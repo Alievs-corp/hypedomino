@@ -24,6 +24,8 @@ Real-time online multiplayer mobile domino game. Hyperactive, colorful, effect-h
 - All game rules live in one pure Go package (`server/internal/rules`) with table-driven tests. The client only renders and sends intents.
 - No allocations in hot paths on the client (Update loops, input, animation). Pool everything that spawns repeatedly.
 - Every number that designers may tune comes from admin-managed config, not constants.
+- Zero trust in the client: no balance, price, reward, inventory or score value is ever accepted from or stored authoritatively on the client. The client sends intents only; modified APKs and memory editors must gain nothing. See Epic 18 and `docs/anti-cheat.md`.
+- Purchases are granted only after server-side receipt validation. Time-based logic uses server time only.
 - Secrets only from environment. Never commit keys, tokens or service accounts.
 
 ## Performance budgets
