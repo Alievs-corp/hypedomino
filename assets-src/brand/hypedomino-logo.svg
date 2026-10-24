@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+<defs>
+<linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfdcff"/></linearGradient>
+<linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3ddc"/><stop offset="1" stop-color="#5a3bff"/></linearGradient>
+<linearGradient id="ext" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a2cff"/><stop offset="1" stop-color="#2a1a9a"/></linearGradient>
+<radialGradient id="pip" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#4a3bb0"/><stop offset="1" stop-color="#0d0830"/></radialGradient>
+<linearGradient id="txt" gradientUnits="userSpaceOnUse" x1="-560" y1="0" x2="560" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset=".36" stop-color="#cfe0ff"/><stop offset=".43" stop-color="#ff4fe0"/><stop offset="1" stop-color="#7a3bff"/></linearGradient>
+<linearGradient id="outer" gradientUnits="userSpaceOnUse" x1="-560" y1="0" x2="560" y2="0"><stop offset="0" stop-color="#3b6bff"/><stop offset=".5" stop-color="#ff2fd0"/><stop offset="1" stop-color="#7a3bff"/></linearGradient>
+<linearGradient id="s1" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ff2fd0"/><stop offset="1" stop-color="#ff2fd0" stop-opacity="0"/></linearGradient>
+<linearGradient id="s2" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#4a6bff"/><stop offset="1" stop-color="#4a6bff" stop-opacity="0"/></linearGradient>
+<linearGradient id="s3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9a3bff"/><stop offset="1" stop-color="#9a3bff" stop-opacity="0"/></linearGradient>
+<radialGradient id="halo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#8a2cff" stop-opacity=".55"/><stop offset="1" stop-color="#8a2cff" stop-opacity="0"/></radialGradient>
+<filter id="glow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1600" height="900" fill="#070a24"/>
+<ellipse cx="800" cy="330" rx="520" ry="300" fill="url(#halo)"/>
+<path d="M180 360 L650 230 L650 262 Z" fill="url(#s2)"/>
+<path d="M120 430 L660 300 L660 340 Z" fill="url(#s1)"/>
+<path d="M240 300 L640 190 L640 214 Z" fill="url(#s3)"/>
+<path d="M1480 330 L1000 210 L1000 240 Z" fill="url(#s1)"/>
+<path d="M1520 420 L1010 290 L1010 326 Z" fill="url(#s2)"/>
+<path d="M1400 250 L1010 160 L1010 182 Z" fill="url(#s3)"/>
+<g transform="translate(625 320) rotate(-15)">
+  <rect x="-84" y="-151" width="200" height="350" rx="40" fill="url(#ext)"/>
+  <rect x="-100" y="-175" width="200" height="350" rx="40" fill="url(#face)" stroke="url(#rim)" stroke-width="9"/>
+  <rect x="-90" y="-165" width="180" height="330" rx="30" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3"/>
+  <rect x="-66" y="-4" width="132" height="8" rx="4" fill="#8a7bd8" opacity=".75"/>
+  <circle cx="0" cy="0" r="9" fill="url(#rim)"/>
+  <circle cx="-46" cy="-134" r="19" fill="url(#pip)"/><circle cx="-52" cy="-141" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="-134" r="19" fill="url(#pip)"/><circle cx="40" cy="-141" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="-88" r="19" fill="url(#pip)"/><circle cx="-52" cy="-95" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="-88" r="19" fill="url(#pip)"/><circle cx="40" cy="-95" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="-42" r="19" fill="url(#pip)"/><circle cx="-52" cy="-49" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="-42" r="19" fill="url(#pip)"/><circle cx="40" cy="-49" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="42" r="19" fill="url(#pip)"/><circle cx="-52" cy="35" r="5" fill="#fff" opacity=".45"/><circle cx="0" cy="88" r="19" fill="url(#pip)"/><circle cx="-6" cy="81" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="134" r="19" fill="url(#pip)"/><circle cx="40" cy="127" r="5" fill="#fff" opacity=".45"/>
+</g>
+<g transform="translate(975 300) rotate(12)">
+  <rect x="-84" y="-151" width="200" height="350" rx="40" fill="url(#ext)"/>
+  <rect x="-100" y="-175" width="200" height="350" rx="40" fill="url(#face)" stroke="url(#rim)" stroke-width="9"/>
+  <rect x="-90" y="-165" width="180" height="330" rx="30" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3"/>
+  <rect x="-66" y="-4" width="132" height="8" rx="4" fill="#8a7bd8" opacity=".75"/>
+  <circle cx="0" cy="0" r="9" fill="url(#rim)"/>
+  <circle cx="-46" cy="-134" r="19" fill="url(#pip)"/><circle cx="-52" cy="-141" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="-134" r="19" fill="url(#pip)"/><circle cx="40" cy="-141" r="5" fill="#fff" opacity=".45"/><circle cx="0" cy="-88" r="19" fill="url(#pip)"/><circle cx="-6" cy="-95" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="-42" r="19" fill="url(#pip)"/><circle cx="-52" cy="-49" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="-42" r="19" fill="url(#pip)"/><circle cx="40" cy="-49" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="42" r="19" fill="url(#pip)"/><circle cx="-52" cy="35" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="42" r="19" fill="url(#pip)"/><circle cx="40" cy="35" r="5" fill="#fff" opacity=".45"/><circle cx="0" cy="88" r="19" fill="url(#pip)"/><circle cx="-6" cy="81" r="5" fill="#fff" opacity=".45"/><circle cx="-46" cy="134" r="19" fill="url(#pip)"/><circle cx="-52" cy="127" r="5" fill="#fff" opacity=".45"/><circle cx="46" cy="134" r="19" fill="url(#pip)"/><circle cx="40" cy="127" r="5" fill="#fff" opacity=".45"/>
+</g>
+<g transform="translate(800 740) skewX(-12)">
+<g filter="url(#glow)" opacity=".85"><text x="0" y="0" text-anchor="middle" font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" font-size="204" letter-spacing="-4" fill="none" stroke="url(#outer)" stroke-width="40">HypeDomino</text></g>
+<text x="0" y="0" text-anchor="middle" font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" font-size="204" letter-spacing="-4" fill="none" stroke="url(#outer)" stroke-width="42" stroke-linejoin="round">HypeDomino</text>
+<text x="0" y="0" text-anchor="middle" font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" font-size="204" letter-spacing="-4" fill="none" stroke="#0a0626" stroke-width="22" stroke-linejoin="round">HypeDomino</text>
+<text x="0" y="0" text-anchor="middle" font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" font-size="204" letter-spacing="-4" fill="url(#txt)">HypeDomino</text>
+</g>
+<path d="M230 842 Q800 800 1390 826 Q800 836 230 842Z" fill="url(#outer)"/>
+</svg>
