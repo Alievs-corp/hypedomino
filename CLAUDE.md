@@ -32,13 +32,34 @@ Real-time online multiplayer mobile domino game. Hyperactive, colorful, effect-h
 - Server: p99 move round-trip under 100 ms in region; 10k concurrent rooms per node target.
 - Any change touching these paths must include a measurement in the PR.
 
-## Workflow
-- One issue = one branch = one PR. Branch: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`.
-- Conventional commits (`feat:`, `fix:`, `perf:`, `test:`, `chore:`, `docs:`).
-- PR description: what changed, how measured/tested, `Closes #N` only if the issue is fully done, else `Part of #N`.
-- CI must be green before merge. Never disable or skip tests to get green.
-- Rules, scoring and economy logic require tests before merge.
-- Issues carry labels: `type:*`, `area:*`, `priority:*`, `epic` for epics. Sub-issues are native GitHub sub-issues of their epic.
+## Git workflow
+Same discipline as the IdeaNest repository. Every task follows this sequence, no exceptions.
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b <type>/<short-description>
+git push -u origin <branch>
+gh pr create --base main --title "..." --body "..."
+```
+
+- Never commit to `main`. Branch types: `feat/ fix/ chore/ docs/ refactor/ test/ perf/`, kebab-case, under about 50 characters (`feat/spinner-double-rules`). If it cannot be described in a few words, split the task.
+- Conventional Commits in English: `<type>(<scope>): <imperative subject>`, no trailing period, body explains why, wrapped at 72 columns. Never `--no-verify`.
+- Every PR: links its issue (`Closes #N` or `Part of #N`), carries a `type:` label, at least one `area:` label and a `priority:` label, passes CI, lists the commands used to verify, and states what was not done and why.
+- Merge only when `CI complete` is green. Squash merge. Delete the branch after merge. A failing check is fixed, never disabled or skipped.
+- `CI complete` is the single required check on `main`: it always runs, waits for the other jobs and fails if any job that had work did not succeed. A new job that may block a merge is added to its `needs` and to its checked list. Branch protection also requires an up-to-date branch, resolved conversations, no force pushes, and zero required approvals until a second reviewer exists (then restore 1).
+
+## Issues
+- Work is tracked as epics with native sub-issues. Pick a sub-issue, never an epic.
+- Assign yourself before starting. One sub-issue, one branch, one PR. If work outgrows the issue, split it.
+- `status: needs-decision` means blocked on an owner decision. Do not implement around it.
+- Rules, scoring and economy logic require tests before merge. Update docs in the same PR as the change.
+
+## Agent conduct
+- Read `docs/rules.md` before touching game logic; read the asset and motion specs before touching UI or art.
+- Never invent a color, rarity, duration or price; they exist as tokens or admin config.
+- Never claim something works without running it. Report failures as plainly as successes.
+- When a rule here conflicts with a habit, the rule wins.
 
 ## Skills (use them)
 - caveman (https://github.com/juliusbrussee/caveman): terse agent replies and compressed context to save tokens. Default communication style in sessions.
