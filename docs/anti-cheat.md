@@ -39,8 +39,8 @@ Code review checks every change against this list. A change that breaks a rule i
 |---|---|---|
 | Block | The request, intent or session is rejected and server state is unchanged. A counter is incremented | Server, immediately |
 | Flag | A risk signal with its evidence is recorded and the account's risk score rises | Server, immediately |
-| Shadowban | Ranked matchmaking pairs the account only with other shadowbanned accounts (cheater pool). It is hidden from public leaderboards. The player is not told | Risk score at `ShadowbanScore`, applied in the next ban wave, or an admin |
-| Temporary ban | No login for `TempBanHours` | Risk score at `TempBanScore`, applied in the next ban wave, or an admin |
+| Shadowban | Ranked matchmaking pairs the account only with other shadowbanned accounts (cheater pool). It is hidden from public leaderboards. The player is not notified; a data export or access request shows it (`docs/privacy.md` 8.3) | Risk score at `ShadowbanScore`, applied in the next ban wave, or an admin |
+| Temporary ban | No login for `TempBanHours` | Risk score at `TempBanScore`, applied in the next ban wave, or an admin. An account under 18 is sent to review instead of a score-based ban (`docs/privacy.md` 12.2, OQ-9) |
 | Permanent ban | No login, permanently | An admin from the review queue only |
 | Review | The account enters the admin review queue with all its signals and evidence; the admin decides and the player can appeal | Risk score at `ReviewScore`, any hard-evidence signal, or a penalty ladder review step (`docs/penalties.md`) |
 

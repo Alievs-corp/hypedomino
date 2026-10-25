@@ -395,5 +395,5 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-6 | `mythic` items in the shop | Yes, time-limited offers only (3.1) |
 | OQ-7 | Starter offer and first-purchase bonus | Both (7.3) |
 | OQ-8 | Market-specific price overrides, for example a lower Turkey price | None at launch; store equalisation only (7.4) |
-| OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; revisit with privacy counsel |
+| OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; sending it later needs a consent purpose first (`docs/privacy.md` 12.2, OQ-13) |
 | OQ-10 | Missed daily login day | Pauses the cycle, no reset (2.3) |
