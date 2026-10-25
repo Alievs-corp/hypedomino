@@ -268,7 +268,7 @@ Owner decision on #8 (2026-10-26).
 
 - A ranked match starts only when every seat is held by a real player. The ranked queue never fills a seat with a bot, however long the wait.
 - The server bot takes a seat in a ranked match only to replace a player during the match (R-50 to R-52). Its MMR and LP handling is section 4.5.
-- Bot fill after a long wait (#48, config) applies to unranked queues only. Nothing in this document is read or written by such a match.
+- Bot fill after a long wait (#48, config) applies to casual queues only (R-56). Nothing in this document is read or written by a casual match.
 
 ## 10. Config
 
