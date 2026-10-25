@@ -2,7 +2,7 @@
 
 Status: proposal; the owner approves it by merging. How every shipped image looks: palette use, shape, light, outline, characters, effects, static fallbacks and the reference board. It defines no colour, duration or budget value. Colours are named by their token path in `docs/design-tokens.json`; motion and effect budgets come from `docs/ui-motion.md` and `docs/performance.md`; delivery follows ADR 0002; item data follows `docs/cosmetics.md`; content limits follow `docs/localization.md` sections 6 and 7 (PEGI 3 target). `node tools/art-direction/art-direction.mjs` checks that this file contains no colour literal and that every token path it names exists; CI runs its tests through `npm run test:tools`.
 
-Production workflow, prompt templates, naming and folders are #167. UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours #5.
+Production workflow, prompt templates, naming and folders are #167. UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours `docs/rarity.md`.
 
 ## 1. Pillars
 
@@ -29,7 +29,7 @@ Dark layered ground, vivid accents. The accent hues carry meaning, so art never 
 | Points | `color.role.score` | Score popups, score particles, points flying to the meter. Nothing else is score yellow in a match |
 | Teams | `color.role.teamA`, `color.role.teamB` | Team seats, meters, the `domino` banner and `matchWin` confetti. A cosmetic is never dominated by a team hue, so it cannot be mistaken for a team marker |
 | Text | `color.text.primary`, `color.text.secondary`, `color.text.muted` and each role's `text` shade | Text is never baked into art (localization 6) |
-| Rarity | `rarity.definedBy` (#5) | No rarity colour, diamond or rarity glow is painted into an asset. The client draws them from `rarityId` |
+| Rarity | `rarity.*`, `docs/rarity.md` | No rarity colour, diamond or rarity glow is painted into an asset. The client draws them from `rarityId` |
 
 Rules:
 - Effect and glow sprites are authored white or greyscale and tinted at runtime with a role `fill` through vertex colour. One sprite serves every role; there are no per-colour effect textures.
@@ -79,7 +79,7 @@ No runtime outline or rim shader: a baked outline costs nothing per frame, a sha
 | Face | Eyes and mouth carry the emotion and stay readable at seat size. Eyes sit low in the head |
 | Hands | Simplified, large enough that open, closed and pointing read in silhouette |
 | Body types | Varied across a set; no body type stands for a group, region or trait (localization 6, representation) |
-| Avatar | Head and shoulders, face centred. Nothing essential in the outer band that a frame (#173) or the rarity mark (#5) covers; the band width is set with #168 |
+| Avatar | Head and shoulders, face centred. Nothing essential in the outer band that a frame (#173) or the rarity glow (`docs/rarity.md`) covers; the band width is set with #168 |
 | Character canvas | One canvas size and pivot per class, shared by every clip and the static sprite (section 7) |
 
 All-ages: no sexualised proportions, poses or outfits, no likeness of a real person, no resemblance to an existing character or brand.
@@ -154,7 +154,7 @@ The board is a set of panels, produced as original art through the workflow of #
 
 | Panel | Must show | Proves |
 |---|---|---|
-| B-1 Palette in context | A match scene mock: ground layers, a panel, the primary button, a selection highlight, a score popup, both team meters, an outcome icon. Rarity slots shown as an empty marked placeholder | Section 2 roles on the real ground |
+| B-1 Palette in context | A match scene mock: ground layers, a panel, the primary button, a selection highlight, a score popup, both team meters, an outcome icon. Rarity marks of all five tiers (`docs/rarity.md`) | Section 2 roles on the real ground |
 | B-2 Value check | B-1 in greyscale | Pips, legal ends, turn owner and score read without hue |
 | B-3 Shape vocabulary | Rounded rectangle, circle, pill and impact shapes side by side, each with one in-game use | Section 3 |
 | B-4 Light and outline | One tile and one character lit from above, showing base, shade and highlight, the rim band, the outer outline in `color.shadow`, and the same with glow added at runtime | Section 4 |
@@ -172,6 +172,5 @@ A cosmetic's palette is reviewed per asset on the board: shown on both `color.su
 ## 10. Open items
 
 - Tile face and pip colours have no tokens. Tiles are not a cosmetic type (`docs/cosmetics.md` section 2), so they need tokens added to `docs/design-tokens.json` by owner-approved PR before tile art is final (#169).
-- Rarity colours, status diamond and rarity glow: #5.
 - Outline weight, smallest display size and avatar frame band per asset class: #168 to #175.
 - The reference board images: #167.

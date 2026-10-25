@@ -52,7 +52,7 @@ The game is drawn on dark, layered backgrounds so vivid fills, glows and particl
 
 Rules:
 - Colour is never the only cue. Team identity also shows as seat position and the team badge; `success`, `warning` and `danger` always come with an icon. Team A blue and team B orange stay distinct under protan and deutan simulation (Viénot 1999); `primary` and `danger` are close under it, which is why danger carries an icon.
-- Rarity colours are not defined here. `rarity` in the tokens is only a reference to #5, which owns those values.
+- Rarity colours, marks and glow levels are defined in `docs/rarity.md`, which explains the `rarity` token group.
 - UI, effect, team, score and role colours come only from these tokens. Cosmetic illustration art (avatars, characters, tables, frames, emoji) uses its own palette per asset, reviewed on the reference board (`docs/art-direction.md` section 9); it is never dominated by a team or role hue and never evokes a flag or political side (`docs/localization.md` 6).
 
 ### Contrast
@@ -318,4 +318,3 @@ The step table, chain boost and roll timings are admin config with these default
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - Sound and haptics per step are not part of this spec.
-- Rarity colours and their glow levels: #5.
