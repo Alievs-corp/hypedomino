@@ -1,0 +1,254 @@
+{
+  "$schema": "../schema.json",
+  "schemaVersion": 1,
+  "manifestVersion": 7,
+  "items": [
+    {
+      "id": "avatar.starter",
+      "type": "avatar",
+      "revision": 1,
+      "nameKey": "cosmetic.avatar.starter.name",
+      "rarityId": "placeholder_1",
+      "animated": false,
+      "staticAddress": "cosmetic/avatar/starter/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "character.starter",
+      "type": "character",
+      "revision": 1,
+      "nameKey": "cosmetic.character.starter.name",
+      "rarityId": "placeholder_1",
+      "animated": false,
+      "staticAddress": "cosmetic/character/starter/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "frame.starter",
+      "type": "frame",
+      "revision": 1,
+      "nameKey": "cosmetic.frame.starter.name",
+      "rarityId": "placeholder_1",
+      "animated": false,
+      "staticAddress": "cosmetic/frame/starter/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "table.starter",
+      "type": "table",
+      "revision": 1,
+      "nameKey": "cosmetic.table.starter.name",
+      "rarityId": "placeholder_1",
+      "animated": false,
+      "staticAddress": "cosmetic/table/starter/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "emoji.smile",
+      "type": "emoji",
+      "revision": 1,
+      "nameKey": "cosmetic.emoji.smile.name",
+      "rarityId": "placeholder_1",
+      "animated": false,
+      "staticAddress": "cosmetic/emoji/smile/static",
+      "group": "basic",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "avatar.comet_fox",
+      "type": "avatar",
+      "revision": 3,
+      "nameKey": "cosmetic.avatar.comet_fox.name",
+      "rarityId": "placeholder_2",
+      "animated": true,
+      "staticAddress": "cosmetic/avatar/comet_fox/static",
+      "animationAddress": "cosmetic/avatar/comet_fox/anim",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "shop",
+          "ref": "offer.avatar_comet_fox"
+        },
+        {
+          "type": "event",
+          "ref": "event.spring_cup"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "character.tile_wizard",
+      "type": "character",
+      "revision": 1,
+      "nameKey": "cosmetic.character.tile_wizard.name",
+      "rarityId": "placeholder_3",
+      "animated": true,
+      "staticAddress": "cosmetic/character/tile_wizard/static",
+      "clips": {
+        "idle": "cosmetic/character/tile_wizard/clip/idle",
+        "win": "cosmetic/character/tile_wizard/clip/win",
+        "lose": "cosmetic/character/tile_wizard/clip/lose",
+        "reaction": "cosmetic/character/tile_wizard/clip/reaction"
+      },
+      "availability": "live",
+      "sources": [
+        {
+          "type": "pass",
+          "ref": "pass.season_1.premium.level_30"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "frame.season_1_top",
+      "type": "frame",
+      "revision": 1,
+      "nameKey": "cosmetic.frame.season_1_top.name",
+      "rarityId": "placeholder_2",
+      "animated": true,
+      "staticAddress": "cosmetic/frame/season_1_top/static",
+      "animationAddress": "cosmetic/frame/season_1_top/anim",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "rank_reward",
+          "ref": "rank.season_1.top_tier"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "table.night_market",
+      "type": "table",
+      "revision": 1,
+      "nameKey": "cosmetic.table.night_market.name",
+      "rarityId": "placeholder_3",
+      "animated": true,
+      "staticAddress": "cosmetic/table/night_market/static",
+      "layers": [
+        {
+          "name": "sky",
+          "address": "cosmetic/table/night_market/layer/sky",
+          "animated": true
+        },
+        {
+          "name": "stalls",
+          "address": "cosmetic/table/night_market/layer/stalls",
+          "animated": false
+        },
+        {
+          "name": "lanterns",
+          "address": "cosmetic/table/night_market/layer/lanterns",
+          "animated": true
+        }
+      ],
+      "availability": "live",
+      "sources": [
+        {
+          "type": "promo",
+          "ref": "promo.launch_week"
+        },
+        {
+          "type": "shop",
+          "ref": "offer.table_night_market"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "emoji.laugh_spin",
+      "type": "emoji",
+      "revision": 1,
+      "nameKey": "cosmetic.emoji.laugh_spin.name",
+      "rarityId": "placeholder_2",
+      "animated": true,
+      "staticAddress": "cosmetic/emoji/laugh_spin/static",
+      "animationAddress": "cosmetic/emoji/laugh_spin/anim",
+      "group": "basic",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "mission",
+          "ref": "mission.win_5_matches"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "avatar.old_logo",
+      "type": "avatar",
+      "revision": 2,
+      "nameKey": "cosmetic.avatar.old_logo.name",
+      "rarityId": "placeholder_2",
+      "animated": false,
+      "staticAddress": "cosmetic/avatar/old_logo/static",
+      "availability": "retired",
+      "sources": [
+        {
+          "type": "event",
+          "ref": "event.closed_beta"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "frame.withdrawn",
+      "type": "frame",
+      "revision": 4,
+      "nameKey": "cosmetic.frame.withdrawn.name",
+      "rarityId": "placeholder_2",
+      "animated": false,
+      "staticAddress": "cosmetic/frame/withdrawn/static",
+      "availability": "disabled",
+      "sources": [
+        {
+          "type": "shop",
+          "ref": "offer.frame_withdrawn"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    }
+  ]
+}
