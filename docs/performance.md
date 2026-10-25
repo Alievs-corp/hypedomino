@@ -18,15 +18,16 @@ Class rule for devices outside the matrix: Low = under 4 GB RAM or GPU older tha
 
 - Development build with the Unity Profiler attached, deep profiling off, for Profiler-based gates. Release build (IL2CPP, ARM64, no Profiler) for cold start, fps and battery gates.
 - Device between 100% and 30% battery, not charging, Wi-Fi to the test server, brightness fixed at 50%, no other foreground apps, idle-cool (surface under 35 C) before each run, battery saver / Low Power Mode off.
-- `Application.targetFrameRate` 60 (120 for the high option), vsync on.
+- `Application.targetFrameRate` 60 (120 for the high option), vsync on. Player Settings "Frame Timing Stats" enabled so `FrameTimingManager` reports per-frame CPU and GPU time.
+- With vsync on, the presented interval is quantised to the refresh period (16.7 ms at 60 Hz), so smoothness is judged by two numbers: work time (`max(cpuFrameTime, gpuFrameTime)` from `FrameTimingManager.GetLatestTimings`) shows headroom, and missed vsyncs (presented interval longer than 1.5 refresh periods) show visible stutter.
 - Scripted match replay: a fixed-seed recorded 2v2 match of 3 minutes, server-fed, effects at the tier's default level, worst-case effect moments included. Played 3 times back to back; all 3 runs must pass and the worst is reported. Harness: #192.
 
 ## 3. Client budgets
 
 | Budget | Target | Tier / environment | Method | Sample and duration | Pass / fail |
 |---|---|---|---|---|---|
-| Stable 60 fps | 60 fps | Mid (Low: section 4) | Per-frame frame time recorded by the replay harness with `ProfilerRecorder` (`ProfilerCategory.Internal`, "Main Thread") or `Time.unscaledDeltaTime`, exported as CSV and analysed in Profile Analyzer. Cross-check with `adb shell dumpsys SurfaceFlinger --latency <layer>` or a Perfetto frame timeline | 3 replays x 3 min (about 10,800 frames each) | All hold: p50 <= 14.0 ms, p95 <= 16.7 ms, p99 <= 20.0 ms, frames over 33.3 ms <= 0.1%, no frame over 100 ms |
-| 120 fps option | 120 fps | High, 120 Hz panel, option enabled | Same as above, target 120 | 3 replays x 3 min | p50 <= 7.0 ms, p95 <= 8.3 ms, p99 <= 11.0 ms, frames over 16.7 ms <= 0.5%, no frame over 50 ms |
+| Stable 60 fps | 60 fps | Mid (Low: section 4) | Replay harness records per frame `FrameTimingManager` CPU and GPU time and the presented interval (`Time.unscaledDeltaTime`), exported as CSV and analysed in Profile Analyzer. Cross-check presented frames with `adb shell dumpsys SurfaceFlinger --latency <layer>` or a Perfetto frame timeline | 3 replays x 3 min (about 10,800 frames each) | All hold: work time p50 <= 11.0 ms and p95 <= 14.0 ms; missed vsyncs (interval > 25.0 ms) <= 1% of frames; no interval over 100 ms |
+| 120 fps option | 120 fps | High, 120 Hz panel, option enabled | Same as above, target 120 | 3 replays x 3 min | Work time p50 <= 5.5 ms and p95 <= 7.0 ms; missed vsyncs (interval > 12.5 ms) <= 2%; no interval over 50 ms |
 | Cold start | < 3 s | Mid, release build | Command below | 10 runs, force-stop before each, first run after install discarded | Median time to interactive lobby < 3000 ms and worst run < 3500 ms. Low and High are recorded, not gated |
 | Draw calls | < 150 | Mid, match scene | `ProfilerRecorder` on `ProfilerCategory.Render` "Batches Count" and "SetPass Calls Count" per frame; inspect the worst frame in Frame Debugger (Window > Analysis > Frame Debugger) | 1 full replay, worst-case effect frame included | Maximum Batches over all frames < 150 (maximum, not average) |
 | GC allocation | 0 B/frame | Mid, match scene, development build | `ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame")` per frame; `GC.CollectionCount(0)` before and after; Profiler Memory module and Memory Profiler snapshot to find the source of any allocation | First deal to result screen, 3 replays | Every frame 0 B and `GC.CollectionCount(0)` delta 0. One non-zero frame fails |
@@ -47,7 +48,7 @@ Leak check, reported but not gated until #191 sets a number: Memory Profiler sna
 
 | Target | Method | Pass / fail |
 |---|---|---|
-| Playable at 30 fps minimum with reduced effects | Same replay on the Low reference devices, `targetFrameRate` 30, reduced-effects level | p50 <= 33.3 ms, p95 <= 36.0 ms, p99 <= 45.0 ms, no frame over 100 ms. Draw call and GC gates still apply. Move, draw, pass and timer fully functional |
+| Playable at 30 fps minimum with reduced effects | Same replay on the Low reference devices, `targetFrameRate` 30, reduced-effects level | Work time p95 <= 28.0 ms; missed vsyncs (interval > 50.0 ms) <= 1%; no interval over 100 ms. Draw call and GC gates still apply. Move, draw, pass and timer fully functional |
 
 ## 5. Battery
 
@@ -110,7 +111,8 @@ Paste-ready block for the PR body under Verification:
 
 | Metric | Before | After | Budget | Result |
 |---|---|---|---|---|
-| Frame time p95 / p99 (ms) | | | 16.7 / 20.0 | |
+| Work time p50 / p95 (ms) | | | 11.0 / 14.0 | |
+| Missed vsyncs (%) | | | <= 1 | |
 | Max batches | | | < 150 | |
 | GC alloc per frame (B) | | | 0 | |
 | Cold start median (ms) | | | < 3000 | |
