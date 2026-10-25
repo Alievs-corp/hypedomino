@@ -182,7 +182,7 @@ Applied in order. The stored display form is the player's text after step 1; the
 |---|---|
 | 1 | Unicode NFKC. |
 | 2 | Strip zero-width and format characters, collapse whitespace, trim. |
-| 3 | Full Unicode case folding, locale independent (`İ` and `I` fold together, so Turkish casing cannot dodge uniqueness). |
+| 3 | Full Unicode case folding, locale independent, then `İ`, `I`, `ı` and `i̇` (i with combining dot) all map to `i`. Standard folding alone keeps `İ` apart from `I`, so this explicit step stops Turkish casing from dodging uniqueness. |
 | 4 | Confusable folding to a canonical letter from a maintained table. Includes Latin/Cyrillic look-alikes (`а`/`a`, `е`/`e`, `о`/`o`, `р`/`p`, `с`/`c`, `у`/`y`, `х`/`x`, `і`/`i`) and the az/tr set (`ə`/`a`, `ı`/`i`, `ö`/`o`, `ü`/`u`, `ş`/`s`, `ç`/`c`, `ğ`/`g`). |
 | 5 | Leetspeak folding (`0`->`o`, `1`->`i`, `3`->`e`, `4`->`a`, `5`->`s`, `7`->`t`, `@`->`a`, `$`->`s`). |
 | 6 | A second form with separators (`_ . - space`) removed, so split spellings still match the word filter. |
@@ -251,7 +251,7 @@ Applies to every art asset, animation, sound, store screenshot and text before i
 | Colours | Use colour tokens only. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
 | Symbols | No national or party emblems, no military insignia, no symbols tied to banned organisations. |
 | Flags and maps | No flags as decoration and no flag standing in for a language (the language list uses names). No maps in launch content. Any later use needs owner review for disputed territory. |
-| Religion | No religious symbols, scriptures, places of worship or clergy in assets or cosmetic themes. Holiday events are reviewed per region by the owner and are not tied to one religion's rites. |
+| Religion | No religious symbols, scriptures, places of worship or clergy in assets or cosmetic themes. Holiday events are reviewed per region by the owner. |
 | Gestures | No avatar or emote with a hand or body sign that is offensive in any launch market. The emote list is reviewed for this. |
 | Gambling imagery | Dominoes with coins must not read as a casino. Avoid slot and roulette cues, card suits, chips, cash piles, spinning-reel reward presentation and the words jackpot, bet, wager. Currency is abstract game tokens. Random rewards follow store disclosure rules where they apply. |
 | Alcohol, tobacco, drugs | None in assets, avatars, items or text. |
