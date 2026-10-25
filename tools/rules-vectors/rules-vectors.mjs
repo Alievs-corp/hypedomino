@@ -297,7 +297,6 @@ function stateErrors({ kind, mode, given, expect }) {
   if (given.boneyard && mode === "1v1" && kind !== "first-opener" && given.boneyard.length === 0) errors.push("1v1 boneyard always keeps its last tile");
   if (kind === "first-opener" && !isValidDeal(mode, given)) errors.push("first-opener needs a valid full deal");
   if (kind === "turn" && expect.steps.length !== given.placements.length) errors.push("placements continue after the turn ended");
-  if (kind === "turn-timer" && given.actedAtSeconds === given.turnSeconds) errors.push("acting exactly at the limit is not specified by rules.md");
   if (kind === "hand-end") {
     const emptyHands = Object.keys(given.hands).filter((seat) => given.hands[seat].length === 0);
     const expectedEmpty = given.end === "domino" ? [given.lastPlacedBy] : [];

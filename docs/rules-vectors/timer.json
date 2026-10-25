@@ -196,6 +196,43 @@
       "mode": "1v1",
       "given": { "afkTimeouts": 3, "events": [{ "seat": "X", "type": "leave" }] },
       "expect": { "controllers": { "X": "bot", "Y": "player" } }
+    },
+    {
+      "id": "timer-acts-exactly-at-limit",
+      "kind": "turn-timer",
+      "rules": ["R-49", "R-50"],
+      "description": "Turn limit 20 s; an action arriving exactly at 20 s is late and the bot moves",
+      "mode": "2v2",
+      "given": { "turnSeconds": 20, "actedAtSeconds": 20 },
+      "expect": { "movedBy": "bot" }
+    },
+    {
+      "id": "afk-reconnect-resets-count",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "S goes AFK after 3 timeouts, reconnects, then times out twice; the count restarted at zero, so S still plays",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "reconnect" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "leave-reconnect-stays-bot",
+      "kind": "afk",
+      "rules": ["R-52"],
+      "description": "S leaves and later reconnects; a leaver cannot take back control, so the bot keeps the seat",
+      "mode": "2v2",
+      "given": { "afkTimeouts": 3, "events": [{ "seat": "S", "type": "leave" }, { "seat": "S", "type": "reconnect" }] },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
     }
   ]
 }
