@@ -244,11 +244,11 @@ Any future feature that accepts free text must update this section and add moder
 
 ## 6. Cultural content checklist
 
-Applies to every art asset, animation, sound, store screenshot and text before it ships. Launch markets are Azerbaijan, Turkey and Russian-speaking regions, and content must also pass the global store review.
+Applies to every art asset, animation, sound, store screenshot and text before it ships. Launch markets are Azerbaijan, Turkey and Russian-speaking regions other than Russia, which is not a store country at launch (`docs/privacy.md` 9.3); content must also pass the global store review.
 
 | Area | Rule |
 |---|---|
-| Colours | Use colour tokens only. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
+| Colours | UI, effect, team, score and role colours come only from colour tokens. Cosmetic illustration art (avatars, characters, tables, frames, emoji) may use its own palette, but is never dominated by a team or role hue. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
 | Symbols | No national or party emblems, no military insignia, no symbols tied to banned organisations. |
 | Flags and maps | No flags as decoration and no flag standing in for a language (the language list uses names). No maps in launch content. Any later use needs owner review for disputed territory. |
 | Religion | No religious symbols, scriptures, places of worship or clergy in assets or cosmetic themes. Holiday events are reviewed per region by the owner. |
@@ -283,6 +283,6 @@ A proposal for the owner to confirm. The stores' questionnaires decide the final
 | IARC (Google Play and others) | Lowest tier (all ages) | No simulated gambling; no free-text chat; purchases and random items disclosed |
 | PEGI | 3 | Same; in-app purchase and random-item notices may apply |
 | App Store | 4+ | No gambling imagery; no unrestricted user text; purchase and random-reward answers given honestly |
-| Turkey, Russia | Follow the local classification shown on the store listing | Checked at submission |
+| Turkey | Follow the local classification shown on the store listing | Checked at submission |
 
 Features that would raise the target and need an owner decision before they are built: free-text chat, voice chat, real-money prizes, casino-style reward presentation. Nicknames and room names are user-generated text, so the store answer is "moderated user content" and the report flow (5.8) must exist before submission.

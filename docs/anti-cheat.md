@@ -47,6 +47,7 @@ Code review checks every change against this list. A change that breaks a rule i
 - Blocks are immediate because they protect state. Shadowbans and temporary bans from the risk score are applied in ban waves every `BanWaveIntervalHours`, so an attacker cannot tie a ban to the action that caused it (#209).
 - The risk score is the sum of signal weights with decay over `RiskDecayDays` (section 5). It is separate from the AFK and leaver offense level in `docs/penalties.md`; both feed the same admin review queue.
 - Every response and every admin change is audited with a mandatory reason (#209).
+- Owner-confirmed on #201 (2026-10-26): permanent bans only by an admin from review, soft signals never ban alone, shadowbanned accounts hidden from public leaderboards, every hard signal goes to review.
 
 ## 4. Attack vectors
 

@@ -2,7 +2,7 @@
 
 What personal data HypeDomino processes, why, on which legal basis, where it lives, how long it is kept, who sees it, and how players exercise their rights. It maps that inventory to GDPR, KVKK and the store disclosure forms and ends with the legal checklist for launch.
 
-This is an engineering compliance spec, not legal advice. Legal counsel reviews it before launch (#195, release gate item 4 in `docs/roadmap.md`). Where an owner decision is missing, the options and a recommended default are written and marked as an open question (section 12); nothing here decides them.
+This is an engineering compliance spec, not legal advice. Legal counsel reviews it before launch (#195, release gate item 4 in `docs/roadmap.md`). Owner decisions made on #187 (2026-10-26) are applied and listed in section 12.1. Where a decision is still missing, the options and a recommended default are written and marked as an open question (section 12.2); nothing here decides them.
 
 Every name in `CamelCase` code font is admin config (ADR 0006, section 11). Every value shown is a proposed default, not a constant. Retention config is changed by the super admin role only and every change is audited (#134).
 
@@ -22,16 +22,18 @@ Related: ADR 0005 (storage), ADR 0007 (zero trust), `docs/anti-cheat.md`, `docs/
 
 ## 2. Roles and processors
 
-The controller is the legal entity named in the privacy policy (#195); it is not fixed in this document.
+The controller is the legal entity named in the privacy policy (#195). It is an owner decision still pending (OQ-11) and blocks launch (L-1).
+
+Primary data region: Germany (EU), hosting Hetzner. PostgreSQL, Redis, logs, the analytics store and backups run there; crash reports stay in the Sentry EU data region. Transfers out of Turkey use KVKK standard contracts (counsel confirms, L-9).
 
 | Party | Role | What it receives | Decided in |
 |---|---|---|---|
 | Google (Sign-In, Play Billing, Play Integrity, Firebase Cloud Messaging) | Independent controller for the player's Google account and payment; processor for FCM delivery | ID token exchange, purchase verification, integrity tokens, push token and payload | #56, #57, #106, #205, #132 |
 | Apple (Sign in with Apple, App Store, App Attest, APNs) | Independent controller for the Apple account and payment; processor for APNs delivery | Same as Google | #56, #57, #106, #205, #132 |
-| Hosting provider (servers, PostgreSQL, Redis, logs, backups) | Processor | Everything in section 3 stored server-side | #25, #24, #188 (OQ-3) |
+| Hosting provider: Hetzner, Germany (servers, PostgreSQL, Redis, logs, backups) | Processor | Everything in section 3 stored server-side | #25, #24, #188 |
 | Object storage and CDN | Processor | IP address and request metadata of asset and bundle downloads; export files (section 8.3) | #26 |
-| Analytics store | Processor, or self-hosted | Analytics events (D-24) | #181 (OQ-6) |
-| Crash reporting vendor | Processor | Crash reports (D-25) | #182 (OQ-6) |
+| Analytics store: first-party, the game's own server and database on the hosting provider; no third-party analytics SDK | No separate processor (hosting only) | Analytics events (D-24) | #181 |
+| Sentry, EU data region | Processor | Crash reports (D-25) | #182 |
 
 The stores are the merchant of record for real-money purchases; the game never receives card or bank data. A vendor that uses received data for its own purposes is not a processor; choosing one changes the "Shared" answers in section 10 and needs counsel review.
 
@@ -64,7 +66,7 @@ Access roles are the admin roles of #134 (super admin, content, live-ops, suppor
 | D-12 | Match records: participants, seats, results, scores, events, config version | Server (#50) | Play, results, ranking, rewards | CON | PostgreSQL | Account lifetime; anonymized at deletion | support | Hosting |
 | D-13 | Replay records: seed and moves (#41) | Server | Disputes, collusion review (V-9) | LI | PostgreSQL or object storage | `ReplayRetentionDays`; longer while linked to an open case | support | Hosting |
 | D-14 | In-match emoji and quick messages (catalog ids only) | Player (#151, #152) | Relay to the room | CON | Memory only | Not stored | none | Hosting |
-| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank and position public, MMR never shown | Hosting |
+| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots, leaderboard emblems and profile showcase | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank and position public, MMR never shown | Hosting |
 | D-16 | Economy: ledger, inventory, pass progress, missions, medals, daily rewards, promo redemptions | Server (#101, #61, #123, #127, #129, #131, #108) | Grant and keep what the player earned or bought | CON | PostgreSQL | Account lifetime | support | Hosting |
 | D-17 | Purchases: store, product id, transaction id, purchase token or receipt, purchase time, bound account token, refund and chargeback notices | Store APIs (#106, #107, #204) | Grant purchases, restore, refunds, fraud | CON, LEG, LI | PostgreSQL | `PurchaseRecordRetentionYears` after purchase | support, super admin | Hosting; Google, Apple |
 | D-18 | Offenses and penalties | Server (`docs/penalties.md`) | Fair play in ranked matches | CON | PostgreSQL | `OffenseWindowDays`, then `ExpiredOffenseRetentionDays` | support | Hosting |
@@ -73,8 +75,8 @@ Access roles are the admin roles of #134 (super admin, content, live-ops, suppor
 | D-21 | Social graph: friends, blocks, mutes, invites, presence | Player, server (#153, #154, #155) | Friends, invites, blocking | CON | PostgreSQL; presence in Redis | Account lifetime; presence by TTL | support | Hosting |
 | D-22 | Push token and notification categories | FCM, APNs (#132) | Gameplay notifications (CON); promotional notifications (CNS) | CON, CNS | PostgreSQL | Until logout, invalidation by FCM or APNs, or deletion | none | Hosting; Google, Apple |
 | D-23 | Consent records and age gate result (birth year and month) | Player (sections 6, 7) | Proof of consent (GDPR Art. 7(1)), age rules | LEG | PostgreSQL; device until sign-in | Account lifetime, then `ConsentRecordRetentionYears` | support, super admin | Hosting |
-| D-24 | Analytics events with analytics id | Client and server (#181) | Product analytics, KPIs (#147, #196) | CNS | Analytics store | `AnalyticsRawRetentionDays`; aggregates without ids kept | analyst | Analytics store |
-| D-25 | Crash reports and client error telemetry (stack trace, device model, OS, app version; missing localization keys, manifest failures) | Client (#182) | Stability | CNS or LI (OQ-5) | Crash vendor, telemetry store | `CrashReportRetentionDays` | eng | Crash vendor |
+| D-24 | Analytics events with analytics id | Client and server (#181) | Product analytics, KPIs (#147, #196) | CNS | Analytics store (first-party) | `AnalyticsRawRetentionDays`; aggregates without ids kept | analyst | Hosting |
+| D-25 | Crash reports and client error telemetry (stack trace, device model, OS, app version; missing localization keys, manifest failures) | Client (#182) | Stability | CNS or LI (OQ-5) | Sentry (EU data region), telemetry store | `CrashReportRetentionDays` | eng | Sentry |
 | D-26 | Server logs and metrics | Server (#28) | Operations, security investigation | LI | Log store | `ServerLogRetentionDays` | eng | Hosting |
 | D-27 | Admin audit log entries about a player | Admin panel (#134, #144) | Accountability of staff actions | LI | PostgreSQL | `AdminAuditRetentionDays` | super admin | Hosting |
 | D-28 | Deletion tombstone; ban-evasion hash of the auth identity | Server (section 8.2) | Re-apply deletions after a backup restore; keep bans effective | LI | PostgreSQL | Tombstone: `BackupRetentionDays`; hash: section 4 | super admin | Hosting |
@@ -98,15 +100,15 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 | `RiskEvidenceRetentionDays` | 365 | D-19 after case close or sanction end | Delete; aggregate counters kept without ids |
 | `ReportRetentionDays` | 365 | D-20 after resolution | Delete |
 | `AnalyticsRawRetentionDays` | 395 | D-24 | Delete raw events; aggregates without ids kept |
-| `CrashReportRetentionDays` | 90 | D-25 | Delete at the vendor |
+| `CrashReportRetentionDays` | 90 | D-25 | Delete at Sentry |
 | `ExportLinkTtlHours` | 72 | D-29 | Delete the file |
 | `AdminAuditRetentionDays` | 730 | D-27 | Delete |
 | `PurchaseRecordRetentionYears` | counsel | D-17 | Delete |
 | `ConsentRecordRetentionYears` | counsel | D-23 after deletion | Delete |
 | `PermanentBanEvasionRetentionDays` | counsel | D-28 hash for a permanent ban | Delete |
 | `BackupRetentionDays` | set in #188 | D-30, D-28 tombstone | Backup rotated out |
-| `InactiveAccountDays` | off (OQ-8) | Accounts without sign-in | Deletion flow (section 8.2) |
 
+- Inactive accounts are never deleted automatically (owner decision, #187). There is no inactivity deletion and no config key for it at launch.
 - A temporary ban's ban-evasion hash expires when the ban would have ended.
 - Match records (D-12), rank history (D-15) and the economy (D-16) live as long as the account: they are the game state the player keeps. They are anonymized, not kept identifiable, after deletion.
 - KVKK requires periodic destruction at an interval set in the controller's retention and destruction policy; the daily job satisfies any interval, and the policy document itself is checklist item L-5.
@@ -115,7 +117,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 
 | Visible to | Data |
 |---|---|
-| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8) |
+| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4) |
 | Room members | Custom room name, seats, in-match emoji and quick messages |
 | Friends | Online presence (#153) |
 | Nobody | Email, auth identity, MMR, install id, IP, purchases, offenses, anti-cheat data, reports |
@@ -143,12 +145,12 @@ The privacy policy states this table. A deleted account appears in past matches 
 
 | Purpose | Covers | Default | Withdrawal effect |
 |---|---|---|---|
-| `analytics` | D-24 events keyed by the analytics id | Off until the player turns it on, where `AnalyticsConsentModeByCountry` is `opt_in` | Client stops sending at once; the analytics id is rotated; server-side events stop carrying it |
+| `analytics` | D-24 events keyed by the analytics id | Off until the player turns it on (`opt_in`) | Client stops sending at once; the analytics id is rotated; server-side events stop carrying it |
 | `diagnostics` | D-25 client crash reports (OQ-5) | As `analytics` | Crash SDK collection disabled at once |
 | `promotional_push` | D-22 promotional and event notifications (#132, #146) | Off | No promotional sends; gameplay notifications follow their own setting |
 
-- `AnalyticsConsentModeByCountry` default is `opt_in` for every country (OQ-4). `opt_out` means the purpose starts on, the notice says so and the toggle stays in settings.
-- Accept and reject have equal weight on the screen; no toggle is pre-ticked in `opt_in` mode; refusing changes nothing in gameplay or rewards.
+- Consent mode is `opt_in` in every country, with a single code path and no per-country mode (owner decision, #187).
+- Accept and reject have equal weight on the screen; no toggle is pre-ticked; refusing changes nothing in gameplay or rewards.
 - Every purpose has a toggle in Settings, Privacy (#157). Withdrawing is one tap, as easy as giving.
 - Below the player's digital consent age (section 7) consent purposes are not offered and stay off.
 - Under KVKK, explicit consent is a separate, specific statement and never bundled with the terms or the notice (checklist L-11).
@@ -162,15 +164,16 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 - No event is sent, queued or written to disk before `analytics` is on. Events from before consent are dropped, not held.
 - Events carry the analytics id, never account id, email, nickname, IP or install id. The analytics store drops the source IP on ingestion or truncates it before storage.
 - Server-side events (match end, purchase, reward) for a player without `analytics` carry no analytics id and only feed aggregates. Revenue and economy KPIs (#147) are computed from D-16 and D-17, not from analytics.
-- Third-party analytics or crash SDK defaults that collect more (advertising id, automatic screen or session tracking with device ids) are disabled in the client build (#76).
+- Analytics is first-party: the client sends events only to the game's own server. No third-party analytics SDK ships.
+- Sentry SDK defaults that collect more (IP address, default personal data, automatic session tracking with device ids) are disabled in the client build (#76).
 
 ## 7. Age gate and children
 
 ### 7.1 Facts
 
-- Content target is PEGI 3, IARC lowest tier, App Store 4+ (`docs/localization.md` 7). A content rating says the content suits all ages; it does not declare who the game targets. The target audience declared to the stores is a separate decision (OQ-1).
+- Content target is PEGI 3, IARC lowest tier, App Store 4+ (`docs/localization.md` 7). A content rating says the content suits all ages; it does not declare who the game targets. The target audience declared to the stores is 13 and older (7.3).
 - The game has accounts, purchases, public nicknames, leaderboards and moderated user names; it has no free-text or voice chat.
-- Bright cartoon visuals make the stores likely to treat the game as appealing to children even if not targeted at them, so the store listing and the age gate must be consistent with the chosen option.
+- Bright cartoon visuals make the stores likely to treat the game as appealing to children even if not targeted at them, so the store listing and the age gate must be consistent with option A.
 
 ### 7.2 Thresholds (counsel confirms per market)
 
@@ -178,10 +181,10 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 |---|---|---|
 | GDPR Art. 8 | 16 unless a member state sets 13 to 15 | Below it, consent-based processing needs parental consent |
 | KVKK | No specific digital age; minors' capacity follows the Turkish Civil Code | Counsel decides whether guardian consent is needed and from which age |
-| COPPA (only if available in the US) | 13 | Below it, verifiable parental consent before collecting personal data |
-| Azerbaijan, Russia | Counsel | Counsel |
+| COPPA (US) | 13 | Below it, verifiable parental consent before collecting personal data |
+| Azerbaijan | Counsel | Counsel |
 
-### 7.3 Options (OQ-1, owner decision)
+### 7.3 Options and decision
 
 | Option | What happens below `MinAccountAgeByCountry` | Store declarations | Cost |
 |---|---|---|---|
@@ -189,7 +192,7 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 | B. All ages with a child mode | Account in child mode: consent purposes off, no promotional push, not on public leaderboards, nickname only from a generated list, friends by invite code only; parental consent collected where a threshold in 7.2 requires it | Target audience includes under 13; Google Play Families policy applies (only self-certified SDKs, no device identifiers from children); Apple Kids rules apply if listed there | Largest: verifiable parental consent, a second data flow in every feature, SDK constraints |
 | C. All ages, child mode, no parental consent | As B without parental consent, relying on processing that needs no consent | As B | Medium, but counsel must confirm it is lawful in each market; COPPA would not allow it |
 
-Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed default 13 for every country. B can follow as a feature if the owner wants young players. Until the owner decides, the age gate is built so that A and B differ only in config and the child-mode switch.
+Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccountAgeByCountry` default is 13 for every country. B can follow later as a feature, so the age gate is built so that A and B differ only in config and the child-mode switch.
 
 ### 7.4 Gate design (all options)
 
@@ -224,7 +227,7 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 | 1. Request | Settings, Account, Delete account; or the web page (Google Play requires one reachable outside the app). Requires a fresh sign-in. Not available during a match. The screen states that coins, items and pass progress are lost and that store purchases are not refunded by deletion |
 | 2. Pending | State `pending_deletion`. All sessions and refresh tokens revoked (#58); removed from matchmaking, presence, friends lists and current leaderboards; push tokens deleted |
 | 3. Grace | `AccountDeletionGraceDays`. Signing in during the grace shows only the pending state and a cancel button; cancel restores the account unchanged |
-| 4. Deletion job | Runs after the grace, idempotent, per the table below. Revokes Sign in with Apple tokens through Apple's REST API. Sends deletion requests for the analytics id and user keys to the analytics store and crash vendor |
+| 4. Deletion job | Runs after the grace, idempotent, per the table below. Revokes Sign in with Apple tokens through Apple's REST API. Deletes raw events for the analytics id in the analytics store and sends a deletion request for user keys to Sentry |
 | 5. Tombstone | D-28 records the tombstone id and deletion time so a backup restore re-applies the deletion before the restored database serves traffic (#188) |
 
 | Data | At deletion |
@@ -237,8 +240,8 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 | D-13, D-18, D-19, D-20 | Kept to their own retention, linked to the tombstone id only; deleted when it ends |
 | D-17 | Kept for `PurchaseRecordRetentionYears`, linked to the tombstone id, without contact data |
 | D-23 | Kept for `ConsentRecordRetentionYears` as proof, linked to the tombstone id |
-| D-24 | Delete raw events for the analytics id at the store |
-| D-25 | Delete at the vendor where reports are keyed by user; otherwise they expire by retention |
+| D-24 | Delete raw events for the analytics id in the analytics store |
+| D-25 | Delete at Sentry where reports are keyed by user; otherwise they expire by retention |
 | D-27 | Kept to retention; entries keep the tombstone id |
 | D-28 | A banned account leaves a keyed hash of its auth identity for the ban's remaining time or `PermanentBanEvasionRetentionDays`; a new account with the same identity inherits the ban |
 | D-7, D-26 | Expire by their retention |
@@ -249,7 +252,7 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 ### 8.3 Export (#63)
 
 - In-app request in Settings, Account. The server builds one JSON file with a versioned schema and offers it as a download through a signed URL valid for `ExportLinkTtlHours`. One request per `DataExportCooldownDays` (proposed default 7).
-- Contents: D-1, D-3, D-8 to D-11, D-12 (own seats only), D-15, D-16, D-17 without purchase tokens or receipts, D-18, D-21 (friends and blocks as nicknames), D-23, D-24 where the analytics store can export by id.
+- Contents: D-1, D-3, D-8 to D-11, D-12 (own seats only), D-15, D-16, D-17 without purchase tokens or receipts, D-18, D-21 (friends and blocks as nicknames), D-23, D-24 for the player's analytics ids.
 - Never included: other players' account ids or hidden tiles, reporter identities, risk scores, detection signals and evidence (sanctions appear with their reason category only, as #186 shows them), receipts and tokens, logs. The basis for withholding anti-cheat detail is OQ-9.
 
 ## 9. Regulation mapping
@@ -270,7 +273,7 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 | 32 | Security | TLS and pinning (#207), encryption at rest (#24, #188), RBAC and audit (#134, #148), P-1, P-9 |
 | 33, 34 | Breach notification within 72 hours to the authority | L-20 |
 | 35 | DPIA: large-scale behavioural monitoring (anti-cheat) and possible minors | L-7 |
-| 44 to 49 | Transfers outside the EEA | Section 2, OQ-3, L-9 |
+| 44 to 49 | Transfers outside the EEA | Section 2 (data region Germany), L-9 |
 
 ### 9.2 KVKK (Law No. 6698)
 
@@ -280,7 +283,7 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 | 5 | Processing conditions | Section 3 basis column |
 | 6 | Special categories | None processed (P-8) |
 | 7 and the regulation on erasure, destruction or anonymization | Deletion and periodic destruction under a written policy | Section 4, 8.2, L-5 |
-| 9 | Transfer abroad: adequacy, appropriate safeguards (standard contract notified to the Authority) or the listed exceptions | OQ-3, L-9 |
+| 9 | Transfer abroad: adequacy, appropriate safeguards (standard contract notified to the Authority) or the listed exceptions | Section 2 (KVKK standard contracts), L-9 |
 | 10 | Information notice (aydınlatma) | 6.1 step 3, #195 |
 | 11, 13 | Data subject applications answered within 30 days, free of charge | 8.1 |
 | 12 | Security and breach notification (Board guidance: 72 hours) | L-20 |
@@ -288,13 +291,17 @@ Recommended default: **A** for launch, with `MinAccountAgeByCountry` proposed de
 
 ### 9.3 Other launch markets
 
-Azerbaijan (Law on Personal Data), Russia (Federal Law 152-FZ, including its rule that personal data of Russian citizens is first recorded in databases in Russia) and any other country where the stores list the game: counsel decides which laws apply and what they add (OQ-2, L-2). If Russia is in scope, the localisation rule affects OQ-3 and may need a separate storage region.
+The game is listed in every store country except Russia (owner decision, #187). GDPR is the baseline everywhere.
+
+- Azerbaijan (Law on Personal Data) and any other listed country: counsel confirms which local laws apply and what they add (L-2).
+- Russia is not a store country at launch, so Federal Law 152-FZ, including its data localisation rule, does not apply. Listing the game in Russia later needs counsel review first.
+- The Russian language stays for Russian-speaking markets other than Russia (`docs/localization.md`).
 
 ## 10. Store disclosures
 
 ### 10.1 Google Play Data safety (#194)
 
-"Shared" is No for every row as long as every vendor in section 2 is a processor; data the player gives directly to Google is not shared by the game.
+"Shared" is No for every row: analytics is first-party, Sentry and every other vendor in section 2 is a processor, and data the player gives directly to Google is not shared by the game.
 
 | Play data type | Rows | Collected | Optional | Purposes |
 |---|---|---|---|---|
@@ -310,7 +317,7 @@ Azerbaijan (Law on Personal Data), Russia (Federal Law 152-FZ, including its rul
 | Diagnostics | D-6, D-25 | Yes | No | App functionality, Fraud prevention, security, and compliance |
 | Device or other IDs | D-5, D-22, D-24 analytics id | Yes | No | App functionality, Fraud prevention, security, and compliance, Developer communications |
 
-Security section: data encrypted in transit, yes; players can request deletion, yes, in app and through the web deletion URL entered in Play Console (#63). Families policy and target audience follow OQ-1.
+Security section: data encrypted in transit, yes; players can request deletion, yes, in app and through the web deletion URL entered in Play Console (#63). Target audience: 13 and older (7.3).
 
 ### 10.2 Apple App Privacy
 
@@ -339,7 +346,7 @@ Used to track: No for every type (P-3).
 | Apple privacy manifest for the app's required-reason API uses (for example `NSUserDefaults` behind PlayerPrefs) and a manifest from every bundled SDK | #76 |
 | Android `AD_ID` permission removed from the merged manifest; IDFA never read; no App Tracking Transparency prompt because nothing tracks | P-3, #76 |
 | Notification permission requested in context | 6.1, #132 |
-| Target audience and content declarations consistent with OQ-1 and `docs/localization.md` 7 | #194 |
+| Target audience and content declarations consistent with 7.3 and `docs/localization.md` 7 | #194 |
 | Age rating questionnaires: moderated user names, in-app purchases, no location shared with other players beyond the country board (OQ-12) | #194 |
 
 ## 11. Config
@@ -349,26 +356,34 @@ Used to track: No for every type (P-3).
 | Retention keys in section 4 | How long each row is kept |
 | `DataExportCooldownDays` | Minimum days between export requests |
 | `PrivacyPolicyVersion`, `TermsVersion` | Current document versions; a change re-prompts per 6.1 |
-| `AnalyticsConsentModeByCountry` | `opt_in` or `opt_out` per country |
-| `MinAccountAgeByCountry` | Age below which no account (option A) or child mode (B, C) applies |
+| `MinAccountAgeByCountry` | Age below which no account is created (option A, default 13) |
 | `DigitalConsentAgeByCountry` | Age below which consent purposes are not offered |
-| `ChildModeEnabled` | Off under option A |
+| `ChildModeEnabled` | Off (option A) |
 
-## 12. Open questions
+## 12. Decisions and open questions
+
+### 12.1 Decided
+
+Owner decisions on #187, 2026-10-26.
+
+| ID | Decision | Section |
+|---|---|---|
+| OQ-1 | Option A: accounts 13 and older only | 7.3 |
+| OQ-2 | Listed in every store country except Russia; GDPR is the baseline everywhere | 9.3 |
+| OQ-3 | Primary data region Germany (EU), hosting Hetzner; transfers out of Turkey under KVKK standard contracts (counsel confirms) | 2 |
+| OQ-4 | Analytics `opt_in` everywhere, single code path | 6.2 |
+| OQ-6 | Analytics first-party (own server and database, no third-party SDK); crash reporting Sentry, EU data region | 2, 6.4 |
+| OQ-8 | Inactive accounts are never deleted automatically; no config at launch | 4 |
+
+### 12.2 Open
 
 | ID | Question | Recommended default | Owner |
 |---|---|---|---|
-| OQ-1 | Under-age policy: option A, B or C (7.3) | A, minimum age 13 | Owner, then counsel |
-| OQ-2 | Countries where the game is listed (EEA, UK, US, Russia and others), hence which laws apply | Treat GDPR as the baseline everywhere | Owner, counsel |
-| OQ-3 | Primary data region and hosting provider (#25); transfer mechanism to it | One region that holds all player data, chosen with counsel; transfers under standard contracts | Owner, counsel |
-| OQ-4 | Analytics consent mode outside the EEA, UK and Turkey | `opt_in` everywhere | Owner, counsel |
 | OQ-5 | Client crash reports: consent (`diagnostics`) or legitimate interest | Consent where `opt_in` applies; reports carry no account or analytics id | Counsel |
-| OQ-6 | Analytics store and crash vendor (#181, #182) | Vendors that act as processors only, with EU or selected-region storage, or self-hosted | Owner |
 | OQ-7 | Statutory periods for `PurchaseRecordRetentionYears` and `ConsentRecordRetentionYears` | None proposed | Counsel |
-| OQ-8 | Delete inactive accounts after `InactiveAccountDays`? Accounts may hold paid items | Off | Owner, counsel |
 | OQ-9 | How much an access request reveals about anti-cheat (shadowban state, signals, score), and whether score-based temporary bans and shadowbans are lawful automated decisions as specified | Reveal sanctions and reason categories, withhold detection detail; keep human review on request | Counsel |
 | OQ-10 | `PermanentBanEvasionRetentionDays` | None proposed | Counsel |
-| OQ-11 | Controller entity, EU or UK representative, KVKK VERBIS registration and representative, data protection officer | Decided before store submission | Owner, counsel |
+| OQ-11 | Controller entity, EU or UK representative, KVKK VERBIS registration and representative, data protection officer | Decided before store submission; launch blocker (L-1, L-3, L-4) | Owner (decision pending), counsel |
 | OQ-12 | Store answers for country-level location and preset in-match messages | Declare both conservatively as in section 10 | Counsel |
 
 ## 13. Legal checklist
@@ -377,24 +392,24 @@ Every item must be checked, or waived by an owner comment on #187, before releas
 
 | ID | Item | Owner | Issue |
 |---|---|---|---|
-| L-1 | Controller entity, address and privacy contact fixed and named in the policy | Owner | #195 |
-| L-2 | Listed countries fixed and applicable laws confirmed per country (9.3) | Owner, counsel | OQ-2 |
+| L-1 | Controller entity, address and privacy contact fixed and named in the policy | Owner (decision pending, OQ-11) | #195 |
+| L-2 | Applicable laws confirmed for every listed country (9.3) | Counsel | #187 |
 | L-3 | EU and UK representative appointed if required (GDPR Art. 27) | Owner, counsel | OQ-11 |
 | L-4 | KVKK VERBIS registration and representative done if required | Owner, counsel | OQ-11 |
 | L-5 | Written retention and destruction policy matching section 4 (KVKK) | Counsel | #187 |
 | L-6 | Record of processing activities built from section 3 | Counsel, eng | #187 |
 | L-7 | DPIA and legitimate interest assessments for every LI row | Counsel | #187 |
 | L-8 | Processing agreements signed with every processor in section 2 | Owner | #195 |
-| L-9 | Transfer mechanism per destination; KVKK standard contract notified to the Authority if used | Counsel | OQ-3 |
+| L-9 | Transfer mechanism per destination; KVKK standard contract notified to the Authority | Counsel | #187 |
 | L-10 | Privacy policy and terms in `az`, `en`, `tr`, `ru` covering GDPR Art. 13, KVKK Art. 10, section 5, automated anti-cheat decisions and retention | Counsel | #195 |
 | L-11 | KVKK explicit consent texts separate from the notice | Counsel | #195 |
 | L-12 | First-launch flow, consent toggles and consent records as section 6 | Eng | #73, #157 |
 | L-13 | Test: no analytics or crash event leaves the device before consent | Eng | #181, #182 |
-| L-14 | Age gate and child policy as decided in OQ-1 | Owner, eng | #73 |
+| L-14 | Age gate as section 7 (option A) | Eng | #73 |
 | L-15 | In-app and web deletion, grace, deletion job and tombstone as 8.2 | Eng | #63 |
 | L-16 | Export as 8.3 | Eng | #63 |
 | L-17 | Sign in with Apple token revocation on deletion | Eng | #57, #63 |
-| L-18 | Deletion propagated to analytics store and crash vendor | Eng | #181, #182 |
+| L-18 | Deletion propagated to the analytics store and Sentry | Eng | #181, #182 |
 | L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188 |
 | L-20 | Breach response in the runbook: assess, notify the authority within 72 hours (GDPR, KVKK), inform players where required | Owner, counsel | #197 |
 | L-21 | Rights request handling in support tools with a 30-day clock | Eng | #144 |

@@ -32,6 +32,7 @@ function itemErrors(item) {
   if (item.id.split(".")[0] !== item.type) errors.push(`id prefix does not match type ${item.type}`);
   if (item.nameKey !== `cosmetic.${item.id}.name`) errors.push(`nameKey is ${item.nameKey}, expected cosmetic.${item.id}.name`);
   if (isDefault(item) && item.availability !== "live") errors.push(`default item is ${item.availability}, must be live`);
+  if (isDefault(item) && item.animated) errors.push("default item is animated, must be static");
   return [...errors, ...addressErrors(item), ...layerErrors(item)];
 }
 

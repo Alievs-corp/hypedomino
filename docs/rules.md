@@ -112,6 +112,7 @@ Owner decisions behind this version: #3 and #4 (2026-10-25).
 - **R-53** 1v1 and 2v2 are both ranked. Each mode has its own rating, rank and leaderboard.
 - **R-54** In ranked 2v2 the partner is assigned at random. A player cannot choose a partner or queue for ranked play together with a chosen partner.
 - **R-55** Custom rooms are unranked. Players create a room and split the teams however they want.
+- **R-56** Casual play is an unranked matchmaking queue for 1v1 and 2v2 under the same game rules. It changes no rating, rank or leaderboard. Only casual queues may fill an empty seat with a bot after a long wait; ranked queues never do.
 
 ## 13. Engine configuration
 

@@ -35,7 +35,7 @@ Rules:
 - Effect and glow sprites are authored white or greyscale and tinted at runtime with a role `fill` through vertex colour. One sprite serves every role; there are no per-colour effect textures.
 - A coloured element on a role fill uses that role's `on` shade, as UI text does.
 - No colour combination is chosen to evoke a flag, party or side (localization 6).
-- Cosmetic illustration colours (skin, hair, materials, table art, shade and highlight tones) have no tokens yet. Until they do, no production palette is fixed; see section 9.
+- UI, effect, team, score and role colours come only from the tokens above. Cosmetic illustration art (avatars, characters, tables, frames, emoji: skin, hair, materials, table art, shade and highlight tones) uses its own palette per asset, reviewed on the reference board (section 9). It is never dominated by a team or role hue and never evokes a flag or political side (localization 6).
 
 ## 3. Shape language
 
@@ -63,7 +63,7 @@ Rules:
 | Glow | Never baked into a sprite. Glow is the runtime additive sprite tinted by a role fill and scaled by a `glow` level (`glow.soft`, `glow.strong`, `glow.intense`); it costs one overdraw layer |
 | Drop shadow | Never baked into a sprite. UI elevation is the 9-slice shadow sprite in `color.shadow`; a character's ground contact shadow is a separate pooled sprite in `color.shadow` |
 | Outer outline | Every character, avatar, frame, emoji, item icon and tile has a solid outer outline in `color.shadow`, baked into the sprite. One weight per asset class, set with the class spec (#168 to #175), identical across every item of that class |
-| Inner lines | Thinner than the outer outline, only where two masses overlap. Their tone belongs to the illustration palette (section 9) |
+| Inner lines | Thinner than the outer outline, only where two masses overlap. Their tone belongs to the asset's own palette (section 2) |
 | Text outline | Through the font's outline material preset (ui-motion section 3), never a second text copy |
 | Post-processing | None in the match scene at any effect level (ui-motion section 4). Art must look finished without bloom, blur or grading |
 
@@ -75,7 +75,7 @@ No runtime outline or rim shader: a baked outline costs nothing per frame, a sha
 
 | Item | Proportion |
 |---|---|
-| Character height | About 3 heads tall. Large head and hands, short limbs, compact torso |
+| Character height | About 3 heads tall (owner-confirmed, #166). Large head and hands, short limbs, compact torso |
 | Face | Eyes and mouth carry the emotion and stay readable at seat size. Eyes sit low in the head |
 | Hands | Simplified, large enough that open, closed and pointing read in silhouette |
 | Body types | Varied across a set; no body type stands for a group, region or trait (localization 6, representation) |
@@ -135,7 +135,7 @@ Every animated asset has a static sprite (ADR 0002, `docs/cosmetics.md` V-2). It
 
 | Do | Don't |
 |---|---|
-| Name every colour by its token path | Use a colour value that has no token |
+| Name every UI, effect, team, score and role colour by its token path | Use a colour value that has no token for those |
 | Author effect sprites white and tint them at runtime | Ship one effect texture per colour |
 | Bake the outer outline in `color.shadow` | Draw outlines with a runtime shader |
 | Leave glow, shadow and rarity marks to the runtime | Paint glow, drop shadows or rarity colour into a sprite |
@@ -150,7 +150,7 @@ Every animated asset has a static sprite (ADR 0002, `docs/cosmetics.md` V-2). It
 
 ## 9. Reference board
 
-The board is a set of panels, produced as original art through the workflow of #167 and stored in `assets-src/` under its naming rules. Each panel is drawn on `color.background.base` at the 1080-unit short side of the match canvas (ui-motion section 1), uses only the tokens named in this document, carries no text other than localization-free panel ids, and names no third-party game, studio or product in its files or metadata.
+The board is a set of panels, produced as original art through the workflow of #167 and stored in `assets-src/` under its naming rules. Each panel is drawn on `color.background.base` at the 1080-unit short side of the match canvas (ui-motion section 1), takes UI, effect, team, score and role colours only from the tokens named in this document, shows cosmetic art in its own per-asset palette (section 2), carries no text other than localization-free panel ids, and names no third-party game, studio or product in its files or metadata.
 
 | Panel | Must show | Proves |
 |---|---|---|
@@ -167,11 +167,11 @@ The board is a set of panels, produced as original art through the workflow of #
 
 The sample character on B-4 to B-8 is the one that #167 takes from concept to game.
 
+A cosmetic's palette is reviewed per asset on the board: shown on both `color.surface.default` and `color.surface.raised` and beside `color.role.teamA` and `color.role.teamB`, so it never reads as a team marker.
+
 ## 10. Open items
 
-- Illustration palette: skin, hair, material, table, tile face and pip colours and the shade and highlight tones have no tokens. They need a token group added to `docs/design-tokens.json` and `docs/ui-motion.md` by owner-approved PR before production art is final.
-- `docs/localization.md` section 6 says art uses colour tokens only, while `docs/ui-motion.md` section 2 says cosmetics take their colours from their own assets. The owner decides which holds for cosmetics; the illustration token group above would satisfy both.
+- Tile face and pip colours have no tokens. Tiles are not a cosmetic type (`docs/cosmetics.md` section 2), so they need tokens added to `docs/design-tokens.json` by owner-approved PR before tile art is final (#169).
 - Rarity colours, status diamond and rarity glow: #5.
 - Outline weight, smallest display size and avatar frame band per asset class: #168 to #175.
-- Character proportions in 5.1 are a proposal; the B-5 panel is where the owner confirms them.
 - The reference board images: #167.
