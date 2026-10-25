@@ -99,9 +99,83 @@ function contrastErrors(tokens) {
     .map(({ fg, bg, ratio, min }) => `contrast ${fg} on ${bg} is ${ratio.toFixed(2)}, needs ${min}`);
 }
 
-function rarityErrors(rarity) {
-  const keys = Object.keys(rarity);
-  return keys.length === 1 && keys[0] === "definedBy" ? [] : ["rarity: only a definedBy reference is allowed here, values belong to #5"];
+const raritySpecPath = "docs/rarity.md";
+const rarityIdPattern = /^[a-z][a-z0-9_]*$/;
+const maxPips = 6;
+const rarityShades = ["fill", "on", "text"];
+
+const isPositiveInteger = (value) => Number.isInteger(value) && value > 0;
+const tiersByOrdinal = (rarity) => Object.entries(rarity.tiers).sort(([, a], [, b]) => a.ordinal - b.ordinal);
+
+export function rarityContrastPairs(tokens) {
+  const layers = backgroundLayers(tokens.color);
+  const pairs = [];
+  for (const [id, tier] of tiersByOrdinal(tokens.rarity)) {
+    for (const [layer, background] of layers) {
+      pairs.push({ fg: `rarity.tiers.${id}.fill`, bg: layer, fgHex: tier.fill, bgHex: background, min: nonTextMinimumContrast });
+      pairs.push({ fg: `rarity.tiers.${id}.text`, bg: layer, fgHex: tier.text, bgHex: background, min: textMinimumContrast });
+    }
+    pairs.push({ fg: `rarity.tiers.${id}.on`, bg: `rarity.tiers.${id}.fill`, fgHex: tier.on, bgHex: tier.fill, min: textMinimumContrast });
+  }
+  return pairs.map((pair) => ({ ...pair, ratio: round2(contrast(pair.fgHex, pair.bgHex)) }));
+}
+
+export function rarityContrastTable(tokens) {
+  const pairs = rarityContrastPairs(tokens);
+  const ratio = (fg, bg) => pairs.find((pair) => pair.fg === fg && pair.bg === bg).ratio.toFixed(2);
+  const layerNames = backgroundLayers(tokens.color).map(([name]) => name);
+  return tiersByOrdinal(tokens.rarity).flatMap(([id]) => {
+    const path = `rarity.tiers.${id}`;
+    const row = (shade, last) => `| \`${path}.${shade}\` | ${layerNames.map((layer) => ratio(`${path}.${shade}`, layer)).join(" | ")} | ${last} |`;
+    return [row("fill", ratio(`${path}.on`, `${path}.fill`)), row("text", "-")];
+  });
+}
+
+function tierErrors(id, tier, glow) {
+  const errors = [];
+  const path = `rarity.tiers.${id}`;
+  if (!rarityIdPattern.test(id)) errors.push(`${path}: id must match ${rarityIdPattern}`);
+  if (tier.nameKey !== `rarity.${id}.name`) errors.push(`${path}.nameKey must be rarity.${id}.name`);
+  for (const shade of rarityShades) if (!hexPattern.test(tier[shade])) errors.push(`${path}.${shade}: ${tier[shade]} is not #RRGGBB`);
+  if (!Number.isInteger(tier.pips) || tier.pips < 1 || tier.pips > maxPips) errors.push(`${path}.pips must be an integer from 1 to ${maxPips}`);
+  if (!glow[tier.glow]) errors.push(`${path}: unknown glow ${tier.glow}`);
+  if (typeof tier.flow !== "boolean") errors.push(`${path}.flow must be a boolean`);
+  return errors;
+}
+
+function rarityErrors(tokens) {
+  const { rarity, glow } = tokens;
+  if (rarity.definedBy !== raritySpecPath) return [`rarity.definedBy must be ${raritySpecPath}`];
+  if (!isObject(rarity.tiers) || Object.keys(rarity.tiers).length === 0) return ["rarity.tiers: at least one tier is required"];
+  const errors = [];
+  if (!isPositiveInteger(rarity.diamondMinSize)) errors.push("rarity.diamondMinSize must be a positive integer");
+  if (!isPositiveInteger(rarity.flowPeriodMs)) errors.push("rarity.flowPeriodMs must be a positive integer");
+  for (const [id, tier] of Object.entries(rarity.tiers)) errors.push(...tierErrors(id, tier, glow));
+  if (errors.length > 0) return errors;
+  const tiers = tiersByOrdinal(rarity);
+  tiers.forEach(([id, tier], index) => {
+    if (tier.ordinal !== index + 1) errors.push(`rarity.tiers.${id}.ordinal: ordinals must be 1 to ${tiers.length} without gaps or repeats`);
+    const previous = tiers[index - 1]?.[1];
+    if (previous && glow[tier.glow].alpha < glow[previous.glow].alpha) errors.push(`rarity.tiers.${id}.glow must not be weaker than a lower tier`);
+  });
+  const pips = tiers.map(([, tier]) => tier.pips);
+  if (new Set(pips).size !== pips.length) errors.push("rarity.tiers: pip counts must be unique");
+  return errors;
+}
+
+function rarityContrastErrors(tokens) {
+  return rarityContrastPairs(tokens)
+    .filter(({ ratio, min }) => ratio < min)
+    .map(({ fg, bg, ratio, min }) => `contrast ${fg} on ${bg} is ${ratio.toFixed(2)}, needs ${min}`);
+}
+
+function raritySpecErrors(tokens, raritySpecText) {
+  const errors = [];
+  for (const row of rarityContrastTable(tokens)) if (!raritySpecText.includes(row)) errors.push(`rarity spec contrast table is missing or stale: ${row}`);
+  for (const tier of Object.values(tokens.rarity.tiers)) {
+    for (const shade of rarityShades) if (!raritySpecText.includes(`\`${tier[shade]}\``)) errors.push(`rarity spec does not list colour ${tier[shade]}`);
+  }
+  return errors;
 }
 
 function typographyErrors(typography) {
@@ -212,13 +286,16 @@ export function stepForPoints(tokens, points, placement = 1) {
   return Math.min(base + boost, steps.length);
 }
 
-export function checkTokens(tokens, specText) {
+export function checkTokens(tokens, specText, raritySpecText) {
   const missing = requiredGroups.filter((path) => lookup(tokens, path) === undefined).map((path) => `missing group ${path}`);
   if (missing.length > 0) return missing;
+  const colorProblems = colorErrors(tokens.color);
+  if (colorProblems.length > 0) return colorProblems;
+  const rarityProblems = rarityErrors(tokens);
   const errors = [
-    ...colorErrors(tokens.color),
     ...contrastErrors(tokens),
-    ...rarityErrors(tokens.rarity),
+    ...rarityProblems,
+    ...(rarityProblems.length > 0 ? [] : [...rarityContrastErrors(tokens), ...raritySpecErrors(tokens, raritySpecText)]),
     ...typographyErrors(tokens.typography),
     ...motionErrors(tokens.motion),
     ...levels.flatMap((name) => (tokens.effects.levels[name] ? levelErrors(name, tokens.effects.levels[name]) : [`effects.levels.${name}: missing`])),
@@ -240,7 +317,11 @@ function main(args) {
     console.log(contrastTable(tokens).join("\n"));
     return;
   }
-  const errors = checkTokens(tokens, loadSpec("docs/ui-motion.md"));
+  if (args.includes("--rarity-table")) {
+    console.log(rarityContrastTable(tokens).join("\n"));
+    return;
+  }
+  const errors = checkTokens(tokens, loadSpec("docs/ui-motion.md"), loadSpec(raritySpecPath));
   for (const error of errors) console.error(error);
   if (errors.length > 0) process.exit(1);
   console.log("design tokens ok");

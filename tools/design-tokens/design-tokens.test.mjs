@@ -6,11 +6,12 @@ import { checkTokens, contrast, loadSpec, loadTokens, stepForPoints } from "./de
 const repoRoot = new URL("../../", import.meta.url);
 const tokens = loadTokens(fileURLToPath(new URL("docs/design-tokens.json", repoRoot)));
 const specText = loadSpec(fileURLToPath(new URL("docs/ui-motion.md", repoRoot)));
+const raritySpecText = loadSpec(fileURLToPath(new URL("docs/rarity.md", repoRoot)));
 
-function errorsAfter(change, spec = specText) {
+function errorsAfter(change) {
   const copy = structuredClone(tokens);
   change(copy);
-  return checkTokens(copy, spec);
+  return checkTokens(copy, specText, raritySpecText);
 }
 
 function assertReported(errors, fragment) {
@@ -18,7 +19,7 @@ function assertReported(errors, fragment) {
 }
 
 test("the committed tokens and spec pass every check", () => {
-  assert.deepEqual(checkTokens(tokens, specText), []);
+  assert.deepEqual(checkTokens(tokens, specText, raritySpecText), []);
 });
 
 test("contrast matches the WCAG 2 reference values", () => {
@@ -42,8 +43,40 @@ test("a colour missing from the spec is reported", () => {
   assertReported(errorsAfter((copy) => { copy.color.role.teamB.text = "#FFB088"; }), "spec does not list colour #FFB088");
 });
 
-test("rarity values are rejected until #5 defines them", () => {
-  assertReported(errorsAfter((copy) => { copy.rarity.common = "#AAAAAA"; }), "rarity");
+test("rarity ordinals with a gap are reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.mythic.ordinal = 6; }), "ordinals must be 1 to 5");
+});
+
+test("repeated rarity pip counts are reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.epic.pips = 2; }), "pip counts must be unique");
+});
+
+test("a rarity glow weaker than a lower tier is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.legendary.glow = "soft"; }), "legendary.glow must not be weaker");
+});
+
+test("a rarity tier with a wrong name key is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.rare.nameKey = "rarity.blue.name"; }), "rare.nameKey");
+});
+
+test("a rarity id outside the cosmetics id pattern is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.Ultra = { ...copy.rarity.tiers.mythic, ordinal: 6, pips: 6, nameKey: "rarity.Ultra.name" }; }), "rarity.tiers.Ultra: id must match");
+});
+
+test("a rarity fill without non-text contrast on a surface is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.rare.fill = "#3A4BB0"; }), "contrast rarity.tiers.rare.fill on surface.raised");
+});
+
+test("a rarity label shade below AA is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.epic.text = "#7A3FB0"; }), "contrast rarity.tiers.epic.text");
+});
+
+test("a stale rarity contrast table is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.common.text = "#D0D2E0"; }), "rarity spec contrast table is missing or stale");
+});
+
+test("a rarity colour missing from the rarity spec is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.rarity.tiers.mythic.on = "#100828"; }), "rarity spec does not list colour #100828");
 });
 
 test("a concurrent set over the level budget is reported", () => {
