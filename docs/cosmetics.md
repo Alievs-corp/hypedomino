@@ -10,9 +10,9 @@ This document stores references to these decisions and never their values.
 
 | Decision | Owner | How an item refers to it |
 |---|---|---|
-| Rarity tiers, their order, names, colours, the status diamond (shape, colour, glow) and the rarity ordinal used for table background selection | #5 (pending an owner decision) | `rarityId`, an id in the rarity table of #5. No tier, name, ordinal or colour is defined here |
-| Status colour | #5 | Derived from `rarityId`; the manifest has no colour field |
-| Table background selection at match start | #5, #98 | Uses the rarity ordinal of each seat's equipped table |
+| Rarity tiers, their order, names, colours, the status diamond (shape, colour, glow) and the rarity ordinal used for table background selection | `docs/rarity.md` | `rarityId`, an id in the rarity table. No tier, name, ordinal or colour is defined here |
+| Status colour | `docs/rarity.md` | Derived from `rarityId`; the manifest has no colour field |
+| Table background selection at match start | `docs/rarity.md` section 5, #98 | Uses the rarity ordinal of each seat's equipped table |
 | Prices, currencies, discounts, offers | #7 (pending) | A `shop` or `promo` source holds an offer or campaign id, never a price |
 | Pass, mission and medal rewards | #9 | A `pass` or `mission` source holds a reward or mission id |
 | Ranked season rewards | #8 | A `rank_reward` source holds a season reward id |
@@ -20,8 +20,6 @@ This document stores references to these decisions and never their values.
 | Emoji groups and equipped emoji slot count | #150 | `group` id; slot count is admin config there |
 | Download and prefetch policy | #68 | Addresses and labels in section 8 |
 | Grant engine and duplicate grants | #102 | Every grant goes through the reward bundle engine |
-
-Example manifests use the placeholder rarity ids `placeholder_1` to `placeholder_3` until #5 is decided. They are not tier names.
 
 ## 2. Types
 
@@ -45,7 +43,7 @@ All required on every item.
 | `type` | enum | One of section 2. Equals the `id` prefix |
 | `revision` | integer >= 1 | Item version. Increases by 1 on every publish that changes any field or asset of the item. Never decreases; a rollback republishes the earlier content under a new revision |
 | `nameKey` | string | Always `cosmetic.<id>.name` (for example `cosmetic.avatar.comet_fox.name`). The localized value lives in the language bundles, not in the manifest |
-| `rarityId` | string | Reference into the rarity table of #5 |
+| `rarityId` | string | Reference into the rarity table of `docs/rarity.md` |
 | `animated` | boolean | True if the item has animation assets. Decides which type fields are required (section 4) |
 | `staticAddress` | address | The static sprite. Mandatory for every item, animated or not: it is the asset of a static item and the fallback of an animated one (section 8.3) |
 | `availability` | enum | `live`, `retired` or `disabled` (section 6) |
@@ -62,7 +60,7 @@ All required on every item.
 | `table` | `layers` | Required if `animated`, forbidden otherwise | Back-to-front list of `{ name, address, animated }`, at least 1, names unique, at least one layer animated. Count at most `TableMaxLayers` (admin config; its value comes from the measured base-scene cost in #97, ADR 0008) |
 | `emoji` | `group` | Required on emoji, forbidden on other types | Emoji group id (#150) |
 
-A field of another type is invalid. Frames carry no effect field: the rarity effect around a frame is drawn from `rarityId` as #5 defines.
+A field of another type is invalid. Frames carry no effect field: the rarity glow around a frame is drawn from `rarityId` as `docs/rarity.md` section 2 defines.
 
 A static table is one flattened sprite (`staticAddress`), one draw call. An animated table composes its layers; its `staticAddress` is the same scene flattened, used wherever the animated version cannot play.
 
@@ -195,7 +193,7 @@ Rules that need more than one manifest or other admin data, checked by the admin
 |---|---|
 | V-12 | No item of the previous manifest is missing; an id keeps its `type` |
 | V-13 | `revision` never decreases and increases on every change to the item |
-| V-14 | `rarityId` exists in the rarity table of #5 |
+| V-14 | `rarityId` exists in the rarity table (`docs/rarity.md` section 7) |
 | V-15 | Every `ref` resolves to an existing record of its source type, and every record that grants an item is listed in that item's `sources` (section 5) |
 | V-16 | `nameKey` has an approved `en` value (`docs/localization.md` 2.1) |
 | V-17 | Every address resolves to an asset in the Addressables build of the target catalog version |

@@ -2,7 +2,7 @@
 
 Status: proposal; the owner approves it by merging. How every shipped image looks: palette use, shape, light, outline, characters, effects, static fallbacks and the reference board. It defines no colour, duration or budget value. Colours are named by their token path in `docs/design-tokens.json`; motion and effect budgets come from `docs/ui-motion.md` and `docs/performance.md`; delivery follows ADR 0002; item data follows `docs/cosmetics.md`; content limits follow `docs/localization.md` sections 6 and 7 (PEGI 3 target). `node tools/art-direction/art-direction.mjs` checks that this file contains no colour literal and that every token path it names exists; CI runs its tests through `npm run test:tools`.
 
-Production workflow, prompt templates, naming and folders are #167. UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours #5.
+Production workflow, prompt templates, naming and folders are #167. UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours `docs/rarity.md`.
 
 ## 1. Pillars
 
@@ -79,7 +79,7 @@ No runtime outline or rim shader: a baked outline costs nothing per frame, a sha
 | Face | Eyes and mouth carry the emotion and stay readable at seat size. Eyes sit low in the head |
 | Hands | Simplified, large enough that open, closed and pointing read in silhouette |
 | Body types | Varied across a set; no body type stands for a group, region or trait (localization 6, representation) |
-| Avatar | Head and shoulders, face centred. Nothing essential in the outer band that a frame (#173) or the rarity mark (#5) covers; the band width is set with #168 |
+| Avatar | Head and shoulders, face centred. Nothing essential in the outer band that a frame (#173) or the rarity glow (`docs/rarity.md`) covers; the band width is set with #168 |
 | Character canvas | One canvas size and pivot per class, shared by every clip and the static sprite (section 7) |
 
 All-ages: no sexualised proportions, poses or outfits, no likeness of a real person, no resemblance to an existing character or brand.
@@ -172,6 +172,5 @@ A cosmetic's palette is reviewed per asset on the board: shown on both `color.su
 ## 10. Open items
 
 - Tile face and pip colours have no tokens. Tiles are not a cosmetic type (`docs/cosmetics.md` section 2), so they need tokens added to `docs/design-tokens.json` by owner-approved PR before tile art is final (#169).
-- Rarity colours, status diamond and rarity glow: #5.
 - Outline weight, smallest display size and avatar frame band per asset class: #168 to #175.
 - The reference board images: #167.
