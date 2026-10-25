@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -75,6 +76,28 @@ jobs:
           node-version: 24
       - run: npm run lint
       - run: npm run test:tools
+
+  pr-meta:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          missing=""
+          for prefix in "type:" "area:" "priority:"; do
+            echo "$LABELS" | jq -e --arg p "$prefix" 'any(.[]; startswith($p))' >/dev/null || missing="$missing $prefix"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing labels:$missing"
+            exit 1
+          fi
+          if ! printf '%s' "$BODY" | grep -qiE '(closes|fixes|resolves|part of) #[0-9]+'; then
+            echo "PR body must link its issue with 'Closes #N' or 'Part of #N'"
+            exit 1
+          fi
+          echo "Labels and issue link present"
 
   server:
     needs: changes
@@ -162,7 +185,7 @@ jobs:
   ci-complete:
     name: CI complete
     if: always()
-    needs: [changes, lint, server, admin, client, proto]
+    needs: [changes, lint, pr-meta, server, admin, client, proto]
     runs-on: ubuntu-latest
     steps:
       - env:
