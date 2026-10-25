@@ -104,8 +104,8 @@ Owner decisions behind this version: #3 and #4 (2026-10-25).
 
 - **R-49** Every turn has a time limit from admin config (default 20 seconds).
 - **R-50** When the time runs out, the server bot makes a legal move for that player. An action that arrives at or after the limit is late.
-- **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting; the consecutive-timeout count then starts again from zero.
-- **R-52** A player who leaves the match is replaced by the bot until the match ends and cannot take back control. Their partner keeps playing. The leaver receives a rating penalty defined in the ranking spec (#8, #52).
+- **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting; the consecutive-timeout count then starts again from zero. Penalties for going AFK are defined in `docs/penalties.md`.
+- **R-52** A player who leaves the match is replaced by the bot until the match ends and cannot take back control. Their partner keeps playing. The leaver is penalised as defined in `docs/penalties.md`.
 
 ## 12. Ranked and custom play
 
@@ -243,4 +243,4 @@ The turn time is 20 seconds.
 
 - South does not act in time, so the bot places a legal tile for South.
 - South keeps timing out until the admin-configured limit is reached. South is marked AFK, and the bot plays South's remaining turns. North keeps playing.
-- If South leaves the match, the bot plays to the end and South receives the leaver rating penalty.
+- If South leaves the match, the bot plays to the end and South is penalised for leaving (`docs/penalties.md`).
