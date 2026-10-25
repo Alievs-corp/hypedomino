@@ -15,6 +15,9 @@ permissions:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       server: ${{ steps.areas.outputs.server }}
       admin: ${{ steps.areas.outputs.admin }}
