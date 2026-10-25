@@ -123,7 +123,7 @@ All of the following hold on the release candidate commit. Scope is in the refer
 3. Minimum content catalogue meets the content gate (#198).
 4. Legal documents are published and linked from the store pages and the app (#195, #187).
 5. Anti-cheat red team passes with no open critical finding (#212), on top of `docs/anti-cheat.md` (#201).
-6. Release checklist and runbook (#197) are completed; backup and restore were exercised (#188); closed beta (#193) and soft launch KPI tracking (#196) are done or explicitly waived by the owner in the issue.
+6. Release checklist and runbook (#197, `docs/launch-runbook.md`) are completed; backup and restore were exercised (#188); closed beta (#193) and soft launch KPI tracking (#196) are done or explicitly waived by the owner in the issue.
 7. `CI complete` is green on the release commit.
 
 An unmeasured budget counts as failed. A waiver for any item needs an owner comment on the issue it concerns.
