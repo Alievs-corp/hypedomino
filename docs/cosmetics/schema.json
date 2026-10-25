@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Alievs-corp/hypedomino/blob/main/docs/cosmetics/schema.json",
+  "title": "HypeDomino cosmetics manifest",
+  "description": "Contract shared by the admin panel, the game server and the client. Semantics and cross-field rules: docs/cosmetics.md.",
+  "type": "object",
+  "required": ["schemaVersion", "manifestVersion", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "manifestVersion": { "type": "integer", "minimum": 1 },
+    "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "itemType": { "enum": ["avatar", "character", "frame", "table", "emoji"] },
+    "itemId": { "type": "string", "pattern": "^(avatar|character|frame|table|emoji)\\.[a-z0-9_]+$" },
+    "nameKey": { "type": "string", "pattern": "^cosmetic\\.(avatar|character|frame|table|emoji)\\.[a-z0-9_]+\\.name$" },
+    "rarityId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "address": { "type": "string", "pattern": "^cosmetic/(avatar|character|frame|table|emoji)/[a-z0-9_]+/(static|anim|clip/(idle|win|lose|reaction)|layer/[a-z0-9_]+)$" },
+    "referenceId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+    "source": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["default", "shop", "pass", "mission", "promo", "rank_reward", "event"] },
+        "ref": { "$ref": "#/$defs/referenceId" }
+      },
+      "if": { "required": ["type"], "properties": { "type": { "const": "default" } } },
+      "then": { "properties": { "ref": false } },
+      "else": { "required": ["ref"] }
+    },
+    "clips": {
+      "type": "object",
+      "required": ["idle", "win", "lose", "reaction"],
+      "additionalProperties": false,
+      "properties": {
+        "idle": { "$ref": "#/$defs/address" },
+        "win": { "$ref": "#/$defs/address" },
+        "lose": { "$ref": "#/$defs/address" },
+        "reaction": { "$ref": "#/$defs/address" }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": ["name", "address", "animated"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "address": { "$ref": "#/$defs/address" },
+        "animated": { "type": "boolean" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "id", "type", "revision", "nameKey", "rarityId", "animated", "staticAddress",
+        "availability", "sources", "artSource", "culturalReview"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/itemId" },
+        "type": { "$ref": "#/$defs/itemType" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "nameKey": { "$ref": "#/$defs/nameKey" },
+        "rarityId": { "$ref": "#/$defs/rarityId" },
+        "animated": { "type": "boolean" },
+        "staticAddress": { "$ref": "#/$defs/address" },
+        "availability": { "enum": ["live", "retired", "disabled"] },
+        "sources": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/source" } },
+        "artSource": { "enum": ["handmade", "ai_assisted"] },
+        "culturalReview": { "const": "approved" },
+        "animationAddress": { "$ref": "#/$defs/address" },
+        "clips": { "$ref": "#/$defs/clips" },
+        "layers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/layer" } },
+        "group": { "$ref": "#/$defs/referenceId" }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["type"], "properties": { "type": { "enum": ["avatar", "frame", "emoji"] } } },
+          "then": {
+            "properties": { "clips": false, "layers": false },
+            "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
+            "then": { "required": ["animationAddress"] },
+            "else": { "properties": { "animationAddress": false } }
+          }
+        },
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "character" } } },
+          "then": {
+            "properties": { "animationAddress": false, "layers": false },
+            "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
+            "then": { "required": ["clips"] },
+            "else": { "properties": { "clips": false } }
+          }
+        },
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "table" } } },
+          "then": {
+            "properties": { "animationAddress": false, "clips": false },
+            "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
+            "then": { "required": ["layers"] },
+            "else": { "properties": { "layers": false } }
+          }
+        },
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "emoji" } } },
+          "then": { "required": ["group"] },
+          "else": { "properties": { "group": false } }
+        }
+      ]
+    }
+  }
+}
