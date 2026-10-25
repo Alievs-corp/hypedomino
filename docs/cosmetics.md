@@ -13,7 +13,7 @@ This document stores references to these decisions and never their values.
 | Rarity tiers, their order, names, colours, the status diamond (shape, colour, glow) and the rarity ordinal used for table background selection | `docs/rarity.md` | `rarityId`, an id in the rarity table. No tier, name, ordinal or colour is defined here |
 | Status colour | `docs/rarity.md` | Derived from `rarityId`; the manifest has no colour field |
 | Table background selection at match start | `docs/rarity.md` section 5, #98 | Uses the rarity ordinal of each seat's equipped table |
-| Prices, currencies, discounts, offers | #7 (pending) | A `shop` or `promo` source holds an offer or campaign id, never a price |
+| Prices, currencies, discounts, offers | `docs/economy.md` (#7) | A `shop` or `promo` source holds an offer or campaign id, never a price |
 | Pass, mission and medal rewards | #9 | A `pass` or `mission` source holds a reward or mission id |
 | Ranked season rewards | #8 | A `rank_reward` source holds a season reward id |
 | Animated asset format and player, active animation budget per screen | #93 | An address; the asset behind it is in the format #93 picks |

@@ -29,7 +29,7 @@ Dark layered ground, vivid accents. The accent hues carry meaning, so art never 
 | Points | `color.role.score` | Score popups, score particles, points flying to the meter. Nothing else is score yellow in a match |
 | Teams | `color.role.teamA`, `color.role.teamB` | Team seats, meters, the `domino` banner and `matchWin` confetti. A cosmetic is never dominated by a team hue, so it cannot be mistaken for a team marker |
 | Text | `color.text.primary`, `color.text.secondary`, `color.text.muted` and each role's `text` shade | Text is never baked into art (localization 6) |
-| Rarity | `rarity.definedBy` (#5) | No rarity colour, diamond or rarity glow is painted into an asset. The client draws them from `rarityId` |
+| Rarity | `rarity.*`, `docs/rarity.md` | No rarity colour, diamond or rarity glow is painted into an asset. The client draws them from `rarityId` |
 
 Rules:
 - Effect and glow sprites are authored white or greyscale and tinted at runtime with a role `fill` through vertex colour. One sprite serves every role; there are no per-colour effect textures.
@@ -154,7 +154,7 @@ The board is a set of panels, produced as original art through the workflow of #
 
 | Panel | Must show | Proves |
 |---|---|---|
-| B-1 Palette in context | A match scene mock: ground layers, a panel, the primary button, a selection highlight, a score popup, both team meters, an outcome icon. Rarity slots shown as an empty marked placeholder | Section 2 roles on the real ground |
+| B-1 Palette in context | A match scene mock: ground layers, a panel, the primary button, a selection highlight, a score popup, both team meters, an outcome icon. Rarity marks of all five tiers (`docs/rarity.md`) | Section 2 roles on the real ground |
 | B-2 Value check | B-1 in greyscale | Pips, legal ends, turn owner and score read without hue |
 | B-3 Shape vocabulary | Rounded rectangle, circle, pill and impact shapes side by side, each with one in-game use | Section 3 |
 | B-4 Light and outline | One tile and one character lit from above, showing base, shade and highlight, the rim band, the outer outline in `color.shadow`, and the same with glow added at runtime | Section 4 |
