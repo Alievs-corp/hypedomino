@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.areas.outputs.server }}
+      admin: ${{ steps.areas.outputs.admin }}
+      client: ${{ steps.areas.outputs.client }}
+      proto: ${{ steps.areas.outputs.proto }}
+      proto_breaking: ${{ steps.areas.outputs.proto_breaking }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/ci.yml'
+            admin:
+              - 'admin/**'
+              - '.github/workflows/ci.yml'
+            client:
+              - 'client/**'
+              - '.github/workflows/ci.yml'
+            proto:
+              - 'proto/**'
+              - '.github/workflows/ci.yml'
+      - id: areas
+        env:
+          SERVER_CHANGED: ${{ steps.filter.outputs.server }}
+          ADMIN_CHANGED: ${{ steps.filter.outputs.admin }}
+          CLIENT_CHANGED: ${{ steps.filter.outputs.client }}
+          PROTO_CHANGED: ${{ steps.filter.outputs.proto }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          emit() {
+            if [ "$2" = "true" ] && [ -f "$3" ]; then echo "$1=true"; else echo "$1=false"; fi >> "$GITHUB_OUTPUT"
+          }
+          emit server "$SERVER_CHANGED" server/go.mod
+          emit admin "$ADMIN_CHANGED" admin/package.json
+          emit client "$CLIENT_CHANGED" client/ProjectSettings/ProjectVersion.txt
+          emit proto "$PROTO_CHANGED" proto/buf.yaml
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:proto/buf.yaml" 2>/dev/null; then
+            echo "proto_breaking=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "proto_breaking=false" >> "$GITHUB_OUTPUT"
+          fi
+          cat "$GITHUB_OUTPUT"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run lint
+      - run: npm run test:tools
+
+  server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          [ -z "$unformatted" ] || { echo "$unformatted"; exit 1; }
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test -race ./...
+
+  admin:
+    needs: changes
+    if: needs.changes.outputs.admin == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: admin/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: admin/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run --if-present typecheck
+      - run: pnpm run --if-present test
+      - run: pnpm run build
+
+  client:
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        with:
+          path: client/Library
+          key: unity-library-${{ hashFiles('client/Assets/**', 'client/Packages/**', 'client/ProjectSettings/**') }}
+          restore-keys: unity-library-
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: client
+          testMode: all
+
+  proto:
+    needs: changes
+    if: needs.changes.outputs.proto == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+      - run: buf lint proto
+      - run: buf format --diff --exit-code proto
+      - if: github.event_name == 'pull_request' && needs.changes.outputs.proto_breaking == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: buf breaking proto --against ".git#ref=${BASE_SHA},subdir=proto"
+
+  ci-complete:
+    name: CI complete
+    if: always()
+    needs: [changes, lint, server, admin, client, proto]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          not_ok=$(echo "$RESULTS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | .key')
+          must_run=$(echo "$RESULTS" | jq -r '[.changes.result, .lint.result] | map(select(. != "success")) | length')
+          if [ -n "$not_ok" ] || [ "$must_run" != "0" ]; then
+            echo "Failed or cancelled: ${not_ok:-changes/lint did not succeed}"
+            exit 1
+          fi
