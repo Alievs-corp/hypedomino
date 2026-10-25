@@ -262,13 +262,13 @@ Every local leaderboard uses the same order. Apex recalculation (section 3.2) us
 - Each board shows the top `LeaderboardTopSize` (default 100) and the viewer's own position and neighbours, whatever their position.
 - The season-end snapshot freezes every board of the season. Past seasons stay readable.
 
-## 9. Bot-filled matches: open question
+## 9. No bot fill in ranked play
 
-#48 allows the queue to fill seats with bots after a long wait (config). How such a match affects ranking is an owner decision that has not been made (#3 question 15 covered the ranked modes only, see R-53). It is not decided here.
+Owner decision on #8 (2026-10-26).
 
-- **OQ-1**: Does a ranked match that started with one or more bot-filled seats change MMR and LP? If it does, what MMR does a bot seat count as in `R_team` and `R_opp`, and is the LP change scaled?
-- Until the owner answers on #8, bot-fill in ranked queues (#48) is blocked by the decision-gate rule in `CLAUDE.md` and is not implemented around.
-- Not affected: a bot that replaces an AFK or leaving player during a match (R-50 to R-52). That case is section 4.5.
+- A ranked match starts only when every seat is held by a real player. The ranked queue never fills a seat with a bot, however long the wait.
+- The server bot takes a seat in a ranked match only to replace a player during the match (R-50 to R-52). Its MMR and LP handling is section 4.5.
+- Bot fill after a long wait (#48, config) applies to unranked queues only. Nothing in this document is read or written by such a match.
 
 ## 10. Config
 
