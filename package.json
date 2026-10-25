@@ -1,0 +1,13 @@
+{
+  "name": "hypedomino",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "lint": "node tools/comment-lint/comment-lint.mjs",
+    "test:tools": "node --test \"tools/**/*.test.mjs\""
+  }
+}
