@@ -1,0 +1,56 @@
+* text=auto eol=lf
+
+*.cs text eol=lf diff=csharp
+*.go text eol=lf diff=golang
+*.unity text eol=lf
+*.prefab text eol=lf
+*.asset text eol=lf
+*.meta text eol=lf
+*.mat text eol=lf
+*.anim text eol=lf
+*.controller text eol=lf
+*.overrideController text eol=lf
+*.physicsMaterial2D text eol=lf
+*.spriteatlas text eol=lf
+*.spriteatlasv2 text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.mp4 binary
+*.zip binary
+
+assets-src/**/*.psd filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.psb filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.ai filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.aep filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.prproj filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.blend filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.obj filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.glb filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.exr filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.tif filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.tiff filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.png filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.webp filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.mov filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.wav filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.aif filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.aiff filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.flac filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.ogg filter=lfs diff=lfs merge=lfs -text
+assets-src/**/*.zip filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+node tools/comment-lint/comment-lint.mjs --staged
+
+go_files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.go')
+[ -z "$go_files" ] && exit 0
+if ! command -v gofmt >/dev/null 2>&1; then
+  echo "pre-commit: gofmt not found, install Go to commit Go files" >&2
+  exit 1
+fi
+unformatted=$(gofmt -l $go_files)
+if [ -n "$unformatted" ]; then
+  echo "pre-commit: run gofmt -w on:" >&2
+  echo "$unformatted" >&2
+  exit 1
+fi
