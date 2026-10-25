@@ -1,0 +1,495 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Alievs-corp/hypedomino/blob/main/docs/rules-vectors/schema.json",
+  "title": "HypeDomino rule vector file",
+  "type": "object",
+  "required": ["vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "vectors": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/vector" } }
+  },
+  "$defs": {
+    "tile": { "type": "string", "pattern": "^[0-6]-[0-6]$" },
+    "tiles": { "type": "array", "items": { "$ref": "#/$defs/tile" } },
+    "seat": { "enum": ["N", "E", "S", "W", "X", "Y"] },
+    "team": { "enum": ["A", "B"] },
+    "points": { "type": "integer", "minimum": 0 },
+    "end": { "enum": ["left", "right", "top", "bottom"] },
+    "teamPoints": {
+      "type": "object",
+      "required": ["A", "B"],
+      "additionalProperties": false,
+      "properties": { "A": { "$ref": "#/$defs/points" }, "B": { "$ref": "#/$defs/points" } }
+    },
+    "hands": {
+      "type": "object",
+      "minProperties": 2,
+      "additionalProperties": false,
+      "properties": {
+        "N": { "$ref": "#/$defs/tiles" },
+        "E": { "$ref": "#/$defs/tiles" },
+        "S": { "$ref": "#/$defs/tiles" },
+        "W": { "$ref": "#/$defs/tiles" },
+        "X": { "$ref": "#/$defs/tiles" },
+        "Y": { "$ref": "#/$defs/tiles" }
+      }
+    },
+    "board": {
+      "type": "object",
+      "required": ["line", "spinner", "top", "bottom"],
+      "additionalProperties": false,
+      "properties": {
+        "line": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/tile" } },
+        "spinner": { "anyOf": [{ "$ref": "#/$defs/tile" }, { "type": "null" }] },
+        "top": { "$ref": "#/$defs/tiles" },
+        "bottom": { "$ref": "#/$defs/tiles" }
+      }
+    },
+    "openEnds": {
+      "type": "object",
+      "required": ["left", "right"],
+      "additionalProperties": false,
+      "properties": {
+        "left": { "$ref": "#/$defs/points" },
+        "right": { "$ref": "#/$defs/points" },
+        "top": { "$ref": "#/$defs/points" },
+        "bottom": { "$ref": "#/$defs/points" }
+      }
+    },
+    "controller": { "enum": ["player", "bot"] },
+    "vector": {
+      "type": "object",
+      "required": ["id", "kind", "rules", "description", "mode", "given", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "kind": {
+          "enum": [
+            "deal",
+            "seat",
+            "first-opener",
+            "opening-score",
+            "place",
+            "turn",
+            "draw",
+            "hand-status",
+            "round",
+            "hand-end",
+            "match-end",
+            "turn-timer",
+            "afk"
+          ]
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^R-[1-9][0-9]*$" }
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["1v1", "2v2"] },
+        "given": { "type": "object" },
+        "expect": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "deal" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/dealGiven" },
+              "expect": { "$ref": "#/$defs/dealExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "seat" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/seatGiven" },
+              "expect": { "$ref": "#/$defs/seatExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "first-opener" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/dealGiven" },
+              "expect": { "$ref": "#/$defs/firstOpenerExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "opening-score" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/openingScoreGiven" },
+              "expect": { "$ref": "#/$defs/scoreExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "place" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/placeGiven" },
+              "expect": { "$ref": "#/$defs/placeExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "turn" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/turnGiven" },
+              "expect": { "$ref": "#/$defs/turnExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "draw" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/drawGiven" },
+              "expect": { "$ref": "#/$defs/drawExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "hand-status" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/handStatusGiven" },
+              "expect": { "$ref": "#/$defs/handStatusExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "round" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/roundGiven" },
+              "expect": { "$ref": "#/$defs/roundExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "hand-end" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/handEndGiven" },
+              "expect": { "$ref": "#/$defs/handEndExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "match-end" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/matchEndGiven" },
+              "expect": { "$ref": "#/$defs/matchEndExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "turn-timer" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/turnTimerGiven" },
+              "expect": { "$ref": "#/$defs/turnTimerExpect" }
+            }
+          }
+        },
+        {
+          "if": { "required": ["kind"], "properties": { "kind": { "const": "afk" } } },
+          "then": {
+            "properties": {
+              "given": { "$ref": "#/$defs/afkGiven" },
+              "expect": { "$ref": "#/$defs/afkExpect" }
+            }
+          }
+        }
+      ]
+    },
+    "dealGiven": {
+      "type": "object",
+      "required": ["hands", "boneyard"],
+      "additionalProperties": false,
+      "properties": {
+        "hands": { "$ref": "#/$defs/hands" },
+        "boneyard": { "$ref": "#/$defs/tiles" }
+      }
+    },
+    "dealExpect": {
+      "type": "object",
+      "required": ["valid"],
+      "additionalProperties": false,
+      "properties": { "valid": { "type": "boolean" } }
+    },
+    "seatGiven": {
+      "type": "object",
+      "required": ["seat"],
+      "additionalProperties": false,
+      "properties": { "seat": { "$ref": "#/$defs/seat" } }
+    },
+    "seatExpect": {
+      "type": "object",
+      "required": ["team", "next"],
+      "additionalProperties": false,
+      "properties": { "team": { "$ref": "#/$defs/team" }, "next": { "$ref": "#/$defs/seat" } }
+    },
+    "firstOpenerExpect": {
+      "type": "object",
+      "required": ["redeal", "opener", "tile", "next"],
+      "additionalProperties": false,
+      "properties": {
+        "redeal": { "type": "boolean" },
+        "opener": { "anyOf": [{ "$ref": "#/$defs/seat" }, { "type": "null" }] },
+        "tile": { "anyOf": [{ "$ref": "#/$defs/tile" }, { "type": "null" }] },
+        "next": { "anyOf": [{ "$ref": "#/$defs/seat" }, { "type": "null" }] }
+      }
+    },
+    "openingScoreGiven": {
+      "type": "object",
+      "required": ["firstHand", "tile", "teamScoreAtHandStart"],
+      "additionalProperties": false,
+      "properties": {
+        "firstHand": { "type": "boolean" },
+        "tile": { "$ref": "#/$defs/tile" },
+        "teamScoreAtHandStart": { "$ref": "#/$defs/points" }
+      }
+    },
+    "scoreExpect": {
+      "type": "object",
+      "required": ["score"],
+      "additionalProperties": false,
+      "properties": { "score": { "$ref": "#/$defs/points" } }
+    },
+    "placeGiven": {
+      "type": "object",
+      "required": ["board", "tile", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "board": { "$ref": "#/$defs/board" },
+        "tile": { "$ref": "#/$defs/tile" },
+        "end": { "$ref": "#/$defs/end" },
+        "teamScoreAtHandStart": { "$ref": "#/$defs/points" }
+      }
+    },
+    "placeExpect": {
+      "type": "object",
+      "required": ["legal"],
+      "additionalProperties": false,
+      "properties": {
+        "legal": { "type": "boolean" },
+        "board": { "$ref": "#/$defs/board" },
+        "openEnds": { "$ref": "#/$defs/openEnds" },
+        "total": { "$ref": "#/$defs/points" },
+        "score": { "$ref": "#/$defs/points" }
+      },
+      "if": { "properties": { "legal": { "const": true } } },
+      "then": { "required": ["board", "openEnds", "total", "score"] },
+      "else": { "maxProperties": 1 }
+    },
+    "turnGiven": {
+      "type": "object",
+      "required": ["board", "placements"],
+      "additionalProperties": false,
+      "properties": {
+        "board": { "$ref": "#/$defs/board" },
+        "placements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["tile", "end"],
+            "additionalProperties": false,
+            "properties": { "tile": { "$ref": "#/$defs/tile" }, "end": { "$ref": "#/$defs/end" } }
+          }
+        }
+      }
+    },
+    "turnExpect": {
+      "type": "object",
+      "required": ["steps", "turnScore"],
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["placed"],
+            "additionalProperties": false,
+            "properties": {
+              "placed": { "type": "boolean" },
+              "total": { "$ref": "#/$defs/points" },
+              "score": { "$ref": "#/$defs/points" }
+            },
+            "if": { "properties": { "placed": { "const": true } } },
+            "then": { "required": ["total", "score"] },
+            "else": { "maxProperties": 1 }
+          }
+        },
+        "turnScore": { "$ref": "#/$defs/points" }
+      }
+    },
+    "drawGiven": {
+      "type": "object",
+      "required": ["board", "hand", "boneyard"],
+      "additionalProperties": false,
+      "properties": {
+        "board": { "$ref": "#/$defs/board" },
+        "hand": { "$ref": "#/$defs/tiles" },
+        "boneyard": { "$ref": "#/$defs/tiles" }
+      }
+    },
+    "drawExpect": {
+      "type": "object",
+      "required": ["drawn", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "drawn": { "$ref": "#/$defs/tiles" },
+        "outcome": { "enum": ["place", "pass"] }
+      }
+    },
+    "handStatusGiven": {
+      "type": "object",
+      "required": ["board", "hands", "boneyard"],
+      "additionalProperties": false,
+      "properties": {
+        "board": { "$ref": "#/$defs/board" },
+        "hands": { "$ref": "#/$defs/hands" },
+        "boneyard": { "$ref": "#/$defs/tiles" }
+      }
+    },
+    "handStatusExpect": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": { "status": { "enum": ["domino", "block", "continue"] } }
+    },
+    "roundGiven": {
+      "type": "object",
+      "required": ["pips"],
+      "additionalProperties": false,
+      "properties": { "pips": { "$ref": "#/$defs/points" } }
+    },
+    "roundExpect": {
+      "type": "object",
+      "required": ["points"],
+      "additionalProperties": false,
+      "properties": { "points": { "$ref": "#/$defs/points" } }
+    },
+    "handEndGiven": {
+      "type": "object",
+      "required": [
+        "end",
+        "lastPlacedBy",
+        "hands",
+        "boneyard",
+        "scoresAtHandStart",
+        "scores",
+        "carryOver"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "end": { "enum": ["domino", "block"] },
+        "lastPlacedBy": { "$ref": "#/$defs/seat" },
+        "hands": { "$ref": "#/$defs/hands" },
+        "boneyard": { "$ref": "#/$defs/tiles" },
+        "scoresAtHandStart": { "$ref": "#/$defs/teamPoints" },
+        "scores": { "$ref": "#/$defs/teamPoints" },
+        "carryOver": { "$ref": "#/$defs/points" }
+      }
+    },
+    "handEndExpect": {
+      "type": "object",
+      "required": ["pips", "winner", "awarded", "carryOver", "scores", "nextOpeningTeam"],
+      "additionalProperties": false,
+      "properties": {
+        "pips": { "$ref": "#/$defs/teamPoints" },
+        "winner": { "anyOf": [{ "$ref": "#/$defs/team" }, { "type": "null" }] },
+        "awarded": { "$ref": "#/$defs/teamPoints" },
+        "carryOver": { "$ref": "#/$defs/points" },
+        "scores": { "$ref": "#/$defs/teamPoints" },
+        "nextOpeningTeam": { "$ref": "#/$defs/team" }
+      }
+    },
+    "matchEndGiven": {
+      "type": "object",
+      "required": ["end", "scores"],
+      "additionalProperties": false,
+      "properties": {
+        "end": { "enum": ["domino", "block", "none"] },
+        "scores": { "$ref": "#/$defs/teamPoints" }
+      }
+    },
+    "matchEndExpect": {
+      "type": "object",
+      "required": ["outcome", "winner"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "enum": ["won", "next-hand", "continue"] },
+        "winner": { "anyOf": [{ "$ref": "#/$defs/team" }, { "type": "null" }] }
+      }
+    },
+    "turnTimerGiven": {
+      "type": "object",
+      "required": ["turnSeconds", "actedAtSeconds"],
+      "additionalProperties": false,
+      "properties": {
+        "turnSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "actedAtSeconds": { "anyOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }] }
+      }
+    },
+    "turnTimerExpect": {
+      "type": "object",
+      "required": ["movedBy"],
+      "additionalProperties": false,
+      "properties": { "movedBy": { "$ref": "#/$defs/controller" } }
+    },
+    "afkGiven": {
+      "type": "object",
+      "required": ["afkTimeouts", "events"],
+      "additionalProperties": false,
+      "properties": {
+        "afkTimeouts": { "type": "integer", "minimum": 1 },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["seat", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "seat": { "$ref": "#/$defs/seat" },
+              "type": { "enum": ["timeout", "move", "reconnect", "leave"] }
+            }
+          }
+        }
+      }
+    },
+    "afkExpect": {
+      "type": "object",
+      "required": ["controllers"],
+      "additionalProperties": false,
+      "properties": {
+        "controllers": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": false,
+          "properties": {
+            "N": { "$ref": "#/$defs/controller" },
+            "E": { "$ref": "#/$defs/controller" },
+            "S": { "$ref": "#/$defs/controller" },
+            "W": { "$ref": "#/$defs/controller" },
+            "X": { "$ref": "#/$defs/controller" },
+            "Y": { "$ref": "#/$defs/controller" }
+          }
+        }
+      }
+    }
+  }
+}

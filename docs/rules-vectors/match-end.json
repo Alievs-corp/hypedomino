@@ -1,0 +1,158 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "match-domino-one-team-over",
+      "kind": "match-end",
+      "rules": ["R-43", "R-46"],
+      "description": "A domino ends the hand with A at 370 and B at 200; A wins the match",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 370, "B": 200 } },
+      "expect": { "outcome": "won", "winner": "A" }
+    },
+    {
+      "id": "match-exactly-365",
+      "kind": "match-end",
+      "rules": ["R-43", "R-46"],
+      "description": "A domino ends the hand with A at exactly 365 and B at 100; A wins the match",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 365, "B": 100 } },
+      "expect": { "outcome": "won", "winner": "A" }
+    },
+    {
+      "id": "match-364-not-reached",
+      "kind": "match-end",
+      "rules": ["R-43", "R-48"],
+      "description": "A domino ends the hand with A at 364 and B at 200; nobody has 365, a new hand is dealt",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 364, "B": 200 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-example8-block-does-not-end",
+      "kind": "match-end",
+      "rules": ["R-45"],
+      "description": "Example 8: a block leaves B at 370 and A at 150; the match does not end and the next hand is played",
+      "mode": "2v2",
+      "given": { "end": "block", "scores": { "A": 150, "B": 370 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-example8-loser-of-hand-wins",
+      "kind": "match-end",
+      "rules": ["R-46"],
+      "description": "Example 8: A dominoes the next hand and finishes with 240; B has 370, more points, and wins the match",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 240, "B": 370 } },
+      "expect": { "outcome": "won", "winner": "B" }
+    },
+    {
+      "id": "match-example9-higher-wins",
+      "kind": "match-end",
+      "rules": ["R-46"],
+      "description": "Example 9: a domino ends with A at 370 and B at 375; B wins even though A dominoed",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 370, "B": 375 } },
+      "expect": { "outcome": "won", "winner": "B" }
+    },
+    {
+      "id": "match-example9-equal-plays-on",
+      "kind": "match-end",
+      "rules": ["R-47"],
+      "description": "Example 9: a domino ends with both teams at 370; another hand is played",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 370, "B": 370 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-equal-400-plays-on",
+      "kind": "match-end",
+      "rules": ["R-47"],
+      "description": "A domino ends with both teams at 400; another hand is played",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 400, "B": 400 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-1v1-equal-365-plays-on",
+      "kind": "match-end",
+      "rules": ["R-8", "R-47"],
+      "description": "1v1: a domino ends with both players at 365; another hand is played",
+      "mode": "1v1",
+      "given": { "end": "domino", "scores": { "A": 365, "B": 365 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-block-both-over",
+      "kind": "match-end",
+      "rules": ["R-45"],
+      "description": "A block leaves A at 380 and B at 370; a block never ends the match",
+      "mode": "2v2",
+      "given": { "end": "block", "scores": { "A": 380, "B": 370 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-1v1-block-over",
+      "kind": "match-end",
+      "rules": ["R-8", "R-45"],
+      "description": "1v1: a block leaves X at 365 and Y at 0; the next hand is played",
+      "mode": "1v1",
+      "given": { "end": "block", "scores": { "A": 365, "B": 0 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-mid-hand-not-checked",
+      "kind": "match-end",
+      "rules": ["R-44"],
+      "description": "During a hand A reaches 380 with board points; the match is not checked and the hand continues",
+      "mode": "2v2",
+      "given": { "end": "none", "scores": { "A": 380, "B": 100 } },
+      "expect": { "outcome": "continue", "winner": null }
+    },
+    {
+      "id": "match-mid-hand-both-over",
+      "kind": "match-end",
+      "rules": ["R-44"],
+      "description": "During a hand both teams are over 365 (370 and 366); the hand continues",
+      "mode": "2v2",
+      "given": { "end": "none", "scores": { "A": 370, "B": 366 } },
+      "expect": { "outcome": "continue", "winner": null }
+    },
+    {
+      "id": "match-1v1-mid-hand",
+      "kind": "match-end",
+      "rules": ["R-8", "R-44"],
+      "description": "1v1: during a hand X has 365; the hand continues",
+      "mode": "1v1",
+      "given": { "end": "none", "scores": { "A": 365, "B": 120 } },
+      "expect": { "outcome": "continue", "winner": null }
+    },
+    {
+      "id": "match-nobody-reached",
+      "kind": "match-end",
+      "rules": ["R-48"],
+      "description": "A domino ends with A at 300 and B at 250; a new hand is dealt",
+      "mode": "2v2",
+      "given": { "end": "domino", "scores": { "A": 300, "B": 250 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-1v1-nobody-reached",
+      "kind": "match-end",
+      "rules": ["R-8", "R-48"],
+      "description": "1v1: a domino ends with X at 0 and Y at 360; a new hand is dealt",
+      "mode": "1v1",
+      "given": { "end": "domino", "scores": { "A": 0, "B": 360 } },
+      "expect": { "outcome": "next-hand", "winner": null }
+    },
+    {
+      "id": "match-1v1-both-over-higher-wins",
+      "kind": "match-end",
+      "rules": ["R-8", "R-46"],
+      "description": "1v1: a domino ends with X at 366 and Y at 365; X wins",
+      "mode": "1v1",
+      "given": { "end": "domino", "scores": { "A": 366, "B": 365 } },
+      "expect": { "outcome": "won", "winner": "A" }
+    }
+  ]
+}

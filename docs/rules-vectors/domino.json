@@ -1,0 +1,245 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "domino-example4",
+      "kind": "hand-end",
+      "rules": ["R-12", "R-33", "R-35"],
+      "description": "Example 4: North dominoes; B holds 6-4, 1-0 and 5-2 (18), rounded to 20; South's tiles are not counted; A goes 180 -> 200 and opens next",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "N",
+        "hands": { "N": [], "E": ["4-6", "0-1"], "S": ["3-3"], "W": ["2-5"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 180, "B": 220 },
+        "scores": { "A": 180, "B": 220 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 6, "B": 18 },
+        "winner": "A",
+        "awarded": { "A": 20, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 200, "B": 220 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "domino-rounds-22-to-25",
+      "kind": "hand-end",
+      "rules": ["R-12", "R-33", "R-35"],
+      "description": "East dominoes; A holds 6-6, 0-4 and 1-5 (22), rounded to 25; B goes 100 -> 125 and opens next",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "E",
+        "hands": { "N": ["6-6", "0-4"], "E": [], "S": ["1-5"], "W": ["2-3"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 100, "B": 100 },
+        "scores": { "A": 100, "B": 100 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 22, "B": 5 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 25 },
+        "carryOver": 0,
+        "scores": { "A": 100, "B": 125 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "domino-rounds-25-to-25",
+      "kind": "hand-end",
+      "rules": ["R-12", "R-33"],
+      "description": "West dominoes; A holds 5-6, 4-4 and 3-3 (25), which stays 25; B goes 60 -> 85",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "W",
+        "hands": { "N": ["5-6", "4-4"], "E": ["0-2"], "S": ["3-3"], "W": [] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 50, "B": 60 },
+        "scores": { "A": 50, "B": 60 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 25, "B": 2 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 25 },
+        "carryOver": 0,
+        "scores": { "A": 50, "B": 85 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "domino-rounds-26-to-30",
+      "kind": "hand-end",
+      "rules": ["R-33", "R-35"],
+      "description": "South dominoes; B holds 6-6, 5-5 and 0-4 (26), rounded to 30; A goes 200 -> 230",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "S",
+        "hands": { "N": ["1-2"], "E": ["6-6", "5-5"], "S": [], "W": ["0-4"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 200, "B": 150 },
+        "scores": { "A": 200, "B": 150 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 3, "B": 26 },
+        "winner": "A",
+        "awarded": { "A": 30, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 230, "B": 150 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "domino-partner-pips-ignored",
+      "kind": "hand-end",
+      "rules": ["R-33", "R-35"],
+      "description": "South dominoes while partner North still holds 33 pips; only B's 0-1 and 0-2 (3) count, rounded to 5",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "S",
+        "hands": { "N": ["6-6", "5-6", "5-5"], "E": ["0-1"], "S": [], "W": ["0-2"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 40, "B": 75 },
+        "scores": { "A": 40, "B": 75 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 33, "B": 3 },
+        "winner": "A",
+        "awarded": { "A": 5, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 45, "B": 75 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "domino-1v1-rounds-21-to-25",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-33", "R-34", "R-35"],
+      "description": "1v1: X dominoes; Y holds 5-6, 3-4 and 1-2 (21), rounded to 25; the boneyard is not counted; X goes 40 -> 65",
+      "mode": "1v1",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "X",
+        "hands": { "X": [], "Y": ["5-6", "3-4", "1-2"] },
+        "boneyard": ["6-6", "4-4"],
+        "scoresAtHandStart": { "A": 40, "B": 70 },
+        "scores": { "A": 40, "B": 70 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 0, "B": 21 },
+        "winner": "A",
+        "awarded": { "A": 25, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 65, "B": 70 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "domino-1v1-boneyard-not-counted",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-12", "R-34"],
+      "description": "1v1: Y dominoes; X holds only 0-1 (1), rounded to 5; the 32 pips in the boneyard are ignored; Y goes 90 -> 95",
+      "mode": "1v1",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "Y",
+        "hands": { "X": ["0-1"], "Y": [] },
+        "boneyard": ["6-6", "5-5", "4-6"],
+        "scoresAtHandStart": { "A": 120, "B": 90 },
+        "scores": { "A": 120, "B": 90 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 1, "B": 0 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 5 },
+        "carryOver": 0,
+        "scores": { "A": 120, "B": 95 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "domino-1v1-last-tile-not-counted",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-34"],
+      "description": "1v1: X dominoes; Y holds 3-4 and 2-2 (11), rounded to 15; the undrawable last tile 5-6 is not counted",
+      "mode": "1v1",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "X",
+        "hands": { "X": [], "Y": ["3-4", "2-2"] },
+        "boneyard": ["5-6"],
+        "scoresAtHandStart": { "A": 10, "B": 0 },
+        "scores": { "A": 10, "B": 0 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 0, "B": 11 },
+        "winner": "A",
+        "awarded": { "A": 15, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 25, "B": 0 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "domino-example7-takes-carry-over",
+      "kind": "hand-end",
+      "rules": ["R-12", "R-39"],
+      "description": "Example 7 hand 6: carry-over 35; East dominoes, A holds 12 pips, rounded to 15; B started with 150 and scores 15 + 35 = 50",
+      "mode": "2v2",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "E",
+        "hands": { "N": ["3-4"], "E": [], "S": ["1-4"], "W": ["2-6"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 120, "B": 150 },
+        "scores": { "A": 120, "B": 150 },
+        "carryOver": 35
+      },
+      "expect": {
+        "pips": { "A": 12, "B": 8 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 50 },
+        "carryOver": 0,
+        "scores": { "A": 120, "B": 200 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "domino-1v1-takes-carry-over",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-39"],
+      "description": "1v1: carry-over 20; Y dominoes, X holds 2-4 (6), rounded to 10; Y scores 10 + 20 = 30",
+      "mode": "1v1",
+      "given": {
+        "end": "domino",
+        "lastPlacedBy": "Y",
+        "hands": { "X": ["2-4"], "Y": [] },
+        "boneyard": ["1-1"],
+        "scoresAtHandStart": { "A": 200, "B": 210 },
+        "scores": { "A": 200, "B": 210 },
+        "carryOver": 20
+      },
+      "expect": {
+        "pips": { "A": 6, "B": 0 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 30 },
+        "carryOver": 0,
+        "scores": { "A": 200, "B": 240 },
+        "nextOpeningTeam": "B"
+      }
+    }
+  ]
+}

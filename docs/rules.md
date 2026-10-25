@@ -4,7 +4,7 @@ Single source of truth for the game rules. The rules engine (`server/internal/ru
 
 Every rule has a stable id (`R-1`, `R-2`, ...). Test vectors (`docs/rules-vectors`, #4) reference these ids. Ids are never reused or renumbered; a removed rule keeps its id marked as removed.
 
-Owner decisions behind this version: #3 (2026-10-25).
+Owner decisions behind this version: #3 and #4 (2026-10-25).
 
 ## Terms
 
@@ -49,7 +49,7 @@ Owner decisions behind this version: #3 (2026-10-25).
 
 - **R-15** Tiles are attached end to end. The touching halves must show the same number.
 - **R-16** The chain starts with two open ends: the two halves of the opening tile.
-- **R-17** The first double in a hand that has tiles attached on both of its sides becomes the spinner. There is exactly one spinner per hand at most.
+- **R-17** The first double in a hand to have tiles attached on both of its sides becomes the spinner, whichever double was placed first. There is exactly one spinner per hand at most.
 - **R-18** Once a double becomes the spinner, its top and bottom arms open and tiles may be attached there too, giving up to four open ends.
 - **R-19** Any other double only continues the line it sits in. It never gets arms.
 
@@ -103,9 +103,9 @@ Owner decisions behind this version: #3 (2026-10-25).
 ## 11. Timer, AFK and leavers
 
 - **R-49** Every turn has a time limit from admin config (default 20 seconds).
-- **R-50** When the time runs out, the server bot makes a legal move for that player.
-- **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting.
-- **R-52** A player who leaves the match is replaced by the bot until the match ends. Their partner keeps playing. The leaver receives a rating penalty defined in the ranking spec (#8, #52).
+- **R-50** When the time runs out, the server bot makes a legal move for that player. An action that arrives at or after the limit is late.
+- **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting; the consecutive-timeout count then starts again from zero.
+- **R-52** A player who leaves the match is replaced by the bot until the match ends and cannot take back control. Their partner keeps playing. The leaver receives a rating penalty defined in the ranking spec (#8, #52).
 
 ## 12. Ranked and custom play
 

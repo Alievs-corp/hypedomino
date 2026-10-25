@@ -1,0 +1,202 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "block-example6",
+      "kind": "hand-end",
+      "rules": ["R-13", "R-37", "R-40"],
+      "description": "Example 6: A holds 18, B holds 21; A scores 21 rounded to 25; West placed last, so B opens next although A won",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "W",
+        "hands": { "N": ["5-6"], "E": ["6-6"], "S": ["3-4"], "W": ["4-5"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 100, "B": 120 },
+        "scores": { "A": 100, "B": 120 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 18, "B": 21 },
+        "winner": "A",
+        "awarded": { "A": 25, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 125, "B": 120 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "block-higher-team-opens-next",
+      "kind": "hand-end",
+      "rules": ["R-13", "R-37", "R-40"],
+      "description": "A holds 22, B holds 4; B scores 22 rounded to 25; North placed last, so A opens next",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "N",
+        "hands": { "N": ["6-6"], "E": ["0-1"], "S": ["5-5"], "W": ["1-2"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 90, "B": 75 },
+        "scores": { "A": 90, "B": 75 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 22, "B": 4 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 25 },
+        "carryOver": 0,
+        "scores": { "A": 90, "B": 100 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "block-example7-equal",
+      "kind": "hand-end",
+      "rules": ["R-13", "R-38"],
+      "description": "Example 7 hand 5: A and B both hold 17; nobody scores, 34 rounds to 35 and is kept as carry-over; North placed last, so A opens",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "N",
+        "hands": { "N": ["5-6"], "E": ["6-6"], "S": ["2-4"], "W": ["1-4"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 120, "B": 150 },
+        "scores": { "A": 120, "B": 150 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 17, "B": 17 },
+        "winner": null,
+        "awarded": { "A": 0, "B": 0 },
+        "carryOver": 35,
+        "scores": { "A": 120, "B": 150 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "block-example7-carry-over-grows",
+      "kind": "hand-end",
+      "rules": ["R-13", "R-38", "R-39"],
+      "description": "Example 7: hand 6 is also blocked with 8 and 8; 16 rounds to 20 and the carry-over grows from 35 to 55",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "E",
+        "hands": { "N": ["1-2"], "E": ["2-6"], "S": ["0-5"], "W": ["0-0"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 120, "B": 150 },
+        "scores": { "A": 120, "B": 150 },
+        "carryOver": 35
+      },
+      "expect": {
+        "pips": { "A": 8, "B": 8 },
+        "winner": null,
+        "awarded": { "A": 0, "B": 0 },
+        "carryOver": 55,
+        "scores": { "A": 120, "B": 150 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "block-winner-takes-carry-over",
+      "kind": "hand-end",
+      "rules": ["R-37", "R-39", "R-40"],
+      "description": "Carry-over 35; A holds 3, B holds 13; A scores 13 rounded to 15 plus 35 = 50",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "S",
+        "hands": { "N": ["0-1"], "E": ["3-5"], "S": ["0-2"], "W": ["1-4"] },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 200, "B": 180 },
+        "scores": { "A": 200, "B": 180 },
+        "carryOver": 35
+      },
+      "expect": {
+        "pips": { "A": 3, "B": 13 },
+        "winner": "A",
+        "awarded": { "A": 50, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 250, "B": 180 },
+        "nextOpeningTeam": "A"
+      }
+    },
+    {
+      "id": "block-example8-crosses-365",
+      "kind": "hand-end",
+      "rules": ["R-13", "R-37"],
+      "description": "Example 8: B starts with 290 and has the lower total; A holds 78, rounded to 80; B ends the hand with 370",
+      "mode": "2v2",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "E",
+        "hands": {
+          "N": ["6-6", "5-6", "5-5", "4-6"],
+          "E": ["0-0"],
+          "S": ["4-5", "4-4", "3-6", "3-5", "0-1"],
+          "W": ["1-2"]
+        },
+        "boneyard": [],
+        "scoresAtHandStart": { "A": 150, "B": 290 },
+        "scores": { "A": 150, "B": 290 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 78, "B": 3 },
+        "winner": "B",
+        "awarded": { "A": 0, "B": 80 },
+        "carryOver": 0,
+        "scores": { "A": 150, "B": 370 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "block-1v1-unequal",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-37", "R-40"],
+      "description": "1v1: X holds 5, Y holds 17; X scores 17 rounded to 20; Y placed last, so Y opens next",
+      "mode": "1v1",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "Y",
+        "hands": { "X": ["1-1", "0-3"], "Y": ["4-6", "2-5"] },
+        "boneyard": ["3-3"],
+        "scoresAtHandStart": { "A": 30, "B": 45 },
+        "scores": { "A": 30, "B": 45 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 5, "B": 17 },
+        "winner": "A",
+        "awarded": { "A": 20, "B": 0 },
+        "carryOver": 0,
+        "scores": { "A": 50, "B": 45 },
+        "nextOpeningTeam": "B"
+      }
+    },
+    {
+      "id": "block-1v1-equal",
+      "kind": "hand-end",
+      "rules": ["R-8", "R-13", "R-38"],
+      "description": "1v1: X and Y both hold 7; nobody scores and 14 rounds to 15 as carry-over; X placed last and opens next",
+      "mode": "1v1",
+      "given": {
+        "end": "block",
+        "lastPlacedBy": "X",
+        "hands": { "X": ["3-4"], "Y": ["1-6"] },
+        "boneyard": ["0-0"],
+        "scoresAtHandStart": { "A": 60, "B": 60 },
+        "scores": { "A": 60, "B": 60 },
+        "carryOver": 0
+      },
+      "expect": {
+        "pips": { "A": 7, "B": 7 },
+        "winner": null,
+        "awarded": { "A": 0, "B": 0 },
+        "carryOver": 15,
+        "scores": { "A": 60, "B": 60 },
+        "nextOpeningTeam": "A"
+      }
+    }
+  ]
+}

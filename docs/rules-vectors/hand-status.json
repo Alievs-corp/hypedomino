@@ -1,0 +1,127 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "status-2v2-domino",
+      "kind": "hand-status",
+      "rules": ["R-32"],
+      "description": "2v2: North has placed their last tile, so the hand ends in a domino",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "N": [], "E": ["1-1"], "S": ["3-4"], "W": ["0-6"] },
+        "boneyard": []
+      },
+      "expect": { "status": "domino" }
+    },
+    {
+      "id": "status-1v1-domino",
+      "kind": "hand-status",
+      "rules": ["R-32"],
+      "description": "1v1: Y has placed their last tile while the boneyard still has tiles; the hand ends in a domino",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "X": ["1-1", "4-5"], "Y": [] },
+        "boneyard": ["0-4", "1-5"]
+      },
+      "expect": { "status": "domino" }
+    },
+    {
+      "id": "status-domino-before-block",
+      "kind": "hand-status",
+      "rules": ["R-32", "R-36"],
+      "description": "2v2: North placed their last tile and nobody else can place; it is a domino, not a block",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "N": [], "E": ["4-5"], "S": ["0-0"], "W": ["1-4"] },
+        "boneyard": []
+      },
+      "expect": { "status": "domino" }
+    },
+    {
+      "id": "status-2v2-block",
+      "kind": "hand-status",
+      "rules": ["R-36"],
+      "description": "2v2: ends 6 and 2 and no player holds a 6 or a 2, so the hand is blocked",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "N": ["1-1"], "E": ["4-5"], "S": ["0-0"], "W": ["1-4"] },
+        "boneyard": []
+      },
+      "expect": { "status": "block" }
+    },
+    {
+      "id": "status-2v2-one-player-can-place",
+      "kind": "hand-status",
+      "rules": ["R-36"],
+      "description": "2v2: West holds 2-4, so the hand continues",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "N": ["1-1"], "E": ["4-5"], "S": ["0-0"], "W": ["2-4"] },
+        "boneyard": []
+      },
+      "expect": { "status": "continue" }
+    },
+    {
+      "id": "status-1v1-block-last-tile",
+      "kind": "hand-status",
+      "rules": ["R-23", "R-36"],
+      "description": "1v1: neither player can place and only the undrawable last tile remains, so the hand is blocked",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "X": ["1-1", "4-5"], "Y": ["0-0", "1-4"] },
+        "boneyard": ["2-5"]
+      },
+      "expect": { "status": "block" }
+    },
+    {
+      "id": "status-1v1-can-still-draw",
+      "kind": "hand-status",
+      "rules": ["R-22", "R-36"],
+      "description": "1v1: neither player can place, but two tiles remain, so a player draws and the hand continues",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hands": { "X": ["1-1", "4-5"], "Y": ["0-0", "1-4"] },
+        "boneyard": ["0-1", "2-5"]
+      },
+      "expect": { "status": "continue" }
+    },
+    {
+      "id": "status-2v2-empty-arm-keeps-hand-open",
+      "kind": "hand-status",
+      "rules": ["R-18", "R-36"],
+      "description": "2v2: only West's 3-6 fits, on an empty arm of spinner 3-3, so the hand continues",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["4-2", "2-3", "3-3", "3-1"], "spinner": "3-3", "top": [], "bottom": [] },
+        "hands": { "N": ["0-0"], "E": ["5-6"], "S": ["2-5"], "W": ["3-6"] },
+        "boneyard": []
+      },
+      "expect": { "status": "continue" }
+    },
+    {
+      "id": "status-2v2-block-with-spinner",
+      "kind": "hand-status",
+      "rules": ["R-36"],
+      "description": "2v2: open ends 4, 1, 5 and 0 on the spinner board and no player holds any of them, so the hand is blocked",
+      "mode": "2v2",
+      "given": {
+        "board": {
+          "line": ["4-2", "2-3", "3-3", "3-1"],
+          "spinner": "3-3",
+          "top": ["3-5"],
+          "bottom": ["3-0"]
+        },
+        "hands": { "N": ["2-2"], "E": ["6-6"], "S": ["2-6"], "W": ["3-6"] },
+        "boneyard": []
+      },
+      "expect": { "status": "block" }
+    }
+  ]
+}

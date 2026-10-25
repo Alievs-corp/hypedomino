@@ -1,0 +1,238 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "timer-acts-in-time",
+      "kind": "turn-timer",
+      "rules": ["R-49"],
+      "description": "Turn limit 20 s; the player acts after 5 s and makes their own move",
+      "mode": "2v2",
+      "given": { "turnSeconds": 20, "actedAtSeconds": 5 },
+      "expect": { "movedBy": "player" }
+    },
+    {
+      "id": "timer-acts-just-before-limit",
+      "kind": "turn-timer",
+      "rules": ["R-49"],
+      "description": "Turn limit 20 s; the player acts after 19.5 s and makes their own move",
+      "mode": "2v2",
+      "given": { "turnSeconds": 20, "actedAtSeconds": 19.5 },
+      "expect": { "movedBy": "player" }
+    },
+    {
+      "id": "timer-never-acts",
+      "kind": "turn-timer",
+      "rules": ["R-49", "R-50"],
+      "description": "Example 13: turn limit 20 s; South does not act, so the bot makes a legal move for South",
+      "mode": "2v2",
+      "given": { "turnSeconds": 20, "actedAtSeconds": null },
+      "expect": { "movedBy": "bot" }
+    },
+    {
+      "id": "timer-acts-too-late",
+      "kind": "turn-timer",
+      "rules": ["R-50"],
+      "description": "Turn limit 20 s; an action after 21 s is too late, the bot already moved when time ran out",
+      "mode": "1v1",
+      "given": { "turnSeconds": 20, "actedAtSeconds": 21 },
+      "expect": { "movedBy": "bot" }
+    },
+    {
+      "id": "timer-admin-15",
+      "kind": "turn-timer",
+      "rules": ["R-49", "R-50"],
+      "description": "Admin config sets 15 s; acting after 17 s is too late and the bot moves",
+      "mode": "2v2",
+      "given": { "turnSeconds": 15, "actedAtSeconds": 17 },
+      "expect": { "movedBy": "bot" }
+    },
+    {
+      "id": "timer-admin-30",
+      "kind": "turn-timer",
+      "rules": ["R-49"],
+      "description": "Admin config sets 30 s; acting after 25 s is in time",
+      "mode": "1v1",
+      "given": { "turnSeconds": 30, "actedAtSeconds": 25 },
+      "expect": { "movedBy": "player" }
+    },
+    {
+      "id": "afk-example13",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "Example 13: AFK limit 3; South times out 3 times in a row, is marked AFK and the bot plays for South; North keeps playing",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    },
+    {
+      "id": "afk-below-limit",
+      "kind": "afk",
+      "rules": ["R-50", "R-51"],
+      "description": "AFK limit 3; after 2 timeouts the bot only made those moves and South still controls their seat",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [{ "seat": "S", "type": "timeout" }, { "seat": "S", "type": "timeout" }]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "afk-move-resets-count",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "AFK limit 3; timeout, timeout, own move, timeout, timeout: never 3 in a row, South still plays",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "move" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "afk-interleaved-turns",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "AFK limit 3; other seats move between South's turns, South times out on 3 own turns in a row and is marked AFK",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "W", "type": "move" },
+          { "seat": "N", "type": "move" },
+          { "seat": "E", "type": "move" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "W", "type": "move" },
+          { "seat": "N", "type": "move" },
+          { "seat": "E", "type": "move" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    },
+    {
+      "id": "afk-reconnect-takes-back",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "AFK limit 3; South is marked AFK, then reconnects and takes back control",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "reconnect" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "afk-admin-limit-2",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "Admin config sets the AFK limit to 2; 2 timeouts in a row mark South AFK",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 2,
+        "events": [{ "seat": "S", "type": "timeout" }, { "seat": "S", "type": "timeout" }]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    },
+    {
+      "id": "afk-1v1-single-timeout",
+      "kind": "afk",
+      "rules": ["R-50"],
+      "description": "1v1, AFK limit 3; Y times out once, the bot makes that move, Y keeps control",
+      "mode": "1v1",
+      "given": { "afkTimeouts": 3, "events": [{ "seat": "Y", "type": "timeout" }] },
+      "expect": { "controllers": { "X": "player", "Y": "player" } }
+    },
+    {
+      "id": "leave-replaced-by-bot",
+      "kind": "afk",
+      "rules": ["R-52"],
+      "description": "Example 13: South leaves; the bot plays South to the end and North keeps playing",
+      "mode": "2v2",
+      "given": { "afkTimeouts": 3, "events": [{ "seat": "S", "type": "leave" }] },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    },
+    {
+      "id": "leave-partner-keeps-playing",
+      "kind": "afk",
+      "rules": ["R-52"],
+      "description": "North moves, South leaves, then East, West and North keep moving; only South is played by the bot",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "N", "type": "move" },
+          { "seat": "S", "type": "leave" },
+          { "seat": "E", "type": "move" },
+          { "seat": "W", "type": "move" },
+          { "seat": "N", "type": "move" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    },
+    {
+      "id": "leave-1v1",
+      "kind": "afk",
+      "rules": ["R-8", "R-52"],
+      "description": "1v1: X leaves; the bot plays X to the end of the match",
+      "mode": "1v1",
+      "given": { "afkTimeouts": 3, "events": [{ "seat": "X", "type": "leave" }] },
+      "expect": { "controllers": { "X": "bot", "Y": "player" } }
+    },
+    {
+      "id": "timer-acts-exactly-at-limit",
+      "kind": "turn-timer",
+      "rules": ["R-49", "R-50"],
+      "description": "Turn limit 20 s; an action arriving exactly at 20 s is late and the bot moves",
+      "mode": "2v2",
+      "given": { "turnSeconds": 20, "actedAtSeconds": 20 },
+      "expect": { "movedBy": "bot" }
+    },
+    {
+      "id": "afk-reconnect-resets-count",
+      "kind": "afk",
+      "rules": ["R-51"],
+      "description": "S goes AFK after 3 timeouts, reconnects, then times out twice; the count restarted at zero, so S still plays",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "reconnect" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "leave-reconnect-stays-bot",
+      "kind": "afk",
+      "rules": ["R-52"],
+      "description": "S leaves and later reconnects; a leaver cannot take back control, so the bot keeps the seat",
+      "mode": "2v2",
+      "given": { "afkTimeouts": 3, "events": [{ "seat": "S", "type": "leave" }, { "seat": "S", "type": "reconnect" }] },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+    }
+  ]
+}
