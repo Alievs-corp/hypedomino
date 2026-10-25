@@ -43,7 +43,16 @@
     "pressedTint": 0.85
   },
   "rarity": {
-    "definedBy": "https://github.com/Alievs-corp/hypedomino/issues/5"
+    "definedBy": "docs/rarity.md",
+    "diamondMinSize": 72,
+    "flowPeriodMs": 2400,
+    "tiers": {
+      "common": { "ordinal": 1, "nameKey": "rarity.common.name", "fill": "#A3A6BF", "on": "#120A2C", "text": "#C9CBDB", "pips": 1, "glow": "none", "flow": false },
+      "rare": { "ordinal": 2, "nameKey": "rarity.rare.name", "fill": "#5C78FF", "on": "#120A2C", "text": "#A3B3FF", "pips": 2, "glow": "soft", "flow": false },
+      "epic": { "ordinal": 3, "nameKey": "rarity.epic.name", "fill": "#B45CFF", "on": "#120A2C", "text": "#D3A3FF", "pips": 3, "glow": "strong", "flow": false },
+      "legendary": { "ordinal": 4, "nameKey": "rarity.legendary.name", "fill": "#FFC23D", "on": "#120A2C", "text": "#FFD98A", "pips": 4, "glow": "intense", "flow": false },
+      "mythic": { "ordinal": 5, "nameKey": "rarity.mythic.name", "fill": "#FF4530", "on": "#120A2C", "text": "#FF9C8F", "pips": 5, "glow": "intense", "flow": true }
+    }
   },
   "typography": {
     "family": {
