@@ -57,8 +57,8 @@ Owner decisions behind this version: #3 (2026-10-25).
 
 - **R-20** On their turn a player must place a tile if they have a legal placement.
 - **R-21** In 2v2, a player with no legal placement passes.
-- **R-22** In 1v1, a player draws from the boneyard only when they have no legal placement. See P-1 for the exact drawing procedure.
-- **R-23** In 1v1, a player with no legal placement and an empty boneyard passes.
+- **R-22** In 1v1, a player draws from the boneyard only when they have no legal placement. They draw one tile at a time until they draw a tile they can place, and then place that tile.
+- **R-23** In 1v1, the last tile in the boneyard can never be drawn. A player with no legal placement when only that tile remains passes.
 - **R-24** A turn normally has one placement. Several placements in one turn are allowed only as described in R-31.
 
 ## 6. Board points
@@ -68,22 +68,22 @@ Owner decisions behind this version: #3 (2026-10-25).
 - **R-27** The spinner's top and bottom arms count as open ends only after a tile has been placed on them. Before that they add nothing.
 - **R-28** If the total is not a multiple of 5, or is 0, nothing is scored.
 - **R-29** The opening placement is the only exception to R-25. It scores only when the opening tile is 5-5, which scores 10. Every other opening tile scores nothing, even when its pips add up to a multiple of 5 (for example 2-3 or 6-4).
-- **R-30** The 5-5 opening scores nothing when the opener's team had 300 or more points at the start of the hand (R-41). See P-3 for the first hand.
+- **R-30** The 5-5 opening scores nothing when the opener's team had 300 or more points at the start of the hand (R-41), and always scores nothing in the first hand of a match.
 - **R-31** Multiple doubles in one turn: when a player places a double and that placement scores, the player may place another double from their hand in the same turn, but only if that placement also scores. This can repeat. Each placement is scored on its own under R-25. A double that would not score cannot be placed as a continuation.
 
 ## 7. End of hand: domino
 
 - **R-32** A hand ends in a domino when a player places their last tile.
 - **R-33** The team that dominoed scores the total pips left in the opposing team's hands, rounded up to the next multiple of 5 (22 → 25, 25 → 25, 26 → 30). The pips in the partner's hand are not counted.
-- **R-34** In 1v1 the boneyard tiles are not counted.
+- **R-34** In 1v1 the boneyard tiles, including the last undrawable one, are not counted.
 - **R-35** The team that dominoed is the winner of the hand.
 
 ## 8. End of hand: block
 
-- **R-36** A hand ends in a block when no player can place a tile: in 2v2 all four players pass in a row; in 1v1 the boneyard is empty and both players pass in a row.
+- **R-36** A hand ends in a block when no player can place a tile: in 2v2 all four players pass in a row; in 1v1 only the last, undrawable boneyard tile remains and both players pass in a row.
 - **R-37** Each team adds up the pips left in its own hands. The team with the lower total scores the other team's total, rounded up to the next multiple of 5. The team with the higher total scores nothing from hand points. The team with the lower total is the winner of the hand.
 - **R-38** If both totals are equal, nobody scores and the hand has no winner. Both totals are added together, rounded up to the next multiple of 5, and kept as a carry-over.
-- **R-39** The carry-over is added to the score of the next hand's winner, together with that winner's own hand points. If the next hand also ends in an equal block, its rounded sum is added to the carry-over, and the total moves to the next winner. See P-2 for a winner who cannot take hand points.
+- **R-39** The carry-over is added to the score of the next hand's winner, together with that winner's own hand points. If the next hand also ends in an equal block, its rounded sum is added to the carry-over, and the total moves to the next winner. If the next winner cannot take hand points (R-41), the carry-over is discarded.
 - **R-40** R-13 decides who opens the next hand after any block. This does not depend on which team won the block.
 
 ## 9. The 300 rule
@@ -129,15 +129,7 @@ Rule values live in `rules.Config` so they can change without code changes. The 
 | `TurnSeconds` | admin config, 20 | R-49 |
 | `AfkConsecutiveTimeouts` | admin config | R-51 |
 
-## 14. Pending confirmation
-
-These details are not covered by the decisions in #3. Each has a proposed default that is not yet a rule.
-
-- **P-1** Drawing in 1v1 (R-22). Proposed: the player draws one tile at a time until they draw a tile they can place, then must place a tile. If the boneyard runs out first, they pass.
-- **P-2** A carry-over winner who has 300 or more points (R-39, R-41). Proposed: the carry-over is discarded.
-- **P-3** The 5-5 opening in the first hand. This only happens in 1v1 under R-10. Proposed: it scores 10 like in any other hand, because the opener's team has 0 points.
-
-## 15. Worked examples
+## 14. Worked examples
 
 All 2v2 examples use seats North, East, South and West in clockwise order. Team A is North and South, Team B is East and West.
 
@@ -205,6 +197,7 @@ Hand 5 is blocked, with A holding 17 pips and B holding 17. North placed the las
 - A opens hand 6 (R-13).
 - In hand 6, B dominoes while A holds 12 pips, which rounds up to 15. B started hand 6 with 150, so B scores 15 + 35 = 50.
 - If hand 6 had instead been blocked with 8 and 8, then 16 rounds up to 20, and the carry-over would grow to 35 + 20 = 55 for the winner of hand 7.
+- If B had started hand 6 with 300 or more, B would score neither the 15 nor the carry-over, and the 35 would be discarded.
 
 ### Example 8: a block that crosses 365 (R-41, R-45, R-46)
 
@@ -220,12 +213,12 @@ B starts the hand with 290. The hand is blocked, B has the lower total, and A ho
 - A domino ends a hand with A at 370 and B at 375. B wins, even though A dominoed.
 - A domino ends a hand with both teams at 370. Another hand is played.
 
-### Example 10: 1v1 first hand without 2-3 (R-10, R-11, R-29)
+### Example 10: 1v1 first hand without 2-3 (R-10, R-11, R-29, R-30)
 
 2-3 is in the boneyard.
 
 - X holds 4-4, 6-6 and 0-0. Y holds 1-1. Y opens with 1-1, the lowest double in the order. The opening scores nothing.
-- X holds 0-0, Y holds 5-5, and neither holds another double. 0-0 is last in the order, so Y opens with 5-5 (scoring: P-3).
+- X holds 0-0, Y holds 5-5, and neither holds another double. 0-0 is last in the order, so Y opens with 5-5. It scores nothing, because it is the first hand (R-30).
 - Neither player holds 2-3 or any double: all tiles are reshuffled and dealt again.
 
 ### Example 11: other doubles never become spinners (R-17, R-19, R-26)
@@ -235,7 +228,16 @@ The spinner already exists. A player places 1-1 on an open 1 end.
 - 1-1 counts 2 while it sits on an open end.
 - It never gets arms. The next tile on it continues the same line.
 
-### Example 12: timer and AFK (R-49 to R-52)
+### Example 12: drawing in 1v1 (R-22, R-23, R-36)
+
+The open ends are 6 and 2. X holds no 6 or 2, and the boneyard has 4 tiles.
+
+- X draws 1-4: it cannot be placed, so X draws again.
+- X draws 5-0: it cannot be placed, so X draws again.
+- X draws 6-1: it can be placed, so X places it on the 6. The open ends are 1 and 2, total 3, so nothing is scored.
+- One tile is left in the boneyard and nobody can draw it. If both players now have no legal placement, the hand is blocked.
+
+### Example 13: timer and AFK (R-49 to R-52)
 
 The turn time is 20 seconds.
 
