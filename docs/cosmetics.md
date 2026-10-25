@@ -72,7 +72,7 @@ A source is `{ "type": ..., "ref": ... }`. `ref` is the id of a record owned by 
 
 | `type` | `ref` points to | Owner |
 |---|---|---|
-| `default` | No `ref`. Granted to every account at creation; cannot be removed | This document |
+| `default` | No `ref`. Granted to every account at creation; cannot be removed. The item is static (V-19) | This document |
 | `shop` | Shop offer id | #7, #104 |
 | `pass` | Pass reward id (season, track, level) | #9, #123 |
 | `mission` | Mission id | #9, #127 |
@@ -84,6 +84,7 @@ Rules:
 - `sources` is the complete list of ways an item can be granted. The admin rejects publishing an offer, reward, mission, campaign or event that grants an item whose `sources` does not list it, and the server's grant path (#102) refuses such a grant. This is what the collection screen shows as the way to earn an item (#99) and what abuse checks (#211) compare against.
 - A source listed on an item does not mean it is active now; whether a shop offer is on sale or an event is running is decided by the referenced record and server time.
 - Every type has at least one `live` item with a `default` source, so a new account has something equipped in every slot and a disabled item has a replacement (section 6).
+- The `default` source and the built-in install of default items (8.2) are owner-confirmed (#6, 2026-10-26). Default items are static (`animated: false`) to protect the install size budget (V-19).
 
 ## 6. Availability
 
@@ -94,7 +95,7 @@ Rules:
 | `disabled` | No | Yes, in inventory | No | No |
 
 - `disabled` is the switch-off in `docs/localization.md` 6.1: it removes the item and its static fallback from display. The server unequips it and equips the first `live` `default` item of the same type in manifest order; other players see that item too.
-- An item with a `default` source is always `live`.
+- An item with a `default` source is always `live` and static.
 - An item that was ever published is never removed from the manifest; it moves to `retired` or `disabled`. Its id stays reserved.
 
 ## 7. Manifest
@@ -155,7 +156,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 |---|---|
 | Group | One Addressables group per item, `cosmetic-<type>-<slug>`, holding the static sprite and every animation asset of the item (ADR 0002). Bundle mode packs each entry separately, so the static sprite downloads on its own and before the animation |
 | Atlas | Sprites of one item share one atlas inside its group |
-| Built-in group | Every asset of a `default` item is in the install-time group `cosmetic-builtin` instead of an item group, so offline start and fallbacks render without a download. Each animated default item adds to the install size budget (`docs/performance.md`) |
+| Built-in group | Every asset of a `default` item is in the install-time group `cosmetic-builtin` instead of an item group, so offline start and fallbacks render without a download. Default items are static (V-19), so the group holds one static sprite per default item and stays within the install size budget (`docs/performance.md`) |
 | Labels | `cosmetic`, `cosmetic-<type>`, and `cosmetic-static` on static sprites. Which labels are prefetched and when is #68's decision |
 | Source art | Lives in `assets-src/` and never ships directly |
 
@@ -186,6 +187,7 @@ Single-manifest rules, checked by the admin at publish, by the server when it lo
 | V-9 | `nameKey` is `cosmetic.<id>.name` |
 | V-10 | Every address follows section 8.1 for its item and slot |
 | V-11 | An item with a `default` source is `live`, and every type has at least one such item |
+| V-19 | An item with a `default` source is static: `animated` is false |
 
 Rules that need more than one manifest or other admin data, checked by the admin at publish only:
 

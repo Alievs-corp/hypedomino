@@ -207,6 +207,23 @@ test("every type needs a live default item", () => {
   assertReported(errors, "frame: no live item with a default source");
 });
 
+test("an animated default item is rejected", () => {
+  assertReported(
+    errorsAfter((_, item) => {
+      const starter = item("avatar.starter");
+      starter.animated = true;
+      starter.animationAddress = "cosmetic/avatar/starter/anim";
+    }),
+    "avatar.starter: default item is animated, must be static",
+  );
+  assertReported(
+    errorsAfter((_, item) => {
+      item("avatar.comet_fox").sources.push({ type: "default" });
+    }),
+    "avatar.comet_fox: default item is animated, must be static",
+  );
+});
+
 test("a published item must have passed cultural review", () => {
   assertReported(
     errorsAfter((_, item) => {
