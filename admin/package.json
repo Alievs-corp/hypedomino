@@ -1,8 +1,0 @@
-{
-  "name": "admin-ci-probe",
-  "private": true,
-  "packageManager": "pnpm@11.11.0",
-  "scripts": {
-    "build": "node -e \"console.log('admin build ok')\""
-  }
-}
