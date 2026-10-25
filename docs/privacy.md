@@ -66,7 +66,7 @@ Access roles are the admin roles of #134 (super admin, content, live-ops, suppor
 | D-12 | Match records: participants, seats, results, scores, events, config version | Server (#50) | Play, results, ranking, rewards | CON | PostgreSQL | Account lifetime; anonymized at deletion | support | Hosting |
 | D-13 | Replay records: seed and moves (#41) | Server | Disputes, collusion review (V-9) | LI | PostgreSQL or object storage | `ReplayRetentionDays`; longer while linked to an open case | support | Hosting |
 | D-14 | In-match emoji and quick messages (catalog ids only) | Player (#151, #152) | Relay to the room | CON | Memory only | Not stored | none | Hosting |
-| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank and position public, MMR never shown | Hosting |
+| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots, leaderboard emblems and profile showcase | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank and position public, MMR never shown | Hosting |
 | D-16 | Economy: ledger, inventory, pass progress, missions, medals, daily rewards, promo redemptions | Server (#101, #61, #123, #127, #129, #131, #108) | Grant and keep what the player earned or bought | CON | PostgreSQL | Account lifetime | support | Hosting |
 | D-17 | Purchases: store, product id, transaction id, purchase token or receipt, purchase time, bound account token, refund and chargeback notices | Store APIs (#106, #107, #204) | Grant purchases, restore, refunds, fraud | CON, LEG, LI | PostgreSQL | `PurchaseRecordRetentionYears` after purchase | support, super admin | Hosting; Google, Apple |
 | D-18 | Offenses and penalties | Server (`docs/penalties.md`) | Fair play in ranked matches | CON | PostgreSQL | `OffenseWindowDays`, then `ExpiredOffenseRetentionDays` | support | Hosting |
@@ -117,7 +117,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 
 | Visible to | Data |
 |---|---|
-| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8) |
+| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4) |
 | Room members | Custom room name, seats, in-match emoji and quick messages |
 | Friends | Online presence (#153) |
 | Nobody | Email, auth identity, MMR, install id, IP, purchases, offenses, anti-cheat data, reports |

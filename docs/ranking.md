@@ -259,8 +259,25 @@ Every local leaderboard uses the same order. Apex recalculation (section 3.2) us
 | Friends | The global order filtered to the viewer and their friends (social epic) |
 
 - A player's leaderboard country is their account country (#117: profile, IP fallback) at their first ranked match of the season in the mode. It stays fixed for that season and mode, so moving country cannot be used to top a smaller board. Players without a country appear on the global and friends boards only.
-- Each board shows the top `LeaderboardTopSize` (default 100) and the viewer's own position and neighbours, whatever their position.
+- Each board shows the top `LeaderboardTopSize` (default 200) and the viewer's own position and neighbours, whatever their position.
 - The season-end snapshot freezes every board of the season. Past seasons stay readable.
+- Every row of every board opens that player's public profile (`docs/privacy.md` section 5): nickname, equipped cosmetics, rank and the emblem showcase (8.4). A player can browse the global board and any country or region board, not only their own.
+
+### 8.3 Leaderboard emblems
+
+Owner decision (2026-10-26). A season-end finish near the top of a board earns a permanent emblem.
+
+- Brackets come from `EmblemBrackets` (default 1, 50, 100, 200): final position 1 earns Top 1, 2 to 50 Top 50, 51 to 100 Top 100, 101 to 200 Top 200. Only the best bracket per board is awarded.
+- Emblems are awarded for the global board and for the player's country and region boards, per mode. Friends boards award nothing.
+- An emblem records mode, season, board (global, country code or region id) and bracket. It is awarded once by the idempotent season-end job (#115) from the frozen snapshot, never from a live position, and is kept for the account's lifetime.
+- Shadowbanned accounts are not on public boards (`docs/anti-cheat.md` section 3), so they earn no emblem. An emblem awarded through a position later found to be cheated is revoked by an admin with an audited reason (#209).
+- Emblem art is one static asset per bracket and board scope (global, local), with the season and the country or region shown as text, not baked into art (#178).
+
+### 8.4 Profile emblem showcase
+
+- A player chooses up to `ProfileEmblemSlots` (default 3) of their own emblems and their order for their public profile. Slots may stay empty.
+- The client sends only the chosen emblem ids. The server accepts an id only if the account owns that emblem and stores the showcase; other players always see the server's copy (`docs/anti-cheat.md` NT-9).
+- A revoked emblem leaves the showcase at once.
 
 ## 9. No bot fill in ranked play
 
@@ -306,7 +323,9 @@ Every key has one value per mode (1v1, 2v2); both start at the same default. Str
 | `ResetFloor` | Bronze IV | 7.2 |
 | `ResetCeiling` | Diamond IV | 7.2 |
 | `SeasonResetTable` | generated, section 7.3 | 7.2 |
-| `LeaderboardTopSize` | 100 | 8.2 |
+| `LeaderboardTopSize` | 200 | 8.2 |
 | `LeaderboardRegions` | set by the owner before launch | 8.2 |
+| `EmblemBrackets` | 1, 50, 100, 200 | 8.3 |
+| `ProfileEmblemSlots` | 3 | 8.4 |
 
 Defined in `docs/penalties.md` and only referenced here: `OffenseRatingPenalty`, `PartnerLossReductionPercent`.
