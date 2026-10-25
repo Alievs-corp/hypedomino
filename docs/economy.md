@@ -2,7 +2,7 @@
 
 The single soft currency (coin): where coins come from, where they go, the reward bundle every grant uses, the shop, real-money products, promo codes, refunds and inflation controls. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
 
-**Status: proposal.** Every number in this document and in [`docs/economy/balance.csv`](economy/balance.csv) is a proposed default that the owner approves on #7. Every one is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys. The CSV is the single list of their values; section 11 is generated from it.
+**Status: approved by the owner on 2026-10-26 (section 13).** Every number in this document and in [`docs/economy/balance.csv`](economy/balance.csv) is a launch default to be tuned with closed-beta data. Every one is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys. The CSV is the single list of their values; section 11 is generated from it.
 
 Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `docs/anti-cheat.md` (V-1, V-3, V-7, V-8, V-11), `docs/cosmetics.md` (acquisition sources), `docs/ranking.md` (final ranks), `docs/penalties.md` (offender rewards), `docs/localization.md` (gambling imagery, age rating, rename), `docs/privacy.md` (D-16, D-17), `docs/launch-runbook.md` (kill switches).
 
@@ -49,7 +49,7 @@ Coins per completed match:
 
 - There is no draw: a match cannot end level (R-47).
 - A 2v2 match is longer, so it pays more per match; per hour both ranked modes earn the same within one coin (section 11).
-- Casual is an unranked matchmaking queue. `docs/rules.md` defines ranked queues (R-53) and custom rooms (R-55) only; unranked queues appear in the owner decision on #48 (2026-10-26). If none ships, the casual keys are unused. Casual earns about 60% of ranked per hour because it may fill seats with bots (#48) and is the easier farm target.
+- Casual is the unranked matchmaking queue (R-56). Casual earns about 60% of ranked per hour because it may fill seats with bots (#48) and is the easier farm target.
 - A casual match that started with a bot-filled seat pays `BotSeatRewardPercent` (50) of the table value, rounded to the nearest integer, halves away from zero. A bot that replaces an AFK or leaving player during a match (R-50 to R-52) reduces nobody's reward.
 - Custom rooms (R-55) pay no coins: players pick the teams, so wins can be arranged. Whether they advance missions and medals is #9.
 - AFK and leave offenders follow `docs/penalties.md` section 5 (no coins, except AFK returned). Partners and opponents get the normal reward.
@@ -381,9 +381,11 @@ Reading the sheet:
 
 Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind `config` are admin config (ADR 0006); `model` keys are never read by the server. Used here and defined elsewhere: `RefundWeight` (`docs/anti-cheat.md`), `NicknameRenameCooldownDays` (`docs/localization.md`), the purchase kill switch (#210).
 
-## 13. Owner decisions requested
+## 13. Owner decisions
 
-| Id | Question | Proposal |
+Decided by the owner on 2026-10-26. Values stay admin config and are tuned with closed-beta data (#193).
+
+| Id | Question | Decision |
 |---|---|---|
 | OQ-1 | Approve the values in `docs/economy/balance.csv` | As listed |
 | OQ-2 | Paid randomised items | None at launch (EP-3) |
@@ -393,5 +395,5 @@ Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind 
 | OQ-6 | `mythic` items in the shop | Yes, time-limited offers only (3.1) |
 | OQ-7 | Starter offer and first-purchase bonus | Both (7.3) |
 | OQ-8 | Market-specific price overrides, for example a lower Turkey price | None at launch; store equalisation only (7.4) |
-| OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not proposed; needs owner and privacy counsel |
+| OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; revisit with privacy counsel |
 | OQ-10 | Missed daily login day | Pauses the cycle, no reset (2.3) |
