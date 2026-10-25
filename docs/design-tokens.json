@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "status": "proposal",
+    "approval": "Every value is an initial proposal. The owner approves a value by merging the pull request that adds or changes it.",
+    "spec": "docs/ui-motion.md",
+    "units": {
+      "length": "UI units on a canvas scaled to a 1080-unit short side",
+      "duration": "milliseconds",
+      "easing": "cubic-bezier control points x1, y1, x2, y2",
+      "budgetMs": "milliseconds of frame work time on the reference device of the level's tier"
+    }
+  },
+  "color": {
+    "background": {
+      "base": "#0D0B24",
+      "raised": "#17143A"
+    },
+    "surface": {
+      "default": "#221D52",
+      "raised": "#2D2768"
+    },
+    "scrim": "#06051A",
+    "shadow": "#05030F",
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#D4CFF7",
+      "muted": "#A49DDB"
+    },
+    "role": {
+      "primary": { "fill": "#FF3D9A", "on": "#120A2C", "text": "#FF8CC4" },
+      "secondary": { "fill": "#26D4FF", "on": "#120A2C", "text": "#7FE6FF" },
+      "success": { "fill": "#35E07A", "on": "#120A2C", "text": "#7DF0AB" },
+      "warning": { "fill": "#FFB020", "on": "#120A2C", "text": "#FFCB6B" },
+      "danger": { "fill": "#FF4D5E", "on": "#120A2C", "text": "#FF95A0" },
+      "score": { "fill": "#FFE03D", "on": "#120A2C", "text": "#FFE97A" },
+      "teamA": { "fill": "#3D8BFF", "on": "#120A2C", "text": "#94C0FF" },
+      "teamB": { "fill": "#FF7A2E", "on": "#120A2C", "text": "#FFAD80" }
+    }
+  },
+  "opacity": {
+    "disabled": 0.4,
+    "scrim": 0.72,
+    "pressedTint": 0.85
+  },
+  "rarity": {
+    "definedBy": "https://github.com/Alievs-corp/hypedomino/issues/5"
+  },
+  "typography": {
+    "family": {
+      "display": { "name": "Unbounded", "license": "OFL-1.1", "weights": [700, 900] },
+      "ui": { "name": "Nunito", "license": "OFL-1.1", "weights": [600, 800, 900] }
+    },
+    "minimumSize": 30,
+    "scale": {
+      "caption": { "family": "ui", "weight": 600, "size": 30, "lineHeight": 1.3 },
+      "body": { "family": "ui", "weight": 600, "size": 38, "lineHeight": 1.35 },
+      "label": { "family": "ui", "weight": 800, "size": 44, "lineHeight": 1.2 },
+      "counter": { "family": "ui", "weight": 900, "size": 56, "lineHeight": 1.0 },
+      "title": { "family": "display", "weight": 700, "size": 54, "lineHeight": 1.15 },
+      "heading": { "family": "display", "weight": 900, "size": 68, "lineHeight": 1.1 },
+      "display": { "family": "display", "weight": 900, "size": 86, "lineHeight": 1.05 },
+      "score": { "family": "display", "weight": 900, "size": 108, "lineHeight": 1.0 }
+    }
+  },
+  "radius": {
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 36,
+    "pill": 999
+  },
+  "spacing": {
+    "xxs": 4,
+    "xs": 8,
+    "sm": 12,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 48,
+    "xxxl": 64
+  },
+  "size": {
+    "touchTargetMin": 120
+  },
+  "elevation": {
+    "e0": { "offsetY": 0, "alpha": 0 },
+    "e1": { "offsetY": 4, "alpha": 0.35 },
+    "e2": { "offsetY": 8, "alpha": 0.45 },
+    "e3": { "offsetY": 16, "alpha": 0.55 }
+  },
+  "glow": {
+    "none": { "alpha": 0, "scale": 1.0 },
+    "soft": { "alpha": 0.35, "scale": 1.15 },
+    "strong": { "alpha": 0.55, "scale": 1.3 },
+    "intense": { "alpha": 0.8, "scale": 1.5 }
+  },
+  "motion": {
+    "duration": {
+      "instant": 0,
+      "micro": 80,
+      "fast": 140,
+      "base": 220,
+      "moderate": 320,
+      "slow": 480,
+      "emphasis": 700
+    },
+    "easing": {
+      "standard": [0.2, 0, 0, 1],
+      "enter": [0, 0, 0.2, 1],
+      "exit": [0.4, 0, 1, 1],
+      "overshoot": [0.34, 1.56, 0.64, 1],
+      "linear": [0, 0, 1, 1]
+    },
+    "shake": {
+      "none": { "amplitude": 0, "durationMs": 0 },
+      "small": { "amplitude": 6, "durationMs": 180 },
+      "medium": { "amplitude": 12, "durationMs": 240 }
+    },
+    "pressScale": 0.94,
+    "panelEnterScale": 0.92,
+    "maxPresentationLagMs": 600,
+    "maxFullScreenFlashesPerSecond": 3
+  },
+  "effects": {
+    "levels": {
+      "low": {
+        "tier": "Low",
+        "targetFps": 30,
+        "workTimeP95Ms": 28.0,
+        "baseSceneCpuMs": 20.0,
+        "baseSceneGpuMs": 20.0,
+        "effectCpuMs": 4.0,
+        "effectGpuMs": 6.0,
+        "baseSceneBatches": 105,
+        "effectDrawCalls": 20,
+        "maxBatches": 149,
+        "maxParticles": 150,
+        "maxOverdrawLayers": 2,
+        "maxTweens": 32,
+        "animatedCosmetics": false
+      },
+      "medium": {
+        "tier": "Mid",
+        "targetFps": 60,
+        "workTimeP95Ms": 14.0,
+        "baseSceneCpuMs": 10.0,
+        "baseSceneGpuMs": 10.0,
+        "effectCpuMs": 3.0,
+        "effectGpuMs": 4.0,
+        "baseSceneBatches": 105,
+        "effectDrawCalls": 35,
+        "maxBatches": 149,
+        "maxParticles": 400,
+        "maxOverdrawLayers": 3,
+        "maxTweens": 64,
+        "animatedCosmetics": true
+      },
+      "high": {
+        "tier": "High",
+        "targetFps": 120,
+        "workTimeP95Ms": 7.0,
+        "baseSceneCpuMs": 5.0,
+        "baseSceneGpuMs": 4.5,
+        "effectCpuMs": 1.5,
+        "effectGpuMs": 2.5,
+        "baseSceneBatches": 105,
+        "effectDrawCalls": 40,
+        "maxBatches": 149,
+        "maxParticles": 800,
+        "maxOverdrawLayers": 4,
+        "maxTweens": 96,
+        "animatedCosmetics": true
+      }
+    },
+    "budgets": {
+      "tilePlace": {
+        "durationMs": 300,
+        "low": { "particles": 4, "drawCalls": 1, "overdrawLayers": 1, "pooled": 4, "cpuMs": 0.25, "gpuMs": 0.35 },
+        "medium": { "particles": 12, "drawCalls": 2, "overdrawLayers": 2, "pooled": 4, "cpuMs": 0.2, "gpuMs": 0.3 },
+        "high": { "particles": 24, "drawCalls": 2, "overdrawLayers": 2, "pooled": 4, "cpuMs": 0.1, "gpuMs": 0.15 }
+      },
+      "scorePopup": {
+        "durationMs": 1160,
+        "low": { "particles": 0, "drawCalls": 1, "overdrawLayers": 1, "pooled": 6, "cpuMs": 0.25, "gpuMs": 0.3 },
+        "medium": { "particles": 0, "drawCalls": 2, "overdrawLayers": 2, "pooled": 6, "cpuMs": 0.2, "gpuMs": 0.3 },
+        "high": { "particles": 8, "drawCalls": 2, "overdrawLayers": 2, "pooled": 6, "cpuMs": 0.1, "gpuMs": 0.15 }
+      },
+      "scoreCascade": {
+        "durationMs": 1000,
+        "low": { "particles": 30, "drawCalls": 3, "overdrawLayers": 2, "pooled": 2, "cpuMs": 0.7, "gpuMs": 1.2 },
+        "medium": { "particles": 90, "drawCalls": 5, "overdrawLayers": 3, "pooled": 2, "cpuMs": 0.6, "gpuMs": 1.0 },
+        "high": { "particles": 180, "drawCalls": 6, "overdrawLayers": 4, "pooled": 2, "cpuMs": 0.35, "gpuMs": 0.6 }
+      },
+      "spinnerFormation": {
+        "durationMs": 600,
+        "low": { "particles": 10, "drawCalls": 2, "overdrawLayers": 1, "pooled": 1, "cpuMs": 0.35, "gpuMs": 0.6 },
+        "medium": { "particles": 30, "drawCalls": 3, "overdrawLayers": 2, "pooled": 1, "cpuMs": 0.3, "gpuMs": 0.5 },
+        "high": { "particles": 60, "drawCalls": 4, "overdrawLayers": 3, "pooled": 1, "cpuMs": 0.15, "gpuMs": 0.3 }
+      },
+      "domino": {
+        "durationMs": 1200,
+        "low": { "particles": 40, "drawCalls": 3, "overdrawLayers": 2, "pooled": 1, "cpuMs": 0.8, "gpuMs": 1.3 },
+        "medium": { "particles": 120, "drawCalls": 6, "overdrawLayers": 3, "pooled": 1, "cpuMs": 0.7, "gpuMs": 1.0 },
+        "high": { "particles": 240, "drawCalls": 7, "overdrawLayers": 4, "pooled": 1, "cpuMs": 0.4, "gpuMs": 0.6 }
+      },
+      "block": {
+        "durationMs": 900,
+        "low": { "particles": 12, "drawCalls": 2, "overdrawLayers": 1, "pooled": 1, "cpuMs": 0.45, "gpuMs": 0.7 },
+        "medium": { "particles": 40, "drawCalls": 4, "overdrawLayers": 2, "pooled": 1, "cpuMs": 0.4, "gpuMs": 0.6 },
+        "high": { "particles": 80, "drawCalls": 5, "overdrawLayers": 3, "pooled": 1, "cpuMs": 0.25, "gpuMs": 0.4 }
+      },
+      "matchWin": {
+        "durationMs": 2400,
+        "low": { "particles": 60, "drawCalls": 5, "overdrawLayers": 2, "pooled": 1, "cpuMs": 1.4, "gpuMs": 2.4 },
+        "medium": { "particles": 200, "drawCalls": 10, "overdrawLayers": 3, "pooled": 1, "cpuMs": 1.2, "gpuMs": 1.8 },
+        "high": { "particles": 400, "drawCalls": 12, "overdrawLayers": 4, "pooled": 1, "cpuMs": 0.6, "gpuMs": 1.1 }
+      },
+      "rankUp": {
+        "durationMs": 2000,
+        "low": { "particles": 50, "drawCalls": 5, "overdrawLayers": 2, "pooled": 1, "cpuMs": 1.4, "gpuMs": 2.4 },
+        "medium": { "particles": 160, "drawCalls": 10, "overdrawLayers": 3, "pooled": 1, "cpuMs": 1.2, "gpuMs": 1.8 },
+        "high": { "particles": 320, "drawCalls": 12, "overdrawLayers": 4, "pooled": 1, "cpuMs": 0.6, "gpuMs": 1.1 }
+      },
+      "emoji": {
+        "durationMs": 1800,
+        "low": { "particles": 0, "drawCalls": 4, "overdrawLayers": 1, "pooled": 4, "cpuMs": 0.5, "gpuMs": 0.8 },
+        "medium": { "particles": 32, "drawCalls": 8, "overdrawLayers": 2, "pooled": 4, "cpuMs": 0.6, "gpuMs": 0.8 },
+        "high": { "particles": 64, "drawCalls": 8, "overdrawLayers": 2, "pooled": 4, "cpuMs": 0.3, "gpuMs": 0.4 }
+      }
+    },
+    "concurrentSets": {
+      "turn": ["tilePlace", "scorePopup", "scoreCascade", "spinnerFormation", "emoji"],
+      "dominoEnd": ["tilePlace", "scorePopup", "scoreCascade", "domino", "emoji"],
+      "blockEnd": ["tilePlace", "scorePopup", "scoreCascade", "block", "emoji"],
+      "matchEnd": ["scorePopup", "scoreCascade", "matchWin", "emoji"],
+      "results": ["scorePopup", "rankUp"]
+    }
+  },
+  "scoreCascade": {
+    "steps": [
+      { "step": 1, "minPoints": 5, "textScale": 1.0, "particleShare": 0.15, "glow": "soft", "shake": "none", "holdMs": 500 },
+      { "step": 2, "minPoints": 10, "textScale": 1.15, "particleShare": 0.3, "glow": "soft", "shake": "none", "holdMs": 550 },
+      { "step": 3, "minPoints": 15, "textScale": 1.3, "particleShare": 0.45, "glow": "strong", "shake": "none", "holdMs": 600 },
+      { "step": 4, "minPoints": 20, "textScale": 1.45, "particleShare": 0.6, "glow": "strong", "shake": "small", "holdMs": 650 },
+      { "step": 5, "minPoints": 25, "textScale": 1.6, "particleShare": 0.8, "glow": "intense", "shake": "small", "holdMs": 700 },
+      { "step": 6, "minPoints": 30, "textScale": 1.8, "particleShare": 1.0, "glow": "intense", "shake": "medium", "holdMs": 800 }
+    ],
+    "chainBoost": [
+      { "placement": 1, "addSteps": 0 },
+      { "placement": 2, "addSteps": 1 },
+      { "placement": 3, "addSteps": 2 }
+    ],
+    "popIn": { "duration": "fast", "easing": "overshoot" },
+    "popOut": { "duration": "base", "easing": "exit" },
+    "chainStepGapMs": 120,
+    "handPoints": {
+      "rollMsPer5Points": 40,
+      "rollMaxMs": 1200,
+      "carryOverGapMs": 200
+    }
+  }
+}
