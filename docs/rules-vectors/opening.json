@@ -1,0 +1,296 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "opening-2v2-east-holds-2-3",
+      "kind": "first-opener",
+      "rules": ["R-9", "R-14"],
+      "description": "Example 1: East holds 2-3, opens with it, and South plays next",
+      "mode": "2v2",
+      "given": {
+        "hands": {
+          "N": ["0-0", "0-1", "0-2", "0-3", "0-4", "0-5", "0-6"],
+          "E": ["2-3", "2-4", "2-5", "2-6", "3-3", "3-4", "3-5"],
+          "S": ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "2-2"],
+          "W": ["3-6", "4-4", "4-5", "4-6", "5-5", "5-6", "6-6"]
+        },
+        "boneyard": []
+      },
+      "expect": { "redeal": false, "opener": "E", "tile": "2-3", "next": "S" }
+    },
+    {
+      "id": "opening-2v2-west-wraps-to-north",
+      "kind": "first-opener",
+      "rules": ["R-9", "R-14"],
+      "description": "West holds 2-3 and opens; play continues clockwise with North",
+      "mode": "2v2",
+      "given": {
+        "hands": {
+          "N": ["0-0", "0-1", "0-2", "0-3", "0-4", "0-5", "0-6"],
+          "E": ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "2-2"],
+          "S": ["3-6", "4-4", "4-5", "4-6", "5-5", "5-6", "6-6"],
+          "W": ["2-3", "2-4", "2-5", "2-6", "3-3", "3-4", "3-5"]
+        },
+        "boneyard": []
+      },
+      "expect": { "redeal": false, "opener": "W", "tile": "2-3", "next": "N" }
+    },
+    {
+      "id": "opening-2v2-doubles-do-not-matter",
+      "kind": "first-opener",
+      "rules": ["R-9", "R-14"],
+      "description": "2v2: North holds 2-3 and opens, even though East holds 1-1 and South holds 0-0",
+      "mode": "2v2",
+      "given": {
+        "hands": {
+          "N": ["2-3", "2-4", "2-5", "2-6", "3-3", "3-4", "3-5"],
+          "E": ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "2-2"],
+          "S": ["0-0", "0-1", "0-2", "0-3", "0-4", "0-5", "0-6"],
+          "W": ["3-6", "4-4", "4-5", "4-6", "5-5", "5-6", "6-6"]
+        },
+        "boneyard": []
+      },
+      "expect": { "redeal": false, "opener": "N", "tile": "2-3", "next": "E" }
+    },
+    {
+      "id": "opening-1v1-x-holds-2-3",
+      "kind": "first-opener",
+      "rules": ["R-9", "R-10", "R-14"],
+      "description": "1v1: X holds 2-3 and opens with it, although Y holds 1-1; doubles only count when 2-3 is in the boneyard",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-1", "0-2", "0-3", "0-4", "0-5", "0-6", "2-3"],
+          "Y": ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "2-2"]
+        },
+        "boneyard": [
+          "0-0",
+          "2-4",
+          "2-5",
+          "2-6",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "X", "tile": "2-3", "next": "Y" }
+    },
+    {
+      "id": "opening-1v1-y-holds-2-3",
+      "kind": "first-opener",
+      "rules": ["R-9", "R-14"],
+      "description": "1v1: Y holds 2-3 and opens; X plays next",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-0", "1-1", "1-2", "1-3", "1-4", "1-5", "1-6"],
+          "Y": ["0-1", "0-2", "0-3", "0-4", "0-5", "0-6", "2-3"]
+        },
+        "boneyard": [
+          "2-2",
+          "2-4",
+          "2-5",
+          "2-6",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "Y", "tile": "2-3", "next": "X" }
+    },
+    {
+      "id": "opening-1v1-lowest-double-1-1",
+      "kind": "first-opener",
+      "rules": ["R-10", "R-14"],
+      "description": "Example 10: 2-3 is in the boneyard, X holds 4-4, 6-6 and 0-0, Y holds 1-1; Y opens with 1-1",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-0", "0-1", "0-2", "0-3", "0-4", "4-4", "6-6"],
+          "Y": ["0-5", "1-1", "1-2", "1-3", "1-4", "1-5", "1-6"]
+        },
+        "boneyard": [
+          "0-6",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5",
+          "2-6",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "Y", "tile": "1-1", "next": "X" }
+    },
+    {
+      "id": "opening-1v1-zero-zero-is-last",
+      "kind": "first-opener",
+      "rules": ["R-10", "R-14"],
+      "description": "Example 10: X holds 0-0, Y holds 5-5 and no other double was dealt; 0-0 is last in the order, so Y opens with 5-5",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-0", "0-1", "0-2", "0-3", "0-4", "0-5", "0-6"],
+          "Y": ["1-2", "1-3", "1-4", "1-5", "1-6", "2-4", "5-5"]
+        },
+        "boneyard": [
+          "1-1",
+          "2-2",
+          "2-3",
+          "2-5",
+          "2-6",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-6",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "Y", "tile": "5-5", "next": "X" }
+    },
+    {
+      "id": "opening-1v1-2-2-before-3-3",
+      "kind": "first-opener",
+      "rules": ["R-10", "R-14"],
+      "description": "1v1: 2-3 and 1-1 are in the boneyard, X holds 3-3 and 6-6, Y holds 2-2 and 0-0; Y opens with 2-2",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-1", "0-2", "0-3", "0-4", "0-5", "3-3", "6-6"],
+          "Y": ["0-0", "1-2", "1-3", "1-4", "1-5", "1-6", "2-2"]
+        },
+        "boneyard": [
+          "0-6",
+          "1-1",
+          "2-3",
+          "2-4",
+          "2-5",
+          "2-6",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "Y", "tile": "2-2", "next": "X" }
+    },
+    {
+      "id": "opening-1v1-only-double-is-0-0",
+      "kind": "first-opener",
+      "rules": ["R-10", "R-11"],
+      "description": "1v1: the only double dealt is X's 0-0, so there is no redeal and X opens with 0-0",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-0", "0-1", "0-2", "0-3", "0-4", "0-5", "0-6"],
+          "Y": ["1-2", "1-3", "1-4", "1-5", "1-6", "2-4", "2-5"]
+        },
+        "boneyard": [
+          "1-1",
+          "2-2",
+          "2-3",
+          "2-6",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": false, "opener": "X", "tile": "0-0", "next": "Y" }
+    },
+    {
+      "id": "opening-1v1-redeal",
+      "kind": "first-opener",
+      "rules": ["R-10", "R-11"],
+      "description": "Example 10: 2-3 and all seven doubles are in the boneyard, so the tiles are dealt again",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-1", "0-2", "0-3", "0-4", "0-5", "0-6", "1-2"],
+          "Y": ["1-3", "1-4", "1-5", "1-6", "2-4", "2-5", "2-6"]
+        },
+        "boneyard": [
+          "0-0",
+          "1-1",
+          "2-2",
+          "2-3",
+          "3-3",
+          "3-4",
+          "3-5",
+          "3-6",
+          "4-4",
+          "4-5",
+          "4-6",
+          "5-5",
+          "5-6",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": true, "opener": null, "tile": null, "next": null }
+    },
+    {
+      "id": "opening-1v1-redeal-other-deal",
+      "kind": "first-opener",
+      "rules": ["R-11"],
+      "description": "1v1: neither hand holds 2-3 or any double, so the tiles are dealt again",
+      "mode": "1v1",
+      "given": {
+        "hands": {
+          "X": ["0-1", "3-4", "3-5", "3-6", "4-5", "4-6", "5-6"],
+          "Y": ["0-2", "0-3", "0-4", "0-5", "0-6", "1-2", "1-3"]
+        },
+        "boneyard": [
+          "0-0",
+          "1-1",
+          "1-4",
+          "1-5",
+          "1-6",
+          "2-2",
+          "2-3",
+          "2-4",
+          "2-5",
+          "2-6",
+          "3-3",
+          "4-4",
+          "5-5",
+          "6-6"
+        ]
+      },
+      "expect": { "redeal": true, "opener": null, "tile": null, "next": null }
+    }
+  ]
+}

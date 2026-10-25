@@ -1,0 +1,136 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "doubles-example3",
+      "kind": "turn",
+      "rules": ["R-25", "R-26", "R-31"],
+      "description": "Example 3: ends 0 and 5; 0-0 scores 5, 5-5 scores 10, 1-1 has no 1 end; the turn scores 15",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["0-2", "2-5"], "spinner": null, "top": [], "bottom": [] },
+        "placements": [
+          { "tile": "0-0", "end": "left" },
+          { "tile": "5-5", "end": "right" },
+          { "tile": "1-1", "end": "left" }
+        ]
+      },
+      "expect": {
+        "steps": [
+          { "placed": true, "total": 5, "score": 5 },
+          { "placed": true, "total": 10, "score": 10 },
+          { "placed": false }
+        ],
+        "turnScore": 15
+      }
+    },
+    {
+      "id": "doubles-example3-counter",
+      "kind": "turn",
+      "rules": ["R-31"],
+      "description": "Example 3 counter-example: ends 2 and 6; 2-2 scores 10, 6-6 would make 4 + 12 = 16 and cannot follow",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["2-4", "4-6"], "spinner": null, "top": [], "bottom": [] },
+        "placements": [{ "tile": "2-2", "end": "left" }, { "tile": "6-6", "end": "right" }]
+      },
+      "expect": {
+        "steps": [{ "placed": true, "total": 10, "score": 10 }, { "placed": false }],
+        "turnScore": 10
+      }
+    },
+    {
+      "id": "doubles-not-after-non-double",
+      "kind": "turn",
+      "rules": ["R-24", "R-31"],
+      "description": "0-4 scores 5 but is not a double, so 0-0 cannot follow even though it would score 5",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["5-1", "1-4"], "spinner": null, "top": [], "bottom": [] },
+        "placements": [{ "tile": "0-4", "end": "right" }, { "tile": "0-0", "end": "right" }]
+      },
+      "expect": {
+        "steps": [{ "placed": true, "total": 5, "score": 5 }, { "placed": false }],
+        "turnScore": 5
+      }
+    },
+    {
+      "id": "doubles-not-after-non-scoring-double",
+      "kind": "turn",
+      "rules": ["R-24", "R-31"],
+      "description": "3-3 makes 2 + 6 = 8 and scores nothing, so 2-2 cannot follow even though it would make 10",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["2-5", "5-3"], "spinner": null, "top": [], "bottom": [] },
+        "placements": [{ "tile": "3-3", "end": "right" }, { "tile": "2-2", "end": "left" }]
+      },
+      "expect": {
+        "steps": [{ "placed": true, "total": 8, "score": 0 }, { "placed": false }],
+        "turnScore": 0
+      }
+    },
+    {
+      "id": "doubles-continuation-must-be-double",
+      "kind": "turn",
+      "rules": ["R-24", "R-31"],
+      "description": "2-2 scores 5; 1-6 would make 6 + 4 = 10 but only a double may continue the turn",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["1-3", "3-3", "3-2"], "spinner": "3-3", "top": [], "bottom": [] },
+        "placements": [{ "tile": "2-2", "end": "right" }, { "tile": "1-6", "end": "left" }]
+      },
+      "expect": {
+        "steps": [{ "placed": true, "total": 5, "score": 5 }, { "placed": false }],
+        "turnScore": 5
+      }
+    },
+    {
+      "id": "doubles-three-on-four-ends",
+      "kind": "turn",
+      "rules": ["R-18", "R-26", "R-31"],
+      "description": "Ends 1, 0, 5, 3: 1-1 scores 10, 0-0 scores 10, 5-5 on top scores 15, 3-3 would make 18 and stops; the turn scores 35",
+      "mode": "2v2",
+      "given": {
+        "board": {
+          "line": ["1-4", "4-4", "4-0"],
+          "spinner": "4-4",
+          "top": ["4-5"],
+          "bottom": ["4-3"]
+        },
+        "placements": [
+          { "tile": "1-1", "end": "left" },
+          { "tile": "0-0", "end": "right" },
+          { "tile": "5-5", "end": "top" },
+          { "tile": "3-3", "end": "bottom" }
+        ]
+      },
+      "expect": {
+        "steps": [
+          { "placed": true, "total": 10, "score": 10 },
+          { "placed": true, "total": 10, "score": 10 },
+          { "placed": true, "total": 15, "score": 15 },
+          { "placed": false }
+        ],
+        "turnScore": 35
+      }
+    },
+    {
+      "id": "doubles-1v1-two-doubles",
+      "kind": "turn",
+      "rules": ["R-26", "R-31"],
+      "description": "1v1: ends 5 and 0; 5-5 scores 10, then 0-0 scores 10; the turn scores 20",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["5-3", "3-0"], "spinner": null, "top": [], "bottom": [] },
+        "placements": [{ "tile": "5-5", "end": "left" }, { "tile": "0-0", "end": "right" }]
+      },
+      "expect": {
+        "steps": [
+          { "placed": true, "total": 10, "score": 10 },
+          { "placed": true, "total": 10, "score": 10 }
+        ],
+        "turnScore": 20
+      }
+    }
+  ]
+}

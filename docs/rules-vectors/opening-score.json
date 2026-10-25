@@ -1,0 +1,104 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "opening-score-5-5-later-hand",
+      "kind": "opening-score",
+      "rules": ["R-12", "R-29"],
+      "description": "Example 2: West opens a later hand with 5-5 while B has 140; B scores 10",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "5-5", "teamScoreAtHandStart": 140 },
+      "expect": { "score": 10 }
+    },
+    {
+      "id": "opening-score-5-5-at-300",
+      "kind": "opening-score",
+      "rules": ["R-30", "R-42"],
+      "description": "Example 2: the opener's team started the hand with exactly 300, so the 5-5 opening scores nothing",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "5-5", "teamScoreAtHandStart": 300 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-5-5-at-299",
+      "kind": "opening-score",
+      "rules": ["R-29", "R-30"],
+      "description": "The opener's team started the hand with 299, under the threshold, so the 5-5 opening scores 10",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "5-5", "teamScoreAtHandStart": 299 },
+      "expect": { "score": 10 }
+    },
+    {
+      "id": "opening-score-5-5-at-345",
+      "kind": "opening-score",
+      "rules": ["R-30", "R-42"],
+      "description": "The opener's team started the hand with 345, so the 5-5 opening scores nothing",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "5-5", "teamScoreAtHandStart": 345 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-6-4-scores-nothing",
+      "kind": "opening-score",
+      "rules": ["R-12", "R-29"],
+      "description": "Example 2: opening a later hand with 6-4 scores nothing, even though 6 + 4 = 10",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "4-6", "teamScoreAtHandStart": 140 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-1-4-scores-nothing",
+      "kind": "opening-score",
+      "rules": ["R-12", "R-29"],
+      "description": "Opening a later hand with 1-4 (5 pips) scores nothing",
+      "mode": "2v2",
+      "given": { "firstHand": false, "tile": "1-4", "teamScoreAtHandStart": 50 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-0-5-scores-nothing",
+      "kind": "opening-score",
+      "rules": ["R-29"],
+      "description": "1v1: opening a later hand with 0-5 (5 pips) scores nothing",
+      "mode": "1v1",
+      "given": { "firstHand": false, "tile": "0-5", "teamScoreAtHandStart": 0 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-2-3-first-hand",
+      "kind": "opening-score",
+      "rules": ["R-9", "R-29"],
+      "description": "Example 1: the first-hand 2-3 opening has open ends 2 and 3 but scores nothing",
+      "mode": "2v2",
+      "given": { "firstHand": true, "tile": "2-3", "teamScoreAtHandStart": 0 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-5-5-first-hand-1v1",
+      "kind": "opening-score",
+      "rules": ["R-10", "R-30"],
+      "description": "Example 10: Y opens the first hand of a 1v1 match with 5-5; it scores nothing in the first hand",
+      "mode": "1v1",
+      "given": { "firstHand": true, "tile": "5-5", "teamScoreAtHandStart": 0 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-1-1-first-hand-1v1",
+      "kind": "opening-score",
+      "rules": ["R-10", "R-29"],
+      "description": "Example 10: Y opens the first hand of a 1v1 match with 1-1; the opening scores nothing",
+      "mode": "1v1",
+      "given": { "firstHand": true, "tile": "1-1", "teamScoreAtHandStart": 0 },
+      "expect": { "score": 0 }
+    },
+    {
+      "id": "opening-score-5-5-later-hand-1v1",
+      "kind": "opening-score",
+      "rules": ["R-29"],
+      "description": "1v1: a later-hand 5-5 opening by a player with 120 scores 10",
+      "mode": "1v1",
+      "given": { "firstHand": false, "tile": "5-5", "teamScoreAtHandStart": 120 },
+      "expect": { "score": 10 }
+    }
+  ]
+}

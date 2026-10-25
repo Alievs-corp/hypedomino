@@ -1,0 +1,153 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "draw-example12",
+      "kind": "draw",
+      "rules": ["R-22"],
+      "description": "Example 12: ends 6 and 2, X has no 6 or 2; X draws 1-4 and 5-0 (no fit), then 6-1 and places it",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "3-4", "4-5"],
+        "boneyard": ["1-4", "0-5", "1-6", "3-3"]
+      },
+      "expect": { "drawn": ["1-4", "0-5", "1-6"], "outcome": "place" }
+    },
+    {
+      "id": "draw-first-tile-fits",
+      "kind": "draw",
+      "rules": ["R-22"],
+      "description": "1v1: X has no fit, draws 2-5, which fits the 2 end, and places it",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "3-4"],
+        "boneyard": ["2-5", "0-1", "0-4"]
+      },
+      "expect": { "drawn": ["2-5"], "outcome": "place" }
+    },
+    {
+      "id": "draw-not-allowed-with-legal-move",
+      "kind": "draw",
+      "rules": ["R-20", "R-22"],
+      "description": "1v1: X holds 2-4, which fits the 2 end, so X must place and may not draw",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "2-4"],
+        "boneyard": ["0-5", "1-6", "3-3"]
+      },
+      "expect": { "drawn": [], "outcome": "place" }
+    },
+    {
+      "id": "draw-last-tile-undrawable",
+      "kind": "draw",
+      "rules": ["R-23"],
+      "description": "Example 12: only one tile is left in the boneyard; X has no fit and passes without drawing, even though 5-6 would fit",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "3-4", "4-5"],
+        "boneyard": ["5-6"]
+      },
+      "expect": { "drawn": [], "outcome": "pass" }
+    },
+    {
+      "id": "draw-stops-before-last-tile",
+      "kind": "draw",
+      "rules": ["R-22", "R-23"],
+      "description": "1v1: X draws 1-4 and 0-5 without a fit; 1-6 is now the last tile and cannot be drawn, so X passes",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1"],
+        "boneyard": ["1-4", "0-5", "1-6"]
+      },
+      "expect": { "drawn": ["1-4", "0-5"], "outcome": "pass" }
+    },
+    {
+      "id": "draw-two-left-draws-one",
+      "kind": "draw",
+      "rules": ["R-22", "R-23"],
+      "description": "1v1: two tiles left; X draws 0-4 (no fit) and passes, because 2-5 is now the last tile",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1"],
+        "boneyard": ["0-4", "2-5"]
+      },
+      "expect": { "drawn": ["0-4"], "outcome": "pass" }
+    },
+    {
+      "id": "draw-empty-arm-accepts",
+      "kind": "draw",
+      "rules": ["R-18", "R-22"],
+      "description": "1v1: ends 4 and 1 plus the empty arms of spinner 3-3; X draws 2-6 (no fit), then 3-6, which fits an empty arm",
+      "mode": "1v1",
+      "given": {
+        "board": { "line": ["4-2", "2-3", "3-3", "3-1"], "spinner": "3-3", "top": [], "bottom": [] },
+        "hand": ["5-6", "0-0"],
+        "boneyard": ["2-6", "3-6", "5-5"]
+      },
+      "expect": { "drawn": ["2-6", "3-6"], "outcome": "place" }
+    },
+    {
+      "id": "draw-2v2-pass",
+      "kind": "draw",
+      "rules": ["R-21"],
+      "description": "2v2: no tile fits the 6 or the 2, so the player passes",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "3-4"],
+        "boneyard": []
+      },
+      "expect": { "drawn": [], "outcome": "pass" }
+    },
+    {
+      "id": "draw-2v2-must-place",
+      "kind": "draw",
+      "rules": ["R-20", "R-21"],
+      "description": "2v2: 1-2 fits the 2 end, so the player must place and may not pass",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["6-3", "3-2"], "spinner": null, "top": [], "bottom": [] },
+        "hand": ["1-1", "1-2"],
+        "boneyard": []
+      },
+      "expect": { "drawn": [], "outcome": "place" }
+    },
+    {
+      "id": "draw-2v2-place-on-empty-arm",
+      "kind": "draw",
+      "rules": ["R-18", "R-20"],
+      "description": "2v2: 3-6 only fits an empty arm of spinner 3-3, and that is a legal placement the player must make",
+      "mode": "2v2",
+      "given": {
+        "board": { "line": ["4-2", "2-3", "3-3", "3-1"], "spinner": "3-3", "top": [], "bottom": [] },
+        "hand": ["0-0", "3-6"],
+        "boneyard": []
+      },
+      "expect": { "drawn": [], "outcome": "place" }
+    },
+    {
+      "id": "draw-2v2-pass-with-spinner",
+      "kind": "draw",
+      "rules": ["R-21"],
+      "description": "2v2: open ends 4, 1, 5 and the empty bottom arm (3); 0-0, 6-6 and 2-6 fit none, so the player passes",
+      "mode": "2v2",
+      "given": {
+        "board": {
+          "line": ["4-2", "2-3", "3-3", "3-1"],
+          "spinner": "3-3",
+          "top": ["3-5"],
+          "bottom": []
+        },
+        "hand": ["0-0", "2-6", "6-6"],
+        "boneyard": []
+      },
+      "expect": { "drawn": [], "outcome": "pass" }
+    }
+  ]
+}

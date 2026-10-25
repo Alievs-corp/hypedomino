@@ -1,0 +1,59 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "seat-north",
+      "kind": "seat",
+      "rules": ["R-6", "R-7"],
+      "description": "North is on team A; the turn passes to East on team B",
+      "mode": "2v2",
+      "given": { "seat": "N" },
+      "expect": { "team": "A", "next": "E" }
+    },
+    {
+      "id": "seat-east",
+      "kind": "seat",
+      "rules": ["R-6", "R-7"],
+      "description": "East is on team B; the turn passes to South on team A",
+      "mode": "2v2",
+      "given": { "seat": "E" },
+      "expect": { "team": "B", "next": "S" }
+    },
+    {
+      "id": "seat-south",
+      "kind": "seat",
+      "rules": ["R-6", "R-7"],
+      "description": "South is North's partner on team A; the turn passes to West on team B",
+      "mode": "2v2",
+      "given": { "seat": "S" },
+      "expect": { "team": "A", "next": "W" }
+    },
+    {
+      "id": "seat-west",
+      "kind": "seat",
+      "rules": ["R-6", "R-7"],
+      "description": "West is East's partner on team B; the turn wraps to North on team A",
+      "mode": "2v2",
+      "given": { "seat": "W" },
+      "expect": { "team": "B", "next": "N" }
+    },
+    {
+      "id": "seat-1v1-x",
+      "kind": "seat",
+      "rules": ["R-7", "R-8"],
+      "description": "1v1: X is a team of one (A) and the turn passes to Y",
+      "mode": "1v1",
+      "given": { "seat": "X" },
+      "expect": { "team": "A", "next": "Y" }
+    },
+    {
+      "id": "seat-1v1-y",
+      "kind": "seat",
+      "rules": ["R-7", "R-8"],
+      "description": "1v1: Y is a team of one (B) and the turn passes back to X",
+      "mode": "1v1",
+      "given": { "seat": "Y" },
+      "expect": { "team": "B", "next": "X" }
+    }
+  ]
+}

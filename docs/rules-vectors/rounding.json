@@ -1,0 +1,113 @@
+{
+  "$schema": "./schema.json",
+  "vectors": [
+    {
+      "id": "round-22-to-25",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "22 pips round up to 25",
+      "mode": "2v2",
+      "given": { "pips": 22 },
+      "expect": { "points": 25 }
+    },
+    {
+      "id": "round-25-stays-25",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "25 pips are already a multiple of 5 and stay 25",
+      "mode": "2v2",
+      "given": { "pips": 25 },
+      "expect": { "points": 25 }
+    },
+    {
+      "id": "round-26-to-30",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "26 pips round up to 30",
+      "mode": "2v2",
+      "given": { "pips": 26 },
+      "expect": { "points": 30 }
+    },
+    {
+      "id": "round-21-to-25",
+      "kind": "round",
+      "rules": ["R-33", "R-37"],
+      "description": "Example 6: 21 pips round up to 25",
+      "mode": "2v2",
+      "given": { "pips": 21 },
+      "expect": { "points": 25 }
+    },
+    {
+      "id": "round-18-to-20",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "Example 4: 18 pips round up to 20",
+      "mode": "2v2",
+      "given": { "pips": 18 },
+      "expect": { "points": 20 }
+    },
+    {
+      "id": "round-12-to-15",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "Example 7: 12 pips round up to 15",
+      "mode": "2v2",
+      "given": { "pips": 12 },
+      "expect": { "points": 15 }
+    },
+    {
+      "id": "round-78-to-80",
+      "kind": "round",
+      "rules": ["R-37"],
+      "description": "Example 8: 78 pips round up to 80",
+      "mode": "2v2",
+      "given": { "pips": 78 },
+      "expect": { "points": 80 }
+    },
+    {
+      "id": "round-34-to-35",
+      "kind": "round",
+      "rules": ["R-38"],
+      "description": "Example 7: an equal block of 17 + 17 = 34 rounds up to 35",
+      "mode": "2v2",
+      "given": { "pips": 34 },
+      "expect": { "points": 35 }
+    },
+    {
+      "id": "round-16-to-20",
+      "kind": "round",
+      "rules": ["R-38"],
+      "description": "Example 7: an equal block of 8 + 8 = 16 rounds up to 20",
+      "mode": "2v2",
+      "given": { "pips": 16 },
+      "expect": { "points": 20 }
+    },
+    {
+      "id": "round-1-to-5",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "1 pip rounds up to 5",
+      "mode": "1v1",
+      "given": { "pips": 1 },
+      "expect": { "points": 5 }
+    },
+    {
+      "id": "round-5-stays-5",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "5 pips stay 5",
+      "mode": "1v1",
+      "given": { "pips": 5 },
+      "expect": { "points": 5 }
+    },
+    {
+      "id": "round-0-stays-0",
+      "kind": "round",
+      "rules": ["R-33"],
+      "description": "0 pips (only 0-0 left) are a multiple of 5 and stay 0",
+      "mode": "1v1",
+      "given": { "pips": 0 },
+      "expect": { "points": 0 }
+    }
+  ]
+}
