@@ -1,20 +1,11 @@
 package bot
 
 import (
-	"math/rand/v2"
 	"testing"
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
-
-func seeded(seed uint64) *rand.Rand {
-	var key [32]byte
-	for i := range 8 {
-		key[i] = byte(seed >> (8 * i))
-	}
-	return rand.New(rand.NewChaCha8(key))
-}
 
 type table struct {
 	match   *rules.Match
@@ -22,7 +13,7 @@ type table struct {
 }
 
 func newTable(mode rules.Mode, seed uint64, levelOf func(rules.Team) Level) table {
-	random := seeded(seed)
+	random := rules.NewSeededRandom(seed)
 	t := table{match: rules.NewMatch(mode, rules.DefaultConfig(), random), players: map[rules.Seat]*Player{}}
 	for _, seat := range mode.Seats() {
 		t.players[seat] = New(levelOf(seat.Team()), DefaultConfig(), random)
@@ -137,7 +128,7 @@ func TestBotActsOnlyForItsSeat(t *testing.T) {
 	if _, err := tab.players[opening.Seat].Act(tab.match, opening.Seat); err != ErrNotActing {
 		t.Fatalf("acted out of turn: %v", err)
 	}
-	if Level(9).String() != "invalid" || Hard.String() != "hard" || New(Easy, DefaultConfig(), seeded(1)).Level() != Easy {
+	if Level(9).String() != "invalid" || Hard.String() != "hard" || New(Easy, DefaultConfig(), rules.NewSeededRandom(1)).Level() != Easy {
 		t.Fatal("level names")
 	}
 }

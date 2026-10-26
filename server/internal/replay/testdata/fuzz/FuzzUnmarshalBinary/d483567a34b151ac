@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("HDR\x01\x0200000000\a\xed\x0000000\x01\x03\x01\x01\xed0\xe100\x01")
