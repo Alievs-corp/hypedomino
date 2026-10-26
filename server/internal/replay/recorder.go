@@ -6,26 +6,30 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
+type Table interface {
+	Open(seat rules.Seat, tile rules.Tile) (int, error)
+	Place(seat rules.Seat, tile rules.Tile, end rules.End) (rules.Placement, error)
+	EndTurn(seat rules.Seat) error
+	Draw(seat rules.Seat) (rules.Tile, error)
+	Pass(seat rules.Seat) error
+}
+
 type Recorder struct {
-	match  *rules.Match
+	*rules.Match
 	record Record
 }
 
 func NewRecorder(mode rules.Mode, config rules.Config, seed uint64) *Recorder {
 	return &Recorder{
-		match:  rules.NewMatch(mode, config, rules.NewSeededRandom(seed)),
+		Match:  rules.NewMatch(mode, config, rules.NewSeededRandom(seed)),
 		record: Record{Mode: mode, Seed: seed, Config: config},
 	}
-}
-
-func (r *Recorder) Match() *rules.Match {
-	return r.match
 }
 
 func (r *Recorder) Record() Record {
 	record := r.record
 	record.Intents = append([]Intent(nil), r.record.Intents...)
-	record.Result, record.HasResult = resultOf(r.match)
+	record.Result, record.HasResult = resultOf(r.Match)
 	return record
 }
 
@@ -38,31 +42,31 @@ func resultOf(m *rules.Match) (Result, bool) {
 }
 
 func (r *Recorder) Open(seat rules.Seat, tile rules.Tile) (int, error) {
-	score, err := r.match.Open(seat, tile)
+	score, err := r.Match.Open(seat, tile)
 	r.note(err, Intent{Kind: KindOpen, Seat: seat, Tile: tile})
 	return score, err
 }
 
 func (r *Recorder) Place(seat rules.Seat, tile rules.Tile, end rules.End) (rules.Placement, error) {
-	placement, err := r.match.Place(seat, tile, end)
+	placement, err := r.Match.Place(seat, tile, end)
 	r.note(err, Intent{Kind: KindPlace, Seat: seat, Tile: tile, End: end})
 	return placement, err
 }
 
 func (r *Recorder) EndTurn(seat rules.Seat) error {
-	err := r.match.EndTurn(seat)
+	err := r.Match.EndTurn(seat)
 	r.note(err, Intent{Kind: KindEndTurn, Seat: seat})
 	return err
 }
 
 func (r *Recorder) Draw(seat rules.Seat) (rules.Tile, error) {
-	tile, err := r.match.Draw(seat)
+	tile, err := r.Match.Draw(seat)
 	r.note(err, Intent{Kind: KindDraw, Seat: seat})
 	return tile, err
 }
 
 func (r *Recorder) Pass(seat rules.Seat) error {
-	err := r.match.Pass(seat)
+	err := r.Match.Pass(seat)
 	r.note(err, Intent{Kind: KindPass, Seat: seat})
 	return err
 }
@@ -73,21 +77,21 @@ func (r *Recorder) note(err error, intent Intent) {
 	}
 }
 
-func Apply(m *rules.Match, intent Intent) error {
+func Apply(table Table, intent Intent) error {
 	switch intent.Kind {
 	case KindOpen:
-		_, err := m.Open(intent.Seat, intent.Tile)
+		_, err := table.Open(intent.Seat, intent.Tile)
 		return err
 	case KindPlace:
-		_, err := m.Place(intent.Seat, intent.Tile, intent.End)
+		_, err := table.Place(intent.Seat, intent.Tile, intent.End)
 		return err
 	case KindEndTurn:
-		return m.EndTurn(intent.Seat)
+		return table.EndTurn(intent.Seat)
 	case KindDraw:
-		_, err := m.Draw(intent.Seat)
+		_, err := table.Draw(intent.Seat)
 		return err
 	case KindPass:
-		return m.Pass(intent.Seat)
+		return table.Pass(intent.Seat)
 	}
 	return fmt.Errorf("%w: intent kind %d", ErrBadRecord, intent.Kind)
 }

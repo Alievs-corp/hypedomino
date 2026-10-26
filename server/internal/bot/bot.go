@@ -9,6 +9,25 @@ import (
 
 var ErrNotActing = errors.New("bot: nothing for this seat to do")
 
+type Table interface {
+	Mode() rules.Mode
+	Config() rules.Config
+	Phase() rules.Phase
+	Scores() rules.TeamPoints
+	HandsPlayed() int
+	Current() rules.Seat
+	OpeningTeam() rules.Team
+	ForcedOpening() (rules.Opening, bool)
+	Hand(seat rules.Seat) rules.Hand
+	Board() *rules.Board
+	Turn() *rules.Turn
+	LegalMoves(seat rules.Seat, moves []rules.Move) []rules.Move
+	Open(seat rules.Seat, tile rules.Tile) (int, error)
+	Place(seat rules.Seat, tile rules.Tile, end rules.End) (rules.Placement, error)
+	EndTurn(seat rules.Seat) error
+	Draw(seat rules.Seat) (rules.Tile, error)
+	Pass(seat rules.Seat) error
+}
 type Level uint8
 
 const (
@@ -90,7 +109,7 @@ func (p *Player) Level() Level {
 	return p.level
 }
 
-func (p *Player) Act(m *rules.Match, seat rules.Seat) (Action, error) {
+func (p *Player) Act(m Table, seat rules.Seat) (Action, error) {
 	switch m.Phase() {
 	case rules.PhaseOpening:
 		return p.open(m, seat)
@@ -103,7 +122,7 @@ func (p *Player) Act(m *rules.Match, seat rules.Seat) (Action, error) {
 	return ActionNone, ErrNotActing
 }
 
-func (p *Player) open(m *rules.Match, seat rules.Seat) (Action, error) {
+func (p *Player) open(m Table, seat rules.Seat) (Action, error) {
 	if opening, forced := m.ForcedOpening(); forced {
 		if opening.Seat != seat {
 			return ActionNone, ErrNotActing
@@ -123,7 +142,7 @@ func (p *Player) open(m *rules.Match, seat rules.Seat) (Action, error) {
 	return ActionOpen, err
 }
 
-func (p *Player) bestOpening(m *rules.Match, seat rules.Seat, hand rules.Hand) rules.Tile {
+func (p *Player) bestOpening(m Table, seat rules.Seat, hand rules.Hand) rules.Tile {
 	config := m.Config()
 	scores := m.Scores()
 	best, bestValue := hand[0], -1
@@ -138,7 +157,7 @@ func (p *Player) bestOpening(m *rules.Match, seat rules.Seat, hand rules.Hand) r
 	return best
 }
 
-func (p *Player) play(m *rules.Match, seat rules.Seat) (Action, error) {
+func (p *Player) play(m Table, seat rules.Seat) (Action, error) {
 	moves := m.LegalMoves(seat, p.moves[:0])
 	if len(moves) == 0 {
 		if m.Turn().Placements() > 0 {
@@ -161,7 +180,7 @@ func (p *Player) play(m *rules.Match, seat rules.Seat) (Action, error) {
 	return ActionPlace, nil
 }
 
-func (p *Player) bestMove(m *rules.Match, seat rules.Seat, moves []rules.Move) rules.Move {
+func (p *Player) bestMove(m Table, seat rules.Seat, moves []rules.Move) rules.Move {
 	config := m.Config()
 	hand := m.Hand(seat)
 	best, bestValue := moves[0], -1
