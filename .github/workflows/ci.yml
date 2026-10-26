@@ -122,7 +122,43 @@ jobs:
           [ -z "$unformatted" ] || { echo "$unformatted"; exit 1; }
       - run: go vet ./...
       - run: go build ./...
-      - run: go test -race ./...
+      - run: go test -race -coverprofile=coverage.out ./...
+      - name: Rules coverage floor
+        run: |
+          rules=$(go tool cover -func=coverage.out | awk '$1 ~ /internal\/rules\// {total += 1} END {print total}')
+          percent=$(go test -cover ./internal/rules/ | grep -o 'coverage: [0-9.]*' | grep -o '[0-9.]*')
+          echo "server/internal/rules coverage: ${percent}% (${rules} functions)" | tee -a "$GITHUB_STEP_SUMMARY"
+          awk -v p="$percent" 'BEGIN { exit (p + 0 >= 95) ? 0 : 1 }' || { echo "rules coverage ${percent}% is below the 95% floor of docs/test-strategy.md section 11"; exit 1; }
+
+  bench:
+    needs: changes
+    if: needs.changes.outputs.server == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Benchmark this branch
+        run: go test -run='^$' -bench=. -benchmem -count=6 ./internal/rules/ | tee new.txt
+      - name: Benchmark main
+        run: |
+          git worktree add ../base "${{ github.event.pull_request.base.sha }}"
+          if [ -d ../base/server/internal/rules ]; then
+            (cd ../base/server && go test -run='^$' -bench=. -benchmem -count=6 ./internal/rules/) | tee old.txt
+          else
+            echo "no rules package on the base" | tee old.txt
+          fi
+      - name: benchstat against main
+        run: |
+          go run golang.org/x/perf/cmd/benchstat@latest old.txt new.txt | tee benchstat.txt || true
+          { echo '## Benchmarks against main (report only)'; echo '```'; cat benchstat.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   admin:
     needs: changes
