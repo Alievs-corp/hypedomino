@@ -310,7 +310,7 @@ func TestTimeoutsHandTheSeatToTheBotAndReconnectTakesItBack(t *testing.T) {
 	}
 }
 
-func TestALeaverIsPlayedByTheBotToTheEnd(t *testing.T) {
+func TestALeaverIsPlayedByTheBotUntilTheyComeBack(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1, 5)
 	tab.settle()
 	v := tab.snapshot(rules.SeatX)
@@ -321,8 +321,8 @@ func TestALeaverIsPlayedByTheBotToTheEnd(t *testing.T) {
 		t.Fatalf("after leaving: %+v", v)
 	}
 	tab.room.Reconnect(leaver, tab.sinks[leaver])
-	if v := tab.view(leaver); v.Controllers[leaver] != rules.ControllerBot {
-		t.Fatal("a leaver took the seat back")
+	if v := tab.view(leaver); v.Controllers[leaver] != rules.ControllerPlayer {
+		t.Fatal("a returning leaver did not take the seat back")
 	}
 	sequences := map[rules.Seat]uint64{}
 	for steps := 0; tab.humanStep(sequences); steps++ {
