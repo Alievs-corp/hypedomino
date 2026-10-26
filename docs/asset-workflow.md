@@ -94,7 +94,7 @@ What must be verified, per item:
 | RC-5 | Substantial human work is documented and its layered source files are kept in `work/` | Human work line, `work/` files |
 | RC-6 | The item passed `docs/localization.md` section 6 | Self-check and Cultural review lines |
 
-This document draws no legal conclusion on ownership, copyright protection or licensing of AI-generated images; those are owner items O-1 to O-4. Until they are closed, the record above is kept for every item so the answer can be applied to existing assets later.
+This document draws no legal conclusion on ownership, copyright protection or licensing of AI-generated images; those are owner items O-1 to O-4. The owner decided (2026-10-26) that the record above is enough until launch; O-2 and O-3 are reviewed with legal advice before launch, as part of gate GN-4 (`docs/launch-runbook.md` section 3), and the answer is applied to existing assets through their records.
 
 ## 4. Naming and folders
 
@@ -202,10 +202,10 @@ The acceptance check of #167. The art team fills the evidence column for one cha
 
 | Id | Item | Owner |
 |---|---|---|
-| O-1 | Which generator account is used (company plan, not personal), who holds it, and whether contractors may use their own accounts | Owner |
-| O-2 | The current terms of the chosen generator on ownership and commercial use of output, read and confirmed for this use | Owner, with legal advice |
-| O-3 | Whether copyright protection of AI-assisted art matters for the business, in which jurisdictions, and how much human work (RC-5) that needs | Owner, with legal advice |
-| O-4 | Whether any store or market requires disclosure of AI-generated content beyond `artSource`; how long provenance records are kept | Owner |
+| O-1 | Which generator account is used (company plan, not personal), who holds it, and whether contractors may use their own accounts | Owner, decided when concept production starts (W-1) |
+| O-2 | The current terms of the chosen generator on ownership and commercial use of output, read and confirmed for this use | Owner, with legal advice, before launch (GN-4) |
+| O-3 | Whether copyright protection of AI-assisted art matters for the business, in which jurisdictions, and how much human work (RC-5) that needs | Owner, with legal advice, before launch (GN-4) |
+| O-4 | Disclosure and retention | Decided 2026-10-26: AI use is disclosed only where Google Play or App Store rules require it, checked at GN-4; `artSource` stays in the manifest; `provenance.md` is kept in git for as long as the repository exists |
 | O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |

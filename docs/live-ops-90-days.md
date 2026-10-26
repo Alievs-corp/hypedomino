@@ -2,7 +2,7 @@
 
 The calendar, season 1 to 2 transition, balance update process and team rhythms from the global launch to the end of the first season. This document schedules values and procedures that other specs define; it defines no price, reward, duration, colour or rarity of its own. Every entry is an admin record or a scheduled change set (`docs/admin.md`), so nothing here needs a client release (`docs/roadmap.md` M4 exit criterion).
 
-Owned elsewhere and only referenced: launch timeline, incidents, on-call and rollback (`docs/launch-runbook.md`), ranked seasons and reset (`docs/ranking.md`), pass seasons, missions and medals (`docs/pass-missions-medals.md`), coins, shop, monitors (`docs/economy.md`), admin workflow and objects (`docs/admin.md`), content rules (`docs/cosmetics.md`, `docs/localization.md`). Operational numbers marked *default* follow the `docs/launch-runbook.md` convention: starting values, changed by PR to this file. Open owner decisions are section 9.
+Owned elsewhere and only referenced: launch timeline, incidents, on-call and rollback (`docs/launch-runbook.md`), ranked seasons and reset (`docs/ranking.md`), pass seasons, missions and medals (`docs/pass-missions-medals.md`), coins, shop, monitors (`docs/economy.md`), admin workflow and objects (`docs/admin.md`), content rules (`docs/cosmetics.md`, `docs/localization.md`). Operational numbers marked *default* follow the `docs/launch-runbook.md` convention: starting values, changed by PR to this file. Owner decisions are section 9.
 
 ## 1. Principles
 
@@ -22,8 +22,9 @@ Owned elsewhere and only referenced: launch timeline, incidents, on-call and rol
 | W0 | From Day 0 to the first Monday economy-week boundary; W1, W2, ... are the following economy weeks |
 | B | End of season 1 and start of season 2: one moment for ranked and pass seasons (`docs/pass-missions-medals.md` 2.1) |
 
-- This plan takes season 1 to start at Day 0 (OD-1). With `SeasonLengthMonths` 3 (`docs/ranking.md` 7.1), B falls on day 89 to 92, so the 90 days cover exactly season 1 and its transition. B may move later while season 1 runs, never earlier (`docs/admin.md` 5.12).
+- Season 1 starts at Day 0 (OD-1). With `SeasonLengthMonths` 3 (`docs/ranking.md` 7.1), B falls on day 89 to 92, so the 90 days cover exactly season 1 and its transition. B may move later while season 1 runs, never earlier (`docs/admin.md` 5.12).
 - Until #131 fixes reset time zones, the economy day starts at 00:00 UTC.
+- Soft launch (#196) progress does not carry over (OD-1). At Day 0 every account's MMR returns to `InitialMmr` and it plays placement again in both modes, as a new player (`docs/ranking.md` 4.2, 5), and its soft launch pass season ends with the normal season-end job, so purchased levels keep their earned rewards (`docs/pass-missions-medals.md` 2.7). The soft launch ranked season grants no rank rewards. Coins, owned cosmetics and medals are kept.
 
 ## 3. Recurring cadence
 
@@ -35,11 +36,12 @@ Everything below runs from published config without a manual step, except where 
 | Daily at `ShopRotationResetHourUtc` (0) UTC | Daily shop rotation, `ShopDailyRotationSlots` (4) offers | `docs/economy.md` 6.1 | Live-ops lead, a week ahead (7.3) |
 | Daily at `ApexRecalcHourUtc` (0) UTC | Grandmaster and Challenger recalculated per mode | `docs/ranking.md` 3.2 | Automatic |
 | Economy week (Monday) | Weekly missions (`WeeklyMissionSlots` 4), one reroll; weekly shop rotation, `ShopWeeklyRotationSlots` (2) offers | `docs/pass-missions-medals.md` 4.4, `docs/economy.md` 6.1 | Live-ops lead, a week ahead (7.3) |
-| Economy week | One live event slot: event window, event missions, event shop offers (OD-2) | `docs/admin.md` 5.13, `docs/pass-missions-medals.md` 4.6 | Live-ops lead, a week ahead (7.3) |
+| Every second economy week | One live event (OD-2): window Friday 00:00 UTC to Monday 00:00 UTC, event missions, event shop offers, one themed cosmetic set (OD-3) | `docs/admin.md` 5.13, `docs/pass-missions-medals.md` 4.6 | Live-ops lead, two weeks ahead (7.3) |
 | Season (B) | Ranked season end and soft reset, pass season rollover | Section 5 | Live-ops lead, before B (5.1) |
 
 - A rotation period without a schedule repeats the previous one (`docs/economy.md` 6.1). A missed rotation entry is therefore a content gap, not an outage.
-- New cosmetics reach players only through a source record: a rotation or featured offer, an event, a mission, a pass level or a rank reward (`docs/cosmetics.md` section 5). The weekly volume of new items is OD-3.
+- New cosmetics reach players only through a source record: a rotation or featured offer, an event, a mission, a pass level or a rank reward (`docs/cosmetics.md` section 5). New items arrive as one themed set of 6 to 8 items per event plus the pass season tracks (OD-3).
+- Event reward bundles carry no coins (OD-2): they grant the event's cosmetics and medals, and the event shop sells the set for coins, so events add sinks, not sources (`docs/economy.md` 2.7, 10). A regional holiday (`docs/localization.md` 6) replaces the next regular event; it does not add one.
 - An event window does not cross B, so all of an event's pass XP (at most `EventMissionXpBudget` 3000) lands in one pass season.
 
 ## 4. Calendar, Day 0 to B + 72h
@@ -52,9 +54,10 @@ Everything below runs from published config without a manual step, except where 
 | From W1 | Weekly review each economy week (7.3); it schedules the following week's rotations and event slot | |
 | Day 7 | First full rolling 7-day sink ratio (`docs/economy.md` section 10) | The first weekly review after Day 7 is the first that may decide an economy change |
 | Day 14 | End of the on-call schedule required by GN-25 | Extended before it runs out, through B + 72h (7.1) |
-| Day 30 | Pass pacing checkpoint 1: sample levels light 24, regular 43, heavy 69 | `docs/pass-missions-medals.md` 8.1 |
+| Day 30 | Pass pacing checkpoint 1: sample levels light 24, regular 43, heavy 69. Season 2 theme chosen (OD-8) | `docs/pass-missions-medals.md` 8.1 |
 | Day 45 | Heavy profile reaches level 100 | Same; pass rewards end for that group, shop and events remain |
 | Day 60 | Pass pacing checkpoint 2: light 43, regular 80, heavy 100 | Same |
+| Day 75 | Season 2 pass track items and season 2 rank reward items published in admin (OD-8) | Leaves the last weekly reviews before B for strings and the staging run (5.1) |
 | Day 77 | Regular profile reaches level 100 | Same |
 | Weekly review before B | Season 2 change sets approved and scheduled (5.1); season-end banners and push campaigns scheduled | Last review with time to fix a rejected publish |
 | B - 1d to B + 72h | Season boundary window (5.2) | *default*, mirrors the launch window of `docs/launch-runbook.md` section 7 |
@@ -141,7 +144,7 @@ A lever is a config key or admin object that already exists. A signal without a 
 
 | Step | Rule |
 |---|---|
-| Cadence | OD-7 |
+| Cadence | Server weekly on Tuesday; client every second Tuesday (OD-7, *default*). Tuesday keeps deploys away from the Monday economy boundary and the weekend event window |
 | Candidate | Tagged from `main`; regression RG-1 to RG-13 (`docs/test-strategy.md` 8) |
 | Server | Canary and drain (`docs/launch-runbook.md` 5.1); server before client |
 | Client | Play staged rollout and App Store phased release (`docs/launch-runbook.md` 5.2); risky features behind a flag (#145) |
@@ -176,18 +179,20 @@ Every entry is created on its own screen and shows in the calendar view A-21 (`d
 
 Windows inside published objects need no scheduled publish; they run on server time (`docs/admin.md` 3.5).
 
-## 9. Open owner decisions
+## 9. Owner decisions
 
-| Id | Question | Plan until decided |
+Decided by the owner on 2026-10-26.
+
+| Id | Question | Decision |
 |---|---|---|
-| OD-1 | Does season 1 start at the global launch (Day 0), and what happens to soft launch (#196) ranks and pass progress? | Season 1 from Day 0 |
-| OD-2 | Live event cadence, window length, coin rewards (no event coin budget exists in `docs/economy.md`) and theme per event; regional holiday events (`docs/localization.md` 6) | One event slot per economy week, none scheduled until decided |
-| OD-3 | Number of new cosmetics per week and per season beyond the launch content gate (#198) | Rotations repeat existing items |
-| OD-4 | Targets for D1, D7, ARPDAU and matches per day (#196) | Report without thresholds |
-| OD-5 | Tolerance for pass pacing and mission completion before XP or targets change | No pacing change without an owner call |
-| OD-6 | Targets for rank distribution, placement outcome, dodge rate and ranked queue wait | No coefficient change without an owner call |
-| OD-7 | Release train cadence for server and client | Release on demand per `docs/launch-runbook.md` 5 |
-| OD-8 | Season 2 theme, pass track items and rank reward items | Required before 5.1 can finish |
+| OD-1 | Season 1 start and soft launch progress | Season 1 starts at Day 0. Soft launch rank and pass progress reset; coins, cosmetics and medals stay (section 2) |
+| OD-2 | Live event cadence, length and rewards | One event every second economy week, Friday to Monday (3 days). No coins in event bundles; cosmetics and medals only, event set sold for coins. Theme chosen at the weekly review two weeks ahead |
+| OD-3 | New cosmetics after launch | One themed set of 6 to 8 items per event (about 45 items in 90 days) plus each season's pass tracks |
+| OD-4 | Targets for D1, D7, ARPDAU and matches per day | Set by the owner from the first two weeks of soft launch data (#196); until then the report runs without thresholds |
+| OD-5 | Tolerance for pass pacing and mission completion | Same as OD-4; no pacing change without an owner call until set |
+| OD-6 | Targets for rank distribution, placement, dodges, queue wait | Same as OD-4; no coefficient change without an owner call until set |
+| OD-7 | Release train cadence | Server weekly, client every two weeks, both on Tuesday; hotfix outside the train (7.2) |
+| OD-8 | Season 2 content | Theme on day 30; pass track items and rank reward items published by day 75 (section 4) |
 
 ## 10. Implementation
 
