@@ -1,0 +1,13 @@
+{
+  "protocolVersion": 1,
+  "sequence": 42,
+  "clientHello": {
+    "appVersion": "1.0.0",
+    "buildHash": "9f2c4d1e",
+    "platform": "PLATFORM_IOS",
+    "osVersion": "18.1",
+    "deviceModel": "reference-high",
+    "sessionToken": "sess_01HZX",
+    "lastAckedSequence": "41"
+  }
+}

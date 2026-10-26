@@ -1,0 +1,8 @@
+{
+  "protocolVersion": 1,
+  "sequence": 7,
+  "placeTileIntent": {
+    "tile": { "low": 2, "high": 3 },
+    "end": "BOARD_END_LEFT"
+  }
+}
