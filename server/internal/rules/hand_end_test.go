@@ -137,8 +137,63 @@ func TestHandEndDoesNotAllocate(t *testing.T) {
 	allocations := testing.AllocsPerRun(100, func() {
 		Mode2v2.HandStatus(&board, hands, nil)
 		DominoResult(Mode2v2, config, SeatNorth, hands, HandScores{})
+		BlockResult(Mode2v2, config, SeatNorth, hands, HandScores{})
 	})
 	if allocations != 0 {
 		t.Fatalf("hand end allocates %.0f times", allocations)
+	}
+}
+
+func TestBlockResultLowerTotalScoresTheOtherTotal(t *testing.T) {
+	config := DefaultConfig()
+	hands := map[Seat]Hand{
+		SeatNorth: tiles("0-1"),
+		SeatEast:  tiles("3-5"),
+		SeatSouth: tiles("0-2"),
+		SeatWest:  tiles("1-4"),
+	}
+	scores := HandScores{AtHandStart: TeamPoints{200, 180}, Current: TeamPoints{210, 180}, CarryOver: 35}
+	got := BlockResult(Mode2v2, config, SeatWest, hands, scores)
+	want := HandResult{
+		Pips:       TeamPoints{3, 13},
+		Winner:     TeamA,
+		HasWinner:  true,
+		Awarded:    TeamPoints{50, 0},
+		CarryOver:  0,
+		Scores:     TeamPoints{260, 180},
+		NextOpener: TeamB,
+	}
+	if got != want {
+		t.Fatalf("BlockResult = %+v, want %+v", got, want)
+	}
+	scores.AtHandStart[TeamA] = 300
+	got = BlockResult(Mode2v2, config, SeatWest, hands, scores)
+	if got.Awarded != (TeamPoints{}) || got.Scores != scores.Current || got.CarryOver != 0 || got.Winner != TeamA {
+		t.Fatalf("locked block winner: %+v", got)
+	}
+}
+
+func TestBlockResultEqualTotalsKeepCarryOver(t *testing.T) {
+	config := DefaultConfig()
+	hands := map[Seat]Hand{SeatX: tiles("3-4"), SeatY: tiles("1-6")}
+	cases := []struct {
+		carryOver, atHandStartA, want int
+	}{
+		{0, 60, 15},
+		{35, 60, 50},
+		{35, 300, 50},
+	}
+	for _, c := range cases {
+		scores := HandScores{AtHandStart: TeamPoints{c.atHandStartA, 60}, Current: TeamPoints{c.atHandStartA, 70}, CarryOver: c.carryOver}
+		got := BlockResult(Mode1v1, config, SeatY, hands, scores)
+		want := HandResult{
+			Pips:       TeamPoints{7, 7},
+			CarryOver:  c.want,
+			Scores:     scores.Current,
+			NextOpener: TeamB,
+		}
+		if got != want {
+			t.Fatalf("carry-over %d: BlockResult = %+v, want %+v", c.carryOver, got, want)
+		}
 	}
 }
