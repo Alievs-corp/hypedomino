@@ -25,6 +25,7 @@ type vectorFile struct {
 
 var vectorRunners = map[string]func(*testing.T, vector){
 	"deal":          runDealVector,
+	"seat":          runSeatVector,
 	"place":         runPlaceVector,
 	"draw":          runDrawVector,
 	"opening-score": runOpeningScoreVector,
@@ -32,7 +33,6 @@ var vectorRunners = map[string]func(*testing.T, vector){
 }
 
 var pendingVectorKinds = map[string]bool{
-	"seat":         true,
 	"first-opener": true,
 	"hand-status":  true,
 	"round":        true,
@@ -286,5 +286,23 @@ func runTurnVector(t *testing.T, v vector) {
 	}
 	if turn.Score() != expect.TurnScore {
 		t.Fatalf("turnScore = %d, want %d", turn.Score(), expect.TurnScore)
+	}
+}
+
+func runSeatVector(t *testing.T, v vector) {
+	var given struct {
+		Seat Seat
+	}
+	var expect struct {
+		Team Team
+		Next Seat
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	if given.Seat.Team() != expect.Team {
+		t.Fatalf("team = %s, want %s", given.Seat.Team(), expect.Team)
+	}
+	if given.Seat.Next() != expect.Next {
+		t.Fatalf("next = %s, want %s", given.Seat.Next(), expect.Next)
 	}
 }
