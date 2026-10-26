@@ -367,15 +367,16 @@ func runHandEndVector(t *testing.T, v vector) {
 	}
 	decodeVector(t, v.Given, &given)
 	decodeVector(t, v.Expect, &expect)
-	if given.End == HandBlocked {
-		t.Skip("block scoring has no engine function yet")
-	}
 	scores := HandScores{
 		AtHandStart: given.ScoresAtHandStart.points(),
 		Current:     given.Scores.points(),
 		CarryOver:   given.CarryOver,
 	}
-	got := DominoResult(v.Mode, DefaultConfig(), given.LastPlacedBy, given.Hands, scores)
+	settle := DominoResult
+	if given.End == HandBlocked {
+		settle = BlockResult
+	}
+	got := settle(v.Mode, DefaultConfig(), given.LastPlacedBy, given.Hands, scores)
 	want := HandResult{
 		Pips:       expect.Pips.points(),
 		HasWinner:  expect.Winner != nil,

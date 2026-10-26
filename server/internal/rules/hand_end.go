@@ -98,6 +98,25 @@ func DominoResult(mode Mode, config Config, lastPlacedBy Seat, hands map[Seat]Ha
 	return result
 }
 
+func BlockResult(mode Mode, config Config, lastPlacedBy Seat, hands map[Seat]Hand, scores HandScores) HandResult {
+	result := HandResult{
+		Pips:       mode.TeamPips(hands),
+		Scores:     scores.Current,
+		NextOpener: lastPlacedBy.Team(),
+	}
+	if result.Pips[TeamA] == result.Pips[TeamB] {
+		result.CarryOver = scores.CarryOver + HandPoints(result.Pips[TeamA]+result.Pips[TeamB], config)
+		return result
+	}
+	winner := TeamA
+	if result.Pips[TeamB] < result.Pips[TeamA] {
+		winner = TeamB
+	}
+	result.Winner = winner
+	result.HasWinner = true
+	result.award(winner, HandPoints(result.Pips[winner.Other()], config), scores, config)
+	return result
+}
 func (r *HandResult) award(winner Team, points int, scores HandScores, config Config) {
 	if scores.AtHandStart[winner] >= config.HandPointsLockThreshold {
 		return
