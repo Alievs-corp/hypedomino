@@ -261,7 +261,7 @@ Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use show
 | `referencePrice` | Optional struck-through price, validated by `docs/economy.md` 6.3 |
 | `regionalOverrideNote` | Text; a store-console override needs owner approval (`docs/economy.md` 7.4) |
 
-A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (open item O-3).
+A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (owner decision O-3).
 
 ### 5.6 Store products and coin packs
 
@@ -462,7 +462,7 @@ Every action goes through the same server path a game event would use, so it obe
 | Revoke emblem | `docs/ranking.md` 8.3; leaves the showcase at once | No |
 | Force rename | `docs/localization.md` 5.6 | No |
 | Edit targeted promo list | 5.11 | No |
-| Mute | Not specified; open item O-4 | - |
+| Mute | For `ModerationMuteHours`, the player cannot send in-match emoji or quick messages (#151, #152); play is unaffected (owner decision O-4) | - |
 
 - Every action needs a reason. Players see the effect through server notices (`docs/localization.md` section 3), never the reason text.
 - Support cannot refund money (stores only), cannot delete an account (the player does, `docs/privacy.md` 8.2) and cannot export a player's data (the player does, 8.3).
@@ -508,26 +508,25 @@ Records of objections and other requests handled through support (`docs/privacy.
 
 ## 8. Two-person rule
 
-Proposal for owner decision (O-1). A high-risk action is first proposed, then confirmed by a second admin holding the same permission. Self-approval is impossible; a proposal expires after `AdminApprovalTtlHours`.
+Owner decision (2026-10-26, O-1): the rule covers the high-risk actions below; ordinary production publishes and rollbacks are made by one author and rely on validation, the audit log and rollback. A high-risk action is first proposed, then confirmed by a second admin holding the same permission. Self-approval is impossible; a proposal expires after `AdminApprovalTtlHours`.
 
 | Action | Proposer | Approver |
 |---|---|---|
-| Production publish and rollback (3.5) | Author with P | Another account with P on every object |
 | Grant or adjust above `AdminGrantApprovalCoins`, or with a `mythic` item | `support` | Another `support` or `super_admin` |
 | Promo code above `PromoCoinsApprovalThreshold` or with a `mythic` item | `live_ops` | Another `live_ops` or `super_admin` (`docs/economy.md` section 8) |
 | Permanent ban and its lift | `support` | Another `support` or `super_admin` |
 | Section 4 control in production, except promo code disable | `live_ops` or `super_admin` | Another `live_ops` or `super_admin` |
 | Granting `super_admin` | `super_admin` | Another `super_admin` |
 
-Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control or publish a rollback alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
+Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 
 ## 9. Security
 
 | Item | Rule |
 |---|---|
 | Login | SSO through the company identity provider (Google Workspace, #134). No local passwords and no shared accounts |
-| Second factor | Enforced by the identity provider for every admin; proposal: phishing-resistant keys (security key or passkey) for `super_admin` (O-5) |
-| Network | Proposal: the panel is reachable only through the company VPN or an access proxy, with an IP allowlist on its egress (O-2) |
+| Second factor | Enforced by the identity provider for every admin; phishing-resistant keys (security key or passkey) for `super_admin` (O-5) |
+| Network | The panel is reachable only through an identity-aware access proxy in front of SSO with 2FA; no public endpoint, no VPN (owner decision O-2) |
 | Session | Server-side session, cookie `HttpOnly`, `Secure`, `SameSite=Strict`. Idle timeout `AdminSessionIdleMinutes`, absolute limit `AdminSessionMaxHours` |
 | Step-up | Every `S` action and every approval needs a sign-in no older than `AdminStepUpMinutes` |
 | Admin API | Separate host and credentials, never player tokens (ADR 0006). The browser talks only to the admin web server; the admin API authorises every request from the admin's identity and roles |
@@ -574,7 +573,7 @@ Every list screen paginates on the server, filters by state and searches by id a
 
 ## 11. Config
 
-Deployment config of the admin API (section 9), changed by pull request. Values are proposed defaults for owner approval (O-6).
+Deployment config of the admin API (section 9), changed by pull request. Values are launch defaults (O-6).
 
 | Key | Proposed default | Section |
 |---|---|---|
@@ -584,6 +583,8 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 | `AdminApprovalTtlHours` | 24 | 8 |
 | `AdminGrantApprovalCoins` | 2000, the value of `PromoCoinsApprovalThreshold` | 6.2, 8 |
 | `AdminInactiveDisableDays` | 30 | 5.18 |
+
+Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
 Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`).
 
@@ -609,14 +610,17 @@ Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength
 | #213 Admin UI localization | 10 |
 | #214 Game string management | 5.15, 3.7 |
 
-## 13. Open items and owner decisions
+## 13. Decisions
 
-| Id | Question | Proposal |
+Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead.
+
+| Id | Question | Decision |
 |---|---|---|
-| O-1 | Two-person rule scope (section 8) | As listed, including four-eyes on every production publish, with break-glass for incidents |
-| O-2 | Network restriction for the panel | VPN or access proxy with an egress IP allowlist |
-| O-3 | Variant tests in the shop (#139 asks for A/B variants) | Presentation only; price, content, window and eligibility are the same for everyone (`docs/economy.md` EP-8) |
-| O-4 | Meaning of "mute" in #144: there is no free-text chat (`docs/localization.md` 5.7) | Either drop it, or define it as blocking in-match emoji and quick messages for a duration (#151, #152) in a spec change first |
+| O-1 | Two-person rule scope (section 8) | High-risk actions only; ordinary production publishes need one author. Break-glass for incidents |
+| O-2 | Network restriction for the panel | Identity-aware access proxy in front of SSO with 2FA; no public endpoint |
+| O-3 | Variant tests in the shop (#139) | Presentation only; price, content, window and eligibility are the same for everyone (`docs/economy.md` EP-8) |
+| O-4 | Meaning of "mute" in #144 | Blocks in-match emoji and quick messages for `ModerationMuteHours`; play is unaffected |
 | O-5 | Second factor for `super_admin` | Phishing-resistant keys only |
 | O-6 | Section 11 defaults | As listed |
-| O-7 | Pass, mission and medal fields (5.7 to 5.9) | Final fields come with #9 and update this document in the same PR |
+
+Open: pass, mission and medal fields (5.7 to 5.9) take their final shape from #9, which updates this document in the same PR.
