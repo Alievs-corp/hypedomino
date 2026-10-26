@@ -51,11 +51,11 @@ Coins per completed match:
 - A 2v2 match is longer, so it pays more per match; per hour both ranked modes earn the same within one coin (section 11).
 - Casual is the unranked matchmaking queue (R-56). Casual earns about 60% of ranked per hour because it may fill seats with bots (#48) and is the easier farm target.
 - A casual match that started with a bot-filled seat pays `BotSeatRewardPercent` (50) of the table value, rounded to the nearest integer, halves away from zero. A bot that replaces an AFK or leaving player during a match (R-50 to R-52) reduces nobody's reward.
-- Custom rooms (R-55) pay no coins: players pick the teams, so wins can be arranged. Whether they advance missions and medals is #9.
-- AFK and leave offenders follow `docs/penalties.md` section 5 (no coins, except AFK returned). Partners and opponents get the normal reward.
+- Custom rooms (R-55) pay no coins: players pick the teams, so wins can be arranged. They give no pass XP and advance no missions or medals (`docs/pass-missions-medals.md` section 3).
+- AFK and leave offenders in ranked and casual matches get no coins, except AFK returned (`docs/penalties.md` sections 5 and 6). Partners and opponents get the normal reward.
 - A match cancelled by the server pays nothing.
 - No bonus for score margin or match length: margin rewards running up the score, and length is already priced per mode.
-- `DailyMatchCoinCap` (400) limits match coins per account per economy day. A reward that would cross the cap is cut to the remainder; after the cap a match pays 0 coins and still gives pass XP and mission progress (#9). The first-win bonus is outside the cap.
+- `DailyMatchCoinCap` (400) limits match coins per account per economy day. A reward that would cross the cap is cut to the remainder; after the cap a match pays 0 coins and still gives pass XP and mission progress (`docs/pass-missions-medals.md` 2.3). The first-win bonus is outside the cap.
 
 ### 2.2 First win of the day
 
@@ -70,11 +70,11 @@ Coins per completed match:
 
 ### 2.4 Missions
 
-Mission types, goals and the split of rewards are #9. Their coins come from fixed budgets: `DailyMissionCoinBudget` (120) per economy day for all daily missions together, `WeeklyMissionCoinBudget` (600) per week for all weekly missions. Admin publish rejects a mission set above its budget. One-time achievement missions are outside the steady-state budget; #110 reports their total.
+Mission types, goals and the split of rewards: `docs/pass-missions-medals.md` section 4. Their coins come from fixed budgets: `DailyMissionCoinBudget` (120) per economy day for all daily missions together, `WeeklyMissionCoinBudget` (600) per week for all weekly missions. Admin publish rejects a mission set above its budget. One-time achievement missions are outside the steady-state budget; #110 reports their total.
 
 ### 2.5 Pass
 
-Season length, levels and the XP curve are #9. Coin budget per pass season: `PassFreeTrackCoins` (1500) on the free track, `PassPremiumTrackCoins` (3000) on the premium track. Admin publish rejects a season above its budget. The premium track returns more coins than its price buys at the reference rate (section 11).
+Season length, levels and the XP curve: `docs/pass-missions-medals.md` section 2. Coin budget per pass season: `PassFreeTrackCoins` (1500) on the free track, `PassPremiumTrackCoins` (3000) on the premium track. Admin publish rejects a season above its budget. The premium track returns more coins than its price buys at the reference rate (section 11).
 
 ### 2.6 Rank rewards
 
@@ -223,7 +223,7 @@ Products `coins_tier1` to `coins_tier5`. USD prices `CoinPackUsd` (0.99, 4.99, 9
 
 - `pass_premium`, `PassPremiumUsd` (4.99): unlocks the premium track of the current pass season.
 - `pass_premium_plus`, `PassPremiumPlusUsd` (9.99): the premium track plus `PassPremiumPlusLevels` (20) levels.
-- The server binds the product to the pass season active at the store's purchase time. A second premium purchase in the same season is rejected before the store flow starts (#125). Premium rewards of levels already reached unlock at once (#9).
+- The server binds the product to the pass season active at the store's purchase time. A second premium purchase in the same season is rejected before the store flow starts (#125). Premium rewards of levels already reached unlock at once (`docs/pass-missions-medals.md` 2.5).
 
 ### 7.3 Starter and first-purchase offers
 
@@ -306,7 +306,7 @@ Inputs are [`docs/economy/balance.csv`](economy/balance.csv): one row per key, c
 | `ModelMatchMinutes` | 10, 14 | Average 1v1 and 2v2 match to 365. Estimate; replace with closed-beta telemetry (#193) |
 | `ModelBetweenMatchMinutes` | 1 | Queue and result screens between matches |
 | `ModelWinRatePercent` | 50 | Matchmaking aims at even matches |
-| `ModelPassSeasonDays` | 90 | Same length as a ranked season (`docs/ranking.md` 7.1) until #9 decides |
+| `ModelPassSeasonDays` | 90 | Same window as a ranked season (`docs/ranking.md` 7.1, `docs/pass-missions-medals.md` 2.1) |
 | `ModelProfileHours` | 0.5, 1, 3 | Hours of ranked 1v1 per day for light, regular and heavy players |
 | `ModelProfileMissionPercent` | 50, 100, 100 | Share of mission and free-track coins each profile collects |
 | `CoinsPerUsdReference` | 500 | Reference rate the pack bonuses are measured against |
