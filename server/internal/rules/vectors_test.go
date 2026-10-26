@@ -30,13 +30,13 @@ var vectorRunners = map[string]func(*testing.T, vector){
 	"draw":          runDrawVector,
 	"opening-score": runOpeningScoreVector,
 	"turn":          runTurnVector,
+	"hand-status":   runHandStatusVector,
+	"round":         runRoundVector,
+	"hand-end":      runHandEndVector,
 }
 
 var pendingVectorKinds = map[string]bool{
 	"first-opener": true,
-	"hand-status":  true,
-	"round":        true,
-	"hand-end":     true,
 	"match-end":    true,
 	"turn-timer":   true,
 	"afk":          true,
@@ -304,5 +304,90 @@ func runSeatVector(t *testing.T, v vector) {
 	}
 	if given.Seat.Next() != expect.Next {
 		t.Fatalf("next = %s, want %s", given.Seat.Next(), expect.Next)
+	}
+}
+
+func runHandStatusVector(t *testing.T, v vector) {
+	var given struct {
+		Board    vectorBoard
+		Hands    map[Seat]Hand
+		Boneyard Boneyard
+	}
+	var expect struct {
+		Status HandStatus
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	board := boardFromVector(t, given.Board)
+	if got := v.Mode.HandStatus(&board, given.Hands, given.Boneyard); got != expect.Status {
+		t.Fatalf("status = %s, want %s", got, expect.Status)
+	}
+}
+
+func runRoundVector(t *testing.T, v vector) {
+	var given struct {
+		Pips int
+	}
+	var expect struct {
+		Points int
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	if got := HandPoints(given.Pips, DefaultConfig()); got != expect.Points {
+		t.Fatalf("HandPoints(%d) = %d, want %d", given.Pips, got, expect.Points)
+	}
+}
+
+type vectorTeamPoints struct {
+	A int
+	B int
+}
+
+func (p vectorTeamPoints) points() TeamPoints {
+	return TeamPoints{p.A, p.B}
+}
+
+func runHandEndVector(t *testing.T, v vector) {
+	var given struct {
+		End               HandStatus
+		LastPlacedBy      Seat
+		Hands             map[Seat]Hand
+		Boneyard          Boneyard
+		ScoresAtHandStart vectorTeamPoints
+		Scores            vectorTeamPoints
+		CarryOver         int
+	}
+	var expect struct {
+		Pips            vectorTeamPoints
+		Winner          *Team
+		Awarded         vectorTeamPoints
+		CarryOver       int
+		Scores          vectorTeamPoints
+		NextOpeningTeam Team
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	if given.End == HandBlocked {
+		t.Skip("block scoring has no engine function yet")
+	}
+	scores := HandScores{
+		AtHandStart: given.ScoresAtHandStart.points(),
+		Current:     given.Scores.points(),
+		CarryOver:   given.CarryOver,
+	}
+	got := DominoResult(v.Mode, DefaultConfig(), given.LastPlacedBy, given.Hands, scores)
+	want := HandResult{
+		Pips:       expect.Pips.points(),
+		HasWinner:  expect.Winner != nil,
+		Awarded:    expect.Awarded.points(),
+		CarryOver:  expect.CarryOver,
+		Scores:     expect.Scores.points(),
+		NextOpener: expect.NextOpeningTeam,
+	}
+	if expect.Winner != nil {
+		want.Winner = *expect.Winner
+	}
+	if got != want {
+		t.Fatalf("result = %+v, want %+v", got, want)
 	}
 }
