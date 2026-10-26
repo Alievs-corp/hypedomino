@@ -323,7 +323,7 @@ Inputs from `docs/economy.md` section 11: ranked 1v1, 10-minute matches plus 1 m
 
 ### 8.2 Levels and rewards
 
-Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level. Premium track: 30 coins on every level (3000), a cosmetic on level 1 and every tenth level. Cosmetics at guide prices (`docs/economy.md` 3.1): free 11850 coins, premium 45000 coins.
+Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level. Premium track: 30 coins on every level (3000), a cosmetic on level 1 and every tenth level. Cosmetics at guide prices (`docs/economy.md` 3.1): free 11850 coins, premium 45000 coins. `node tools/pass-season/pass-season.mjs` checks the table against the curve (2.2) and the track budgets in `docs/economy/balance.csv` (2.4); CI runs it through `npm run test:tools`.
 
 | Level | XP total to reach | Free | Premium |
 |---|---|---|---|
