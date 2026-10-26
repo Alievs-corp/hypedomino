@@ -117,7 +117,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 
 | Visible to | Data |
 |---|---|
-| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4) |
+| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4), earned medals chosen for the medal showcase (`docs/pass-missions-medals.md` 5.4) |
 | Room members | Custom room name, seats, in-match emoji and quick messages |
 | Friends | Online presence (#153) |
 | Nobody | Email, auth identity, MMR, install id, IP, purchases, offenses, anti-cheat data, reports |

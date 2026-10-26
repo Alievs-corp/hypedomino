@@ -278,6 +278,7 @@ Owner decision (2026-10-26). A season-end finish near the top of a board earns a
 - A player chooses up to `ProfileEmblemSlots` (default 3) of their own emblems and their order for their public profile. Slots may stay empty.
 - The client sends only the chosen emblem ids. The server accepts an id only if the account owns that emblem and stores the showcase; other players always see the server's copy (`docs/anti-cheat.md` NT-9).
 - A revoked emblem leaves the showcase at once.
+- The medal collection screen lists emblems in their own section; emblems are not medals (`docs/pass-missions-medals.md` 5.5).
 
 ## 9. No bot fill in ranked play
 
