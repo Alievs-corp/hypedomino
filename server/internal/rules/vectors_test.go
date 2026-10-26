@@ -26,6 +26,7 @@ type vectorFile struct {
 var vectorRunners = map[string]func(*testing.T, vector){
 	"deal":  runDealVector,
 	"place": runPlaceVector,
+	"draw":  runDrawVector,
 }
 
 var pendingVectorKinds = map[string]bool{
@@ -33,7 +34,6 @@ var pendingVectorKinds = map[string]bool{
 	"first-opener":  true,
 	"opening-score": true,
 	"turn":          true,
-	"draw":          true,
 	"hand-status":   true,
 	"round":         true,
 	"hand-end":      true,
@@ -196,5 +196,31 @@ func runPlaceVector(t *testing.T, v vector) {
 	}
 	if ends.Total() != expect.Total {
 		t.Fatalf("total = %d, want %d", ends.Total(), expect.Total)
+	}
+}
+
+func runDrawVector(t *testing.T, v vector) {
+	var given struct {
+		Board    vectorBoard
+		Hand     Hand
+		Boneyard Boneyard
+	}
+	var expect struct {
+		Drawn   []Tile
+		Outcome TurnOutcome
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	board := boardFromVector(t, given.Board)
+	var buffer [SetSize]Tile
+	drawn, outcome := DrawUntilPlayable(v.Mode, &board, &given.Hand, &given.Boneyard, buffer[:0])
+	if outcome != expect.Outcome {
+		t.Fatalf("outcome = %v, want %v", outcome, expect.Outcome)
+	}
+	if !sameTiles(drawn, expect.Drawn) {
+		t.Fatalf("drawn = %v, want %v", drawn, expect.Drawn)
+	}
+	if (outcome == OutcomePlace) != board.HasLegalMove(given.Hand) {
+		t.Fatalf("outcome %v but HasLegalMove %v", outcome, board.HasLegalMove(given.Hand))
 	}
 }
