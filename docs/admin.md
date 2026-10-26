@@ -2,7 +2,7 @@
 
 Roles and permissions, every object the admin panel manages with its fields and lifecycle, the draft, preview, publish and schedule workflow over versioned config snapshots, validation, rollback, live controls, player tools, the audit log, the two-person rule, security, and the screen list. Architecture is ADR 0006: a separate Next.js app that talks only to the admin API; the admin API validates and writes config, the game server reads published snapshots.
 
-Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs/cosmetics/schema.json`), rarity (`docs/rarity.md`), economy values and rules (`docs/economy.md`, `docs/economy/balance.csv`), ranking (`docs/ranking.md`), pass, missions and medals (`docs/pass-missions-medals.md`), penalties (`docs/penalties.md`), anti-cheat responses (`docs/anti-cheat.md`), personal data and its access (`docs/privacy.md`), strings and moderation lists (`docs/localization.md`), kill switch procedures (`docs/launch-runbook.md`). No colour, price, duration or reward value is defined here. Names in `CamelCase` code font are config keys; section 11 lists the keys this document adds. Implementation is Epic 12 (#133); section 12 maps sections to its sub-issues.
+Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs/cosmetics/schema.json`), rarity (`docs/rarity.md`), economy values and rules (`docs/economy.md`, `docs/economy/balance.csv`), ranking (`docs/ranking.md`), pass, missions and medals (`docs/pass-missions-medals.md`), penalties (`docs/penalties.md`), anti-cheat responses (`docs/anti-cheat.md`), personal data and its access (`docs/privacy.md`), strings and moderation lists (`docs/localization.md`), kill switch procedures (`docs/launch-runbook.md`), the post-launch live-ops calendar (`docs/live-ops-90-days.md`). No colour, price, duration or reward value is defined here. Names in `CamelCase` code font are config keys; section 11 lists the keys this document adds. Implementation is Epic 12 (#133); section 12 maps sections to its sub-issues.
 
 ## 1. Principles
 
@@ -382,6 +382,21 @@ Everything is editable until start (#143). While live, only the non-structural k
 - Promotional sends reach only accounts with `promotional_push` consent (`docs/privacy.md` 6.2). Live-ops sees audience counts, never recipients (AP-7).
 - Every text is a game string key in all four languages before publish.
 - Events, banners, rotations, scheduled change sets and season boundaries share one calendar view (#146).
+
+Calendar (A-21). The calendar holds no data of its own: an entry exists because a published or scheduled object has a window or an activation time, and it links to that object and its change set. A planned entry is entered by creating the object on its own screen with its window, or by scheduling a change set (3.5).
+
+| Entry | Object | Screen |
+|---|---|---|
+| Ranked season start and end | 5.12 | A-19 |
+| Pass season window | 5.7 | A-16 |
+| Live event window, with its event missions and event shop offers | 5.13, 5.8, 5.5 | A-22, A-17, A-12 |
+| Daily and weekly rotation period | 5.5 | A-13 |
+| Featured offer window | 5.5 | A-12 |
+| Banner window, push send time | 5.13 | A-23, A-24 |
+| Promo code window | 5.11 | A-15 |
+| Scheduled change set activation | 5.17 | A-2, A-3 |
+
+The plan for the first 90 days after launch, entered this way, is `docs/live-ops-90-days.md`.
 
 ### 5.14 Config values and feature flags
 
