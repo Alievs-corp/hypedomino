@@ -48,7 +48,7 @@ Legal basis codes (GDPR article; KVKK Law No. 6698 article):
 | LI | Art. 6(1)(f) legitimate interest, with a documented balancing test (checklist L-7) | Art. 5(2)(f); for dispute evidence also 5(2)(e) |
 | CNS | Art. 6(1)(a) consent, plus ePrivacy Art. 5(3) for device access | Art. 5(1) explicit consent |
 
-Access roles are the admin roles of #134 (super admin, content, live-ops, support, analyst) plus `eng` (production infrastructure access through #24, audited). Content and live-ops roles see no personal data. Retention keys are defined in section 4.
+Access roles are the admin roles of `docs/admin.md` section 2 (super admin, content, live-ops, support, analyst) plus `eng` (production infrastructure access through #24, audited). Super admin also holds every access listed for the other admin roles. Content and live-ops roles see no personal data. Retention keys are defined in section 4.
 
 | ID | Data item | Source | Purpose | Basis | Storage | Retention | Access | Processor |
 |---|---|---|---|---|---|---|---|---|
