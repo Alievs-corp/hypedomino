@@ -40,8 +40,6 @@ var vectorRunners = map[string]func(*testing.T, vector){
 	"afk":           runAfkVector,
 }
 
-var pendingVectorKinds = map[string]bool{}
-
 func TestRuleVectors(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join(vectorsDir, "*.json"))
 	if err != nil {
