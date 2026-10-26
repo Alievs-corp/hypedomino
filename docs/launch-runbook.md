@@ -37,7 +37,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-1 | Gate 1: no open `priority:p0` or `priority:p1` issue | Release manager | Output of both `gh issue list` commands from the gate, pasted in the release issue |
 | GN-2 | Gate 2: performance budgets pass on the device matrix | Client lead, Server lead | Measurement reports in #191, #192, #161, #164 per `docs/performance.md` |
 | GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
-| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187) |
+| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187); AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report |
 | GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 and #196 closed or waived |
 | GN-7 | Gate 7: `CI complete` green on the release commit | Release manager | Link to the run on the tagged commit |

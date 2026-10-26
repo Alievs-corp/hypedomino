@@ -32,7 +32,7 @@ Owned elsewhere and only referenced here: item shape, sources, availability and 
 
 ### 2.1 Rarity distribution
 
-`docs/rarity.md` and `docs/cosmetics.md` define tiers but no distribution of the catalogue across them, so no per-rarity minimum is set here (OD-1). The report shows the count per category and `rarityId` as information. Constraints that already hold through other specs:
+Owner decision OD-1: MC-1 to MC-5 each need at least one ready item of every tier from `common` to `legendary` (`docs/rarity.md` 1). `mythic` is not required, since it is sold only in time-limited offers. Emoji and medals have no per-tier minimum. Beyond that the report shows the count per category and `rarityId` as information. Constraints that already hold through other specs:
 
 | Constraint | Source |
 |---|---|
@@ -108,11 +108,19 @@ A template is a promo code record with `template` true (`docs/admin.md` 5.11): i
 
 | Id | Rule | Source |
 |---|---|---|
-| PT-1 | At least `ContentGatePromoTemplatesPerType` templates of each type `single_use`, `multi_use`, `targeted` | `docs/economy.md` 8 |
+| PT-1 | The three launch templates of the table below exist | `docs/economy.md` 8 |
 | PT-2 | `campaignId` is set; `bundle` resolves and is not a store product | `docs/economy.md` 8, `docs/admin.md` 5.11 |
 | PT-3 | Every cosmetic in the bundle is ready and lists the template's campaign as a `promo` source | `docs/cosmetics.md` 5, V-15 |
 
-Which campaigns and bundles the templates hold is OD-2.
+Launch templates (owner decision OD-2):
+
+| Template | Type | Bundle | Cloned |
+|---|---|---|---|
+| Welcome | `multi_use` | One launch cosmetic and a coin amount at or below `PromoCoinsApprovalThreshold` | Once per launch campaign |
+| Creator | `multi_use` | One cosmetic exclusive to the creator's campaign | Once per creator, each clone with its own `campaignId`, so redemptions are reported per creator |
+| Compensation | `single_use` | Set at cloning by the product owner's compensation decision (`docs/launch-runbook.md` 6.5) | Per incident, as a generated batch |
+
+The compensation template's bundle is filled at cloning, so PT-2 and PT-3 check it on the clone, not on the template.
 
 ## 4. Content gate report
 
@@ -135,7 +143,7 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 
 | Id | Check | Pass when |
 |---|---|---|
-| CG-1 to CG-7 | MC-1 to MC-7 | Count of ready items at or above the key's value |
+| CG-1 to CG-7 | MC-1 to MC-7 | Count of ready items at or above the key's value; for MC-1 to MC-5 also at least one ready item per tier `common` to `legendary` (2.1) |
 | CG-8 | Every `live` cosmetic and medal is ready | No `live` item fails a CR or MR rule. Failures list the item id and rule id |
 | CG-9 | Missions | MS-1 to MS-4 hold |
 | CG-10 | Pass season 1 | A pass season contains `launchAt` and PS-1 to PS-5 hold |
@@ -176,7 +184,6 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 | `ContentGateMinTables` | 15 | 2 |
 | `ContentGateMinEmoji` | 40 | 2 |
 | `ContentGateMinMedals` | 40 | 2 |
-| `ContentGatePromoTemplatesPerType` | 1 | 3.6 |
 
 Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `DailyMissionRerolls`, `WeeklyMissionRerolls`, `PassLevels` (`docs/pass-missions-medals.md`), `PromoCoinsApprovalThreshold` (`docs/economy.md`), `LeaderboardRegions` (`docs/ranking.md`).
 
@@ -187,9 +194,11 @@ Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `Dai
 - The medal definition has no cultural review field, unlike cosmetics (`docs/cosmetics.md` 3), while `docs/localization.md` 6.1 requires the review for every asset. MR rules cannot check it until #141 adds the field.
 - #198 is closed when a `green` production report (or a waived `red` one) is linked at GN-3.
 
-## 7. Open owner decisions
+## 7. Owner decisions
 
-| Id | Question | Until decided |
+Decided by the owner on 2026-10-26.
+
+| Id | Question | Decision |
 |---|---|---|
-| OD-1 | Per-rarity minimums per category (2.1) | Report shows the distribution as information only |
-| OD-2 | Which promo templates exist at launch (purpose, campaign, bundle contents) beyond `ContentGatePromoTemplatesPerType` per type | PT-1 checks the count only |
+| OD-1 | Per-rarity minimums per category | MC-1 to MC-5: at least one ready item per tier `common` to `legendary` (2.1) |
+| OD-2 | Promo templates at launch | Welcome, creator and compensation templates (3.6) |

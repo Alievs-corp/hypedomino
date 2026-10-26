@@ -119,7 +119,7 @@ draft -> submitted -> approved -> [scheduled] -> active -> superseded
 |---|---|
 | `draft` | A change set: one or more object drafts, editable by their authors. Validation runs on every save and shows errors inline |
 | `submitted` | Frozen and validated; waiting for approval. Any edit returns it to `draft` |
-| `approved` | A second admin with P on every object approved it (section 3.5). Publish now goes straight to `active` |
+| `approved` | Approved per section 3.5: by its author, or by a second admin for a section 8 action. Publish now goes straight to `active` |
 | `scheduled` | Approved with a future activation time |
 | `active` | Its snapshot is the current one |
 | `superseded` | A later snapshot is active |
@@ -156,7 +156,7 @@ The admin API implements these rules in Go. The tools in `tools/` check the repo
 
 ### 3.5 Approval and publish
 
-- Production: every change set needs an approver other than its author, holding P on every object in it (four-eyes publish, section 8). Staging: the author may approve their own change set.
+- Production: the author approves their own change set; validation, the audit log and rollback are the controls (owner decision O-1). Only the high-risk actions of section 8 need a second admin holding the same permission. Staging: the author approves.
 - During the launch config freeze (`docs/launch-runbook.md` section 4) the approver is the release manager.
 - Publish now activates at approval. Schedule sets an activation time in UTC; the change set appears in the live-ops calendar (#146) and can be cancelled until it activates. Files for the CDN are uploaded at approval, so activation only switches the active version.
 - Time windows inside content (offer windows, event windows, season start and end) need no scheduled publish: they are part of the published object and run on server time (`docs/economy.md` EP-6).
@@ -615,7 +615,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` and `ContentGatePromoTemplatesPerType` (`docs/launch-content-gate.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
 
 ## 12. Implementation
 
