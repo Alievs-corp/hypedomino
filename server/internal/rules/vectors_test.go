@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 const vectorsDir = "../../../docs/rules-vectors"
@@ -35,12 +36,11 @@ var vectorRunners = map[string]func(*testing.T, vector){
 	"hand-end":      runHandEndVector,
 	"first-opener":  runFirstOpenerVector,
 	"match-end":     runMatchEndVector,
+	"turn-timer":    runTurnTimerVector,
+	"afk":           runAfkVector,
 }
 
-var pendingVectorKinds = map[string]bool{
-	"turn-timer": true,
-	"afk":        true,
-}
+var pendingVectorKinds = map[string]bool{}
 
 func TestRuleVectors(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join(vectorsDir, "*.json"))
@@ -55,9 +55,6 @@ func TestRuleVectors(t *testing.T) {
 		for _, v := range loadVectors(t, path) {
 			t.Run(v.ID, func(t *testing.T) {
 				run, ok := vectorRunners[v.Kind]
-				if !ok && pendingVectorKinds[v.Kind] {
-					t.Skipf("kind %q has no engine function yet", v.Kind)
-				}
 				if !ok {
 					t.Fatalf("unknown vector kind %q", v.Kind)
 				}
@@ -444,5 +441,66 @@ func runMatchEndVector(t *testing.T, v vector) {
 	}
 	if expect.Winner != nil && winner != *expect.Winner {
 		t.Fatalf("winner = %s, want %s", winner, *expect.Winner)
+	}
+}
+
+func runTurnTimerVector(t *testing.T, v vector) {
+	var given struct {
+		TurnSeconds    float64
+		ActedAtSeconds *float64
+	}
+	var expect struct {
+		MovedBy Controller
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	config := DefaultConfig()
+	config.TurnSeconds = int(given.TurnSeconds)
+	if float64(config.TurnSeconds) != given.TurnSeconds {
+		t.Fatalf("turnSeconds %v is not a whole number of seconds", given.TurnSeconds)
+	}
+	actedAfter := time.Duration(0)
+	if given.ActedAtSeconds != nil {
+		actedAfter = time.Duration(*given.ActedAtSeconds * float64(time.Second))
+	}
+	if got := MovedBy(config, given.ActedAtSeconds != nil, actedAfter); got != expect.MovedBy {
+		t.Fatalf("movedBy = %s, want %s", got, expect.MovedBy)
+	}
+}
+
+func runAfkVector(t *testing.T, v vector) {
+	var given struct {
+		AfkTimeouts int
+		Events      []struct {
+			Seat Seat
+			Type string
+		}
+	}
+	var expect struct {
+		Controllers map[Seat]Controller
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	config := DefaultConfig()
+	config.AfkConsecutiveTimeouts = given.AfkTimeouts
+	presence := NewPresence(config)
+	for _, event := range given.Events {
+		switch event.Type {
+		case "timeout":
+			presence.Timeout(event.Seat)
+		case "move":
+			presence.Move(event.Seat)
+		case "reconnect":
+			presence.Reconnect(event.Seat)
+		case "leave":
+			presence.Leave(event.Seat)
+		default:
+			t.Fatalf("unknown event %q", event.Type)
+		}
+	}
+	for seat, want := range expect.Controllers {
+		if got := presence.Controller(seat); got != want {
+			t.Fatalf("%s controlled by %s, want %s", seat, got, want)
+		}
 	}
 }

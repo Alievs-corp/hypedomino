@@ -8,6 +8,8 @@ type Config struct {
 	FirstHandOpeningTile    Tile
 	ScoringOpeningTile      Tile
 	ScoringOpeningPoints    int
+	TurnSeconds             int
+	AfkConsecutiveTimeouts  int
 }
 
 func DefaultConfig() Config {
@@ -19,5 +21,7 @@ func DefaultConfig() Config {
 		FirstHandOpeningTile:    Tile{Low: 2, High: 3},
 		ScoringOpeningTile:      Tile{Low: 5, High: 5},
 		ScoringOpeningPoints:    10,
+		TurnSeconds:             20,
+		AfkConsecutiveTimeouts:  3,
 	}
 }
