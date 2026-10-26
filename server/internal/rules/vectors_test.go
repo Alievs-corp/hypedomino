@@ -28,12 +28,12 @@ var vectorRunners = map[string]func(*testing.T, vector){
 	"place":         runPlaceVector,
 	"draw":          runDrawVector,
 	"opening-score": runOpeningScoreVector,
+	"turn":          runTurnVector,
 }
 
 var pendingVectorKinds = map[string]bool{
 	"seat":         true,
 	"first-opener": true,
-	"turn":         true,
 	"hand-status":  true,
 	"round":        true,
 	"hand-end":     true,
@@ -242,5 +242,49 @@ func runOpeningScoreVector(t *testing.T, v vector) {
 	score := OpeningScore(DefaultConfig(), given.FirstHand, given.Tile, given.TeamScoreAtHandStart)
 	if score != expect.Score {
 		t.Fatalf("score = %d, want %d", score, expect.Score)
+	}
+}
+
+func runTurnVector(t *testing.T, v vector) {
+	var given struct {
+		Board      vectorBoard
+		Placements []struct {
+			Tile Tile
+			End  End
+		}
+	}
+	var expect struct {
+		Steps []struct {
+			Placed bool
+			Total  int
+			Score  int
+		}
+		TurnScore int
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	board := boardFromVector(t, given.Board)
+	turn := BeginTurn(&board, DefaultConfig())
+	if len(expect.Steps) != len(given.Placements) {
+		t.Fatalf("%d steps for %d placements", len(expect.Steps), len(given.Placements))
+	}
+	for i, placement := range given.Placements {
+		step := expect.Steps[i]
+		result, err := turn.Place(placement.Tile, placement.End)
+		if (err == nil) != step.Placed {
+			t.Fatalf("step %d placed = %v (%v), want %v", i+1, err == nil, err, step.Placed)
+		}
+		if !step.Placed {
+			if i != len(given.Placements)-1 {
+				t.Fatalf("step %d refused before the last placement", i+1)
+			}
+			break
+		}
+		if result.Total != step.Total || result.Score != step.Score {
+			t.Fatalf("step %d = %+v, want total %d score %d", i+1, result, step.Total, step.Score)
+		}
+	}
+	if turn.Score() != expect.TurnScore {
+		t.Fatalf("turnScore = %d, want %d", turn.Score(), expect.TurnScore)
 	}
 }
