@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -23,14 +24,14 @@ type vectorFile struct {
 }
 
 var vectorRunners = map[string]func(*testing.T, vector){
-	"deal": runDealVector,
+	"deal":  runDealVector,
+	"place": runPlaceVector,
 }
 
 var pendingVectorKinds = map[string]bool{
 	"seat":          true,
 	"first-opener":  true,
 	"opening-score": true,
-	"place":         true,
 	"turn":          true,
 	"draw":          true,
 	"hand-status":   true,
@@ -105,5 +106,95 @@ func runDealVector(t *testing.T, v vector) {
 	err := ValidateDeal(v.Mode, DefaultConfig(), Deal{Hands: given.Hands, Boneyard: given.Boneyard})
 	if (err == nil) != expect.Valid {
 		t.Fatalf("valid = %v (%v), want %v", err == nil, err, expect.Valid)
+	}
+}
+
+type vectorBoard struct {
+	Line    []Oriented
+	Spinner *Oriented
+	Top     []Oriented
+	Bottom  []Oriented
+}
+
+func boardFromVector(t *testing.T, vb vectorBoard) Board {
+	t.Helper()
+	board := Board{head: SetSize, tail: SetSize}
+	for _, tile := range vb.Line {
+		board.line[board.tail] = tile
+		board.tail++
+	}
+	for _, tile := range vb.Top {
+		board.top.push(tile)
+	}
+	for _, tile := range vb.Bottom {
+		board.bottom.push(tile)
+	}
+	if vb.Spinner != nil {
+		board.spinner = *vb.Spinner
+		board.hasSpinner = true
+	}
+	return board
+}
+
+func boardToVector(board *Board) vectorBoard {
+	vb := vectorBoard{
+		Line:   append([]Oriented{}, board.Line()...),
+		Top:    append([]Oriented{}, board.Top()...),
+		Bottom: append([]Oriented{}, board.Bottom()...),
+	}
+	if board.hasSpinner {
+		spinner := board.spinner
+		vb.Spinner = &spinner
+	}
+	return vb
+}
+
+func openEndsToVector(ends OpenEnds) map[End]int {
+	values := map[End]int{}
+	for end := EndLeft; end < endCount; end++ {
+		if value, open := ends.Value(end); open {
+			values[end] = value
+		}
+	}
+	return values
+}
+
+func runPlaceVector(t *testing.T, v vector) {
+	var given struct {
+		Board                vectorBoard
+		Tile                 Tile
+		End                  End
+		TeamScoreAtHandStart int
+	}
+	var expect struct {
+		Legal    bool
+		Board    vectorBoard
+		OpenEnds map[End]int
+		Total    int
+		Score    int
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	board := boardFromVector(t, given.Board)
+	before := board
+	err := board.Place(given.Tile, given.End)
+	if (err == nil) != expect.Legal {
+		t.Fatalf("legal = %v (%v), want %v", err == nil, err, expect.Legal)
+	}
+	if !expect.Legal {
+		if board != before {
+			t.Fatal("a refused placement changed the board")
+		}
+		return
+	}
+	if got := boardToVector(&board); !reflect.DeepEqual(got, expect.Board) {
+		t.Fatalf("board = %+v, want %+v", got, expect.Board)
+	}
+	ends := board.OpenEnds()
+	if got := openEndsToVector(ends); !reflect.DeepEqual(got, expect.OpenEnds) {
+		t.Fatalf("openEnds = %v, want %v", got, expect.OpenEnds)
+	}
+	if ends.Total() != expect.Total {
+		t.Fatalf("total = %d, want %d", ends.Total(), expect.Total)
 	}
 }
