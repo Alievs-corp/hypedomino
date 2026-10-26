@@ -75,6 +75,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Players (section 6) | V, S: all of section 6 | | | V, S: all of section 6 | |
 | Review, report and appeal queues (6.4) | V, S | | | V, S | |
 | Rights request records (6.5) | V, E | | | VCE | |
+| Content gate reports (`docs/launch-content-gate.md` 4.4); C is running a report | VC | VC | VC | V | V |
 | Dashboards and aggregate exports (section 10, A-1) | V | V | V | V | V |
 | Analytics events with analytics id (D-24) | V | | | | V |
 | Audit log (section 7) | V | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
@@ -102,7 +103,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `privacy` | `docs/privacy.md` section 4 and section 11 | Policy and age values only |
 | `moderation` | Word filter, reserved names, confusables table version, nickname and report keys (`docs/localization.md` section 5) | Never |
 | `localization` | Active bundle version per language, `LocaleFallbackChains` | Bundle files on the CDN |
-| `liveops` | Live events, banners, push campaign definitions, feature flags, effect level and motion config (`docs/ui-motion.md` sections 7, 8) | With client config |
+| `liveops` | Live events, banners, push campaign definitions, feature flags, effect level and motion config (`docs/ui-motion.md` sections 7, 8), content gate minimums (`docs/launch-content-gate.md` section 5) | With client config, except the content gate minimums |
 
 - The game server loads a snapshot, validates it again (`docs/cosmetics.md` section 9) and swaps it in without a restart. A server that rejects a snapshot keeps its current one and alerts.
 - A snapshot records its parent version, its change set, author, approver, activation time and the revision of every domain. Files it references on the CDN (manifest, string bundles) are immutable and content-hashed (ADR 0002).
@@ -351,6 +352,7 @@ Awards come only from the season-end job. Revoking an awarded emblem is a suppor
 | `cap` | Required for `multi_use`; server for the other types |
 | `code` | Generated (`PromoCodeLength`, cryptographic source) or admin-chosen for `multi_use` only; stored as a keyed hash |
 | `accounts` | `targeted` only: account ids, entered by `support` |
+| `template` | True for a template (`docs/launch-content-gate.md` 3.6): it stays `draft`, cannot be submitted or redeemed, and has no window, cap, code or accounts. Cloning it creates a record with `template` false |
 | `state` | Server: `draft`, `pending_approval`, `active`, `disabled`, `expired` |
 | `creator`, `approver` | Server |
 | `redemptions` | Server: count; per-account list visible to `support` only |
@@ -573,6 +575,7 @@ The panel UI is localized itself (#213). Navigation shows only groups and screen
 | Publishing | A-2 Change sets: list, editor, diff, validation report | `super_admin`, `content`, `live_ops` | 3.2 to 3.4 |
 | | A-3 Approvals | Accounts with P | 3.5, 8 |
 | | A-4 Snapshots and rollback | All but `analyst` | 3.7, 5.17 |
+| | A-41 Content gate report: run, history, failures per check, JSON export | All; run: `super_admin`, `content`, `live_ops` | `docs/launch-content-gate.md` section 4 |
 | Catalog | A-5 Cosmetics list with filters and bulk edit; A-6 item form per type with preview | `super_admin`, `content`; others view | 5.1 |
 | | A-7 Assets and catalog builds | `super_admin`, `content` | 5.2 |
 | | A-8 Rarity table | `super_admin`, `content`; others view | 5.3 |
@@ -612,7 +615,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` and `ContentGatePromoTemplatesPerType` (`docs/launch-content-gate.md`).
 
 ## 12. Implementation
 
@@ -635,6 +638,8 @@ Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength
 | #148 Performance and security hardening | 9 |
 | #213 Admin UI localization | 10 |
 | #214 Game string management | 5.15, 3.7 |
+
+The content gate report (A-41) has no sub-issue yet (`docs/launch-content-gate.md` section 6).
 
 ## 13. Decisions
 
