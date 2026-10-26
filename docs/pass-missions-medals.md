@@ -2,9 +2,9 @@
 
 The seasonal pass with a free and a premium track, daily, weekly, achievement and event missions, and the medal collection. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
 
-**Status: proposal.** Values marked *approved* come from `docs/economy.md` (owner-approved 2026-10-26) and are not changed here. Every other number is a proposed launch default for the owner to approve (section 11). Every number is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys (section 9).
+**Status: approved by the owner on 2026-10-26 (section 11).** Every number is a launch default to be tuned with closed-beta data (#193). Values marked *economy* are defined in `docs/economy.md` and only repeated here. Every number is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys (section 9).
 
-Related: `docs/economy.md` (coins, reward bundle, ledger, pass products), `docs/rarity.md` (tiers), `docs/cosmetics.md` (sources `pass` and `mission`), `docs/ranking.md` (seasons, leaderboard emblems), `docs/rules.md` R-53 to R-56 (ranked, custom, casual), `docs/penalties.md` section 5, `docs/anti-cheat.md` (V-7, V-8, V-9, V-11), `docs/localization.md`, `docs/ui-motion.md`, `docs/privacy.md` (D-16, section 5). Implementation: Epic 11 #122 (section 10).
+Related: `docs/economy.md` (coins, reward bundle, ledger, pass products), `docs/rarity.md` (tiers), `docs/cosmetics.md` (sources `pass` and `mission`), `docs/ranking.md` (seasons, leaderboard emblems), `docs/rules.md` R-53 to R-56 (ranked, custom, casual), `docs/penalties.md` sections 5 and 6, `docs/anti-cheat.md` (V-7, V-8, V-9, V-11), `docs/localization.md`, `docs/ui-motion.md`, `docs/privacy.md` (D-16, section 5). Implementation: Epic 11 #122 (section 10).
 
 ## 1. Principles
 
@@ -62,7 +62,7 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 | Weekly mission | Slot XP, `WeeklyMissionSlotXp` 600 each | Section 4.4 |
 | Event mission | From the event's bundles, at most `EventMissionXpBudget` (3000) per event in total | Section 4.6 |
 | Bundle `passXp` | As set on the bundle | Any other bundle the admin attaches XP to, for example a promo campaign |
-| Premium plus | `PassPremiumPlusLevels` (20, *approved*) levels of XP | Section 2.5 |
+| Premium plus | `PassPremiumPlusLevels` (20, *economy*) levels of XP | Section 2.5 |
 | Level purchase | The XP of the bought levels | Section 2.6 |
 
 - Match XP has no score-margin or length bonus, as with match coins (`docs/economy.md` 2.1).
@@ -73,7 +73,7 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 ### 2.4 Tracks and rewards
 
 - Each level has one free-track bundle and one premium-track bundle. A free-track level may be empty; a premium-track level may not.
-- Coin budgets per season, *approved*: `PassFreeTrackCoins` 1500 on the free track, `PassPremiumTrackCoins` 3000 on the premium track. Admin publish rejects a season above either.
+- Coin budgets per season, *economy*: `PassFreeTrackCoins` 1500 on the free track, `PassPremiumTrackCoins` 3000 on the premium track. Admin publish rejects a season above either.
 - Track bundles carry `coins` and `cosmetics`. They never carry `medals` (PM-5) and never `passXp` (a level that grants levels would make the curve meaningless).
 - Track cosmetics list the source `pass` with ref `pass.<seasonId>.<track>.level_<n>`, for example `pass.season_1.premium.level_30` (`docs/cosmetics.md` section 5).
 - Level 1 rewards are granted when the account enters the season (free) and when premium is unlocked (premium), so the premium track gives its headline item at once.
@@ -82,18 +82,18 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 
 ### 2.5 Premium and late purchase
 
-Products, *approved* (`docs/economy.md` 7.2): `pass_premium` (`PassPremiumUsd` 4.99) unlocks the premium track of the current season; `pass_premium_plus` (`PassPremiumPlusUsd` 9.99) unlocks it and adds `PassPremiumPlusLevels` (20) levels. The premium track is never sold for coins.
+Products, *economy* (`docs/economy.md` 7.2): `pass_premium` (`PassPremiumUsd` 4.99) unlocks the premium track of the current season; `pass_premium_plus` (`PassPremiumPlusUsd` 9.99) unlocks it and adds `PassPremiumPlusLevels` (20) levels. The premium track is never sold for coins.
 
 - Purchase flow, receipt validation and binding to the season active at the store's purchase time: `docs/economy.md` 7.5 and #125. A second premium purchase in the same season is rejected before the store flow starts.
 - **Late purchase.** When premium unlocks at level `L`, the server grants the premium bundle of every level 1 to `L` at once, then continues normally. Each level is its own grant with key `pass:<seasonId>:premium:<level>`, so an interrupted batch resumes and a repeated one grants nothing twice.
 - `pass_premium_plus` adds the XP from the current XP total to the total of level `L + 20`, keeping progress inside the current level. Levels crossed grant both tracks.
-- `pass_premium_plus` is offered only while the account's level is at most `PassLevels` - `PassPremiumPlusLevels` (80), so its levels are never wasted. Above that only `pass_premium` is offered. If the account levels up between the buy intent and validation, levels past `PassLevels` are paid out as `PassLevelCoinPrice` (200, *approved*) coins each in the purchase grant.
+- `pass_premium_plus` is offered only while the account's level is at most `PassLevels` - `PassPremiumPlusLevels` (80), so its levels are never wasted. Above that only `pass_premium` is offered. If the account levels up between the buy intent and validation, levels past `PassLevels` are paid out as `PassLevelCoinPrice` (200, *economy*) coins each in the purchase grant.
 - A validated purchase is always granted, even after the season ended (`docs/economy.md` 7.5 step 7). Its premium bundles for the levels reached are granted at validation.
 - Refund (`docs/economy.md` section 9): the premium track and every premium reward granted are revoked. For `pass_premium_plus` the XP it added is also removed, the level is derived again, and both tracks' rewards of levels no longer reached are revoked the same way.
 
 ### 2.6 Level purchase
 
-- Intent with a count `k` and a client request id. Price `k` x `PassLevelCoinPrice` (200, *approved*), ledger reason `pass_level_purchase`, key `spend:<requestId>` (`docs/economy.md` 3.2, section 5).
+- Intent with a count `k` and a client request id. Price `k` x `PassLevelCoinPrice` (200, *economy*), ledger reason `pass_level_purchase`, key `spend:<requestId>` (`docs/economy.md` 3.2, section 5).
 - The server rejects `k` < 1, a count that would pass `PassLevels`, a balance below the price, and any purchase outside the season window.
 - A bought level adds the XP from the current total to the total of level `L + k`, keeping progress inside the current level. Levels crossed grant the free track, and the premium track if unlocked.
 - Coins are not refunded for levels, and a later premium unlock grants the premium rewards of bought levels as in 2.5.
@@ -111,13 +111,13 @@ At the season's end (server time):
 |---|---|---|---|
 | Ranked 1v1, 2v2 (R-53) | Full | Yes | Yes |
 | Casual 1v1, 2v2 (R-56), all seats human at start | Full | Yes | Yes |
-| Casual with a bot-filled seat at start (#48) | `BotSeatRewardPercent` (50, *approved*) of match XP, rounded, halves away from zero | Yes | No |
+| Casual with a bot-filled seat at start (#48) | `BotSeatRewardPercent` (50, *economy*) of match XP, rounded, halves away from zero | Yes | No |
 | Custom room (R-55) | None | No | No |
 | Cancelled by the server | None | No | No |
 
 - Only completed, server-recorded matches count. Progress is read from the match record, never from a client report.
 - A bot replacing an AFK or leaving player during the match (R-50 to R-52) reduces nobody's XP or progress.
-- AFK and leave offenders follow `docs/penalties.md` section 5: no pass XP, no mission or medal progress from that match; AFK returned keeps them. Partners and opponents count normally.
+- AFK and leave offenders in ranked and casual matches get no pass XP and no mission or medal progress from that match; AFK returned keeps them (`docs/penalties.md` sections 5 and 6). Partners and opponents count normally.
 - Custom rooms count for nothing because players pick the teams, so results can be arranged (as for coins, `docs/economy.md` 2.1).
 - Bot-filled casual matches count for daily and weekly missions because their rewards are capped per period anyway (4.4), so a bot table only makes the same reward faster; they never count for achievements and medals, which mark play against people.
 
@@ -127,7 +127,7 @@ At the season's end (server time):
 |---|---|
 | Caps | `PassDailyMatchXpCap`; mission coin and XP budgets per period (4.4); a finite level table; idempotent keys per period (`docs/economy.md` section 5) |
 | Queues | Custom rooms and cancelled matches count for nothing; bot-filled casual is reduced as above |
-| Offenders | `docs/penalties.md` section 5 |
+| Offenders | Ranked and casual: no XP or progress from the offending match (`docs/penalties.md` sections 5 and 6) |
 | No transfers | XP, levels, missions and medals cannot be moved between accounts (EP-5), so farm accounts cannot feed a main account |
 | Signals | Repeated meetings of the same accounts, losses to the same opponent and shared devices feed `CollusionWeight` (V-9, #183, #110). Mission completions and XP per account and day are reported to #110; the account daily earn alert of `docs/economy.md` section 10 already includes mission coins |
 | Response | Confirmed farming or collusion: an admin removes the XP, levels, mission rewards and medals gained from the affected matches, with an audited reason (#209). Grants of levels no longer reached are revoked as in 2.5 |
@@ -194,7 +194,7 @@ Each slot has a fixed reward; every mission in the slot's pool pays it, so selec
 | Weekly 1 to 4 | 150 each | 600 each | About 15 matches each. One match counts for every mission it fits, so all four fit in a week of one hour a day (about 38 matches) |
 
 - Keys: `DailyMissionSlotCoins` (30, 40, 50), `DailyMissionSlotXp` (100, 150, 200), `WeeklyMissionSlotCoins` (150 x 4), `WeeklyMissionSlotXp` (600 x 4).
-- Budgets: slot coins sum to at most `DailyMissionCoinBudget` (120, *approved*) and `WeeklyMissionCoinBudget` (600, *approved*); slot XP sums to at most `DailyMissionXpBudget` (450) and `WeeklyMissionXpBudget` (2400). Admin publish rejects a slot set above a budget.
+- Budgets: slot coins sum to at most `DailyMissionCoinBudget` (120, *economy*) and `WeeklyMissionCoinBudget` (600, *economy*); slot XP sums to at most `DailyMissionXpBudget` (450) and `WeeklyMissionXpBudget` (2400). Admin publish rejects a slot set above a budget.
 - Assignment: at the first moment the server needs the player's missions in a period (session start or match end), it draws one live mission per slot by weight with the server's cryptographically secure random source, avoiding the mission the slot had in the previous period when the pool has another. The draw is stored; it happens once per player and period.
 - Expiry: at the end of the period unfinished missions and their progress end. Completed missions were already granted (PM-3).
 - Reroll: `DailyMissionRerolls` (1) per economy day and `WeeklyMissionRerolls` (1) per week, free, by intent. It replaces one uncompleted mission with another live mission of the same slot that the player has not had in this period; progress on the replaced mission is lost. A reroll is rejected when the slot has no such mission. Rerolls are never sold and do not accumulate.
@@ -263,7 +263,7 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 
 ### 5.5 Emblems
 
-- Leaderboard emblems (`docs/ranking.md` 8.3, 8.4) stay a ranking system: awarded by the season-end job from frozen boards, recorded with mode, season, board and bracket, revoked only by an admin, shown in their own profile showcase (`ProfileEmblemSlots`). They have no rarity, no sources and no bundle, and are not medals.
+- Leaderboard emblems (`docs/ranking.md` 8.3, 8.4) stay a ranking system: awarded by the season-end job from frozen boards, recorded with mode, season, board and bracket, revoked only by an admin, shown in their own profile showcase (`ProfileEmblemSlots`, 3). They have no rarity, no sources and no bundle, and are not medals.
 - The medal collection screen shows emblems in their own section after the medals, newest season first, with the same art (#178). Emblems do not count toward the medal total.
 - Reason: emblems are positional season records with board and bracket fields; making each board, bracket and season a catalogue medal would add thousands of entries for no player-visible gain. One screen, two systems.
 
@@ -486,26 +486,27 @@ Rarities are first estimates for 5.3, checked against measured earn shares after
 
 ## 9. Config
 
-| Key | Default | Status | Section |
+| Key | Default | Defined in | Section |
 |---|---|---|---|
-| `PassLevels` | 100 | Proposal | 2.2 |
-| `PassXpBase`, `PassXpStep`, `PassXpMax` | 300, 50, 1000 | Proposal | 2.2 |
-| `PassMatchXp1v1` | 100 win, 60 loss | Proposal | 2.3 |
-| `PassMatchXp2v2` | 140 win, 80 loss | Proposal | 2.3 |
-| `PassDailyMatchXpCap` | 2000 | Proposal | 2.3 |
-| `EventMissionXpBudget` | 3000 per event | Proposal | 2.3, 4.6 |
-| `DailyMissionSlots`, `WeeklyMissionSlots` | 3, 4 | Proposal | 4.1 |
-| `DailyMissionSlotCoins`, `DailyMissionSlotXp` | 30, 40, 50; 100, 150, 200 | Proposal | 4.4 |
-| `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` | 150 x 4; 600 x 4 | Proposal | 4.4 |
-| `DailyMissionXpBudget`, `WeeklyMissionXpBudget` | 450, 2400 | Proposal | 4.4 |
-| `DailyMissionRerolls`, `WeeklyMissionRerolls` | 1, 1 | Proposal | 4.4 |
-| `ProfileMedalSlots` | 3 | Proposal | 5.4 |
-| Medal rarity shares | Section 5.3 | Proposal, guidance for admins | 5.3 |
-| `PassFreeTrackCoins`, `PassPremiumTrackCoins` | 1500, 3000 | Approved | 2.4 |
-| `PassLevelCoinPrice` | 200 | Approved | 2.5, 2.6 |
-| `PassPremiumUsd`, `PassPremiumPlusUsd`, `PassPremiumPlusLevels` | 4.99, 9.99, 20 | Approved | 2.5 |
-| `DailyMissionCoinBudget`, `WeeklyMissionCoinBudget` | 120, 600 | Approved | 4.4 |
-| `BotSeatRewardPercent` | 50 | Approved | 3 |
+| `PassLevels` | 100 | This document | 2.2 |
+| `PassXpBase`, `PassXpStep`, `PassXpMax` | 300, 50, 1000 | This document | 2.2 |
+| `PassMatchXp1v1` | 100 win, 60 loss | This document | 2.3 |
+| `PassMatchXp2v2` | 140 win, 80 loss | This document | 2.3 |
+| `PassDailyMatchXpCap` | 2000 | This document | 2.3 |
+| `EventMissionXpBudget` | 3000 per event | This document | 2.3, 4.6 |
+| `DailyMissionSlots`, `WeeklyMissionSlots` | 3, 4 | This document | 4.1 |
+| `DailyMissionSlotCoins`, `DailyMissionSlotXp` | 30, 40, 50; 100, 150, 200 | This document | 4.4 |
+| `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` | 150 x 4; 600 x 4 | This document | 4.4 |
+| `DailyMissionXpBudget`, `WeeklyMissionXpBudget` | 450, 2400 | This document | 4.4 |
+| `DailyMissionRerolls`, `WeeklyMissionRerolls` | 1, 1 | This document | 4.4 |
+| `ProfileMedalSlots` | 3 | This document | 5.4 |
+| `ProfileEmblemSlots` | 3 | `docs/ranking.md` | 5.5 |
+| Medal rarity shares | Section 5.3 | This document, guidance for admins | 5.3 |
+| `PassFreeTrackCoins`, `PassPremiumTrackCoins` | 1500, 3000 | `docs/economy.md` | 2.4 |
+| `PassLevelCoinPrice` | 200 | `docs/economy.md` | 2.5, 2.6 |
+| `PassPremiumUsd`, `PassPremiumPlusUsd`, `PassPremiumPlusLevels` | 4.99, 9.99, 20 | `docs/economy.md` | 2.5 |
+| `DailyMissionCoinBudget`, `WeeklyMissionCoinBudget` | 120, 600 | `docs/economy.md` | 4.4 |
+| `BotSeatRewardPercent` | 50 | `docs/economy.md` | 3 |
 
 Season windows are records, not keys: they default to the ranked season's window (2.1).
 
@@ -545,15 +546,17 @@ Elsewhere: admin #138 (bundles), #140 (pass seasons), #141 (missions and medals)
 
 ## 11. Owner decisions
 
-| Id | Question | Proposal |
+Decided by the owner on 2026-10-26. Values stay admin config and are tuned with closed-beta data (#193).
+
+| Id | Question | Decision |
 |---|---|---|
-| OQ-1 | Approve the proposed values of section 9 | As listed |
+| OQ-1 | Approve the values of section 9 | As listed |
 | OQ-2 | Pass season window | Same as the ranked season (2.1) |
 | OQ-3 | Level count and pace | 100 levels; a regular player (1 h/day, all missions) finishes around day 77 of 90; a light player reaches level 61 (8.1) |
 | OQ-4 | Casual pass XP | Same as ranked per match; half when a seat was bot-filled at start. Coins in casual stay at about 60% of ranked (`docs/economy.md` OQ-4) |
 | OQ-5 | Claim model | Automatic grants, no claim step, nothing expires unclaimed (section 6) |
 | OQ-6 | Bot-filled casual and missions | Counts for daily and weekly missions, not for achievements and medals (section 3) |
 | OQ-7 | Medals and money | Medals only from play: achievements, event missions, rank rewards; never on the premium track or for sale (PM-5) |
-| OQ-8 | Medals and emblems | Separate systems; emblems shown in their own section of the medal collection and their own profile showcase (5.5) |
+| OQ-8 | Medals and emblems | Separate systems with their own profile showcase: `ProfileEmblemSlots` (3) emblems and `ProfileMedalSlots` (3) medals; emblems have their own section of the medal collection (5.4, 5.5) |
 | OQ-9 | Catch-up for players who join late in a season | None at launch; level purchase and premium plus cover it |
 | OQ-10 | `mythic` items on pass tracks | None; the sample tops out at one `legendary` per track season (8.2) |
