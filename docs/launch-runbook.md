@@ -157,7 +157,7 @@ Store builds cannot be withdrawn from devices. That is why every client feature 
 
 | Control | Effect | Changed by | Defined in |
 |---|---|---|---|
-| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, admin role per #13 | #210 |
+| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, with the `live_ops` or `super_admin` admin role and the two-person rule of `docs/admin.md` section 8 | #210 |
 | Ranked kill switch | Ranked queues closed; matches in progress finish | Same | #210 |
 | Minimum version and build allowlist | Older or unlisted builds get `UPDATE_REQUIRED` | Same, with the client lead | #210, ADR 0004 |
 | Maintenance mode | Client shows the maintenance screen; no new matches | Same | #146 |
