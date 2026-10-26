@@ -129,7 +129,7 @@ Goal (#190 acceptance): bot clients play a full match on the real server automat
 | Against staging | `server/cmd/botclient` runs the same scenarios against a deployed environment: release smoke at T-1d (runbook section 4) and opponents for device smoke (section 4) |
 | Determinism | The deal source is injected (ADR 0003). Production wires a cryptographically secure source (R-4). E2E wires a seeded source (`math/rand/v2` ChaCha8) that exists only in test code, so no production binary can be seeded. The seed is logged on every failure. The server clock is injected, so timer scenarios advance time instead of waiting |
 | Identity | In process, the server is built with a fake ID-token verifier. On staging, bot accounts use a staging-only identity path that the production config refuses to start with (#57, #24) |
-| Load reuse | The load bot (#192, #53) reuses `botclient` for the protocol so load and E2E speak one implementation |
+| Load reuse | The load bot (`server/cmd/loadbot`, #192, #53) reuses `botclient` for the protocol so load and E2E speak one implementation |
 
 ### 3.2 Assertions on every scenario
 
@@ -338,7 +338,6 @@ Roles as in `docs/launch-runbook.md` section 1. The author of a change writes it
 ## 13. Open items
 
 - The E2E acceptance of #190 (S-1 and S-2 green in CI) needs the rules engine (#30 to #40), the protocol (#23, #44), rooms (#46), sessions (#45) and the schema (#55). #190 stays open until then.
-- `docs/performance.md` names `tools/` as the home of the load bot. The load bot reuses `server/internal/botclient`, which Go only allows from inside `server/`; #192 settles the location and updates `docs/performance.md`.
 - The staging-only identity path for bot accounts (section 3.1) needs the token design of #57 and #58 and the environment separation of #24.
 - Device farm provider and UI automation driver: #191, #76.
 - Admin test runner: #134.
