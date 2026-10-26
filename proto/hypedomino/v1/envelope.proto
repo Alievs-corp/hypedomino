@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package hypedomino.v1;
+
+import "hypedomino/v1/error.proto";
+import "hypedomino/v1/hello.proto";
+import "hypedomino/v1/match.proto";
+
+message Envelope {
+  uint32 protocol_version = 1;
+  uint64 sequence = 2;
+  uint64 acked_sequence = 3;
+  oneof payload {
+    ClientHello client_hello = 10;
+    ServerHello server_hello = 11;
+    Error error = 12;
+    PlaceTileIntent place_tile_intent = 20;
+    PassIntent pass_intent = 21;
+    DrawIntent draw_intent = 22;
+  }
+}

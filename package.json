@@ -8,6 +8,8 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "lint": "node tools/comment-lint/comment-lint.mjs",
+    "lint:proto": "node tools/proto-lint/proto-lint.mjs proto",
+    "proto:gen": "buf generate proto --template proto/buf.gen.yaml",
     "test:tools": "node --test \"tools/**/*.test.mjs\""
   }
 }

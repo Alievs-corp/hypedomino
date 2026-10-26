@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package hypedomino.v1;
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_ANDROID = 1;
+  PLATFORM_IOS = 2;
+}
+
+enum HelloStatus {
+  HELLO_STATUS_UNSPECIFIED = 0;
+  HELLO_STATUS_ACCEPTED = 1;
+  HELLO_STATUS_UPDATE_REQUIRED = 2;
+}
+
+message ClientHello {
+  string app_version = 1;
+  string build_hash = 2;
+  Platform platform = 3;
+  string os_version = 4;
+  string device_model = 5;
+  string session_token = 6;
+  uint64 last_acked_sequence = 7;
+}
+
+message ServerHello {
+  HelloStatus status = 1;
+  string minimum_app_version = 2;
+  uint64 server_time_unix_ms = 3;
+  string catalog_version = 4;
+}

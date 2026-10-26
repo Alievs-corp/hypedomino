@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package hypedomino.v1;
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_UNSUPPORTED_PROTOCOL = 1;
+  ERROR_CODE_UNAUTHENTICATED = 2;
+  ERROR_CODE_ILLEGAL_INTENT = 3;
+  ERROR_CODE_RATE_LIMITED = 4;
+}
+
+message Error {
+  ErrorCode code = 1;
+  uint64 rejected_sequence = 2;
+}

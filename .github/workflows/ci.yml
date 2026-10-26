@@ -44,6 +44,10 @@ jobs:
               - '.github/workflows/ci.yml'
             proto:
               - 'proto/**'
+              - 'server/internal/pb/**'
+              - 'client/Assets/HypeDomino/Generated/**'
+              - 'admin/src/gen/**'
+              - 'tools/proto-lint/**'
               - '.github/workflows/ci.yml'
       - id: areas
         env:
@@ -181,6 +185,15 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: buf breaking proto --against ".git#ref=${BASE_SHA},subdir=proto"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node tools/proto-lint/proto-lint.mjs proto
+      - run: buf generate proto --template proto/buf.gen.yaml
+      - name: generated code is current
+        run: |
+          drift=$(git status --porcelain -- server/internal/pb client/Assets/HypeDomino/Generated admin/src/gen)
+          [ -z "$drift" ] || { echo "$drift"; echo "generated code differs from proto/, run npm run proto:gen and commit"; exit 1; }
 
   ci-complete:
     name: CI complete
