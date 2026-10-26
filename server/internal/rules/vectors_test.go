@@ -33,13 +33,13 @@ var vectorRunners = map[string]func(*testing.T, vector){
 	"hand-status":   runHandStatusVector,
 	"round":         runRoundVector,
 	"hand-end":      runHandEndVector,
+	"first-opener":  runFirstOpenerVector,
+	"match-end":     runMatchEndVector,
 }
 
 var pendingVectorKinds = map[string]bool{
-	"first-opener": true,
-	"match-end":    true,
-	"turn-timer":   true,
-	"afk":          true,
+	"turn-timer": true,
+	"afk":        true,
 }
 
 func TestRuleVectors(t *testing.T) {
@@ -390,5 +390,59 @@ func runHandEndVector(t *testing.T, v vector) {
 	}
 	if got != want {
 		t.Fatalf("result = %+v, want %+v", got, want)
+	}
+}
+
+func runFirstOpenerVector(t *testing.T, v vector) {
+	var given struct {
+		Hands    map[Seat]Hand
+		Boneyard Boneyard
+	}
+	var expect struct {
+		Redeal bool
+		Opener *Seat
+		Tile   *Tile
+		Next   *Seat
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	opening, ok := FirstOpener(v.Mode, DefaultConfig(), given.Hands)
+	if ok == expect.Redeal {
+		t.Fatalf("redeal = %v, want %v", !ok, expect.Redeal)
+	}
+	if !ok {
+		return
+	}
+	if opening.Seat != *expect.Opener || opening.Tile != *expect.Tile || opening.Seat.Next() != *expect.Next {
+		t.Fatalf("opening = %s %s next %s, want %s %s next %s", opening.Seat, opening.Tile, opening.Seat.Next(), *expect.Opener, *expect.Tile, *expect.Next)
+	}
+}
+
+func runMatchEndVector(t *testing.T, v vector) {
+	var given struct {
+		End    string
+		Scores vectorTeamPoints
+	}
+	var expect struct {
+		Outcome MatchOutcome
+		Winner  *Team
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	end := HandContinues
+	if given.End != "none" {
+		if err := end.UnmarshalText([]byte(given.End)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	outcome, winner := MatchEnd(DefaultConfig(), end, given.Scores.points())
+	if outcome != expect.Outcome {
+		t.Fatalf("outcome = %s, want %s", outcome, expect.Outcome)
+	}
+	if (outcome == MatchWon) != (expect.Winner != nil) {
+		t.Fatalf("winner presence does not match outcome %s", outcome)
+	}
+	if expect.Winner != nil && winner != *expect.Winner {
+		t.Fatalf("winner = %s, want %s", winner, *expect.Winner)
 	}
 }
