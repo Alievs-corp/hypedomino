@@ -12,7 +12,7 @@ import (
 func recordMatch(tb testing.TB, mode rules.Mode, seed uint64) Record {
 	tb.Helper()
 	recorder := NewRecorder(mode, rules.DefaultConfig(), seed)
-	m := recorder.Match()
+	m := recorder.Match
 	random := rules.NewSeededRandom(seed + 1000)
 	players := map[rules.Seat]*bot.Player{}
 	for i, seat := range mode.Seats() {
@@ -31,7 +31,7 @@ func recordMatch(tb testing.TB, mode rules.Mode, seed uint64) Record {
 }
 
 func act(r *Recorder, players map[rules.Seat]*bot.Player, random rules.Random, buffer []rules.Move) error {
-	m := r.Match()
+	m := r.Match
 	if m.Phase() == rules.PhaseOpening {
 		opening, forced := m.ForcedOpening()
 		seat := opening.Seat
@@ -97,7 +97,7 @@ func TestRecordRoundTripsAndReplaysToTheSameResult(t *testing.T) {
 
 func TestRecorderKeepsOnlyAcceptedIntents(t *testing.T) {
 	recorder := NewRecorder(rules.Mode2v2, rules.DefaultConfig(), 3)
-	opening, _ := recorder.Match().ForcedOpening()
+	opening, _ := recorder.Match.ForcedOpening()
 	if _, err := recorder.Open(opening.Seat.Next(), opening.Tile); err == nil {
 		t.Fatal("wrong opener accepted")
 	}
