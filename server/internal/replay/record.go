@@ -83,7 +83,7 @@ func (r *Record) MarshalBinary() ([]byte, error) {
 }
 
 func appendConfig(data []byte, c rules.Config) []byte {
-	for _, value := range []int{c.HandSize, c.TargetScore, c.ScoringMultiple, c.HandPointsLockThreshold, c.ScoringOpeningPoints} {
+	for _, value := range []int{c.HandSize, c.TargetScore, c.ScoringMultiple, c.HandPointsLockThreshold, c.ScoringOpeningPoints, c.TurnSeconds, c.AfkConsecutiveTimeouts} {
 		data = binary.AppendUvarint(data, uint64(value))
 	}
 	return append(data, packTile(c.FirstHandOpeningTile), packTile(c.ScoringOpeningTile))
@@ -162,6 +162,8 @@ func (r *Record) UnmarshalBinary(data []byte) error {
 		ScoringMultiple:         in.uvarint(),
 		HandPointsLockThreshold: in.uvarint(),
 		ScoringOpeningPoints:    in.uvarint(),
+		TurnSeconds:             in.uvarint(),
+		AfkConsecutiveTimeouts:  in.uvarint(),
 		FirstHandOpeningTile:    in.tile(),
 		ScoringOpeningTile:      in.tile(),
 	}
