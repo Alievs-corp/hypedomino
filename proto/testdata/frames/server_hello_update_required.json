@@ -1,0 +1,9 @@
+{
+  "protocolVersion": 1,
+  "ackedSequence": 1,
+  "serverHello": {
+    "status": "HELLO_STATUS_UPDATE_REQUIRED",
+    "minimumAppVersion": "1.2.0",
+    "serverTimeUnixMs": "1761480000000"
+  }
+}

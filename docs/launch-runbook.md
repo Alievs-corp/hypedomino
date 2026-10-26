@@ -36,8 +36,8 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 |---|---|---|---|
 | GN-1 | Gate 1: no open `priority:p0` or `priority:p1` issue | Release manager | Output of both `gh issue list` commands from the gate, pasted in the release issue |
 | GN-2 | Gate 2: performance budgets pass on the device matrix | Client lead, Server lead | Measurement reports in #191, #192, #161, #164 per `docs/performance.md` |
-| GN-3 | Gate 3: content gate | Live-ops lead | Admin count report green (#198) |
-| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187) |
+| GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
+| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187); AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report |
 | GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 and #196 closed or waived |
 | GN-7 | Gate 7: `CI complete` green on the release commit | Release manager | Link to the run on the tagged commit |
@@ -62,7 +62,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-21 | Support tools work in production: player lookup, grant with reason, ban and mute; moderation and appeal queue staffed | Support lead | Audit log entries of test actions on a staff account | #144, #186 |
 | GN-22 | Store products match admin shop config; a licensed test purchase on the release build is granted once and restores | Live-ops lead | Ledger entry, restore record | #106, #107, #139, #204 |
 | GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots | #194, #187 |
-| GN-24 | Release candidate regression passed; smoke passed on every device tier | QA lead | Test run report | #190, #191 |
+| GN-24 | Release candidate regression passed; smoke passed on every device tier | QA lead | Test run report per `docs/test-strategy.md` section 8 | #190, #191 |
 | GN-25 | On-call schedule published from T-1d to T+14d; contact sheet complete; escalation path tested end to end | Release manager | Schedule link, test page record | section 7 |
 | GN-26 | Support channel live; FAQ and templates published in all four languages | Support lead | Links, translation review | sections 8, 9 |
 | GN-27 | Status page live with incident and maintenance components | Support lead | Link `{filled by #28}` | section 8 |
@@ -79,6 +79,7 @@ T-0 is the moment the release is made available in the stores. Server and config
 | T-5d | Support templates, FAQ and banner texts sent for translation (`docs/localization.md`) | Support lead |
 | T-3d | Server release deployed to production (section 5.1). Go/no-go dry run: every item has evidence or a named blocker | Server lead, Release manager |
 | T-3d | Config freeze: production admin publishes only through the release manager until T+72h, except incident mitigation | Live-ops lead |
+| T-3d | Content gate report run in production (GN-3); run again after any later content or config publish, since that makes it stale | Live-ops lead |
 | T-1d | Go/no-go meeting. Product owner decides go, no-go or slip; decision recorded in the release issue. War room channel opened, on-call launch shifts start | Product owner |
 | T-1d | Backups verified fresh; production smoke with the store-approved build | Server lead, QA lead |
 | T-2h | Final health check of all dashboards; status page set to operational; on-call primary and secondary confirmed online | Release manager |
@@ -157,7 +158,7 @@ Store builds cannot be withdrawn from devices. That is why every client feature 
 
 | Control | Effect | Changed by | Defined in |
 |---|---|---|---|
-| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, admin role per #13 | #210 |
+| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, with the `live_ops` or `super_admin` admin role and the two-person rule of `docs/admin.md` section 8 | #210 |
 | Ranked kill switch | Ranked queues closed; matches in progress finish | Same | #210 |
 | Minimum version and build allowlist | Older or unlisted builds get `UPDATE_REQUIRED` | Same, with the client lead | #210, ADR 0004 |
 | Maintenance mode | Client shows the maintenance screen; no new matches | Same | #146 |

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package hypedomino.v1;
+
+enum BoardEnd {
+  BOARD_END_UNSPECIFIED = 0;
+  BOARD_END_LEFT = 1;
+  BOARD_END_RIGHT = 2;
+  BOARD_END_TOP = 3;
+  BOARD_END_BOTTOM = 4;
+}
+
+message Tile {
+  uint32 low = 1;
+  uint32 high = 2;
+}
+
+message PlaceTileIntent {
+  Tile tile = 1;
+  BoardEnd end = 2;
+}
+
+message PassIntent {}
+
+message DrawIntent {}

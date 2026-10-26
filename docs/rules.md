@@ -128,7 +128,7 @@ Rule values live in `rules.Config` so they can change without code changes. The 
 | `ScoringOpeningTile` | 5-5 | R-29 |
 | `ScoringOpeningPoints` | 10 | R-29 |
 | `TurnSeconds` | admin config, 20 | R-49 |
-| `AfkConsecutiveTimeouts` | admin config | R-51 |
+| `AfkConsecutiveTimeouts` | admin config, 3 | R-51 |
 
 ## 14. Worked examples
 

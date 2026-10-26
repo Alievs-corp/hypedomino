@@ -120,7 +120,7 @@ All of the following hold on the release candidate commit. Scope is in the refer
 
 1. All issues labelled `priority:p0` or `priority:p1` are closed. Check: `gh issue list --state open -l "priority:p0"` and `-l "priority:p1"` return nothing.
 2. Performance budgets are measured and pass as defined in `docs/performance.md` on the device matrix (#191, #192, #161, #164).
-3. Minimum content catalogue meets the content gate (#198).
+3. Minimum content catalogue meets the content gate (#198, `docs/launch-content-gate.md`).
 4. Legal documents are published and linked from the store pages and the app (#195, #187).
 5. Anti-cheat red team passes with no open critical finding (#212), on top of `docs/anti-cheat.md` (#201).
 6. Release checklist and runbook (#197, `docs/launch-runbook.md`) are completed; backup and restore were exercised (#188); closed beta (#193) and soft launch KPI tracking (#196) are done or explicitly waived by the owner in the issue.

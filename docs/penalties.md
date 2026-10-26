@@ -1,10 +1,11 @@
 # AFK and leaver penalties
 
-Penalties for players who stop playing a match (R-51) or leave it (R-52). The server alone detects offenses, applies penalties and keeps the record; the client only shows them. Every count, weight, percentage and duration below is admin config (section 7). This document fixes the structure and the order of escalation, not the values.
+Penalties for players who stop playing a match (R-51) or leave it (R-52). The server alone detects offenses, applies penalties and keeps the record; the client only shows them. Every count, weight, percentage and duration below is admin config (section 8). This document fixes the structure and the order of escalation, not the values.
 
 ## 1. Scope
 
-- Applies to ranked 1v1 and 2v2 matches (R-53).
+- Ranked 1v1 and 2v2 matches (R-53): offenses of section 2, the offense level of section 3, the ladder of section 4 and the match result of section 5.
+- Casual 1v1 and 2v2 matches (R-56): offenses of section 2 on the separate, lighter casual ladder of section 6.
 - Does not apply to custom rooms (R-55): nothing is recorded and nothing is penalised there.
 - A match that is cancelled by the server (server fault, region outage) records no offense for anyone.
 
@@ -48,14 +49,33 @@ Each step applies from the moment the offense is recorded. A higher step include
 - When both partners of a team commit an offense, neither gets the partner reduction.
 - When the offender's team wins (the bot and the partner finish the match), the win still counts as a loss for the offender only.
 
-## 6. Record, notice and appeal
+## 6. Casual matches
 
-- Every offense is stored with the match id, the seat, the timeout, reconnect and leave events with server timestamps, and the config version used.
-- The player sees each active offense, its expiry, their current step and how to leave it.
+Casual offenses are kept apart from ranked ones. They never add to the offense level of section 3 and never lead to a matchmaking ban or a review.
+
+- Offenses and their weights are those of section 2.
+- A casual offense stays active for `CasualOffenseWindowDays` from the match end. `CasualCleanMatchesToForgive` completed casual matches without an offense in a row remove the oldest active casual offense early.
+- The casual offense level is the sum of the weights of the active casual offenses. It picks the step of the casual ladder.
+- Each step applies from the moment the offense is recorded. A queue delay step includes the warning.
+
+| Step | From casual level (config) | Penalty |
+|---|---|---|
+| 1. Warning | `CasualWarningLevel` | A notice after the match: what was detected, the current casual level and the next step |
+| 2. Casual queue delay `n` | Entry `n` of `CasualQueueDelayLevels` | Every casual matchmaking entry waits entry `n` of `CasualQueueDelaySeconds` before the search starts, for the next `CasualQueueDelayMatches` completed casual matches. The highest step reached applies. Ranked matchmaking and custom rooms are not delayed |
+
+| Who | Rewards |
+|---|---|
+| Offender | No coins, pass XP, mission or medal progress from that match. AFK, returned: rewards are kept |
+| Partner of the offender (2v2) and opponents | Normal. The bot plays the offender's seat (R-50 to R-52); nobody else is penalised |
+
+## 7. Record, notice and appeal
+
+- Every offense is stored with the match id, the queue (ranked or casual), the seat, the timeout, reconnect and leave events with server timestamps, and the config version used.
+- The player sees each active offense, its expiry, their current step on each ladder and how to leave it.
 - An admin can remove an offense or lift a penalty, with a mandatory reason. Every admin change is audited.
 - Applying penalties is idempotent: replaying the same match end never records a second offense.
 
-## 7. Config
+## 8. Config
 
 | Field | Meaning |
 |---|---|
@@ -68,5 +88,10 @@ Each step applies from the moment the offense is recorded. A higher step include
 | `BanHours`, `BanEscalationFactor` | First ban length and its growth for each further ban in the window |
 | `OffenseRatingPenalty` | Extra rating loss for the offender |
 | `PartnerLossReductionPercent` | How much smaller the partner's rating loss is |
+| `CasualOffenseWindowDays` | How long a casual offense stays active |
+| `CasualCleanMatchesToForgive` | Clean completed casual matches in a row that remove the oldest active casual offense |
+| `CasualWarningLevel` | Casual offense level at which the casual warning starts |
+| `CasualQueueDelayLevels`, `CasualQueueDelaySeconds` | Ascending casual offense levels of the casual queue delay steps, and the delay of each step; equal length. No entry of `CasualQueueDelaySeconds` exceeds `QueueDelaySeconds`, so the casual ladder stays lighter than the ranked one |
+| `CasualQueueDelayMatches` | How many completed casual matches a casual queue delay lasts |
 
 Values are set in the admin panel before launch. A match always uses the config version that was active when it started.

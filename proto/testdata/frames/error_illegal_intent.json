@@ -1,0 +1,8 @@
+{
+  "protocolVersion": 1,
+  "ackedSequence": 7,
+  "error": {
+    "code": "ERROR_CODE_ILLEGAL_INTENT",
+    "rejectedSequence": "7"
+  }
+}

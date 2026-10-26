@@ -166,4 +166,4 @@ A publish that breaks a rule is rejected (ADR 0006). The checker in `tools/desig
 - The client never sends a rarity, ordinal or table choice. Rarity is display data on the client; the server uses it only for table selection.
 - Prices, drop chances and rewards are not derived from rarity here; they belong to #7 and #9.
 - Open: the reference board panel with the five item cards and the four-mythic-seat mock (`docs/art-direction.md` section 9, #167).
-- Open: reward reveal motion per tier, with the shop and pass screens (#7, #9).
+- Reward reveal for pass, mission and medal grants: `docs/pass-missions-medals.md` 6.1. Open: the shop purchase reveal (#7).

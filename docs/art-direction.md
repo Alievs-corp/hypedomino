@@ -2,7 +2,7 @@
 
 Status: proposal; the owner approves it by merging. How every shipped image looks: palette use, shape, light, outline, characters, effects, static fallbacks and the reference board. It defines no colour, duration or budget value. Colours are named by their token path in `docs/design-tokens.json`; motion and effect budgets come from `docs/ui-motion.md` and `docs/performance.md`; delivery follows ADR 0002; item data follows `docs/cosmetics.md`; content limits follow `docs/localization.md` sections 6 and 7 (PEGI 3 target). `node tools/art-direction/art-direction.mjs` checks that this file contains no colour literal and that every token path it names exists; CI runs its tests through `npm run test:tools`.
 
-Production workflow, prompt templates, naming and folders are #167. UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours `docs/rarity.md`.
+Production workflow, prompt templates, naming and folders are `docs/asset-workflow.md` (#167). UI kit is #168, tile set and table base art #169, effects library #176, animated asset format and per-screen animation budget #93, rarity and status colours `docs/rarity.md`.
 
 ## 1. Pillars
 
