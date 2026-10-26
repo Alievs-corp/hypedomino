@@ -36,7 +36,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 |---|---|---|---|
 | GN-1 | Gate 1: no open `priority:p0` or `priority:p1` issue | Release manager | Output of both `gh issue list` commands from the gate, pasted in the release issue |
 | GN-2 | Gate 2: performance budgets pass on the device matrix | Client lead, Server lead | Measurement reports in #191, #192, #161, #164 per `docs/performance.md` |
-| GN-3 | Gate 3: content gate | Live-ops lead | Admin count report green (#198) |
+| GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
 | GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report |
 | GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 and #196 closed or waived |
@@ -79,6 +79,7 @@ T-0 is the moment the release is made available in the stores. Server and config
 | T-5d | Support templates, FAQ and banner texts sent for translation (`docs/localization.md`) | Support lead |
 | T-3d | Server release deployed to production (section 5.1). Go/no-go dry run: every item has evidence or a named blocker | Server lead, Release manager |
 | T-3d | Config freeze: production admin publishes only through the release manager until T+72h, except incident mitigation | Live-ops lead |
+| T-3d | Content gate report run in production (GN-3); run again after any later content or config publish, since that makes it stale | Live-ops lead |
 | T-1d | Go/no-go meeting. Product owner decides go, no-go or slip; decision recorded in the release issue. War room channel opened, on-call launch shifts start | Product owner |
 | T-1d | Backups verified fresh; production smoke with the store-approved build | Server lead, QA lead |
 | T-2h | Final health check of all dashboards; status page set to operational; on-call primary and secondary confirmed online | Release manager |
