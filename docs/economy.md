@@ -52,7 +52,7 @@ Coins per completed match:
 - Casual is the unranked matchmaking queue (R-56). Casual earns about 60% of ranked per hour because it may fill seats with bots (#48) and is the easier farm target.
 - A casual match that started with a bot-filled seat pays `BotSeatRewardPercent` (50) of the table value, rounded to the nearest integer, halves away from zero. A bot that replaces an AFK or leaving player during a match (R-50 to R-52) reduces nobody's reward.
 - Custom rooms (R-55) pay no coins: players pick the teams, so wins can be arranged. They give no pass XP and advance no missions or medals (`docs/pass-missions-medals.md` section 3).
-- AFK and leave offenders follow `docs/penalties.md` section 5 (no coins, except AFK returned). Partners and opponents get the normal reward.
+- AFK and leave offenders in ranked and casual matches get no coins, except AFK returned (`docs/penalties.md` sections 5 and 6). Partners and opponents get the normal reward.
 - A match cancelled by the server pays nothing.
 - No bonus for score margin or match length: margin rewards running up the score, and length is already priced per mode.
 - `DailyMatchCoinCap` (400) limits match coins per account per economy day. A reward that would cross the cap is cut to the remainder; after the cap a match pays 0 coins and still gives pass XP and mission progress (`docs/pass-missions-medals.md` 2.3). The first-win bonus is outside the cap.
