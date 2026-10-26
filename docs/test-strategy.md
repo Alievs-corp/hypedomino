@@ -39,7 +39,7 @@ The pyramid: most checks are fast pure tests (rules vectors, property tests, cli
 | Vector runner | One table-driven test reads every `docs/rules-vectors/*.json` except `schema.json`, dispatches on `kind`, compares with `expect` field by field; the vector id is the subtest name; an unknown `kind` fails (`docs/rules-vectors/README.md`). Non-tunable values use the `rules.Config` defaults of `docs/rules.md` section 13 | #30 to #38, #39 |
 | Property tests | From random seeded deals and random legal play: the 28 tiles are conserved across hands, board and boneyard (R-1 to R-3); every move the engine lists as legal is accepted and every other one is refused (R-20 to R-23); every score and hand total is a multiple of `ScoringMultiple` (R-25, R-33, R-37, R-38); no team score changes in the middle of a hand except by placement scores; a match ends only at a hand end by domino with a team at or above `TargetScore` and strictly ahead (R-43 to R-48); every match terminates | #39 |
 | Fuzz | `go test -fuzz` targets on intent application and state decoding: no panic, an illegal intent returns an error and leaves state unchanged | #39 |
-| Benchmarks | Processing one move: *proposal from #39* under 5 microseconds and 0 allocs/op; regressions per `docs/performance.md` section 6 "Hot-path cost" | #39 |
+| Benchmarks | Processing one move under 5 microseconds and 0 allocs/op (`BenchmarkPlace`, `BenchmarkLegalMoves`, `BenchmarkMatch` per step); the `bench` CI job runs `benchstat` against `main` and reports without gating, per `docs/performance.md` section 6 "Hot-path cost" | #39 |
 | Bot (#40) | Never plays an illegal move under fuzz; the hardest level wins at least 80% against random legal play; decision within 50 ms | #40 |
 | Replay (#41) | Replaying a record (seed and moves) gives the same hands, scores and result | #41 |
 
@@ -312,7 +312,7 @@ All *proposal*; measured, reported in CI and raised or lowered by PR to this fil
 
 | Code | Line coverage | Measured by |
 |---|---|---|
-| `server/internal/rules` | 95% (#39) | `go test -coverprofile` |
+| `server/internal/rules` | 95%, enforced by the `server` CI job | `go test -coverprofile` |
 | Economy, ledger, ranking, penalties packages | 90% | `go test -coverprofile` |
 | Rest of `server/` | 75% | `go test -coverprofile` |
 | Client logic assemblies (no scene or view code) | 60% | Unity Code Coverage package |
