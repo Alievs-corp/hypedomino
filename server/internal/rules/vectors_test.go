@@ -24,22 +24,22 @@ type vectorFile struct {
 }
 
 var vectorRunners = map[string]func(*testing.T, vector){
-	"deal":  runDealVector,
-	"place": runPlaceVector,
+	"deal":          runDealVector,
+	"place":         runPlaceVector,
+	"draw":          runDrawVector,
+	"opening-score": runOpeningScoreVector,
 }
 
 var pendingVectorKinds = map[string]bool{
-	"seat":          true,
-	"first-opener":  true,
-	"opening-score": true,
-	"turn":          true,
-	"draw":          true,
-	"hand-status":   true,
-	"round":         true,
-	"hand-end":      true,
-	"match-end":     true,
-	"turn-timer":    true,
-	"afk":           true,
+	"seat":         true,
+	"first-opener": true,
+	"turn":         true,
+	"hand-status":  true,
+	"round":        true,
+	"hand-end":     true,
+	"match-end":    true,
+	"turn-timer":   true,
+	"afk":          true,
 }
 
 func TestRuleVectors(t *testing.T) {
@@ -196,5 +196,51 @@ func runPlaceVector(t *testing.T, v vector) {
 	}
 	if ends.Total() != expect.Total {
 		t.Fatalf("total = %d, want %d", ends.Total(), expect.Total)
+	}
+	if score := PlacementScore(ends.Total(), DefaultConfig()); score != expect.Score {
+		t.Fatalf("score = %d, want %d", score, expect.Score)
+	}
+}
+
+func runDrawVector(t *testing.T, v vector) {
+	var given struct {
+		Board    vectorBoard
+		Hand     Hand
+		Boneyard Boneyard
+	}
+	var expect struct {
+		Drawn   []Tile
+		Outcome TurnOutcome
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	board := boardFromVector(t, given.Board)
+	var buffer [SetSize]Tile
+	drawn, outcome := DrawUntilPlayable(v.Mode, &board, &given.Hand, &given.Boneyard, buffer[:0])
+	if outcome != expect.Outcome {
+		t.Fatalf("outcome = %v, want %v", outcome, expect.Outcome)
+	}
+	if !sameTiles(drawn, expect.Drawn) {
+		t.Fatalf("drawn = %v, want %v", drawn, expect.Drawn)
+	}
+	if (outcome == OutcomePlace) != board.HasLegalMove(given.Hand) {
+		t.Fatalf("outcome %v but HasLegalMove %v", outcome, board.HasLegalMove(given.Hand))
+	}
+}
+
+func runOpeningScoreVector(t *testing.T, v vector) {
+	var given struct {
+		FirstHand            bool
+		Tile                 Tile
+		TeamScoreAtHandStart int
+	}
+	var expect struct {
+		Score int
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	score := OpeningScore(DefaultConfig(), given.FirstHand, given.Tile, given.TeamScoreAtHandStart)
+	if score != expect.Score {
+		t.Fatalf("score = %d, want %d", score, expect.Score)
 	}
 }
