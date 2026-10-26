@@ -113,7 +113,7 @@ Unit and component tests run with `pnpm test`, browser e2e as a separate suite. 
 
 ### 2.7 Spec tooling (exists)
 
-`npm run lint` runs the comment lint; `npm run test:tools` runs `node --test "tools/**/*.test.mjs"`: comment lint, rules vectors, economy balance sheet, design tokens, art direction and cosmetics schema validators. They run in the `lint` CI job on every PR and keep the spec fixtures that server tests consume (vectors, balance CSV, manifests) valid before the code exists.
+`npm run lint` runs the comment lint; `npm run test:tools` runs `node --test "tools/**/*.test.mjs"`: comment lint, rules vectors, economy balance sheet, pass sample season, design tokens, art direction and cosmetics schema validators. They run in the `lint` CI job on every PR and keep the spec fixtures that server tests consume (vectors, balance CSV, manifests) valid before the code exists.
 
 ## 3. End-to-end bot clients
 
@@ -154,7 +154,7 @@ Seed counts are *proposals*.
 | S-4 | Illegal intents: tile not in hand, wrong end, out of turn, pass or draw while holding a legal placement (R-20 to R-23), action at or after the turn limit (R-50) | PR CI |
 | S-5 | Duplicate sequence answered idempotently; frame with a foreign session nonce refused | PR CI, V-8, #207 |
 | S-6 | Turn timeout: bot moves for the player (R-50); after `AfkConsecutiveTimeouts` the player is AFK (R-51); reconnect takes control back and resets the count | PR CI |
-| S-7 | Leaver replaced by the bot until the end (R-52); penalty recorded once (`docs/penalties.md` section 6) | PR CI |
+| S-7 | Leaver replaced by the bot until the end (R-52); penalty recorded once (`docs/penalties.md` section 7) | PR CI |
 | S-8 | Disconnect mid-turn and resume with session token and last acknowledged sequence | PR CI, #45 |
 | S-9 | Server stops mid-match and restarts: result not lost and not doubled | PR CI, #50 |
 | S-10 | App version below the configured minimum gets `UPDATE_REQUIRED` | PR CI, ADR 0004, #210 |

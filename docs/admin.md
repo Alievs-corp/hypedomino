@@ -2,7 +2,7 @@
 
 Roles and permissions, every object the admin panel manages with its fields and lifecycle, the draft, preview, publish and schedule workflow over versioned config snapshots, validation, rollback, live controls, player tools, the audit log, the two-person rule, security, and the screen list. Architecture is ADR 0006: a separate Next.js app that talks only to the admin API; the admin API validates and writes config, the game server reads published snapshots.
 
-Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs/cosmetics/schema.json`), rarity (`docs/rarity.md`), economy values and rules (`docs/economy.md`, `docs/economy/balance.csv`), ranking (`docs/ranking.md`), penalties (`docs/penalties.md`), anti-cheat responses (`docs/anti-cheat.md`), personal data and its access (`docs/privacy.md`), strings and moderation lists (`docs/localization.md`), kill switch procedures (`docs/launch-runbook.md`). No colour, price, duration or reward value is defined here. Names in `CamelCase` code font are config keys; section 11 lists the keys this document adds. Implementation is Epic 12 (#133); section 12 maps sections to its sub-issues.
+Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs/cosmetics/schema.json`), rarity (`docs/rarity.md`), economy values and rules (`docs/economy.md`, `docs/economy/balance.csv`), ranking (`docs/ranking.md`), pass, missions and medals (`docs/pass-missions-medals.md`), penalties (`docs/penalties.md`), anti-cheat responses (`docs/anti-cheat.md`), personal data and its access (`docs/privacy.md`), strings and moderation lists (`docs/localization.md`), kill switch procedures (`docs/launch-runbook.md`). No colour, price, duration or reward value is defined here. Names in `CamelCase` code font are config keys; section 11 lists the keys this document adds. Implementation is Epic 12 (#133); section 12 maps sections to its sub-issues.
 
 ## 1. Principles
 
@@ -97,7 +97,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
 | `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
-| `penalties` | `docs/penalties.md` section 7 | From the server |
+| `penalties` | `docs/penalties.md` section 8 | From the server |
 | `anticheat` | `docs/anti-cheat.md` section 7 except live controls | Never |
 | `privacy` | `docs/privacy.md` section 4 and section 11 | Policy and age values only |
 | `moderation` | Word filter, reserved names, confusables table version, nickname and report keys (`docs/localization.md` section 5) | Never |
@@ -136,7 +136,7 @@ draft -> submitted -> approved -> [scheduled] -> active -> superseded
 | `cosmetics` | Schema and V-1 to V-11, V-19 for the whole manifest; V-12 to V-18 across manifests and other admin data | `docs/cosmetics.md` section 9; `tools/cosmetics-schema` runs the single-manifest rules on repo examples |
 | `rarity` | Ids, ordinals 1 to N, unique pips, glow order, contrast on all ground layers, no removed id still referenced | `docs/rarity.md` section 7; `tools/design-tokens` runs the same rules on the defaults |
 | `economy` | Offer price is coins or a store product, never both; `mythic` only in time-limited offers; struck-through price is the lowest of `ReferencePriceDays`; bundle has a non-empty field; daily and weekly mission sets within budget | `docs/economy.md` 3.1, 4, 6.2, 6.3, 2.4; `tools/economy-balance` regenerates the balance sheet from the CSV defaults |
-| `progression` | Pass free and premium track coins within `PassFreeTrackCoins` and `PassPremiumTrackCoins` | `docs/economy.md` 2.5, #9 |
+| `progression` | PV-1 to PV-10: track coins within `PassFreeTrackCoins` and `PassPremiumTrackCoins`; every premium level has a bundle; no `medals`, `passXp` or `mythic` item on a track; no overlapping pass seasons and no change to a frozen field of a running one; mission slots within their coin and XP budgets; event mission XP within `EventMissionXpBudget`; medal sources only `mission` or `rank_reward` | `docs/pass-missions-medals.md` 9.1, `docs/economy.md` 2.5; `tools/pass-season` checks the sample season against the curve and the track budgets |
 | `ranking` | `LpChangeMax` + `OffenseRatingPenalty` below `DivisionLp`; reset table monotone and never above the old rank; structural keys unchanged while a season runs; seasons contiguous | `docs/ranking.md` 3.1, 7.1, 7.2 |
 | `localization` | Only approved values in a bundle; placeholders match the key's declaration; plural categories complete per language; value within the key's max length; `en` complete; `en` last in every fallback chain | `docs/localization.md` 1.2, 2.1, 4.1 to 4.3 |
 | All | Every reference resolves (bundle, offer, item, medal, mission, product); every record that grants an item is listed in the item's `sources`; every value within its schema type and bounds; every `nameKey` has an approved `en` value | `docs/cosmetics.md` V-15, V-16, AP-3 |
@@ -277,44 +277,55 @@ The admin never sets a local price (`docs/economy.md` 7.4). Store products must 
 
 ### 5.7 Pass seasons
 
-Season structure, levels and the XP curve are owned by #9; this table is what the admin needs from it and #9 extends it in the same PR as its spec.
+Rules: `docs/pass-missions-medals.md` section 2.
 
 | Field | Rule |
 |---|---|
-| `id` | `pass.<slug>` |
+| `id` | `season_<n>` |
 | `nameKey` | Game string |
-| `window` | Start and end, UTC |
-| `levels` | Level count |
-| `xpPerLevel` | List, one entry per level |
-| `freeTrack`, `premiumTrack` | Per level: bundle id or none |
+| `window` | Start and end, server UTC; defaults to the ranked season's window; never overlaps another pass season |
+| `levels`, `curve` | Server: `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax` of the published config when the season is created |
+| `xpTable` | Server: XP to next level and XP total per level from the curve (`docs/pass-missions-medals.md` 2.2) |
+| `freeTrack`, `premiumTrack` | Per level 1 to `levels`: a bundle id; a free level may be empty, a premium level may not. Track bundles carry `coins` and `cosmetics` only, never `medals`, `passXp` or a `mythic` item; each cosmetic lists the source `pass.<seasonId>.<track>.level_<n>` |
 | `products` | `pass_premium`, `pass_premium_plus` bound to the season (`docs/economy.md` 7.2) |
 | `budget` | Server: coin totals per track against `PassFreeTrackCoins` and `PassPremiumTrackCoins` |
 
-Lifecycle: create or clone a past season (#140), publish before its start. After start only fields #9 marks as live-editable change.
+Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with an item of the same type and rarity, with an audited reason. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
 
 ### 5.8 Missions and daily login
 
+Rules: `docs/pass-missions-medals.md` section 4.
+
 | Field | Rule |
 |---|---|
-| `id` | `mission.<slug>` |
-| `period` | `daily`, `weekly`, `achievement` |
-| `nameKey`, `descriptionKey` | Game strings |
-| `condition` | Event type from the server's list, target count and filters (mode, queue), built without code (#141) |
-| `bundle` | Reward bundle id |
-| `schedule` | Active window and rotation, UTC |
+| `id` | `mission.<slug>`, never reused |
+| `revision` | Server: +1 on every published change |
+| `type` | `daily`, `weekly`, `achievement`, `event` |
+| `nameKey` | Server: `mission.<slug>.name`, an ICU message with `{target}` and plural forms; the value is edited as a game string (5.15) |
+| `event`, `target`, `filters` | A progress event from the server's list (`docs/pass-missions-medals.md` 4.3), a target >= 1, optional `queue` and `mode` filters; built without code (#141) |
+| `slot`, `weight` | `daily` and `weekly` only: slot number and selection weight >= 1. The slot fixes the reward: `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` |
+| `bundle` | `achievement` and `event` only: reward bundle id |
+| `next` | `achievement` only, optional: the next mission of the chain |
+| `eventId` | `event` only: the live event (5.13) |
+| `availability` | `live` or `retired` |
 
-Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` or a bundle id (`docs/economy.md` 2.3). Condition types, rotation rules and whether custom rooms count are #9. Before publish a mission is tried on a staff test account in staging (#141).
+Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` or a bundle id (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141).
 
 ### 5.9 Medals
 
+Rules: `docs/pass-missions-medals.md` section 5.
+
 | Field | Rule |
 |---|---|
-| `id` | `medal.<slug>` |
-| `nameKey`, `descriptionKey` | Game strings |
-| `iconAddress` | Static icon upload (5.2) |
-| `availability` | `live` or `retired` |
+| `id` | `medal.<slug>`, never reused |
+| `revision` | Server: +1 on every published change |
+| `nameKey`, `descriptionKey` | Server: `medal.<slug>.name`, `medal.<slug>.description`; the values are edited as game strings (5.15); the description says how the medal is earned |
+| `rarityId` | Picked from the published rarity table, guided by the expected earn share (`docs/pass-missions-medals.md` 5.3); the list shows the measured share from #147 |
+| `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2) |
+| `sources` | At least one: `mission` (achievement or event mission id) or `rank_reward` (#120 reward id) |
+| `availability` | `live`, `retired`, `disabled` (`docs/cosmetics.md` section 6) |
 
-Medals are granted only through bundles (`docs/economy.md` section 4). Award rules are #9 and #129.
+Medals are granted only through a bundle of a listed source (`docs/economy.md` section 4); pass tracks, shop offers and promo codes never carry one. Grant rules are #129.
 
 ### 5.10 Leaderboard emblems
 
@@ -384,7 +395,7 @@ Remote config (#145) is one editor over every key of the domains in 3.1.
 | `perMode` | True for ranking keys (one value for 1v1, one for 2v2) |
 | `value` | Edited |
 | `default` | Repo default, with a link to its spec section |
-| `frozenWhileSeason` | True for `docs/ranking.md` 7.1 structural keys |
+| `frozenWhileSeason` | True for `docs/ranking.md` 7.1 structural keys; `PassLevels` and the pass XP curve are frozen per pass season by its record (5.7) |
 
 Feature flags are boolean or enum keys of the `liveops` domain with an optional audience filter by platform and app version. Who edits which domain is the matrix in 2.3; anti-cheat values are hidden from every role but `super_admin` because they describe detection (`docs/privacy.md` 8.3).
 
@@ -457,7 +468,7 @@ Every action goes through the same server path a game event would use, so it obe
 | Temporary ban | No login for `TempBanHours` (`docs/anti-cheat.md` section 3) | No |
 | Shadowban, lift shadowban | `docs/anti-cheat.md` section 3 | No |
 | Permanent ban, lift permanent ban | From the review queue only (`docs/anti-cheat.md` section 3) | Yes |
-| Remove offense, lift penalty | `docs/penalties.md` section 6 | No |
+| Remove offense, lift penalty | `docs/penalties.md` section 7 | No |
 | Revert rating changes | Reverses MMR and LP of named matches after confirmed collusion (`docs/anti-cheat.md` V-9) | No |
 | Revoke emblem | `docs/ranking.md` 8.3; leaves the showcase at once | No |
 | Force rename | `docs/localization.md` 5.6 | No |
@@ -586,7 +597,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`).
 
 ## 12. Implementation
 
@@ -622,5 +633,3 @@ Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the
 | O-4 | Meaning of "mute" in #144 | Blocks in-match emoji and quick messages for `ModerationMuteHours`; play is unaffected |
 | O-5 | Second factor for `super_admin` | Phishing-resistant keys only |
 | O-6 | Section 11 defaults | As listed |
-
-Open: pass, mission and medal fields (5.7 to 5.9) take their final shape from #9, which updates this document in the same PR.
