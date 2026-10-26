@@ -24,22 +24,22 @@ type vectorFile struct {
 }
 
 var vectorRunners = map[string]func(*testing.T, vector){
-	"deal":  runDealVector,
-	"place": runPlaceVector,
-	"draw":  runDrawVector,
+	"deal":          runDealVector,
+	"place":         runPlaceVector,
+	"draw":          runDrawVector,
+	"opening-score": runOpeningScoreVector,
 }
 
 var pendingVectorKinds = map[string]bool{
-	"seat":          true,
-	"first-opener":  true,
-	"opening-score": true,
-	"turn":          true,
-	"hand-status":   true,
-	"round":         true,
-	"hand-end":      true,
-	"match-end":     true,
-	"turn-timer":    true,
-	"afk":           true,
+	"seat":         true,
+	"first-opener": true,
+	"turn":         true,
+	"hand-status":  true,
+	"round":        true,
+	"hand-end":     true,
+	"match-end":    true,
+	"turn-timer":   true,
+	"afk":          true,
 }
 
 func TestRuleVectors(t *testing.T) {
@@ -197,6 +197,9 @@ func runPlaceVector(t *testing.T, v vector) {
 	if ends.Total() != expect.Total {
 		t.Fatalf("total = %d, want %d", ends.Total(), expect.Total)
 	}
+	if score := PlacementScore(ends.Total(), DefaultConfig()); score != expect.Score {
+		t.Fatalf("score = %d, want %d", score, expect.Score)
+	}
 }
 
 func runDrawVector(t *testing.T, v vector) {
@@ -222,5 +225,22 @@ func runDrawVector(t *testing.T, v vector) {
 	}
 	if (outcome == OutcomePlace) != board.HasLegalMove(given.Hand) {
 		t.Fatalf("outcome %v but HasLegalMove %v", outcome, board.HasLegalMove(given.Hand))
+	}
+}
+
+func runOpeningScoreVector(t *testing.T, v vector) {
+	var given struct {
+		FirstHand            bool
+		Tile                 Tile
+		TeamScoreAtHandStart int
+	}
+	var expect struct {
+		Score int
+	}
+	decodeVector(t, v.Given, &given)
+	decodeVector(t, v.Expect, &expect)
+	score := OpeningScore(DefaultConfig(), given.FirstHand, given.Tile, given.TeamScoreAtHandStart)
+	if score != expect.Score {
+		t.Fatalf("score = %d, want %d", score, expect.Score)
 	}
 }
