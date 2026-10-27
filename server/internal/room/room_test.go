@@ -445,3 +445,36 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 		t.Fatal("a returning leaver did not take the seat back by joining")
 	}
 }
+
+func TestTheCreatorKicksASeatAndAdmitsItAgain(t *testing.T) {
+	tab := newTable(t, rules.Mode2v2, 8)
+	tab.settle()
+	v := tab.snapshot(rules.SeatNorth)
+	kicked, other := v.ForcedOpening.Seat, v.ForcedOpening.Seat.Next()
+	tab.room.Kick(kicked)
+	v = tab.view(other)
+	if v.Controllers[kicked] != rules.ControllerBot || v.State != StatePlaying {
+		t.Fatalf("after the kick: %+v", v)
+	}
+	back := make(chanSink, 16)
+	tab.room.Reconnect(kicked, back)
+	if m := <-back; !m.Rejected || !errors.Is(m.Reason, ErrBarred) {
+		t.Fatalf("a kicked player reconnected: %+v", m)
+	}
+	tab.room.Join(kicked, back)
+	if m := <-back; !m.Rejected || !errors.Is(m.Reason, ErrBarred) {
+		t.Fatalf("a kicked player joined: %+v", m)
+	}
+	tab.room.Admit(kicked)
+	tab.room.Join(kicked, back)
+	if m := <-back; m.Rejected || m.View.Controllers[kicked] != rules.ControllerPlayer {
+		t.Fatalf("after admit: %+v", m)
+	}
+	tab.room.Kick(rules.SeatX)
+	if tab.snapshot(other).Controllers[rules.SeatX] != rules.ControllerPlayer {
+		t.Fatal("kicking a seat outside the mode changed something")
+	}
+	if tab.room.Kind() != KindRanked {
+		t.Fatalf("default kind %s", tab.room.Kind())
+	}
+}

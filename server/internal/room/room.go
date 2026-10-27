@@ -18,7 +18,26 @@ var (
 	ErrFinished      = errors.New("room: the match is over")
 	ErrSeatByBot     = errors.New("room: the seat is played by the bot")
 	ErrStaleSequence = errors.New("room: sequence already handled")
+	ErrBarred        = errors.New("room: seat barred by the room creator")
 )
+
+type Kind uint8
+
+const (
+	KindRanked Kind = iota
+	KindCasual
+	KindCustom
+)
+
+func (k Kind) String() string {
+	switch k {
+	case KindCasual:
+		return "casual"
+	case KindCustom:
+		return "custom"
+	}
+	return "ranked"
+}
 
 type State uint8
 
@@ -46,6 +65,7 @@ type Sink interface {
 }
 
 type Options struct {
+	Kind     Kind
 	Mode     rules.Mode
 	Config   rules.Config
 	Bot      bot.Config
@@ -80,6 +100,7 @@ type Room struct {
 	timer    <-chan time.Time
 	moves    []rules.Move
 	done     chan struct{}
+	barred   [6]bool
 	finished chan struct{}
 	ended    bool
 }
@@ -149,6 +170,23 @@ func (r *Room) Leave(seat rules.Seat) {
 	r.enqueue(func(r *Room) { r.leave(seat) })
 }
 
+func (r *Room) Kick(seat rules.Seat) {
+	r.enqueue(func(r *Room) {
+		if r.seated(seat) {
+			r.barred[seat] = true
+			r.leave(seat)
+		}
+	})
+}
+
+func (r *Room) Admit(seat rules.Seat) {
+	r.enqueue(func(r *Room) { r.barred[seat] = false })
+}
+
+func (r *Room) Kind() Kind {
+	return r.options.Kind
+}
+
 func (r *Room) Disconnect(seat rules.Seat, sink Sink) {
 	r.enqueue(func(r *Room) { r.disconnect(seat, sink) })
 }
@@ -174,6 +212,10 @@ func (r *Room) Record(reply chan<- replay.Record) {
 func (r *Room) join(seat rules.Seat, sink Sink) {
 	if !r.seated(seat) || r.seats[seat].sink != nil {
 		sink.Deliver(Message{Rejected: true, Reason: ErrSeatTaken})
+		return
+	}
+	if r.barred[seat] {
+		sink.Deliver(Message{Rejected: true, Reason: ErrBarred})
 		return
 	}
 	r.seats[seat].sink = sink
@@ -205,6 +247,10 @@ func (r *Room) full() bool {
 func (r *Room) reconnect(seat rules.Seat, sink Sink) {
 	if !r.seated(seat) {
 		sink.Deliver(Message{Rejected: true, Reason: ErrNotSeated})
+		return
+	}
+	if r.barred[seat] {
+		sink.Deliver(Message{Rejected: true, Reason: ErrBarred})
 		return
 	}
 	r.seats[seat].sink = sink
