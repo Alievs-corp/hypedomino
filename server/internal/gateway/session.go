@@ -56,7 +56,7 @@ func (s *RoomSession) Deliver(message room.Message) {
 	}
 	s.acked.Store(message.View.Acked)
 	if message.Rejected {
-		s.conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
+		s.conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
 	}
 	s.conn.Send(&pb.Envelope{
 		AckedSequence: message.View.Acked,

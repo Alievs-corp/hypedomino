@@ -80,6 +80,8 @@ type Room struct {
 	timer    <-chan time.Time
 	moves    []rules.Move
 	done     chan struct{}
+	finished chan struct{}
+	ended    bool
 }
 
 func New(options Options) *Room {
@@ -90,6 +92,7 @@ func New(options Options) *Room {
 		armed:    turnKey{hands: -1},
 		moves:    make([]rules.Move, 0, 4*rules.SetSize),
 		done:     make(chan struct{}),
+		finished: make(chan struct{}),
 	}
 	random := rules.NewSeededRandom(options.Seed ^ 0x9e3779b97f4a7c15)
 	for _, seat := range options.Mode.Seats() {
@@ -114,6 +117,17 @@ func (r *Room) Run(ctx context.Context) {
 
 func (r *Room) Done() <-chan struct{} {
 	return r.done
+}
+
+func (r *Room) Finished() <-chan struct{} {
+	return r.finished
+}
+
+func (r *Room) end() {
+	if !r.ended {
+		r.ended = true
+		close(r.finished)
+	}
 }
 
 func (r *Room) enqueue(cmd command) {
@@ -276,6 +290,7 @@ func (r *Room) settle() {
 			r.state = stateOf(r.match().Phase())
 			if r.state == StateFinished {
 				r.timer = nil
+				r.end()
 				break
 			}
 			if key := r.key(); key != r.armed {

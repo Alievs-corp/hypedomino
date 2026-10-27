@@ -25,6 +25,8 @@ type Conn struct {
 	reason  string
 	session Session
 	bucket  bucket
+	stop    context.CancelFunc
+	served  chan struct{}
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
@@ -34,6 +36,7 @@ func newConn(socket *websocket.Conn, options Options) *Conn {
 		options: options,
 		queue:   make(chan *pb.Envelope, options.Config.WriteQueue),
 		closed:  make(chan struct{}),
+		served:  make(chan struct{}),
 		bucket:  newBucket(options.Config.IntentsPerSecond, options.Config.IntentBurst, options.Clock.Now()),
 	}
 }
@@ -69,8 +72,10 @@ func (c *Conn) Done() <-chan struct{} {
 }
 
 func (c *Conn) serve(ctx context.Context) {
+	defer close(c.served)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	c.stop = cancel
 	var writer sync.WaitGroup
 	writer.Add(1)
 	go func() {
@@ -101,7 +106,8 @@ func (c *Conn) closeSocket() {
 	select {
 	case <-done:
 	case <-time.After(c.options.Config.CloseTimeout):
-		c.socket.CloseNow()
+		c.stop()
+		<-done
 	}
 }
 
@@ -184,7 +190,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Close(websocket.StatusPolicyViolation, "hello expected")
 		return false
 	case frame.GetProtocolVersion() != ProtocolVersion:
-		c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_UNSUPPORTED_PROTOCOL, frame.GetSequence(), 0))
+		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNSUPPORTED_PROTOCOL, frame.GetSequence(), 0))
 		c.Close(websocket.StatusProtocolError, "unsupported protocol")
 		return false
 	case !VersionAtLeast(hello.GetAppVersion(), c.options.Config.MinimumAppVersion):
@@ -195,7 +201,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 	session, err := c.options.Handler.Connect(ctx, c, hello)
 	switch {
 	case errors.Is(err, ErrUnauthenticated):
-		c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED, frame.GetSequence(), 0))
+		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED, frame.GetSequence(), 0))
 		c.Close(websocket.StatusPolicyViolation, "unauthenticated")
 		return false
 	case err != nil:
@@ -207,7 +213,30 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		return false
 	}
 	session.Attach()
+	go c.pingLoop(ctx)
 	return true
+}
+
+func (c *Conn) pingLoop(ctx context.Context) {
+	ticker := time.NewTicker(c.options.Config.PingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.closed:
+			return
+		case <-ticker.C:
+			if !c.ping(ctx) {
+				c.Close(websocket.StatusGoingAway, "no pong")
+				return
+			}
+		}
+	}
+}
+
+func (c *Conn) ping(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, c.options.Config.PongTimeout)
+	defer cancel()
+	return c.socket.Ping(ctx) == nil
 }
 
 func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.Envelope) bool {
@@ -236,10 +265,10 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	sequence := frame.GetSequence()
 	intent, ok := DecodeIntent(frame)
 	if !ok {
-		return c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
+		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
-		return c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
+		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
 	}
 	c.session.Intent(sequence, intent)
 	return true
