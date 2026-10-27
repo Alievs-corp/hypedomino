@@ -196,6 +196,18 @@ Risk is the impact if the countermeasures did not exist. Every vector is verifie
 - Soft signals happen to honest players too (bad networks, rooted devices, wrong clocks). They act only through the score.
 - A simulated cracked client must be flagged; this is the acceptance test of #209.
 
+### 5.1 Attestation verdict (#205)
+
+`server/internal/integrity` turns one attestation token into a verdict with named failure reasons and a decision. It applies no penalty itself: the caller blocks the request, records the signal and feeds the score.
+
+- **Nonce.** The server issues a random, single-use nonce bound to the account, the session and the purpose: session start, purchase, ranked match start or casual match start. It expires after `IntegrityNonceTtlSeconds`. Redeeming removes it, so an unknown, already used, expired or differently bound nonce fails the check.
+- **Android.** Google decodes the Play Integrity token server to server (`decodeIntegrityToken`); a verdict or hash reported by the client is never read. The nonce comes from `requestDetails.nonce` (classic request) or `requestDetails.requestHash` (standard request). The check passes only if the nonce redeems; `requestDetails.requestPackageName` and `appIntegrity.packageName` equal the configured package; `requestDetails.timestampMillis` is within `IntegrityTokenMaxAgeSeconds` of server time; `appIntegrity.appRecognitionVerdict` is `PLAY_RECOGNIZED`; every `appIntegrity.certificateSha256Digest` entry is on the signing digest allowlist (a build re-signed with another key fails); the highest `deviceIntegrity.deviceRecognitionVerdict` level (basic, then device, then strong) reaches `IntegrityMinDeviceLevel`; and, when `IntegrityRequireLicensed` is on, `accountDetails.appLicensingVerdict` is `LICENSED`. A token Google rejects fails the check. An outage of the decoding service is an error, not a verdict; purchases and ranked entry then fail closed.
+- **iOS attestation.** The app attests one Secure Enclave key with App Attest, using the nonce as client data. It passes only if the format is `apple-appattest`; the `x5c` chain verifies to the Apple App Attest root CA at server time; the credential certificate extension `1.2.840.113635.100.8.2` holds SHA-256(authData ‖ SHA-256(nonce)); the SHA-256 of the certificate's public key (uncompressed point) equals both the key id and the credential id; the RP ID hash equals SHA-256(`<team id>.<bundle id>`); the counter is 0; and the AAGUID is the production one (`appattest` and seven zero bytes), or the development one (`appattestdevelop`) only where the develop environment switch is on, which it never is in production. The server stores the public key, the counter and the receipt.
+- **iOS assertion.** Later checks sign a fresh nonce with the attested key. An assertion passes only if the nonce redeems, the signature over SHA-256(authenticatorData ‖ SHA-256(nonce)) verifies with the stored key, the RP ID hash matches and the counter is strictly greater than the stored one.
+- **Reasons.** Each failure has a stable name stored with the signal as evidence, for example `unknown_signing_certificate`, `unrecognized_app`, `token_stale`, `nonce_unknown`, `app_id_mismatch`, `environment_mismatch`, `counter_replay`.
+- **Decision.** A device verdict below `IntegrityMinDeviceLevel` is a V-6 device signal handled by `DeviceRiskAction`: warn (no signal), flag (signal with `DeviceRiskWeight`) or block ranked (ranked match start blocked, other purposes flagged). Every other failure is a V-2 integrity failure with a signal of `IntegrityFailureWeight`: purchase and ranked match start are always blocked, session start and casual match start follow `IntegrityFailureAction`. The most severe action wins, and a blocked request still records its signal. An unknown `IntegrityFailureAction` is treated as block, an unknown `DeviceRiskAction` as block ranked.
+- **Tightening.** `IntegrityFailureAction`, `IntegrityMinDeviceLevel`, `IntegrityRequireLicensed` and `DeviceRiskAction` are read on every check, so publishing stricter config applies to the next check without a release.
+
 ## 6. Residual risk
 
 Complete protection is impossible. A determined attacker controls the device and can bypass any client-side check, obfuscation or detection given time. The goal is not to make cheating impossible but to make it worthless where it matters: no path may create currency, items or pass progress, change a balance, or move a rating outside legal play. The release gate checks exactly that (#212, `docs/roadmap.md`).
@@ -217,6 +229,11 @@ Accepted residual risks:
 | `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag |
 | `IntegrityFailureAction` | Block login or flag on failed attestation |
 | `DeviceRiskAction` | Warn, block ranked or flag on a risky device |
+| `IntegrityNonceTtlSeconds` | Lifetime of an attestation nonce (section 5.1) |
+| `IntegrityTokenMaxAgeSeconds` | How far a Play Integrity token timestamp may be from server time |
+| `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong |
+| `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict |
+| Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
 | `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight`, `FakeReceiptWeight`, `RefundWeight`, `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `RiskDecayDays` | How long a signal keeps counting toward the score |
 | `ReviewScore`, `ShadowbanScore`, `TempBanScore` | Risk score at which each response starts |
