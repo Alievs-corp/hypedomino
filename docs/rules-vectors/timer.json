@@ -165,7 +165,7 @@
       "id": "leave-replaced-by-bot",
       "kind": "afk",
       "rules": ["R-52"],
-      "description": "Example 13: South leaves; the bot plays South to the end and North keeps playing",
+      "description": "Example 13: South leaves; the bot plays South and North keeps playing",
       "mode": "2v2",
       "given": { "afkTimeouts": 3, "events": [{ "seat": "S", "type": "leave" }] },
       "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
@@ -192,7 +192,7 @@
       "id": "leave-1v1",
       "kind": "afk",
       "rules": ["R-8", "R-52"],
-      "description": "1v1: X leaves; the bot plays X to the end of the match",
+      "description": "1v1: X leaves and does not come back; the bot plays X",
       "mode": "1v1",
       "given": { "afkTimeouts": 3, "events": [{ "seat": "X", "type": "leave" }] },
       "expect": { "controllers": { "X": "bot", "Y": "player" } }
@@ -226,13 +226,32 @@
       "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
     },
     {
-      "id": "leave-reconnect-stays-bot",
+      "id": "leave-reconnect-takes-back",
       "kind": "afk",
       "rules": ["R-52"],
-      "description": "S leaves and later reconnects; a leaver cannot take back control, so the bot keeps the seat",
+      "description": "S leaves and comes back before the match ends; S takes back control from the bot",
       "mode": "2v2",
       "given": { "afkTimeouts": 3, "events": [{ "seat": "S", "type": "leave" }, { "seat": "S", "type": "reconnect" }] },
-      "expect": { "controllers": { "N": "player", "E": "player", "S": "bot", "W": "player" } }
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
+    },
+    {
+      "id": "leave-return-restarts-timeout-count",
+      "kind": "afk",
+      "rules": ["R-51", "R-52"],
+      "description": "S times out twice, leaves, comes back and times out twice more; the count restarted at zero, so S still plays",
+      "mode": "2v2",
+      "given": {
+        "afkTimeouts": 3,
+        "events": [
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "leave" },
+          { "seat": "S", "type": "reconnect" },
+          { "seat": "S", "type": "timeout" },
+          { "seat": "S", "type": "timeout" }
+        ]
+      },
+      "expect": { "controllers": { "N": "player", "E": "player", "S": "player", "W": "player" } }
     }
   ]
 }

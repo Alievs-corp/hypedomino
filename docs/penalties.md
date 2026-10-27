@@ -6,7 +6,7 @@ Penalties for players who stop playing a match (R-51) or leave it (R-52). The se
 
 - Ranked 1v1 and 2v2 matches (R-53): offenses of section 2, the offense level of section 3, the ladder of section 4 and the match result of section 5.
 - Casual 1v1 and 2v2 matches (R-56): offenses of section 2 on the separate, lighter casual ladder of section 6.
-- Does not apply to custom rooms (R-55): nothing is recorded and nothing is penalised there.
+- Does not apply to custom rooms (R-55): nothing is recorded and nothing is penalised there, including a player removed by the room creator.
 - A match that is cancelled by the server (server fault, region outage) records no offense for anyone.
 
 ## 2. Offenses
@@ -15,10 +15,11 @@ Penalties for players who stop playing a match (R-51) or leave it (R-52). The se
 |---|---|---|
 | AFK, returned | The player is marked AFK (R-51), takes back control by reconnecting and is in control when the match ends | `AfkReturnedWeight` |
 | AFK, not returned | The player is marked AFK (R-51) and the bot is still playing for them when the match ends | `AfkWeight` |
-| Leave | The player leaves the match (R-52): quits from the match screen, or stays disconnected longer than `ReconnectGraceSeconds` | `LeaveWeight` |
+| Leave, returned | The player leaves the match (R-52), quitting from the match screen or disconnecting, stays away longer than `ReconnectGraceSeconds`, comes back and is in control when the match ends | `LeaveReturnedWeight` |
+| Leave, not returned | The player leaves the match (R-52), stays away longer than `ReconnectGraceSeconds` and the bot is still playing for them when the match ends | `LeaveWeight` |
 
 - One match records at most one offense per player, the heaviest one.
-- A disconnect shorter than `ReconnectGraceSeconds`, after which the player plays on, is not an offense. Turns missed while disconnected still count as timeouts toward R-51.
+- Time away shorter than `ReconnectGraceSeconds`, after which the player plays on, is not an offense, whether they quit from the match screen or lost the connection. Turns missed while away still count as timeouts toward R-51.
 - The server cannot tell a dropped network from a deliberate quit, so it does not try: what counts is whether the player came back in time. Repeated drops are handled by the ladder like any other offense.
 
 ## 3. Offense level
@@ -42,7 +43,7 @@ Each step applies from the moment the offense is recorded. A higher step include
 
 | Who | Rating | Rewards |
 |---|---|---|
-| Offender | The match counts as a loss whatever the result, plus an extra rating loss of `OffenseRatingPenalty` | No coins, pass XP, mission or medal progress from that match. AFK, returned: rewards are kept, the rating penalty still applies |
+| Offender | The match counts as a loss whatever the result, plus an extra rating loss of `OffenseRatingPenalty` | No coins, pass XP, mission or medal progress from that match. AFK, returned and Leave, returned: rewards are kept, the rating penalty still applies |
 | Partner of the offender (2v2), if their team loses | The rating loss is reduced by `PartnerLossReductionPercent` | Normal |
 | Opponents | Normal result | Normal |
 
@@ -65,7 +66,7 @@ Casual offenses are kept apart from ranked ones. They never add to the offense l
 
 | Who | Rewards |
 |---|---|
-| Offender | No coins, pass XP, mission or medal progress from that match. AFK, returned: rewards are kept |
+| Offender | No coins, pass XP, mission or medal progress from that match. AFK, returned and Leave, returned: rewards are kept |
 | Partner of the offender (2v2) and opponents | Normal. The bot plays the offender's seat (R-50 to R-52); nobody else is penalised |
 
 ## 7. Record, notice and appeal
@@ -79,8 +80,8 @@ Casual offenses are kept apart from ranked ones. They never add to the offense l
 
 | Field | Meaning |
 |---|---|
-| `ReconnectGraceSeconds` | How long a disconnected player may stay away before it counts as a leave |
-| `AfkReturnedWeight`, `AfkWeight`, `LeaveWeight` | Weight of each offense |
+| `ReconnectGraceSeconds` | How long a player who quit or disconnected may stay away before it counts as a leave |
+| `AfkReturnedWeight`, `AfkWeight`, `LeaveReturnedWeight`, `LeaveWeight` | Weight of each offense |
 | `OffenseWindowDays` | How long an offense stays active |
 | `CleanMatchesToForgive` | Clean completed matches in a row that remove the oldest active offense |
 | `WarningLevel`, `QueueDelayLevel`, `BanLevel`, `ReviewLevel` | Offense level at which each step starts |

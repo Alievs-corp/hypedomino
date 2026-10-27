@@ -55,8 +55,16 @@ func TestPresenceAfkLeaveAndReconnect(t *testing.T) {
 		t.Fatal("the count did not restart from zero after reconnecting")
 	}
 	p.Leave(SeatSouth)
-	if p.Reconnect(SeatSouth) != ControllerBot || p.Controller(SeatSouth) != ControllerBot {
-		t.Fatal("a leaver took the seat back")
+	if p.Controller(SeatSouth) != ControllerBot || p.Controller(SeatNorth) != ControllerPlayer {
+		t.Fatal("leaving did not hand only the leaver's seat to the bot")
+	}
+	if p.Reconnect(SeatSouth) != ControllerPlayer {
+		t.Fatal("a returning leaver did not take the seat back")
+	}
+	p.Timeout(SeatSouth)
+	p.Timeout(SeatSouth)
+	if p.Controller(SeatSouth) != ControllerPlayer {
+		t.Fatal("the count did not restart from zero after a leaver came back")
 	}
 	var parsed Controller
 	if err := parsed.UnmarshalText([]byte("bot")); err != nil || parsed != ControllerBot || ControllerPlayer.String() != "player" {

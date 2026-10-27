@@ -105,13 +105,13 @@ Owner decisions behind this version: #3 and #4 (2026-10-25).
 - **R-49** Every turn has a time limit from admin config (default 20 seconds).
 - **R-50** When the time runs out, the server bot makes a legal move for that player. An action that arrives at or after the limit is late.
 - **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting; the consecutive-timeout count then starts again from zero. Penalties for going AFK are defined in `docs/penalties.md`.
-- **R-52** A player who leaves the match is replaced by the bot until the match ends and cannot take back control. Their partner keeps playing. The leaver is penalised as defined in `docs/penalties.md`.
+- **R-52** A player who leaves the match is replaced by the bot. If they come back before the match ends, they take back control from the bot; the consecutive-timeout count then starts again from zero. Their partner keeps playing either way. A leaver who stays away too long is penalised as defined in `docs/penalties.md`.
 
 ## 12. Ranked and custom play
 
-- **R-53** 1v1 and 2v2 are both ranked. Each mode has its own rating, rank and leaderboard.
+- **R-53** 1v1 and 2v2 are both ranked. Each mode has its own rating, rank and leaderboard. A ranked match opens directly once matchmaking has formed it (`docs/ranking.md`); there is no room, seat choice or team split.
 - **R-54** In ranked 2v2 the partner is assigned at random. A player cannot choose a partner or queue for ranked play together with a chosen partner.
-- **R-55** Custom rooms are unranked. Players create a room and split the teams however they want.
+- **R-55** Custom rooms are unranked and meant for friends. Players create a room and split the teams however they want. The creator of the room can remove a player from it and add a player to a free seat, before or during a match. During a match the seat of a removed player is played by the bot until the creator adds a player to it; a removed player comes back only if the creator adds them again. Nobody is penalised in a custom room for timing out, leaving or being removed.
 - **R-56** Casual play is an unranked matchmaking queue for 1v1 and 2v2 under the same game rules. It changes no rating, rank or leaderboard. Only casual queues may fill an empty seat with a bot after a long wait; ranked queues never do.
 
 ## 13. Engine configuration
@@ -244,4 +244,4 @@ The turn time is 20 seconds.
 
 - South does not act in time, so the bot places a legal tile for South.
 - South keeps timing out until the admin-configured limit is reached. South is marked AFK, and the bot plays South's remaining turns. North keeps playing.
-- If South leaves the match, the bot plays to the end and South is penalised for leaving (`docs/penalties.md`).
+- If South leaves the match, the bot plays South's turns. If South comes back before the match ends, South takes back control. If South stayed away longer than the admin-configured grace time, or never comes back, South is penalised for leaving (`docs/penalties.md`).

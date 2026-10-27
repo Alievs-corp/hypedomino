@@ -220,7 +220,7 @@ function afk(mode, { afkTimeouts, events }) {
     if (type === "timeout") state.timeouts++;
     if (type === "timeout" && state.timeouts >= afkTimeouts) state.status = "afk";
     if (type === "move") state.timeouts = 0;
-    if (type === "reconnect" && state.status === "afk") Object.assign(state, { status: "active", timeouts: 0 });
+    if (type === "reconnect") Object.assign(state, { status: "active", timeouts: 0 });
     if (type === "leave") state.status = "left";
   }
   const controllers = Object.entries(states).map(([seat, { status }]) => [seat, status === "active" ? "player" : "bot"]);
