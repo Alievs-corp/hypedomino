@@ -58,6 +58,8 @@ CI runs all of these on every change under `proto/` or a generated directory and
 | Binary frames that decode as `Envelope` | | Close 1008 (text frames: 1003) |
 | Intents per connection: `IntentsPerSecond`, burst `IntentBurst` | 10, 20 | `Error RATE_LIMITED`, intent dropped |
 | Server write queue `WriteQueue` frames per connection | 32 | Close 1008 (slow consumer) |
+| Pong within `PongTimeout` after each server ping every `PingInterval` | 5 s, 15 s | Close 1001 (no pong) |
+| One live connection per session token | | The earlier connection is closed 1008 (session replaced) |
 
 Frames above `CompressionThreshold` (256 bytes) are sent with permessage-deflate without context takeover when the client negotiates it; intents stay well under it. Measured over a full 1v1 and 2v2 match in `TestPlayersFinishAMatchOverWebSocket`: 13 to 14 bytes per intent frame on average, against the 64 byte acceptance line of #44.
 

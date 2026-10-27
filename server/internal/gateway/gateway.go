@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -28,6 +29,8 @@ type Config struct {
 	HelloTimeout         time.Duration
 	WriteTimeout         time.Duration
 	CloseTimeout         time.Duration
+	PingInterval         time.Duration
+	PongTimeout          time.Duration
 	CompressionThreshold int
 	IntentsPerSecond     int
 	IntentBurst          int
@@ -41,6 +44,8 @@ func DefaultConfig() Config {
 		HelloTimeout:         5 * time.Second,
 		WriteTimeout:         5 * time.Second,
 		CloseTimeout:         2 * time.Second,
+		PingInterval:         15 * time.Second,
+		PongTimeout:          5 * time.Second,
 		CompressionThreshold: 256,
 		IntentsPerSecond:     10,
 		IntentBurst:          20,
@@ -81,13 +86,53 @@ type Options struct {
 
 type Gateway struct {
 	options Options
+	mu      sync.Mutex
+	conns   map[*Conn]struct{}
 }
 
 func New(options Options) *Gateway {
 	if options.Clock == nil {
 		options.Clock = systemClock{}
 	}
-	return &Gateway{options: options}
+	return &Gateway{options: options, conns: map[*Conn]struct{}{}}
+}
+
+func (g *Gateway) track(conn *Conn) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.conns[conn] = struct{}{}
+}
+
+func (g *Gateway) forget(conn *Conn) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	delete(g.conns, conn)
+}
+
+func (g *Gateway) Connections() int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return len(g.conns)
+}
+
+func (g *Gateway) Shutdown(ctx context.Context) error {
+	g.mu.Lock()
+	conns := make([]*Conn, 0, len(g.conns))
+	for conn := range g.conns {
+		conns = append(conns, conn)
+	}
+	g.mu.Unlock()
+	for _, conn := range conns {
+		conn.Close(websocket.StatusGoingAway, "server shutdown")
+	}
+	for _, conn := range conns {
+		select {
+		case <-conn.served:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
 }
 
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -100,5 +145,7 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn := newConn(socket, g.options)
+	g.track(conn)
+	defer g.forget(conn)
 	conn.serve(r.Context())
 }
