@@ -76,6 +76,269 @@ func (BoardEnd) EnumDescriptor() ([]byte, []int) {
 	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{0}
 }
 
+type Seat int32
+
+const (
+	Seat_SEAT_UNSPECIFIED Seat = 0
+	Seat_SEAT_NORTH       Seat = 1
+	Seat_SEAT_EAST        Seat = 2
+	Seat_SEAT_SOUTH       Seat = 3
+	Seat_SEAT_WEST        Seat = 4
+	Seat_SEAT_X           Seat = 5
+	Seat_SEAT_Y           Seat = 6
+)
+
+// Enum value maps for Seat.
+var (
+	Seat_name = map[int32]string{
+		0: "SEAT_UNSPECIFIED",
+		1: "SEAT_NORTH",
+		2: "SEAT_EAST",
+		3: "SEAT_SOUTH",
+		4: "SEAT_WEST",
+		5: "SEAT_X",
+		6: "SEAT_Y",
+	}
+	Seat_value = map[string]int32{
+		"SEAT_UNSPECIFIED": 0,
+		"SEAT_NORTH":       1,
+		"SEAT_EAST":        2,
+		"SEAT_SOUTH":       3,
+		"SEAT_WEST":        4,
+		"SEAT_X":           5,
+		"SEAT_Y":           6,
+	}
+)
+
+func (x Seat) Enum() *Seat {
+	p := new(Seat)
+	*p = x
+	return p
+}
+
+func (x Seat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Seat) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[1].Descriptor()
+}
+
+func (Seat) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[1]
+}
+
+func (x Seat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Seat.Descriptor instead.
+func (Seat) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{1}
+}
+
+type Team int32
+
+const (
+	Team_TEAM_UNSPECIFIED Team = 0
+	Team_TEAM_A           Team = 1
+	Team_TEAM_B           Team = 2
+)
+
+// Enum value maps for Team.
+var (
+	Team_name = map[int32]string{
+		0: "TEAM_UNSPECIFIED",
+		1: "TEAM_A",
+		2: "TEAM_B",
+	}
+	Team_value = map[string]int32{
+		"TEAM_UNSPECIFIED": 0,
+		"TEAM_A":           1,
+		"TEAM_B":           2,
+	}
+)
+
+func (x Team) Enum() *Team {
+	p := new(Team)
+	*p = x
+	return p
+}
+
+func (x Team) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Team) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[2].Descriptor()
+}
+
+func (Team) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[2]
+}
+
+func (x Team) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Team.Descriptor instead.
+func (Team) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{2}
+}
+
+type Mode int32
+
+const (
+	Mode_MODE_UNSPECIFIED Mode = 0
+	Mode_MODE_1V1         Mode = 1
+	Mode_MODE_2V2         Mode = 2
+)
+
+// Enum value maps for Mode.
+var (
+	Mode_name = map[int32]string{
+		0: "MODE_UNSPECIFIED",
+		1: "MODE_1V1",
+		2: "MODE_2V2",
+	}
+	Mode_value = map[string]int32{
+		"MODE_UNSPECIFIED": 0,
+		"MODE_1V1":         1,
+		"MODE_2V2":         2,
+	}
+)
+
+func (x Mode) Enum() *Mode {
+	p := new(Mode)
+	*p = x
+	return p
+}
+
+func (x Mode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Mode) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[3].Descriptor()
+}
+
+func (Mode) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[3]
+}
+
+func (x Mode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Mode.Descriptor instead.
+func (Mode) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{3}
+}
+
+type Controller int32
+
+const (
+	Controller_CONTROLLER_UNSPECIFIED Controller = 0
+	Controller_CONTROLLER_PLAYER      Controller = 1
+	Controller_CONTROLLER_BOT         Controller = 2
+)
+
+// Enum value maps for Controller.
+var (
+	Controller_name = map[int32]string{
+		0: "CONTROLLER_UNSPECIFIED",
+		1: "CONTROLLER_PLAYER",
+		2: "CONTROLLER_BOT",
+	}
+	Controller_value = map[string]int32{
+		"CONTROLLER_UNSPECIFIED": 0,
+		"CONTROLLER_PLAYER":      1,
+		"CONTROLLER_BOT":         2,
+	}
+)
+
+func (x Controller) Enum() *Controller {
+	p := new(Controller)
+	*p = x
+	return p
+}
+
+func (x Controller) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Controller) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[4].Descriptor()
+}
+
+func (Controller) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[4]
+}
+
+func (x Controller) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Controller.Descriptor instead.
+func (Controller) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{4}
+}
+
+type MatchState int32
+
+const (
+	MatchState_MATCH_STATE_UNSPECIFIED MatchState = 0
+	MatchState_MATCH_STATE_WAITING     MatchState = 1
+	MatchState_MATCH_STATE_OPENING     MatchState = 2
+	MatchState_MATCH_STATE_PLAYING     MatchState = 3
+	MatchState_MATCH_STATE_FINISHED    MatchState = 4
+)
+
+// Enum value maps for MatchState.
+var (
+	MatchState_name = map[int32]string{
+		0: "MATCH_STATE_UNSPECIFIED",
+		1: "MATCH_STATE_WAITING",
+		2: "MATCH_STATE_OPENING",
+		3: "MATCH_STATE_PLAYING",
+		4: "MATCH_STATE_FINISHED",
+	}
+	MatchState_value = map[string]int32{
+		"MATCH_STATE_UNSPECIFIED": 0,
+		"MATCH_STATE_WAITING":     1,
+		"MATCH_STATE_OPENING":     2,
+		"MATCH_STATE_PLAYING":     3,
+		"MATCH_STATE_FINISHED":    4,
+	}
+)
+
+func (x MatchState) Enum() *MatchState {
+	p := new(MatchState)
+	*p = x
+	return p
+}
+
+func (x MatchState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MatchState) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[5].Descriptor()
+}
+
+func (MatchState) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[5]
+}
+
+func (x MatchState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MatchState.Descriptor instead.
+func (MatchState) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{5}
+}
+
 type Tile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Low           uint32                 `protobuf:"varint,1,opt,name=low,proto3" json:"low,omitempty"`
@@ -252,6 +515,702 @@ func (*DrawIntent) Descriptor() ([]byte, []int) {
 	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{3}
 }
 
+type EndTurnIntent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EndTurnIntent) Reset() {
+	*x = EndTurnIntent{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EndTurnIntent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EndTurnIntent) ProtoMessage() {}
+
+func (x *EndTurnIntent) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EndTurnIntent.ProtoReflect.Descriptor instead.
+func (*EndTurnIntent) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{4}
+}
+
+type OrientedTile struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	First         uint32                 `protobuf:"varint,1,opt,name=first,proto3" json:"first,omitempty"`
+	Second        uint32                 `protobuf:"varint,2,opt,name=second,proto3" json:"second,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrientedTile) Reset() {
+	*x = OrientedTile{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrientedTile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrientedTile) ProtoMessage() {}
+
+func (x *OrientedTile) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrientedTile.ProtoReflect.Descriptor instead.
+func (*OrientedTile) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OrientedTile) GetFirst() uint32 {
+	if x != nil {
+		return x.First
+	}
+	return 0
+}
+
+func (x *OrientedTile) GetSecond() uint32 {
+	if x != nil {
+		return x.Second
+	}
+	return 0
+}
+
+type OpenEnd struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	End           BoardEnd               `protobuf:"varint,1,opt,name=end,proto3,enum=hypedomino.v1.BoardEnd" json:"end,omitempty"`
+	Value         uint32                 `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenEnd) Reset() {
+	*x = OpenEnd{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenEnd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenEnd) ProtoMessage() {}
+
+func (x *OpenEnd) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenEnd.ProtoReflect.Descriptor instead.
+func (*OpenEnd) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *OpenEnd) GetEnd() BoardEnd {
+	if x != nil {
+		return x.End
+	}
+	return BoardEnd_BOARD_END_UNSPECIFIED
+}
+
+func (x *OpenEnd) GetValue() uint32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type BoardView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Line          []*OrientedTile        `protobuf:"bytes,1,rep,name=line,proto3" json:"line,omitempty"`
+	Spinner       *Tile                  `protobuf:"bytes,2,opt,name=spinner,proto3" json:"spinner,omitempty"`
+	Top           []*OrientedTile        `protobuf:"bytes,3,rep,name=top,proto3" json:"top,omitempty"`
+	Bottom        []*OrientedTile        `protobuf:"bytes,4,rep,name=bottom,proto3" json:"bottom,omitempty"`
+	OpenEnds      []*OpenEnd             `protobuf:"bytes,5,rep,name=open_ends,json=openEnds,proto3" json:"open_ends,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BoardView) Reset() {
+	*x = BoardView{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BoardView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BoardView) ProtoMessage() {}
+
+func (x *BoardView) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BoardView.ProtoReflect.Descriptor instead.
+func (*BoardView) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *BoardView) GetLine() []*OrientedTile {
+	if x != nil {
+		return x.Line
+	}
+	return nil
+}
+
+func (x *BoardView) GetSpinner() *Tile {
+	if x != nil {
+		return x.Spinner
+	}
+	return nil
+}
+
+func (x *BoardView) GetTop() []*OrientedTile {
+	if x != nil {
+		return x.Top
+	}
+	return nil
+}
+
+func (x *BoardView) GetBottom() []*OrientedTile {
+	if x != nil {
+		return x.Bottom
+	}
+	return nil
+}
+
+func (x *BoardView) GetOpenEnds() []*OpenEnd {
+	if x != nil {
+		return x.OpenEnds
+	}
+	return nil
+}
+
+type SeatView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	HandSize      uint32                 `protobuf:"varint,2,opt,name=hand_size,json=handSize,proto3" json:"hand_size,omitempty"`
+	Controller    Controller             `protobuf:"varint,3,opt,name=controller,proto3,enum=hypedomino.v1.Controller" json:"controller,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SeatView) Reset() {
+	*x = SeatView{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SeatView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SeatView) ProtoMessage() {}
+
+func (x *SeatView) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SeatView.ProtoReflect.Descriptor instead.
+func (*SeatView) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SeatView) GetSeat() Seat {
+	if x != nil {
+		return x.Seat
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *SeatView) GetHandSize() uint32 {
+	if x != nil {
+		return x.HandSize
+	}
+	return 0
+}
+
+func (x *SeatView) GetController() Controller {
+	if x != nil {
+		return x.Controller
+	}
+	return Controller_CONTROLLER_UNSPECIFIED
+}
+
+type LegalMove struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tile          *Tile                  `protobuf:"bytes,1,opt,name=tile,proto3" json:"tile,omitempty"`
+	End           BoardEnd               `protobuf:"varint,2,opt,name=end,proto3,enum=hypedomino.v1.BoardEnd" json:"end,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LegalMove) Reset() {
+	*x = LegalMove{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LegalMove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LegalMove) ProtoMessage() {}
+
+func (x *LegalMove) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LegalMove.ProtoReflect.Descriptor instead.
+func (*LegalMove) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *LegalMove) GetTile() *Tile {
+	if x != nil {
+		return x.Tile
+	}
+	return nil
+}
+
+func (x *LegalMove) GetEnd() BoardEnd {
+	if x != nil {
+		return x.End
+	}
+	return BoardEnd_BOARD_END_UNSPECIFIED
+}
+
+type Opening struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Tile          *Tile                  `protobuf:"bytes,2,opt,name=tile,proto3" json:"tile,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Opening) Reset() {
+	*x = Opening{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Opening) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Opening) ProtoMessage() {}
+
+func (x *Opening) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Opening.ProtoReflect.Descriptor instead.
+func (*Opening) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Opening) GetSeat() Seat {
+	if x != nil {
+		return x.Seat
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *Opening) GetTile() *Tile {
+	if x != nil {
+		return x.Tile
+	}
+	return nil
+}
+
+type TeamPoints struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TeamA         uint32                 `protobuf:"varint,1,opt,name=team_a,json=teamA,proto3" json:"team_a,omitempty"`
+	TeamB         uint32                 `protobuf:"varint,2,opt,name=team_b,json=teamB,proto3" json:"team_b,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TeamPoints) Reset() {
+	*x = TeamPoints{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TeamPoints) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TeamPoints) ProtoMessage() {}
+
+func (x *TeamPoints) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TeamPoints.ProtoReflect.Descriptor instead.
+func (*TeamPoints) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TeamPoints) GetTeamA() uint32 {
+	if x != nil {
+		return x.TeamA
+	}
+	return 0
+}
+
+func (x *TeamPoints) GetTeamB() uint32 {
+	if x != nil {
+		return x.TeamB
+	}
+	return 0
+}
+
+type HandResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pips          *TeamPoints            `protobuf:"bytes,1,opt,name=pips,proto3" json:"pips,omitempty"`
+	Winner        Team                   `protobuf:"varint,2,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
+	Awarded       *TeamPoints            `protobuf:"bytes,3,opt,name=awarded,proto3" json:"awarded,omitempty"`
+	CarryOver     uint32                 `protobuf:"varint,4,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
+	Scores        *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
+	NextOpener    Team                   `protobuf:"varint,6,opt,name=next_opener,json=nextOpener,proto3,enum=hypedomino.v1.Team" json:"next_opener,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HandResult) Reset() {
+	*x = HandResult{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandResult) ProtoMessage() {}
+
+func (x *HandResult) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandResult.ProtoReflect.Descriptor instead.
+func (*HandResult) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *HandResult) GetPips() *TeamPoints {
+	if x != nil {
+		return x.Pips
+	}
+	return nil
+}
+
+func (x *HandResult) GetWinner() Team {
+	if x != nil {
+		return x.Winner
+	}
+	return Team_TEAM_UNSPECIFIED
+}
+
+func (x *HandResult) GetAwarded() *TeamPoints {
+	if x != nil {
+		return x.Awarded
+	}
+	return nil
+}
+
+func (x *HandResult) GetCarryOver() uint32 {
+	if x != nil {
+		return x.CarryOver
+	}
+	return 0
+}
+
+func (x *HandResult) GetScores() *TeamPoints {
+	if x != nil {
+		return x.Scores
+	}
+	return nil
+}
+
+func (x *HandResult) GetNextOpener() Team {
+	if x != nil {
+		return x.NextOpener
+	}
+	return Team_TEAM_UNSPECIFIED
+}
+
+type MatchView struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	State              MatchState             `protobuf:"varint,1,opt,name=state,proto3,enum=hypedomino.v1.MatchState" json:"state,omitempty"`
+	Seat               Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Mode               Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
+	HandsPlayed        uint32                 `protobuf:"varint,4,opt,name=hands_played,json=handsPlayed,proto3" json:"hands_played,omitempty"`
+	Scores             *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
+	CarryOver          uint32                 `protobuf:"varint,6,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
+	Hand               []*Tile                `protobuf:"bytes,7,rep,name=hand,proto3" json:"hand,omitempty"`
+	Seats              []*SeatView            `protobuf:"bytes,8,rep,name=seats,proto3" json:"seats,omitempty"`
+	BoneyardSize       uint32                 `protobuf:"varint,9,opt,name=boneyard_size,json=boneyardSize,proto3" json:"boneyard_size,omitempty"`
+	Board              *BoardView             `protobuf:"bytes,10,opt,name=board,proto3" json:"board,omitempty"`
+	Current            Seat                   `protobuf:"varint,11,opt,name=current,proto3,enum=hypedomino.v1.Seat" json:"current,omitempty"`
+	OpeningTeam        Team                   `protobuf:"varint,12,opt,name=opening_team,json=openingTeam,proto3,enum=hypedomino.v1.Team" json:"opening_team,omitempty"`
+	ForcedOpening      *Opening               `protobuf:"bytes,13,opt,name=forced_opening,json=forcedOpening,proto3" json:"forced_opening,omitempty"`
+	TurnPlacements     uint32                 `protobuf:"varint,14,opt,name=turn_placements,json=turnPlacements,proto3" json:"turn_placements,omitempty"`
+	TurnDeadlineUnixMs uint64                 `protobuf:"varint,15,opt,name=turn_deadline_unix_ms,json=turnDeadlineUnixMs,proto3" json:"turn_deadline_unix_ms,omitempty"`
+	LegalMoves         []*LegalMove           `protobuf:"bytes,16,rep,name=legal_moves,json=legalMoves,proto3" json:"legal_moves,omitempty"`
+	LastResult         *HandResult            `protobuf:"bytes,17,opt,name=last_result,json=lastResult,proto3" json:"last_result,omitempty"`
+	Winner             Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *MatchView) Reset() {
+	*x = MatchView{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchView) ProtoMessage() {}
+
+func (x *MatchView) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchView.ProtoReflect.Descriptor instead.
+func (*MatchView) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *MatchView) GetState() MatchState {
+	if x != nil {
+		return x.State
+	}
+	return MatchState_MATCH_STATE_UNSPECIFIED
+}
+
+func (x *MatchView) GetSeat() Seat {
+	if x != nil {
+		return x.Seat
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *MatchView) GetMode() Mode {
+	if x != nil {
+		return x.Mode
+	}
+	return Mode_MODE_UNSPECIFIED
+}
+
+func (x *MatchView) GetHandsPlayed() uint32 {
+	if x != nil {
+		return x.HandsPlayed
+	}
+	return 0
+}
+
+func (x *MatchView) GetScores() *TeamPoints {
+	if x != nil {
+		return x.Scores
+	}
+	return nil
+}
+
+func (x *MatchView) GetCarryOver() uint32 {
+	if x != nil {
+		return x.CarryOver
+	}
+	return 0
+}
+
+func (x *MatchView) GetHand() []*Tile {
+	if x != nil {
+		return x.Hand
+	}
+	return nil
+}
+
+func (x *MatchView) GetSeats() []*SeatView {
+	if x != nil {
+		return x.Seats
+	}
+	return nil
+}
+
+func (x *MatchView) GetBoneyardSize() uint32 {
+	if x != nil {
+		return x.BoneyardSize
+	}
+	return 0
+}
+
+func (x *MatchView) GetBoard() *BoardView {
+	if x != nil {
+		return x.Board
+	}
+	return nil
+}
+
+func (x *MatchView) GetCurrent() Seat {
+	if x != nil {
+		return x.Current
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *MatchView) GetOpeningTeam() Team {
+	if x != nil {
+		return x.OpeningTeam
+	}
+	return Team_TEAM_UNSPECIFIED
+}
+
+func (x *MatchView) GetForcedOpening() *Opening {
+	if x != nil {
+		return x.ForcedOpening
+	}
+	return nil
+}
+
+func (x *MatchView) GetTurnPlacements() uint32 {
+	if x != nil {
+		return x.TurnPlacements
+	}
+	return 0
+}
+
+func (x *MatchView) GetTurnDeadlineUnixMs() uint64 {
+	if x != nil {
+		return x.TurnDeadlineUnixMs
+	}
+	return 0
+}
+
+func (x *MatchView) GetLegalMoves() []*LegalMove {
+	if x != nil {
+		return x.LegalMoves
+	}
+	return nil
+}
+
+func (x *MatchView) GetLastResult() *HandResult {
+	if x != nil {
+		return x.LastResult
+	}
+	return nil
+}
+
+func (x *MatchView) GetWinner() Team {
+	if x != nil {
+		return x.Winner
+	}
+	return Team_TEAM_UNSPECIFIED
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -266,13 +1225,109 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"PassIntent\"\f\n" +
 	"\n" +
-	"DrawIntent*w\n" +
+	"DrawIntent\"\x0f\n" +
+	"\rEndTurnIntent\"<\n" +
+	"\fOrientedTile\x12\x14\n" +
+	"\x05first\x18\x01 \x01(\rR\x05first\x12\x16\n" +
+	"\x06second\x18\x02 \x01(\rR\x06second\"J\n" +
+	"\aOpenEnd\x12)\n" +
+	"\x03end\x18\x01 \x01(\x0e2\x17.hypedomino.v1.BoardEndR\x03end\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value\"\x84\x02\n" +
+	"\tBoardView\x12/\n" +
+	"\x04line\x18\x01 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x04line\x12-\n" +
+	"\aspinner\x18\x02 \x01(\v2\x13.hypedomino.v1.TileR\aspinner\x12-\n" +
+	"\x03top\x18\x03 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x03top\x123\n" +
+	"\x06bottom\x18\x04 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x06bottom\x123\n" +
+	"\topen_ends\x18\x05 \x03(\v2\x16.hypedomino.v1.OpenEndR\bopenEnds\"\x8b\x01\n" +
+	"\bSeatView\x12'\n" +
+	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1b\n" +
+	"\thand_size\x18\x02 \x01(\rR\bhandSize\x129\n" +
+	"\n" +
+	"controller\x18\x03 \x01(\x0e2\x19.hypedomino.v1.ControllerR\n" +
+	"controller\"_\n" +
+	"\tLegalMove\x12'\n" +
+	"\x04tile\x18\x01 \x01(\v2\x13.hypedomino.v1.TileR\x04tile\x12)\n" +
+	"\x03end\x18\x02 \x01(\x0e2\x17.hypedomino.v1.BoardEndR\x03end\"[\n" +
+	"\aOpening\x12'\n" +
+	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
+	"\x04tile\x18\x02 \x01(\v2\x13.hypedomino.v1.TileR\x04tile\":\n" +
+	"\n" +
+	"TeamPoints\x12\x15\n" +
+	"\x06team_a\x18\x01 \x01(\rR\x05teamA\x12\x15\n" +
+	"\x06team_b\x18\x02 \x01(\rR\x05teamB\"\xa5\x02\n" +
+	"\n" +
+	"HandResult\x12-\n" +
+	"\x04pips\x18\x01 \x01(\v2\x19.hypedomino.v1.TeamPointsR\x04pips\x12+\n" +
+	"\x06winner\x18\x02 \x01(\x0e2\x13.hypedomino.v1.TeamR\x06winner\x123\n" +
+	"\aawarded\x18\x03 \x01(\v2\x19.hypedomino.v1.TeamPointsR\aawarded\x12\x1d\n" +
+	"\n" +
+	"carry_over\x18\x04 \x01(\rR\tcarryOver\x121\n" +
+	"\x06scores\x18\x05 \x01(\v2\x19.hypedomino.v1.TeamPointsR\x06scores\x124\n" +
+	"\vnext_opener\x18\x06 \x01(\x0e2\x13.hypedomino.v1.TeamR\n" +
+	"nextOpener\"\xd6\x06\n" +
+	"\tMatchView\x12/\n" +
+	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
+	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12!\n" +
+	"\fhands_played\x18\x04 \x01(\rR\vhandsPlayed\x121\n" +
+	"\x06scores\x18\x05 \x01(\v2\x19.hypedomino.v1.TeamPointsR\x06scores\x12\x1d\n" +
+	"\n" +
+	"carry_over\x18\x06 \x01(\rR\tcarryOver\x12'\n" +
+	"\x04hand\x18\a \x03(\v2\x13.hypedomino.v1.TileR\x04hand\x12-\n" +
+	"\x05seats\x18\b \x03(\v2\x17.hypedomino.v1.SeatViewR\x05seats\x12#\n" +
+	"\rboneyard_size\x18\t \x01(\rR\fboneyardSize\x12.\n" +
+	"\x05board\x18\n" +
+	" \x01(\v2\x18.hypedomino.v1.BoardViewR\x05board\x12-\n" +
+	"\acurrent\x18\v \x01(\x0e2\x13.hypedomino.v1.SeatR\acurrent\x126\n" +
+	"\fopening_team\x18\f \x01(\x0e2\x13.hypedomino.v1.TeamR\vopeningTeam\x12=\n" +
+	"\x0eforced_opening\x18\r \x01(\v2\x16.hypedomino.v1.OpeningR\rforcedOpening\x12'\n" +
+	"\x0fturn_placements\x18\x0e \x01(\rR\x0eturnPlacements\x121\n" +
+	"\x15turn_deadline_unix_ms\x18\x0f \x01(\x04R\x12turnDeadlineUnixMs\x129\n" +
+	"\vlegal_moves\x18\x10 \x03(\v2\x18.hypedomino.v1.LegalMoveR\n" +
+	"legalMoves\x12:\n" +
+	"\vlast_result\x18\x11 \x01(\v2\x19.hypedomino.v1.HandResultR\n" +
+	"lastResult\x12+\n" +
+	"\x06winner\x18\x12 \x01(\x0e2\x13.hypedomino.v1.TeamR\x06winner*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +
 	"\x0fBOARD_END_RIGHT\x10\x02\x12\x11\n" +
 	"\rBOARD_END_TOP\x10\x03\x12\x14\n" +
-	"\x10BOARD_END_BOTTOM\x10\x04B\xc5\x01\n" +
+	"\x10BOARD_END_BOTTOM\x10\x04*r\n" +
+	"\x04Seat\x12\x14\n" +
+	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0e\n" +
+	"\n" +
+	"SEAT_NORTH\x10\x01\x12\r\n" +
+	"\tSEAT_EAST\x10\x02\x12\x0e\n" +
+	"\n" +
+	"SEAT_SOUTH\x10\x03\x12\r\n" +
+	"\tSEAT_WEST\x10\x04\x12\n" +
+	"\n" +
+	"\x06SEAT_X\x10\x05\x12\n" +
+	"\n" +
+	"\x06SEAT_Y\x10\x06*4\n" +
+	"\x04Team\x12\x14\n" +
+	"\x10TEAM_UNSPECIFIED\x10\x00\x12\n" +
+	"\n" +
+	"\x06TEAM_A\x10\x01\x12\n" +
+	"\n" +
+	"\x06TEAM_B\x10\x02*8\n" +
+	"\x04Mode\x12\x14\n" +
+	"\x10MODE_UNSPECIFIED\x10\x00\x12\f\n" +
+	"\bMODE_1V1\x10\x01\x12\f\n" +
+	"\bMODE_2V2\x10\x02*S\n" +
+	"\n" +
+	"Controller\x12\x1a\n" +
+	"\x16CONTROLLER_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11CONTROLLER_PLAYER\x10\x01\x12\x12\n" +
+	"\x0eCONTROLLER_BOT\x10\x02*\x8e\x01\n" +
+	"\n" +
+	"MatchState\x12\x1b\n" +
+	"\x17MATCH_STATE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13MATCH_STATE_WAITING\x10\x01\x12\x17\n" +
+	"\x13MATCH_STATE_OPENING\x10\x02\x12\x17\n" +
+	"\x13MATCH_STATE_PLAYING\x10\x03\x12\x18\n" +
+	"\x14MATCH_STATE_FINISHED\x10\x04B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"MatchProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -288,23 +1343,68 @@ func file_hypedomino_v1_match_proto_rawDescGZIP() []byte {
 	return file_hypedomino_v1_match_proto_rawDescData
 }
 
-var file_hypedomino_v1_match_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_hypedomino_v1_match_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_hypedomino_v1_match_proto_goTypes = []any{
 	(BoardEnd)(0),           // 0: hypedomino.v1.BoardEnd
-	(*Tile)(nil),            // 1: hypedomino.v1.Tile
-	(*PlaceTileIntent)(nil), // 2: hypedomino.v1.PlaceTileIntent
-	(*PassIntent)(nil),      // 3: hypedomino.v1.PassIntent
-	(*DrawIntent)(nil),      // 4: hypedomino.v1.DrawIntent
+	(Seat)(0),               // 1: hypedomino.v1.Seat
+	(Team)(0),               // 2: hypedomino.v1.Team
+	(Mode)(0),               // 3: hypedomino.v1.Mode
+	(Controller)(0),         // 4: hypedomino.v1.Controller
+	(MatchState)(0),         // 5: hypedomino.v1.MatchState
+	(*Tile)(nil),            // 6: hypedomino.v1.Tile
+	(*PlaceTileIntent)(nil), // 7: hypedomino.v1.PlaceTileIntent
+	(*PassIntent)(nil),      // 8: hypedomino.v1.PassIntent
+	(*DrawIntent)(nil),      // 9: hypedomino.v1.DrawIntent
+	(*EndTurnIntent)(nil),   // 10: hypedomino.v1.EndTurnIntent
+	(*OrientedTile)(nil),    // 11: hypedomino.v1.OrientedTile
+	(*OpenEnd)(nil),         // 12: hypedomino.v1.OpenEnd
+	(*BoardView)(nil),       // 13: hypedomino.v1.BoardView
+	(*SeatView)(nil),        // 14: hypedomino.v1.SeatView
+	(*LegalMove)(nil),       // 15: hypedomino.v1.LegalMove
+	(*Opening)(nil),         // 16: hypedomino.v1.Opening
+	(*TeamPoints)(nil),      // 17: hypedomino.v1.TeamPoints
+	(*HandResult)(nil),      // 18: hypedomino.v1.HandResult
+	(*MatchView)(nil),       // 19: hypedomino.v1.MatchView
 }
 var file_hypedomino_v1_match_proto_depIdxs = []int32{
-	1, // 0: hypedomino.v1.PlaceTileIntent.tile:type_name -> hypedomino.v1.Tile
-	0, // 1: hypedomino.v1.PlaceTileIntent.end:type_name -> hypedomino.v1.BoardEnd
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6,  // 0: hypedomino.v1.PlaceTileIntent.tile:type_name -> hypedomino.v1.Tile
+	0,  // 1: hypedomino.v1.PlaceTileIntent.end:type_name -> hypedomino.v1.BoardEnd
+	0,  // 2: hypedomino.v1.OpenEnd.end:type_name -> hypedomino.v1.BoardEnd
+	11, // 3: hypedomino.v1.BoardView.line:type_name -> hypedomino.v1.OrientedTile
+	6,  // 4: hypedomino.v1.BoardView.spinner:type_name -> hypedomino.v1.Tile
+	11, // 5: hypedomino.v1.BoardView.top:type_name -> hypedomino.v1.OrientedTile
+	11, // 6: hypedomino.v1.BoardView.bottom:type_name -> hypedomino.v1.OrientedTile
+	12, // 7: hypedomino.v1.BoardView.open_ends:type_name -> hypedomino.v1.OpenEnd
+	1,  // 8: hypedomino.v1.SeatView.seat:type_name -> hypedomino.v1.Seat
+	4,  // 9: hypedomino.v1.SeatView.controller:type_name -> hypedomino.v1.Controller
+	6,  // 10: hypedomino.v1.LegalMove.tile:type_name -> hypedomino.v1.Tile
+	0,  // 11: hypedomino.v1.LegalMove.end:type_name -> hypedomino.v1.BoardEnd
+	1,  // 12: hypedomino.v1.Opening.seat:type_name -> hypedomino.v1.Seat
+	6,  // 13: hypedomino.v1.Opening.tile:type_name -> hypedomino.v1.Tile
+	17, // 14: hypedomino.v1.HandResult.pips:type_name -> hypedomino.v1.TeamPoints
+	2,  // 15: hypedomino.v1.HandResult.winner:type_name -> hypedomino.v1.Team
+	17, // 16: hypedomino.v1.HandResult.awarded:type_name -> hypedomino.v1.TeamPoints
+	17, // 17: hypedomino.v1.HandResult.scores:type_name -> hypedomino.v1.TeamPoints
+	2,  // 18: hypedomino.v1.HandResult.next_opener:type_name -> hypedomino.v1.Team
+	5,  // 19: hypedomino.v1.MatchView.state:type_name -> hypedomino.v1.MatchState
+	1,  // 20: hypedomino.v1.MatchView.seat:type_name -> hypedomino.v1.Seat
+	3,  // 21: hypedomino.v1.MatchView.mode:type_name -> hypedomino.v1.Mode
+	17, // 22: hypedomino.v1.MatchView.scores:type_name -> hypedomino.v1.TeamPoints
+	6,  // 23: hypedomino.v1.MatchView.hand:type_name -> hypedomino.v1.Tile
+	14, // 24: hypedomino.v1.MatchView.seats:type_name -> hypedomino.v1.SeatView
+	13, // 25: hypedomino.v1.MatchView.board:type_name -> hypedomino.v1.BoardView
+	1,  // 26: hypedomino.v1.MatchView.current:type_name -> hypedomino.v1.Seat
+	2,  // 27: hypedomino.v1.MatchView.opening_team:type_name -> hypedomino.v1.Team
+	16, // 28: hypedomino.v1.MatchView.forced_opening:type_name -> hypedomino.v1.Opening
+	15, // 29: hypedomino.v1.MatchView.legal_moves:type_name -> hypedomino.v1.LegalMove
+	18, // 30: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
+	2,  // 31: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_match_proto_init() }
@@ -317,8 +1417,8 @@ func file_hypedomino_v1_match_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_match_proto_rawDesc), len(file_hypedomino_v1_match_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      6,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

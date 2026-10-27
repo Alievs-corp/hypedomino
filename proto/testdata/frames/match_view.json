@@ -1,0 +1,52 @@
+{
+  "protocolVersion": 1,
+  "ackedSequence": 8,
+  "matchView": {
+    "state": "MATCH_STATE_PLAYING",
+    "seat": "SEAT_X",
+    "mode": "MODE_1V1",
+    "handsPlayed": 1,
+    "scores": { "teamA": 45, "teamB": 20 },
+    "carryOver": 3,
+    "hand": [
+      { "low": 0, "high": 4 },
+      { "low": 2, "high": 6 },
+      { "low": 5, "high": 5 }
+    ],
+    "seats": [
+      { "seat": "SEAT_X", "handSize": 3, "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_Y", "handSize": 5, "controller": "CONTROLLER_BOT" }
+    ],
+    "boneyardSize": 6,
+    "board": {
+      "line": [
+        { "first": 4, "second": 6 },
+        { "first": 6, "second": 6 },
+        { "first": 6, "second": 1 }
+      ],
+      "spinner": { "low": 6, "high": 6 },
+      "top": [{ "first": 6, "second": 3 }],
+      "bottom": [],
+      "openEnds": [
+        { "end": "BOARD_END_LEFT", "value": 4 },
+        { "end": "BOARD_END_RIGHT", "value": 1 },
+        { "end": "BOARD_END_TOP", "value": 3 }
+      ]
+    },
+    "current": "SEAT_X",
+    "openingTeam": "TEAM_B",
+    "turnPlacements": 0,
+    "turnDeadlineUnixMs": "1761480020000",
+    "legalMoves": [
+      { "tile": { "low": 0, "high": 4 }, "end": "BOARD_END_LEFT" }
+    ],
+    "lastResult": {
+      "pips": { "teamA": 0, "teamB": 23 },
+      "winner": "TEAM_A",
+      "awarded": { "teamA": 25, "teamB": 0 },
+      "carryOver": 3,
+      "scores": { "teamA": 45, "teamB": 20 },
+      "nextOpener": "TEAM_A"
+    }
+  }
+}

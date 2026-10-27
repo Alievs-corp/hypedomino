@@ -14,8 +14,10 @@ message Envelope {
     ClientHello client_hello = 10;
     ServerHello server_hello = 11;
     Error error = 12;
+    MatchView match_view = 13;
     PlaceTileIntent place_tile_intent = 20;
     PassIntent pass_intent = 21;
     DrawIntent draw_intent = 22;
+    EndTurnIntent end_turn_intent = 23;
   }
 }

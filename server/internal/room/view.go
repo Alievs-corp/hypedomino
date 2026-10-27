@@ -59,6 +59,9 @@ func (r *Room) view(seat rules.Seat) View {
 	}
 	v.BoneyardSize = m.BoneyardSize()
 	v.Current = m.Current()
+	if acting, ok := r.actingSeat(); ok {
+		v.Current = acting
+	}
 	v.OpeningTeam = m.OpeningTeam()
 	v.ForcedOpening, v.HasForced = m.ForcedOpening()
 	v.TurnDeadline = r.deadline

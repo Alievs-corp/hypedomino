@@ -8,7 +8,7 @@ import type { Error } from "./error_pb";
 import { file_hypedomino_v1_error } from "./error_pb";
 import type { ClientHello, ServerHello } from "./hello_pb";
 import { file_hypedomino_v1_hello } from "./hello_pb";
-import type { DrawIntent, PassIntent, PlaceTileIntent } from "./match_pb";
+import type { DrawIntent, EndTurnIntent, MatchView, PassIntent, PlaceTileIntent } from "./match_pb";
 import { file_hypedomino_v1_match } from "./match_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/envelope.proto.
  */
 export const file_hypedomino_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIokDCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEjIKDGNsaWVudF9oZWxsbxgKIAEoCzIaLmh5cGVkb21pbm8udjEuQ2xpZW50SGVsbG9IABIyCgxzZXJ2ZXJfaGVsbG8YCyABKAsyGi5oeXBlZG9taW5vLnYxLlNlcnZlckhlbGxvSAASJQoFZXJyb3IYDCABKAsyFC5oeXBlZG9taW5vLnYxLkVycm9ySAASOwoRcGxhY2VfdGlsZV9pbnRlbnQYFCABKAsyHi5oeXBlZG9taW5vLnYxLlBsYWNlVGlsZUludGVudEgAEjAKC3Bhc3NfaW50ZW50GBUgASgLMhkuaHlwZWRvbWluby52MS5QYXNzSW50ZW50SAASMAoLZHJhd19pbnRlbnQYFiABKAsyGS5oeXBlZG9taW5vLnYxLkRyYXdJbnRlbnRIAEIJCgdwYXlsb2FkQsgBChFjb20uaHlwZWRvbWluby52MUINRW52ZWxvcGVQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
+  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIvIDCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEjIKDGNsaWVudF9oZWxsbxgKIAEoCzIaLmh5cGVkb21pbm8udjEuQ2xpZW50SGVsbG9IABIyCgxzZXJ2ZXJfaGVsbG8YCyABKAsyGi5oeXBlZG9taW5vLnYxLlNlcnZlckhlbGxvSAASJQoFZXJyb3IYDCABKAsyFC5oeXBlZG9taW5vLnYxLkVycm9ySAASLgoKbWF0Y2hfdmlldxgNIAEoCzIYLmh5cGVkb21pbm8udjEuTWF0Y2hWaWV3SAASOwoRcGxhY2VfdGlsZV9pbnRlbnQYFCABKAsyHi5oeXBlZG9taW5vLnYxLlBsYWNlVGlsZUludGVudEgAEjAKC3Bhc3NfaW50ZW50GBUgASgLMhkuaHlwZWRvbWluby52MS5QYXNzSW50ZW50SAASMAoLZHJhd19pbnRlbnQYFiABKAsyGS5oeXBlZG9taW5vLnYxLkRyYXdJbnRlbnRIABI3Cg9lbmRfdHVybl9pbnRlbnQYFyABKAsyHC5oeXBlZG9taW5vLnYxLkVuZFR1cm5JbnRlbnRIAEIJCgdwYXlsb2FkQsgBChFjb20uaHlwZWRvbWluby52MUINRW52ZWxvcGVQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
 
 /**
  * @generated from message hypedomino.v1.Envelope
@@ -60,6 +60,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
     case: "error";
   } | {
     /**
+     * @generated from field: hypedomino.v1.MatchView match_view = 13;
+     */
+    value: MatchView;
+    case: "matchView";
+  } | {
+    /**
      * @generated from field: hypedomino.v1.PlaceTileIntent place_tile_intent = 20;
      */
     value: PlaceTileIntent;
@@ -76,6 +82,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
      */
     value: DrawIntent;
     case: "drawIntent";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.EndTurnIntent end_turn_intent = 23;
+     */
+    value: EndTurnIntent;
+    case: "endTurnIntent";
   } | { case: undefined; value?: undefined };
 };
 

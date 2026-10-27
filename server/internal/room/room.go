@@ -135,6 +135,10 @@ func (r *Room) Leave(seat rules.Seat) {
 	r.enqueue(func(r *Room) { r.leave(seat) })
 }
 
+func (r *Room) Disconnect(seat rules.Seat, sink Sink) {
+	r.enqueue(func(r *Room) { r.disconnect(seat, sink) })
+}
+
 func (r *Room) Intent(seat rules.Seat, sequence uint64, intent replay.Intent) {
 	r.enqueue(func(r *Room) { r.intent(seat, sequence, intent) })
 }
@@ -159,6 +163,7 @@ func (r *Room) join(seat rules.Seat, sink Sink) {
 		return
 	}
 	r.seats[seat].sink = sink
+	r.presence.Reconnect(seat)
 	if r.state == StateWaiting && r.full() {
 		r.recorder = replay.NewRecorder(r.options.Mode, r.options.Config, r.options.Seed)
 	}
@@ -191,6 +196,12 @@ func (r *Room) reconnect(seat rules.Seat, sink Sink) {
 	r.seats[seat].sink = sink
 	r.presence.Reconnect(seat)
 	r.settle()
+}
+
+func (r *Room) disconnect(seat rules.Seat, sink Sink) {
+	if r.seated(seat) && r.seats[seat].sink == sink {
+		r.seats[seat].sink = nil
+	}
 }
 
 func (r *Room) leave(seat rules.Seat) {

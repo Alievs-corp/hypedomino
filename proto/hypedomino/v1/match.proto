@@ -10,6 +10,42 @@ enum BoardEnd {
   BOARD_END_BOTTOM = 4;
 }
 
+enum Seat {
+  SEAT_UNSPECIFIED = 0;
+  SEAT_NORTH = 1;
+  SEAT_EAST = 2;
+  SEAT_SOUTH = 3;
+  SEAT_WEST = 4;
+  SEAT_X = 5;
+  SEAT_Y = 6;
+}
+
+enum Team {
+  TEAM_UNSPECIFIED = 0;
+  TEAM_A = 1;
+  TEAM_B = 2;
+}
+
+enum Mode {
+  MODE_UNSPECIFIED = 0;
+  MODE_1V1 = 1;
+  MODE_2V2 = 2;
+}
+
+enum Controller {
+  CONTROLLER_UNSPECIFIED = 0;
+  CONTROLLER_PLAYER = 1;
+  CONTROLLER_BOT = 2;
+}
+
+enum MatchState {
+  MATCH_STATE_UNSPECIFIED = 0;
+  MATCH_STATE_WAITING = 1;
+  MATCH_STATE_OPENING = 2;
+  MATCH_STATE_PLAYING = 3;
+  MATCH_STATE_FINISHED = 4;
+}
+
 message Tile {
   uint32 low = 1;
   uint32 high = 2;
@@ -23,3 +59,74 @@ message PlaceTileIntent {
 message PassIntent {}
 
 message DrawIntent {}
+
+message EndTurnIntent {}
+
+message OrientedTile {
+  uint32 first = 1;
+  uint32 second = 2;
+}
+
+message OpenEnd {
+  BoardEnd end = 1;
+  uint32 value = 2;
+}
+
+message BoardView {
+  repeated OrientedTile line = 1;
+  Tile spinner = 2;
+  repeated OrientedTile top = 3;
+  repeated OrientedTile bottom = 4;
+  repeated OpenEnd open_ends = 5;
+}
+
+message SeatView {
+  Seat seat = 1;
+  uint32 hand_size = 2;
+  Controller controller = 3;
+}
+
+message LegalMove {
+  Tile tile = 1;
+  BoardEnd end = 2;
+}
+
+message Opening {
+  Seat seat = 1;
+  Tile tile = 2;
+}
+
+message TeamPoints {
+  uint32 team_a = 1;
+  uint32 team_b = 2;
+}
+
+message HandResult {
+  TeamPoints pips = 1;
+  Team winner = 2;
+  TeamPoints awarded = 3;
+  uint32 carry_over = 4;
+  TeamPoints scores = 5;
+  Team next_opener = 6;
+}
+
+message MatchView {
+  MatchState state = 1;
+  Seat seat = 2;
+  Mode mode = 3;
+  uint32 hands_played = 4;
+  TeamPoints scores = 5;
+  uint32 carry_over = 6;
+  repeated Tile hand = 7;
+  repeated SeatView seats = 8;
+  uint32 boneyard_size = 9;
+  BoardView board = 10;
+  Seat current = 11;
+  Team opening_team = 12;
+  Opening forced_opening = 13;
+  uint32 turn_placements = 14;
+  uint64 turn_deadline_unix_ms = 15;
+  repeated LegalMove legal_moves = 16;
+  HandResult last_result = 17;
+  Team winner = 18;
+}
