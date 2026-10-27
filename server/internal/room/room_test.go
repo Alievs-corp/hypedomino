@@ -31,7 +31,7 @@ func (c *fakeClock) Now() time.Time {
 func (c *fakeClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.pending = make(chan time.Time, 1)
+	c.pending = make(chan time.Time)
 	return c.pending
 }
 
@@ -412,6 +412,7 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 	v := tab.snapshot(rules.SeatX)
 	gone, other := v.ForcedOpening.Seat, v.ForcedOpening.Seat.Next()
 	tab.room.Disconnect(gone, tab.sinks[gone])
+	tab.snapshot(other)
 	tab.clock.fire()
 	v = tab.view(other)
 	if v.Controllers[gone] != rules.ControllerPlayer || v.State != StatePlaying || v.Current != other {
