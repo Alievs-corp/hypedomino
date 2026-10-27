@@ -57,6 +57,23 @@ func (s *recordingSession) Attach() {
 	s.attached = true
 }
 
+func (s *recordingSession) isAttached() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.attached
+}
+
+func (s *recordingSession) awaitAttached(t *testing.T) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !s.isAttached() {
+		if time.Now().After(deadline) {
+			t.Fatal("session was not attached after the hello")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
 func (s *recordingSession) Intent(sequence uint64, intent replay.Intent) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -240,13 +257,7 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	if frame.GetProtocolVersion() != ProtocolVersion {
 		t.Fatalf("protocol version %d", frame.GetProtocolVersion())
 	}
-	session := h.session("ok-resume")
-	session.mu.Lock()
-	attached := session.attached
-	session.mu.Unlock()
-	if !attached {
-		t.Fatal("session was not attached after the hello")
-	}
+	h.session("ok-resume").awaitAttached(t)
 }
 
 func TestOldClientGetsUpdateRequiredAndIsClosed(t *testing.T) {
