@@ -405,3 +405,36 @@ func TestIntentsBeforeTheMatchStartsAreRefused(t *testing.T) {
 		t.Fatalf("record before start: %+v", record)
 	}
 }
+
+func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1, 6)
+	tab.settle()
+	v := tab.snapshot(rules.SeatX)
+	gone, other := v.ForcedOpening.Seat, v.ForcedOpening.Seat.Next()
+	tab.room.Disconnect(gone, tab.sinks[gone])
+	tab.clock.fire()
+	v = tab.view(other)
+	if v.Controllers[gone] != rules.ControllerPlayer || v.State != StatePlaying || v.Current != other {
+		t.Fatalf("after a disconnect and one timeout: %+v", v)
+	}
+	if messages := tab.inbox(gone); len(messages) != 0 {
+		t.Fatalf("a disconnected seat received %d messages", len(messages))
+	}
+	stale := make(chanSink, 1)
+	tab.room.Disconnect(other, stale)
+	tab.room.Intent(other, 1, replay.Intent{Kind: replay.KindPass})
+	if m, rejected := tab.rejection(other); !rejected || !errors.Is(m.Reason, rules.ErrMustPlace) {
+		t.Fatalf("a stale sink dropped the live one: %+v", m)
+	}
+	fresh := make(chanSink, 64)
+	tab.sinks[gone] = fresh
+	tab.room.Join(gone, fresh)
+	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerPlayer || len(v.Hand) != 6 {
+		t.Fatalf("joining the seat again: %+v", v)
+	}
+	tab.room.Leave(gone)
+	tab.room.Join(gone, fresh)
+	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerBot {
+		t.Fatal("a leaver took the seat back by joining")
+	}
+}
