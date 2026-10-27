@@ -46,7 +46,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 
 | Id | Item | Owner | Evidence | Link |
 |---|---|---|---|---|
-| GN-8 | Production environment separate from staging; secrets only in the secret manager; secret scan green | Server lead | IaC apply log, secret scan run | #24 |
+| GN-8 | Production environment separate from staging (`docs/environments.md` E-1 to E-6); secrets only in the `production` environment secrets (section 3 there); secret scan green | Server lead | IaC apply log `{filled by #25}`, `secret-scan` job green in the `CI complete` run of the release commit | #24, `docs/environments.md` |
 | GN-9 | Server deploy drill on staging: matches in progress finish or move during a deploy; rollback measured under 5 minutes | Server lead | Drill record with timings | #25, #43 |
 | GN-10 | Catalog switch drill: previous Addressables catalog re-activated; an older client still loads with its catalog | Live-ops lead | Drill record | #26, ADR 0002 |
 | GN-11 | Release builds are produced and signed by the pipeline from the tag; version and build numbers recorded; symbols and mapping files uploaded | Client lead | Pipeline run, build numbers in the release issue | #27, #182 |
@@ -108,7 +108,7 @@ A threshold breach with player impact is an incident (section 6).
 ### 5.1 Server deploy
 
 1. The release is a tagged commit with `CI complete` green; the image is built once and promoted from staging to production unchanged. `{filled by #25}`
-2. Migrations follow expand then contract: a migration never breaks the previous server version, so the binary can roll back without touching the schema (ADR 0005). A contract step ships only after the previous version is no longer deployed.
+2. Migrations follow expand then contract: a migration never breaks the previous server version, so the binary can roll back without touching the schema (ADR 0005). A contract step ships only after the previous version is no longer deployed. Migrations are forward only and run once, staging first (`docs/environments.md` section 6).
 3. Canary: new rooms are routed to one new node first, *default* 10% of new rooms for 30 minutes, while rooms in progress stay on old nodes (ADR 0003: a room lives on one node).
 4. Watch section 4.1 on the canary. On a breach, stop and roll back (5.4).
 5. Roll the remaining nodes: new rooms go to new nodes, old nodes drain until their rooms finish, then stop (#25, #43). Never kill a node with live rooms.
@@ -215,7 +215,7 @@ In SEV1 the incident commander, comms lead and scribe are three different people
 ### 6.5 Special cases
 
 - Economy integrity (currency or items created outside legal play): purchase kill switch on, evidence preserved, ledger reconciliation (#202). Corrections go through the ledger with a reason through admin tools (#144). Compensation is a product owner decision.
-- Security (leaked secret, admin compromise, modded build at scale): security lead joins as responder. Rotate secrets (#24), block builds (#210), disable affected admin accounts (#134). Personal data breaches follow the notification duties in #187 (GDPR: 72 hours to the supervisory authority).
+- Security (leaked secret, admin compromise, modded build at scale): security lead joins as responder. Rotate secrets (`docs/environments.md` section 5), block builds (#210), disable affected admin accounts (#134). Personal data breaches follow the notification duties in #187 (GDPR: 72 hours to the supervisory authority).
 - Cheating wave: responses follow `docs/anti-cheat.md` section 3; public messages never reveal detection details (#186, #209).
 - Store outage (billing or review): nothing on our side to roll back; purchase kill switch if receipts fail, comms only.
 
@@ -314,7 +314,7 @@ One page per category, each answer in all four launch languages and taken from i
 
 ## 10. Open items
 
-- Every `{filled by #N}` placeholder: deploy and rollback commands (#25), environments and secret rotation (#24), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
+- Every `{filled by #N}` placeholder: deploy and rollback commands and the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
 - Where the FAQ is hosted (in-app view or web page) is not decided.
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.

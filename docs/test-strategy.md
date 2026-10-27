@@ -276,12 +276,13 @@ A test that fails and then passes on the same commit is flaky. A flaky test is a
 |---|---|---|
 | `changes` | Path filter for `server/`, `admin/`, `client/`, `proto/`; an area counts as changed only if its project file exists (`server/go.mod`, `admin/package.json`, `client/ProjectSettings/ProjectVersion.txt`, `proto/buf.yaml`) | Every PR and push to `main` |
 | `lint` | `npm run lint` (comment lint), `npm run test:tools` (spec validators) | Always |
+| `secret-scan` | Pinned gitleaks over the PR's commits, or the full history on `main` (`docs/environments.md` section 4) | Always |
 | `pr-meta` | One `type:`, `area:` and `priority:` label; `Closes #N` or `Part of #N` in the body | PRs |
 | `server` | `gofmt`, `go vet`, `go build`, `go test -race ./...` | Server changed |
 | `admin` | `pnpm install --frozen-lockfile`, `typecheck`, `test`, `build` (scripts if present) | Admin changed |
 | `client` | Unity test runner, `testMode: all` (edit-mode and play-mode) | Client changed |
 | `proto` | `buf lint`, `buf format --diff --exit-code`, `buf breaking` against the PR base | Proto changed |
-| `CI complete` | Fails if any needed job is neither `success` nor `skipped`, or if `changes` or `lint` did not succeed | Always |
+| `CI complete` | Fails if any needed job is neither `success` nor `skipped`, or if `changes`, `lint` or `secret-scan` did not succeed | Always |
 
 Today no project file exists, so `server`, `admin`, `client` and `proto` are skipped on every run.
 
@@ -304,7 +305,7 @@ Today no project file exists, so `server`, `admin`, `client` and `proto` are ski
 
 ### 10.3 Adding a job
 
-Per CLAUDE.md: a new job that may block a merge is added to the `needs` list of `ci-complete`. A job that must run on every PR (not path-gated) is also added to the list of jobs that must succeed in its check step, next to `changes` and `lint`. A path-gated job only joins `needs`, where `skipped` counts as passing. Scheduled and release workflows are separate files and never part of `CI complete`. This document does not edit `ci.yml`; each issue in the table above adds its own job.
+Per CLAUDE.md: a new job that may block a merge is added to the `needs` list of `ci-complete`. A job that must run on every PR (not path-gated) is also added to the list of jobs that must succeed in its check step, next to `changes`, `lint` and `secret-scan`. A path-gated job only joins `needs`, where `skipped` counts as passing. Scheduled and release workflows are separate files and never part of `CI complete`. This document does not edit `ci.yml`; each issue in the table above adds its own job.
 
 ## 11. Coverage targets
 
