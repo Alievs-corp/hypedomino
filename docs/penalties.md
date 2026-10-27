@@ -74,7 +74,8 @@ Casual offenses are kept apart from ranked ones. They never add to the offense l
 - Every offense is stored with the match id, the queue (ranked or casual), the seat, the timeout, reconnect and leave events with server timestamps, and the config version used.
 - The player sees each active offense, its expiry, their current step on each ladder and how to leave it.
 - An admin can remove an offense or lift a penalty, with a mandatory reason. Every admin change is audited.
-- Applying penalties is idempotent: replaying the same match end never records a second offense.
+- Applying penalties is idempotent: replaying the same match end never records a second offense. The record keeps the match ids it has applied inside the offense window, so a replayed match end is answered with the current state and changes nothing.
+- Dodges (`docs/ranking.md` section 6) are kept on the same record, apart from the offense ladders: a dodge never adds to an offense level and an offense never adds to the dodge count.
 
 ## 8. Config
 
@@ -95,4 +96,4 @@ Casual offenses are kept apart from ranked ones. They never add to the offense l
 | `CasualQueueDelayLevels`, `CasualQueueDelaySeconds` | Ascending casual offense levels of the casual queue delay steps, and the delay of each step; equal length. No entry of `CasualQueueDelaySeconds` exceeds `QueueDelaySeconds`, so the casual ladder stays lighter than the ranked one |
 | `CasualQueueDelayMatches` | How many completed casual matches a casual queue delay lasts |
 
-Values are set in the admin panel before launch. A match always uses the config version that was active when it started.
+Values are set in the admin panel before launch. A match always uses the config version that was active when it started. Until then the server runs on the placeholders of `penalties.DefaultConfig` (`server/internal/penalties`), which are not design decisions.
