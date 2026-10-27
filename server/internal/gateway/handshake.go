@@ -53,7 +53,7 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64) *pb.Envelope {
 	}
 }
 
-func errorFrame(code pb.ErrorCode, rejected, acked uint64) *pb.Envelope {
+func ErrorFrame(code pb.ErrorCode, rejected, acked uint64) *pb.Envelope {
 	return &pb.Envelope{
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,

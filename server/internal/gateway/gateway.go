@@ -28,6 +28,8 @@ type Config struct {
 	HelloTimeout         time.Duration
 	WriteTimeout         time.Duration
 	CloseTimeout         time.Duration
+	PingInterval         time.Duration
+	PongTimeout          time.Duration
 	CompressionThreshold int
 	IntentsPerSecond     int
 	IntentBurst          int
@@ -41,6 +43,8 @@ func DefaultConfig() Config {
 		HelloTimeout:         5 * time.Second,
 		WriteTimeout:         5 * time.Second,
 		CloseTimeout:         2 * time.Second,
+		PingInterval:         15 * time.Second,
+		PongTimeout:          5 * time.Second,
 		CompressionThreshold: 256,
 		IntentsPerSecond:     10,
 		IntentBurst:          20,

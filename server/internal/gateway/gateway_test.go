@@ -454,14 +454,14 @@ func TestSlowConsumerIsDisconnected(t *testing.T) {
 	defer socket.CloseNow()
 	conn := <-accepted
 	for sequence := uint64(1); sequence <= 2; sequence++ {
-		if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, 0)); err != nil {
+		if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, 0)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 3, 0)); !errors.Is(err, ErrSlowConsumer) {
+	if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 3, 0)); !errors.Is(err, ErrSlowConsumer) {
 		t.Fatalf("third frame: %v", err)
 	}
-	if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 4, 0)); !errors.Is(err, ErrClosed) {
+	if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 4, 0)); !errors.Is(err, ErrClosed) {
 		t.Fatalf("after closing: %v", err)
 	}
 	_, _, err = socket.Read(ctx)
@@ -494,5 +494,31 @@ func TestVersionAtLeast(t *testing.T) {
 		if got := VersionAtLeast(tc.version, tc.minimum); got != tc.want {
 			t.Errorf("VersionAtLeast(%q, %q) = %v, want %v", tc.version, tc.minimum, got, tc.want)
 		}
+	}
+}
+
+func TestAClientThatStopsAnsweringPingsIsClosed(t *testing.T) {
+	config := testConfig()
+	config.PingInterval = 50 * time.Millisecond
+	config.PongTimeout = 100 * time.Millisecond
+	h := newHarness(t, config)
+	c := h.dial()
+	c.handshake("ok")
+	select {
+	case <-h.session("ok").closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a client that never reads was not disconnected")
+	}
+	c.expectClose(websocket.StatusGoingAway)
+
+	alive := h.dial()
+	alive.handshake("ok-alive")
+	alive.socket.CloseRead(alive.ctx)
+	time.Sleep(400 * time.Millisecond)
+	alive.send(place(1, 2, 3, pb.BoardEnd_BOARD_END_UNSPECIFIED))
+	alive.socket.Close(websocket.StatusNormalClosure, "")
+	<-h.session("ok-alive").closed
+	if got := h.session("ok-alive").received(); len(got) != 1 {
+		t.Fatalf("a responsive client was dropped: %+v", got)
 	}
 }
