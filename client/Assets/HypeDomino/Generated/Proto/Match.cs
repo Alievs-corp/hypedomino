@@ -28,22 +28,85 @@ namespace Hypedomino.V1 {
             "BFRpbGUSEAoDbG93GAEgASgNUgNsb3cSEgoEaGlnaBgCIAEoDVIEaGlnaCJl",
             "Cg9QbGFjZVRpbGVJbnRlbnQSJwoEdGlsZRgBIAEoCzITLmh5cGVkb21pbm8u",
             "djEuVGlsZVIEdGlsZRIpCgNlbmQYAiABKA4yFy5oeXBlZG9taW5vLnYxLkJv",
-            "YXJkRW5kUgNlbmQiDAoKUGFzc0ludGVudCIMCgpEcmF3SW50ZW50KncKCEJv",
-            "YXJkRW5kEhkKFUJPQVJEX0VORF9VTlNQRUNJRklFRBAAEhIKDkJPQVJEX0VO",
-            "RF9MRUZUEAESEwoPQk9BUkRfRU5EX1JJR0hUEAISEQoNQk9BUkRfRU5EX1RP",
-            "UBADEhQKEEJPQVJEX0VORF9CT1RUT00QBELFAQoRY29tLmh5cGVkb21pbm8u",
-            "djFCCk1hdGNoUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBl",
-            "ZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVk",
-            "b21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx",
-            "4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYx",
-            "YgZwcm90bzM="));
+            "YXJkRW5kUgNlbmQiDAoKUGFzc0ludGVudCIMCgpEcmF3SW50ZW50Ig8KDUVu",
+            "ZFR1cm5JbnRlbnQiPAoMT3JpZW50ZWRUaWxlEhQKBWZpcnN0GAEgASgNUgVm",
+            "aXJzdBIWCgZzZWNvbmQYAiABKA1SBnNlY29uZCJKCgdPcGVuRW5kEikKA2Vu",
+            "ZBgBIAEoDjIXLmh5cGVkb21pbm8udjEuQm9hcmRFbmRSA2VuZBIUCgV2YWx1",
+            "ZRgCIAEoDVIFdmFsdWUihAIKCUJvYXJkVmlldxIvCgRsaW5lGAEgAygLMhsu",
+            "aHlwZWRvbWluby52MS5PcmllbnRlZFRpbGVSBGxpbmUSLQoHc3Bpbm5lchgC",
+            "IAEoCzITLmh5cGVkb21pbm8udjEuVGlsZVIHc3Bpbm5lchItCgN0b3AYAyAD",
+            "KAsyGy5oeXBlZG9taW5vLnYxLk9yaWVudGVkVGlsZVIDdG9wEjMKBmJvdHRv",
+            "bRgEIAMoCzIbLmh5cGVkb21pbm8udjEuT3JpZW50ZWRUaWxlUgZib3R0b20S",
+            "MwoJb3Blbl9lbmRzGAUgAygLMhYuaHlwZWRvbWluby52MS5PcGVuRW5kUghv",
+            "cGVuRW5kcyKLAQoIU2VhdFZpZXcSJwoEc2VhdBgBIAEoDjITLmh5cGVkb21p",
+            "bm8udjEuU2VhdFIEc2VhdBIbCgloYW5kX3NpemUYAiABKA1SCGhhbmRTaXpl",
+            "EjkKCmNvbnRyb2xsZXIYAyABKA4yGS5oeXBlZG9taW5vLnYxLkNvbnRyb2xs",
+            "ZXJSCmNvbnRyb2xsZXIiXwoJTGVnYWxNb3ZlEicKBHRpbGUYASABKAsyEy5o",
+            "eXBlZG9taW5vLnYxLlRpbGVSBHRpbGUSKQoDZW5kGAIgASgOMhcuaHlwZWRv",
+            "bWluby52MS5Cb2FyZEVuZFIDZW5kIlsKB09wZW5pbmcSJwoEc2VhdBgBIAEo",
+            "DjITLmh5cGVkb21pbm8udjEuU2VhdFIEc2VhdBInCgR0aWxlGAIgASgLMhMu",
+            "aHlwZWRvbWluby52MS5UaWxlUgR0aWxlIjoKClRlYW1Qb2ludHMSFQoGdGVh",
+            "bV9hGAEgASgNUgV0ZWFtQRIVCgZ0ZWFtX2IYAiABKA1SBXRlYW1CIqUCCgpI",
+            "YW5kUmVzdWx0Ei0KBHBpcHMYASABKAsyGS5oeXBlZG9taW5vLnYxLlRlYW1Q",
+            "b2ludHNSBHBpcHMSKwoGd2lubmVyGAIgASgOMhMuaHlwZWRvbWluby52MS5U",
+            "ZWFtUgZ3aW5uZXISMwoHYXdhcmRlZBgDIAEoCzIZLmh5cGVkb21pbm8udjEu",
+            "VGVhbVBvaW50c1IHYXdhcmRlZBIdCgpjYXJyeV9vdmVyGAQgASgNUgljYXJy",
+            "eU92ZXISMQoGc2NvcmVzGAUgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9p",
+            "bnRzUgZzY29yZXMSNAoLbmV4dF9vcGVuZXIYBiABKA4yEy5oeXBlZG9taW5v",
+            "LnYxLlRlYW1SCm5leHRPcGVuZXIi1gYKCU1hdGNoVmlldxIvCgVzdGF0ZRgB",
+            "IAEoDjIZLmh5cGVkb21pbm8udjEuTWF0Y2hTdGF0ZVIFc3RhdGUSJwoEc2Vh",
+            "dBgCIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdFIEc2VhdBInCgRtb2RlGAMg",
+            "ASgOMhMuaHlwZWRvbWluby52MS5Nb2RlUgRtb2RlEiEKDGhhbmRzX3BsYXll",
+            "ZBgEIAEoDVILaGFuZHNQbGF5ZWQSMQoGc2NvcmVzGAUgASgLMhkuaHlwZWRv",
+            "bWluby52MS5UZWFtUG9pbnRzUgZzY29yZXMSHQoKY2Fycnlfb3ZlchgGIAEo",
+            "DVIJY2FycnlPdmVyEicKBGhhbmQYByADKAsyEy5oeXBlZG9taW5vLnYxLlRp",
+            "bGVSBGhhbmQSLQoFc2VhdHMYCCADKAsyFy5oeXBlZG9taW5vLnYxLlNlYXRW",
+            "aWV3UgVzZWF0cxIjCg1ib25leWFyZF9zaXplGAkgASgNUgxib25leWFyZFNp",
+            "emUSLgoFYm9hcmQYCiABKAsyGC5oeXBlZG9taW5vLnYxLkJvYXJkVmlld1IF",
+            "Ym9hcmQSLQoHY3VycmVudBgLIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdFIH",
+            "Y3VycmVudBI2CgxvcGVuaW5nX3RlYW0YDCABKA4yEy5oeXBlZG9taW5vLnYx",
+            "LlRlYW1SC29wZW5pbmdUZWFtEj0KDmZvcmNlZF9vcGVuaW5nGA0gASgLMhYu",
+            "aHlwZWRvbWluby52MS5PcGVuaW5nUg1mb3JjZWRPcGVuaW5nEicKD3R1cm5f",
+            "cGxhY2VtZW50cxgOIAEoDVIOdHVyblBsYWNlbWVudHMSMQoVdHVybl9kZWFk",
+            "bGluZV91bml4X21zGA8gASgEUhJ0dXJuRGVhZGxpbmVVbml4TXMSOQoLbGVn",
+            "YWxfbW92ZXMYECADKAsyGC5oeXBlZG9taW5vLnYxLkxlZ2FsTW92ZVIKbGVn",
+            "YWxNb3ZlcxI6CgtsYXN0X3Jlc3VsdBgRIAEoCzIZLmh5cGVkb21pbm8udjEu",
+            "SGFuZFJlc3VsdFIKbGFzdFJlc3VsdBIrCgZ3aW5uZXIYEiABKA4yEy5oeXBl",
+            "ZG9taW5vLnYxLlRlYW1SBndpbm5lcip3CghCb2FyZEVuZBIZChVCT0FSRF9F",
+            "TkRfVU5TUEVDSUZJRUQQABISCg5CT0FSRF9FTkRfTEVGVBABEhMKD0JPQVJE",
+            "X0VORF9SSUdIVBACEhEKDUJPQVJEX0VORF9UT1AQAxIUChBCT0FSRF9FTkRf",
+            "Qk9UVE9NEAQqcgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDgoKU0VB",
+            "VF9OT1JUSBABEg0KCVNFQVRfRUFTVBACEg4KClNFQVRfU09VVEgQAxINCglT",
+            "RUFUX1dFU1QQBBIKCgZTRUFUX1gQBRIKCgZTRUFUX1kQBio0CgRUZWFtEhQK",
+            "EFRFQU1fVU5TUEVDSUZJRUQQABIKCgZURUFNX0EQARIKCgZURUFNX0IQAio4",
+            "CgRNb2RlEhQKEE1PREVfVU5TUEVDSUZJRUQQABIMCghNT0RFXzFWMRABEgwK",
+            "CE1PREVfMlYyEAIqUwoKQ29udHJvbGxlchIaChZDT05UUk9MTEVSX1VOU1BF",
+            "Q0lGSUVEEAASFQoRQ09OVFJPTExFUl9QTEFZRVIQARISCg5DT05UUk9MTEVS",
+            "X0JPVBACKo4BCgpNYXRjaFN0YXRlEhsKF01BVENIX1NUQVRFX1VOU1BFQ0lG",
+            "SUVEEAASFwoTTUFUQ0hfU1RBVEVfV0FJVElORxABEhcKE01BVENIX1NUQVRF",
+            "X09QRU5JTkcQAhIXChNNQVRDSF9TVEFURV9QTEFZSU5HEAMSGAoUTUFUQ0hf",
+            "U1RBVEVfRklOSVNIRUQQBELFAQoRY29tLmh5cGVkb21pbm8udjFCCk1hdGNo",
+            "UHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3Nl",
+            "cnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaIC",
+            "A0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRv",
+            "bWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.BoardEnd), }, null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.BoardEnd), typeof(global::Hypedomino.V1.Seat), typeof(global::Hypedomino.V1.Team), typeof(global::Hypedomino.V1.Mode), typeof(global::Hypedomino.V1.Controller), typeof(global::Hypedomino.V1.MatchState), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Tile), global::Hypedomino.V1.Tile.Parser, new[]{ "Low", "High" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.PlaceTileIntent), global::Hypedomino.V1.PlaceTileIntent.Parser, new[]{ "Tile", "End" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.PassIntent), global::Hypedomino.V1.PassIntent.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.DrawIntent), global::Hypedomino.V1.DrawIntent.Parser, null, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.DrawIntent), global::Hypedomino.V1.DrawIntent.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.EndTurnIntent), global::Hypedomino.V1.EndTurnIntent.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.OrientedTile), global::Hypedomino.V1.OrientedTile.Parser, new[]{ "First", "Second" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.OpenEnd), global::Hypedomino.V1.OpenEnd.Parser, new[]{ "End", "Value" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.BoardView), global::Hypedomino.V1.BoardView.Parser, new[]{ "Line", "Spinner", "Top", "Bottom", "OpenEnds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.SeatView), global::Hypedomino.V1.SeatView.Parser, new[]{ "Seat", "HandSize", "Controller" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LegalMove), global::Hypedomino.V1.LegalMove.Parser, new[]{ "Tile", "End" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Opening), global::Hypedomino.V1.Opening.Parser, new[]{ "Seat", "Tile" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.TeamPoints), global::Hypedomino.V1.TeamPoints.Parser, new[]{ "TeamA", "TeamB" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.HandResult), global::Hypedomino.V1.HandResult.Parser, new[]{ "Pips", "Winner", "Awarded", "CarryOver", "Scores", "NextOpener" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner" }, null, null, null, null)
           }));
     }
     #endregion
@@ -56,6 +119,42 @@ namespace Hypedomino.V1 {
     [pbr::OriginalName("BOARD_END_RIGHT")] Right = 2,
     [pbr::OriginalName("BOARD_END_TOP")] Top = 3,
     [pbr::OriginalName("BOARD_END_BOTTOM")] Bottom = 4,
+  }
+
+  public enum Seat {
+    [pbr::OriginalName("SEAT_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("SEAT_NORTH")] North = 1,
+    [pbr::OriginalName("SEAT_EAST")] East = 2,
+    [pbr::OriginalName("SEAT_SOUTH")] South = 3,
+    [pbr::OriginalName("SEAT_WEST")] West = 4,
+    [pbr::OriginalName("SEAT_X")] X = 5,
+    [pbr::OriginalName("SEAT_Y")] Y = 6,
+  }
+
+  public enum Team {
+    [pbr::OriginalName("TEAM_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("TEAM_A")] A = 1,
+    [pbr::OriginalName("TEAM_B")] B = 2,
+  }
+
+  public enum Mode {
+    [pbr::OriginalName("MODE_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("MODE_1V1")] _1V1 = 1,
+    [pbr::OriginalName("MODE_2V2")] _2V2 = 2,
+  }
+
+  public enum Controller {
+    [pbr::OriginalName("CONTROLLER_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("CONTROLLER_PLAYER")] Player = 1,
+    [pbr::OriginalName("CONTROLLER_BOT")] Bot = 2,
+  }
+
+  public enum MatchState {
+    [pbr::OriginalName("MATCH_STATE_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("MATCH_STATE_WAITING")] Waiting = 1,
+    [pbr::OriginalName("MATCH_STATE_OPENING")] Opening = 2,
+    [pbr::OriginalName("MATCH_STATE_PLAYING")] Playing = 3,
+    [pbr::OriginalName("MATCH_STATE_FINISHED")] Finished = 4,
   }
 
   #endregion
@@ -855,6 +954,3183 @@ namespace Hypedomino.V1 {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class EndTurnIntent : pb::IMessage<EndTurnIntent>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<EndTurnIntent> _parser = new pb::MessageParser<EndTurnIntent>(() => new EndTurnIntent());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<EndTurnIntent> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EndTurnIntent() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EndTurnIntent(EndTurnIntent other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EndTurnIntent Clone() {
+      return new EndTurnIntent(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as EndTurnIntent);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(EndTurnIntent other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(EndTurnIntent other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class OrientedTile : pb::IMessage<OrientedTile>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<OrientedTile> _parser = new pb::MessageParser<OrientedTile>(() => new OrientedTile());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<OrientedTile> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OrientedTile() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OrientedTile(OrientedTile other) : this() {
+      first_ = other.first_;
+      second_ = other.second_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OrientedTile Clone() {
+      return new OrientedTile(this);
+    }
+
+    /// <summary>Field number for the "first" field.</summary>
+    public const int FirstFieldNumber = 1;
+    private uint first_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint First {
+      get { return first_; }
+      set {
+        first_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "second" field.</summary>
+    public const int SecondFieldNumber = 2;
+    private uint second_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint Second {
+      get { return second_; }
+      set {
+        second_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as OrientedTile);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(OrientedTile other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (First != other.First) return false;
+      if (Second != other.Second) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (First != 0) hash ^= First.GetHashCode();
+      if (Second != 0) hash ^= Second.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (First != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(First);
+      }
+      if (Second != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Second);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (First != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(First);
+      }
+      if (Second != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Second);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (First != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(First);
+      }
+      if (Second != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Second);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(OrientedTile other) {
+      if (other == null) {
+        return;
+      }
+      if (other.First != 0) {
+        First = other.First;
+      }
+      if (other.Second != 0) {
+        Second = other.Second;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            First = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            Second = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            First = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            Second = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class OpenEnd : pb::IMessage<OpenEnd>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<OpenEnd> _parser = new pb::MessageParser<OpenEnd>(() => new OpenEnd());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<OpenEnd> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OpenEnd() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OpenEnd(OpenEnd other) : this() {
+      end_ = other.end_;
+      value_ = other.value_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public OpenEnd Clone() {
+      return new OpenEnd(this);
+    }
+
+    /// <summary>Field number for the "end" field.</summary>
+    public const int EndFieldNumber = 1;
+    private global::Hypedomino.V1.BoardEnd end_ = global::Hypedomino.V1.BoardEnd.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.BoardEnd End {
+      get { return end_; }
+      set {
+        end_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "value" field.</summary>
+    public const int ValueFieldNumber = 2;
+    private uint value_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint Value {
+      get { return value_; }
+      set {
+        value_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as OpenEnd);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(OpenEnd other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (End != other.End) return false;
+      if (Value != other.Value) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) hash ^= End.GetHashCode();
+      if (Value != 0) hash ^= Value.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) End);
+      }
+      if (Value != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Value);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) End);
+      }
+      if (Value != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Value);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) End);
+      }
+      if (Value != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Value);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(OpenEnd other) {
+      if (other == null) {
+        return;
+      }
+      if (other.End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        End = other.End;
+      }
+      if (other.Value != 0) {
+        Value = other.Value;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            End = (global::Hypedomino.V1.BoardEnd) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Value = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            End = (global::Hypedomino.V1.BoardEnd) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Value = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class BoardView : pb::IMessage<BoardView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<BoardView> _parser = new pb::MessageParser<BoardView>(() => new BoardView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<BoardView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[7]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BoardView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BoardView(BoardView other) : this() {
+      line_ = other.line_.Clone();
+      spinner_ = other.spinner_ != null ? other.spinner_.Clone() : null;
+      top_ = other.top_.Clone();
+      bottom_ = other.bottom_.Clone();
+      openEnds_ = other.openEnds_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BoardView Clone() {
+      return new BoardView(this);
+    }
+
+    /// <summary>Field number for the "line" field.</summary>
+    public const int LineFieldNumber = 1;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.OrientedTile> _repeated_line_codec
+        = pb::FieldCodec.ForMessage(10, global::Hypedomino.V1.OrientedTile.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> line_ = new pbc::RepeatedField<global::Hypedomino.V1.OrientedTile>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> Line {
+      get { return line_; }
+    }
+
+    /// <summary>Field number for the "spinner" field.</summary>
+    public const int SpinnerFieldNumber = 2;
+    private global::Hypedomino.V1.Tile spinner_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Tile Spinner {
+      get { return spinner_; }
+      set {
+        spinner_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "top" field.</summary>
+    public const int TopFieldNumber = 3;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.OrientedTile> _repeated_top_codec
+        = pb::FieldCodec.ForMessage(26, global::Hypedomino.V1.OrientedTile.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> top_ = new pbc::RepeatedField<global::Hypedomino.V1.OrientedTile>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> Top {
+      get { return top_; }
+    }
+
+    /// <summary>Field number for the "bottom" field.</summary>
+    public const int BottomFieldNumber = 4;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.OrientedTile> _repeated_bottom_codec
+        = pb::FieldCodec.ForMessage(34, global::Hypedomino.V1.OrientedTile.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> bottom_ = new pbc::RepeatedField<global::Hypedomino.V1.OrientedTile>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.OrientedTile> Bottom {
+      get { return bottom_; }
+    }
+
+    /// <summary>Field number for the "open_ends" field.</summary>
+    public const int OpenEndsFieldNumber = 5;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.OpenEnd> _repeated_openEnds_codec
+        = pb::FieldCodec.ForMessage(42, global::Hypedomino.V1.OpenEnd.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.OpenEnd> openEnds_ = new pbc::RepeatedField<global::Hypedomino.V1.OpenEnd>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.OpenEnd> OpenEnds {
+      get { return openEnds_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as BoardView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(BoardView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!line_.Equals(other.line_)) return false;
+      if (!object.Equals(Spinner, other.Spinner)) return false;
+      if(!top_.Equals(other.top_)) return false;
+      if(!bottom_.Equals(other.bottom_)) return false;
+      if(!openEnds_.Equals(other.openEnds_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= line_.GetHashCode();
+      if (spinner_ != null) hash ^= Spinner.GetHashCode();
+      hash ^= top_.GetHashCode();
+      hash ^= bottom_.GetHashCode();
+      hash ^= openEnds_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      line_.WriteTo(output, _repeated_line_codec);
+      if (spinner_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Spinner);
+      }
+      top_.WriteTo(output, _repeated_top_codec);
+      bottom_.WriteTo(output, _repeated_bottom_codec);
+      openEnds_.WriteTo(output, _repeated_openEnds_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      line_.WriteTo(ref output, _repeated_line_codec);
+      if (spinner_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Spinner);
+      }
+      top_.WriteTo(ref output, _repeated_top_codec);
+      bottom_.WriteTo(ref output, _repeated_bottom_codec);
+      openEnds_.WriteTo(ref output, _repeated_openEnds_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      size += line_.CalculateSize(_repeated_line_codec);
+      if (spinner_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Spinner);
+      }
+      size += top_.CalculateSize(_repeated_top_codec);
+      size += bottom_.CalculateSize(_repeated_bottom_codec);
+      size += openEnds_.CalculateSize(_repeated_openEnds_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(BoardView other) {
+      if (other == null) {
+        return;
+      }
+      line_.Add(other.line_);
+      if (other.spinner_ != null) {
+        if (spinner_ == null) {
+          Spinner = new global::Hypedomino.V1.Tile();
+        }
+        Spinner.MergeFrom(other.Spinner);
+      }
+      top_.Add(other.top_);
+      bottom_.Add(other.bottom_);
+      openEnds_.Add(other.openEnds_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            line_.AddEntriesFrom(input, _repeated_line_codec);
+            break;
+          }
+          case 18: {
+            if (spinner_ == null) {
+              Spinner = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Spinner);
+            break;
+          }
+          case 26: {
+            top_.AddEntriesFrom(input, _repeated_top_codec);
+            break;
+          }
+          case 34: {
+            bottom_.AddEntriesFrom(input, _repeated_bottom_codec);
+            break;
+          }
+          case 42: {
+            openEnds_.AddEntriesFrom(input, _repeated_openEnds_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            line_.AddEntriesFrom(ref input, _repeated_line_codec);
+            break;
+          }
+          case 18: {
+            if (spinner_ == null) {
+              Spinner = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Spinner);
+            break;
+          }
+          case 26: {
+            top_.AddEntriesFrom(ref input, _repeated_top_codec);
+            break;
+          }
+          case 34: {
+            bottom_.AddEntriesFrom(ref input, _repeated_bottom_codec);
+            break;
+          }
+          case 42: {
+            openEnds_.AddEntriesFrom(ref input, _repeated_openEnds_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SeatView : pb::IMessage<SeatView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SeatView> _parser = new pb::MessageParser<SeatView>(() => new SeatView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SeatView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[8]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SeatView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SeatView(SeatView other) : this() {
+      seat_ = other.seat_;
+      handSize_ = other.handSize_;
+      controller_ = other.controller_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SeatView Clone() {
+      return new SeatView(this);
+    }
+
+    /// <summary>Field number for the "seat" field.</summary>
+    public const int SeatFieldNumber = 1;
+    private global::Hypedomino.V1.Seat seat_ = global::Hypedomino.V1.Seat.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Seat Seat {
+      get { return seat_; }
+      set {
+        seat_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "hand_size" field.</summary>
+    public const int HandSizeFieldNumber = 2;
+    private uint handSize_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint HandSize {
+      get { return handSize_; }
+      set {
+        handSize_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "controller" field.</summary>
+    public const int ControllerFieldNumber = 3;
+    private global::Hypedomino.V1.Controller controller_ = global::Hypedomino.V1.Controller.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Controller Controller {
+      get { return controller_; }
+      set {
+        controller_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SeatView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SeatView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Seat != other.Seat) return false;
+      if (HandSize != other.HandSize) return false;
+      if (Controller != other.Controller) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) hash ^= Seat.GetHashCode();
+      if (HandSize != 0) hash ^= HandSize.GetHashCode();
+      if (Controller != global::Hypedomino.V1.Controller.Unspecified) hash ^= Controller.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Seat);
+      }
+      if (HandSize != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(HandSize);
+      }
+      if (Controller != global::Hypedomino.V1.Controller.Unspecified) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Controller);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Seat);
+      }
+      if (HandSize != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(HandSize);
+      }
+      if (Controller != global::Hypedomino.V1.Controller.Unspecified) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Controller);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Seat);
+      }
+      if (HandSize != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(HandSize);
+      }
+      if (Controller != global::Hypedomino.V1.Controller.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Controller);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SeatView other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        Seat = other.Seat;
+      }
+      if (other.HandSize != 0) {
+        HandSize = other.HandSize;
+      }
+      if (other.Controller != global::Hypedomino.V1.Controller.Unspecified) {
+        Controller = other.Controller;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            HandSize = input.ReadUInt32();
+            break;
+          }
+          case 24: {
+            Controller = (global::Hypedomino.V1.Controller) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            HandSize = input.ReadUInt32();
+            break;
+          }
+          case 24: {
+            Controller = (global::Hypedomino.V1.Controller) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class LegalMove : pb::IMessage<LegalMove>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<LegalMove> _parser = new pb::MessageParser<LegalMove>(() => new LegalMove());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<LegalMove> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LegalMove() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LegalMove(LegalMove other) : this() {
+      tile_ = other.tile_ != null ? other.tile_.Clone() : null;
+      end_ = other.end_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LegalMove Clone() {
+      return new LegalMove(this);
+    }
+
+    /// <summary>Field number for the "tile" field.</summary>
+    public const int TileFieldNumber = 1;
+    private global::Hypedomino.V1.Tile tile_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Tile Tile {
+      get { return tile_; }
+      set {
+        tile_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "end" field.</summary>
+    public const int EndFieldNumber = 2;
+    private global::Hypedomino.V1.BoardEnd end_ = global::Hypedomino.V1.BoardEnd.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.BoardEnd End {
+      get { return end_; }
+      set {
+        end_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as LegalMove);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(LegalMove other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(Tile, other.Tile)) return false;
+      if (End != other.End) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (tile_ != null) hash ^= Tile.GetHashCode();
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) hash ^= End.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (tile_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Tile);
+      }
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) End);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (tile_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Tile);
+      }
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) End);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (tile_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Tile);
+      }
+      if (End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) End);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(LegalMove other) {
+      if (other == null) {
+        return;
+      }
+      if (other.tile_ != null) {
+        if (tile_ == null) {
+          Tile = new global::Hypedomino.V1.Tile();
+        }
+        Tile.MergeFrom(other.Tile);
+      }
+      if (other.End != global::Hypedomino.V1.BoardEnd.Unspecified) {
+        End = other.End;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (tile_ == null) {
+              Tile = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Tile);
+            break;
+          }
+          case 16: {
+            End = (global::Hypedomino.V1.BoardEnd) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            if (tile_ == null) {
+              Tile = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Tile);
+            break;
+          }
+          case 16: {
+            End = (global::Hypedomino.V1.BoardEnd) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class Opening : pb::IMessage<Opening>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<Opening> _parser = new pb::MessageParser<Opening>(() => new Opening());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<Opening> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[10]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Opening() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Opening(Opening other) : this() {
+      seat_ = other.seat_;
+      tile_ = other.tile_ != null ? other.tile_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Opening Clone() {
+      return new Opening(this);
+    }
+
+    /// <summary>Field number for the "seat" field.</summary>
+    public const int SeatFieldNumber = 1;
+    private global::Hypedomino.V1.Seat seat_ = global::Hypedomino.V1.Seat.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Seat Seat {
+      get { return seat_; }
+      set {
+        seat_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "tile" field.</summary>
+    public const int TileFieldNumber = 2;
+    private global::Hypedomino.V1.Tile tile_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Tile Tile {
+      get { return tile_; }
+      set {
+        tile_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as Opening);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(Opening other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Seat != other.Seat) return false;
+      if (!object.Equals(Tile, other.Tile)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) hash ^= Seat.GetHashCode();
+      if (tile_ != null) hash ^= Tile.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Seat);
+      }
+      if (tile_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Tile);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Seat);
+      }
+      if (tile_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Tile);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Seat);
+      }
+      if (tile_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Tile);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(Opening other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        Seat = other.Seat;
+      }
+      if (other.tile_ != null) {
+        if (tile_ == null) {
+          Tile = new global::Hypedomino.V1.Tile();
+        }
+        Tile.MergeFrom(other.Tile);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (tile_ == null) {
+              Tile = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Tile);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (tile_ == null) {
+              Tile = new global::Hypedomino.V1.Tile();
+            }
+            input.ReadMessage(Tile);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class TeamPoints : pb::IMessage<TeamPoints>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<TeamPoints> _parser = new pb::MessageParser<TeamPoints>(() => new TeamPoints());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<TeamPoints> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[11]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TeamPoints() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TeamPoints(TeamPoints other) : this() {
+      teamA_ = other.teamA_;
+      teamB_ = other.teamB_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TeamPoints Clone() {
+      return new TeamPoints(this);
+    }
+
+    /// <summary>Field number for the "team_a" field.</summary>
+    public const int TeamAFieldNumber = 1;
+    private uint teamA_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint TeamA {
+      get { return teamA_; }
+      set {
+        teamA_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "team_b" field.</summary>
+    public const int TeamBFieldNumber = 2;
+    private uint teamB_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint TeamB {
+      get { return teamB_; }
+      set {
+        teamB_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as TeamPoints);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(TeamPoints other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TeamA != other.TeamA) return false;
+      if (TeamB != other.TeamB) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TeamA != 0) hash ^= TeamA.GetHashCode();
+      if (TeamB != 0) hash ^= TeamB.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (TeamA != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(TeamA);
+      }
+      if (TeamB != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(TeamB);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (TeamA != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(TeamA);
+      }
+      if (TeamB != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(TeamB);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (TeamA != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(TeamA);
+      }
+      if (TeamB != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(TeamB);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(TeamPoints other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TeamA != 0) {
+        TeamA = other.TeamA;
+      }
+      if (other.TeamB != 0) {
+        TeamB = other.TeamB;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            TeamA = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            TeamB = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            TeamA = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            TeamB = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class HandResult : pb::IMessage<HandResult>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<HandResult> _parser = new pb::MessageParser<HandResult>(() => new HandResult());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<HandResult> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[12]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public HandResult() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public HandResult(HandResult other) : this() {
+      pips_ = other.pips_ != null ? other.pips_.Clone() : null;
+      winner_ = other.winner_;
+      awarded_ = other.awarded_ != null ? other.awarded_.Clone() : null;
+      carryOver_ = other.carryOver_;
+      scores_ = other.scores_ != null ? other.scores_.Clone() : null;
+      nextOpener_ = other.nextOpener_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public HandResult Clone() {
+      return new HandResult(this);
+    }
+
+    /// <summary>Field number for the "pips" field.</summary>
+    public const int PipsFieldNumber = 1;
+    private global::Hypedomino.V1.TeamPoints pips_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.TeamPoints Pips {
+      get { return pips_; }
+      set {
+        pips_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "winner" field.</summary>
+    public const int WinnerFieldNumber = 2;
+    private global::Hypedomino.V1.Team winner_ = global::Hypedomino.V1.Team.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Team Winner {
+      get { return winner_; }
+      set {
+        winner_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "awarded" field.</summary>
+    public const int AwardedFieldNumber = 3;
+    private global::Hypedomino.V1.TeamPoints awarded_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.TeamPoints Awarded {
+      get { return awarded_; }
+      set {
+        awarded_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "carry_over" field.</summary>
+    public const int CarryOverFieldNumber = 4;
+    private uint carryOver_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint CarryOver {
+      get { return carryOver_; }
+      set {
+        carryOver_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "scores" field.</summary>
+    public const int ScoresFieldNumber = 5;
+    private global::Hypedomino.V1.TeamPoints scores_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.TeamPoints Scores {
+      get { return scores_; }
+      set {
+        scores_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "next_opener" field.</summary>
+    public const int NextOpenerFieldNumber = 6;
+    private global::Hypedomino.V1.Team nextOpener_ = global::Hypedomino.V1.Team.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Team NextOpener {
+      get { return nextOpener_; }
+      set {
+        nextOpener_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as HandResult);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(HandResult other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(Pips, other.Pips)) return false;
+      if (Winner != other.Winner) return false;
+      if (!object.Equals(Awarded, other.Awarded)) return false;
+      if (CarryOver != other.CarryOver) return false;
+      if (!object.Equals(Scores, other.Scores)) return false;
+      if (NextOpener != other.NextOpener) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (pips_ != null) hash ^= Pips.GetHashCode();
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) hash ^= Winner.GetHashCode();
+      if (awarded_ != null) hash ^= Awarded.GetHashCode();
+      if (CarryOver != 0) hash ^= CarryOver.GetHashCode();
+      if (scores_ != null) hash ^= Scores.GetHashCode();
+      if (NextOpener != global::Hypedomino.V1.Team.Unspecified) hash ^= NextOpener.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (pips_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Pips);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Winner);
+      }
+      if (awarded_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(Awarded);
+      }
+      if (CarryOver != 0) {
+        output.WriteRawTag(32);
+        output.WriteUInt32(CarryOver);
+      }
+      if (scores_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(Scores);
+      }
+      if (NextOpener != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(48);
+        output.WriteEnum((int) NextOpener);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (pips_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Pips);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Winner);
+      }
+      if (awarded_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(Awarded);
+      }
+      if (CarryOver != 0) {
+        output.WriteRawTag(32);
+        output.WriteUInt32(CarryOver);
+      }
+      if (scores_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(Scores);
+      }
+      if (NextOpener != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(48);
+        output.WriteEnum((int) NextOpener);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (pips_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Pips);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Winner);
+      }
+      if (awarded_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Awarded);
+      }
+      if (CarryOver != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(CarryOver);
+      }
+      if (scores_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Scores);
+      }
+      if (NextOpener != global::Hypedomino.V1.Team.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) NextOpener);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(HandResult other) {
+      if (other == null) {
+        return;
+      }
+      if (other.pips_ != null) {
+        if (pips_ == null) {
+          Pips = new global::Hypedomino.V1.TeamPoints();
+        }
+        Pips.MergeFrom(other.Pips);
+      }
+      if (other.Winner != global::Hypedomino.V1.Team.Unspecified) {
+        Winner = other.Winner;
+      }
+      if (other.awarded_ != null) {
+        if (awarded_ == null) {
+          Awarded = new global::Hypedomino.V1.TeamPoints();
+        }
+        Awarded.MergeFrom(other.Awarded);
+      }
+      if (other.CarryOver != 0) {
+        CarryOver = other.CarryOver;
+      }
+      if (other.scores_ != null) {
+        if (scores_ == null) {
+          Scores = new global::Hypedomino.V1.TeamPoints();
+        }
+        Scores.MergeFrom(other.Scores);
+      }
+      if (other.NextOpener != global::Hypedomino.V1.Team.Unspecified) {
+        NextOpener = other.NextOpener;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (pips_ == null) {
+              Pips = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Pips);
+            break;
+          }
+          case 16: {
+            Winner = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            if (awarded_ == null) {
+              Awarded = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Awarded);
+            break;
+          }
+          case 32: {
+            CarryOver = input.ReadUInt32();
+            break;
+          }
+          case 42: {
+            if (scores_ == null) {
+              Scores = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Scores);
+            break;
+          }
+          case 48: {
+            NextOpener = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            if (pips_ == null) {
+              Pips = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Pips);
+            break;
+          }
+          case 16: {
+            Winner = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            if (awarded_ == null) {
+              Awarded = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Awarded);
+            break;
+          }
+          case 32: {
+            CarryOver = input.ReadUInt32();
+            break;
+          }
+          case 42: {
+            if (scores_ == null) {
+              Scores = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Scores);
+            break;
+          }
+          case 48: {
+            NextOpener = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MatchView : pb::IMessage<MatchView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MatchView> _parser = new pb::MessageParser<MatchView>(() => new MatchView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MatchView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.MatchReflection.Descriptor.MessageTypes[13]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MatchView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MatchView(MatchView other) : this() {
+      state_ = other.state_;
+      seat_ = other.seat_;
+      mode_ = other.mode_;
+      handsPlayed_ = other.handsPlayed_;
+      scores_ = other.scores_ != null ? other.scores_.Clone() : null;
+      carryOver_ = other.carryOver_;
+      hand_ = other.hand_.Clone();
+      seats_ = other.seats_.Clone();
+      boneyardSize_ = other.boneyardSize_;
+      board_ = other.board_ != null ? other.board_.Clone() : null;
+      current_ = other.current_;
+      openingTeam_ = other.openingTeam_;
+      forcedOpening_ = other.forcedOpening_ != null ? other.forcedOpening_.Clone() : null;
+      turnPlacements_ = other.turnPlacements_;
+      turnDeadlineUnixMs_ = other.turnDeadlineUnixMs_;
+      legalMoves_ = other.legalMoves_.Clone();
+      lastResult_ = other.lastResult_ != null ? other.lastResult_.Clone() : null;
+      winner_ = other.winner_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MatchView Clone() {
+      return new MatchView(this);
+    }
+
+    /// <summary>Field number for the "state" field.</summary>
+    public const int StateFieldNumber = 1;
+    private global::Hypedomino.V1.MatchState state_ = global::Hypedomino.V1.MatchState.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.MatchState State {
+      get { return state_; }
+      set {
+        state_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "seat" field.</summary>
+    public const int SeatFieldNumber = 2;
+    private global::Hypedomino.V1.Seat seat_ = global::Hypedomino.V1.Seat.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Seat Seat {
+      get { return seat_; }
+      set {
+        seat_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "mode" field.</summary>
+    public const int ModeFieldNumber = 3;
+    private global::Hypedomino.V1.Mode mode_ = global::Hypedomino.V1.Mode.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Mode Mode {
+      get { return mode_; }
+      set {
+        mode_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "hands_played" field.</summary>
+    public const int HandsPlayedFieldNumber = 4;
+    private uint handsPlayed_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint HandsPlayed {
+      get { return handsPlayed_; }
+      set {
+        handsPlayed_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "scores" field.</summary>
+    public const int ScoresFieldNumber = 5;
+    private global::Hypedomino.V1.TeamPoints scores_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.TeamPoints Scores {
+      get { return scores_; }
+      set {
+        scores_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "carry_over" field.</summary>
+    public const int CarryOverFieldNumber = 6;
+    private uint carryOver_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint CarryOver {
+      get { return carryOver_; }
+      set {
+        carryOver_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "hand" field.</summary>
+    public const int HandFieldNumber = 7;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.Tile> _repeated_hand_codec
+        = pb::FieldCodec.ForMessage(58, global::Hypedomino.V1.Tile.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.Tile> hand_ = new pbc::RepeatedField<global::Hypedomino.V1.Tile>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.Tile> Hand {
+      get { return hand_; }
+    }
+
+    /// <summary>Field number for the "seats" field.</summary>
+    public const int SeatsFieldNumber = 8;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.SeatView> _repeated_seats_codec
+        = pb::FieldCodec.ForMessage(66, global::Hypedomino.V1.SeatView.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.SeatView> seats_ = new pbc::RepeatedField<global::Hypedomino.V1.SeatView>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.SeatView> Seats {
+      get { return seats_; }
+    }
+
+    /// <summary>Field number for the "boneyard_size" field.</summary>
+    public const int BoneyardSizeFieldNumber = 9;
+    private uint boneyardSize_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint BoneyardSize {
+      get { return boneyardSize_; }
+      set {
+        boneyardSize_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "board" field.</summary>
+    public const int BoardFieldNumber = 10;
+    private global::Hypedomino.V1.BoardView board_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.BoardView Board {
+      get { return board_; }
+      set {
+        board_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "current" field.</summary>
+    public const int CurrentFieldNumber = 11;
+    private global::Hypedomino.V1.Seat current_ = global::Hypedomino.V1.Seat.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Seat Current {
+      get { return current_; }
+      set {
+        current_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "opening_team" field.</summary>
+    public const int OpeningTeamFieldNumber = 12;
+    private global::Hypedomino.V1.Team openingTeam_ = global::Hypedomino.V1.Team.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Team OpeningTeam {
+      get { return openingTeam_; }
+      set {
+        openingTeam_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "forced_opening" field.</summary>
+    public const int ForcedOpeningFieldNumber = 13;
+    private global::Hypedomino.V1.Opening forcedOpening_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Opening ForcedOpening {
+      get { return forcedOpening_; }
+      set {
+        forcedOpening_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "turn_placements" field.</summary>
+    public const int TurnPlacementsFieldNumber = 14;
+    private uint turnPlacements_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint TurnPlacements {
+      get { return turnPlacements_; }
+      set {
+        turnPlacements_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "turn_deadline_unix_ms" field.</summary>
+    public const int TurnDeadlineUnixMsFieldNumber = 15;
+    private ulong turnDeadlineUnixMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong TurnDeadlineUnixMs {
+      get { return turnDeadlineUnixMs_; }
+      set {
+        turnDeadlineUnixMs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "legal_moves" field.</summary>
+    public const int LegalMovesFieldNumber = 16;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.LegalMove> _repeated_legalMoves_codec
+        = pb::FieldCodec.ForMessage(130, global::Hypedomino.V1.LegalMove.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.LegalMove> legalMoves_ = new pbc::RepeatedField<global::Hypedomino.V1.LegalMove>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.LegalMove> LegalMoves {
+      get { return legalMoves_; }
+    }
+
+    /// <summary>Field number for the "last_result" field.</summary>
+    public const int LastResultFieldNumber = 17;
+    private global::Hypedomino.V1.HandResult lastResult_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.HandResult LastResult {
+      get { return lastResult_; }
+      set {
+        lastResult_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "winner" field.</summary>
+    public const int WinnerFieldNumber = 18;
+    private global::Hypedomino.V1.Team winner_ = global::Hypedomino.V1.Team.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.Team Winner {
+      get { return winner_; }
+      set {
+        winner_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MatchView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MatchView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (State != other.State) return false;
+      if (Seat != other.Seat) return false;
+      if (Mode != other.Mode) return false;
+      if (HandsPlayed != other.HandsPlayed) return false;
+      if (!object.Equals(Scores, other.Scores)) return false;
+      if (CarryOver != other.CarryOver) return false;
+      if(!hand_.Equals(other.hand_)) return false;
+      if(!seats_.Equals(other.seats_)) return false;
+      if (BoneyardSize != other.BoneyardSize) return false;
+      if (!object.Equals(Board, other.Board)) return false;
+      if (Current != other.Current) return false;
+      if (OpeningTeam != other.OpeningTeam) return false;
+      if (!object.Equals(ForcedOpening, other.ForcedOpening)) return false;
+      if (TurnPlacements != other.TurnPlacements) return false;
+      if (TurnDeadlineUnixMs != other.TurnDeadlineUnixMs) return false;
+      if(!legalMoves_.Equals(other.legalMoves_)) return false;
+      if (!object.Equals(LastResult, other.LastResult)) return false;
+      if (Winner != other.Winner) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (State != global::Hypedomino.V1.MatchState.Unspecified) hash ^= State.GetHashCode();
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) hash ^= Seat.GetHashCode();
+      if (Mode != global::Hypedomino.V1.Mode.Unspecified) hash ^= Mode.GetHashCode();
+      if (HandsPlayed != 0) hash ^= HandsPlayed.GetHashCode();
+      if (scores_ != null) hash ^= Scores.GetHashCode();
+      if (CarryOver != 0) hash ^= CarryOver.GetHashCode();
+      hash ^= hand_.GetHashCode();
+      hash ^= seats_.GetHashCode();
+      if (BoneyardSize != 0) hash ^= BoneyardSize.GetHashCode();
+      if (board_ != null) hash ^= Board.GetHashCode();
+      if (Current != global::Hypedomino.V1.Seat.Unspecified) hash ^= Current.GetHashCode();
+      if (OpeningTeam != global::Hypedomino.V1.Team.Unspecified) hash ^= OpeningTeam.GetHashCode();
+      if (forcedOpening_ != null) hash ^= ForcedOpening.GetHashCode();
+      if (TurnPlacements != 0) hash ^= TurnPlacements.GetHashCode();
+      if (TurnDeadlineUnixMs != 0UL) hash ^= TurnDeadlineUnixMs.GetHashCode();
+      hash ^= legalMoves_.GetHashCode();
+      if (lastResult_ != null) hash ^= LastResult.GetHashCode();
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) hash ^= Winner.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (State != global::Hypedomino.V1.MatchState.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) State);
+      }
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Seat);
+      }
+      if (Mode != global::Hypedomino.V1.Mode.Unspecified) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Mode);
+      }
+      if (HandsPlayed != 0) {
+        output.WriteRawTag(32);
+        output.WriteUInt32(HandsPlayed);
+      }
+      if (scores_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(Scores);
+      }
+      if (CarryOver != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(CarryOver);
+      }
+      hand_.WriteTo(output, _repeated_hand_codec);
+      seats_.WriteTo(output, _repeated_seats_codec);
+      if (BoneyardSize != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(BoneyardSize);
+      }
+      if (board_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Board);
+      }
+      if (Current != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(88);
+        output.WriteEnum((int) Current);
+      }
+      if (OpeningTeam != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(96);
+        output.WriteEnum((int) OpeningTeam);
+      }
+      if (forcedOpening_ != null) {
+        output.WriteRawTag(106);
+        output.WriteMessage(ForcedOpening);
+      }
+      if (TurnPlacements != 0) {
+        output.WriteRawTag(112);
+        output.WriteUInt32(TurnPlacements);
+      }
+      if (TurnDeadlineUnixMs != 0UL) {
+        output.WriteRawTag(120);
+        output.WriteUInt64(TurnDeadlineUnixMs);
+      }
+      legalMoves_.WriteTo(output, _repeated_legalMoves_codec);
+      if (lastResult_ != null) {
+        output.WriteRawTag(138, 1);
+        output.WriteMessage(LastResult);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(144, 1);
+        output.WriteEnum((int) Winner);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (State != global::Hypedomino.V1.MatchState.Unspecified) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) State);
+      }
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) Seat);
+      }
+      if (Mode != global::Hypedomino.V1.Mode.Unspecified) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Mode);
+      }
+      if (HandsPlayed != 0) {
+        output.WriteRawTag(32);
+        output.WriteUInt32(HandsPlayed);
+      }
+      if (scores_ != null) {
+        output.WriteRawTag(42);
+        output.WriteMessage(Scores);
+      }
+      if (CarryOver != 0) {
+        output.WriteRawTag(48);
+        output.WriteUInt32(CarryOver);
+      }
+      hand_.WriteTo(ref output, _repeated_hand_codec);
+      seats_.WriteTo(ref output, _repeated_seats_codec);
+      if (BoneyardSize != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(BoneyardSize);
+      }
+      if (board_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Board);
+      }
+      if (Current != global::Hypedomino.V1.Seat.Unspecified) {
+        output.WriteRawTag(88);
+        output.WriteEnum((int) Current);
+      }
+      if (OpeningTeam != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(96);
+        output.WriteEnum((int) OpeningTeam);
+      }
+      if (forcedOpening_ != null) {
+        output.WriteRawTag(106);
+        output.WriteMessage(ForcedOpening);
+      }
+      if (TurnPlacements != 0) {
+        output.WriteRawTag(112);
+        output.WriteUInt32(TurnPlacements);
+      }
+      if (TurnDeadlineUnixMs != 0UL) {
+        output.WriteRawTag(120);
+        output.WriteUInt64(TurnDeadlineUnixMs);
+      }
+      legalMoves_.WriteTo(ref output, _repeated_legalMoves_codec);
+      if (lastResult_ != null) {
+        output.WriteRawTag(138, 1);
+        output.WriteMessage(LastResult);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        output.WriteRawTag(144, 1);
+        output.WriteEnum((int) Winner);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (State != global::Hypedomino.V1.MatchState.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) State);
+      }
+      if (Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Seat);
+      }
+      if (Mode != global::Hypedomino.V1.Mode.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Mode);
+      }
+      if (HandsPlayed != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(HandsPlayed);
+      }
+      if (scores_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Scores);
+      }
+      if (CarryOver != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(CarryOver);
+      }
+      size += hand_.CalculateSize(_repeated_hand_codec);
+      size += seats_.CalculateSize(_repeated_seats_codec);
+      if (BoneyardSize != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(BoneyardSize);
+      }
+      if (board_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Board);
+      }
+      if (Current != global::Hypedomino.V1.Seat.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Current);
+      }
+      if (OpeningTeam != global::Hypedomino.V1.Team.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) OpeningTeam);
+      }
+      if (forcedOpening_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ForcedOpening);
+      }
+      if (TurnPlacements != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(TurnPlacements);
+      }
+      if (TurnDeadlineUnixMs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(TurnDeadlineUnixMs);
+      }
+      size += legalMoves_.CalculateSize(_repeated_legalMoves_codec);
+      if (lastResult_ != null) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(LastResult);
+      }
+      if (Winner != global::Hypedomino.V1.Team.Unspecified) {
+        size += 2 + pb::CodedOutputStream.ComputeEnumSize((int) Winner);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MatchView other) {
+      if (other == null) {
+        return;
+      }
+      if (other.State != global::Hypedomino.V1.MatchState.Unspecified) {
+        State = other.State;
+      }
+      if (other.Seat != global::Hypedomino.V1.Seat.Unspecified) {
+        Seat = other.Seat;
+      }
+      if (other.Mode != global::Hypedomino.V1.Mode.Unspecified) {
+        Mode = other.Mode;
+      }
+      if (other.HandsPlayed != 0) {
+        HandsPlayed = other.HandsPlayed;
+      }
+      if (other.scores_ != null) {
+        if (scores_ == null) {
+          Scores = new global::Hypedomino.V1.TeamPoints();
+        }
+        Scores.MergeFrom(other.Scores);
+      }
+      if (other.CarryOver != 0) {
+        CarryOver = other.CarryOver;
+      }
+      hand_.Add(other.hand_);
+      seats_.Add(other.seats_);
+      if (other.BoneyardSize != 0) {
+        BoneyardSize = other.BoneyardSize;
+      }
+      if (other.board_ != null) {
+        if (board_ == null) {
+          Board = new global::Hypedomino.V1.BoardView();
+        }
+        Board.MergeFrom(other.Board);
+      }
+      if (other.Current != global::Hypedomino.V1.Seat.Unspecified) {
+        Current = other.Current;
+      }
+      if (other.OpeningTeam != global::Hypedomino.V1.Team.Unspecified) {
+        OpeningTeam = other.OpeningTeam;
+      }
+      if (other.forcedOpening_ != null) {
+        if (forcedOpening_ == null) {
+          ForcedOpening = new global::Hypedomino.V1.Opening();
+        }
+        ForcedOpening.MergeFrom(other.ForcedOpening);
+      }
+      if (other.TurnPlacements != 0) {
+        TurnPlacements = other.TurnPlacements;
+      }
+      if (other.TurnDeadlineUnixMs != 0UL) {
+        TurnDeadlineUnixMs = other.TurnDeadlineUnixMs;
+      }
+      legalMoves_.Add(other.legalMoves_);
+      if (other.lastResult_ != null) {
+        if (lastResult_ == null) {
+          LastResult = new global::Hypedomino.V1.HandResult();
+        }
+        LastResult.MergeFrom(other.LastResult);
+      }
+      if (other.Winner != global::Hypedomino.V1.Team.Unspecified) {
+        Winner = other.Winner;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            State = (global::Hypedomino.V1.MatchState) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            Mode = (global::Hypedomino.V1.Mode) input.ReadEnum();
+            break;
+          }
+          case 32: {
+            HandsPlayed = input.ReadUInt32();
+            break;
+          }
+          case 42: {
+            if (scores_ == null) {
+              Scores = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Scores);
+            break;
+          }
+          case 48: {
+            CarryOver = input.ReadUInt32();
+            break;
+          }
+          case 58: {
+            hand_.AddEntriesFrom(input, _repeated_hand_codec);
+            break;
+          }
+          case 66: {
+            seats_.AddEntriesFrom(input, _repeated_seats_codec);
+            break;
+          }
+          case 72: {
+            BoneyardSize = input.ReadUInt32();
+            break;
+          }
+          case 82: {
+            if (board_ == null) {
+              Board = new global::Hypedomino.V1.BoardView();
+            }
+            input.ReadMessage(Board);
+            break;
+          }
+          case 88: {
+            Current = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 96: {
+            OpeningTeam = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+          case 106: {
+            if (forcedOpening_ == null) {
+              ForcedOpening = new global::Hypedomino.V1.Opening();
+            }
+            input.ReadMessage(ForcedOpening);
+            break;
+          }
+          case 112: {
+            TurnPlacements = input.ReadUInt32();
+            break;
+          }
+          case 120: {
+            TurnDeadlineUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 130: {
+            legalMoves_.AddEntriesFrom(input, _repeated_legalMoves_codec);
+            break;
+          }
+          case 138: {
+            if (lastResult_ == null) {
+              LastResult = new global::Hypedomino.V1.HandResult();
+            }
+            input.ReadMessage(LastResult);
+            break;
+          }
+          case 144: {
+            Winner = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            State = (global::Hypedomino.V1.MatchState) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Seat = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            Mode = (global::Hypedomino.V1.Mode) input.ReadEnum();
+            break;
+          }
+          case 32: {
+            HandsPlayed = input.ReadUInt32();
+            break;
+          }
+          case 42: {
+            if (scores_ == null) {
+              Scores = new global::Hypedomino.V1.TeamPoints();
+            }
+            input.ReadMessage(Scores);
+            break;
+          }
+          case 48: {
+            CarryOver = input.ReadUInt32();
+            break;
+          }
+          case 58: {
+            hand_.AddEntriesFrom(ref input, _repeated_hand_codec);
+            break;
+          }
+          case 66: {
+            seats_.AddEntriesFrom(ref input, _repeated_seats_codec);
+            break;
+          }
+          case 72: {
+            BoneyardSize = input.ReadUInt32();
+            break;
+          }
+          case 82: {
+            if (board_ == null) {
+              Board = new global::Hypedomino.V1.BoardView();
+            }
+            input.ReadMessage(Board);
+            break;
+          }
+          case 88: {
+            Current = (global::Hypedomino.V1.Seat) input.ReadEnum();
+            break;
+          }
+          case 96: {
+            OpeningTeam = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
+          case 106: {
+            if (forcedOpening_ == null) {
+              ForcedOpening = new global::Hypedomino.V1.Opening();
+            }
+            input.ReadMessage(ForcedOpening);
+            break;
+          }
+          case 112: {
+            TurnPlacements = input.ReadUInt32();
+            break;
+          }
+          case 120: {
+            TurnDeadlineUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 130: {
+            legalMoves_.AddEntriesFrom(ref input, _repeated_legalMoves_codec);
+            break;
+          }
+          case 138: {
+            if (lastResult_ == null) {
+              LastResult = new global::Hypedomino.V1.HandResult();
+            }
+            input.ReadMessage(LastResult);
+            break;
+          }
+          case 144: {
+            Winner = (global::Hypedomino.V1.Team) input.ReadEnum();
+            break;
+          }
         }
       }
     }

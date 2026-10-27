@@ -1,0 +1,14 @@
+{
+  "protocolVersion": 1,
+  "matchView": {
+    "state": "MATCH_STATE_WAITING",
+    "seat": "SEAT_NORTH",
+    "mode": "MODE_2V2",
+    "seats": [
+      { "seat": "SEAT_NORTH", "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_EAST", "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_SOUTH", "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_WEST", "controller": "CONTROLLER_PLAYER" }
+    ]
+  }
+}

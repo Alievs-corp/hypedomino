@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/match.proto.
  */
 export const file_hypedomino_v1_match: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvEg1oeXBlZG9taW5vLnYxIiEKBFRpbGUSCwoDbG93GAEgASgNEgwKBGhpZ2gYAiABKA0iWgoPUGxhY2VUaWxlSW50ZW50EiEKBHRpbGUYASABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJAoDZW5kGAIgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZCIMCgpQYXNzSW50ZW50IgwKCkRyYXdJbnRlbnQqdwoIQm9hcmRFbmQSGQoVQk9BUkRfRU5EX1VOU1BFQ0lGSUVEEAASEgoOQk9BUkRfRU5EX0xFRlQQARITCg9CT0FSRF9FTkRfUklHSFQQAhIRCg1CT0FSRF9FTkRfVE9QEAMSFAoQQk9BUkRfRU5EX0JPVFRPTRAEQsUBChFjb20uaHlwZWRvbWluby52MUIKTWF0Y2hQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw");
+  fileDesc("ChloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvEg1oeXBlZG9taW5vLnYxIiEKBFRpbGUSCwoDbG93GAEgASgNEgwKBGhpZ2gYAiABKA0iWgoPUGxhY2VUaWxlSW50ZW50EiEKBHRpbGUYASABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJAoDZW5kGAIgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZCIMCgpQYXNzSW50ZW50IgwKCkRyYXdJbnRlbnQiDwoNRW5kVHVybkludGVudCItCgxPcmllbnRlZFRpbGUSDQoFZmlyc3QYASABKA0SDgoGc2Vjb25kGAIgASgNIj4KB09wZW5FbmQSJAoDZW5kGAEgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZBINCgV2YWx1ZRgCIAEoDSLeAQoJQm9hcmRWaWV3EikKBGxpbmUYASADKAsyGy5oeXBlZG9taW5vLnYxLk9yaWVudGVkVGlsZRIkCgdzcGlubmVyGAIgASgLMhMuaHlwZWRvbWluby52MS5UaWxlEigKA3RvcBgDIAMoCzIbLmh5cGVkb21pbm8udjEuT3JpZW50ZWRUaWxlEisKBmJvdHRvbRgEIAMoCzIbLmh5cGVkb21pbm8udjEuT3JpZW50ZWRUaWxlEikKCW9wZW5fZW5kcxgFIAMoCzIWLmh5cGVkb21pbm8udjEuT3BlbkVuZCJvCghTZWF0VmlldxIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EhEKCWhhbmRfc2l6ZRgCIAEoDRItCgpjb250cm9sbGVyGAMgASgOMhkuaHlwZWRvbWluby52MS5Db250cm9sbGVyIlQKCUxlZ2FsTW92ZRIhCgR0aWxlGAEgASgLMhMuaHlwZWRvbWluby52MS5UaWxlEiQKA2VuZBgCIAEoDjIXLmh5cGVkb21pbm8udjEuQm9hcmRFbmQiTwoHT3BlbmluZxIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EiEKBHRpbGUYAiABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUiLAoKVGVhbVBvaW50cxIOCgZ0ZWFtX2EYASABKA0SDgoGdGVhbV9iGAIgASgNIu8BCgpIYW5kUmVzdWx0EicKBHBpcHMYASABKAsyGS5oeXBlZG9taW5vLnYxLlRlYW1Qb2ludHMSIwoGd2lubmVyGAIgASgOMhMuaHlwZWRvbWluby52MS5UZWFtEioKB2F3YXJkZWQYAyABKAsyGS5oeXBlZG9taW5vLnYxLlRlYW1Qb2ludHMSEgoKY2Fycnlfb3ZlchgEIAEoDRIpCgZzY29yZXMYBSABKAsyGS5oeXBlZG9taW5vLnYxLlRlYW1Qb2ludHMSKAoLbmV4dF9vcGVuZXIYBiABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW0imAUKCU1hdGNoVmlldxIoCgVzdGF0ZRgBIAEoDjIZLmh5cGVkb21pbm8udjEuTWF0Y2hTdGF0ZRIhCgRzZWF0GAIgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EiEKBG1vZGUYAyABKA4yEy5oeXBlZG9taW5vLnYxLk1vZGUSFAoMaGFuZHNfcGxheWVkGAQgASgNEikKBnNjb3JlcxgFIAEoCzIZLmh5cGVkb21pbm8udjEuVGVhbVBvaW50cxISCgpjYXJyeV9vdmVyGAYgASgNEiEKBGhhbmQYByADKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJgoFc2VhdHMYCCADKAsyFy5oeXBlZG9taW5vLnYxLlNlYXRWaWV3EhUKDWJvbmV5YXJkX3NpemUYCSABKA0SJwoFYm9hcmQYCiABKAsyGC5oeXBlZG9taW5vLnYxLkJvYXJkVmlldxIkCgdjdXJyZW50GAsgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EikKDG9wZW5pbmdfdGVhbRgMIAEoDjITLmh5cGVkb21pbm8udjEuVGVhbRIuCg5mb3JjZWRfb3BlbmluZxgNIAEoCzIWLmh5cGVkb21pbm8udjEuT3BlbmluZxIXCg90dXJuX3BsYWNlbWVudHMYDiABKA0SHQoVdHVybl9kZWFkbGluZV91bml4X21zGA8gASgEEi0KC2xlZ2FsX21vdmVzGBAgAygLMhguaHlwZWRvbWluby52MS5MZWdhbE1vdmUSLgoLbGFzdF9yZXN1bHQYESABKAsyGS5oeXBlZG9taW5vLnYxLkhhbmRSZXN1bHQSIwoGd2lubmVyGBIgASgOMhMuaHlwZWRvbWluby52MS5UZWFtKncKCEJvYXJkRW5kEhkKFUJPQVJEX0VORF9VTlNQRUNJRklFRBAAEhIKDkJPQVJEX0VORF9MRUZUEAESEwoPQk9BUkRfRU5EX1JJR0hUEAISEQoNQk9BUkRfRU5EX1RPUBADEhQKEEJPQVJEX0VORF9CT1RUT00QBCpyCgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJRUQQABIOCgpTRUFUX05PUlRIEAESDQoJU0VBVF9FQVNUEAISDgoKU0VBVF9TT1VUSBADEg0KCVNFQVRfV0VTVBAEEgoKBlNFQVRfWBAFEgoKBlNFQVRfWRAGKjQKBFRlYW0SFAoQVEVBTV9VTlNQRUNJRklFRBAAEgoKBlRFQU1fQRABEgoKBlRFQU1fQhACKjgKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEgwKCE1PREVfMVYxEAESDAoITU9ERV8yVjIQAipTCgpDb250cm9sbGVyEhoKFkNPTlRST0xMRVJfVU5TUEVDSUZJRUQQABIVChFDT05UUk9MTEVSX1BMQVlFUhABEhIKDkNPTlRST0xMRVJfQk9UEAIqjgEKCk1hdGNoU3RhdGUSGwoXTUFUQ0hfU1RBVEVfVU5TUEVDSUZJRUQQABIXChNNQVRDSF9TVEFURV9XQUlUSU5HEAESFwoTTUFUQ0hfU1RBVEVfT1BFTklORxACEhcKE01BVENIX1NUQVRFX1BMQVlJTkcQAxIYChRNQVRDSF9TVEFURV9GSU5JU0hFRBAEQsUBChFjb20uaHlwZWRvbWluby52MUIKTWF0Y2hQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw");
 
 /**
  * @generated from message hypedomino.v1.Tile
@@ -83,6 +83,337 @@ export const DrawIntentSchema: GenMessage<DrawIntent> = /*@__PURE__*/
   messageDesc(file_hypedomino_v1_match, 3);
 
 /**
+ * @generated from message hypedomino.v1.EndTurnIntent
+ */
+export type EndTurnIntent = Message<"hypedomino.v1.EndTurnIntent"> & {
+};
+
+/**
+ * Describes the message hypedomino.v1.EndTurnIntent.
+ * Use `create(EndTurnIntentSchema)` to create a new message.
+ */
+export const EndTurnIntentSchema: GenMessage<EndTurnIntent> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 4);
+
+/**
+ * @generated from message hypedomino.v1.OrientedTile
+ */
+export type OrientedTile = Message<"hypedomino.v1.OrientedTile"> & {
+  /**
+   * @generated from field: uint32 first = 1;
+   */
+  first: number;
+
+  /**
+   * @generated from field: uint32 second = 2;
+   */
+  second: number;
+};
+
+/**
+ * Describes the message hypedomino.v1.OrientedTile.
+ * Use `create(OrientedTileSchema)` to create a new message.
+ */
+export const OrientedTileSchema: GenMessage<OrientedTile> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 5);
+
+/**
+ * @generated from message hypedomino.v1.OpenEnd
+ */
+export type OpenEnd = Message<"hypedomino.v1.OpenEnd"> & {
+  /**
+   * @generated from field: hypedomino.v1.BoardEnd end = 1;
+   */
+  end: BoardEnd;
+
+  /**
+   * @generated from field: uint32 value = 2;
+   */
+  value: number;
+};
+
+/**
+ * Describes the message hypedomino.v1.OpenEnd.
+ * Use `create(OpenEndSchema)` to create a new message.
+ */
+export const OpenEndSchema: GenMessage<OpenEnd> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 6);
+
+/**
+ * @generated from message hypedomino.v1.BoardView
+ */
+export type BoardView = Message<"hypedomino.v1.BoardView"> & {
+  /**
+   * @generated from field: repeated hypedomino.v1.OrientedTile line = 1;
+   */
+  line: OrientedTile[];
+
+  /**
+   * @generated from field: hypedomino.v1.Tile spinner = 2;
+   */
+  spinner?: Tile | undefined;
+
+  /**
+   * @generated from field: repeated hypedomino.v1.OrientedTile top = 3;
+   */
+  top: OrientedTile[];
+
+  /**
+   * @generated from field: repeated hypedomino.v1.OrientedTile bottom = 4;
+   */
+  bottom: OrientedTile[];
+
+  /**
+   * @generated from field: repeated hypedomino.v1.OpenEnd open_ends = 5;
+   */
+  openEnds: OpenEnd[];
+};
+
+/**
+ * Describes the message hypedomino.v1.BoardView.
+ * Use `create(BoardViewSchema)` to create a new message.
+ */
+export const BoardViewSchema: GenMessage<BoardView> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 7);
+
+/**
+ * @generated from message hypedomino.v1.SeatView
+ */
+export type SeatView = Message<"hypedomino.v1.SeatView"> & {
+  /**
+   * @generated from field: hypedomino.v1.Seat seat = 1;
+   */
+  seat: Seat;
+
+  /**
+   * @generated from field: uint32 hand_size = 2;
+   */
+  handSize: number;
+
+  /**
+   * @generated from field: hypedomino.v1.Controller controller = 3;
+   */
+  controller: Controller;
+};
+
+/**
+ * Describes the message hypedomino.v1.SeatView.
+ * Use `create(SeatViewSchema)` to create a new message.
+ */
+export const SeatViewSchema: GenMessage<SeatView> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 8);
+
+/**
+ * @generated from message hypedomino.v1.LegalMove
+ */
+export type LegalMove = Message<"hypedomino.v1.LegalMove"> & {
+  /**
+   * @generated from field: hypedomino.v1.Tile tile = 1;
+   */
+  tile?: Tile | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.BoardEnd end = 2;
+   */
+  end: BoardEnd;
+};
+
+/**
+ * Describes the message hypedomino.v1.LegalMove.
+ * Use `create(LegalMoveSchema)` to create a new message.
+ */
+export const LegalMoveSchema: GenMessage<LegalMove> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 9);
+
+/**
+ * @generated from message hypedomino.v1.Opening
+ */
+export type Opening = Message<"hypedomino.v1.Opening"> & {
+  /**
+   * @generated from field: hypedomino.v1.Seat seat = 1;
+   */
+  seat: Seat;
+
+  /**
+   * @generated from field: hypedomino.v1.Tile tile = 2;
+   */
+  tile?: Tile | undefined;
+};
+
+/**
+ * Describes the message hypedomino.v1.Opening.
+ * Use `create(OpeningSchema)` to create a new message.
+ */
+export const OpeningSchema: GenMessage<Opening> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 10);
+
+/**
+ * @generated from message hypedomino.v1.TeamPoints
+ */
+export type TeamPoints = Message<"hypedomino.v1.TeamPoints"> & {
+  /**
+   * @generated from field: uint32 team_a = 1;
+   */
+  teamA: number;
+
+  /**
+   * @generated from field: uint32 team_b = 2;
+   */
+  teamB: number;
+};
+
+/**
+ * Describes the message hypedomino.v1.TeamPoints.
+ * Use `create(TeamPointsSchema)` to create a new message.
+ */
+export const TeamPointsSchema: GenMessage<TeamPoints> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 11);
+
+/**
+ * @generated from message hypedomino.v1.HandResult
+ */
+export type HandResult = Message<"hypedomino.v1.HandResult"> & {
+  /**
+   * @generated from field: hypedomino.v1.TeamPoints pips = 1;
+   */
+  pips?: TeamPoints | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.Team winner = 2;
+   */
+  winner: Team;
+
+  /**
+   * @generated from field: hypedomino.v1.TeamPoints awarded = 3;
+   */
+  awarded?: TeamPoints | undefined;
+
+  /**
+   * @generated from field: uint32 carry_over = 4;
+   */
+  carryOver: number;
+
+  /**
+   * @generated from field: hypedomino.v1.TeamPoints scores = 5;
+   */
+  scores?: TeamPoints | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.Team next_opener = 6;
+   */
+  nextOpener: Team;
+};
+
+/**
+ * Describes the message hypedomino.v1.HandResult.
+ * Use `create(HandResultSchema)` to create a new message.
+ */
+export const HandResultSchema: GenMessage<HandResult> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 12);
+
+/**
+ * @generated from message hypedomino.v1.MatchView
+ */
+export type MatchView = Message<"hypedomino.v1.MatchView"> & {
+  /**
+   * @generated from field: hypedomino.v1.MatchState state = 1;
+   */
+  state: MatchState;
+
+  /**
+   * @generated from field: hypedomino.v1.Seat seat = 2;
+   */
+  seat: Seat;
+
+  /**
+   * @generated from field: hypedomino.v1.Mode mode = 3;
+   */
+  mode: Mode;
+
+  /**
+   * @generated from field: uint32 hands_played = 4;
+   */
+  handsPlayed: number;
+
+  /**
+   * @generated from field: hypedomino.v1.TeamPoints scores = 5;
+   */
+  scores?: TeamPoints | undefined;
+
+  /**
+   * @generated from field: uint32 carry_over = 6;
+   */
+  carryOver: number;
+
+  /**
+   * @generated from field: repeated hypedomino.v1.Tile hand = 7;
+   */
+  hand: Tile[];
+
+  /**
+   * @generated from field: repeated hypedomino.v1.SeatView seats = 8;
+   */
+  seats: SeatView[];
+
+  /**
+   * @generated from field: uint32 boneyard_size = 9;
+   */
+  boneyardSize: number;
+
+  /**
+   * @generated from field: hypedomino.v1.BoardView board = 10;
+   */
+  board?: BoardView | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.Seat current = 11;
+   */
+  current: Seat;
+
+  /**
+   * @generated from field: hypedomino.v1.Team opening_team = 12;
+   */
+  openingTeam: Team;
+
+  /**
+   * @generated from field: hypedomino.v1.Opening forced_opening = 13;
+   */
+  forcedOpening?: Opening | undefined;
+
+  /**
+   * @generated from field: uint32 turn_placements = 14;
+   */
+  turnPlacements: number;
+
+  /**
+   * @generated from field: uint64 turn_deadline_unix_ms = 15;
+   */
+  turnDeadlineUnixMs: bigint;
+
+  /**
+   * @generated from field: repeated hypedomino.v1.LegalMove legal_moves = 16;
+   */
+  legalMoves: LegalMove[];
+
+  /**
+   * @generated from field: hypedomino.v1.HandResult last_result = 17;
+   */
+  lastResult?: HandResult | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.Team winner = 18;
+   */
+  winner: Team;
+};
+
+/**
+ * Describes the message hypedomino.v1.MatchView.
+ * Use `create(MatchViewSchema)` to create a new message.
+ */
+export const MatchViewSchema: GenMessage<MatchView> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 13);
+
+/**
  * @generated from enum hypedomino.v1.BoardEnd
  */
 export enum BoardEnd {
@@ -117,4 +448,164 @@ export enum BoardEnd {
  */
 export const BoardEndSchema: GenEnum<BoardEnd> = /*@__PURE__*/
   enumDesc(file_hypedomino_v1_match, 0);
+
+/**
+ * @generated from enum hypedomino.v1.Seat
+ */
+export enum Seat {
+  /**
+   * @generated from enum value: SEAT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SEAT_NORTH = 1;
+   */
+  NORTH = 1,
+
+  /**
+   * @generated from enum value: SEAT_EAST = 2;
+   */
+  EAST = 2,
+
+  /**
+   * @generated from enum value: SEAT_SOUTH = 3;
+   */
+  SOUTH = 3,
+
+  /**
+   * @generated from enum value: SEAT_WEST = 4;
+   */
+  WEST = 4,
+
+  /**
+   * @generated from enum value: SEAT_X = 5;
+   */
+  X = 5,
+
+  /**
+   * @generated from enum value: SEAT_Y = 6;
+   */
+  Y = 6,
+}
+
+/**
+ * Describes the enum hypedomino.v1.Seat.
+ */
+export const SeatSchema: GenEnum<Seat> = /*@__PURE__*/
+  enumDesc(file_hypedomino_v1_match, 1);
+
+/**
+ * @generated from enum hypedomino.v1.Team
+ */
+export enum Team {
+  /**
+   * @generated from enum value: TEAM_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TEAM_A = 1;
+   */
+  A = 1,
+
+  /**
+   * @generated from enum value: TEAM_B = 2;
+   */
+  B = 2,
+}
+
+/**
+ * Describes the enum hypedomino.v1.Team.
+ */
+export const TeamSchema: GenEnum<Team> = /*@__PURE__*/
+  enumDesc(file_hypedomino_v1_match, 2);
+
+/**
+ * @generated from enum hypedomino.v1.Mode
+ */
+export enum Mode {
+  /**
+   * @generated from enum value: MODE_UNSPECIFIED = 0;
+   */
+  MODE_UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MODE_1V1 = 1;
+   */
+  MODE_1V1 = 1,
+
+  /**
+   * @generated from enum value: MODE_2V2 = 2;
+   */
+  MODE_2V2 = 2,
+}
+
+/**
+ * Describes the enum hypedomino.v1.Mode.
+ */
+export const ModeSchema: GenEnum<Mode> = /*@__PURE__*/
+  enumDesc(file_hypedomino_v1_match, 3);
+
+/**
+ * @generated from enum hypedomino.v1.Controller
+ */
+export enum Controller {
+  /**
+   * @generated from enum value: CONTROLLER_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CONTROLLER_PLAYER = 1;
+   */
+  PLAYER = 1,
+
+  /**
+   * @generated from enum value: CONTROLLER_BOT = 2;
+   */
+  BOT = 2,
+}
+
+/**
+ * Describes the enum hypedomino.v1.Controller.
+ */
+export const ControllerSchema: GenEnum<Controller> = /*@__PURE__*/
+  enumDesc(file_hypedomino_v1_match, 4);
+
+/**
+ * @generated from enum hypedomino.v1.MatchState
+ */
+export enum MatchState {
+  /**
+   * @generated from enum value: MATCH_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MATCH_STATE_WAITING = 1;
+   */
+  WAITING = 1,
+
+  /**
+   * @generated from enum value: MATCH_STATE_OPENING = 2;
+   */
+  OPENING = 2,
+
+  /**
+   * @generated from enum value: MATCH_STATE_PLAYING = 3;
+   */
+  PLAYING = 3,
+
+  /**
+   * @generated from enum value: MATCH_STATE_FINISHED = 4;
+   */
+  FINISHED = 4,
+}
+
+/**
+ * Describes the enum hypedomino.v1.MatchState.
+ */
+export const MatchStateSchema: GenEnum<MatchState> = /*@__PURE__*/
+  enumDesc(file_hypedomino_v1_match, 5);
 
