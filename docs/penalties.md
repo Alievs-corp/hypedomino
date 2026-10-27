@@ -18,7 +18,7 @@ Penalties for players who stop playing a match (R-51) or leave it (R-52). The se
 | Leave, returned | The player leaves the match (R-52), quitting from the match screen or disconnecting, stays away longer than `ReconnectGraceSeconds`, comes back and is in control when the match ends | `LeaveReturnedWeight` |
 | Leave, not returned | The player leaves the match (R-52), stays away longer than `ReconnectGraceSeconds` and the bot is still playing for them when the match ends | `LeaveWeight` |
 
-- One match records at most one offense per player, the heaviest one.
+- One match records at most one offense per player, the heaviest one. The room reports per seat at match end (`rules.PresenceReport`): total timeouts, whether the player was marked AFK, whether they left, and whether the bot was in control at the end. #52 maps the report to the offense of this table with the heaviest configured weight.
 - Time away shorter than `ReconnectGraceSeconds`, after which the player plays on, is not an offense, whether they quit from the match screen or lost the connection. Turns missed while away still count as timeouts toward R-51.
 - The server cannot tell a dropped network from a deliberate quit, so it does not try: what counts is whether the player came back in time. Repeated drops are handled by the ladder like any other offense.
 

@@ -34,6 +34,7 @@ type View struct {
 	TurnPlacements int
 	TurnDeadline   time.Time
 	Controllers    [6]rules.Controller
+	Presence       [6]rules.PresenceReport
 	LegalMoves     []rules.Move
 	LastResult     rules.HandResult
 	HasLastResult  bool
@@ -45,6 +46,7 @@ func (r *Room) view(seat rules.Seat) View {
 	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked}
 	for _, s := range r.options.Mode.Seats() {
 		v.Controllers[s] = r.presence.Controller(s)
+		v.Presence[s] = r.presence.Report(s)
 	}
 	if r.recorder == nil {
 		return v

@@ -49,6 +49,16 @@ func MovedBy(config Config, acted bool, actedAfter time.Duration) Controller {
 type seatPresence struct {
 	consecutiveTimeouts int
 	byBot               bool
+	timeouts            int
+	markedAfk           bool
+	left                bool
+}
+
+type PresenceReport struct {
+	Timeouts  int
+	MarkedAfk bool
+	Left      bool
+	ByBot     bool
 }
 
 type Presence struct {
@@ -70,8 +80,10 @@ func (p *Presence) Controller(seat Seat) Controller {
 func (p *Presence) Timeout(seat Seat) Controller {
 	s := &p.seats[seat]
 	s.consecutiveTimeouts++
+	s.timeouts++
 	if s.consecutiveTimeouts >= p.config.AfkConsecutiveTimeouts {
 		s.byBot = true
+		s.markedAfk = true
 	}
 	return p.Controller(seat)
 }
@@ -81,10 +93,19 @@ func (p *Presence) Move(seat Seat) {
 }
 
 func (p *Presence) Reconnect(seat Seat) Controller {
-	p.seats[seat] = seatPresence{}
+	s := &p.seats[seat]
+	s.consecutiveTimeouts = 0
+	s.byBot = false
 	return p.Controller(seat)
 }
 
 func (p *Presence) Leave(seat Seat) {
-	p.seats[seat].byBot = true
+	s := &p.seats[seat]
+	s.byBot = true
+	s.left = true
+}
+
+func (p *Presence) Report(seat Seat) PresenceReport {
+	s := p.seats[seat]
+	return PresenceReport{Timeouts: s.timeouts, MarkedAfk: s.markedAfk, Left: s.left, ByBot: s.byBot}
 }
