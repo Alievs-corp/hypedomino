@@ -27,7 +27,7 @@ A skinned 3D mesh scales by level of detail and texture size, shares one skeleto
 | medium | `modelAddress` | Seat LOD, up to 10,000 triangles | Base colour 1024 px |
 | high | `modelHqAddress` where the item has one, otherwise `modelAddress` | Seat LOD in the match scene; hero LOD (up to 30,000 triangles) in lobby, profile and shop | Base colour 2048 px and normal map 2048 px |
 
-- Initial asset limits, confirmed or changed by the measurement below in a PR to this ADR: at most 65 bones and 4 bone influences per vertex (2 on medium), one mesh and one material per LOD, ASTC 6x6 for base colour and 5x5 for normal maps (ADR 0002 sets block size per asset class). The `model` bundle of one character with its clips stays under the 1.5 MB of #170; `modelHq` is its own bundle in the item's group (entries are packed separately, `docs/cosmetics.md` 8.2), fetched only on the high level, and stays under 6 MB.
+- Initial asset limits, confirmed or changed by the measurement below in a PR to this ADR: at most 65 bones and 4 bone influences per vertex (2 on medium), one mesh and one material per LOD, ASTC 6x6 for base colour and 5x5 for normal maps (ADR 0002 sets block size per asset class). The `model` bundle of one character with its clips stays under the 1.5 MB of #170; `modelHq` is its own bundle in the item's group (entries are packed separately, `docs/cosmetics.md` 8.2), fetched only on the high level, and stays under 8 MB. The high-level normal map stays at 2048 px (owner decision 2026-10-27): a 1024 px map looked the same on the first characters, but later sculpted models and premium skins need the detail.
 - Every character keeps a static sprite (ADR 0002, `docs/cosmetics.md` V-2). It is rendered from the model in a chosen key pose, so static and 3D show the same character.
 - Production goes through `docs/asset-workflow.md` section 5.5: concept turnaround, image-to-3D, clean-up and retopology in Blender, texture bake, rig, clips, Unity import.
 
@@ -42,3 +42,12 @@ A skinned 3D mesh scales by level of detail and texture size, shares one skeleto
 - Easier: one model serves seat, lobby, profile and shop at any size; quality scales with the graphics setting without new art; base clips are shared; a skin is a texture or part change on the same skeleton.
 - Harder: the art pipeline needs 3D skills (retopology, UV, bake, rigging). A skinned mesh costs CPU or GPU skinning per frame; four seats plus effects must still fit the work-time and draw-call gates of `docs/performance.md`. The client must handle a missing or still-loading model with the static sprite.
 - Must be verified in #93 before the first character ships: the replay of `docs/performance.md` section 3 with four animated characters, on the Mid reference devices at the medium level and on the High reference devices at the high level, reporting work time, batches, SetPass calls, GC and memory, plus the download size of one `model` and one `modelHq` bundle. A miss changes the limits above by PR.
+- First measurement, 2026-10-27, on a High-class device outside the matrix (Snapdragon 865, Adreno 650, Vulkan, 2400x1080, development build, the system held the display at 50 Hz). Two test characters (10,000 and 4,000 triangle LODs on medium; 30,000 and 10,000 on high), four seats, 40 s per phase:
+
+| Phase | GPU p50 | Main thread p50 | Render thread p50 | Batches | SetPass |
+|---|---|---|---|---|---|
+| No characters | 0.82 ms | 4.26 ms | 0.84 ms | 3 | 3 |
+| Four characters, medium | 2.09 ms | 5.22 ms | 0.86 ms | 7 | 4 |
+| Four characters, high | 4.01 ms | 5.35 ms | 0.88 ms | 7 | 4 |
+
+  Bundle sizes in the build report, uncompressed with mipmaps: `model` with clips 1.30 MB and 1.41 MB, `modelHq` 7.3 MB and 7.4 MB. The first limit of 6 MB for `modelHq` was an estimate that left out mipmaps and the seat texture the bundle repeats; it is raised to 8 MB on this measurement. At 8 MB a `modelHq` bundle takes about 6 s on a 10 Mbit/s connection while the static or `model` shows, and is fetched only on the high level, so the install budget is not affected. GC was 0 B in two runs; one run allocated 4.2 KB over 4 frames in the medium phase, source not found yet. Still open: the Mid reference devices at the medium level, and the high level at 120 fps, where four high characters alone use most of the 4.5 ms base-scene GPU budget of `docs/ui-motion.md` section 7.
