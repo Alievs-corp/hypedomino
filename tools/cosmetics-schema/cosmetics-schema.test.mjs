@@ -61,6 +61,20 @@ test("an animated character needs all four clips", () => {
   assertReported(errorsAfter((_, item) => delete item("character.tile_wizard").clips.reaction), "missing reaction");
 });
 
+test("an animated character needs a model and the high-detail model stays optional", () => {
+  assertReported(errorsAfter((_, item) => delete item("character.tile_wizard").modelAddress), "missing modelAddress");
+  assert.deepEqual(errorsAfter((_, item) => delete item("character.tile_wizard").modelHqAddress), []);
+});
+
+test("a static character carries no model", () => {
+  assertReported(
+    errorsAfter((_, item) => {
+      item("character.starter").modelAddress = "cosmetic/character/starter/model";
+    }),
+    "unexpected property modelAddress",
+  );
+});
+
 test("fields of another type are rejected", () => {
   assertReported(
     errorsAfter((_, item) => {
@@ -184,6 +198,12 @@ test("an address off the naming convention is rejected", () => {
       item("character.tile_wizard").clips.win = "cosmetic/character/tile_wizard/clip/lose";
     }),
     "clips.win is cosmetic/character/tile_wizard/clip/lose",
+  );
+  assertReported(
+    errorsAfter((_, item) => {
+      item("character.tile_wizard").modelHqAddress = "cosmetic/character/tile_wizard/model";
+    }),
+    "modelHqAddress is cosmetic/character/tile_wizard/model",
   );
   assertReported(
     errorsAfter((_, item) => {

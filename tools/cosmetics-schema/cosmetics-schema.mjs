@@ -11,6 +11,8 @@ function addressErrors(item) {
   const base = assetBase(item.id);
   const expected = [["staticAddress", item.staticAddress, `${base}/static`]];
   if (item.animationAddress) expected.push(["animationAddress", item.animationAddress, `${base}/anim`]);
+  if (item.modelAddress) expected.push(["modelAddress", item.modelAddress, `${base}/model`]);
+  if (item.modelHqAddress) expected.push(["modelHqAddress", item.modelHqAddress, `${base}/model_hq`]);
   for (const [clip, address] of Object.entries(item.clips ?? {})) expected.push([`clips.${clip}`, address, `${base}/clip/${clip}`]);
   for (const layer of item.layers ?? []) expected.push([`layers.${layer.name}`, layer.address, `${base}/layer/${layer.name}`]);
   return expected.filter(([, actual, wanted]) => actual !== wanted).map(([field, actual, wanted]) => `${field} is ${actual}, expected ${wanted}`);

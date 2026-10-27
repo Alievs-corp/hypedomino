@@ -126,6 +126,8 @@
         "lose": "cosmetic/character/tile_wizard/clip/lose",
         "reaction": "cosmetic/character/tile_wizard/clip/reaction"
       },
+      "modelAddress": "cosmetic/character/tile_wizard/model",
+      "modelHqAddress": "cosmetic/character/tile_wizard/model_hq",
       "availability": "live",
       "sources": [
         {

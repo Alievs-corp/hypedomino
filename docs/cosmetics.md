@@ -56,7 +56,9 @@ All required on every item.
 | Type | Field | When | Rule |
 |---|---|---|---|
 | `avatar`, `frame`, `emoji` | `animationAddress` | Required if `animated`, forbidden otherwise | One looping animation |
-| `character` | `clips` | Required if `animated`, forbidden otherwise | Object with exactly `idle`, `win`, `lose`, `reaction`, each an address. A static character shows `staticAddress` in every state |
+| `character` | `clips` | Required if `animated`, forbidden otherwise | Object with exactly `idle`, `win`, `lose`, `reaction`, each an address of an animation clip on the shared humanoid skeleton (ADR 0009). A static character shows `staticAddress` in every state |
+| `character` | `modelAddress` | Required if `animated`, forbidden otherwise | The real-time 3D model at medium detail: seat level of detail and base colour texture (ADR 0009) |
+| `character` | `modelHqAddress` | Optional if `animated`, forbidden otherwise | The high-detail model: hero level of detail, larger textures and normal map. Without it the high level shows `modelAddress` |
 | `table` | `layers` | Required if `animated`, forbidden otherwise | Back-to-front list of `{ name, address, animated }`, at least 1, names unique, at least one layer animated. Count at most `TableMaxLayers` (admin config; its value comes from the measured base-scene cost in #97, ADR 0008) |
 | `emoji` | `group` | Required on emoji, forbidden on other types | Emoji group id (#150) |
 
@@ -144,6 +146,8 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Static sprite | `cosmetic/<type>/<slug>/static` |
 | Animation (avatar, frame, emoji) | `cosmetic/<type>/<slug>/anim` |
 | Character clip | `cosmetic/character/<slug>/clip/<idle\|win\|lose\|reaction>` |
+| Character model | `cosmetic/character/<slug>/model` |
+| Character high-detail model | `cosmetic/character/<slug>/model_hq` |
 | Table layer | `cosmetic/table/<slug>/layer/<layer name>` |
 
 `<type>/<slug>` is the `id` with the dot replaced by `/`. Any other address is invalid.
@@ -166,6 +170,8 @@ The client plays an item's animation only when all of these hold; otherwise it s
 3. The animation assets are loaded. A missing or failed download is a static, not a wait.
 4. The screen's active animation budget from #93 is not exhausted.
 
+When a character plays animated, the high effect level loads `modelHqAddress` if the item has one and `modelAddress` otherwise; the medium level loads only `modelAddress`, so a medium device never downloads the high-detail bundle (ADR 0009). The effect level follows the graphics setting (`docs/ui-motion.md` section 7).
+
 Until `staticAddress` itself is loaded, the client shows the built-in static of the first `live` `default` item of the same type. Input never waits for a cosmetic to load.
 
 ## 9. Validation
@@ -177,7 +183,7 @@ Single-manifest rules, checked by the admin at publish, by the server when it lo
 | V-1 | The manifest conforms to `docs/cosmetics/schema.json`, including: required shared fields, no undeclared field (a price on an item or source is invalid), known types and source types, `culturalReview` is `approved`, `schemaVersion` is known |
 | V-2 | Every item has `staticAddress`. An animated item without a static fallback is invalid |
 | V-3 | Animation fields match `animated` and `type` (section 4): required when animated, forbidden when static, forbidden on other types |
-| V-4 | An animated character has all four clips |
+| V-4 | An animated character has all four clips and `modelAddress` |
 | V-5 | An animated table has unique layer names and at least one animated layer |
 | V-6 | An emoji has a `group`; other types do not |
 | V-7 | Sources are non-empty and unique; `default` has no `ref`, every other source has one |

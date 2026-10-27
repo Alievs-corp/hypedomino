@@ -8,7 +8,7 @@ Real-time online multiplayer mobile domino game. Hyperactive, colorful, effect-h
 - Never mention any third-party game name in code, docs, issues, commits or assets. Describe behavior on its own terms.
 
 ## Monorepo
-- `client/` Unity 6 LTS, URP 2D, C#, Addressables
+- `client/` Unity 6 LTS, URP (Universal Renderer, 2D sprites and real-time 3D characters, ADR 0009), C#, Addressables
 - `server/` Go, WebSocket (binary protobuf), PostgreSQL, Redis
 - `admin/` Next.js, TypeScript, Tailwind
 - `proto/` shared protobuf contracts
@@ -71,7 +71,8 @@ gh pr create --base main --title "..." --body "..."
 
 ## Asset pipeline
 - Concept and raw art: ChatGPT (browser), then cleanup in Adobe (Photoshop, Illustrator, After Effects) or Blender.
-- Characters and animated avatars: Blender/After Effects to sprite sheets or skeletal 2D rigs, packed into atlases, compressed (ASTC) and shipped via Addressables.
+- Characters: concept turnaround, image-to-3D, Blender clean-up, retopology, texture bake and rig, shipped as real-time skinned 3D models with levels of detail via Addressables (ADR 0009, `docs/asset-workflow.md` 5.5).
+- Animated avatars and other 2D assets: Blender/After Effects to sprite sheets or skeletal 2D rigs, packed into atlases, compressed (ASTC) and shipped via Addressables.
 - Every asset has a rarity, a status color and a manifest entry managed from the admin panel.
 - Static fallback exists for every animated asset.
 

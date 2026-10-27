@@ -1,6 +1,6 @@
 # 0001. Client: Unity 6 LTS, URP 2D, IL2CPP
 
-Status: Accepted
+Status: Accepted; the renderer choice is superseded by 0009
 Date: 2026-10-25
 Issue: #10
 

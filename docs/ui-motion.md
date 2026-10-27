@@ -208,6 +208,7 @@ The effect level follows the graphics quality setting. The default level per dev
 | Overdraw layers, any effect | 2 | 3 | 4 |
 | `maxTweens` | 32 | 64 | 96 |
 | Animated cosmetics (avatars, emoji) | Static fallback (ADR 0002) | Animated | Animated |
+| Characters (ADR 0009) | Static fallback (ADR 0002) | 3D, `modelAddress` | 3D, `modelHqAddress` where the item has one |
 
 Base scene plus effects stays within the p95 work-time gate; the checker enforces it. The high level is budgeted at 120 fps, so it also holds at 60.
 
