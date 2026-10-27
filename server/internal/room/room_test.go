@@ -433,8 +433,11 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 		t.Fatalf("joining the seat again: %+v", v)
 	}
 	tab.room.Leave(gone)
+	if v := tab.view(other); v.Controllers[gone] != rules.ControllerBot {
+		t.Fatalf("after leaving: %+v", v)
+	}
 	tab.room.Join(gone, fresh)
-	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerBot {
-		t.Fatal("a leaver took the seat back by joining")
+	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerPlayer {
+		t.Fatal("a returning leaver did not take the seat back by joining")
 	}
 }
