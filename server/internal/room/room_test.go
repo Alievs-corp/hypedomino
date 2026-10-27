@@ -305,7 +305,7 @@ func TestTimeoutsHandTheSeatToTheBotAndReconnectTakesItBack(t *testing.T) {
 		t.Fatalf("an AFK seat moved itself: %+v", m)
 	}
 	tab.room.Reconnect(opener, tab.sinks[opener])
-	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer {
+	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer || v.Presence[opener] != (rules.PresenceReport{Timeouts: 3, MarkedAfk: true}) {
 		t.Fatalf("reconnect did not take the seat back: %+v", v)
 	}
 }
@@ -337,6 +337,9 @@ func TestALeaverIsPlayedByTheBotUntilTheyComeBack(t *testing.T) {
 	}
 	if err := replay.Verify(tab.record()); err != nil {
 		t.Fatal(err)
+	}
+	if final.Presence[leaver] != (rules.PresenceReport{Left: true}) || final.Presence[other] != (rules.PresenceReport{}) {
+		t.Fatalf("presence reports %+v", final.Presence)
 	}
 }
 

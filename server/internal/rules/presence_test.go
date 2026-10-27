@@ -82,3 +82,40 @@ func TestPresenceAfkLeaveAndReconnect(t *testing.T) {
 		t.Fatalf("presence allocates %.0f times", allocations)
 	}
 }
+
+func TestPresenceReportKeepsTheHistoryAcrossReconnects(t *testing.T) {
+	p := NewPresence(DefaultConfig())
+	if r := p.Report(SeatSouth); r != (PresenceReport{}) {
+		t.Fatalf("fresh seat reports %+v", r)
+	}
+	p.Timeout(SeatSouth)
+	p.Timeout(SeatSouth)
+	p.Move(SeatSouth)
+	if r := p.Report(SeatSouth); r != (PresenceReport{Timeouts: 2}) {
+		t.Fatalf("after two timeouts and a move: %+v", r)
+	}
+	for i := 0; i < 3; i++ {
+		p.Timeout(SeatSouth)
+	}
+	if r := p.Report(SeatSouth); r != (PresenceReport{Timeouts: 5, MarkedAfk: true, ByBot: true}) {
+		t.Fatalf("marked AFK: %+v", r)
+	}
+	p.Reconnect(SeatSouth)
+	if r := p.Report(SeatSouth); r != (PresenceReport{Timeouts: 5, MarkedAfk: true}) {
+		t.Fatalf("after taking the seat back: %+v", r)
+	}
+	if p.Timeout(SeatSouth) != ControllerPlayer {
+		t.Fatal("the consecutive count did not restart on reconnect")
+	}
+	p.Leave(SeatSouth)
+	if r := p.Report(SeatSouth); r != (PresenceReport{Timeouts: 6, MarkedAfk: true, Left: true, ByBot: true}) {
+		t.Fatalf("after leaving: %+v", r)
+	}
+	p.Reconnect(SeatSouth)
+	if r := p.Report(SeatSouth); r != (PresenceReport{Timeouts: 6, MarkedAfk: true, Left: true}) {
+		t.Fatalf("returned leaver: %+v", r)
+	}
+	if r := p.Report(SeatNorth); r != (PresenceReport{}) {
+		t.Fatalf("another seat was touched: %+v", r)
+	}
+}
