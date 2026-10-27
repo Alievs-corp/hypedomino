@@ -13,6 +13,8 @@ const validTree = [
   `${character}/export/static.png`,
   `${character}/export/clip/idle/0001.png`,
   `${character}/export/clip/win/0001.png`,
+  `${character}/export/model/comet_fox.fbx`,
+  `${character}/export/model_hq/comet_fox.fbx`,
   "cosmetic/avatar/comet_fox/provenance.md",
   "cosmetic/avatar/comet_fox/export/static.png",
   "cosmetic/avatar/comet_fox/export/anim/sheet.png",
@@ -57,6 +59,7 @@ test("an export without the static fallback is rejected", () => {
 test("export folders must match the cosmetic type and its address slots", () => {
   assertReported([`${character}/provenance.md`, `${character}/export/static.png`, `${character}/export/anim/0001.png`], "export/anim is not allowed for character");
   assertReported([`${character}/provenance.md`, `${character}/export/static.png`, `${character}/export/clip/dance/0001.png`], "unknown clip dance");
+  assertReported([`${character}/provenance.md`, `${character}/export/static.png`, `${character}/export/model`], "export/model needs files inside a folder");
   assertReported(["cosmetic/table/t/provenance.md", "cosmetic/table/t/export/static.png", "cosmetic/table/t/export/layer/0001.png"], "invalid layer name 0001.png");
   assertReported(["cosmetic/emoji/e/provenance.md", "cosmetic/emoji/e/export/static.png", "cosmetic/emoji/e/export/anim"], "needs files inside a folder");
 });

@@ -6,7 +6,7 @@ import { itemTypes } from "../cosmetics-schema/cosmetics-schema.mjs";
 export const assetClasses = ["cosmetic", "medal", "effect", "ui", "tile", "board", "sound"];
 const itemParts = new Set(["provenance.md", "concept", "work", "export"]);
 const clipNames = new Set(["idle", "win", "lose", "reaction"]);
-const exportFolderByType = { avatar: "anim", frame: "anim", emoji: "anim", character: "clip", table: "layer" };
+const exportFoldersByType = { avatar: ["anim"], frame: ["anim"], emoji: ["anim"], character: ["clip", "model", "model_hq"], table: ["layer"] };
 const slugPattern = /^[a-z0-9_]+$/;
 const boardSlugPattern = /^b_([1-9]|10)$/;
 const namePattern = /^[a-z0-9_]+(\.[a-z0-9]+)?$/;
@@ -28,8 +28,8 @@ function itemRoot(segments) {
 function cosmeticExportErrors(type, rest) {
   if (rest.length === 2 && rest[1] === "static.png") return [];
   const folder = rest[1];
-  if (folder !== exportFolderByType[type]) return [`export/${folder} is not allowed for ${type}`];
-  const depth = folder === "anim" ? 2 : 3;
+  if (!exportFoldersByType[type].includes(folder)) return [`export/${folder} is not allowed for ${type}`];
+  const depth = folder === "clip" || folder === "layer" ? 3 : 2;
   if (folder === "clip" && !clipNames.has(rest[2])) return [`unknown clip ${rest[2]}`];
   if (folder === "layer" && !slugPattern.test(rest[2] ?? "")) return [`invalid layer name ${rest[2]}`];
   return rest.length > depth ? [] : [`export/${folder} needs files inside a folder`];

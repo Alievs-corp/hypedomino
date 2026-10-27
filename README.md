@@ -6,7 +6,7 @@ Real-time online multiplayer mobile domino game.
 
 | Path | What |
 |---|---|
-| `client/` | Unity 6 LTS client, URP 2D, C#, Addressables |
+| `client/` | Unity 6 LTS client, URP Universal Renderer (2D sprites, 3D characters), C#, Addressables |
 | `server/` | Go server, WebSocket with binary protobuf, PostgreSQL, Redis |
 | `admin/` | Next.js admin panel, TypeScript, Tailwind |
 | `proto/` | Shared protobuf contracts |

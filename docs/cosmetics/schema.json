@@ -17,7 +17,7 @@
     "itemId": { "type": "string", "pattern": "^(avatar|character|frame|table|emoji)\\.[a-z0-9_]+$" },
     "nameKey": { "type": "string", "pattern": "^cosmetic\\.(avatar|character|frame|table|emoji)\\.[a-z0-9_]+\\.name$" },
     "rarityId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-    "address": { "type": "string", "pattern": "^cosmetic/(avatar|character|frame|table|emoji)/[a-z0-9_]+/(static|anim|clip/(idle|win|lose|reaction)|layer/[a-z0-9_]+)$" },
+    "address": { "type": "string", "pattern": "^cosmetic/(avatar|character|frame|table|emoji)/[a-z0-9_]+/(static|anim|model|model_hq|clip/(idle|win|lose|reaction)|layer/[a-z0-9_]+)$" },
     "referenceId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
     "source": {
       "type": "object",
@@ -73,6 +73,8 @@
         "culturalReview": { "const": "approved" },
         "animationAddress": { "$ref": "#/$defs/address" },
         "clips": { "$ref": "#/$defs/clips" },
+        "modelAddress": { "$ref": "#/$defs/address" },
+        "modelHqAddress": { "$ref": "#/$defs/address" },
         "layers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/layer" } },
         "group": { "$ref": "#/$defs/referenceId" }
       },
@@ -80,7 +82,7 @@
         {
           "if": { "required": ["type"], "properties": { "type": { "enum": ["avatar", "frame", "emoji"] } } },
           "then": {
-            "properties": { "clips": false, "layers": false },
+            "properties": { "clips": false, "layers": false, "modelAddress": false, "modelHqAddress": false },
             "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
             "then": { "required": ["animationAddress"] },
             "else": { "properties": { "animationAddress": false } }
@@ -91,14 +93,14 @@
           "then": {
             "properties": { "animationAddress": false, "layers": false },
             "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
-            "then": { "required": ["clips"] },
-            "else": { "properties": { "clips": false } }
+            "then": { "required": ["clips", "modelAddress"] },
+            "else": { "properties": { "clips": false, "modelAddress": false, "modelHqAddress": false } }
           }
         },
         {
           "if": { "required": ["type"], "properties": { "type": { "const": "table" } } },
           "then": {
-            "properties": { "animationAddress": false, "clips": false },
+            "properties": { "animationAddress": false, "clips": false, "modelAddress": false, "modelHqAddress": false },
             "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
             "then": { "required": ["layers"] },
             "else": { "properties": { "layers": false } }
