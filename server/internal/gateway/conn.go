@@ -26,6 +26,7 @@ type Conn struct {
 	session Session
 	bucket  bucket
 	stop    context.CancelFunc
+	served  chan struct{}
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
@@ -35,6 +36,7 @@ func newConn(socket *websocket.Conn, options Options) *Conn {
 		options: options,
 		queue:   make(chan *pb.Envelope, options.Config.WriteQueue),
 		closed:  make(chan struct{}),
+		served:  make(chan struct{}),
 		bucket:  newBucket(options.Config.IntentsPerSecond, options.Config.IntentBurst, options.Clock.Now()),
 	}
 }
@@ -70,6 +72,7 @@ func (c *Conn) Done() <-chan struct{} {
 }
 
 func (c *Conn) serve(ctx context.Context) {
+	defer close(c.served)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	c.stop = cancel
