@@ -60,9 +60,9 @@ Daşı elə qoy ki, açıq ucların cəmi beşə bölünsün: komandan həmin c�
 • Kimsə oyundan çıxsa, o qayıdana qədər onun yerinə bot oynayır və matç davam edir.
 
 ÖZ ÜSLUBUNU YARAT
-Personajlar, avatarlar, çərçivələr, masalar, emojilər və lobbi hərəkətləri topla. Onları masada və 3D personajlarınızın matçlar arasında bir araya gəldiyi dost lobbisində göstər. Mağazadakı hər təklif sənə nə veriləcəyini dəqiq göstərir.
+Personajlar, avatarlar, çərçivələr, masalar, emojilər və lobbi hərəkətləri topla. Onları masada və 3D personajların matçlar arasında bir araya gəldiyi dost lobbisində göstər. Mağazadakı hər təklif sənə nə veriləcəyini dəqiq göstərir.
 
-BİRLİKDƏ OYNAYIN
+BİRLİKDƏ OYNA
 Matç zamanı emoji və hazır mesajlarla reaksiya ver. Dost əlavə et, kimin onlayn olduğunu gör və onları otağına dəvət et.
 
 MÖVSÜMLƏR VƏ İRƏLİLƏYİŞ
