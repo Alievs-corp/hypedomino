@@ -30,9 +30,6 @@ type Config struct {
 	CasualQueueDelayLevels      []int
 	CasualQueueDelaySeconds     []int
 	CasualQueueDelayMatches     int
-	DodgeLpPenalty              int
-	DodgeWindowHours            int
-	DodgeLockoutMinutes         []int
 }
 
 func DefaultConfig() Config {
@@ -59,9 +56,6 @@ func DefaultConfig() Config {
 		CasualQueueDelayLevels:      []int{4, 8},
 		CasualQueueDelaySeconds:     []int{60, 180},
 		CasualQueueDelayMatches:     3,
-		DodgeLpPenalty:              5,
-		DodgeWindowHours:            24,
-		DodgeLockoutMinutes:         []int{5, 15, 60},
 	}
 }
 
@@ -74,7 +68,7 @@ func Validate(c Config) error {
 		"AfkReturnedWeight": c.AfkReturnedWeight, "AfkWeight": c.AfkWeight,
 		"LeaveReturnedWeight": c.LeaveReturnedWeight, "LeaveWeight": c.LeaveWeight,
 		"OffenseWindowDays": c.OffenseWindowDays, "CasualOffenseWindowDays": c.CasualOffenseWindowDays,
-		"DodgeWindowHours": c.DodgeWindowHours, "BanHours": c.BanHours,
+		"BanHours": c.BanHours,
 	} {
 		if value <= 0 {
 			fail("%s must be positive", name)
@@ -84,7 +78,6 @@ func Validate(c Config) error {
 		"CleanMatchesToForgive": c.CleanMatchesToForgive, "CasualCleanMatchesToForgive": c.CasualCleanMatchesToForgive,
 		"QueueDelaySeconds": c.QueueDelaySeconds, "QueueDelayMatches": c.QueueDelayMatches,
 		"CasualQueueDelayMatches": c.CasualQueueDelayMatches, "OffenseRatingPenalty": c.OffenseRatingPenalty,
-		"DodgeLpPenalty": c.DodgeLpPenalty,
 	} {
 		if value < 0 {
 			fail("%s must not be negative", name)
@@ -108,14 +101,6 @@ func Validate(c Config) error {
 		}
 		if index < len(c.CasualQueueDelaySeconds) && c.CasualQueueDelaySeconds[index] > c.QueueDelaySeconds {
 			fail("CasualQueueDelaySeconds must not exceed QueueDelaySeconds")
-		}
-	}
-	if len(c.DodgeLockoutMinutes) == 0 {
-		fail("DodgeLockoutMinutes must have an entry")
-	}
-	for _, minutes := range c.DodgeLockoutMinutes {
-		if minutes < 0 {
-			fail("DodgeLockoutMinutes must not be negative")
 		}
 	}
 	return errors.Join(errs...)

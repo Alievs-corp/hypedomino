@@ -2,6 +2,7 @@ package dbtest
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"net/url"
 	"os"
@@ -63,7 +64,7 @@ func admin(t testing.TB) string {
 	c, err := postgres.Run(ctx, Image,
 		postgres.WithDatabase("postgres"),
 		postgres.WithUsername("postgres"),
-		postgres.WithPassword("postgres"),
+		postgres.WithPassword(rand.Text()),
 		postgres.BasicWaitStrategies(),
 	)
 	if err != nil {

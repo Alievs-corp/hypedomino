@@ -20,6 +20,7 @@ Penalties for players who stop playing a match (R-51) or leave it (R-52). The se
 
 - One match records at most one offense per player, the heaviest one. The room reports per seat at match end (`rules.PresenceReport`): total timeouts, whether the player was marked AFK, whether they left, and whether the bot was in control at the end. #52 maps the report to the offense of this table with the heaviest configured weight.
 - Time away shorter than `ReconnectGraceSeconds`, after which the player plays on, is not an offense, whether they quit from the match screen or lost the connection. Turns missed while away still count as timeouts toward R-51.
+- A player who is not ready when the loading phase ends (R-57) is treated as disconnected from that moment: the same grace and offenses apply as for a drop during play.
 - The server cannot tell a dropped network from a deliberate quit, so it does not try: what counts is whether the player came back in time. Repeated drops are handled by the ladder like any other offense.
 
 ## 3. Offense level
@@ -75,7 +76,6 @@ Casual offenses are kept apart from ranked ones. They never add to the offense l
 - The player sees each active offense, its expiry, their current step on each ladder and how to leave it.
 - An admin can remove an offense or lift a penalty, with a mandatory reason. Every admin change is audited.
 - Applying penalties is idempotent: replaying the same match end never records a second offense. The record keeps the match ids it has applied inside the offense window, so a replayed match end is answered with the current state and changes nothing.
-- Dodges (`docs/ranking.md` section 6) are kept on the same record, apart from the offense ladders: a dodge never adds to an offense level and an offense never adds to the dodge count.
 
 ## 8. Config
 

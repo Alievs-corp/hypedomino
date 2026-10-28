@@ -41,6 +41,28 @@ test("an animated avatar, frame or emoji without an animation address is rejecte
   }
 });
 
+test("an action is always animated and needs its clip", () => {
+  assertReported(errorsAfter((_, item) => delete item("action.victory_dance").animationAddress), "missing animationAddress");
+  assertReported(
+    errorsAfter((_, item) => {
+      item("action.victory_dance").animated = false;
+    }),
+    "animated",
+  );
+});
+
+test("an action cannot be a default item and no default action is required", () => {
+  assertReported(
+    errorsAfter((_, item) => {
+      item("action.victory_dance").sources = [{ type: "default" }];
+    }),
+    "action cannot have a default source",
+  );
+  const minimal = examples.find(({ name }) => name === "minimal.json").manifest;
+  assert.ok(!minimal.items.some((item) => item.type === "action"));
+  assert.deepEqual(checkManifest(schema, minimal), []);
+});
+
 test("a static item with animation fields is rejected", () => {
   assertReported(
     errorsAfter((_, item) => {

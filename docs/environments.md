@@ -20,7 +20,7 @@ Rules:
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
 - E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); the Redis version is fixed with #51 and the hosting with #25.
 
-Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration and the node layout are not decided; they are the ADR of #25. Infrastructure as code is written with that ADR, so the IaC tool and its state location are open items (section 7).
+Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment.
 
 ## 2. Environment variables
 
@@ -100,7 +100,16 @@ gitleaks git --redact --no-banner .
 
 The security lead owns rotation (`docs/launch-runbook.md` section 1). Every rotation is recorded in an issue labelled `area:infra` with the secret name, environment, reason and time, never the value.
 
-When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence (an owner decision, section 7).
+When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence below (decided 2026-10-28). The cadence counts from the last rotation; the rotation issue of a secret states its next due date.
+
+| Secret type | Regular cadence | Why |
+|---|---|---|
+| Session token signing keys (#58) | 90 days | Signs every session; rotation is cheap because of the overlap in step 3 |
+| PostgreSQL and Redis passwords, runtime and migration roles (M-7) | 180 days | Reachable only inside the cluster network; each rotation needs a deploy |
+| Hosting and infrastructure tokens: cloud API, object storage keys, registry and deploy tokens (ADR 0010) | 180 days | Broad power over the environment |
+| Store and vendor API credentials: Play service account key, App Store Connect API key, crash reporting (#106, #182) | 365 days | Narrow scope, issued and revoked in the vendor console |
+| CI-only credentials (Unity license and account) | 365 days, or when the license is renewed | CI only, never in a runtime environment |
+| App signing keys: Play upload key, Apple distribution certificate | No cadence: only on a leak or when the issuer expires it | A new key changes the signing digest; the integrity allowlist (#205) is updated in the same change |
 
 Procedure for one secret in one environment:
 1. Create the new value at its issuer (database role password, key pair, store or vendor credential). Keep the old one valid.
@@ -129,9 +138,8 @@ Rules:
 
 ## 7. Open items
 
-- Infrastructure as code: tool, state location and the resources it creates wait for the orchestration ADR of #25. GN-8 evidence (IaC apply log) depends on it.
-- Staging automatic deploy (acceptance criterion of #24) depends on #25.
+- Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
+- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above and the release workflow that pushes the image (#27).
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
-- Regular rotation cadence per secret type: owner decision.
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.

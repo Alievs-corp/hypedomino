@@ -40,8 +40,6 @@ func TestValidateRejectsEveryBrokenField(t *testing.T) {
 		{"unequal casual steps", func(c *Config) { c.CasualQueueDelaySeconds = []int{60} }},
 		{"casual levels not ascending", func(c *Config) { c.CasualQueueDelayLevels = []int{8, 4} }},
 		{"casual delay heavier than ranked", func(c *Config) { c.CasualQueueDelaySeconds = []int{60, 301} }},
-		{"no dodge lockout", func(c *Config) { c.DodgeLockoutMinutes = nil }},
-		{"negative dodge lockout", func(c *Config) { c.DodgeLockoutMinutes = []int{-5} }},
 	}
 	for _, tc := range cases {
 		config := DefaultConfig()
@@ -286,37 +284,6 @@ func TestCasualLadderIsSeparateAndLighter(t *testing.T) {
 	}
 	if later := now.Add(14 * 24 * time.Hour); record.Level(config, matchmaking.QueueCasual, later) != 0 {
 		t.Fatal("casual offenses expire after the casual window")
-	}
-}
-
-func TestDodgesLockRankedQueuesWithEscalatingLockouts(t *testing.T) {
-	config := DefaultConfig()
-	var record Record
-	dodge, applied := record.Dodge(config, "d1", start)
-	if !applied || dodge.LpPenalty != 5 || !dodge.LockedUntil.Equal(start.Add(5*time.Minute)) {
-		t.Fatalf("first dodge: %+v", dodge)
-	}
-	if _, applied := record.Dodge(config, "d1", start.Add(time.Minute)); applied {
-		t.Fatal("a replayed dodge was recorded twice")
-	}
-	if until, locked := record.RankedLocked(config, start.Add(time.Minute)); !locked || !until.Equal(dodge.LockedUntil) {
-		t.Fatal("not locked")
-	}
-	if _, locked := record.RankedLocked(config, start.Add(5*time.Minute)); locked {
-		t.Fatal("still locked after the lockout")
-	}
-	second, _ := record.Dodge(config, "d2", start.Add(time.Hour))
-	third, _ := record.Dodge(config, "d3", start.Add(2*time.Hour))
-	fourth, _ := record.Dodge(config, "d4", start.Add(3*time.Hour))
-	if second.LockedUntil.Sub(second.At) != 15*time.Minute || third.LockedUntil.Sub(third.At) != time.Hour || fourth.LockedUntil.Sub(fourth.At) != time.Hour {
-		t.Fatalf("lockouts %v %v %v", second.LockedUntil.Sub(second.At), third.LockedUntil.Sub(third.At), fourth.LockedUntil.Sub(fourth.At))
-	}
-	fresh, _ := record.Dodge(config, "d5", start.Add(28*time.Hour))
-	if fresh.LockedUntil.Sub(fresh.At) != 5*time.Minute {
-		t.Fatalf("dodges outside the window are forgotten: %v", fresh.LockedUntil.Sub(fresh.At))
-	}
-	if record.QueueDelay(matchmaking.QueueRanked) != 0 || record.Level(config, matchmaking.QueueRanked, start) != 0 {
-		t.Fatal("a dodge is not an offense of the ladder")
 	}
 }
 

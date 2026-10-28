@@ -13,11 +13,11 @@
     "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
   },
   "$defs": {
-    "itemType": { "enum": ["avatar", "character", "frame", "table", "emoji"] },
-    "itemId": { "type": "string", "pattern": "^(avatar|character|frame|table|emoji)\\.[a-z0-9_]+$" },
-    "nameKey": { "type": "string", "pattern": "^cosmetic\\.(avatar|character|frame|table|emoji)\\.[a-z0-9_]+\\.name$" },
+    "itemType": { "enum": ["avatar", "character", "frame", "table", "emoji", "action"] },
+    "itemId": { "type": "string", "pattern": "^(avatar|character|frame|table|emoji|action)\\.[a-z0-9_]+$" },
+    "nameKey": { "type": "string", "pattern": "^cosmetic\\.(avatar|character|frame|table|emoji|action)\\.[a-z0-9_]+\\.name$" },
     "rarityId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-    "address": { "type": "string", "pattern": "^cosmetic/(avatar|character|frame|table|emoji)/[a-z0-9_]+/(static|anim|model|model_hq|clip/(idle|win|lose|reaction)|layer/[a-z0-9_]+)$" },
+    "address": { "type": "string", "pattern": "^cosmetic/(avatar|character|frame|table|emoji|action)/[a-z0-9_]+/(static|anim|model|model_hq|clip/(idle|win|lose|reaction)|layer/[a-z0-9_]+)$" },
     "referenceId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
     "source": {
       "type": "object",
@@ -104,6 +104,13 @@
             "if": { "required": ["animated"], "properties": { "animated": { "const": true } } },
             "then": { "required": ["layers"] },
             "else": { "properties": { "layers": false } }
+          }
+        },
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "action" } } },
+          "then": {
+            "required": ["animationAddress"],
+            "properties": { "animated": { "const": true }, "clips": false, "layers": false, "modelAddress": false, "modelHqAddress": false }
           }
         },
         {
