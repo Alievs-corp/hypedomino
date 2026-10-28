@@ -25,6 +25,7 @@ jobs:
       client: ${{ steps.areas.outputs.client }}
       proto: ${{ steps.areas.outputs.proto }}
       proto_breaking: ${{ steps.areas.outputs.proto_breaking }}
+      deploy: ${{ steps.areas.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +43,11 @@ jobs:
             client:
               - 'client/**'
               - '.github/workflows/ci.yml'
+            deploy:
+              - 'server/**'
+              - 'deploy/**'
+              - 'tools/deploy/**'
+              - '.github/workflows/ci.yml'
             proto:
               - 'proto/**'
               - 'server/internal/pb/**'
@@ -55,6 +61,7 @@ jobs:
           ADMIN_CHANGED: ${{ steps.filter.outputs.admin }}
           CLIENT_CHANGED: ${{ steps.filter.outputs.client }}
           PROTO_CHANGED: ${{ steps.filter.outputs.proto }}
+          DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           emit() {
@@ -64,6 +71,7 @@ jobs:
           emit admin "$ADMIN_CHANGED" admin/package.json
           emit client "$CLIENT_CHANGED" client/ProjectSettings/ProjectVersion.txt
           emit proto "$PROTO_CHANGED" proto/buf.yaml
+          emit deploy "$DEPLOY_CHANGED" server/Dockerfile
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:proto/buf.yaml" 2>/dev/null; then
             echo "proto_breaking=true" >> "$GITHUB_OUTPUT"
           else
@@ -188,6 +196,30 @@ jobs:
           go run golang.org/x/perf/cmd/benchstat@latest old.txt new.txt | tee benchstat.txt || true
           { echo '## Benchmarks against main (report only)'; echo '```'; cat benchstat.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
+  image:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    env:
+      KIND_VERSION: v0.33.0
+      KIND_SHA256: aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the server image
+        run: docker build -t hypedomino-server:ci server
+      - name: Container health, bad config exit and SIGTERM drain
+        run: bash tools/deploy/container-smoke.sh hypedomino-server:ci
+      - name: Install kind
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          echo "$KIND_SHA256  $RUNNER_TEMP/kind" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/kind"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Create the cluster
+        run: kind create cluster --name hd --wait 120s
+      - name: Rolling deploy drains old pods, rollback under 5 minutes
+        run: bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
+
   admin:
     needs: changes
     if: needs.changes.outputs.admin == 'true'
@@ -262,7 +294,7 @@ jobs:
   ci-complete:
     name: CI complete
     if: always()
-    needs: [changes, lint, secret-scan, pr-meta, server, admin, client, proto]
+    needs: [changes, lint, secret-scan, pr-meta, server, image, admin, client, proto]
     runs-on: ubuntu-latest
     steps:
       - env:

@@ -279,6 +279,7 @@ A test that fails and then passes on the same commit is flaky. A flaky test is a
 | `secret-scan` | Pinned gitleaks over the PR's commits, or the full history on `main` (`docs/environments.md` section 4) | Always |
 | `pr-meta` | One `type:`, `area:` and `priority:` label; `Closes #N` or `Part of #N` in the body | PRs |
 | `server` | `gofmt`, `go vet`, `go build`, `go test -race ./...` | Server changed |
+| `image` | Builds `server/Dockerfile`; `tools/deploy/container-smoke.sh` (non-root user, bad config exits 2, health, drain on `SIGTERM`); `tools/deploy/kind-rollout.sh` on a kind cluster (rolling deploy keeps every replica available, old pods drain and stop, rollback under 5 minutes, ADR 0010) | Server, `deploy/` or `tools/deploy/` changed |
 | `admin` | `pnpm install --frozen-lockfile`, `typecheck`, `test`, `build` (scripts if present) | Admin changed |
 | `client` | Unity test runner, `testMode: all` (edit-mode and play-mode) | Client changed |
 | `proto` | `buf lint`, `buf format --diff --exit-code`, `buf breaking` against the PR base | Proto changed |

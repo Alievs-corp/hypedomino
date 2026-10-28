@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hd-ci
+resources:
+  - namespace.yaml
+  - ../../base
+images:
+  - name: ghcr.io/alievs-corp/hypedomino-server
+    newName: hypedomino-server
+    newTag: ci
+secretGenerator:
+  - name: server-env
+    literals:
+      - HD_LOG_LEVEL=info
+generatorOptions:
+  disableNameSuffixHash: true
+patches:
+  - path: server.yaml
