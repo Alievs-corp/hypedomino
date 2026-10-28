@@ -39,7 +39,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
 | GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187); AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report |
-| GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 and #196 closed or waived |
+| GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 closed or waived after its exit record (`docs/closed-beta.md` 7.1), #196 closed or waived |
 | GN-7 | Gate 7: `CI complete` green on the release commit | Release manager | Link to the run on the tagged commit |
 
 ### 3.2 Operational readiness
@@ -94,7 +94,7 @@ T-0 is the moment the release is made available in the stores. Server and config
 
 | Signal | Source | Threshold |
 |---|---|---|
-| Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level) and not below the previous version |
+| Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level, `docs/closed-beta.md` BX-1) and not below the previous version |
 | Move round-trip p99 | #28 | Under 100 ms (`docs/performance.md`) |
 | Login success, matchmaking wait, error rate, database connections | #28 | Alert thresholds `{filled by #28}` |
 | Receipt validation success per store | #106, #28 | Alert thresholds `{filled by #28}` |
