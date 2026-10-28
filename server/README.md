@@ -45,6 +45,8 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `internal/app` | Composition root: typed config from the environment, JSON logger, HTTP mux with health endpoints, room registry and the drain sequence (#43) |
 | `internal/botclient` | Go protocol client over the generated contract: hello, intents with sequence numbers, a legal default move for any view, used by the in-process scenario tests and later the load bot (`docs/test-strategy.md` section 3) |
 | `cmd/server` | The game server binary |
+| `internal/db` | PostgreSQL access: `Open` (pgx pool), the embedded goose migrations and `Migrator` (up, down to, status, version) under a session advisory lock; `dbtest` starts PostgreSQL 16 in a container, or uses `HD_TEST_DATABASE_URL`, and hands every test a fresh migrated database (#55) |
+| `cmd/migrate` | `up`, `down -to N`, `status`, `version` against `HD_DATABASE_URL`; run once per deploy from one runner (`docs/environments.md` 6) |
 
 The gateway takes a `gateway.Handler`: it receives the accepted `ClientHello` and returns a `gateway.Session` that gets decoded intents with their sequence numbers. `gateway.JoinRoom` and `gateway.ResumeRoom` bind a session to a room seat. A closed connection disconnects the seat without leaving it (`docs/penalties.md`: a short disconnect is not a leave); turns missed meanwhile are timeouts.
 
@@ -53,3 +55,14 @@ Sign-in: the server issues a nonce (`Verifier.IssueNonce`), the client passes it
 `session.Manager` is the production handler. `Create(account)` issues an opaque 128-bit resume token (login, #57 and #58, calls it); `Seat(token, room, seat)` binds the session to a room, now or later (matchmaking, #48). On connect the token is looked up, a previous live connection of the same session is closed with 1008 `session replaced` (newest device wins, no grace timer for the replaced one), and the `ServerHello` carries the last sequence the room acknowledged, so the client resends anything above it. The first attach joins the seat, every later one reconnects and receives the full `MatchView`. When a connection drops, `ReconnectGrace` starts; if the session has not reconnected when it ends, the seat is left (R-52, the bot plays until the player returns). `ReconnectGraceSeconds` is admin config (`docs/penalties.md` section 8); the code default is 60 s until the owner sets it. Intents from a session without a seat are answered `ILLEGAL_INTENT`. Sessions live in process memory; the Redis store with TTLs (ADR 0005) is #51.
 
 Penalties: at match end the room's `View.Presence` report of each seat goes to `penalties.Record.MatchEnd` with the queue, match id and config version; the returned `Notice` is what the player sees. `Record.QueueDelay` becomes the `SearchFrom` offset of the next `matchmaking.Entry`, `Record.RankedLocked` gates ranked enqueue (ban, review or dodge lockout), and `penalties.Results` tells the rating and reward engines how to treat each seat. `penalties.DefaultConfig` holds placeholder numbers until the admin panel publishes the real ones; the record is kept in memory by its caller until the data layer (#50, #55) stores it.
+
+## Database
+
+```
+cd server
+HD_DATABASE_URL=postgres://user:secret@host:5432/hypedomino go run ./cmd/migrate up
+HD_DATABASE_URL=... go run ./cmd/migrate status
+HD_DATABASE_URL=... go run ./cmd/migrate down -to 0      # dev and CI only (M-1)
+```
+
+Migrations are goose SQL files in `internal/db/migrations`, numbered, each with an Up and a Down section, embedded into `cmd/migrate` and `cmd/server`. `migrate up` takes a session advisory lock so concurrent runners apply each version once. `00001_core.sql` creates `accounts`, `auth_identities`, `profiles`, `inventory_items`, `wallets`, `ledger_entries` (idempotency key unique per account, purchase keys unique across accounts, balances never negative), and `matches` with `match_participants` partitioned by month of `started_at` with a default partition and `match_partitions_ensure`. Integration tests run against a real PostgreSQL 16: `go test ./internal/db` starts `postgres:16-alpine` through testcontainers on the local Docker, or connects to `HD_TEST_DATABASE_URL` (a URL with a role that may create databases) when set; `-short` skips them. PostgreSQL 16 is the major version of every environment (`docs/environments.md` E-6).

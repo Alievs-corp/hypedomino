@@ -18,7 +18,7 @@ Rules:
 - E-3 Staging-only paths (the bot identity path of `docs/test-strategy.md` section 3.1) are refused by the server at start when it runs as `production` (#57, #58).
 - E-4 An image is built once and promoted from `staging` to `production` unchanged; environments differ only by environment variables and secrets (`docs/launch-runbook.md` 5.1, #25).
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
-- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). The versions are fixed with #55, #51 and #25.
+- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); the Redis version is fixed with #51 and the hosting with #25.
 
 Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration and the node layout are not decided; they are the ADR of #25. Infrastructure as code is written with that ADR, so the IaC tool and its state location are open items (section 7).
 
@@ -114,7 +114,7 @@ On a leak: it is a SEV1 incident (`docs/launch-runbook.md` 6.1, 6.5). Revoke fir
 
 ## 6. Database migrations
 
-Schema changes are versioned migrations reviewed in PRs (ADR 0005). The migration tool is chosen in #55; ADR 0005 does not fix it.
+Schema changes are versioned migrations reviewed in PRs (ADR 0005). The tool is goose (#55): SQL files under `server/internal/db/migrations`, embedded in the binaries, applied by `server/cmd/migrate` under a PostgreSQL session advisory lock. PostgreSQL major version: 16 (E-6).
 
 Rules:
 - M-1 Forward only in `staging` and `production`. A mistake is fixed by a new migration. Down migrations, if the tool writes them, run only in `dev` and CI.
@@ -125,6 +125,7 @@ Rules:
 - M-6 Order per release: `staging` first, a deploy drill on it, then `production` with the same migration files.
 - M-7 The migration role may change the schema; the server's runtime role may not. Each has its own secret per environment.
 - M-8 Ledger, purchase and inventory rows are never corrected by a migration or direct SQL; corrections are ledger entries through admin tools (`docs/launch-runbook.md` 5.4, #144).
+- M-9 `matches` and `match_participants` are partitioned by month of `started_at`. `match_partitions_ensure(from, months)` creates the months ahead and is idempotent; a deploy or a scheduled job calls it for the coming six months, and a `_default` partition catches any row outside the created months so a write never fails. A partition is created before rows for its month exist.
 
 ## 7. Open items
 
