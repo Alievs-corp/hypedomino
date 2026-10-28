@@ -26,6 +26,19 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 
 `/healthz` answers 200 while the process runs. `/readyz` answers 200 while the server accepts work and 503 from the first drain step on. A bad value in the environment stops the start with every bad variable named, exit code 2.
 
+## Container and deploy
+
+`server/Dockerfile` builds a static binary into a distroless image that runs as user `65532` (ADR 0010). Kubernetes manifests are in `deploy/k8s`: `base` is shared, an overlay per environment sets the image tag, replicas and the `server-env` secret. Locally, with Docker and kind:
+
+```
+docker build -t hypedomino-server:ci server
+bash tools/deploy/container-smoke.sh hypedomino-server:ci
+kind create cluster --name hd
+bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
+```
+
+`terminationGracePeriodSeconds` in `deploy/k8s/base/server.yaml` must stay above the 10 s `preStop` plus `HD_DRAIN_TIMEOUT` plus `HD_SHUTDOWN_TIMEOUT`; change them together.
+
 ## Packages
 
 | Package | What |

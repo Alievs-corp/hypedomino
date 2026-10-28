@@ -20,7 +20,7 @@ Rules:
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
 - E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). The versions are fixed with #55, #51 and #25.
 
-Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration and the node layout are not decided; they are the ADR of #25. Infrastructure as code is written with that ADR, so the IaC tool and its state location are open items (section 7).
+Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment.
 
 ## 2. Environment variables
 
@@ -128,8 +128,8 @@ Rules:
 
 ## 7. Open items
 
-- Infrastructure as code: tool, state location and the resources it creates wait for the orchestration ADR of #25. GN-8 evidence (IaC apply log) depends on it.
-- Staging automatic deploy (acceptance criterion of #24) depends on #25.
+- Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
+- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above and the release workflow that pushes the image (#27).
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Regular rotation cadence per secret type: owner decision.
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).

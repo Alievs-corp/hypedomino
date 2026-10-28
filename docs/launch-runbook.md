@@ -107,7 +107,7 @@ A threshold breach with player impact is an incident (section 6).
 
 ### 5.1 Server deploy
 
-1. The release is a tagged commit with `CI complete` green; the image is built once and promoted from staging to production unchanged. `{filled by #25}`
+1. The release is a tagged commit with `CI complete` green; the image is built once and promoted from staging to production unchanged: `ghcr.io/alievs-corp/hypedomino-server:<sha>`, applied with `kubectl apply -k deploy/k8s/overlays/<environment>` after the overlay's image tag is set to the SHA, then `kubectl rollout status deployment/server` (ADR 0010). The migration job runs before the rollout and a failed job stops the deploy.
 2. Migrations follow expand then contract: a migration never breaks the previous server version, so the binary can roll back without touching the schema (ADR 0005). A contract step ships only after the previous version is no longer deployed. Migrations are forward only and run once, staging first (`docs/environments.md` section 6).
 3. Canary: new rooms are routed to one new node first, *default* 10% of new rooms for 30 minutes, while rooms in progress stay on old nodes (ADR 0003: a room lives on one node).
 4. Watch section 4.1 on the canary. On a breach, stop and roll back (5.4).
@@ -143,7 +143,7 @@ Mitigate first, find the root cause after. Pick the fastest step that stops the 
 
 | What broke | Step | Target | Notes |
 |---|---|---|---|
-| Server release | Redeploy the previous image with the same drain as 5.1 | Under 5 minutes (#25) | Works because migrations are expand only during a release. Never roll back below the version a live client needs; fix forward instead |
+| Server release | `kubectl rollout undo deployment/server`, or deploy the previous SHA through 5.1; same drain as 5.1 (ADR 0010) | Under 5 minutes, measured by the `image` CI job and drill GN-9 (#25) | Works because migrations are expand only during a release. Never roll back below the version a live client needs; fix forward instead |
 | Database data | Restore from point-in-time recovery | RTO and RPO from #188 | Only for corruption or loss, decided by the incident commander with the product owner. Ledger mistakes are corrected with ledger entries, never by restore or direct SQL (#101, #144) |
 | Config | Publish the previous config version in admin | Under 5 minutes | Applies to new matches; matches in progress finish on their recorded version |
 | Content | Re-activate the previous catalog version | Under 5 minutes | Old content URLs stay valid because files are immutable (ADR 0002) |
@@ -314,7 +314,7 @@ One page per category, each answer in all four launch languages and taken from i
 
 ## 10. Open items
 
-- Every `{filled by #N}` placeholder: deploy and rollback commands and the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
+- Every `{filled by #N}` placeholder: the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
 - Where the FAQ is hosted (in-app view or web page) is not decided.
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.
