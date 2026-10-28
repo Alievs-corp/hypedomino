@@ -166,8 +166,10 @@ func (r *Runner) playRoom(ctx context.Context, id uint64, mode rules.Mode, seed 
 func (r *Runner) dial(ctx context.Context, token string, acked uint64) (*botclient.Client, error) {
 	c, err := botclient.Dial(ctx, r.config.Target, botclient.Options{Token: token, AppVersion: r.config.AppVersion, LastAcked: acked})
 	if err != nil {
-		r.counters.DialFailures.Add(1)
-		r.debug("dial failed", "error", err)
+		if ctx.Err() == nil {
+			r.counters.DialFailures.Add(1)
+			r.debug("dial failed", "error", err)
+		}
 		return nil, err
 	}
 	n := r.counters.Connections.Add(1)
