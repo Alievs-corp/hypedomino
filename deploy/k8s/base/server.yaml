@@ -52,6 +52,16 @@ spec:
               value: 15m
             - name: HD_SHUTDOWN_TIMEOUT
               value: 10s
+            - name: HD_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: HD_NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HD_NODE_ADDR
+              value: "$(HD_NODE_IP):8080"
           envFrom:
             - secretRef:
                 name: server-env

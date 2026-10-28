@@ -49,16 +49,39 @@ type Session struct {
 	generation uint64
 }
 
+type Router interface {
+	Claim(ctx context.Context, token string) error
+	Release(ctx context.Context, token string) error
+}
+
 type Manager struct {
 	config   Config
 	clock    Clock
 	random   Random
+	router   Router
 	mu       sync.Mutex
 	sessions map[string]*Session
 }
 
 func New(config Config, clock Clock, random Random) *Manager {
 	return &Manager{config: config, clock: clock, random: random, sessions: map[string]*Session{}}
+}
+
+func (m *Manager) Route(router Router) {
+	m.router = router
+}
+
+func (m *Manager) claim(token string) error {
+	if m.router == nil {
+		return nil
+	}
+	return m.router.Claim(context.Background(), token)
+}
+
+func (m *Manager) release(token string) {
+	if m.router != nil {
+		m.router.Release(context.Background(), token)
+	}
 }
 
 func (m *Manager) Create(account string) string {
@@ -86,6 +109,9 @@ func (m *Manager) Seat(token string, r *room.Room, seat rules.Seat) error {
 	case s.room != nil:
 		return ErrAlreadySeated
 	}
+	if err := m.claim(token); err != nil {
+		return err
+	}
 	s.room, s.seat, s.joined, s.acked = r, seat, false, 0
 	if s.active != nil {
 		s.active.attach(s)
@@ -98,6 +124,9 @@ func (m *Manager) Revoke(token string) {
 	s, ok := m.sessions[token]
 	delete(m.sessions, token)
 	m.mu.Unlock()
+	if ok && s.room != nil {
+		m.release(token)
+	}
 	if ok && s.active != nil {
 		s.active.conn.Close(websocket.StatusPolicyViolation, "session revoked")
 	}
@@ -201,4 +230,5 @@ func (m *Manager) expire(s *Session, generation uint64, due <-chan time.Time) {
 		return
 	}
 	s.room.Leave(s.seat)
+	m.release(s.token)
 }

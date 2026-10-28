@@ -326,3 +326,19 @@ func (b *bucket) take(now time.Time) bool {
 	b.tokens--
 	return true
 }
+
+func EncodeIntent(intent replay.Intent) (*pb.Envelope, bool) {
+	switch intent.Kind {
+	case replay.KindOpen:
+		return &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{Tile: tileMessage(intent.Tile)}}}, true
+	case replay.KindPlace:
+		return &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{Tile: tileMessage(intent.Tile), End: endMessage(intent.End)}}}, true
+	case replay.KindEndTurn:
+		return &pb.Envelope{Payload: &pb.Envelope_EndTurnIntent{EndTurnIntent: &pb.EndTurnIntent{}}}, true
+	case replay.KindDraw:
+		return &pb.Envelope{Payload: &pb.Envelope_DrawIntent{DrawIntent: &pb.DrawIntent{}}}, true
+	case replay.KindPass:
+		return &pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}}, true
+	}
+	return nil, false
+}

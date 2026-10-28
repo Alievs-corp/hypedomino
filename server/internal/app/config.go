@@ -3,10 +3,12 @@ package app
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 )
@@ -19,6 +21,9 @@ type Config struct {
 	DrainTimeout    time.Duration
 	Gateway         gateway.Config
 	Session         session.Config
+	Redis           string
+	Cluster         cluster.Config
+	Relay           cluster.RelayConfig
 }
 
 func DefaultConfig() Config {
@@ -29,7 +34,15 @@ func DefaultConfig() Config {
 		DrainTimeout:    15 * time.Minute,
 		Gateway:         gateway.DefaultConfig(),
 		Session:         session.DefaultConfig(),
+		Cluster:         defaultCluster(),
+		Relay:           cluster.DefaultRelayConfig(),
 	}
+}
+
+func defaultCluster() cluster.Config {
+	config := cluster.DefaultConfig()
+	config.NodeID, _ = os.Hostname()
+	return config
 }
 
 type Lookup func(name string) (string, bool)
@@ -71,6 +84,19 @@ func (r *envReader) integer(name string, value *int) {
 	*value = parsed
 }
 
+func (r *envReader) fraction(name string, value *float64) {
+	raw, ok := r.lookup(name)
+	if !ok {
+		return
+	}
+	parsed, err := strconv.ParseFloat(raw, 64)
+	if err != nil || parsed < 0 || parsed > 1 {
+		r.errs = append(r.errs, fmt.Errorf("%s: %q is not a fraction between 0 and 1", name, raw))
+		return
+	}
+	*value = parsed
+}
+
 func (r *envReader) duration(name string, value *time.Duration) {
 	raw, ok := r.lookup(name)
 	if !ok {
@@ -105,6 +131,21 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_PING_INTERVAL", &config.Gateway.PingInterval)
 	r.duration("HD_PONG_TIMEOUT", &config.Gateway.PongTimeout)
 	r.duration("HD_RECONNECT_GRACE", &config.Session.ReconnectGrace)
+	r.text("HD_REDIS_URL", &config.Redis)
+	r.text("HD_NODE_ID", &config.Cluster.NodeID)
+	r.text("HD_NODE_ADDR", &config.Cluster.Addr)
+	r.integer("HD_NODE_CAPACITY", &config.Cluster.Capacity)
+	r.duration("HD_NODE_HEARTBEAT", &config.Cluster.Heartbeat)
+	r.duration("HD_NODE_TTL", &config.Cluster.NodeTTL)
+	r.duration("HD_ROUTE_TTL", &config.Cluster.RouteTTL)
+	r.fraction("HD_SCALE_OUT_AT", &config.Cluster.ScaleOutAt)
+	r.fraction("HD_SCALE_IN_AT", &config.Cluster.ScaleInAt)
+	r.duration("HD_RELAY_DIAL_TIMEOUT", &config.Relay.DialTimeout)
+	if config.Redis != "" {
+		if err := config.Cluster.Validate(); err != nil {
+			r.errs = append(r.errs, err)
+		}
+	}
 	if _, ok := parseLevel(config.LogLevel); !ok {
 		r.errs = append(r.errs, fmt.Errorf("HD_LOG_LEVEL: %q is not debug, info, warn or error", config.LogLevel))
 	}

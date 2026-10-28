@@ -14,7 +14,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `HD_LISTEN_ADDR` | `:8080` | TCP address of the HTTP listener (`/healthz`, `/readyz`, `/ws`) |
+| `HD_LISTEN_ADDR` | `:8080` | TCP address of the HTTP listener (`/healthz`, `/readyz`, `/loadz`, `/ws`) |
 | `HD_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `HD_ORIGINS` | none | Comma separated origin host patterns allowed to open a WebSocket besides the request host |
 | `HD_SHUTDOWN_TIMEOUT` | `10s` | Time given to close connections and the listener after the drain |
@@ -23,6 +23,12 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_CATALOG_VERSION` | empty | Catalog version announced in `ServerHello` |
 | `HD_MAX_FRAME_BYTES`, `HD_WRITE_QUEUE`, `HD_HELLO_TIMEOUT`, `HD_WRITE_TIMEOUT`, `HD_CLOSE_TIMEOUT`, `HD_COMPRESSION_THRESHOLD`, `HD_INTENTS_PER_SECOND`, `HD_INTENT_BURST`, `HD_PING_INTERVAL`, `HD_PONG_TIMEOUT` | `gateway.DefaultConfig` | Gateway limits (`proto/README.md`, Gateway limits) |
 | `HD_RECONNECT_GRACE` | `60s` | `ReconnectGraceSeconds` of `docs/penalties.md` |
+| `HD_REDIS_URL` | empty | Redis URL; when set the node joins the cluster of ADR 0011 (membership, routes, relay, `/loadz` summary) |
+| `HD_NODE_ID`, `HD_NODE_ADDR` | hostname, empty | Node id in the registry and the internal `host:port` other nodes dial for relays (the pod IP in `deploy/k8s`) |
+| `HD_NODE_CAPACITY`, `HD_NODE_HEARTBEAT`, `HD_NODE_TTL` | `10000`, `2s`, `6s` | Rooms a node accepts, heartbeat period and the time after which a silent node is dropped |
+| `HD_ROUTE_TTL` | `2h` | Lifetime of a player-to-node route; longer than any match plus the reconnect grace |
+| `HD_SCALE_OUT_AT`, `HD_SCALE_IN_AT` | `0.7`, `0.3` | Cluster utilisation at which `/loadz` advises `out` or `in` |
+| `HD_RELAY_DIAL_TIMEOUT` | `5s` | Time to reach the hosting node for a relayed resume |
 
 `/healthz` answers 200 while the process runs. `/readyz` answers 200 while the server accepts work and 503 from the first drain step on. A bad value in the environment stops the start with every bad variable named, exit code 2.
 
@@ -61,6 +67,7 @@ bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
 | `cmd/server` | The game server binary |
 | `internal/db` | PostgreSQL access: `Open` (pgx pool), the embedded goose migrations and `Migrator` (up, down to, status, version) under a session advisory lock; `dbtest` starts PostgreSQL 16 in a container, or uses `HD_TEST_DATABASE_URL`, and hands every test a fresh migrated database (#55) |
 | `internal/matchstore` | Match result storage over `internal/db`: `Begin` writes the match and its participants once, `Finish` writes result, replay, events and the outbox messages in one transaction and refuses a second finish, `Relay` publishes pending outbox rows at least once (`docs/environments.md` 6, #50) |
+| `internal/cluster` | Multi-node coordination over Redis (ADR 0011): node registry with heartbeats, player-to-node routes keyed by the hashed session token, `Relay` that pipes a resume to the hosting node, `Least` and `Summarize` for placement and the auto-scale advice; `redistest` starts Redis 7 in a container or uses `HD_TEST_REDIS_URL` (#51) |
 | `cmd/migrate` | `up`, `down -to N`, `status`, `version` against `HD_DATABASE_URL`; run once per deploy from one runner (`docs/environments.md` 6) |
 | `cmd/loadbot` | `serve` (a node with the load-mode handler), `run` (the generator against a node) and `local` (both in one process, with heap samples) |
 
@@ -97,3 +104,9 @@ go run ./cmd/loadbot local -rooms 1000 -hold 2m       # one process, developer m
 ## Match results
 
 `internal/matchstore` is the only writer of match rows. A room calls `Begin` when the match starts (one `matches` row and one `match_participants` row per seat, bots with a null account) and `Finish` once when it ends. `Finish` locks the match row, refuses it when `ended_at` is already set (`ErrAlreadyFinished`), and in the same transaction stores the final scores, winner, hands played, the replay bytes, per-seat results, the `match_events` log and the outbox messages built by `MatchMessages(kind, key, payload)`: ranked matches feed `rating`, `xp`, `missions` and `economy`, casual matches skip `rating`, custom matches only feed `missions`. `Relay.Run` polls the outbox and hands each pending row to a `Publisher`; a failed publish increments `attempts` and keeps the row pending, so delivery is at least once and consumers deduplicate on `(topic, key)`. Tests run against the same PostgreSQL as `internal/db`.
+
+## Cluster
+
+With `HD_REDIS_URL` set the node heartbeats into Redis, `session.Manager` claims a route for every seated session, and the gateway handler is `cluster.Relay`: a hello whose token is unknown locally is looked up in the routes and, when another live node owns it, relayed over the cluster network to that node's `HD_NODE_ADDR` with the `X-HD-Relay` header; frames are piped both ways until either side closes. A draining node refuses public WebSockets but accepts relayed ones, so a player who drops during a deploy finishes the match on the old pod. A relayed hello is never relayed again. When the owning node's heartbeat has expired the route is dropped and the client gets `UNAUTHENTICATED`; the match is lost without result or penalty (ADR 0011, node loss).
+
+`GET /loadz` returns `{"load": {...}, "node": {...}, "cluster": {"nodes", "rooms", "connections", "capacity", "utilization", "advice"}}`; `advice` is `out`, `in` or `hold` by `HD_SCALE_OUT_AT` and `HD_SCALE_IN_AT`. Without Redis only `load` is present. Integration tests in `internal/cluster` and `internal/app` run against a real Redis 7: `go test ./internal/cluster/ ./internal/app/` starts `redis:7-alpine` through testcontainers on the local Docker or connects to `HD_TEST_REDIS_URL` when set; `-short` skips them.

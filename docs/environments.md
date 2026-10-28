@@ -18,7 +18,7 @@ Rules:
 - E-3 Staging-only paths (the bot identity path of `docs/test-strategy.md` section 3.1) are refused by the server at start when it runs as `production` (#57, #58).
 - E-4 An image is built once and promoted from `staging` to `production` unchanged; environments differ only by environment variables and secrets (`docs/launch-runbook.md` 5.1, #25).
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
-- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); the Redis version is fixed with #51 and the hosting with #25.
+- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); Redis is 7 (#51, `server/internal/cluster/redistest` runs `redis:7-alpine`); the hosting is #25 (ADR 0010).
 
 Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment.
 
@@ -50,6 +50,16 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PING_INTERVAL` | No | server | `15s` | `15s` | No | from #264 (default from #262) |
 | `HD_PONG_TIMEOUT` | No | server | `5s` | `5s` | No | from #264 (default from #262) |
 | `HD_RECONNECT_GRACE` | No | server | `60s` | `60s` | No | from #264 |
+| `HD_REDIS_URL` | No; required for more than one node | server | empty (single node, no routing) | `redis://:<password>@redis:6379/0` | Yes | from #51 |
+| `HD_NODE_ID` | No | server | hostname (the pod name) | `server-6d4f9c7b8-x2k9q` | No | from #51 |
+| `HD_NODE_ADDR` | With `HD_REDIS_URL` | server | empty | `10.42.0.17:8080` (pod IP and port) | No | from #51 |
+| `HD_NODE_CAPACITY` | No | server | `10000` | `10000` | No | from #51 |
+| `HD_NODE_HEARTBEAT` | No | server | `2s` | `2s` | No | from #51 |
+| `HD_NODE_TTL` | No | server | `6s` | `6s` | No | from #51 |
+| `HD_ROUTE_TTL` | No | server | `2h` | `2h` | No | from #51 |
+| `HD_SCALE_OUT_AT` | No | server | `0.7` | `0.7` | No | from #51 |
+| `HD_SCALE_IN_AT` | No | server | `0.3` | `0.3` | No | from #51 |
+| `HD_RELAY_DIAL_TIMEOUT` | No | server | `5s` | `5s` | No | from #51 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
@@ -63,7 +73,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.3 Not read yet
 
-The admin panel and the client read no environment variable. Database and Redis connections (#55, #51), session token signing keys (#58), ID token verification settings (#57), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The admin panel and the client read no environment variable. Database connections (#55), session token signing keys (#58), ID token verification settings (#57), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
 ## 3. Where secrets live
 
@@ -73,6 +83,7 @@ The admin panel and the client read no environment variable. Database and Redis 
 | `staging` runtime | GitHub Actions environment secrets of the `staging` environment | Environment variables injected by the staging deploy (#25) |
 | `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from protected refs | Environment variables injected by the production deploy (#25) |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
+| Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.
