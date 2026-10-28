@@ -91,16 +91,18 @@ func TestLoadEndpointReportsTheNodeAndTheCluster(t *testing.T) {
 	prefix := redistest.Prefix(t)
 	a, _ := startMember(t, prefix, "a")
 	b, _ := startMember(t, prefix, "b")
-	time.Sleep(200 * time.Millisecond)
 	a.openRoom(rules.Mode1v1)
 	a.dial(rules.SeatX)
-	time.Sleep(200 * time.Millisecond)
-	report := b.loadz()
-	var summary cluster.Summary
-	if err := json.Unmarshal(report["cluster"], &summary); err != nil {
-		t.Fatal(err)
-	}
-	if summary.Nodes != 2 || summary.Rooms != 1 || summary.Connections != 1 || summary.Capacity != 8 || summary.Advice != cluster.AdviceIn {
+	var report map[string]json.RawMessage
+	summary := eventually(t, func() (cluster.Summary, bool) {
+		report = b.loadz()
+		var s cluster.Summary
+		if err := json.Unmarshal(report["cluster"], &s); err != nil {
+			t.Fatal(err)
+		}
+		return s, s.Nodes == 2 && s.Rooms == 1 && s.Connections == 1
+	})
+	if summary.Capacity != 8 || summary.Advice != cluster.AdviceIn {
 		t.Fatalf("cluster summary %+v", summary)
 	}
 	var self cluster.Node
@@ -141,9 +143,12 @@ func TestADrainingNodeKeepsItsMembershipAndAcceptsRelayedConnections(t *testing.
 		t.Fatalf("a draining node refused a relayed connection: %v", err)
 	}
 	socket.CloseNow()
-	self, err := members.Node(ctx, "a")
-	if err != nil || !self.Load.Draining {
-		t.Fatalf("draining node in the registry: %+v, %v", self, err)
+	self := eventually(t, func() (cluster.Node, bool) {
+		node, err := members.Node(ctx, "a")
+		return node, err == nil && node.Load.Draining
+	})
+	if self.Load.Rooms != 1 {
+		t.Fatalf("draining node in the registry: %+v", self)
 	}
 	north.Drop()
 	if err := a.wait(); err != nil {
@@ -151,5 +156,21 @@ func TestADrainingNodeKeepsItsMembershipAndAcceptsRelayedConnections(t *testing.
 	}
 	if _, err := members.Node(ctx, "a"); err == nil {
 		t.Fatal("a stopped node stayed in the registry")
+	}
+}
+
+func eventually[T any](t *testing.T, probe func() (T, bool)) T {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		value, ok := probe()
+		if ok {
+			return value
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("condition not met in time: %+v", value)
+			return value
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 }
