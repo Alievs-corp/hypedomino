@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: server
+          imagePullPolicy: Never
+          env:
+            - name: HD_DRAIN_TIMEOUT
+              value: 30s
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
