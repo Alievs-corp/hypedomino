@@ -100,7 +100,16 @@ gitleaks git --redact --no-banner .
 
 The security lead owns rotation (`docs/launch-runbook.md` section 1). Every rotation is recorded in an issue labelled `area:infra` with the secret name, environment, reason and time, never the value.
 
-When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence (an owner decision, section 7).
+When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence below (decided 2026-10-28). The cadence counts from the last rotation; the rotation issue of a secret states its next due date.
+
+| Secret type | Regular cadence | Why |
+|---|---|---|
+| Session token signing keys (#58) | 90 days | Signs every session; rotation is cheap because of the overlap in step 3 |
+| PostgreSQL and Redis passwords, runtime and migration roles (M-7) | 180 days | Reachable only inside the cluster network; each rotation needs a deploy |
+| Hosting and infrastructure tokens: cloud API, object storage keys, registry and deploy tokens (ADR 0010) | 180 days | Broad power over the environment |
+| Store and vendor API credentials: Play service account key, App Store Connect API key, crash reporting (#106, #182) | 365 days | Narrow scope, issued and revoked in the vendor console |
+| CI-only credentials (Unity license and account) | 365 days, or when the license is renewed | CI only, never in a runtime environment |
+| App signing keys: Play upload key, Apple distribution certificate | No cadence: only on a leak or when the issuer expires it | A new key changes the signing digest; the integrity allowlist (#205) is updated in the same change |
 
 Procedure for one secret in one environment:
 1. Create the new value at its issuer (database role password, key pair, store or vendor credential). Keep the old one valid.
@@ -131,6 +140,5 @@ Rules:
 - Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
 - Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above and the release workflow that pushes the image (#27).
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
-- Regular rotation cadence per secret type: owner decision.
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
