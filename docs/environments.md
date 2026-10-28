@@ -145,7 +145,8 @@ Rules:
 - M-6 Order per release: `staging` first, a deploy drill on it, then `production` with the same migration files.
 - M-7 The migration role may change the schema; the server's runtime role may not. Each has its own secret per environment.
 - M-8 Ledger, purchase and inventory rows are never corrected by a migration or direct SQL; corrections are ledger entries through admin tools (`docs/launch-runbook.md` 5.4, #144).
-- M-9 `matches` and `match_participants` are partitioned by month of `started_at`. `match_partitions_ensure(from, months)` creates the months ahead and is idempotent; a deploy or a scheduled job calls it for the coming six months, and a `_default` partition catches any row outside the created months so a write never fails. A partition is created before rows for its month exist.
+- M-9 `matches`, `match_participants` and `match_events` are partitioned by month of `started_at`. `match_partitions_ensure(from, months)` creates the months ahead and is idempotent; a deploy or a scheduled job calls it for the coming six months, and a `_default` partition catches any row outside the created months so a write never fails. A partition is created before rows for its month exist.
+- M-10 A match result is written once, in one transaction: the `matches` row is closed, participant results, the replay and the event log are stored, and one `outbox` row per downstream topic (`rating`, `xp`, `missions`, `economy`) is inserted with the key `match:<id>`. A second finish of the same match is refused, so a crash between the write and the publish never scores a match twice; the relay publishes pending outbox rows at least once and consumers deduplicate by key (`server/internal/matchstore`, #50).
 
 ## 7. Open items
 
