@@ -189,7 +189,7 @@ Controls that must act within minutes and must not be undone by a config rollbac
 
 Each table lists the fields the admin edits. Fields marked "server" are set by the admin API and shown read-only. Every object also carries `createdBy`, `createdAt`, `updatedBy`, `updatedAt` and its published revision. Ids are set at creation and immutable (AP-5). Unless a spec fixes another form (store products, rarity tiers, string keys), an id is `<prefix>.<slug>` with slug `[a-z0-9_]+`.
 
-### 5.1 Cosmetic items: avatar, character, frame, table, emoji
+### 5.1 Cosmetic items: avatar, character, frame, table, emoji, action
 
 One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields per type (#137).
 
@@ -206,7 +206,7 @@ One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields p
 | `sources` | All | Picker of `default` and existing offers, pass rewards, missions, campaigns, season rewards, events. A form that grants an item offers to add its source to the item in the same change set |
 | `artSource` | All | `handmade` or `ai_assisted` |
 | `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3) |
-| `animationAddress` | `avatar`, `frame`, `emoji` | Server: derived; upload required when animated |
+| `animationAddress` | `avatar`, `frame`, `emoji`, `action` | Server: derived; upload required when animated, always for an action |
 | `clips` | `character` | `idle`, `win`, `lose`, `reaction` uploads, all four when animated |
 | `layers` | `table` | Ordered list of name and upload with an animated flag, at most `TableMaxLayers` |
 | `group` | `emoji` | Emoji group id (#150) |

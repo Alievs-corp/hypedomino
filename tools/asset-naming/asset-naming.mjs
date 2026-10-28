@@ -6,7 +6,7 @@ import { itemTypes } from "../cosmetics-schema/cosmetics-schema.mjs";
 export const assetClasses = ["cosmetic", "medal", "effect", "ui", "tile", "board", "sound"];
 const itemParts = new Set(["provenance.md", "concept", "work", "export"]);
 const clipNames = new Set(["idle", "win", "lose", "reaction"]);
-const exportFoldersByType = { avatar: ["anim"], frame: ["anim"], emoji: ["anim"], character: ["clip", "model", "model_hq"], table: ["layer"] };
+const exportFoldersByType = { avatar: ["anim"], frame: ["anim"], emoji: ["anim"], action: ["anim"], character: ["clip", "model", "model_hq"], table: ["layer"] };
 const slugPattern = /^[a-z0-9_]+$/;
 const boardSlugPattern = /^b_([1-9]|10)$/;
 const namePattern = /^[a-z0-9_]+(\.[a-z0-9]+)?$/;
