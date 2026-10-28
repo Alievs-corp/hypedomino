@@ -26,10 +26,10 @@ This document stores references to these decisions and never their values.
 | `type` | What it is | Where it shows |
 |---|---|---|
 | `avatar` | Player portrait | Profile, seat, lists, shop, collection |
-| `character` | Full-body figure that reacts to match events | Match seat, profile, shop, collection |
+| `character` | Full-body figure that reacts to match events | Match seat, loading screen, friend lobby (its clips are the lobby actions, `docs/friend-lobby.md`), profile, shop, collection |
 | `frame` | Border around the avatar | Everywhere the avatar shows |
 | `table` | Match table background | Match scene, collection, shop |
-| `emoji` | In-match reaction sent by id (`docs/localization.md` 5.7) | Match seat, emoji wheel, collection |
+| `emoji` | Reaction sent by id in a match or a friend lobby (`docs/localization.md` 5.7) | Match seat, friend lobby, emoji wheel, collection |
 
 Adding a type is a schema change (section 7.2) and a change to this table.
 
