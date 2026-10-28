@@ -110,7 +110,7 @@ A lever is a config key or admin object that already exists. A signal without a 
 | Pass pacing | #147, checkpoints of section 4 | Measured level per profile against `docs/pass-missions-medals.md` 8.1; tolerance OD-5 | `PassMatchXp1v1`, `PassMatchXp2v2`, `PassDailyMatchXpCap`, `DailyMissionSlotXp`, `WeeklyMissionSlotXp` within their budgets, mid-season | `PassLevels`, curve and tracks until season 2; catch-up offers (OQ-9) |
 | Mission effort | #127, #147 | Completion against the intended effort of `docs/pass-missions-medals.md` 4.4; tolerance OD-5 | Mission targets: add, retire or replace missions in a slot pool | Slot rewards (fixed per slot) |
 | Medal earn share | #147 | Outside the band of `docs/pass-missions-medals.md` 5.3 | The medal's `rarityId` | Condition changes on an earned medal |
-| Ranked distribution, placement, dodges, queue wait | #147, #28, #48 | OD-6 | `docs/ranking.md` section 4 coefficients mid-season; structural keys only through season 2 (5.1) | Bot fill in ranked (`docs/ranking.md` 9) |
+| Ranked distribution, placement, leaves, queue wait | #147, #28, #48 | OD-6 | `docs/ranking.md` section 4 coefficients mid-season; structural keys only through season 2 (5.1) | Bot fill in ranked (`docs/ranking.md` 9) |
 | D1, D7, ARPDAU, matches per day | #196 weekly KPI report | Targets of #196 (OD-4) | None directly; they set the weekly review's priorities | |
 | Launch health signals | `docs/launch-runbook.md` 4.1 | As defined there | None: an incident (`docs/launch-runbook.md` section 6) | Any balance key |
 
@@ -190,7 +190,7 @@ Decided by the owner on 2026-10-26.
 | OD-3 | New cosmetics after launch | One themed set of 6 to 8 items per event (about 45 items in 90 days) plus each season's pass tracks |
 | OD-4 | Targets for D1, D7, ARPDAU and matches per day | Set by the owner from the first two weeks of soft launch data (#196); until then the report runs without thresholds |
 | OD-5 | Tolerance for pass pacing and mission completion | Same as OD-4; no pacing change without an owner call until set |
-| OD-6 | Targets for rank distribution, placement, dodges, queue wait | Same as OD-4; no coefficient change without an owner call until set |
+| OD-6 | Targets for rank distribution, placement, leaves, queue wait | Same as OD-4; no coefficient change without an owner call until set |
 | OD-7 | Release train cadence | Server weekly, client every two weeks, both on Tuesday; hotfix outside the train (7.2) |
 | OD-8 | Season 2 content | Theme on day 30; pass track items and rank reward items published by day 75 (section 4) |
 

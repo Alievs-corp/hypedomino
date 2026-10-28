@@ -97,3 +97,5 @@ These rules are not checkable by a deterministic rules-engine function. The vali
 - **R-54** Partner assignment in ranked 2v2 is random matchmaking, outside `server/internal/rules`.
 - **R-55** Custom rooms and team splitting are room management, outside `server/internal/rules`.
 - **R-56** Casual queues and bot fill are matchmaking, outside `server/internal/rules`.
+- **R-57** The loading phase is room start-up, outside `server/internal/rules`; the room tests cover it.
+- **R-58** Rejoining and the queue block for a player with an unfinished match are session and matchmaking, outside `server/internal/rules`.

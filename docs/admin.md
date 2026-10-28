@@ -97,7 +97,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `economy` | `docs/economy/balance.csv` keys of kind `config`, reward bundles, shop offers and rotations, store product mapping, daily login | Shop and reward views from the server |
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
-| `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
+| `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
 | `penalties` | `docs/penalties.md` section 8 | From the server |
 | `anticheat` | `docs/anti-cheat.md` section 7 except live controls | Never |
 | `privacy` | `docs/privacy.md` section 4 and section 11 | Policy and age values only |
