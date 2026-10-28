@@ -242,7 +242,7 @@ func (s *seatRun) play() (finished bool, dropped bool) {
 	r := s.runner
 	drop := s.nextDrop()
 	frames := make(chan readResult, 16)
-	go s.reader(frames)
+	go s.reader(s.client, frames)
 	for {
 		frame, err := s.next(frames, drop)
 		if errors.Is(err, errDrop) {
@@ -261,6 +261,7 @@ func (s *seatRun) play() (finished bool, dropped bool) {
 			r.debug("intent rejected", "code", rejected.GetCode().String(), "sequence", rejected.GetRejectedSequence(), "view", s.actedOn.String())
 			s.pending = 0
 		}
+		s.client.Observe(frame)
 		view := frame.GetMatchView()
 		if view == nil {
 			continue
@@ -302,10 +303,10 @@ type readResult struct {
 	err   error
 }
 
-func (s *seatRun) reader(frames chan<- readResult) {
+func (s *seatRun) reader(client *botclient.Client, frames chan<- readResult) {
 	defer close(frames)
 	for {
-		frame, err := s.client.Read()
+		frame, err := client.Receive()
 		frames <- readResult{frame, err}
 		if err != nil {
 			return

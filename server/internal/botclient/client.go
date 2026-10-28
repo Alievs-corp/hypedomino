@@ -108,7 +108,7 @@ func (c *Client) Send(frame *pb.Envelope) error {
 	return nil
 }
 
-func (c *Client) Read() (*pb.Envelope, error) {
+func (c *Client) Receive() (*pb.Envelope, error) {
 	kind, data, err := c.socket.Read(c.ctx)
 	if err != nil {
 		return nil, err
@@ -120,11 +120,23 @@ func (c *Client) Read() (*pb.Envelope, error) {
 	if err := proto.Unmarshal(data, frame); err != nil {
 		return nil, err
 	}
+	return frame, nil
+}
+
+func (c *Client) Observe(frame *pb.Envelope) {
 	if view := frame.GetMatchView(); view != nil {
 		c.Acked = frame.GetAckedSequence()
 		c.Sequence = max(c.Sequence, c.Acked)
 		c.Last = view
 	}
+}
+
+func (c *Client) Read() (*pb.Envelope, error) {
+	frame, err := c.Receive()
+	if err != nil {
+		return nil, err
+	}
+	c.Observe(frame)
 	return frame, nil
 }
 
