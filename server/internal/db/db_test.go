@@ -61,6 +61,8 @@ func has(names []string, want string) bool {
 	return false
 }
 
+const head = 2
+
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -74,7 +76,7 @@ func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 		t.Fatalf("empty database version %d, %v", version, err)
 	}
 	version, err := migrator.Up(ctx)
-	if err != nil || version != 1 {
+	if err != nil || version != head {
 		t.Fatalf("up: version %d, %v", version, err)
 	}
 	pool, err := db.Open(ctx, url)
@@ -82,16 +84,16 @@ func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "goose_db_version"} {
+	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "match_events", "match_events_default", "outbox", "goose_db_version"} {
 		if !has(tables(t, pool), want) {
 			t.Fatalf("table %s missing after up: %v", want, tables(t, pool))
 		}
 	}
-	if version, err := migrator.Up(ctx); err != nil || version != 1 {
+	if version, err := migrator.Up(ctx); err != nil || version != head {
 		t.Fatalf("second up: version %d, %v", version, err)
 	}
 	statuses, err := migrator.Status(ctx)
-	if err != nil || len(statuses) != 1 || !statuses[0].Applied || statuses[0].Version != 1 {
+	if err != nil || len(statuses) != head || !statuses[head-1].Applied || statuses[head-1].Version != head {
 		t.Fatalf("status %+v, %v", statuses, err)
 	}
 	if version, err := migrator.DownTo(ctx, 0); err != nil || version != 0 {
@@ -100,7 +102,7 @@ func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	if names := tables(t, pool); len(names) != 1 || names[0] != "goose_db_version" {
 		t.Fatalf("tables left after down: %v", names)
 	}
-	if version, err := migrator.Up(ctx); err != nil || version != 1 {
+	if version, err := migrator.Up(ctx); err != nil || version != head {
 		t.Fatalf("up after down: version %d, %v", version, err)
 	}
 }
@@ -251,14 +253,14 @@ func TestMatchesArePartitionedByMonth(t *testing.T) {
 		t.Fatal("a participant without a match was accepted")
 	}
 	var created int
-	if err := pool.QueryRow(ctx, "select match_partitions_ensure(date '2031-01-15', 2)").Scan(&created); err != nil || created != 2 {
+	if err := pool.QueryRow(ctx, "select match_partitions_ensure(date '2031-01-15', 2)").Scan(&created); err != nil || created != 6 {
 		t.Fatalf("ensure created %d, %v", created, err)
 	}
 	if err := pool.QueryRow(ctx, "select match_partitions_ensure(date '2031-01-15', 2)").Scan(&created); err != nil || created != 0 {
 		t.Fatalf("ensure is not idempotent: %d, %v", created, err)
 	}
 	names := tables(t, pool)
-	for _, want := range []string{"matches_203101", "matches_203102", "match_participants_203101", "match_participants_203102", "matches_" + thisMonth, "match_participants_" + thisMonth} {
+	for _, want := range []string{"matches_203101", "matches_203102", "match_participants_203101", "match_participants_203102", "match_events_203101", "match_events_203102", "matches_" + thisMonth, "match_participants_" + thisMonth} {
 		if !has(names, want) {
 			t.Fatalf("partition %s missing: %v", want, names)
 		}
