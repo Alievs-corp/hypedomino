@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 )
 
@@ -38,6 +40,7 @@ type App struct {
 	logger   *slog.Logger
 	gateway  *gateway.Gateway
 	rooms    *Rooms
+	cluster  *cluster.Cluster
 	mux      *http.ServeMux
 	ready    atomic.Bool
 	listener net.Listener
@@ -56,7 +59,17 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
 	a.mux.HandleFunc("GET /ws", a.ws)
+	a.mux.HandleFunc("GET /loadz", a.loadz)
 	return a
+}
+
+func (a *App) Join(c *cluster.Cluster) {
+	a.cluster = c
+	c.Observe(a.load)
+}
+
+func (a *App) load() cluster.Load {
+	return cluster.Load{Rooms: a.rooms.Len(), Connections: a.gateway.Connections(), Draining: !a.ready.Load()}
 }
 
 func (a *App) Rooms() *Rooms {
@@ -87,11 +100,30 @@ func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) ws(w http.ResponseWriter, r *http.Request) {
-	if !a.ready.Load() {
+	relayed := a.cluster != nil && r.Header.Get(cluster.RelayHeader) != ""
+	if !a.ready.Load() && !relayed {
 		http.Error(w, "draining", http.StatusServiceUnavailable)
 		return
 	}
+	if relayed {
+		r = r.WithContext(cluster.MarkRelayed(r.Context()))
+	}
 	a.gateway.ServeHTTP(w, r)
+}
+
+func (a *App) loadz(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	report := map[string]any{"load": a.load()}
+	if a.cluster != nil {
+		report["node"] = a.cluster.Self()
+		summary, err := a.cluster.Summarize(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		report["cluster"] = summary
+	}
+	json.NewEncoder(w).Encode(report)
 }
 
 func (a *App) Run(ctx context.Context) error {
@@ -104,6 +136,8 @@ func (a *App) Run(ctx context.Context) error {
 	server := &http.Server{Handler: a.mux, ReadHeaderTimeout: 10 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.Serve(listener) }()
+	stopCluster := a.announce()
+	defer stopCluster()
 	a.logger.Info("listening", "addr", listener.Addr().String())
 	a.addr <- listener.Addr().String()
 	select {
@@ -135,4 +169,22 @@ func (a *App) shutdown(server *http.Server) error {
 		return nil
 	}
 	return err
+}
+
+func (a *App) announce() func() {
+	if a.cluster == nil {
+		return func() {}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if err := a.cluster.Run(ctx); err != nil && ctx.Err() == nil {
+			a.logger.Error("cluster membership failed", "node", a.cluster.NodeID(), "error", err)
+		}
+	}()
+	return func() {
+		cancel()
+		<-done
+	}
 }
