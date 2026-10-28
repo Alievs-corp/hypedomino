@@ -104,7 +104,7 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 ```
 
 - `GuidePriceCoins` per rarity id of #5 in order `common`, `rare`, `epic`, `legendary`, `mythic`: 400, 1500, 3500, 12000, 30000. Rarities are referenced by id only.
-- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `emoji`: 100, 150, 100, 150, 50. A character carries four clips and a table fills the match scene; an emoji is a small, frequent item.
+- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `emoji`, `action`: 100, 150, 100, 150, 50, 50. A character carries four clips and a table fills the match scene; an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer.
 - The full table and the play time each price takes are in section 11.
 
@@ -345,13 +345,13 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 
 #### Guide prices by rarity and type (coins)
 
-| Rarity | `avatar` | `character` | `frame` | `table` | `emoji` |
-|---|---|---|---|---|---|
-| `common` | 400 | 600 | 400 | 600 | 200 |
-| `rare` | 1500 | 2250 | 1500 | 2250 | 750 |
-| `epic` | 3500 | 5250 | 3500 | 5250 | 1750 |
-| `legendary` | 12000 | 18000 | 12000 | 18000 | 6000 |
-| `mythic` | 30000 | 45000 | 30000 | 45000 | 15000 |
+| Rarity | `avatar` | `character` | `frame` | `table` | `emoji` | `action` |
+|---|---|---|---|---|---|---|
+| `common` | 400 | 600 | 400 | 600 | 200 | 200 |
+| `rare` | 1500 | 2250 | 1500 | 2250 | 750 | 750 |
+| `epic` | 3500 | 5250 | 3500 | 5250 | 1750 | 1750 |
+| `legendary` | 12000 | 18000 | 12000 | 18000 | 6000 | 6000 |
+| `mythic` | 30000 | 45000 | 30000 | 45000 | 15000 | 15000 |
 
 #### Price against earn rate
 
