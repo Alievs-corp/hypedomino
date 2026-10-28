@@ -61,7 +61,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-20 | Admin accounts least privilege; audit log on; hardening passed | Security lead | Account and role list, #148 report | #134, #148 |
 | GN-21 | Support tools work in production: player lookup, grant with reason, ban and mute; moderation and appeal queue staffed | Support lead | Audit log entries of test actions on a staff account | #144, #186 |
 | GN-22 | Store products match admin shop config; a licensed test purchase on the release build is granted once and restores | Live-ops lead | Ledger entry, restore record | #106, #107, #139, #204 |
-| GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots | #194, #187 |
+| GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots; pre-submission checklist ST-1 to ST-23 of `docs/store-listing.md` section 9 checked | #194, #187 |
 | GN-24 | Release candidate regression passed; smoke passed on every device tier | QA lead | Test run report per `docs/test-strategy.md` section 8 | #190, #191 |
 | GN-25 | On-call schedule published from T-1d to T+14d; contact sheet complete; escalation path tested end to end | Release manager | Schedule link, test page record | section 7 |
 | GN-26 | Support channel live; FAQ and templates published in all four languages | Support lead | Links, translation review | sections 8, 9 |
