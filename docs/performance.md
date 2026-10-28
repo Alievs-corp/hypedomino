@@ -127,4 +127,4 @@ Not affected and why:
 
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
 - Skinned 3D characters (ADR 0009) are part of the match scene: their skinning, draw calls and memory are inside the client budgets above and are first measured in #93.
-- The replay harness, load bot and metrics endpoint do not exist yet (#192). Until they do, gates are checked by hand with the Profiler and the commands above.
+- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The replay harness, the `move_roundtrip_seconds` server histogram and the metrics endpoint do not exist yet (#192); until they do, client gates are checked by hand with the Profiler and the commands above.

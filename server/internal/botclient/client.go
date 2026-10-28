@@ -122,6 +122,7 @@ func (c *Client) Read() (*pb.Envelope, error) {
 	}
 	if view := frame.GetMatchView(); view != nil {
 		c.Acked = frame.GetAckedSequence()
+		c.Sequence = max(c.Sequence, c.Acked)
 		c.Last = view
 	}
 	return frame, nil
