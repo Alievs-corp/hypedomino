@@ -4,7 +4,7 @@ Single source of truth for the game rules. The rules engine (`server/internal/ru
 
 Every rule has a stable id (`R-1`, `R-2`, ...). Test vectors (`docs/rules-vectors`, #4) reference these ids. Ids are never reused or renumbered; a removed rule keeps its id marked as removed.
 
-Owner decisions behind this version: #3 and #4 (2026-10-25).
+Owner decisions behind this version: #3 and #4 (2026-10-25); match start, loading phase and rejoining, R-53, R-57 and R-58 (2026-10-28, #85).
 
 ## Terms
 
@@ -107,12 +107,14 @@ Owner decisions behind this version: #3 and #4 (2026-10-25).
 - **R-51** After a number of consecutive timeouts set in admin config, the player is marked AFK and the bot plays the rest of the match for them. The player can take back control by reconnecting; the consecutive-timeout count then starts again from zero. Penalties for going AFK are defined in `docs/penalties.md`.
 - **R-52** A player who leaves the match is replaced by the bot. If they come back before the match ends, they take back control from the bot; the consecutive-timeout count then starts again from zero. Their partner keeps playing either way. A leaver who stays away too long is penalised as defined in `docs/penalties.md`.
 
-## 12. Ranked and custom play
+## 12. Ranked, casual and custom play; match start
 
-- **R-53** 1v1 and 2v2 are both ranked. Each mode has its own rating, rank and leaderboard. A ranked match opens directly once matchmaking has formed it (`docs/ranking.md`); there is no room, seat choice or team split.
+- **R-53** 1v1 and 2v2 are both ranked. Each mode has its own rating, rank and leaderboard. A ranked match opens directly once matchmaking has formed it (`docs/ranking.md`): there is no accept step, room, seat choice or team split, only the loading phase of R-57.
 - **R-54** In ranked 2v2 the partner is assigned at random. A player cannot choose a partner or queue for ranked play together with a chosen partner.
 - **R-55** Custom rooms are unranked and meant for friends. Players create a room and split the teams however they want. The creator of the room can remove a player from it and add a player to a free seat, before or during a match. During a match the seat of a removed player is played by the bot until the creator adds a player to it; a removed player comes back only if the creator adds them again. Nobody is penalised in a custom room for timing out, leaving or being removed.
 - **R-56** Casual play is an unranked matchmaking queue for 1v1 and 2v2 under the same game rules. It changes no rating, rank or leaderboard. Only casual queues may fill an empty seat with a bot after a long wait; ranked queues never do.
+- **R-57** Every match, ranked, casual or custom, opens with a loading phase. Each player's client loads the match and reports when it is ready. The first hand is dealt as soon as every player is ready, or when `MatchLoadingSeconds` (admin config, default 10 seconds) have passed, whichever comes first. No turn timer runs during the loading phase. A player who is not ready when the phase ends starts the match as disconnected: the bot plays for them (R-52), and their reconnect grace starts at that moment. A match is never cancelled or delayed further because a player did not load.
+- **R-58** A player whose match has not ended can rejoin it at any time until it ends, and takes back control from the bot when they do (R-52). Until the match ends they cannot join a matchmaking queue or a custom room or start another match; opening the game takes them back into the running match.
 
 ## 13. Engine configuration
 
@@ -129,6 +131,7 @@ Rule values live in `rules.Config` so they can change without code changes. The 
 | `ScoringOpeningPoints` | 10 | R-29 |
 | `TurnSeconds` | admin config, 20 | R-49 |
 | `AfkConsecutiveTimeouts` | admin config, 3 | R-51 |
+| `MatchLoadingSeconds` | admin config, 10 | R-57 |
 
 ## 14. Worked examples
 

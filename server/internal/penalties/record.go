@@ -55,17 +55,9 @@ type Ladder struct {
 	UnderReview      bool
 }
 
-type Dodge struct {
-	MatchID     string
-	At          time.Time
-	LpPenalty   int
-	LockedUntil time.Time
-}
-
 type Record struct {
 	Ranked Ladder
 	Casual Ladder
-	Dodges []Dodge
 }
 
 type Notice struct {
@@ -260,40 +252,6 @@ func (r *Record) Banned(now time.Time) (time.Time, bool) {
 		return r.Ranked.BanUntil, true
 	}
 	return time.Time{}, false
-}
-
-func (r *Record) RankedLocked(c Config, now time.Time) (time.Time, bool) {
-	if until, banned := r.Banned(now); banned {
-		return until, true
-	}
-	r.pruneDodges(c, now)
-	for _, dodge := range r.Dodges {
-		if now.Before(dodge.LockedUntil) {
-			return dodge.LockedUntil, true
-		}
-	}
-	return time.Time{}, false
-}
-
-func (r *Record) pruneDodges(c Config, now time.Time) {
-	window := time.Duration(c.DodgeWindowHours) * time.Hour
-	r.Dodges = slices.DeleteFunc(r.Dodges, func(d Dodge) bool { return !d.At.Add(window).After(now) })
-}
-
-func (r *Record) Dodge(c Config, matchID string, now time.Time) (Dodge, bool) {
-	r.pruneDodges(c, now)
-	if index := slices.IndexFunc(r.Dodges, func(d Dodge) bool { return d.MatchID == matchID }); index >= 0 {
-		return r.Dodges[index], false
-	}
-	minutes := c.DodgeLockoutMinutes[min(len(r.Dodges), len(c.DodgeLockoutMinutes)-1)]
-	dodge := Dodge{
-		MatchID:     matchID,
-		At:          now,
-		LpPenalty:   c.DodgeLpPenalty,
-		LockedUntil: now.Add(time.Duration(minutes) * time.Minute),
-	}
-	r.Dodges = append(r.Dodges, dodge)
-	return dodge, true
 }
 
 func (r *Record) Lift() {
