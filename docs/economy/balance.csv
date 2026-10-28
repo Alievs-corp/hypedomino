@@ -14,7 +14,7 @@ PassPremiumTrackCoins,3000,coins per pass season,config,2.5
 RankRewardCoins,100;200;400;700;1000;1500;2000;3000;4000;5000,coins Iron..Challenger,config,2.6
 DuplicateCompensationPercent,20,percent of guide price,config,2.7
 GuidePriceCoins,400;1500;3500;12000;30000,coins common..mythic,config,3.1
-GuidePriceTypePercent,100;150;100;150;50,percent avatar;character;frame;table;emoji,config,3.1
+GuidePriceTypePercent,100;150;100;150;50;50,percent avatar;character;frame;table;emoji;action,config,3.1
 PassLevelCoinPrice,200,coins per level,config,3.2
 RenameCoinPrice,1000,coins,config,3.3
 ShopRotationResetHourUtc,0,hour UTC,config,6.1

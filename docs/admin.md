@@ -92,7 +92,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 
 | Domain | Content | Delivered to the client |
 |---|---|---|
-| `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3) | Manifest file on the CDN |
+| `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3); `LobbyActionSlots` (`docs/friend-lobby.md` section 5) | Manifest file on the CDN; slot count with client config |
 | `rarity` | Rarity table (`docs/rarity.md` section 7) | With client config |
 | `economy` | `docs/economy/balance.csv` keys of kind `config`, reward bundles, shop offers and rotations, store product mapping, daily login | Shop and reward views from the server |
 | `progression` | Pass seasons, missions, medals | From the server |

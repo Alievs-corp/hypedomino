@@ -41,5 +41,5 @@ A member can leave the room in FL-1 and FL-2. Leaving during FL-3 and FL-4 is a 
 
 ## 5. Decisions and open items
 
-- Decided 2026-10-28: lobby actions are also their own cosmetic type, `action` (`docs/cosmetics.md`), sold and earned like other cosmetics. Their shop price weight (`GuidePriceTypePercent` in `docs/economy.md`) and the value of `LobbyActionSlots` are owner decisions still open; until then actions come only from pass, missions, events, promos and rank rewards.
+- Decided 2026-10-28: lobby actions are also their own cosmetic type, `action` (`docs/cosmetics.md`), sold and earned like other cosmetics. The shop price follows rarity through the guide price (`docs/economy.md` 3.1, `GuidePriceTypePercent` 50 for `action`) and the admin sets each offer's price. `LobbyActionSlots` is 4 and admin config. Launch needs at least 8 ready actions (`docs/launch-content-gate.md` MC-8).
 - Decided 2026-10-28: no bot seats in custom matches. A 2v2 needs four players; with fewer, the room plays 1v1.

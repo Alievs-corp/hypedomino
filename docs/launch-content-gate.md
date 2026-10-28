@@ -25,6 +25,7 @@ Owned elsewhere and only referenced here: item shape, sources, availability and 
 | MC-5 | Tables | Ready `table` items | `ContentGateMinTables` | 15 |
 | MC-6 | Emoji | Ready `emoji` items | `ContentGateMinEmoji` | 40 |
 | MC-7 | Medals | Ready medals | `ContentGateMinMedals` | 40 |
+| MC-8 | Lobby actions | Ready `action` items | `ContentGateMinActions` | 8 |
 
 - An item counts once, in the category of its `type` and `animated` flag, whatever its sources: `default` items (static, `docs/cosmetics.md` V-19), pass track items, shop, mission, promo, rank reward and event items all count.
 - Only items in the active production manifest or progression domain count. A draft, a scheduled change set and a `retired` or `disabled` item do not.
@@ -32,11 +33,11 @@ Owned elsewhere and only referenced here: item shape, sources, availability and 
 
 ### 2.1 Rarity distribution
 
-Owner decision OD-1: MC-1 to MC-5 each need at least one ready item of every tier from `common` to `legendary` (`docs/rarity.md` 1). `mythic` is not required, since it is sold only in time-limited offers. Emoji and medals have no per-tier minimum. Beyond that the report shows the count per category and `rarityId` as information. Constraints that already hold through other specs:
+Owner decision OD-1: MC-1 to MC-5 each need at least one ready item of every tier from `common` to `legendary` (`docs/rarity.md` 1). `mythic` is not required, since it is sold only in time-limited offers. Emoji, medals and lobby actions have no per-tier minimum. Beyond that the report shows the count per category and `rarityId` as information. Constraints that already hold through other specs:
 
 | Constraint | Source |
 |---|---|
-| Every type has at least one `live` `default` item, and every `default` item is static | `docs/cosmetics.md` V-11, V-19 |
+| Every type except `action` has at least one `live` `default` item, and every `default` item is static | `docs/cosmetics.md` V-11, V-19 |
 | No `mythic` item on a pass track | `docs/pass-missions-medals.md` PV-10 |
 | `mythic` items are sold only in time-limited offers | `docs/economy.md` 3.1 |
 | No `mythic` medal at launch | `docs/pass-missions-medals.md` 5.3 |
@@ -184,6 +185,7 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 | `ContentGateMinTables` | 15 | 2 |
 | `ContentGateMinEmoji` | 40 | 2 |
 | `ContentGateMinMedals` | 40 | 2 |
+| `ContentGateMinActions` | 8 | 2 |
 
 Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `DailyMissionRerolls`, `WeeklyMissionRerolls`, `PassLevels` (`docs/pass-missions-medals.md`), `PromoCoinsApprovalThreshold` (`docs/economy.md`), `LeaderboardRegions` (`docs/ranking.md`).
 
