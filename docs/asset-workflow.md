@@ -118,7 +118,7 @@ assets-src/
     concept/<YYYYMMDD>-<nn>.<png|jpg|jpeg|webp>
     work/<name>.<ext>
     export/static.png
-    export/anim/...           avatar, frame, emoji
+    export/anim/...           avatar, frame, emoji, action
     export/clip/<clip>/...    character: idle, win, lose, reaction
     export/model/...          character: medium-detail model
     export/model_hq/...       character: high-detail model, optional
@@ -177,7 +177,7 @@ The runtime format and the per-screen animation budget are #93; this section onl
 | After Effects | Animate the layered master, render each clip as a PNG sequence with alpha, no effects that add glow, blur or shadow | Frame sequences for a sprite sheet |
 | Blender | Orthographic camera at the class canvas, flat shading with three tones, outline matching 5.1 step 3, no post-processing, render PNG sequence with alpha | Frame sequences for a sprite sheet |
 
-Per type: a character delivers `idle`, `win`, `lose`, `reaction` (`docs/art-direction.md` 5.2); avatar, frame and emoji deliver one loop; an animated table delivers its layers, back to front, at most `TableMaxLayers` (`docs/cosmetics.md` section 4). Each clip is checked with reduce motion and on the low effect level, where only the static shows.
+Per type: a character delivers `idle`, `win`, `lose`, `reaction` (`docs/art-direction.md` 5.2); avatar, frame and emoji deliver one loop; an action delivers one clip on the shared humanoid skeleton, checked on at least two characters of different build; an animated table delivers its layers, back to front, at most `TableMaxLayers` (`docs/cosmetics.md` section 4). Each clip is checked with reduce motion and on the low effect level, where only the static shows.
 
 Static fallback, every item: a chosen key pose or key frame, not frame 0, exported at the same canvas, pivot and framing as the animation; for a table the flattened rest frame of all layers (`docs/art-direction.md` section 7). It is reviewed side by side with the animation on board panel B-8.
 
