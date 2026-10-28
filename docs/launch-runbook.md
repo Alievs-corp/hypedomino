@@ -299,6 +299,8 @@ Page the on-call primary when 5 tickets with the same new symptom arrive within 
 
 One page per category, each answer in all four launch languages and taken from its source document, never written from memory.
 
+Hosting (decided 2026-10-28): the FAQ is one set of web pages, and the game shows the same pages inside the game from its help screen, in the game's language, without sending the player to an outside browser. The web pages also serve as the support URL of the store listings (#194). One source means an answer is changed once and is current in both places.
+
 | Category | Questions it answers | Source |
 |---|---|---|
 | How to play | Rules, scoring, 365 target, 1v1 and 2v2 | `docs/rules.md` |
@@ -315,6 +317,5 @@ One page per category, each answer in all four launch languages and taken from i
 ## 10. Open items
 
 - Every `{filled by #N}` placeholder: the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
-- Where the FAQ is hosted (in-app view or web page) is not decided.
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.
