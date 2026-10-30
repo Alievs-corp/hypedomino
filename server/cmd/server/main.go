@@ -15,9 +15,11 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
@@ -84,7 +86,22 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	sessions.Authenticate(tokens)
 	a.Handle("POST /auth/", auth.New(verifier, account.New(pool), tokens, sessions, logger))
 	a.Handle("/profile/", profile.NewHandler(tokens, profile.NewStore(pool, config.Profile), logger, time.Now))
+	catalog, err := loadCatalog(config.Cosmetics)
+	if err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
+	items := inventory.NewHandler(tokens, inventory.NewStore(pool, catalog, config.Inventory), logger, time.Now)
+	a.Handle("/inventory", items)
+	a.Handle("/inventory/", items)
 	return a, pool.Close, nil
+}
+
+func loadCatalog(path string) (*cosmetics.Catalog, error) {
+	if path == "" {
+		return cosmetics.Builtin(), nil
+	}
+	return cosmetics.Load(path)
 }
 
 func node(config app.Config, logger *slog.Logger, sessions *session.Manager, client *redis.Client) (*app.App, error) {

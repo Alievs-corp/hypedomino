@@ -22,6 +22,7 @@ type Loadout struct {
 	Character string   `json:"character,omitempty"`
 	Table     string   `json:"table,omitempty"`
 	Emojis    []string `json:"emojis,omitempty"`
+	Actions   []string `json:"actions,omitempty"`
 }
 
 type ModeStats struct {

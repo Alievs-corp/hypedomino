@@ -11,6 +11,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -31,6 +32,8 @@ type Config struct {
 	IDToken         idtoken.Config
 	Token           token.Config
 	Profile         profile.Config
+	Cosmetics       string
+	Inventory       inventory.Config
 }
 
 func DefaultConfig() Config {
@@ -46,6 +49,7 @@ func DefaultConfig() Config {
 		IDToken:         idtoken.DefaultConfig(),
 		Token:           token.DefaultConfig(),
 		Profile:         profile.DefaultConfig(),
+		Inventory:       inventory.DefaultConfig(),
 	}
 }
 
@@ -177,6 +181,12 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.flag("HD_NICKNAME_ALLOW_MIXED_SCRIPT", &config.Profile.NicknameAllowMixedScript)
 	r.duration("HD_NICKNAME_RENAME_COOLDOWN", &config.Profile.NicknameRenameCooldown)
 	r.duration("HD_NICKNAME_RELEASE", &config.Profile.NicknameRelease)
+	r.text("HD_COSMETICS_MANIFEST", &config.Cosmetics)
+	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
+	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
+	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
+		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))
+	}
 	if config.Profile.NicknameMinLength < 1 || config.Profile.NicknameMaxLength < config.Profile.NicknameMinLength {
 		r.errs = append(r.errs, errors.New("HD_NICKNAME_MIN_LENGTH and HD_NICKNAME_MAX_LENGTH: the minimum must be at least 1 and not above the maximum"))
 	}
