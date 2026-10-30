@@ -60,6 +60,10 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SCALE_OUT_AT` | No | server | `0.7` | `0.7` | No | from #51 |
 | `HD_SCALE_IN_AT` | No | server | `0.3` | `0.3` | No | from #51 |
 | `HD_RELAY_DIAL_TIMEOUT` | No | server | `5s` | `5s` | No | from #51 |
+| `HD_DATABASE_URL` | No; required for sign-in | server | empty (no database, no `/auth` routes) | `postgres://hd_server:<password>@postgres.hypedomino.svc:5432/hypedomino?sslmode=require` | Yes | from #57 |
+| `HD_GOOGLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `<android-client-id>.apps.googleusercontent.com,<ios-client-id>.apps.googleusercontent.com` | No | from #57 |
+| `HD_APPLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `com.example.hypedomino` (the app bundle id) | No | from #57 |
+| `HD_NONCE_TTL` | No | server | `10m` | `10m` | No | from #57 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
@@ -73,7 +77,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.3 Not read yet
 
-The admin panel and the client read no environment variable. Database connections (#55), session token signing keys (#58), ID token verification settings (#57), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The admin panel and the client read no environment variable. Session token signing keys (#58), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
 ## 3. Where secrets live
 
@@ -84,6 +88,7 @@ The admin panel and the client read no environment variable. Database connection
 | `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from protected refs | Environment variables injected by the production deploy (#25) |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
+| Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.

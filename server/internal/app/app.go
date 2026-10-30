@@ -63,6 +63,10 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 	return a
 }
 
+func (a *App) Handle(pattern string, handler http.Handler) {
+	a.mux.Handle(pattern, handler)
+}
+
 func (a *App) Join(c *cluster.Cluster) {
 	a.cluster = c
 	c.Observe(a.load)

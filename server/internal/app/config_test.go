@@ -53,6 +53,10 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_SCALE_OUT_AT":          "0.8",
 		"HD_SCALE_IN_AT":           "0.2",
 		"HD_RELAY_DIAL_TIMEOUT":    "2s",
+		"HD_DATABASE_URL":          "postgres://hd:secret@db:5432/hypedomino",
+		"HD_GOOGLE_AUDIENCES":      "1-abc.apps.googleusercontent.com, 2-def.apps.googleusercontent.com",
+		"HD_APPLE_AUDIENCES":       "com.example.hypedomino",
+		"HD_NONCE_TTL":             "4m",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -73,6 +77,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	c := config.Cluster
 	if config.Redis != "redis://cache:6379/0" || c.NodeID != "server-7" || c.Addr != "10.0.0.7:8080" || c.Capacity != 5000 || c.Heartbeat != time.Second || c.NodeTTL != 4*time.Second || c.RouteTTL != 3*time.Hour || c.ScaleOutAt != 0.8 || c.ScaleInAt != 0.2 || config.Relay.DialTimeout != 2*time.Second {
 		t.Fatalf("cluster config %+v %+v", c, config.Relay)
+	}
+	if config.Database != "postgres://hd:secret@db:5432/hypedomino" || len(config.IDToken.Google.Audiences) != 2 || config.IDToken.Google.Audiences[1] != "2-def.apps.googleusercontent.com" || len(config.IDToken.Apple.Audiences) != 1 || config.IDToken.NonceTTL != 4*time.Minute {
+		t.Fatalf("sign-in config %+v", config.IDToken)
 	}
 }
 
@@ -111,5 +118,15 @@ func TestClusterConfigIsOnlyValidatedWithRedis(t *testing.T) {
 	}
 	if _, err := ConfigFromEnv(lookup(map[string]string{"HD_REDIS_URL": "redis://cache:6379", "HD_NODE_ID": " "})); err == nil {
 		t.Fatal("an empty node id was accepted with Redis configured")
+	}
+}
+
+func TestADatabaseNeedsAtLeastOneSignInAudience(t *testing.T) {
+	if _, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd"})); err == nil || !strings.Contains(err.Error(), "HD_GOOGLE_AUDIENCES") {
+		t.Fatalf("a database without client ids was accepted: %v", err)
+	}
+	config, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino"}))
+	if err != nil || config.IDToken.Apple.Audiences[0] != "com.example.hypedomino" || config.IDToken.NonceTTL != 10*time.Minute {
+		t.Fatalf("apple only: %+v %v", config.IDToken, err)
 	}
 }

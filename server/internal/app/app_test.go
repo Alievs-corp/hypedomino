@@ -268,3 +268,29 @@ func TestRunFailsOnABadListenAddress(t *testing.T) {
 		t.Fatal("Run succeeded on an unusable address")
 	}
 }
+
+func TestMountedHandlersServeNextToTheBuiltInRoutes(t *testing.T) {
+	config := DefaultConfig()
+	config.ListenAddr = "127.0.0.1:0"
+	logs := &bytes.Buffer{}
+	a := New(config, NewLogger(logs, "info"), &seatHandler{})
+	a.Handle("POST /auth/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(r.URL.Path))
+	}))
+	server := httptest.NewServer(a.Handler())
+	t.Cleanup(server.Close)
+	resp, err := http.Post(server.URL+"/auth/nonce", "application/json", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := &bytes.Buffer{}
+	body.ReadFrom(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated || body.String() != "/auth/nonce" {
+		t.Fatalf("mounted handler answered %d %q", resp.StatusCode, body.String())
+	}
+	if resp, err := http.Get(server.URL + "/healthz"); err != nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("healthz next to the mount: %v %v", resp, err)
+	}
+}
