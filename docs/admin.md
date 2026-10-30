@@ -83,6 +83,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 
 - A change set is published only by an account that holds P on every object in it.
 - The matrix is enforced by the admin API per request. #134's acceptance test checks that an account without the role can neither see nor perform each action.
+- The matrix lives in `server/internal/rbac`. Its test reads this table, so a change to a cell fails CI until the code matches. A new qualifier or `S` phrase needs a named action there.
 
 ## 3. Workflow
 
