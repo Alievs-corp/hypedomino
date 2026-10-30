@@ -26,10 +26,11 @@ This document stores references to these decisions and never their values.
 | `type` | What it is | Where it shows |
 |---|---|---|
 | `avatar` | Player portrait | Profile, seat, lists, shop, collection |
-| `character` | Full-body figure that reacts to match events | Match seat, profile, shop, collection |
+| `character` | Full-body figure that reacts to match events | Match seat, loading screen, friend lobby (its clips are the lobby actions, `docs/friend-lobby.md`), profile, shop, collection |
 | `frame` | Border around the avatar | Everywhere the avatar shows |
 | `table` | Match table background | Match scene, collection, shop |
-| `emoji` | In-match reaction sent by id (`docs/localization.md` 5.7) | Match seat, emoji wheel, collection |
+| `emoji` | Reaction sent by id in a match or a friend lobby (`docs/localization.md` 5.7) | Match seat, friend lobby, emoji wheel, collection |
+| `action` | Full-body motion the equipped character plays in the friend lobby, on demand (`docs/friend-lobby.md`) | Friend lobby action wheel, collection, shop |
 
 Adding a type is a schema change (section 7.2) and a change to this table.
 
@@ -61,6 +62,8 @@ All required on every item.
 | `character` | `modelHqAddress` | Optional if `animated`, forbidden otherwise | The high-detail model: hero level of detail, larger textures and normal map. Without it the high level shows `modelAddress` |
 | `table` | `layers` | Required if `animated`, forbidden otherwise | Back-to-front list of `{ name, address, animated }`, at least 1, names unique, at least one layer animated. Count at most `TableMaxLayers` (admin config; its value comes from the measured base-scene cost in #97, ADR 0008) |
 | `emoji` | `group` | Required on emoji, forbidden on other types | Emoji group id (#150) |
+| `action` | `animated` | Always `true` | An action is motion by definition; its `staticAddress` is its icon, shown in the action wheel and played as a pop-up over a static character |
+| `action` | `animationAddress` | Required | One clip on the shared humanoid skeleton (ADR 0009), so every character can play every action |
 
 A field of another type is invalid. Frames carry no effect field: the rarity glow around a frame is drawn from `rarityId` as `docs/rarity.md` section 2 defines.
 
@@ -83,7 +86,7 @@ A source is `{ "type": ..., "ref": ... }`. `ref` is the id of a record owned by 
 Rules:
 - `sources` is the complete list of ways an item can be granted. The admin rejects publishing an offer, reward, mission, campaign or event that grants an item whose `sources` does not list it, and the server's grant path (#102) refuses such a grant. This is what the collection screen shows as the way to earn an item (#99) and what abuse checks (#211) compare against.
 - A source listed on an item does not mean it is active now; whether a shop offer is on sale or an event is running is decided by the referenced record and server time.
-- Every type has at least one `live` item with a `default` source, so a new account has something equipped in every slot and a disabled item has a replacement (section 6).
+- Every type except `action` has at least one `live` item with a `default` source, so a new account has something equipped in every slot and a disabled item has a replacement (section 6). An `action` never has a `default` source: it is always animated, and the friend lobby already offers the equipped character's own clips without any owned action.
 - The `default` source and the built-in install of default items (8.2) are owner-confirmed (#6, 2026-10-26). Default items are static (`animated: false`) to protect the install size budget (V-19).
 
 ## 6. Availability
@@ -144,7 +147,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Asset | Address |
 |---|---|
 | Static sprite | `cosmetic/<type>/<slug>/static` |
-| Animation (avatar, frame, emoji) | `cosmetic/<type>/<slug>/anim` |
+| Animation (avatar, frame, emoji), action clip | `cosmetic/<type>/<slug>/anim` |
 | Character clip | `cosmetic/character/<slug>/clip/<idle\|win\|lose\|reaction>` |
 | Character model | `cosmetic/character/<slug>/model` |
 | Character high-detail model | `cosmetic/character/<slug>/model_hq` |
@@ -190,7 +193,7 @@ Single-manifest rules, checked by the admin at publish, by the server when it lo
 | V-8 | Ids are unique and their prefix equals `type` |
 | V-9 | `nameKey` is `cosmetic.<id>.name` |
 | V-10 | Every address follows section 8.1 for its item and slot |
-| V-11 | An item with a `default` source is `live`, and every type has at least one such item |
+| V-11 | An item with a `default` source is `live`, and every type except `action` has at least one such item; an `action` has no `default` source |
 | V-19 | An item with a `default` source is static: `animated` is false |
 
 Rules that need more than one manifest or other admin data, checked by the admin at publish only:
@@ -213,6 +216,7 @@ An invalid manifest is never published. A client that receives one keeps its pre
 - Ownership is the server inventory. Items are granted only through the reward bundle engine (#102) from a listed source (section 5).
 - Equip is an intent: the server accepts it only for an owned item of that slot's type whose availability is `live` or `retired`. Sending an emoji requires owning it (#150).
 - The client never unlocks, previews as owned or equips locally ahead of the server. A modified client that edits its manifest only changes what it draws for itself.
+- Implemented in `server/internal/cosmetics` and `server/internal/inventory` (#61): a `default` item is owned by every account implicitly, with no inventory row, so it can never be revoked; every other item is a row with its granting source, accepted only when listed in `sources`. Equip checks type, availability and ownership; the loadout is resolved again at match start and recorded with the match (`match_participants.loadout`). The manifest comes from `HD_COSMETICS_MANIFEST` or the built-in copy of `examples/minimal.json` until admin config serves it (ADR 0006).
 
 ## 11. One schema for admin, server and client
 

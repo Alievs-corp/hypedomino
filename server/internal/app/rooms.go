@@ -1,0 +1,87 @@
+package app
+
+import (
+	"context"
+	"errors"
+	"sync"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/room"
+)
+
+var ErrDraining = errors.New("app: not accepting new rooms")
+
+type Rooms struct {
+	mu      sync.Mutex
+	live    map[*room.Room]context.CancelFunc
+	closed  bool
+	wg      sync.WaitGroup
+	changed chan struct{}
+}
+
+func NewRooms() *Rooms {
+	return &Rooms{live: map[*room.Room]context.CancelFunc{}, changed: make(chan struct{}, 1)}
+}
+
+func (rs *Rooms) Open(options room.Options) (*room.Room, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	if rs.closed {
+		return nil, ErrDraining
+	}
+	r := room.New(options)
+	ctx, cancel := context.WithCancel(context.Background())
+	rs.live[r] = cancel
+	rs.wg.Add(1)
+	go rs.run(ctx, cancel, r)
+	return r, nil
+}
+
+func (rs *Rooms) run(ctx context.Context, cancel context.CancelFunc, r *room.Room) {
+	defer rs.wg.Done()
+	go r.Run(ctx)
+	select {
+	case <-r.Finished():
+	case <-ctx.Done():
+	}
+	cancel()
+	<-r.Done()
+	rs.mu.Lock()
+	delete(rs.live, r)
+	rs.mu.Unlock()
+	select {
+	case rs.changed <- struct{}{}:
+	default:
+	}
+}
+
+func (rs *Rooms) Len() int {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	return len(rs.live)
+}
+
+func (rs *Rooms) Close() {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	rs.closed = true
+}
+
+func (rs *Rooms) Drain(ctx context.Context) error {
+	for rs.Len() > 0 {
+		select {
+		case <-rs.changed:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+func (rs *Rooms) Stop() {
+	rs.mu.Lock()
+	for _, cancel := range rs.live {
+		cancel()
+	}
+	rs.mu.Unlock()
+	rs.wg.Wait()
+}

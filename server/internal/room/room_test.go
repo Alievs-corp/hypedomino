@@ -3,6 +3,7 @@ package room
 import (
 	"context"
 	"errors"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -75,6 +76,9 @@ func newTable(t *testing.T, mode rules.Mode, seed uint64) *table {
 		tab.sinks[seat] = make(chanSink, 4096)
 		room.Join(seat, tab.sinks[seat])
 	}
+	for _, seat := range mode.Seats() {
+		room.Loading(seat, 100, true)
+	}
 	return tab
 }
 
@@ -144,7 +148,7 @@ func (tab *table) humanStep(sequences map[rules.Seat]uint64) bool {
 			break
 		}
 	}
-	if view.State == StateWaiting {
+	if view.State == StateWaiting || view.State == StateLoading {
 		return false
 	}
 	sequences[seat]++
@@ -305,7 +309,7 @@ func TestTimeoutsHandTheSeatToTheBotAndReconnectTakesItBack(t *testing.T) {
 		t.Fatalf("an AFK seat moved itself: %+v", m)
 	}
 	tab.room.Reconnect(opener, tab.sinks[opener])
-	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer {
+	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer || v.Presence[opener] != (rules.PresenceReport{Timeouts: 3, MarkedAfk: true}) {
 		t.Fatalf("reconnect did not take the seat back: %+v", v)
 	}
 }
@@ -337,6 +341,9 @@ func TestALeaverIsPlayedByTheBotUntilTheyComeBack(t *testing.T) {
 	}
 	if err := replay.Verify(tab.record()); err != nil {
 		t.Fatal(err)
+	}
+	if final.Presence[leaver] != (rules.PresenceReport{Left: true}) || final.Presence[other] != (rules.PresenceReport{}) {
+		t.Fatalf("presence reports %+v", final.Presence)
 	}
 }
 
@@ -392,7 +399,7 @@ func TestIntentsBeforeTheMatchStartsAreRefused(t *testing.T) {
 	go room.Run(ctx)
 	sink := make(chanSink, 16)
 	room.Join(rules.SeatNorth, sink)
-	if m := <-sink; m.View.State != StateWaiting {
+	if m := <-sink; m.View.State != StateLoading {
 		t.Fatalf("after the first join: %+v", m.View)
 	}
 	room.Intent(rules.SeatNorth, 1, replay.Intent{Kind: replay.KindPass})
@@ -440,5 +447,131 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 	tab.room.Join(gone, fresh)
 	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerPlayer {
 		t.Fatal("a returning leaver did not take the seat back by joining")
+	}
+}
+
+func TestTheCreatorKicksASeatAndAdmitsItAgain(t *testing.T) {
+	tab := newTable(t, rules.Mode2v2, 8)
+	tab.settle()
+	v := tab.snapshot(rules.SeatNorth)
+	kicked, other := v.ForcedOpening.Seat, v.ForcedOpening.Seat.Next()
+	tab.room.Kick(kicked)
+	v = tab.view(other)
+	if v.Controllers[kicked] != rules.ControllerBot || v.State != StatePlaying {
+		t.Fatalf("after the kick: %+v", v)
+	}
+	back := make(chanSink, 16)
+	tab.room.Reconnect(kicked, back)
+	if m := <-back; !m.Rejected || !errors.Is(m.Reason, ErrBarred) {
+		t.Fatalf("a kicked player reconnected: %+v", m)
+	}
+	tab.room.Join(kicked, back)
+	if m := <-back; !m.Rejected || !errors.Is(m.Reason, ErrBarred) {
+		t.Fatalf("a kicked player joined: %+v", m)
+	}
+	tab.room.Admit(kicked)
+	tab.room.Join(kicked, back)
+	if m := <-back; m.Rejected || m.View.Controllers[kicked] != rules.ControllerPlayer {
+		t.Fatalf("after admit: %+v", m)
+	}
+	tab.room.Kick(rules.SeatX)
+	if tab.snapshot(other).Controllers[rules.SeatX] != rules.ControllerPlayer {
+		t.Fatal("kicking a seat outside the mode changed something")
+	}
+	if tab.room.Kind() != KindRanked {
+		t.Fatalf("default kind %s", tab.room.Kind())
+	}
+}
+
+func snapshotOf(r *Room, seat rules.Seat) View {
+	reply := make(chan View, 1)
+	r.Snapshot(seat, reply)
+	return <-reply
+}
+
+func TestLoadingShowsTheRosterProgressAndDeadline(t *testing.T) {
+	clock := newFakeClock()
+	roster := []Player{{Seat: rules.SeatX, Nickname: "ayla", Character: "nar", RankLabel: "Silver II"}, {Seat: rules.SeatY, Nickname: "bot", Bot: true}}
+	room := New(Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Seed: 9, Clock: clock, Roster: roster})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go room.Run(ctx)
+	sink := make(chanSink, 16)
+	room.Join(rules.SeatX, sink)
+	m := <-sink
+	if m.View.State != StateLoading || !m.View.LoadingDeadline.Equal(clock.Now().Add(rules.LoadingLimit(rules.DefaultConfig()))) || !reflect.DeepEqual(m.View.Roster, roster) {
+		t.Fatalf("loading view %+v", m.View)
+	}
+	room.Loading(rules.SeatX, 37, false)
+	if m := <-sink; m.View.Loading[rules.SeatX] != 30 || m.View.Ready[rules.SeatX] {
+		t.Fatalf("after reporting progress: %+v", m.View)
+	}
+	room.Loading(rules.SeatX, 100, true)
+	if m := <-sink; m.View.State != StateLoading || m.View.Loading[rules.SeatX] != 100 || !m.View.Ready[rules.SeatX] {
+		t.Fatalf("after reporting ready: %+v", m.View)
+	}
+	room.Loading(rules.SeatX, 50, false)
+	room.Intent(rules.SeatX, 1, replay.Intent{Kind: replay.KindPass})
+	if m := <-sink; !m.Rejected || !errors.Is(m.Reason, ErrNotStarted) {
+		t.Fatalf("ready was withdrawn or a hand was dealt early: %+v", m)
+	}
+}
+
+func TestEveryoneReadyDealsBeforeTheDeadline(t *testing.T) {
+	tab := newTable(t, rules.Mode2v2, 12)
+	tab.settle()
+	v := tab.snapshot(rules.SeatNorth)
+	if v.State != StateOpening || v.LoadingDeadline != (time.Time{}) {
+		t.Fatalf("after everyone reported ready: %+v", v)
+	}
+	for _, seat := range rules.Mode2v2.Seats() {
+		if v.Controllers[seat] != rules.ControllerPlayer || !v.Ready[seat] || v.Loading[seat] != 100 {
+			t.Fatalf("%s after the deal: %+v", seat, v)
+		}
+	}
+}
+
+func TestTheDeadlineDealsAndTheBotPlaysAbsentSeatsUntilTheyArrive(t *testing.T) {
+	clock := newFakeClock()
+	room := New(Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: 9, Clock: clock, ReconnectGrace: 2 * time.Hour})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go room.Run(ctx)
+	x, y := make(chanSink, 4096), make(chanSink, 4096)
+	room.Join(rules.SeatX, x)
+	room.Loading(rules.SeatX, 100, true)
+	if v := snapshotOf(room, rules.SeatX); v.State != StateLoading {
+		t.Fatalf("one ready seat dealt the hand: %+v", v)
+	}
+	clock.fire()
+	v := snapshotOf(room, rules.SeatX)
+	if v.State == StateLoading || v.State == StateFinished || v.Controllers[rules.SeatY] != rules.ControllerBot || v.Presence[rules.SeatY] != (rules.PresenceReport{ByBot: true}) {
+		t.Fatalf("after the loading deadline: %+v", v)
+	}
+	room.Join(rules.SeatY, y)
+	if v := (<-y).View; v.Controllers[rules.SeatY] != rules.ControllerPlayer || v.Presence[rules.SeatY] != (rules.PresenceReport{}) {
+		t.Fatalf("an arriving player did not take the seat: %+v", v)
+	}
+}
+
+func TestASeatStillAbsentAfterTheGraceIsLeft(t *testing.T) {
+	clock := newFakeClock()
+	room := New(Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: 9, Clock: clock, ReconnectGrace: 2 * time.Hour})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go room.Run(ctx)
+	x := make(chanSink, 4096)
+	room.Join(rules.SeatX, x)
+	room.Loading(rules.SeatX, 100, true)
+	snapshotOf(room, rules.SeatX)
+	clock.fire()
+	snapshotOf(room, rules.SeatX)
+	clock.fire()
+	if v := snapshotOf(room, rules.SeatX); v.Presence[rules.SeatY].Left {
+		t.Fatalf("left before the grace: %+v", v)
+	}
+	clock.fire()
+	if v := snapshotOf(room, rules.SeatX); v.Presence[rules.SeatY] != (rules.PresenceReport{ByBot: true, Left: true}) {
+		t.Fatalf("after the grace: %+v", v.Presence[rules.SeatY])
 	}
 }

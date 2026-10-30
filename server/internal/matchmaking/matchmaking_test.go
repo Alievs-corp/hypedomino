@@ -235,3 +235,21 @@ func TestPoolQueuesOncePerAccountAndFormsOnTick(t *testing.T) {
 		t.Fatal("leave did not remove the entry exactly once")
 	}
 }
+
+type busy map[string]bool
+
+func (b busy) InMatch(account string) bool { return b[account] }
+
+func TestAnAccountInARunningMatchCannotQueue(t *testing.T) {
+	pool := NewPool(DefaultConfig(), rand.New(rand.NewPCG(1, 2)))
+	pool.Guard(busy{"playing": true})
+	if err := pool.Enqueue(entry("playing", rules.Mode1v1, QueueCasual, 1000, 0)); !errors.Is(err, ErrInMatch) {
+		t.Fatalf("queueing during a match: %v", err)
+	}
+	if err := pool.Enqueue(entry("free", rules.Mode1v1, QueueCasual, 1000, 0)); err != nil {
+		t.Fatal(err)
+	}
+	if pool.Queued("playing") || !pool.Queued("free") {
+		t.Fatal("the guarded account was queued")
+	}
+}

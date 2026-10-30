@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -40,21 +41,59 @@ type received struct {
 	intent   replay.Intent
 }
 
+type loadingReport struct {
+	progress int
+	ready    bool
+}
+
 type recordingSession struct {
 	acked    uint64
 	conn     *Conn
 	mu       sync.Mutex
 	intents  []received
+	loading  []loadingReport
+	inMatch  bool
 	attached bool
 	closed   chan struct{}
 }
 
 func (s *recordingSession) Acked() uint64 { return s.acked }
 
+func (s *recordingSession) InMatch() bool { return s.inMatch }
+
+func (s *recordingSession) Loading(progress int, ready bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.loading = append(s.loading, loadingReport{progress: progress, ready: ready})
+}
+
+func (s *recordingSession) loadingReports() []loadingReport {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]loadingReport(nil), s.loading...)
+}
+
 func (s *recordingSession) Attach() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.attached = true
+}
+
+func (s *recordingSession) isAttached() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.attached
+}
+
+func (s *recordingSession) awaitAttached(t *testing.T) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !s.isAttached() {
+		if time.Now().After(deadline) {
+			t.Fatal("session was not attached after the hello")
+		}
+		time.Sleep(time.Millisecond)
+	}
 }
 
 func (s *recordingSession) Intent(sequence uint64, intent replay.Intent) {
@@ -69,6 +108,17 @@ func (s *recordingSession) received() []received {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]received(nil), s.intents...)
+}
+
+func (s *recordingSession) awaitIntents(t *testing.T, count int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for len(s.received()) < count {
+		if time.Now().After(deadline) {
+			t.Fatalf("session received %d intents, want %d", len(s.received()), count)
+		}
+		time.Sleep(time.Millisecond)
+	}
 }
 
 type harness struct {
@@ -96,7 +146,7 @@ func (h *harness) connect(ctx context.Context, conn *Conn, hello *pb.ClientHello
 	if hello.GetSessionToken() == "ok-broken" {
 		return nil, errors.New("storage down")
 	}
-	session := &recordingSession{acked: hello.GetLastAckedSequence(), conn: conn, closed: make(chan struct{})}
+	session := &recordingSession{acked: hello.GetLastAckedSequence(), conn: conn, closed: make(chan struct{}), inMatch: hello.GetSessionToken() == "ok-playing"}
 	h.mu.Lock()
 	h.sessions[hello.GetSessionToken()] = session
 	h.mu.Unlock()
@@ -240,13 +290,7 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	if frame.GetProtocolVersion() != ProtocolVersion {
 		t.Fatalf("protocol version %d", frame.GetProtocolVersion())
 	}
-	session := h.session("ok-resume")
-	session.mu.Lock()
-	attached := session.attached
-	session.mu.Unlock()
-	if !attached {
-		t.Fatal("session was not attached after the hello")
-	}
+	h.session("ok-resume").awaitAttached(t)
 }
 
 func TestOldClientGetsUpdateRequiredAndIsClosed(t *testing.T) {
@@ -454,14 +498,14 @@ func TestSlowConsumerIsDisconnected(t *testing.T) {
 	defer socket.CloseNow()
 	conn := <-accepted
 	for sequence := uint64(1); sequence <= 2; sequence++ {
-		if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, 0)); err != nil {
+		if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, 0)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 3, 0)); !errors.Is(err, ErrSlowConsumer) {
+	if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 3, 0)); !errors.Is(err, ErrSlowConsumer) {
 		t.Fatalf("third frame: %v", err)
 	}
-	if err := conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 4, 0)); !errors.Is(err, ErrClosed) {
+	if err := conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, 4, 0)); !errors.Is(err, ErrClosed) {
 		t.Fatalf("after closing: %v", err)
 	}
 	_, _, err = socket.Read(ctx)
@@ -494,5 +538,59 @@ func TestVersionAtLeast(t *testing.T) {
 		if got := VersionAtLeast(tc.version, tc.minimum); got != tc.want {
 			t.Errorf("VersionAtLeast(%q, %q) = %v, want %v", tc.version, tc.minimum, got, tc.want)
 		}
+	}
+}
+
+func TestAClientThatStopsAnsweringPingsIsClosed(t *testing.T) {
+	config := testConfig()
+	config.PingInterval = 50 * time.Millisecond
+	config.PongTimeout = 100 * time.Millisecond
+	h := newHarness(t, config)
+	c := h.dial()
+	c.handshake("ok")
+	select {
+	case <-h.session("ok").closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a client that never reads was not disconnected")
+	}
+	c.expectClose(websocket.StatusGoingAway)
+
+	alive := h.dial()
+	alive.handshake("ok-alive")
+	alive.socket.CloseRead(alive.ctx)
+	time.Sleep(400 * time.Millisecond)
+	alive.send(place(1, 2, 3, pb.BoardEnd_BOARD_END_UNSPECIFIED))
+	alive.socket.Close(websocket.StatusNormalClosure, "")
+	<-h.session("ok-alive").closed
+	if got := h.session("ok-alive").received(); len(got) != 1 {
+		t.Fatalf("a responsive client was dropped: %+v", got)
+	}
+}
+
+func TestHelloTellsAResumingClientWhetherItIsInAMatch(t *testing.T) {
+	h := newHarness(t, testConfig())
+	idle, playing := h.dial(), h.dial()
+	if idle.handshake("ok-idle").GetInMatch() {
+		t.Fatal("an idle session was reported in a match")
+	}
+	if !playing.handshake("ok-playing").GetInMatch() {
+		t.Fatal("a seated session was not reported in a match")
+	}
+}
+
+func TestLoadingReportsReachTheSessionWithoutASequence(t *testing.T) {
+	h := newHarness(t, testConfig())
+	c := h.dial()
+	c.handshake("ok")
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 40}}}))
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}}))
+	c.send(place(1, 2, 3, pb.BoardEnd_BOARD_END_UNSPECIFIED))
+	h.session("ok").awaitIntents(t, 1)
+	want := []loadingReport{{40, false}, {100, true}}
+	if got := h.session("ok").loadingReports(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("session received loading reports %+v", got)
+	}
+	if got := h.session("ok").received(); len(got) != 1 || got[0].sequence != 1 {
+		t.Fatalf("session received intents %+v", got)
 	}
 }

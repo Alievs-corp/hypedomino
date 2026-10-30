@@ -6,7 +6,7 @@ Status: proposal; the owner approves it by merging. How an asset goes from an AI
 
 | Id | Stage | Tool | Output | Gate |
 |---|---|---|---|---|
-| W-1 | Concept | ChatGPT in the browser, company account (O-1) | Raw images in `concept/`, prompt log in `provenance.md` | Section 2 templates used; section 3 record started |
+| W-1 | Concept | ChatGPT in the browser, the author's own account (O-1) | Raw images in `concept/`, prompt log in `provenance.md` | Section 2 templates used; section 3 record started |
 | W-2 | Concept review | Reference board (`docs/art-direction.md` section 9) | One approved concept sheet per item | Silhouette, smallest-size and palette checks of art-direction sections 2, 3, 5; similarity check (section 3) |
 | W-3 | Clean-up | Illustrator, Photoshop; characters: image-to-3D and Blender | Layered master in `work/`; characters: game-ready mesh and textures | Section 5.1; characters 5.5 |
 | W-4 | Animation | Unity 2D rig, After Effects or Blender, as #93 decides; characters: humanoid rig and clips | Clips or loop in `work/` | Section 5.2; characters 5.5 |
@@ -97,7 +97,7 @@ What must be verified, per item:
 
 | Id | Check | Evidence in `provenance.md` |
 |---|---|---|
-| RC-1 | The generation used the company account named in O-1, and the terms in force on that day of the generator and of every 3D tool were read | Generator, Terms and 3D tools lines |
+| RC-1 | The account holder and its plan are named, and the terms in force on that day of that plan of the generator and of every 3D tool were read (O-1) | Generator, Terms and 3D tools lines |
 | RC-2 | No input image, prompt or file name names or depicts a third party's artist, studio, game, brand, mascot, logo or real person | Prompt log, Inputs line |
 | RC-3 | A reverse image search of the canonical concept and the final static finds no close match to existing work | Similarity check line |
 | RC-4 | No AI artefacts and no resemblance to a real person in any generated person (`docs/localization.md` 6, Representation) | Self-check line |
@@ -118,7 +118,7 @@ assets-src/
     concept/<YYYYMMDD>-<nn>.<png|jpg|jpeg|webp>
     work/<name>.<ext>
     export/static.png
-    export/anim/...           avatar, frame, emoji
+    export/anim/...           avatar, frame, emoji, action
     export/clip/<clip>/...    character: idle, win, lose, reaction
     export/model/...          character: medium-detail model
     export/model_hq/...       character: high-detail model, optional
@@ -177,7 +177,7 @@ The runtime format and the per-screen animation budget are #93; this section onl
 | After Effects | Animate the layered master, render each clip as a PNG sequence with alpha, no effects that add glow, blur or shadow | Frame sequences for a sprite sheet |
 | Blender | Orthographic camera at the class canvas, flat shading with three tones, outline matching 5.1 step 3, no post-processing, render PNG sequence with alpha | Frame sequences for a sprite sheet |
 
-Per type: a character delivers `idle`, `win`, `lose`, `reaction` (`docs/art-direction.md` 5.2); avatar, frame and emoji deliver one loop; an animated table delivers its layers, back to front, at most `TableMaxLayers` (`docs/cosmetics.md` section 4). Each clip is checked with reduce motion and on the low effect level, where only the static shows.
+Per type: a character delivers `idle`, `win`, `lose`, `reaction` (`docs/art-direction.md` 5.2); avatar, frame and emoji deliver one loop; an action delivers one clip on the shared humanoid skeleton, checked on at least two characters of different build; an animated table delivers its layers, back to front, at most `TableMaxLayers` (`docs/cosmetics.md` section 4). Each clip is checked with reduce motion and on the low effect level, where only the static shows.
 
 Static fallback, every item: a chosen key pose or key frame, not frame 0, exported at the same canvas, pivot and framing as the animation; for a table the flattened rest frame of all layers (`docs/art-direction.md` section 7). It is reviewed side by side with the animation on board panel B-8.
 
@@ -236,7 +236,7 @@ The acceptance check of #167. The art team fills the evidence column for one cha
 
 | Id | Item | Owner |
 |---|---|---|
-| O-1 | Which generator account is used (company plan, not personal), who holds it, and whether contractors may use their own accounts | Owner, decided when concept production starts (W-1) |
+| O-1 | Which generator account is used | Decided 2026-10-28: team members and contractors may use their own accounts. `provenance.md` names the account holder and the plan for every generation (RC-1); O-2 covers the terms of every plan that was used |
 | O-2 | The current terms of the chosen generator on ownership and commercial use of output, read and confirmed for this use | Owner, with legal advice, before launch (GN-4) |
 | O-3 | Whether copyright protection of AI-assisted art matters for the business, in which jurisdictions, and how much human work (RC-5) that needs | Owner, with legal advice, before launch (GN-4) |
 | O-4 | Disclosure and retention | Decided 2026-10-26: AI use is disclosed only where Google Play or App Store rules require it, checked at GN-4; `artSource` stays in the manifest; `provenance.md` is kept in git for as long as the repository exists |

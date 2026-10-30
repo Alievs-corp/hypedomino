@@ -33,6 +33,19 @@ func (s *RoomSession) Acked() uint64 {
 	return s.acked.Load()
 }
 
+func (s *RoomSession) InMatch() bool {
+	select {
+	case <-s.room.Finished():
+		return false
+	default:
+		return true
+	}
+}
+
+func (s *RoomSession) Loading(progress int, ready bool) {
+	s.room.Loading(s.seat, progress, ready)
+}
+
 func (s *RoomSession) Attach() {
 	if s.resume {
 		s.room.Reconnect(s.seat, s)
@@ -56,7 +69,7 @@ func (s *RoomSession) Deliver(message room.Message) {
 	}
 	s.acked.Store(message.View.Acked)
 	if message.Rejected {
-		s.conn.Send(errorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
+		s.conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
 	}
 	s.conn.Send(&pb.Envelope{
 		AckedSequence: message.View.Acked,

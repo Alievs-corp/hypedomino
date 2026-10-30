@@ -148,7 +148,7 @@ Division moves: Gold I 90 LP wins +21: Platinum IV 11 LP. Gold III 10 LP loses -
 
 - The first `PlacementMatches` (default 5) ranked matches of a season in a mode are placement matches. Until they are done the player has no visible rank in that mode and is not on its leaderboards.
 - MMR changes normally with the provisional `K` (section 4.1). LP is not tracked.
-- Section 4.5 applies to MMR. LP penalties earned during placement (`OffenseRatingPenalty`, `DodgeLpPenalty`) are summed and subtracted once placement ends, never below 0 LP and never causing a demotion.
+- Section 4.5 applies to MMR. LP penalties earned during placement (`OffenseRatingPenalty`) are summed and subtracted once placement ends, never below 0 LP and never causing a demotion.
 - After the last placement match:
   1. MMR rank index = floor((MMR - `RankMmrBase`) / `RankMmrStep`), limited to 0 to 27.
   2. A returning player (had a final rank in the mode in the previous season) is limited to their reset rank (section 7.2) minus `PlacementMaxDropDivisions` (default 4) to reset rank plus `PlacementMaxClimbDivisions` (default 4).
@@ -156,14 +156,9 @@ Division moves: Gold I 90 LP wins +21: Platinum IV 11 LP. Gold III 10 LP loses -
   4. The result is never below Iron IV and never above Diamond I. LP starts at 0.
 - A player who does not finish placement before the season ends has no final rank for that season.
 
-## 6. Dodge
+## 6. No dodge
 
-- A dodge is when the server has formed a ranked match and told the player, and the player does not confirm within `ReadyConfirmSeconds` (default 10), declines, or leaves before the first turn of the first hand starts. Leaving after that point is a leave under `docs/penalties.md`, not a dodge.
-- The match is cancelled. Nobody else's MMR or LP changes; the others return to the queue (#48 decides their queue position).
-- The dodger loses `DodgeLpPenalty` (default 5) LP. A dodge never demotes: LP stops at 0. MMR does not change.
-- Dodges inside a rolling `DodgeWindowHours` (default 24) lock the player out of ranked queues of both modes: the n-th dodge in the window locks for entry n of `DodgeLockoutMinutes` (default 5, 15, 60; the last entry repeats). Custom rooms stay open.
-- A disconnect on the ready screen counts as a dodge. The server cannot tell a dropped network from a quit (same stance as `docs/penalties.md` section 2).
-- Every dodge is stored with the match id and server timestamps, for #121.
+A ranked match has no accept or decline step (R-53), so there is no dodge and no dodge penalty. A player who has not loaded when the loading phase ends starts the match disconnected (R-57) and falls under the leave rules of `docs/penalties.md`: back within `ReconnectGraceSeconds` is no offense, later is a leave.
 
 ## 7. Seasons and soft reset
 
@@ -315,10 +310,6 @@ Every key has one value per mode (1v1, 2v2); both start at the same default. Str
 | `PlacementMatches` | 5 | 5 |
 | `PlacementMaxDropDivisions`, `PlacementMaxClimbDivisions` | 4, 4 | 5 |
 | `NewPlayerPlacementCap` | Gold IV | 5 |
-| `ReadyConfirmSeconds` | 10 | 6 |
-| `DodgeLpPenalty` | 5 | 6 |
-| `DodgeWindowHours` | 24 | 6 |
-| `DodgeLockoutMinutes` | 5, 15, 60 | 6 |
 | `SeasonLengthMonths` | 3 | 7.1 |
 | `ResetTierDrop` | 1 | 7.2 |
 | `ResetFloor` | Bronze IV | 7.2 |

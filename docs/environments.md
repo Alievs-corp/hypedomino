@@ -18,9 +18,9 @@ Rules:
 - E-3 Staging-only paths (the bot identity path of `docs/test-strategy.md` section 3.1) are refused by the server at start when it runs as `production` (#57, #58).
 - E-4 An image is built once and promoted from `staging` to `production` unchanged; environments differ only by environment variables and secrets (`docs/launch-runbook.md` 5.1, #25).
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
-- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). The versions are fixed with #55, #51 and #25.
+- E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); Redis is 7 (#51, `server/internal/cluster/redistest` runs `redis:7-alpine`); the hosting is #25 (ADR 0010).
 
-Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration and the node layout are not decided; they are the ADR of #25. Infrastructure as code is written with that ADR, so the IaC tool and its state location are open items (section 7).
+Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment.
 
 ## 2. Environment variables
 
@@ -50,6 +50,39 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PING_INTERVAL` | No | server | `15s` | `15s` | No | from #264 (default from #262) |
 | `HD_PONG_TIMEOUT` | No | server | `5s` | `5s` | No | from #264 (default from #262) |
 | `HD_RECONNECT_GRACE` | No | server | `60s` | `60s` | No | from #264 |
+| `HD_REDIS_URL` | No; required for more than one node | server | empty (single node, no routing) | `redis://:<password>@redis:6379/0` | Yes | from #51 |
+| `HD_NODE_ID` | No | server | hostname (the pod name) | `server-6d4f9c7b8-x2k9q` | No | from #51 |
+| `HD_NODE_ADDR` | With `HD_REDIS_URL` | server | empty | `10.42.0.17:8080` (pod IP and port) | No | from #51 |
+| `HD_NODE_CAPACITY` | No | server | `10000` | `10000` | No | from #51 |
+| `HD_NODE_HEARTBEAT` | No | server | `2s` | `2s` | No | from #51 |
+| `HD_NODE_TTL` | No | server | `6s` | `6s` | No | from #51 |
+| `HD_ROUTE_TTL` | No | server | `2h` | `2h` | No | from #51 |
+| `HD_SCALE_OUT_AT` | No | server | `0.7` | `0.7` | No | from #51 |
+| `HD_SCALE_IN_AT` | No | server | `0.3` | `0.3` | No | from #51 |
+| `HD_RELAY_DIAL_TIMEOUT` | No | server | `5s` | `5s` | No | from #51 |
+| `HD_DATABASE_URL` | No; required for sign-in | server | empty (no database, no `/auth` routes) | `postgres://hd_server:<password>@postgres.hypedomino.svc:5432/hypedomino?sslmode=require` | Yes | from #57 |
+| `HD_GOOGLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `<android-client-id>.apps.googleusercontent.com,<ios-client-id>.apps.googleusercontent.com` | No | from #57 |
+| `HD_APPLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `com.example.hypedomino` (the app bundle id) | No | from #57 |
+| `HD_NONCE_TTL` | No | server | `10m` | `10m` | No | from #57 |
+| `HD_TOKEN_KEYS` | With `HD_DATABASE_URL` | server | none | `2026-10:<base64 of 32 random bytes>,2026-07:<previous key>` | Yes | from #58 |
+| `HD_ACCESS_TTL` | No | server | `15m` | `15m` | No | from #58 |
+| `HD_REFRESH_TTL` | No | server | `720h` | `720h` | No | from #58 |
+| `HD_REFRESH_REUSE_GRACE` | No | server | `30s` | `30s` | No | from #58 |
+| `HD_NICKNAME_MIN_LENGTH` | No | server | `3` | `3` | No | from #59 |
+| `HD_NICKNAME_MAX_LENGTH` | No | server | `16` | `16` | No | from #59 |
+| `HD_NICKNAME_ALLOW_MIXED_SCRIPT` | No | server | `false` | `false` | No | from #59 |
+| `HD_NICKNAME_RENAME_COOLDOWN` | No | server | `720h` | `720h` | No | from #59 |
+| `HD_NICKNAME_RELEASE` | No | server | `720h` | `720h` | No | from #59 |
+| `HD_COSMETICS_MANIFEST` | No | server | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61 |
+| `HD_EMOJI_SLOTS` | No | server | `6` | `6` | No | from #61 |
+| `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
+| `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
+| `HD_SHOP_CATALOG` | No | server | empty (shop closed until a publish) | `/etc/hypedomino/shop.json` | No | from #104 |
+| `HD_SHOP_DAILY_SLOTS` | No | server | `4` | `4` | No | from #104 |
+| `HD_SHOP_WEEKLY_SLOTS` | No | server | `2` | `2` | No | from #104 |
+| `HD_SHOP_RESET_HOUR_UTC` | No | server | `0` | `0` | No | from #104 |
+| `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
+| `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
@@ -63,7 +96,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.3 Not read yet
 
-The admin panel and the client read no environment variable. Database and Redis connections (#55, #51), session token signing keys (#58), ID token verification settings (#57), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The admin panel and the client read no environment variable. Store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
 ## 3. Where secrets live
 
@@ -73,6 +106,9 @@ The admin panel and the client read no environment variable. Database and Redis 
 | `staging` runtime | GitHub Actions environment secrets of the `staging` environment | Environment variables injected by the staging deploy (#25) |
 | `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from protected refs | Environment variables injected by the production deploy (#25) |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
+| Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
+| Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
+| Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.
@@ -100,7 +136,16 @@ gitleaks git --redact --no-banner .
 
 The security lead owns rotation (`docs/launch-runbook.md` section 1). Every rotation is recorded in an issue labelled `area:infra` with the secret name, environment, reason and time, never the value.
 
-When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence (an owner decision, section 7).
+When: on any suspected leak, when a person with access to it leaves the team or changes role, when the issuer expires it, and at the regular cadence below (decided 2026-10-28). The cadence counts from the last rotation; the rotation issue of a secret states its next due date.
+
+| Secret type | Regular cadence | Why |
+|---|---|---|
+| Session token signing keys (#58) | 90 days | Signs every session; rotation is cheap because of the overlap in step 3 |
+| PostgreSQL and Redis passwords, runtime and migration roles (M-7) | 180 days | Reachable only inside the cluster network; each rotation needs a deploy |
+| Hosting and infrastructure tokens: cloud API, object storage keys, registry and deploy tokens (ADR 0010) | 180 days | Broad power over the environment |
+| Store and vendor API credentials: Play service account key, App Store Connect API key, crash reporting (#106, #182) | 365 days | Narrow scope, issued and revoked in the vendor console |
+| CI-only credentials (Unity license and account) | 365 days, or when the license is renewed | CI only, never in a runtime environment |
+| App signing keys: Play upload key, Apple distribution certificate | No cadence: only on a leak or when the issuer expires it | A new key changes the signing digest; the integrity allowlist (#205) is updated in the same change |
 
 Procedure for one secret in one environment:
 1. Create the new value at its issuer (database role password, key pair, store or vendor credential). Keep the old one valid.
@@ -114,7 +159,7 @@ On a leak: it is a SEV1 incident (`docs/launch-runbook.md` 6.1, 6.5). Revoke fir
 
 ## 6. Database migrations
 
-Schema changes are versioned migrations reviewed in PRs (ADR 0005). The migration tool is chosen in #55; ADR 0005 does not fix it.
+Schema changes are versioned migrations reviewed in PRs (ADR 0005). The tool is goose (#55): SQL files under `server/internal/db/migrations`, embedded in the binaries, applied by `server/cmd/migrate` under a PostgreSQL session advisory lock. PostgreSQL major version: 16 (E-6).
 
 Rules:
 - M-1 Forward only in `staging` and `production`. A mistake is fixed by a new migration. Down migrations, if the tool writes them, run only in `dev` and CI.
@@ -125,12 +170,13 @@ Rules:
 - M-6 Order per release: `staging` first, a deploy drill on it, then `production` with the same migration files.
 - M-7 The migration role may change the schema; the server's runtime role may not. Each has its own secret per environment.
 - M-8 Ledger, purchase and inventory rows are never corrected by a migration or direct SQL; corrections are ledger entries through admin tools (`docs/launch-runbook.md` 5.4, #144).
+- M-9 `matches`, `match_participants` and `match_events` are partitioned by month of `started_at`. `match_partitions_ensure(from, months)` creates the months ahead and is idempotent; a deploy or a scheduled job calls it for the coming six months, and a `_default` partition catches any row outside the created months so a write never fails. A partition is created before rows for its month exist.
+- M-10 A match result is written once, in one transaction: the `matches` row is closed, participant results, the replay and the event log are stored, and one `outbox` row per downstream topic (`rating`, `xp`, `missions`, `economy`) is inserted with the key `match:<id>`. A second finish of the same match is refused, so a crash between the write and the publish never scores a match twice; the relay publishes pending outbox rows at least once and consumers deduplicate by key (`server/internal/matchstore`, #50).
 
 ## 7. Open items
 
-- Infrastructure as code: tool, state location and the resources it creates wait for the orchestration ADR of #25. GN-8 evidence (IaC apply log) depends on it.
-- Staging automatic deploy (acceptance criterion of #24) depends on #25.
+- Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
+- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above and the release workflow that pushes the image (#27).
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
-- Regular rotation cadence per secret type: owner decision.
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.

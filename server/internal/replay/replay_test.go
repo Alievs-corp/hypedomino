@@ -11,7 +11,7 @@ import (
 
 func recordMatch(tb testing.TB, mode rules.Mode, seed uint64) Record {
 	tb.Helper()
-	recorder := NewRecorder(mode, rules.DefaultConfig(), seed)
+	recorder := NewRecorder(mode, rules.DefaultConfig(), seed, [32]byte{1, 2, 3})
 	m := recorder.Match
 	random := rules.NewSeededRandom(seed + 1000)
 	players := map[rules.Seat]*bot.Player{}
@@ -73,7 +73,7 @@ func TestRecordRoundTripsAndReplaysToTheSameResult(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(data) > 40+4*len(record.Intents) {
+			if len(data) > 72+4*len(record.Intents) {
 				t.Fatalf("%s seed %d: %d bytes for %d intents", mode, seed, len(data), len(record.Intents))
 			}
 			var decoded Record
@@ -96,7 +96,7 @@ func TestRecordRoundTripsAndReplaysToTheSameResult(t *testing.T) {
 }
 
 func TestRecorderKeepsOnlyAcceptedIntents(t *testing.T) {
-	recorder := NewRecorder(rules.Mode2v2, rules.DefaultConfig(), 3)
+	recorder := NewRecorder(rules.Mode2v2, rules.DefaultConfig(), 3, [32]byte{})
 	opening, _ := recorder.Match.ForcedOpening()
 	if _, err := recorder.Open(opening.Seat.Next(), opening.Tile); err == nil {
 		t.Fatal("wrong opener accepted")
@@ -181,7 +181,7 @@ func TestMalformedBytesAreRejected(t *testing.T) {
 func tileTampered(data []byte) []byte {
 	out := append([]byte{}, data...)
 	out[len(out)-1] = 1
-	out[13] = 60
+	out[45] = 60
 	return out
 }
 

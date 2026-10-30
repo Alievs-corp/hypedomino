@@ -125,7 +125,7 @@ Goal (#190 acceptance): bot clients play a full match on the real server automat
 |---|---|
 | Client | A Go protocol client in `server/internal/botclient`: connects over WebSocket, sends the client hello, authenticates, wraps intents in `Envelope` with sequence numbers, tracks the last acknowledged sequence and resumes with the session token (ADR 0004). It uses the generated Go code from `proto/`, the same contract the Unity client uses |
 | Brain | The bot sees only what its seat receives: its own hand and the public board. It chooses moves with the #40 bot or a seeded random legal choice, computed by `server/internal/rules` on that visible state. The server still validates every intent |
-| In CI | Scenario tests in `server/internal/e2e` start the real server in process on `127.0.0.1:0` with PostgreSQL and Redis containers (section 2.3), then connect N bot clients over real WebSocket frames. They run in `go test ./...`, so the existing `server` job runs them |
+| In CI | Scenario tests in `server/internal/e2e` start the real server (app, gateway, session manager, room) in process on `127.0.0.1:0`, then connect N bot clients over real WebSocket frames. A scenario starts PostgreSQL and Redis containers (section 2.3) once it asserts on stored state. They run in `go test ./...`, so the existing `server` job runs them |
 | Against staging | `server/cmd/botclient` runs the same scenarios against a deployed environment: release smoke at T-1d (runbook section 4) and opponents for device smoke (section 4) |
 | Determinism | The deal source is injected (ADR 0003). Production wires a cryptographically secure source (R-4). E2E wires a seeded source (`math/rand/v2` ChaCha8) that exists only in test code, so no production binary can be seeded. The seed is logged on every failure. The server clock is injected, so timer scenarios advance time instead of waiting |
 | Identity | In process, the server is built with a fake ID-token verifier. On staging, bot accounts use a staging-only identity path that the production config refuses to start with (#57, #24) |
@@ -162,6 +162,8 @@ Seed counts are *proposals*.
 | S-12 | Mutated and random frames from an authenticated bot: no panic, no balance or state change | Nightly fuzz, #202 |
 
 #190 is closed when S-1 and S-2 run green in the `server` job on `main`.
+
+S-1 and S-2 live in `server/internal/e2e/match_test.go` (`TestS1OneVersusOneFullMatch`, `TestS2TwoVersusTwoFullMatch`). Each seat is a `botclient.Brain`: the #40 bot at the hard level deciding on a `rules.Board` rebuilt from the seat's own view. The room clock never fires, so no turn times out and every intent in the record comes from a bot client. They assert E-1, E-2, E-3, E-6 and that no intent is refused (E-5). E-4 joins when match results are stored from the room (#50).
 
 ## 4. Device farm smoke
 
@@ -279,6 +281,7 @@ A test that fails and then passes on the same commit is flaky. A flaky test is a
 | `secret-scan` | Pinned gitleaks over the PR's commits, or the full history on `main` (`docs/environments.md` section 4) | Always |
 | `pr-meta` | One `type:`, `area:` and `priority:` label; `Closes #N` or `Part of #N` in the body | PRs |
 | `server` | `gofmt`, `go vet`, `go build`, `go test -race ./...` | Server changed |
+| `image` | Builds `server/Dockerfile`; `tools/deploy/container-smoke.sh` (non-root user, bad config exits 2, health, drain on `SIGTERM`); `tools/deploy/kind-rollout.sh` on a kind cluster (rolling deploy keeps every replica available, old pods drain and stop, rollback under 5 minutes, ADR 0010) | Server, `deploy/` or `tools/deploy/` changed |
 | `admin` | `pnpm install --frozen-lockfile`, `typecheck`, `test`, `build` (scripts if present) | Admin changed |
 | `client` | Unity test runner, `testMode: all` (edit-mode and play-mode) | Client changed |
 | `proto` | `buf lint`, `buf format --diff --exit-code`, `buf breaking` against the PR base | Proto changed |

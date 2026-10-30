@@ -105,6 +105,10 @@
           "ref": "offer.avatar_comet_fox"
         },
         {
+          "type": "shop",
+          "ref": "offer.starter"
+        },
+        {
           "type": "event",
           "ref": "event.spring_cup"
         }
@@ -251,6 +255,25 @@
       ],
       "artSource": "ai_assisted",
       "culturalReview": "approved"
+    },
+    {
+      "id": "action.victory_dance",
+      "type": "action",
+      "revision": 1,
+      "nameKey": "cosmetic.action.victory_dance.name",
+      "rarityId": "rare",
+      "animated": true,
+      "staticAddress": "cosmetic/action/victory_dance/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "event",
+          "ref": "event.spring_cup"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved",
+      "animationAddress": "cosmetic/action/victory_dance/anim"
     }
   ]
 }

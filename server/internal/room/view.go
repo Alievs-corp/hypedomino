@@ -16,35 +16,49 @@ type BoardView struct {
 }
 
 type View struct {
-	State          State
-	Seat           rules.Seat
-	Mode           rules.Mode
-	Acked          uint64
-	HandsPlayed    int
-	Scores         rules.TeamPoints
-	CarryOver      int
-	Hand           []rules.Tile
-	HandSizes      [6]int
-	BoneyardSize   int
-	Board          BoardView
-	Current        rules.Seat
-	OpeningTeam    rules.Team
-	ForcedOpening  rules.Opening
-	HasForced      bool
-	TurnPlacements int
-	TurnDeadline   time.Time
-	Controllers    [6]rules.Controller
-	LegalMoves     []rules.Move
-	LastResult     rules.HandResult
-	HasLastResult  bool
-	Winner         rules.Team
-	HasWinner      bool
+	State           State
+	Seat            rules.Seat
+	Mode            rules.Mode
+	Acked           uint64
+	HandsPlayed     int
+	Scores          rules.TeamPoints
+	CarryOver       int
+	Hand            []rules.Tile
+	HandSizes       [6]int
+	BoneyardSize    int
+	Board           BoardView
+	Current         rules.Seat
+	OpeningTeam     rules.Team
+	ForcedOpening   rules.Opening
+	HasForced       bool
+	TurnPlacements  int
+	TurnDeadline    time.Time
+	Controllers     [6]rules.Controller
+	Presence        [6]rules.PresenceReport
+	LegalMoves      []rules.Move
+	LastResult      rules.HandResult
+	HasLastResult   bool
+	Winner          rules.Team
+	HasWinner       bool
+	Loading         [6]int
+	Ready           [6]bool
+	LoadingDeadline time.Time
+	Roster          []Player
+	Table           string
 }
 
 func (r *Room) view(seat rules.Seat) View {
 	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked}
 	for _, s := range r.options.Mode.Seats() {
 		v.Controllers[s] = r.presence.Controller(s)
+		v.Presence[s] = r.presence.Report(s)
+		v.Loading[s] = r.seats[s].loading
+		v.Ready[s] = r.seats[s].ready
+	}
+	v.Roster = r.options.Roster
+	v.Table = r.options.Table
+	if r.state == StateLoading {
+		v.LoadingDeadline = r.deadline
 	}
 	if r.recorder == nil {
 		return v

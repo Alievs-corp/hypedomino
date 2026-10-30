@@ -25,6 +25,8 @@ type Conn struct {
 	reason  string
 	session Session
 	bucket  bucket
+	stop    context.CancelFunc
+	served  chan struct{}
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
@@ -34,6 +36,7 @@ func newConn(socket *websocket.Conn, options Options) *Conn {
 		options: options,
 		queue:   make(chan *pb.Envelope, options.Config.WriteQueue),
 		closed:  make(chan struct{}),
+		served:  make(chan struct{}),
 		bucket:  newBucket(options.Config.IntentsPerSecond, options.Config.IntentBurst, options.Clock.Now()),
 	}
 }
@@ -69,8 +72,10 @@ func (c *Conn) Done() <-chan struct{} {
 }
 
 func (c *Conn) serve(ctx context.Context) {
+	defer close(c.served)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	c.stop = cancel
 	var writer sync.WaitGroup
 	writer.Add(1)
 	go func() {
@@ -101,7 +106,8 @@ func (c *Conn) closeSocket() {
 	select {
 	case <-done:
 	case <-time.After(c.options.Config.CloseTimeout):
-		c.socket.CloseNow()
+		c.stop()
+		<-done
 	}
 }
 
@@ -184,18 +190,18 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Close(websocket.StatusPolicyViolation, "hello expected")
 		return false
 	case frame.GetProtocolVersion() != ProtocolVersion:
-		c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_UNSUPPORTED_PROTOCOL, frame.GetSequence(), 0))
+		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNSUPPORTED_PROTOCOL, frame.GetSequence(), 0))
 		c.Close(websocket.StatusProtocolError, "unsupported protocol")
 		return false
 	case !VersionAtLeast(hello.GetAppVersion(), c.options.Config.MinimumAppVersion):
-		c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0))
+		c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0, false))
 		c.Close(websocket.StatusNormalClosure, "update required")
 		return false
 	}
 	session, err := c.options.Handler.Connect(ctx, c, hello)
 	switch {
 	case errors.Is(err, ErrUnauthenticated):
-		c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED, frame.GetSequence(), 0))
+		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED, frame.GetSequence(), 0))
 		c.Close(websocket.StatusPolicyViolation, "unauthenticated")
 		return false
 	case err != nil:
@@ -203,11 +209,34 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		return false
 	}
 	c.session = session
-	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked())) != nil {
+	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked(), session.InMatch())) != nil {
 		return false
 	}
 	session.Attach()
+	go c.pingLoop(ctx)
 	return true
+}
+
+func (c *Conn) pingLoop(ctx context.Context) {
+	ticker := time.NewTicker(c.options.Config.PingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.closed:
+			return
+		case <-ticker.C:
+			if !c.ping(ctx) {
+				c.Close(websocket.StatusGoingAway, "no pong")
+				return
+			}
+		}
+	}
+}
+
+func (c *Conn) ping(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, c.options.Config.PongTimeout)
+	defer cancel()
+	return c.socket.Ping(ctx) == nil
 }
 
 func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.Envelope) bool {
@@ -234,12 +263,17 @@ func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 
 func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	sequence := frame.GetSequence()
+	loading := frame.GetLoadingIntent()
 	intent, ok := DecodeIntent(frame)
-	if !ok {
-		return c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
+	if !ok && loading == nil {
+		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
-		return c.Send(errorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
+		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
+	}
+	if loading != nil {
+		c.session.Loading(int(loading.GetProgress()), loading.GetReady())
+		return true
 	}
 	c.session.Intent(sequence, intent)
 	return true
@@ -296,4 +330,20 @@ func (b *bucket) take(now time.Time) bool {
 	}
 	b.tokens--
 	return true
+}
+
+func EncodeIntent(intent replay.Intent) (*pb.Envelope, bool) {
+	switch intent.Kind {
+	case replay.KindOpen:
+		return &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{Tile: tileMessage(intent.Tile)}}}, true
+	case replay.KindPlace:
+		return &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{Tile: tileMessage(intent.Tile), End: endMessage(intent.End)}}}, true
+	case replay.KindEndTurn:
+		return &pb.Envelope{Payload: &pb.Envelope_EndTurnIntent{EndTurnIntent: &pb.EndTurnIntent{}}}, true
+	case replay.KindDraw:
+		return &pb.Envelope{Payload: &pb.Envelope_DrawIntent{DrawIntent: &pb.DrawIntent{}}}, true
+	case replay.KindPass:
+		return &pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}}, true
+	}
+	return nil, false
 }

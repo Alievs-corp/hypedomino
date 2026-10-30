@@ -1,0 +1,11 @@
+{
+  "protocolVersion": 1,
+  "ackedSequence": 7,
+  "serverHello": {
+    "status": "HELLO_STATUS_ACCEPTED",
+    "minimumAppVersion": "1.0.0",
+    "serverTimeUnixMs": "1761480000000",
+    "catalogVersion": "2026.10.26-1",
+    "inMatch": true
+  }
+}

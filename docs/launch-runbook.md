@@ -39,7 +39,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
 | GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187); AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report |
-| GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 and #196 closed or waived |
+| GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 closed or waived after its exit record (`docs/closed-beta.md` 7.1), #196 closed or waived |
 | GN-7 | Gate 7: `CI complete` green on the release commit | Release manager | Link to the run on the tagged commit |
 
 ### 3.2 Operational readiness
@@ -61,7 +61,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-20 | Admin accounts least privilege; audit log on; hardening passed | Security lead | Account and role list, #148 report | #134, #148 |
 | GN-21 | Support tools work in production: player lookup, grant with reason, ban and mute; moderation and appeal queue staffed | Support lead | Audit log entries of test actions on a staff account | #144, #186 |
 | GN-22 | Store products match admin shop config; a licensed test purchase on the release build is granted once and restores | Live-ops lead | Ledger entry, restore record | #106, #107, #139, #204 |
-| GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots | #194, #187 |
+| GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots; pre-submission checklist ST-1 to ST-23 of `docs/store-listing.md` section 9 checked | #194, #187 |
 | GN-24 | Release candidate regression passed; smoke passed on every device tier | QA lead | Test run report per `docs/test-strategy.md` section 8 | #190, #191 |
 | GN-25 | On-call schedule published from T-1d to T+14d; contact sheet complete; escalation path tested end to end | Release manager | Schedule link, test page record | section 7 |
 | GN-26 | Support channel live; FAQ and templates published in all four languages | Support lead | Links, translation review | sections 8, 9 |
@@ -94,7 +94,7 @@ T-0 is the moment the release is made available in the stores. Server and config
 
 | Signal | Source | Threshold |
 |---|---|---|
-| Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level) and not below the previous version |
+| Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level, `docs/closed-beta.md` BX-1) and not below the previous version |
 | Move round-trip p99 | #28 | Under 100 ms (`docs/performance.md`) |
 | Login success, matchmaking wait, error rate, database connections | #28 | Alert thresholds `{filled by #28}` |
 | Receipt validation success per store | #106, #28 | Alert thresholds `{filled by #28}` |
@@ -107,7 +107,7 @@ A threshold breach with player impact is an incident (section 6).
 
 ### 5.1 Server deploy
 
-1. The release is a tagged commit with `CI complete` green; the image is built once and promoted from staging to production unchanged. `{filled by #25}`
+1. The release is a tagged commit with `CI complete` green; the image is built once and promoted from staging to production unchanged: `ghcr.io/alievs-corp/hypedomino-server:<sha>`, applied with `kubectl apply -k deploy/k8s/overlays/<environment>` after the overlay's image tag is set to the SHA, then `kubectl rollout status deployment/server` (ADR 0010). The migration job runs before the rollout and a failed job stops the deploy.
 2. Migrations follow expand then contract: a migration never breaks the previous server version, so the binary can roll back without touching the schema (ADR 0005). A contract step ships only after the previous version is no longer deployed. Migrations are forward only and run once, staging first (`docs/environments.md` section 6).
 3. Canary: new rooms are routed to one new node first, *default* 10% of new rooms for 30 minutes, while rooms in progress stay on old nodes (ADR 0003: a room lives on one node).
 4. Watch section 4.1 on the canary. On a breach, stop and roll back (5.4).
@@ -143,7 +143,7 @@ Mitigate first, find the root cause after. Pick the fastest step that stops the 
 
 | What broke | Step | Target | Notes |
 |---|---|---|---|
-| Server release | Redeploy the previous image with the same drain as 5.1 | Under 5 minutes (#25) | Works because migrations are expand only during a release. Never roll back below the version a live client needs; fix forward instead |
+| Server release | `kubectl rollout undo deployment/server`, or deploy the previous SHA through 5.1; same drain as 5.1 (ADR 0010) | Under 5 minutes, measured by the `image` CI job and drill GN-9 (#25) | Works because migrations are expand only during a release. Never roll back below the version a live client needs; fix forward instead |
 | Database data | Restore from point-in-time recovery | RTO and RPO from #188 | Only for corruption or loss, decided by the incident commander with the product owner. Ledger mistakes are corrected with ledger entries, never by restore or direct SQL (#101, #144) |
 | Config | Publish the previous config version in admin | Under 5 minutes | Applies to new matches; matches in progress finish on their recorded version |
 | Content | Re-activate the previous catalog version | Under 5 minutes | Old content URLs stay valid because files are immutable (ADR 0002) |
@@ -299,6 +299,8 @@ Page the on-call primary when 5 tickets with the same new symptom arrive within 
 
 One page per category, each answer in all four launch languages and taken from its source document, never written from memory.
 
+Hosting (decided 2026-10-28): the FAQ is one set of web pages, and the game shows the same pages inside the game from its help screen, in the game's language, without sending the player to an outside browser. The web pages also serve as the support URL of the store listings (#194). One source means an answer is changed once and is current in both places.
+
 | Category | Questions it answers | Source |
 |---|---|---|
 | How to play | Rules, scoring, 365 target, 1v1 and 2v2 | `docs/rules.md` |
@@ -314,7 +316,6 @@ One page per category, each answer in all four launch languages and taken from i
 
 ## 10. Open items
 
-- Every `{filled by #N}` placeholder: deploy and rollback commands and the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
-- Where the FAQ is hosted (in-app view or web page) is not decided.
+- Every `{filled by #N}` placeholder: the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.
