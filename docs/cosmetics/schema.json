@@ -24,7 +24,7 @@
       "required": ["type"],
       "additionalProperties": false,
       "properties": {
-        "type": { "enum": ["default", "shop", "pass", "mission", "promo", "rank_reward", "event"] },
+        "type": { "enum": ["default", "shop", "pass", "mission", "promo", "rank_reward", "first_purchase", "event"] },
         "ref": { "$ref": "#/$defs/referenceId" }
       },
       "if": { "required": ["type"], "properties": { "type": { "const": "default" } } },

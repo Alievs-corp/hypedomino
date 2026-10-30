@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fixed UUID namespace of shop.AccountToken, used as the expected account token in store receipt tests; not a credential"
+regexes = ['''(?i)5f0d6a2e-3c7b-4e1a-9d8f-2b6c4a1e7f30''']
