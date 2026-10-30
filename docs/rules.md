@@ -133,6 +133,20 @@ Rule values live in `rules.Config` so they can change without code changes. The 
 | `AfkConsecutiveTimeouts` | admin config, 3 | R-51 |
 | `MatchLoadingSeconds` | admin config, 10 | R-57 |
 
+The admin config fields form the `rules` domain (`docs/admin.md` 3.1, 5.14). The admin edits them within these bounds:
+
+| Key | Type | Unit | Default | Min | Max |
+|---|---|---|---|---|---|
+| `TurnSeconds` | integer | seconds | 20 | 10 | 60 |
+| `AfkConsecutiveTimeouts` | integer | timeouts | 3 | 1 | 10 |
+| `MatchLoadingSeconds` | integer | seconds | 10 | 5 | 60 |
+
+- **Refused snapshots.** A snapshot is refused if it has an unknown key, a value that is not an integer, or a value outside its bounds. The server then keeps its current values.
+- **Missing keys.** A key that the snapshot leaves out keeps its default.
+- **When a new value applies.** Only to matches that open after the server loads it. Matches in progress keep the values they started with.
+
+This is implemented in `server/internal/rulesconfig` (#145). `config-publish -domain rules` validates a snapshot before publishing it.
+
 ## 14. Worked examples
 
 All 2v2 examples use seats North, East, South and West in clockwise order. Team A is North and South, Team B is East and West.

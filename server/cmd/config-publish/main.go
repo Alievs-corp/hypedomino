@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
@@ -64,6 +65,9 @@ func validate(domain string, raw []byte) error {
 	switch domain {
 	case shop.Domain:
 		_, err := shop.Parse(raw, shop.DefaultConfig())
+		return err
+	case rulesconfig.Domain:
+		_, err := rulesconfig.Parse(raw)
 		return err
 	}
 	return fmt.Errorf("%w: %s", errDomain, domain)

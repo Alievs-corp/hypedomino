@@ -23,6 +23,8 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -111,6 +113,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		}
 	}
 	go offers.Run(ctx, config.ConfigPoll)
+	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
+	go tuning.Run(ctx, config.ConfigPoll)
+	a.Rooms().Tune(func(base rules.Config) rules.Config {
+		current, _, _ := tuning.Current()
+		return current.Apply(base)
+	})
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
