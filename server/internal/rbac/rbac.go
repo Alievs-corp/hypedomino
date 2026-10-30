@@ -1,5 +1,7 @@
 package rbac
 
+import "slices"
+
 type Role string
 
 const (
@@ -66,6 +68,28 @@ const (
 	ActOnQueue           Action = "act_on_queue"
 	GrantSuperAdmin      Action = "grant_super_admin"
 )
+
+func IsRole(role Role) bool {
+	switch role {
+	case SuperAdmin, Content, LiveOps, Support, Analyst:
+		return true
+	}
+	return false
+}
+
+func IsObject(object Object) bool {
+	_, known := matrix[object]
+	return known
+}
+
+func Objects() []Object {
+	objects := make([]Object, 0, len(matrix))
+	for object := range matrix {
+		objects = append(objects, object)
+	}
+	slices.Sort(objects)
+	return objects
+}
 
 func Allows(roles []Role, object Object, action Action) bool {
 	grants := matrix[object]
