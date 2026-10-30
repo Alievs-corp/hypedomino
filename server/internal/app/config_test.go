@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"encoding/base64"
 	"strings"
 	"testing"
 	"time"
@@ -57,6 +59,10 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_GOOGLE_AUDIENCES":      "1-abc.apps.googleusercontent.com, 2-def.apps.googleusercontent.com",
 		"HD_APPLE_AUDIENCES":       "com.example.hypedomino",
 		"HD_NONCE_TTL":             "4m",
+		"HD_TOKEN_KEYS":            "k2:" + testKey('b') + ",k1:" + testKey('a'),
+		"HD_ACCESS_TTL":            "5m",
+		"HD_REFRESH_TTL":           "240h",
+		"HD_REFRESH_REUSE_GRACE":   "10s",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -80,6 +86,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	}
 	if config.Database != "postgres://hd:secret@db:5432/hypedomino" || len(config.IDToken.Google.Audiences) != 2 || config.IDToken.Google.Audiences[1] != "2-def.apps.googleusercontent.com" || len(config.IDToken.Apple.Audiences) != 1 || config.IDToken.NonceTTL != 4*time.Minute {
 		t.Fatalf("sign-in config %+v", config.IDToken)
+	}
+	if config.Token.AccessTTL != 5*time.Minute || config.Token.RefreshTTL != 240*time.Hour || config.Token.ReuseGrace != 10*time.Second || !strings.HasPrefix(config.Token.Keys, "k2:") {
+		t.Fatalf("token config %+v", config.Token)
 	}
 }
 
@@ -125,8 +134,23 @@ func TestADatabaseNeedsAtLeastOneSignInAudience(t *testing.T) {
 	if _, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd"})); err == nil || !strings.Contains(err.Error(), "HD_GOOGLE_AUDIENCES") {
 		t.Fatalf("a database without client ids was accepted: %v", err)
 	}
-	config, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino"}))
+	config, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino", "HD_TOKEN_KEYS": "k1:" + testKey('a')}))
 	if err != nil || config.IDToken.Apple.Audiences[0] != "com.example.hypedomino" || config.IDToken.NonceTTL != 10*time.Minute {
 		t.Fatalf("apple only: %+v %v", config.IDToken, err)
+	}
+}
+
+func testKey(fill byte) string {
+	return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{fill}, 32))
+}
+
+func TestADatabaseNeedsASigningKey(t *testing.T) {
+	_, err := ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino"}))
+	if err == nil || !strings.Contains(err.Error(), "HD_TOKEN_KEYS") {
+		t.Fatalf("a database without signing keys was accepted: %v", err)
+	}
+	_, err = ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino", "HD_TOKEN_KEYS": "k1:c2hvcnQ="}))
+	if err == nil || !strings.Contains(err.Error(), "HD_TOKEN_KEYS") {
+		t.Fatalf("a short signing key was accepted: %v", err)
 	}
 }

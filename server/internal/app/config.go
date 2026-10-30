@@ -12,6 +12,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
+	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
 type Config struct {
@@ -27,6 +28,7 @@ type Config struct {
 	Relay           cluster.RelayConfig
 	Database        string
 	IDToken         idtoken.Config
+	Token           token.Config
 }
 
 func DefaultConfig() Config {
@@ -40,6 +42,7 @@ func DefaultConfig() Config {
 		Cluster:         defaultCluster(),
 		Relay:           cluster.DefaultRelayConfig(),
 		IDToken:         idtoken.DefaultConfig(),
+		Token:           token.DefaultConfig(),
 	}
 }
 
@@ -149,6 +152,15 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.list("HD_GOOGLE_AUDIENCES", &config.IDToken.Google.Audiences)
 	r.list("HD_APPLE_AUDIENCES", &config.IDToken.Apple.Audiences)
 	r.duration("HD_NONCE_TTL", &config.IDToken.NonceTTL)
+	r.text("HD_TOKEN_KEYS", &config.Token.Keys)
+	r.duration("HD_ACCESS_TTL", &config.Token.AccessTTL)
+	r.duration("HD_REFRESH_TTL", &config.Token.RefreshTTL)
+	r.duration("HD_REFRESH_REUSE_GRACE", &config.Token.ReuseGrace)
+	if config.Database != "" {
+		if _, err := token.ParseKeys(config.Token.Keys); err != nil {
+			r.errs = append(r.errs, fmt.Errorf("HD_TOKEN_KEYS: %w", err))
+		}
+	}
 	if config.Database != "" && len(config.IDToken.Google.Audiences)+len(config.IDToken.Apple.Audiences) == 0 {
 		r.errs = append(r.errs, errors.New("HD_GOOGLE_AUDIENCES or HD_APPLE_AUDIENCES: at least one client id is required with HD_DATABASE_URL"))
 	}

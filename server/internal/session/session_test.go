@@ -450,3 +450,47 @@ func (p *player) awaitReady() *pb.MatchView {
 		}
 	}
 }
+
+type fakeAuthenticator map[string][2]string
+
+func (a fakeAuthenticator) Authenticate(token string) (string, string, error) {
+	identity, ok := a[token]
+	if !ok {
+		return "", "", errors.New("bad token")
+	}
+	return identity[0], identity[1], nil
+}
+
+func TestAccessTokensOpenSessionsKeyedByTheirSessionIdAndLogoutAllClosesThem(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	tab.manager.Authenticate(fakeAuthenticator{"jwt-1": {"ayla", "sid-1"}, "jwt-2": {"ayla", "sid-1"}, "jwt-3": {"ayla", "sid-2"}})
+	tab.connect("jwt-bad", false)
+	first := tab.connect("jwt-1", true)
+	if tab.manager.InMatch("ayla") || !tab.manager.Connected("sid-1") {
+		t.Fatal("the authenticated session was not created under its session id")
+	}
+	if err := tab.manager.Seat("sid-1", tab.room, rules.SeatX); err != nil {
+		t.Fatal(err)
+	}
+	first.view()
+	first.socket.CloseNow()
+	for tab.manager.Connected("sid-1") {
+		time.Sleep(time.Millisecond)
+	}
+	refreshed := tab.connect("jwt-2", true)
+	if view := refreshed.view(); view.GetSeat() != pb.Seat_SEAT_X {
+		t.Fatalf("a refreshed access token did not resume the seat: %v", view)
+	}
+	other := tab.connect("jwt-3", true)
+	if n := tab.manager.RevokeAccount("ayla"); n != 2 {
+		t.Fatalf("revoked %d sessions", n)
+	}
+	for _, p := range []*player{refreshed, other} {
+		if _, err := p.tryRead(); websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
+			t.Fatalf("after logout-all the device saw %v", err)
+		}
+	}
+	if tab.manager.InMatch("ayla") || tab.manager.RevokeAccount("ayla") != 0 {
+		t.Fatal("sessions survived logout-all")
+	}
+}

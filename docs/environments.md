@@ -64,6 +64,10 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_GOOGLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `<android-client-id>.apps.googleusercontent.com,<ios-client-id>.apps.googleusercontent.com` | No | from #57 |
 | `HD_APPLE_AUDIENCES` | One of the two with `HD_DATABASE_URL` | server | empty | `com.example.hypedomino` (the app bundle id) | No | from #57 |
 | `HD_NONCE_TTL` | No | server | `10m` | `10m` | No | from #57 |
+| `HD_TOKEN_KEYS` | With `HD_DATABASE_URL` | server | none | `2026-10:<base64 of 32 random bytes>,2026-07:<previous key>` | Yes | from #58 |
+| `HD_ACCESS_TTL` | No | server | `15m` | `15m` | No | from #58 |
+| `HD_REFRESH_TTL` | No | server | `720h` | `720h` | No | from #58 |
+| `HD_REFRESH_REUSE_GRACE` | No | server | `30s` | `30s` | No | from #58 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
@@ -77,7 +81,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.3 Not read yet
 
-The admin panel and the client read no environment variable. Session token signing keys (#58), store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The admin panel and the client read no environment variable. Store receipt validation credentials (#106) and crash reporting (#182) add their variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
 ## 3. Where secrets live
 
@@ -89,6 +93,7 @@ The admin panel and the client read no environment variable. Session token signi
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 | Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
+| Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.
