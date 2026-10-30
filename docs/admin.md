@@ -532,6 +532,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `source` | Admin session id, source IP and user agent of the admin |
 
 - Append-only: the admin API's database role can insert and read audit rows, never update or delete them. Entries expire after `AdminAuditRetentionDays` (`docs/privacy.md` D-27).
+- The table is `admin_audit_entries` (`server/internal/audit`). A trigger rejects every `update`, `delete` and `truncate` for every role, the owner included. The retention purge is not built yet; it has to run through a reviewed path that removes only expired rows, not by dropping the trigger.
 - Entries about a player are visible to `super_admin` only (D-27). Other roles see entries about objects they can view.
 - Searchable by actor, object, action, time range and reason text; exportable by `super_admin`.
 
