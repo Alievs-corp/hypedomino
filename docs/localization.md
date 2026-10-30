@@ -164,6 +164,8 @@ A sentence is one key with placeholders. Code never joins fragments (`name + " "
 
 The server alone validates, normalises and stores nicknames. The client may pre-check for responsiveness but never decides.
 
+Implemented in `server/internal/profile` (#59): 5.1 (`NicknameAllowedSet` is fixed to the sets below, not configurable yet), 5.2 steps 1 to 4 and uniqueness on the step 4 form, 5.4, the format and taken codes of 5.5 with `nickname.invalid_separators`, `nickname.mixed_scripts`, `nickname.digits_only` and `nickname.cooldown` added, the registration default, and the frequency and history rows of 5.6. The word filter, reserved names and `nickname.not_allowed` are #60, the rate limit is #184, the rename price is #101. The admin names map to the server variables `HD_NICKNAME_MIN_LENGTH`, `HD_NICKNAME_MAX_LENGTH`, `HD_NICKNAME_ALLOW_MIXED_SCRIPT`, `HD_NICKNAME_RENAME_COOLDOWN` and `HD_NICKNAME_RELEASE` until admin config serves them.
+
 ### 5.1 Format
 
 | Item | Rule | Proposed default (admin config) |
