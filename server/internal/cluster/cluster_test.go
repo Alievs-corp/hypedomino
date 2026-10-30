@@ -39,7 +39,7 @@ func (s *loadSource) get() cluster.Load {
 func config(prefix, id string) cluster.Config {
 	c := cluster.DefaultConfig()
 	c.NodeID, c.Addr, c.Capacity, c.KeyPrefix = id, id+".internal:8080", 10, prefix
-	c.Heartbeat, c.NodeTTL, c.RouteTTL = 50*time.Millisecond, 300*time.Millisecond, time.Minute
+	c.Heartbeat, c.NodeTTL, c.RouteTTL = 50*time.Millisecond, 10*time.Second, time.Minute
 	return c
 }
 
@@ -124,12 +124,20 @@ func TestExpiredHeartbeatDropsTheNode(t *testing.T) {
 	client := redistest.Client(t)
 	prefix := redistest.Prefix(t)
 	ctx := context.Background()
-	a, _ := node(t, client, prefix, "a")
+	short := config(prefix, "a")
+	short.NodeTTL = 300 * time.Millisecond
+	a, err := cluster.New(short, client, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	b, _ := node(t, client, prefix, "b")
 	if err := a.Announce(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if err := b.Announce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Leave(ctx); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(400 * time.Millisecond)
