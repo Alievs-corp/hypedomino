@@ -48,6 +48,10 @@ The chains are admin config (`LocaleFallbackChains`) and `en` is always last. Th
 | Ownership | Values are managed in admin as key-value per language, with the `en` reference and a per-language status (missing, draft, approved). Only approved values enter a published bundle. |
 | Context | Each key has a translator note: where it appears, max length, what each placeholder is. |
 
+Max length counts the visible characters of the longest text the value can produce: literal characters after NFC, combining marks not counted, placeholders and `#` not counted, and for a plural or select the longest branch.
+
+Implemented in `server/internal/gamestrings` (#214): the key format, entries with note, max length and typed placeholders (the param types of section 3), value checks for the 4.3 subset with exactly the declared placeholders, plural only on `integer` or `decimal`, select only on `string`, every 4.2 category plus `other`, `=N` branches allowed, and the max length above; a bundle per language built from approved, non-deprecated values that is blocked as a whole when any of them fails a check, encoded as JSON with a SHA-256 content hash; and the missing-value report per language with percentage and key list. Storage, the editor, import and export, publishing to the CDN and rollback follow in #214.
+
 ### 2.2 Delivery
 
 | Item | Rule |
@@ -84,7 +88,7 @@ The server never sends rendered text for display. It sends `key` plus typed para
 | Errors | Responses carry a stable reason code that maps to a key, never prose. |
 | Player-supplied strings | Nicknames and custom room names pass through as parameters, are not translated, and are inserted by placeholder (4.7). |
 | Unknown key (newer server, older client) | Handled by 2.3 with the generic `notice.generic` key, never the raw key. |
-| Server logs, admin tools | English; this section covers player-facing text only. |
+| Server logs | English; this section covers player-facing text only. The admin panel UI has its own languages (`docs/admin.md` section 10). |
 
 ## 4. Text rules
 

@@ -15,7 +15,10 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
+	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
+
+var superAdmin = []rbac.Role{rbac.SuperAdmin}
 
 var start = time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
 
@@ -23,9 +26,9 @@ func TestMain(m *testing.M) {
 	os.Exit(dbtest.Main(m))
 }
 
-func entry(actor, action, objectType, objectID string) audit.Entry {
+func entry(actor, action string, objectType rbac.Object, objectID string) audit.Entry {
 	return audit.Entry{
-		Actor:       audit.Actor{ID: actor, Roles: []string{"live_ops"}},
+		Actor:       audit.Actor{ID: actor, Roles: []rbac.Role{rbac.LiveOps}},
 		Environment: audit.Production,
 		Action:      action,
 		Object:      audit.Object{Type: objectType, ID: objectID},
@@ -58,9 +61,9 @@ func TestAnEntryReadsBackWithEveryField(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
 	ctx := context.Background()
-	proposal := appendAll(t, store, entry("ayla", "submit", "promo_code", "SPRING"))[0]
-	full := entry("ben", "approve", "promo_code", "SPRING")
-	full.Actor.Roles = []string{"live_ops", "support"}
+	proposal := appendAll(t, store, entry("ayla", "submit", rbac.PromoCodes, "SPRING"))[0]
+	full := entry("ben", "approve", rbac.PromoCodes, "SPRING")
+	full.Actor.Roles = []rbac.Role{rbac.LiveOps, rbac.Support}
 	full.Before = json.RawMessage(`{"state": "pending"}`)
 	full.After = json.RawMessage(`{"state":"approved","coins":2500}`)
 	full.Reason = "Spring campaign"
@@ -72,7 +75,7 @@ func TestAnEntryReadsBackWithEveryField(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	found, err := store.Search(ctx, audit.Filter{ActorID: "ben"})
+	found, err := store.Search(ctx, superAdmin, audit.Filter{ActorID: "ben"})
 	if err != nil || len(found) != 1 {
 		t.Fatalf("search %+v %v", found, err)
 	}
@@ -93,10 +96,10 @@ func TestAnEntryReadsBackWithEveryField(t *testing.T) {
 func TestOptionalFieldsStayEmpty(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
-	bare := entry("ayla", "view", "player", "p-1")
+	bare := entry("ayla", "view", rbac.Players, "p-1")
 	bare.Source.IP = netip.Addr{}
 	appendAll(t, store, bare)
-	found, err := store.Search(context.Background(), audit.Filter{})
+	found, err := store.Search(context.Background(), superAdmin, audit.Filter{})
 	if err != nil || len(found) != 1 {
 		t.Fatalf("search %+v %v", found, err)
 	}
@@ -109,7 +112,7 @@ func TestOptionalFieldsStayEmpty(t *testing.T) {
 func TestEntriesCannotBeChangedOrRemoved(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
-	appendAll(t, store, entry("ayla", "publish", "shop_offer", "o-1"))
+	appendAll(t, store, entry("ayla", "publish", rbac.ShopOffers, "o-1"))
 	ctx := context.Background()
 	for _, statement := range []string{
 		`update admin_audit_entries set reason = 'edited'`,
@@ -129,10 +132,12 @@ func TestEntriesCannotBeChangedOrRemoved(t *testing.T) {
 func TestInvalidEntriesAreRejected(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
-	valid := entry("ayla", "edit", "cosmetic_item", "frame-1")
+	valid := entry("ayla", "edit", rbac.CosmeticItems, "frame-1")
 	tests := map[string]func(*audit.Entry){
 		"no actor":       func(e *audit.Entry) { e.Actor.ID = "" },
 		"no roles":       func(e *audit.Entry) { e.Actor.Roles = nil },
+		"unknown role":   func(e *audit.Entry) { e.Actor.Roles = []rbac.Role{rbac.LiveOps, "owner"} },
+		"unknown object": func(e *audit.Entry) { e.Object.Type = "shop_offer" },
 		"environment":    func(e *audit.Entry) { e.Environment = "dev" },
 		"no action":      func(e *audit.Entry) { e.Action = "" },
 		"no object type": func(e *audit.Entry) { e.Object.Type = "" },
@@ -156,7 +161,7 @@ func TestInvalidEntriesAreRejected(t *testing.T) {
 func TestAnApprovalMustPointAtAnExistingEntry(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
-	approval := entry("ben", "approve", "promo_code", "SPRING")
+	approval := entry("ben", "approve", rbac.PromoCodes, "SPRING")
 	approval.ApprovalID = 999
 	if _, err := store.Append(context.Background(), approval, start); err == nil {
 		t.Fatal("approval of a missing entry was stored")
@@ -166,14 +171,14 @@ func TestAnApprovalMustPointAtAnExistingEntry(t *testing.T) {
 func TestSearchFiltersNewestFirst(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := audit.NewStore(pool)
-	rollback := entry("ben", "rollback", "snapshot", "shop")
+	rollback := entry("ben", "rollback", rbac.Snapshots, "shop")
 	rollback.Reason = "Broken PRICE in rotation"
 	r := appendAll(t, store,
-		entry("ayla", "edit", "shop_offer", "o-1"),
-		entry("ben", "edit", "shop_offer", "o-1"),
-		entry("ayla", "publish", "shop_offer", "o-2"),
+		entry("ayla", "edit", rbac.ShopOffers, "o-1"),
+		entry("ben", "edit", rbac.ShopOffers, "o-1"),
+		entry("ayla", "publish", rbac.ShopOffers, "o-2"),
 		rollback,
-		entry("ayla", "edit", "promo_code", "o-1"),
+		entry("ayla", "edit", rbac.PromoCodes, "o-1"),
 	)
 	tests := []struct {
 		name   string
@@ -182,8 +187,8 @@ func TestSearchFiltersNewestFirst(t *testing.T) {
 	}{
 		{"all", audit.Filter{}, []audit.Recorded{r[4], r[3], r[2], r[1], r[0]}},
 		{"actor", audit.Filter{ActorID: "ayla"}, []audit.Recorded{r[4], r[2], r[0]}},
-		{"object", audit.Filter{Object: audit.Object{Type: "shop_offer", ID: "o-1"}}, []audit.Recorded{r[1], r[0]}},
-		{"object type", audit.Filter{Object: audit.Object{Type: "shop_offer"}}, []audit.Recorded{r[2], r[1], r[0]}},
+		{"object", audit.Filter{Object: audit.Object{Type: rbac.ShopOffers, ID: "o-1"}}, []audit.Recorded{r[1], r[0]}},
+		{"object type", audit.Filter{Object: audit.Object{Type: rbac.ShopOffers}}, []audit.Recorded{r[2], r[1], r[0]}},
 		{"action", audit.Filter{Action: "edit"}, []audit.Recorded{r[4], r[1], r[0]}},
 		{"time range", audit.Filter{From: start.Add(time.Minute), To: start.Add(3 * time.Minute)}, []audit.Recorded{r[2], r[1]}},
 		{"reason text ignores case", audit.Filter{ReasonContains: "price"}, []audit.Recorded{r[3]}},
@@ -191,7 +196,7 @@ func TestSearchFiltersNewestFirst(t *testing.T) {
 		{"nothing", audit.Filter{ActorID: "cem"}, []audit.Recorded{}},
 	}
 	for _, test := range tests {
-		got, err := store.Search(context.Background(), test.filter)
+		got, err := store.Search(context.Background(), superAdmin, test.filter)
 		if err != nil {
 			t.Fatalf("%s: %v", test.name, err)
 		}
@@ -206,23 +211,72 @@ func TestSearchPagesByIDWithABoundedLimit(t *testing.T) {
 	store := audit.NewStore(pool)
 	entries := make([]audit.Entry, audit.MaxLimit+5)
 	for i := range entries {
-		entries[i] = entry("ayla", "view", "player", "p-1")
+		entries[i] = entry("ayla", "view", rbac.Players, "p-1")
 	}
 	r := appendAll(t, store, entries...)
 	ctx := context.Background()
-	first, err := store.Search(ctx, audit.Filter{Limit: 2})
+	first, err := store.Search(ctx, superAdmin, audit.Filter{Limit: 2})
 	if err != nil || !reflect.DeepEqual(ids(first), []int64{r[len(r)-1].ID, r[len(r)-2].ID}) {
 		t.Fatalf("first page %v %v", ids(first), err)
 	}
-	next, err := store.Search(ctx, audit.Filter{Limit: 2, BeforeID: first[1].ID})
+	next, err := store.Search(ctx, superAdmin, audit.Filter{Limit: 2, BeforeID: first[1].ID})
 	if err != nil || !reflect.DeepEqual(ids(next), []int64{r[len(r)-3].ID, r[len(r)-4].ID}) {
 		t.Fatalf("second page %v %v", ids(next), err)
 	}
-	if page, err := store.Search(ctx, audit.Filter{}); err != nil || len(page) != audit.DefaultLimit {
+	if page, err := store.Search(ctx, superAdmin, audit.Filter{}); err != nil || len(page) != audit.DefaultLimit {
 		t.Fatalf("default limit %d %v", len(page), err)
 	}
-	if page, err := store.Search(ctx, audit.Filter{Limit: audit.MaxLimit * 10}); err != nil || len(page) != audit.MaxLimit {
+	if page, err := store.Search(ctx, superAdmin, audit.Filter{Limit: audit.MaxLimit * 10}); err != nil || len(page) != audit.MaxLimit {
 		t.Fatalf("capped limit %d %v", len(page), err)
+	}
+}
+
+func TestEachRoleSeesOnlyEntriesOnObjectsItCanView(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := audit.NewStore(pool)
+	r := appendAll(t, store,
+		entry("ayla", "edit", rbac.CosmeticItems, "frame-1"),
+		entry("ayla", "view", rbac.Players, "p-1"),
+		entry("ayla", "edit", rbac.AntiCheatConfig, "ReviewScore"),
+		entry("ayla", "create", rbac.Assets, "a-1"),
+		entry("ayla", "act_on_queue", rbac.Queues, "report-1"),
+		entry("ayla", "edit", rbac.RightsRequests, "rr-1"),
+		entry("ayla", "edit", rbac.StoreProducts, "coins-500"),
+	)
+	tests := []struct {
+		name  string
+		roles []rbac.Role
+		want  []audit.Recorded
+	}{
+		{"super admin sees everything", []rbac.Role{rbac.SuperAdmin}, []audit.Recorded{r[6], r[5], r[4], r[3], r[2], r[1], r[0]}},
+		{"content", []rbac.Role{rbac.Content}, []audit.Recorded{r[3], r[0]}},
+		{"live ops", []rbac.Role{rbac.LiveOps}, []audit.Recorded{r[6], r[3], r[0]}},
+		{"support sees no player entries", []rbac.Role{rbac.Support}, []audit.Recorded{r[6], r[0]}},
+		{"roles add up", []rbac.Role{rbac.Content, rbac.Support}, []audit.Recorded{r[6], r[3], r[0]}},
+	}
+	for _, test := range tests {
+		got, err := store.Search(context.Background(), test.roles, audit.Filter{})
+		if err != nil {
+			t.Fatalf("%s: %v", test.name, err)
+		}
+		if !reflect.DeepEqual(ids(got), ids(test.want)) {
+			t.Errorf("%s: ids %v, want %v", test.name, ids(got), ids(test.want))
+		}
+	}
+	hidden, err := store.Search(context.Background(), []rbac.Role{rbac.Content}, audit.Filter{Object: audit.Object{Type: rbac.Players}})
+	if err != nil || len(hidden) != 0 {
+		t.Fatalf("content filtering for player entries %v %v", ids(hidden), err)
+	}
+}
+
+func TestRolesWithoutTheAuditLogCannotSearch(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := audit.NewStore(pool)
+	appendAll(t, store, entry("ayla", "view", rbac.Dashboards, "home"))
+	for _, roles := range [][]rbac.Role{nil, {rbac.Analyst}, {"owner"}} {
+		if got, err := store.Search(context.Background(), roles, audit.Filter{}); !errors.Is(err, audit.ErrForbidden) || got != nil {
+			t.Errorf("%v: %v %v", roles, ids(got), err)
+		}
 	}
 }
 

@@ -466,6 +466,8 @@ Snapshots are read-only. Change sets are created, edited, submitted, approved, s
 
 Created, changed and disabled by `super_admin` only. Granting `super_admin` needs a second `super_admin` (section 8). An account unused for `AdminInactiveDisableDays` is disabled. The role list is reviewed at every go/no-go (`docs/launch-runbook.md` GN-20).
 
+The table is `admin_accounts` (`server/internal/adminaccount`). Each environment has its own database (`docs/environments.md` E-1), so an account row and its roles exist per environment. The email is stored trimmed and lower-case and is unique; sign-in is refused for a disabled or unknown email and records `lastLogin` only on success. An account never signed in counts as inactive from its creation.
+
 ## 6. Player tools
 
 ### 6.1 Lookup
@@ -533,7 +535,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 
 - Append-only: the admin API's database role can insert and read audit rows, never update or delete them. Entries expire after `AdminAuditRetentionDays` (`docs/privacy.md` D-27).
 - The table is `admin_audit_entries` (`server/internal/audit`). A trigger rejects every `update`, `delete` and `truncate` for every role, the owner included. The retention purge is not built yet; it has to run through a reviewed path that removes only expired rows, not by dropping the trigger.
-- Entries about a player are visible to `super_admin` only (D-27). Other roles see entries about objects they can view.
+- Entries about a player are visible to `super_admin` only (D-27). Other roles see entries about objects they can view. An entry is about a player when its object is a player, a review, report or appeal queue item, or a rights request record (`players`, `queues`, `rights_requests` in `server/internal/rbac`); the admin API filters them in the query, so a search never returns rows the role may not see.
 - Searchable by actor, object, action, time range and reason text; exportable by `super_admin`.
 
 ## 8. Two-person rule
@@ -569,7 +571,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ## 10. Screens and navigation
 
-The panel UI is localized itself (#213). Navigation shows only groups and screens the account's roles allow.
+The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. Navigation shows only groups and screens the account's roles allow.
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
