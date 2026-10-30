@@ -82,6 +82,9 @@ func join(t *testing.T, server *httptest.Server, seat rules.Seat, resume bool) *
 	if reply.GetServerHello().GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
 		t.Fatalf("%s: hello answered %v", seat, reply)
 	}
+	if !resume {
+		p.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}})
+	}
 	return p
 }
 
@@ -205,8 +208,8 @@ func TestPlayersFinishAMatchOverWebSocket(t *testing.T) {
 func TestSeatTakenAndResume(t *testing.T) {
 	server, _ := roomServer(t, rules.Mode1v1, 3)
 	first := join(t, server, rules.SeatX, false)
-	if view := first.read().GetMatchView(); view.GetState() != pb.MatchState_MATCH_STATE_WAITING || view.GetSeat() != pb.Seat_SEAT_X {
-		t.Fatalf("waiting view %v", view)
+	if view := first.read().GetMatchView(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING || view.GetSeat() != pb.Seat_SEAT_X || view.GetLoadingDeadlineUnixMs() == 0 {
+		t.Fatalf("loading view %v", view)
 	}
 	second := join(t, server, rules.SeatX, false)
 	_, _, err := second.socket.Read(second.ctx)
@@ -215,13 +218,13 @@ func TestSeatTakenAndResume(t *testing.T) {
 	}
 	first.socket.Close(websocket.StatusNormalClosure, "")
 	resumed := join(t, server, rules.SeatX, false)
-	if view := resumed.read().GetMatchView(); view.GetState() != pb.MatchState_MATCH_STATE_WAITING {
+	if view := resumed.read().GetMatchView(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING {
 		t.Fatalf("after leaving, joining again: %v", view)
 	}
 	other := join(t, server, rules.SeatY, false)
 	views := map[pb.Seat]*pb.MatchView{}
 	for _, p := range []*player{resumed, other} {
-		for views[p.seat] == nil || views[p.seat].GetState() == pb.MatchState_MATCH_STATE_WAITING {
+		for views[p.seat] == nil || views[p.seat].GetState() == pb.MatchState_MATCH_STATE_LOADING {
 			views[p.seat] = p.read().GetMatchView()
 		}
 	}

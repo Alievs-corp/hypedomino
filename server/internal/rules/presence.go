@@ -39,6 +39,10 @@ func TurnLimit(config Config) time.Duration {
 	return time.Duration(config.TurnSeconds) * time.Second
 }
 
+func LoadingLimit(config Config) time.Duration {
+	return time.Duration(config.MatchLoadingSeconds) * time.Second
+}
+
 func MovedBy(config Config, acted bool, actedAfter time.Duration) Controller {
 	if acted && actedAfter < TurnLimit(config) {
 		return ControllerPlayer
@@ -103,6 +107,10 @@ func (p *Presence) Leave(seat Seat) {
 	s := &p.seats[seat]
 	s.byBot = true
 	s.left = true
+}
+
+func (p *Presence) Absent(seat Seat) {
+	p.seats[seat].byBot = true
 }
 
 func (p *Presence) Report(seat Seat) PresenceReport {

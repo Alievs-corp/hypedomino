@@ -312,3 +312,29 @@ func TestRemovingBeforeTheStartFreesTheSeatAndReadyResetsOnMove(t *testing.T) {
 		t.Fatalf("adding outside the mode: %v", err)
 	}
 }
+
+type busy map[string]bool
+
+func (b busy) InMatch(account string) bool { return b[account] }
+
+func TestAnAccountInARunningMatchCannotEnterALobby(t *testing.T) {
+	open, _ := opener(t)
+	lobby := NewLobby(&counter{}, open)
+	lobby.Guard(busy{"playing": true})
+	if _, err := lobby.Create("playing", rules.Mode2v2); !errors.Is(err, ErrInMatch) {
+		t.Fatalf("creating during a match: %v", err)
+	}
+	r, err := lobby.Create("ana", rules.Mode2v2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Join("playing"); !errors.Is(err, ErrInMatch) {
+		t.Fatalf("joining during a match: %v", err)
+	}
+	if err := r.Add("ana", "playing", rules.SeatEast); !errors.Is(err, ErrInMatch) {
+		t.Fatalf("being added during a match: %v", err)
+	}
+	if _, err := r.Join("ben"); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -194,7 +194,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Close(websocket.StatusProtocolError, "unsupported protocol")
 		return false
 	case !VersionAtLeast(hello.GetAppVersion(), c.options.Config.MinimumAppVersion):
-		c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0))
+		c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0, false))
 		c.Close(websocket.StatusNormalClosure, "update required")
 		return false
 	}
@@ -209,7 +209,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		return false
 	}
 	c.session = session
-	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked())) != nil {
+	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked(), session.InMatch())) != nil {
 		return false
 	}
 	session.Attach()
@@ -263,12 +263,17 @@ func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 
 func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	sequence := frame.GetSequence()
+	loading := frame.GetLoadingIntent()
 	intent, ok := DecodeIntent(frame)
-	if !ok {
+	if !ok && loading == nil {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
+	}
+	if loading != nil {
+		c.session.Loading(int(loading.GetProgress()), loading.GetReady())
+		return true
 	}
 	c.session.Intent(sequence, intent)
 	return true

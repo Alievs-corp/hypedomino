@@ -96,6 +96,30 @@ func (c *Client) write(frame *pb.Envelope) error {
 	return c.socket.Write(c.ctx, websocket.MessageBinary, data)
 }
 
+func (c *Client) Ready() error {
+	return c.write(&pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}})
+}
+
+func NeedsReady(view *pb.MatchView) bool {
+	if view.GetState() != pb.MatchState_MATCH_STATE_LOADING {
+		return false
+	}
+	for _, seat := range view.GetSeats() {
+		if seat.GetSeat() == view.GetSeat() {
+			return !seat.GetReady()
+		}
+	}
+	return true
+}
+
+func Idle(view *pb.MatchView) bool {
+	switch view.GetState() {
+	case pb.MatchState_MATCH_STATE_WAITING, pb.MatchState_MATCH_STATE_LOADING, pb.MatchState_MATCH_STATE_FINISHED:
+		return true
+	}
+	return view.GetCurrent() != view.GetSeat()
+}
+
 func (c *Client) Send(frame *pb.Envelope) error {
 	c.Sequence++
 	frame.ProtocolVersion = gateway.ProtocolVersion
@@ -189,7 +213,13 @@ func (c *Client) PlayUntil(stop func(*pb.MatchView) bool) (*pb.MatchView, error)
 		if stop(view) {
 			return view, nil
 		}
-		if view.GetState() != pb.MatchState_MATCH_STATE_WAITING && view.GetCurrent() == view.GetSeat() {
+		if NeedsReady(view) {
+			if err := c.Ready(); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if !Idle(view) {
 			if err := c.Act(view); err != nil {
 				return nil, err
 			}

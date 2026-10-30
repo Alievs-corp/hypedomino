@@ -82,8 +82,10 @@ func TestLeavingAfterTheGraceReleasesTheRoute(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1)
 	router := &fakeRouter{}
 	tab.manager.Route(router)
-	north := tab.connect(tab.tokens[rules.SeatX], true)
-	north.read()
+	south := tab.join(rules.SeatY)
+	south.awaitReady()
+	north := tab.join(rules.SeatX)
+	north.awaitReady()
 	north.socket.CloseNow()
 	deadline := time.Now().Add(5 * time.Second)
 	for tab.manager.Connected(tab.tokens[rules.SeatX]) && time.Now().Before(deadline) {
@@ -99,5 +101,52 @@ func TestLeavingAfterTheGraceReleasesTheRoute(t *testing.T) {
 	}
 	if _, released := router.counts(); released != 1 || router.released[0] != tab.tokens[rules.SeatX] {
 		t.Fatalf("released %v", router.released)
+	}
+}
+
+func TestAFinishedMatchUnbindsTheSessionAndReleasesTheRoute(t *testing.T) {
+	clock := &fakeClock{now: time.UnixMilli(1761480000000)}
+	manager := New(DefaultConfig(), clock, secrand.Source{})
+	router := &fakeRouter{}
+	manager.Route(router)
+	r := room.New(room.Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: 11, Clock: clock})
+	ctx, cancel := context.WithCancel(context.Background())
+	go r.Run(ctx)
+	t.Cleanup(func() { cancel(); <-r.Done() })
+	token := manager.Create("x")
+	if manager.InMatch("x") {
+		t.Fatal("in a match before being seated")
+	}
+	if err := manager.Seat(token, r, rules.SeatX); err != nil {
+		t.Fatal(err)
+	}
+	if !manager.InMatch("x") {
+		t.Fatal("not in a match after being seated")
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		select {
+		case <-r.Finished():
+		default:
+			if time.Now().After(deadline) {
+				t.Fatal("the bots did not finish the match")
+			}
+			clock.advance(rules.TurnLimit(rules.DefaultConfig()))
+			time.Sleep(time.Millisecond)
+			continue
+		}
+		break
+	}
+	for manager.InMatch("x") && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if manager.InMatch("x") {
+		t.Fatal("still in a match after it finished")
+	}
+	if _, released := router.counts(); released != 1 || router.released[0] != token {
+		t.Fatalf("released %v", router.released)
+	}
+	if err := manager.Seat(token, r, rules.SeatY); err != nil {
+		t.Fatalf("seating again after the match: %v", err)
 	}
 }

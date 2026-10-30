@@ -270,7 +270,15 @@ func (s *seatRun) play() (finished bool, dropped bool) {
 		if botclient.Finished(view) {
 			return true, false
 		}
-		if view.GetState() == pb.MatchState_MATCH_STATE_WAITING || view.GetCurrent() != view.GetSeat() || s.pending != 0 {
+		if botclient.NeedsReady(view) {
+			if err := s.client.Ready(); err != nil && s.ctx.Err() == nil {
+				r.counters.ReadFailures.Add(1)
+				r.debug("ready failed", "error", err)
+				return false, false
+			}
+			continue
+		}
+		if botclient.Idle(view) || s.pending != 0 {
 			continue
 		}
 		key := keyOf(view)
