@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
@@ -42,6 +43,7 @@ type Participant struct {
 	Seat    rules.Seat
 	Account string
 	Bot     bool
+	Loadout profile.Loadout
 }
 
 type Started struct {
@@ -124,8 +126,12 @@ func (s *Store) Begin(ctx context.Context, m Started) error {
 		if !p.Bot && p.Account != "" {
 			account = &p.Account
 		}
-		if _, err := tx.Exec(ctx, `insert into match_participants (match_id, started_at, seat, team, account_id, bot)
-			values ($1, $2, $3, $4, $5, $6)`, m.ID, m.StartedAt, int16(p.Seat), int16(p.Seat.Team()), account, p.Bot); err != nil {
+		loadout, err := json.Marshal(p.Loadout)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `insert into match_participants (match_id, started_at, seat, team, account_id, bot, loadout)
+			values ($1, $2, $3, $4, $5, $6, $7)`, m.ID, m.StartedAt, int16(p.Seat), int16(p.Seat.Team()), account, p.Bot, loadout); err != nil {
 			return err
 		}
 	}

@@ -73,6 +73,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_NICKNAME_ALLOW_MIXED_SCRIPT` | No | server | `false` | `false` | No | from #59 |
 | `HD_NICKNAME_RENAME_COOLDOWN` | No | server | `720h` | `720h` | No | from #59 |
 | `HD_NICKNAME_RELEASE` | No | server | `720h` | `720h` | No | from #59 |
+| `HD_COSMETICS_MANIFEST` | No | server | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61 |
+| `HD_EMOJI_SLOTS` | No | server | `6` | `6` | No | from #61 |
+| `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 

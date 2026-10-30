@@ -14,10 +14,6 @@ import (
 
 const MaxBodyBytes = 4 * 1024
 
-type Verifier interface {
-	Verify(access string) (token.Claims, error)
-}
-
 type Profiles interface {
 	Get(ctx context.Context, account string) (Profile, bool, error)
 	Exists(ctx context.Context, account string) (bool, error)
@@ -27,14 +23,14 @@ type Profiles interface {
 }
 
 type Handler struct {
-	verifier Verifier
+	verifier token.Verifier
 	profiles Profiles
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
 }
 
-func NewHandler(verifier Verifier, profiles Profiles, logger *slog.Logger, now func() time.Time) *Handler {
+func NewHandler(verifier token.Verifier, profiles Profiles, logger *slog.Logger, now func() time.Time) *Handler {
 	h := &Handler{verifier: verifier, profiles: profiles, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("GET /profile/me", h.me)
 	h.mux.HandleFunc("PUT /profile/nickname", h.nickname)
@@ -176,11 +172,7 @@ func (h *Handler) own(p Profile) ownView {
 }
 
 func (h *Handler) authenticate(w http.ResponseWriter, r *http.Request) (token.Claims, bool) {
-	scheme, value, _ := strings.Cut(r.Header.Get("Authorization"), " ")
-	if !strings.EqualFold(scheme, "Bearer") {
-		value = ""
-	}
-	claims, err := h.verifier.Verify(strings.TrimSpace(value))
+	claims, err := token.Authorize(h.verifier, r)
 	switch {
 	case errors.Is(err, token.ErrExpired):
 		reply(w, http.StatusUnauthorized, errorResponse{Error: "access_expired"})

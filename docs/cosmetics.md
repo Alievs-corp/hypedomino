@@ -216,6 +216,7 @@ An invalid manifest is never published. A client that receives one keeps its pre
 - Ownership is the server inventory. Items are granted only through the reward bundle engine (#102) from a listed source (section 5).
 - Equip is an intent: the server accepts it only for an owned item of that slot's type whose availability is `live` or `retired`. Sending an emoji requires owning it (#150).
 - The client never unlocks, previews as owned or equips locally ahead of the server. A modified client that edits its manifest only changes what it draws for itself.
+- Implemented in `server/internal/cosmetics` and `server/internal/inventory` (#61): a `default` item is owned by every account implicitly, with no inventory row, so it can never be revoked; every other item is a row with its granting source, accepted only when listed in `sources`. Equip checks type, availability and ownership; the loadout is resolved again at match start and recorded with the match (`match_participants.loadout`). The manifest comes from `HD_COSMETICS_MANIFEST` or the built-in copy of `examples/minimal.json` until admin config serves it (ADR 0006).
 
 ## 11. One schema for admin, server and client
 

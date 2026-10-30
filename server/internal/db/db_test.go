@@ -61,7 +61,7 @@ func has(names []string, want string) bool {
 	return false
 }
 
-const head = 4
+const head = 5
 
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
