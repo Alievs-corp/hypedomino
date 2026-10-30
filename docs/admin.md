@@ -403,7 +403,7 @@ The plan for the first 90 days after launch, entered this way, is `docs/live-ops
 
 ### 5.14 Config values and feature flags
 
-Remote config (#145) is one editor over every key of the domains in 3.1.
+Remote config (#145) is one editor over every key of the domains in 3.1. The `rules` domain keys and their bounds are in `docs/rules.md` section 13 (O-7).
 
 | Field | Rule |
 |---|---|
@@ -657,3 +657,4 @@ Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the
 | O-4 | Meaning of "mute" in #144 | Blocks in-match emoji and quick messages for `ModerationMuteHours`; play is unaffected |
 | O-5 | Second factor for `super_admin` | Phishing-resistant keys only |
 | O-6 | Section 11 defaults | As listed |
+| O-7 | Bounds of the `rules` domain keys (5.14, #145) | `docs/rules.md` section 13; set by the lead with the owner's permission on 2026-10-31 |
