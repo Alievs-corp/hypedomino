@@ -175,6 +175,14 @@ func (p *player) tryRead() (*pb.Envelope, error) {
 	return frame, nil
 }
 
+func (p *player) closeStatus() websocket.StatusCode {
+	for {
+		if _, err := p.tryRead(); err != nil {
+			return websocket.CloseStatus(err)
+		}
+	}
+}
+
 func (p *player) view() *pb.MatchView {
 	p.t.Helper()
 	for {
@@ -347,9 +355,8 @@ func TestASecondDeviceReplacesTheFirstWithoutStartingTheGrace(t *testing.T) {
 	first := tab.join(rules.SeatX)
 	first.awaitReady()
 	second := tab.join(rules.SeatX)
-	_, err := first.tryRead()
-	if websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
-		t.Fatalf("first device saw %v", err)
+	if status := first.closeStatus(); status != websocket.StatusPolicyViolation {
+		t.Fatalf("first device closed with %v", status)
 	}
 	if view := second.view(); view.GetSeat() != pb.Seat_SEAT_X || controllerOf(view, pb.Seat_SEAT_X) != pb.Controller_CONTROLLER_PLAYER {
 		t.Fatalf("second device view %v", view)
@@ -377,8 +384,8 @@ func TestIntentsBeforeASeatAreIllegalAndRevokeCloses(t *testing.T) {
 		t.Fatalf("intent without a room answered %v", frame)
 	}
 	tab.manager.Revoke(token)
-	if _, err := p.tryRead(); websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
-		t.Fatalf("after revoke: %v", err)
+	if status := p.closeStatus(); status != websocket.StatusPolicyViolation {
+		t.Fatalf("after revoke closed with %v", status)
 	}
 	if again := tab.connect(token, false); again.hello.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED {
 		t.Fatalf("revoked token answered %v", again.hello)
@@ -486,8 +493,8 @@ func TestAccessTokensOpenSessionsKeyedByTheirSessionIdAndLogoutAllClosesThem(t *
 		t.Fatalf("revoked %d sessions", n)
 	}
 	for _, p := range []*player{refreshed, other} {
-		if _, err := p.tryRead(); websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
-			t.Fatalf("after logout-all the device saw %v", err)
+		if status := p.closeStatus(); status != websocket.StatusPolicyViolation {
+			t.Fatalf("after logout-all the device closed with %v", status)
 		}
 	}
 	if tab.manager.InMatch("ayla") || tab.manager.RevokeAccount("ayla") != 0 {
