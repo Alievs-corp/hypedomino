@@ -466,6 +466,8 @@ Snapshots are read-only. Change sets are created, edited, submitted, approved, s
 
 Created, changed and disabled by `super_admin` only. Granting `super_admin` needs a second `super_admin` (section 8). An account unused for `AdminInactiveDisableDays` is disabled. The role list is reviewed at every go/no-go (`docs/launch-runbook.md` GN-20).
 
+The table is `admin_accounts` (`server/internal/adminaccount`). Each environment has its own database (`docs/environments.md` E-1), so an account row and its roles exist per environment. The email is stored trimmed and lower-case and is unique; sign-in is refused for a disabled or unknown email and records `lastLogin` only on success. An account never signed in counts as inactive from its creation.
+
 ## 6. Player tools
 
 ### 6.1 Lookup
