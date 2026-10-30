@@ -1,0 +1,14 @@
+{
+    "name": "HypeDomino.Game",
+    "rootNamespace": "HypeDomino.Game",
+    "references": ["HypeDomino.Core", "HypeDomino.Net", "HypeDomino.UI", "HypeDomino.Cosmetics"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
