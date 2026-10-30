@@ -5,6 +5,7 @@
     "state": "MATCH_STATE_PLAYING",
     "seat": "SEAT_X",
     "mode": "MODE_1V1",
+    "table": "table.night_market",
     "handsPlayed": 1,
     "scores": { "teamA": 45, "teamB": 20 },
     "carryOver": 3,

@@ -1232,6 +1232,7 @@ type MatchView struct {
 	Winner                Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
 	Roster                []*RosterEntry         `protobuf:"bytes,19,rep,name=roster,proto3" json:"roster,omitempty"`
 	LoadingDeadlineUnixMs uint64                 `protobuf:"varint,20,opt,name=loading_deadline_unix_ms,json=loadingDeadlineUnixMs,proto3" json:"loading_deadline_unix_ms,omitempty"`
+	Table                 string                 `protobuf:"bytes,21,opt,name=table,proto3" json:"table,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -1406,6 +1407,13 @@ func (x *MatchView) GetLoadingDeadlineUnixMs() uint64 {
 	return 0
 }
 
+func (x *MatchView) GetTable() string {
+	if x != nil {
+		return x.Table
+	}
+	return ""
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1475,7 +1483,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"rank_label\x18\a \x01(\tR\trankLabel\x12\x18\n" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
-	"\x03bot\x18\t \x01(\bR\x03bot\"\xc3\a\n" +
+	"\x03bot\x18\t \x01(\bR\x03bot\"\xd9\a\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
@@ -1500,7 +1508,8 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"lastResult\x12+\n" +
 	"\x06winner\x18\x12 \x01(\x0e2\x13.hypedomino.v1.TeamR\x06winner\x122\n" +
 	"\x06roster\x18\x13 \x03(\v2\x1a.hypedomino.v1.RosterEntryR\x06roster\x127\n" +
-	"\x18loading_deadline_unix_ms\x18\x14 \x01(\x04R\x15loadingDeadlineUnixMs*w\n" +
+	"\x18loading_deadline_unix_ms\x18\x14 \x01(\x04R\x15loadingDeadlineUnixMs\x12\x14\n" +
+	"\x05table\x18\x15 \x01(\tR\x05table*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +

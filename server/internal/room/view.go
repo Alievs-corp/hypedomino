@@ -44,6 +44,7 @@ type View struct {
 	Ready           [6]bool
 	LoadingDeadline time.Time
 	Roster          []Player
+	Table           string
 }
 
 func (r *Room) view(seat rules.Seat) View {
@@ -55,6 +56,7 @@ func (r *Room) view(seat rules.Seat) View {
 		v.Ready[s] = r.seats[s].ready
 	}
 	v.Roster = r.options.Roster
+	v.Table = r.options.Table
 	if r.state == StateLoading {
 		v.LoadingDeadline = r.deadline
 	}

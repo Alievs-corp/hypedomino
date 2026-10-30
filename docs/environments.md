@@ -76,6 +76,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_COSMETICS_MANIFEST` | No | server | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61 |
 | `HD_EMOJI_SLOTS` | No | server | `6` | `6` | No | from #61 |
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
+| `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 

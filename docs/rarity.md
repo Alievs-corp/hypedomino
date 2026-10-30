@@ -113,7 +113,7 @@ Rules:
 - The server computes the choice and sends only the table item id in the match start state; clients render it and never compute it. `b` stays on the server (`docs/anti-cheat.md` NT-4) and is stored in the replay record with the moves (`docs/privacy.md` D-13), so a replay reproduces the choice.
 - The table is fixed for the whole match: hands, reconnects and equip changes during the match do not change it.
 - Rendering follows `docs/cosmetics.md` section 8.3: animated if allowed and loaded, otherwise its static, otherwise the built-in default table static.
-- Implementation and the uniformity test: #98.
+- Implementation and the uniformity test: `server/internal/cosmetics` (`PickTable`, `Catalog.Table`, `NewDraw`) with the worked examples below and a uniformity test over 60 000 draws per tie size (#98). The draw is `replay.Record.TableDraw`, the chosen id is `room.Options.Table` and `MatchView.table`; ordinals come from `HD_RARITY_ORDINALS` until admin config serves the rarity table.
 
 Worked examples (`U` in hex):
 

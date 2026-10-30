@@ -151,4 +151,5 @@ message MatchView {
   Team winner = 18;
   repeated RosterEntry roster = 19;
   uint64 loading_deadline_unix_ms = 20;
+  string table = 21;
 }
