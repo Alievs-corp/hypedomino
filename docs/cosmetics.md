@@ -210,6 +210,11 @@ Rules that need more than one manifest or other admin data, checked by the admin
 
 An invalid manifest is never published. A client that receives one keeps its previous manifest (7.3).
 
+Implemented in `server/internal/cosmetics` (#136):
+- **Publish check.** A publish must follow the previous manifest. Its `manifestVersion` is exactly one higher (7.1). V-12 holds: every earlier item is still present and keeps its type. V-13 holds: no revision goes down, and an item whose content changed has a higher revision. Content means every field except `revision`.
+- **Rollback** (`docs/admin.md` 3.7). It builds the next manifest from the current one. An item whose content differs from the target version gets the target's content under the next revision. Unchanged items, and items added after the target, stay as they are. The result passes the publish check.
+- **Not yet.** The checks that need other admin data (V-14 to V-18) and loading the manifest from a config snapshot follow in #136.
+
 ## 10. Server authority
 
 - The manifest describes what exists. It holds no ownership, price, amount, chance or time window.
