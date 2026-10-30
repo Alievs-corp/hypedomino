@@ -21,6 +21,10 @@ var (
 	ErrAlreadySeated  = errors.New("session: already seated in a room")
 )
 
+type Authenticator interface {
+	Authenticate(token string) (account, session string, err error)
+}
+
 type Config struct {
 	ReconnectGrace time.Duration
 }
@@ -60,6 +64,7 @@ type Manager struct {
 	clock    Clock
 	random   Random
 	router   Router
+	auth     Authenticator
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -71,6 +76,10 @@ func New(config Config, clock Clock, random Random) *Manager {
 
 func (m *Manager) Route(router Router) {
 	m.router = router
+}
+
+func (m *Manager) Authenticate(auth Authenticator) {
+	m.auth = auth
 }
 
 func (m *Manager) claim(token string) error {
@@ -97,13 +106,34 @@ func (m *Manager) Create(account string) string {
 	token := hex.EncodeToString(raw[:])
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.ensure(token, account)
+	return token
+}
+
+func (m *Manager) ensure(token, account string) *Session {
+	if s, ok := m.sessions[token]; ok {
+		return s
+	}
 	s := &Session{token: token, account: account}
 	m.sessions[token] = s
 	if m.accounts[account] == nil {
 		m.accounts[account] = map[string]*Session{}
 	}
 	m.accounts[account][token] = s
-	return token
+	return s
+}
+
+func (m *Manager) RevokeAccount(account string) int {
+	m.mu.Lock()
+	var tokens []string
+	for token := range m.accounts[account] {
+		tokens = append(tokens, token)
+	}
+	m.mu.Unlock()
+	for _, token := range tokens {
+		m.Revoke(token)
+	}
+	return len(tokens)
 }
 
 func (m *Manager) InMatch(account string) bool {
@@ -179,6 +209,13 @@ func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s, ok := m.sessions[hello.GetSessionToken()]
+	if !ok && m.auth != nil {
+		account, id, err := m.auth.Authenticate(hello.GetSessionToken())
+		if err != nil || id == "" || account == "" {
+			return nil, gateway.ErrUnauthenticated
+		}
+		s, ok = m.ensure(id, account), true
+	}
 	if !ok {
 		return nil, gateway.ErrUnauthenticated
 	}

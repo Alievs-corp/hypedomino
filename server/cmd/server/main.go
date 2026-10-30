@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
+	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
 type systemClock struct{}
@@ -74,7 +75,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		nonces = auth.NewRedisNonces(client, config.Cluster.KeyPrefix)
 	}
 	verifier := idtoken.New(idtoken.Options{Config: config.IDToken, Nonces: nonces})
-	a.Handle("POST /auth/", auth.New(verifier, account.New(pool), sessions, logger))
+	tokens, err := token.NewService(config.Token, token.NewStore(pool), time.Now)
+	if err != nil {
+		pool.Close()
+		return nil, nil, fmt.Errorf("HD_TOKEN_KEYS: %w", err)
+	}
+	sessions.Authenticate(tokens)
+	a.Handle("POST /auth/", auth.New(verifier, account.New(pool), tokens, sessions, logger))
 	return a, pool.Close, nil
 }
 
