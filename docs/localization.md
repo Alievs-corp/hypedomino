@@ -84,7 +84,7 @@ The server never sends rendered text for display. It sends `key` plus typed para
 | Errors | Responses carry a stable reason code that maps to a key, never prose. |
 | Player-supplied strings | Nicknames and custom room names pass through as parameters, are not translated, and are inserted by placeholder (4.7). |
 | Unknown key (newer server, older client) | Handled by 2.3 with the generic `notice.generic` key, never the raw key. |
-| Server logs, admin tools | English; this section covers player-facing text only. |
+| Server logs | English; this section covers player-facing text only. The admin panel UI has its own languages (`docs/admin.md` section 10). |
 
 ## 4. Text rules
 
