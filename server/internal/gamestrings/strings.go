@@ -59,8 +59,8 @@ const (
 var placeholderTypes = []PlaceholderType{Integer, Decimal, String, Timestamp, Duration, ItemID}
 
 type Placeholder struct {
-	Name string
-	Type PlaceholderType
+	Name string          `json:"name"`
+	Type PlaceholderType `json:"type"`
 }
 
 type Value struct {
