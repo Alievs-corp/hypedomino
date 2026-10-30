@@ -18,6 +18,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -82,6 +83,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	sessions.Authenticate(tokens)
 	a.Handle("POST /auth/", auth.New(verifier, account.New(pool), tokens, sessions, logger))
+	a.Handle("/profile/", profile.NewHandler(tokens, profile.NewStore(pool, config.Profile), logger, time.Now))
 	return a, pool.Close, nil
 }
 

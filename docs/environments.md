@@ -68,6 +68,11 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_ACCESS_TTL` | No | server | `15m` | `15m` | No | from #58 |
 | `HD_REFRESH_TTL` | No | server | `720h` | `720h` | No | from #58 |
 | `HD_REFRESH_REUSE_GRACE` | No | server | `30s` | `30s` | No | from #58 |
+| `HD_NICKNAME_MIN_LENGTH` | No | server | `3` | `3` | No | from #59 |
+| `HD_NICKNAME_MAX_LENGTH` | No | server | `16` | `16` | No | from #59 |
+| `HD_NICKNAME_ALLOW_MIXED_SCRIPT` | No | server | `false` | `false` | No | from #59 |
+| `HD_NICKNAME_RENAME_COOLDOWN` | No | server | `720h` | `720h` | No | from #59 |
+| `HD_NICKNAME_RELEASE` | No | server | `720h` | `720h` | No | from #59 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 

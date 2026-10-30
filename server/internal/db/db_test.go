@@ -61,7 +61,7 @@ func has(names []string, want string) bool {
 	return false
 }
 
-const head = 3
+const head = 4
 
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
@@ -167,13 +167,13 @@ func TestAccountIdentityProfileAndInventoryConstraints(t *testing.T) {
 	if _, err := pool.Exec(ctx, "insert into auth_identities (provider, subject, account_id) values ('facebook', 'sub-2', $1)", b); !check(err) {
 		t.Fatalf("unknown provider accepted: %v", err)
 	}
-	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname) values ($1, 'Domino')", a); err != nil {
+	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname, nickname_key) values ($1, 'Domino', 'domino')", a); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname) values ($1, 'domino')", b); !unique(err) {
-		t.Fatalf("nickname unique ignoring case: %v", err)
+	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname, nickname_key) values ($1, 'DOMINO', 'domino')", b); !unique(err) {
+		t.Fatalf("nickname key unique: %v", err)
 	}
-	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname, level) values ($1, 'other', 0)", b); !check(err) {
+	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname, nickname_key, level) values ($1, 'other', 'other', 0)", b); !check(err) {
 		t.Fatalf("level zero accepted: %v", err)
 	}
 	if _, err := pool.Exec(ctx, "insert into inventory_items (account_id, item_id, source_type, source_ref) values ($1, 'frame.gold', 'pass_reward', 'pass:1:free:3')", a); err != nil {

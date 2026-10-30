@@ -11,6 +11,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
@@ -29,6 +30,7 @@ type Config struct {
 	Database        string
 	IDToken         idtoken.Config
 	Token           token.Config
+	Profile         profile.Config
 }
 
 func DefaultConfig() Config {
@@ -43,6 +45,7 @@ func DefaultConfig() Config {
 		Relay:           cluster.DefaultRelayConfig(),
 		IDToken:         idtoken.DefaultConfig(),
 		Token:           token.DefaultConfig(),
+		Profile:         profile.DefaultConfig(),
 	}
 }
 
@@ -104,6 +107,19 @@ func (r *envReader) fraction(name string, value *float64) {
 	*value = parsed
 }
 
+func (r *envReader) flag(name string, value *bool) {
+	raw, ok := r.lookup(name)
+	if !ok {
+		return
+	}
+	parsed, err := strconv.ParseBool(raw)
+	if err != nil {
+		r.errs = append(r.errs, fmt.Errorf("%s: %q is not true or false", name, raw))
+		return
+	}
+	*value = parsed
+}
+
 func (r *envReader) duration(name string, value *time.Duration) {
 	raw, ok := r.lookup(name)
 	if !ok {
@@ -156,6 +172,14 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_ACCESS_TTL", &config.Token.AccessTTL)
 	r.duration("HD_REFRESH_TTL", &config.Token.RefreshTTL)
 	r.duration("HD_REFRESH_REUSE_GRACE", &config.Token.ReuseGrace)
+	r.integer("HD_NICKNAME_MIN_LENGTH", &config.Profile.NicknameMinLength)
+	r.integer("HD_NICKNAME_MAX_LENGTH", &config.Profile.NicknameMaxLength)
+	r.flag("HD_NICKNAME_ALLOW_MIXED_SCRIPT", &config.Profile.NicknameAllowMixedScript)
+	r.duration("HD_NICKNAME_RENAME_COOLDOWN", &config.Profile.NicknameRenameCooldown)
+	r.duration("HD_NICKNAME_RELEASE", &config.Profile.NicknameRelease)
+	if config.Profile.NicknameMinLength < 1 || config.Profile.NicknameMaxLength < config.Profile.NicknameMinLength {
+		r.errs = append(r.errs, errors.New("HD_NICKNAME_MIN_LENGTH and HD_NICKNAME_MAX_LENGTH: the minimum must be at least 1 and not above the maximum"))
+	}
 	if config.Database != "" {
 		if _, err := token.ParseKeys(config.Token.Keys); err != nil {
 			r.errs = append(r.errs, fmt.Errorf("HD_TOKEN_KEYS: %w", err))

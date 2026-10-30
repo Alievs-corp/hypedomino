@@ -27,42 +27,47 @@ func TestConfigDefaultsWhenTheEnvironmentIsEmpty(t *testing.T) {
 
 func TestConfigReadsEveryVariable(t *testing.T) {
 	config, err := ConfigFromEnv(lookup(map[string]string{
-		"HD_LISTEN_ADDR":           "127.0.0.1:9000",
-		"HD_LOG_LEVEL":             "DEBUG",
-		"HD_ORIGINS":               "play.example.com, admin.example.com,",
-		"HD_SHUTDOWN_TIMEOUT":      "3s",
-		"HD_DRAIN_TIMEOUT":         "2m",
-		"HD_MIN_APP_VERSION":       "1.4.0",
-		"HD_CATALOG_VERSION":       "2026.11.01-2",
-		"HD_MAX_FRAME_BYTES":       "2048",
-		"HD_WRITE_QUEUE":           "64",
-		"HD_HELLO_TIMEOUT":         "1s",
-		"HD_WRITE_TIMEOUT":         "2s",
-		"HD_CLOSE_TIMEOUT":         "500ms",
-		"HD_COMPRESSION_THRESHOLD": "512",
-		"HD_INTENTS_PER_SECOND":    "20",
-		"HD_INTENT_BURST":          "40",
-		"HD_PING_INTERVAL":         "7s",
-		"HD_PONG_TIMEOUT":          "3s",
-		"HD_RECONNECT_GRACE":       "45s",
-		"HD_REDIS_URL":             "redis://cache:6379/0",
-		"HD_NODE_ID":               "server-7",
-		"HD_NODE_ADDR":             "10.0.0.7:8080",
-		"HD_NODE_CAPACITY":         "5000",
-		"HD_NODE_HEARTBEAT":        "1s",
-		"HD_NODE_TTL":              "4s",
-		"HD_ROUTE_TTL":             "3h",
-		"HD_SCALE_OUT_AT":          "0.8",
-		"HD_SCALE_IN_AT":           "0.2",
-		"HD_RELAY_DIAL_TIMEOUT":    "2s",
-		"HD_DATABASE_URL":          "postgres://hd:secret@db:5432/hypedomino",
-		"HD_GOOGLE_AUDIENCES":      "1-abc.apps.googleusercontent.com, 2-def.apps.googleusercontent.com",
-		"HD_APPLE_AUDIENCES":       "com.example.hypedomino",
-		"HD_NONCE_TTL":             "4m",
-		"HD_TOKEN_KEYS":            "k2:" + testKey('b') + ",k1:" + testKey('a'),
-		"HD_ACCESS_TTL":            "5m",
-		"HD_REFRESH_TTL":           "240h",
-		"HD_REFRESH_REUSE_GRACE":   "10s",
+		"HD_LISTEN_ADDR":                 "127.0.0.1:9000",
+		"HD_LOG_LEVEL":                   "DEBUG",
+		"HD_ORIGINS":                     "play.example.com, admin.example.com,",
+		"HD_SHUTDOWN_TIMEOUT":            "3s",
+		"HD_DRAIN_TIMEOUT":               "2m",
+		"HD_MIN_APP_VERSION":             "1.4.0",
+		"HD_CATALOG_VERSION":             "2026.11.01-2",
+		"HD_MAX_FRAME_BYTES":             "2048",
+		"HD_WRITE_QUEUE":                 "64",
+		"HD_HELLO_TIMEOUT":               "1s",
+		"HD_WRITE_TIMEOUT":               "2s",
+		"HD_CLOSE_TIMEOUT":               "500ms",
+		"HD_COMPRESSION_THRESHOLD":       "512",
+		"HD_INTENTS_PER_SECOND":          "20",
+		"HD_INTENT_BURST":                "40",
+		"HD_PING_INTERVAL":               "7s",
+		"HD_PONG_TIMEOUT":                "3s",
+		"HD_RECONNECT_GRACE":             "45s",
+		"HD_REDIS_URL":                   "redis://cache:6379/0",
+		"HD_NODE_ID":                     "server-7",
+		"HD_NODE_ADDR":                   "10.0.0.7:8080",
+		"HD_NODE_CAPACITY":               "5000",
+		"HD_NODE_HEARTBEAT":              "1s",
+		"HD_NODE_TTL":                    "4s",
+		"HD_ROUTE_TTL":                   "3h",
+		"HD_SCALE_OUT_AT":                "0.8",
+		"HD_SCALE_IN_AT":                 "0.2",
+		"HD_RELAY_DIAL_TIMEOUT":          "2s",
+		"HD_DATABASE_URL":                "postgres://hd:secret@db:5432/hypedomino",
+		"HD_GOOGLE_AUDIENCES":            "1-abc.apps.googleusercontent.com, 2-def.apps.googleusercontent.com",
+		"HD_APPLE_AUDIENCES":             "com.example.hypedomino",
+		"HD_NONCE_TTL":                   "4m",
+		"HD_TOKEN_KEYS":                  "k2:" + testKey('b') + ",k1:" + testKey('a'),
+		"HD_ACCESS_TTL":                  "5m",
+		"HD_REFRESH_TTL":                 "240h",
+		"HD_REFRESH_REUSE_GRACE":         "10s",
+		"HD_NICKNAME_MIN_LENGTH":         "2",
+		"HD_NICKNAME_MAX_LENGTH":         "12",
+		"HD_NICKNAME_ALLOW_MIXED_SCRIPT": "true",
+		"HD_NICKNAME_RENAME_COOLDOWN":    "168h",
+		"HD_NICKNAME_RELEASE":            "48h",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -90,24 +95,30 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Token.AccessTTL != 5*time.Minute || config.Token.RefreshTTL != 240*time.Hour || config.Token.ReuseGrace != 10*time.Second || !strings.HasPrefix(config.Token.Keys, "k2:") {
 		t.Fatalf("token config %+v", config.Token)
 	}
+	p := config.Profile
+	if p.NicknameMinLength != 2 || p.NicknameMaxLength != 12 || !p.NicknameAllowMixedScript || p.NicknameRenameCooldown != 168*time.Hour || p.NicknameRelease != 48*time.Hour {
+		t.Fatalf("profile config %+v", p)
+	}
 }
 
 func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 	_, err := ConfigFromEnv(lookup(map[string]string{
-		"HD_LOG_LEVEL":       "loud",
-		"HD_DRAIN_TIMEOUT":   "soon",
-		"HD_WRITE_QUEUE":     "-1",
-		"HD_INTENT_BURST":    "many",
-		"HD_HELLO_TIMEOUT":   "-5s",
-		"HD_MAX_FRAME_BYTES": "1024",
-		"HD_SCALE_OUT_AT":    "1.5",
-		"HD_REDIS_URL":       "redis://cache:6379",
-		"HD_NODE_CAPACITY":   "0",
+		"HD_LOG_LEVEL":                   "loud",
+		"HD_DRAIN_TIMEOUT":               "soon",
+		"HD_WRITE_QUEUE":                 "-1",
+		"HD_INTENT_BURST":                "many",
+		"HD_HELLO_TIMEOUT":               "-5s",
+		"HD_MAX_FRAME_BYTES":             "1024",
+		"HD_SCALE_OUT_AT":                "1.5",
+		"HD_REDIS_URL":                   "redis://cache:6379",
+		"HD_NODE_CAPACITY":               "0",
+		"HD_NICKNAME_ALLOW_MIXED_SCRIPT": "maybe",
+		"HD_NICKNAME_MAX_LENGTH":         "2",
 	}))
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}
