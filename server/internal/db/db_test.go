@@ -84,7 +84,7 @@ func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "match_events", "match_events_default", "outbox", "reward_grants", "config_snapshots", "purchases", "purchase_notices", "goose_db_version"} {
+	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "match_events", "match_events_default", "outbox", "reward_grants", "config_snapshots", "admin_audit_entries", "purchases", "purchase_notices", "goose_db_version"} {
 		if !has(tables(t, pool), want) {
 			t.Fatalf("table %s missing after up: %v", want, tables(t, pool))
 		}
@@ -192,7 +192,7 @@ func TestWalletAndLedgerConstraints(t *testing.T) {
 	ctx := context.Background()
 	a, b := account(t, pool), account(t, pool)
 	if _, err := pool.Exec(ctx, "insert into wallets (account_id, balance) values ($1, -1)", a); err != nil {
-		t.Fatalf("a refund may leave a negative balance (migration 00008): %v", err)
+		t.Fatalf("a refund may leave a negative balance (migration 00009): %v", err)
 	}
 	if _, err := pool.Exec(ctx, "insert into wallets (account_id) values ($1)", b); err != nil {
 		t.Fatal(err)
@@ -214,7 +214,7 @@ func TestWalletAndLedgerConstraints(t *testing.T) {
 		t.Fatalf("a purchase transaction credited to two accounts: %v", err)
 	}
 	if _, err := pool.Exec(ctx, entry, a, -2000, "refund_revoke", "refund:play:n1", -1450); err != nil {
-		t.Fatalf("a refund revoke below zero refused (migration 00008): %v", err)
+		t.Fatalf("a refund revoke below zero refused (migration 00009): %v", err)
 	}
 }
 

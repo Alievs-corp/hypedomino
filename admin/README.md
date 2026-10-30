@@ -2,4 +2,20 @@
 
 Next.js admin panel (TypeScript, Tailwind) for content, economy, live-ops and player support. Every designer-tunable value is managed here.
 
-The app is created in #134.
+The panel holds no permission logic of its own: the admin API decides every permission (`docs/admin.md` AP-2, matrix in `server/internal/rbac`). Sign-in, sessions and the audit log follow in #134.
+
+## Run
+
+```
+cd admin
+pnpm install
+pnpm dev
+pnpm typecheck
+pnpm build
+```
+
+Node 24 and pnpm 11 (`packageManager` in `package.json`).
+
+## Colours
+
+`src/app/globals.css` maps the Tailwind theme to `docs/design-tokens.json` (`color.background`, `color.surface`, `color.text`, `color.role.primary`). Change the token file first, then the theme.
