@@ -8,7 +8,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
-const Version = 1
+const Version = 2
 
 var (
 	ErrBadRecord     = errors.New("replay: malformed record")
@@ -46,6 +46,7 @@ type Result struct {
 type Record struct {
 	Mode      rules.Mode
 	Seed      uint64
+	TableDraw [32]byte
 	Config    rules.Config
 	Intents   []Intent
 	Result    Result
@@ -53,10 +54,11 @@ type Record struct {
 }
 
 func (r *Record) MarshalBinary() ([]byte, error) {
-	data := make([]byte, 0, 32+3*len(r.Intents))
+	data := make([]byte, 0, 64+3*len(r.Intents))
 	data = append(data, magic[:]...)
 	data = append(data, Version, byte(r.Mode))
 	data = binary.LittleEndian.AppendUint64(data, r.Seed)
+	data = append(data, r.TableDraw[:]...)
 	data = appendConfig(data, r.Config)
 	data = binary.AppendUvarint(data, uint64(len(r.Intents)))
 	for _, intent := range r.Intents {
@@ -151,11 +153,13 @@ func (r *Record) UnmarshalBinary(data []byte) error {
 	if in.err != nil || mode.Players() == 0 {
 		return fmt.Errorf("%w: bad mode", ErrBadRecord)
 	}
-	if len(in.data) < 8 {
+	if len(in.data) < 40 {
 		return fmt.Errorf("%w: truncated seed", ErrBadRecord)
 	}
 	seed := binary.LittleEndian.Uint64(in.data)
-	in.data = in.data[8:]
+	var tableDraw [32]byte
+	copy(tableDraw[:], in.data[8:40])
+	in.data = in.data[40:]
 	config := rules.Config{
 		HandSize:                in.uvarint(),
 		TargetScore:             in.uvarint(),
@@ -198,7 +202,7 @@ func (r *Record) UnmarshalBinary(data []byte) error {
 		}
 		intents = append(intents, intent)
 	}
-	record := Record{Mode: mode, Seed: seed, Config: config, Intents: intents}
+	record := Record{Mode: mode, Seed: seed, TableDraw: tableDraw, Config: config, Intents: intents}
 	switch in.byte() {
 	case 0:
 	case 1:

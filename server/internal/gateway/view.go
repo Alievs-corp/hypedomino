@@ -103,6 +103,7 @@ func ViewMessage(view room.View) *pb.MatchView {
 		State: stateMessage(view.State),
 		Seat:  seatMessage(view.Seat),
 		Mode:  pb.Mode(view.Mode),
+		Table: view.Table,
 	}
 	for _, seat := range view.Mode.Seats() {
 		out.Seats = append(out.Seats, &pb.SeatView{

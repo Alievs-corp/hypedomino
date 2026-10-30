@@ -19,10 +19,10 @@ type Recorder struct {
 	record Record
 }
 
-func NewRecorder(mode rules.Mode, config rules.Config, seed uint64) *Recorder {
+func NewRecorder(mode rules.Mode, config rules.Config, seed uint64, tableDraw [32]byte) *Recorder {
 	return &Recorder{
 		Match:  rules.NewMatch(mode, config, rules.NewSeededRandom(seed)),
-		record: Record{Mode: mode, Seed: seed, Config: config},
+		record: Record{Mode: mode, Seed: seed, TableDraw: tableDraw, Config: config},
 	}
 }
 

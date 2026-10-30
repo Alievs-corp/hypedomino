@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -33,6 +34,7 @@ type Config struct {
 	Token           token.Config
 	Profile         profile.Config
 	Cosmetics       string
+	Rarities        cosmetics.Rarities
 	Inventory       inventory.Config
 }
 
@@ -50,6 +52,7 @@ func DefaultConfig() Config {
 		Token:           token.DefaultConfig(),
 		Profile:         profile.DefaultConfig(),
 		Inventory:       inventory.DefaultConfig(),
+		Rarities:        cosmetics.DefaultRarities(),
 	}
 }
 
@@ -182,6 +185,13 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_NICKNAME_RENAME_COOLDOWN", &config.Profile.NicknameRenameCooldown)
 	r.duration("HD_NICKNAME_RELEASE", &config.Profile.NicknameRelease)
 	r.text("HD_COSMETICS_MANIFEST", &config.Cosmetics)
+	if raw, ok := lookup("HD_RARITY_ORDINALS"); ok {
+		parsed, err := cosmetics.ParseRarities(raw)
+		if err != nil {
+			r.errs = append(r.errs, fmt.Errorf("HD_RARITY_ORDINALS: %w", err))
+		}
+		config.Rarities = parsed
+	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
 	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
 	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {

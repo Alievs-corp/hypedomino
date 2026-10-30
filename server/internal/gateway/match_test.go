@@ -248,6 +248,7 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 		State:         room.StatePlaying,
 		Seat:          rules.SeatX,
 		Mode:          rules.Mode1v1,
+		Table:         "table.night_market",
 		HandsPlayed:   1,
 		Scores:        rules.TeamPoints{45, 20},
 		CarryOver:     3,

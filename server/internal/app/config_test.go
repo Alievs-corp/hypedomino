@@ -69,6 +69,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_NICKNAME_RENAME_COOLDOWN":    "168h",
 		"HD_NICKNAME_RELEASE":            "48h",
 		"HD_COSMETICS_MANIFEST":          "/etc/hypedomino/cosmetics.json",
+		"HD_RARITY_ORDINALS":             "common:1,rare:2,epic:3,legendary:4,mythic:5,cosmic:6",
 		"HD_EMOJI_SLOTS":                 "8",
 		"HD_ACTION_SLOTS":                "2",
 	}))
@@ -105,6 +106,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 || config.Inventory.ActionSlots != 2 {
 		t.Fatalf("inventory config %q %+v", config.Cosmetics, config.Inventory)
 	}
+	if len(config.Rarities) != 6 || config.Rarities["cosmic"] != 6 {
+		t.Fatalf("rarities %v", config.Rarities)
+	}
 }
 
 func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
@@ -121,11 +125,12 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 		"HD_NICKNAME_ALLOW_MIXED_SCRIPT": "maybe",
 		"HD_NICKNAME_MAX_LENGTH":         "2",
 		"HD_EMOJI_SLOTS":                 "0",
+		"HD_RARITY_ORDINALS":             "common:1,rare:1",
 	}))
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_RARITY_ORDINALS"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}

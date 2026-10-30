@@ -4,6 +4,7 @@
     "state": "MATCH_STATE_LOADING",
     "seat": "SEAT_NORTH",
     "mode": "MODE_2V2",
+    "table": "table.night_market",
     "seats": [
       { "seat": "SEAT_NORTH", "controller": "CONTROLLER_PLAYER", "loadingProgress": 100, "ready": true },
       { "seat": "SEAT_EAST", "controller": "CONTROLLER_PLAYER", "loadingProgress": 40 },

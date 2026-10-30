@@ -83,6 +83,8 @@ type Options struct {
 	Bot            bot.Config
 	BotLevel       bot.Level
 	Seed           uint64
+	Table          string
+	TableDraw      [32]byte
 	Clock          Clock
 	Roster         []Player
 	ReconnectGrace time.Duration
@@ -455,7 +457,7 @@ func (r *Room) loading(seat rules.Seat, progress int, ready bool) {
 }
 
 func (r *Room) deal() {
-	r.recorder = replay.NewRecorder(r.options.Mode, r.options.Config, r.options.Seed)
+	r.recorder = replay.NewRecorder(r.options.Mode, r.options.Config, r.options.Seed, r.options.TableDraw)
 	now := r.options.Clock.Now()
 	for _, seat := range r.options.Mode.Seats() {
 		if r.seats[seat].ready && r.seats[seat].sink != nil {
