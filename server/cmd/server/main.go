@@ -24,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 type systemClock struct{}
@@ -94,6 +95,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	items := inventory.NewHandler(tokens, inventory.NewStore(pool, catalog, config.Inventory), logger, time.Now)
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)
+	a.Handle("/wallet", wallet.NewHandler(tokens, wallet.NewStore(pool), logger))
 	return a, pool.Close, nil
 }
 
