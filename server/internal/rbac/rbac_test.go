@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -210,4 +211,27 @@ func sensitivePhrases(rest string) []string {
 		return strings.Split(list, ", ")
 	}
 	return []string{rest}
+}
+
+func TestObjectsAndRolesAreKnownByName(t *testing.T) {
+	objects := Objects()
+	if len(objects) != len(matrix) || !slices.IsSorted(objects) {
+		t.Fatalf("objects %v", objects)
+	}
+	for _, object := range objects {
+		if !IsObject(object) {
+			t.Errorf("%s is not an object", object)
+		}
+	}
+	if IsObject("shop_offer") {
+		t.Error("a misspelt object is known")
+	}
+	for _, role := range specColumns {
+		if !IsRole(role) {
+			t.Errorf("%s is not a role", role)
+		}
+	}
+	if IsRole("owner") || IsRole("") {
+		t.Error("an unknown role is known")
+	}
 }

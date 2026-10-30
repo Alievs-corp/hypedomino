@@ -6,15 +6,23 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
-var ErrInvalid = errors.New("audit: invalid entry")
+var (
+	ErrInvalid   = errors.New("audit: invalid entry")
+	ErrForbidden = errors.New("audit: the roles cannot view the audit log")
+)
+
+var playerObjects = []rbac.Object{rbac.Players, rbac.Queues, rbac.RightsRequests}
 
 const (
 	Staging    = "staging"
@@ -28,11 +36,11 @@ const (
 
 type Actor struct {
 	ID    string
-	Roles []string
+	Roles []rbac.Role
 }
 
 type Object struct {
-	Type string
+	Type rbac.Object
 	ID   string
 }
 
@@ -85,10 +93,14 @@ func (e Entry) Validate() error {
 	switch {
 	case e.Actor.ID == "" || len(e.Actor.Roles) == 0:
 		return fmt.Errorf("%w: actor id and roles are required", ErrInvalid)
+	case slices.ContainsFunc(e.Actor.Roles, func(role rbac.Role) bool { return !rbac.IsRole(role) }):
+		return fmt.Errorf("%w: unknown role in %v", ErrInvalid, e.Actor.Roles)
 	case e.Environment != Staging && e.Environment != Production:
 		return fmt.Errorf("%w: environment %q", ErrInvalid, e.Environment)
 	case e.Action == "" || e.Object.Type == "" || e.Object.ID == "":
 		return fmt.Errorf("%w: action and object are required", ErrInvalid)
+	case !rbac.IsObject(e.Object.Type):
+		return fmt.Errorf("%w: unknown object type %q", ErrInvalid, e.Object.Type)
 	case e.Source.SessionID == "":
 		return fmt.Errorf("%w: session id is required", ErrInvalid)
 	case !validJSON(e.Before) || !validJSON(e.After):
@@ -121,8 +133,29 @@ func (s *Store) Append(ctx context.Context, entry Entry, now time.Time) (Recorde
 	return Recorded{Entry: entry, ID: id, At: now.UTC().Truncate(time.Microsecond)}, nil
 }
 
-func (s *Store) Search(ctx context.Context, filter Filter) ([]Recorded, error) {
-	where, args := filter.conditions()
+func VisibleObjects(roles []rbac.Role) []rbac.Object {
+	if !rbac.Allows(roles, rbac.AuditLog, rbac.View) {
+		return nil
+	}
+	seesPlayers := slices.Contains(roles, rbac.SuperAdmin)
+	var visible []rbac.Object
+	for _, object := range rbac.Objects() {
+		if slices.Contains(playerObjects, object) && !seesPlayers {
+			continue
+		}
+		if rbac.Allows(roles, object, rbac.View) {
+			visible = append(visible, object)
+		}
+	}
+	return visible
+}
+
+func (s *Store) Search(ctx context.Context, viewer []rbac.Role, filter Filter) ([]Recorded, error) {
+	visible := VisibleObjects(viewer)
+	if len(visible) == 0 {
+		return nil, ErrForbidden
+	}
+	where, args := filter.conditions(visible)
 	args = append(args, filter.limit())
 	rows, err := s.pool.Query(ctx, `select id, created_at, actor_id, actor_roles, environment, action, object_type, object_id,
 		before, after, reason, coalesce(approval_id, 0), ref, change_set, coalesce(config_version, 0), session_id, source_ip, user_agent
@@ -133,13 +166,14 @@ func (s *Store) Search(ctx context.Context, filter Filter) ([]Recorded, error) {
 	return pgx.CollectRows(rows, scanRecorded)
 }
 
-func (f Filter) conditions() (string, []any) {
+func (f Filter) conditions(visible []rbac.Object) (string, []any) {
 	var clauses []string
 	var args []any
 	add := func(clause string, value any) {
 		args = append(args, value)
 		clauses = append(clauses, strings.ReplaceAll(clause, "?", "$"+strconv.Itoa(len(args))))
 	}
+	add("object_type = any(?)", visible)
 	if f.ActorID != "" {
 		add("actor_id = ?", f.ActorID)
 	}
@@ -163,9 +197,6 @@ func (f Filter) conditions() (string, []any) {
 	}
 	if f.BeforeID > 0 {
 		add("id < ?", f.BeforeID)
-	}
-	if len(clauses) == 0 {
-		return "", nil
 	}
 	return " where " + strings.Join(clauses, " and "), args
 }
