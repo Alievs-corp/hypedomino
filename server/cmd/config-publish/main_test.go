@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
+	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
 func TestMain(m *testing.M) {
@@ -46,5 +50,32 @@ func TestPublishValidatesAndStoresTheSnapshot(t *testing.T) {
 	}
 	if err := pool.QueryRow(ctx, `select count(*) from config_snapshots`).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("snapshots after refusals %d %v", count, err)
+	}
+}
+
+func TestRulesSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
+	url, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	write := func(content string) string {
+		path := filepath.Join(t.TempDir(), "rules.json")
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	var out bytes.Buffer
+	if err := run(ctx, url, rulesconfig.Domain, write(`{"TurnSeconds": 61}`), &out); !errors.Is(err, rulesconfig.ErrInvalid) {
+		t.Fatalf("out of bounds turn time: %v", err)
+	}
+	if err := run(ctx, url, rulesconfig.Domain, write(`{"TurnSeconds": 25}`), &out); err != nil {
+		t.Fatal(err)
+	}
+	watcher := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, slog.New(slog.DiscardHandler))
+	if _, err := watcher.Load(ctx); err != nil {
+		t.Fatal(err)
+	}
+	tuning, _, _ := watcher.Current()
+	if got := tuning.Apply(rules.DefaultConfig()).TurnSeconds; got != 25 {
+		t.Fatalf("published turn time %d", got)
 	}
 }
