@@ -25,6 +25,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -132,6 +133,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		current, _, _ := tuning.Current()
 		return current.Apply(base)
 	})
+	ratingConfigs := rating.NewWatcher(pool, logger)
+	go ratingConfigs.Run(ctx, config.ConfigPoll)
+	go rating.NewStore(pool, ratingConfigs).RunApexRecalc(ctx, logger, time.Now)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
