@@ -80,8 +80,8 @@ A source is `{ "type": ..., "ref": ... }`. `ref` is the id of a record owned by 
 | `pass` | Pass reward id (season, track, level) | #9, #123 |
 | `mission` | Mission id | #9, #127 |
 | `promo` | Promo campaign id | #7, #108 |
-| `rank_reward` | Ranked season reward id | #8, #113 |
 | `first_purchase` | First-purchase bonus bundle id, granted once with the first validated real-money purchase (`docs/economy.md` 7) | #106 |
+| `rank_reward` | Ranked season reward bundle id (`RankRewards` in the `rating` config) | #8, #120 |
 | `event` | Live event id | Admin live-ops config |
 
 Rules:
