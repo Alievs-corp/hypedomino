@@ -29,4 +29,5 @@ message ServerHello {
   string minimum_app_version = 2;
   uint64 server_time_unix_ms = 3;
   string catalog_version = 4;
+  bool in_match = 5;
 }

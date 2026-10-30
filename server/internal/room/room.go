@@ -46,6 +46,7 @@ const (
 	StateOpening
 	StatePlaying
 	StateFinished
+	StateLoading
 )
 
 type Clock interface {
@@ -64,19 +65,35 @@ type Sink interface {
 	Deliver(Message)
 }
 
+type Player struct {
+	Seat      rules.Seat
+	Nickname  string
+	Character string
+	Frame     string
+	Avatar    string
+	RankLabel string
+	Emblems   []string
+	Bot       bool
+}
+
 type Options struct {
-	Kind     Kind
-	Mode     rules.Mode
-	Config   rules.Config
-	Bot      bot.Config
-	BotLevel bot.Level
-	Seed     uint64
-	Clock    Clock
+	Kind           Kind
+	Mode           rules.Mode
+	Config         rules.Config
+	Bot            bot.Config
+	BotLevel       bot.Level
+	Seed           uint64
+	Clock          Clock
+	Roster         []Player
+	ReconnectGrace time.Duration
 }
 
 type seatState struct {
-	sink  Sink
-	acked uint64
+	sink        Sink
+	acked       uint64
+	loading     int
+	ready       bool
+	absentSince time.Time
 }
 
 type turnKey struct {
@@ -124,6 +141,7 @@ func New(options Options) *Room {
 
 func (r *Room) Run(ctx context.Context) {
 	defer close(r.done)
+	r.open()
 	for {
 		select {
 		case <-ctx.Done():
@@ -146,6 +164,7 @@ func (r *Room) Finished() <-chan struct{} {
 
 func (r *Room) end() {
 	if !r.ended {
+		r.settleAbsences()
 		r.ended = true
 		close(r.finished)
 	}
@@ -187,6 +206,10 @@ func (r *Room) Kind() Kind {
 	return r.options.Kind
 }
 
+func (r *Room) Loading(seat rules.Seat, progress int, ready bool) {
+	r.enqueue(func(r *Room) { r.loading(seat, progress, ready) })
+}
+
 func (r *Room) Disconnect(seat rules.Seat, sink Sink) {
 	r.enqueue(func(r *Room) { r.disconnect(seat, sink) })
 }
@@ -219,10 +242,7 @@ func (r *Room) join(seat rules.Seat, sink Sink) {
 		return
 	}
 	r.seats[seat].sink = sink
-	r.presence.Reconnect(seat)
-	if r.state == StateWaiting && r.full() {
-		r.recorder = replay.NewRecorder(r.options.Mode, r.options.Config, r.options.Seed)
-	}
+	r.returned(seat)
 	r.settle()
 }
 
@@ -235,9 +255,9 @@ func (r *Room) seated(seat rules.Seat) bool {
 	return false
 }
 
-func (r *Room) full() bool {
+func (r *Room) allReady() bool {
 	for _, seat := range r.options.Mode.Seats() {
-		if r.seats[seat].sink == nil {
+		if !r.seats[seat].ready {
 			return false
 		}
 	}
@@ -254,7 +274,7 @@ func (r *Room) reconnect(seat rules.Seat, sink Sink) {
 		return
 	}
 	r.seats[seat].sink = sink
-	r.presence.Reconnect(seat)
+	r.returned(seat)
 	r.settle()
 }
 
@@ -269,6 +289,7 @@ func (r *Room) leave(seat rules.Seat) {
 		return
 	}
 	r.seats[seat].sink = nil
+	r.seats[seat].absentSince = time.Time{}
 	r.presence.Leave(seat)
 	r.settle()
 }
@@ -369,9 +390,14 @@ func stateOf(phase rules.Phase) State {
 }
 
 func (r *Room) onTimer() {
+	if r.state == StateLoading {
+		r.deal()
+		return
+	}
 	if r.recorder == nil || r.state == StateFinished {
 		return
 	}
+	r.settleAbsences()
 	seat, acting := r.actingSeat()
 	if !acting {
 		return
@@ -398,4 +424,68 @@ func (r *Room) broadcast() {
 			sink.Deliver(Message{View: r.view(seat)})
 		}
 	}
+}
+
+func (r *Room) open() {
+	r.state = StateLoading
+	limit := rules.LoadingLimit(r.options.Config)
+	r.deadline = r.options.Clock.Now().Add(limit)
+	r.timer = r.options.Clock.After(limit)
+}
+
+func (r *Room) loading(seat rules.Seat, progress int, ready bool) {
+	if !r.seated(seat) || r.state != StateLoading {
+		return
+	}
+	s := &r.seats[seat]
+	progress = min(100, max(0, progress)) / 10 * 10
+	ready = s.ready || ready
+	if ready {
+		progress = 100
+	}
+	if s.loading == progress && s.ready == ready {
+		return
+	}
+	s.loading, s.ready = progress, ready
+	if r.allReady() {
+		r.deal()
+		return
+	}
+	r.broadcast()
+}
+
+func (r *Room) deal() {
+	r.recorder = replay.NewRecorder(r.options.Mode, r.options.Config, r.options.Seed)
+	now := r.options.Clock.Now()
+	for _, seat := range r.options.Mode.Seats() {
+		if r.seats[seat].ready && r.seats[seat].sink != nil {
+			continue
+		}
+		r.presence.Absent(seat)
+		r.seats[seat].absentSince = now
+	}
+	r.settle()
+}
+
+func (r *Room) settleAbsence(seat rules.Seat) {
+	since := r.seats[seat].absentSince
+	if since.IsZero() {
+		return
+	}
+	if r.options.Clock.Now().Sub(since) >= r.options.ReconnectGrace {
+		r.presence.Leave(seat)
+		r.seats[seat].absentSince = time.Time{}
+	}
+}
+
+func (r *Room) settleAbsences() {
+	for _, seat := range r.options.Mode.Seats() {
+		r.settleAbsence(seat)
+	}
+}
+
+func (r *Room) returned(seat rules.Seat) {
+	r.settleAbsence(seat)
+	r.seats[seat].absentSince = time.Time{}
+	r.presence.Reconnect(seat)
 }

@@ -19,5 +19,6 @@ message Envelope {
     PassIntent pass_intent = 21;
     DrawIntent draw_intent = 22;
     EndTurnIntent end_turn_intent = 23;
+    LoadingIntent loading_intent = 24;
   }
 }

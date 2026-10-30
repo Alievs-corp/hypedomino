@@ -44,6 +44,7 @@ enum MatchState {
   MATCH_STATE_OPENING = 2;
   MATCH_STATE_PLAYING = 3;
   MATCH_STATE_FINISHED = 4;
+  MATCH_STATE_LOADING = 5;
 }
 
 message Tile {
@@ -61,6 +62,11 @@ message PassIntent {}
 message DrawIntent {}
 
 message EndTurnIntent {}
+
+message LoadingIntent {
+  uint32 progress = 1;
+  bool ready = 2;
+}
 
 message OrientedTile {
   uint32 first = 1;
@@ -84,6 +90,8 @@ message SeatView {
   Seat seat = 1;
   uint32 hand_size = 2;
   Controller controller = 3;
+  uint32 loading_progress = 4;
+  bool ready = 5;
 }
 
 message LegalMove {
@@ -110,6 +118,18 @@ message HandResult {
   Team next_opener = 6;
 }
 
+message RosterEntry {
+  Seat seat = 1;
+  Team team = 2;
+  string nickname = 3;
+  string character = 4;
+  string frame = 5;
+  string avatar = 6;
+  string rank_label = 7;
+  repeated string emblems = 8;
+  bool bot = 9;
+}
+
 message MatchView {
   MatchState state = 1;
   Seat seat = 2;
@@ -129,4 +149,6 @@ message MatchView {
   repeated LegalMove legal_moves = 16;
   HandResult last_result = 17;
   Team winner = 18;
+  repeated RosterEntry roster = 19;
+  uint64 loading_deadline_unix_ms = 20;
 }

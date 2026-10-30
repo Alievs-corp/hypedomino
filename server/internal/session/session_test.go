@@ -130,6 +130,9 @@ func (tab *table) connect(token string, expectAccepted bool) *player {
 	}
 	p.acked = p.hello.GetAckedSequence()
 	p.sequence = p.acked
+	if expectAccepted {
+		p.write(&pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}})
+	}
 	return p
 }
 
@@ -216,7 +219,7 @@ func (p *player) untilMyTurn() *pb.MatchView {
 	p.t.Helper()
 	for {
 		view := p.view()
-		if view.GetState() != pb.MatchState_MATCH_STATE_WAITING && view.GetCurrent() == p.seat {
+		if !pregame(view) && view.GetCurrent() == p.seat {
 			return view
 		}
 	}
@@ -342,7 +345,7 @@ func TestStayingAwayPastTheGraceHandsTheSeatToTheBotUntilReturn(t *testing.T) {
 func TestASecondDeviceReplacesTheFirstWithoutStartingTheGrace(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1)
 	first := tab.join(rules.SeatX)
-	first.view()
+	first.awaitReady()
 	second := tab.join(rules.SeatX)
 	_, err := first.tryRead()
 	if websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
@@ -352,7 +355,7 @@ func TestASecondDeviceReplacesTheFirstWithoutStartingTheGrace(t *testing.T) {
 		t.Fatalf("second device view %v", view)
 	}
 	y := tab.join(rules.SeatY)
-	y.view()
+	y.awaitReady()
 	tab.clock.advance(2 * DefaultConfig().ReconnectGrace)
 	view := second.untilMyTurn()
 	if controllerOf(view, pb.Seat_SEAT_X) != pb.Controller_CONTROLLER_PLAYER {
@@ -393,7 +396,7 @@ func TestSeatingAConnectedSessionJoinsAtOnce(t *testing.T) {
 	if err := tab.manager.Seat(token, other, rules.SeatY); err != nil {
 		t.Fatal(err)
 	}
-	if view := p.view(); view.GetState() != pb.MatchState_MATCH_STATE_WAITING || view.GetSeat() != pb.Seat_SEAT_Y || view.GetMode() != pb.Mode_MODE_1V1 {
+	if view := p.view(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING || view.GetSeat() != pb.Seat_SEAT_Y || view.GetMode() != pb.Mode_MODE_1V1 {
 		t.Fatalf("view after seating %v", view)
 	}
 }
@@ -403,7 +406,7 @@ func (tab *table) firstToAct() (*player, *player) {
 	x, y := tab.join(rules.SeatX), tab.join(rules.SeatY)
 	for {
 		view := x.view()
-		if view.GetState() == pb.MatchState_MATCH_STATE_WAITING {
+		if pregame(view) {
 			continue
 		}
 		if view.GetCurrent() == x.seat {
@@ -430,4 +433,20 @@ func (tab *table) awayFor(p *player, d time.Duration) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	tab.clock.advance(d)
+}
+
+func pregame(view *pb.MatchView) bool {
+	return view.GetState() == pb.MatchState_MATCH_STATE_WAITING || view.GetState() == pb.MatchState_MATCH_STATE_LOADING
+}
+
+func (p *player) awaitReady() *pb.MatchView {
+	p.t.Helper()
+	for {
+		view := p.view()
+		for _, seat := range view.GetSeats() {
+			if seat.GetSeat() == p.seat && seat.GetReady() {
+				return view
+			}
+		}
+	}
 }

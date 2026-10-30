@@ -36,6 +36,7 @@ type Envelope struct {
 	//	*Envelope_PassIntent
 	//	*Envelope_DrawIntent
 	//	*Envelope_EndTurnIntent
+	//	*Envelope_LoadingIntent
 	Payload       isEnvelope_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -171,6 +172,15 @@ func (x *Envelope) GetEndTurnIntent() *EndTurnIntent {
 	return nil
 }
 
+func (x *Envelope) GetLoadingIntent() *LoadingIntent {
+	if x != nil {
+		if x, ok := x.Payload.(*Envelope_LoadingIntent); ok {
+			return x.LoadingIntent
+		}
+	}
+	return nil
+}
+
 type isEnvelope_Payload interface {
 	isEnvelope_Payload()
 }
@@ -207,6 +217,10 @@ type Envelope_EndTurnIntent struct {
 	EndTurnIntent *EndTurnIntent `protobuf:"bytes,23,opt,name=end_turn_intent,json=endTurnIntent,proto3,oneof"`
 }
 
+type Envelope_LoadingIntent struct {
+	LoadingIntent *LoadingIntent `protobuf:"bytes,24,opt,name=loading_intent,json=loadingIntent,proto3,oneof"`
+}
+
 func (*Envelope_ClientHello) isEnvelope_Payload() {}
 
 func (*Envelope_ServerHello) isEnvelope_Payload() {}
@@ -223,11 +237,13 @@ func (*Envelope_DrawIntent) isEnvelope_Payload() {}
 
 func (*Envelope_EndTurnIntent) isEnvelope_Payload() {}
 
+func (*Envelope_LoadingIntent) isEnvelope_Payload() {}
+
 var File_hypedomino_v1_envelope_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_envelope_proto_rawDesc = "" +
 	"\n" +
-	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\x80\x05\n" +
+	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xc7\x05\n" +
 	"\bEnvelope\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x12%\n" +
@@ -243,7 +259,8 @@ const file_hypedomino_v1_envelope_proto_rawDesc = "" +
 	"passIntent\x12<\n" +
 	"\vdraw_intent\x18\x16 \x01(\v2\x19.hypedomino.v1.DrawIntentH\x00R\n" +
 	"drawIntent\x12F\n" +
-	"\x0fend_turn_intent\x18\x17 \x01(\v2\x1c.hypedomino.v1.EndTurnIntentH\x00R\rendTurnIntentB\t\n" +
+	"\x0fend_turn_intent\x18\x17 \x01(\v2\x1c.hypedomino.v1.EndTurnIntentH\x00R\rendTurnIntent\x12E\n" +
+	"\x0eloading_intent\x18\x18 \x01(\v2\x1c.hypedomino.v1.LoadingIntentH\x00R\rloadingIntentB\t\n" +
 	"\apayloadB\xc8\x01\n" +
 	"\x11com.hypedomino.v1B\rEnvelopeProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -270,6 +287,7 @@ var file_hypedomino_v1_envelope_proto_goTypes = []any{
 	(*PassIntent)(nil),      // 6: hypedomino.v1.PassIntent
 	(*DrawIntent)(nil),      // 7: hypedomino.v1.DrawIntent
 	(*EndTurnIntent)(nil),   // 8: hypedomino.v1.EndTurnIntent
+	(*LoadingIntent)(nil),   // 9: hypedomino.v1.LoadingIntent
 }
 var file_hypedomino_v1_envelope_proto_depIdxs = []int32{
 	1, // 0: hypedomino.v1.Envelope.client_hello:type_name -> hypedomino.v1.ClientHello
@@ -280,11 +298,12 @@ var file_hypedomino_v1_envelope_proto_depIdxs = []int32{
 	6, // 5: hypedomino.v1.Envelope.pass_intent:type_name -> hypedomino.v1.PassIntent
 	7, // 6: hypedomino.v1.Envelope.draw_intent:type_name -> hypedomino.v1.DrawIntent
 	8, // 7: hypedomino.v1.Envelope.end_turn_intent:type_name -> hypedomino.v1.EndTurnIntent
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	9, // 8: hypedomino.v1.Envelope.loading_intent:type_name -> hypedomino.v1.LoadingIntent
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_envelope_proto_init() }
@@ -304,6 +323,7 @@ func file_hypedomino_v1_envelope_proto_init() {
 		(*Envelope_PassIntent)(nil),
 		(*Envelope_DrawIntent)(nil),
 		(*Envelope_EndTurnIntent)(nil),
+		(*Envelope_LoadingIntent)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

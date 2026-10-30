@@ -10,6 +10,7 @@ type Config struct {
 	ScoringOpeningPoints    int
 	TurnSeconds             int
 	AfkConsecutiveTimeouts  int
+	MatchLoadingSeconds     int
 }
 
 func DefaultConfig() Config {
@@ -23,5 +24,6 @@ func DefaultConfig() Config {
 		ScoringOpeningPoints:    10,
 		TurnSeconds:             20,
 		AfkConsecutiveTimeouts:  3,
+		MatchLoadingSeconds:     10,
 	}
 }

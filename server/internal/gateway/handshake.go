@@ -40,7 +40,7 @@ func parseVersion(text string) ([3]int, bool) {
 	return parts, true
 }
 
-func (c *Conn) serverHello(status pb.HelloStatus, acked uint64) *pb.Envelope {
+func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *pb.Envelope {
 	return &pb.Envelope{
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,
@@ -49,6 +49,7 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64) *pb.Envelope {
 			MinimumAppVersion: c.options.Config.MinimumAppVersion,
 			ServerTimeUnixMs:  uint64(c.options.Clock.Now().UnixMilli()),
 			CatalogVersion:    c.options.Config.CatalogVersion,
+			InMatch:           inMatch,
 		}},
 	}
 }

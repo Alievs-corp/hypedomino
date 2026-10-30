@@ -93,12 +93,13 @@ func (r *Relay) dial(ctx context.Context, node Node, conn *gateway.Conn, hello *
 }
 
 type relaySession struct {
-	socket *websocket.Conn
-	conn   *gateway.Conn
-	acked  atomic.Uint64
-	mu     sync.Mutex
-	done   chan struct{}
-	once   sync.Once
+	socket  *websocket.Conn
+	conn    *gateway.Conn
+	acked   atomic.Uint64
+	inMatch bool
+	mu      sync.Mutex
+	done    chan struct{}
+	once    sync.Once
 }
 
 func (s *relaySession) handshake(ctx context.Context, hello *pb.ClientHello) error {
@@ -118,6 +119,7 @@ func (s *relaySession) handshake(ctx context.Context, hello *pb.ClientHello) err
 		return ErrRelayRefused
 	}
 	s.acked.Store(reply.GetAckedSequence())
+	s.inMatch = reply.GetServerHello().GetInMatch()
 	return nil
 }
 
@@ -148,6 +150,17 @@ func (s *relaySession) read(ctx context.Context) (*pb.Envelope, error) {
 
 func (s *relaySession) Acked() uint64 {
 	return s.acked.Load()
+}
+
+func (s *relaySession) InMatch() bool {
+	return s.inMatch
+}
+
+func (s *relaySession) Loading(progress int, ready bool) {
+	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: uint32(progress), Ready: ready}}}
+	if err := s.write(context.Background(), frame); err != nil {
+		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
+	}
 }
 
 func (s *relaySession) Attach() {

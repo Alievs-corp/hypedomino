@@ -33,6 +33,19 @@ func (s *RoomSession) Acked() uint64 {
 	return s.acked.Load()
 }
 
+func (s *RoomSession) InMatch() bool {
+	select {
+	case <-s.room.Finished():
+		return false
+	default:
+		return true
+	}
+}
+
+func (s *RoomSession) Loading(progress int, ready bool) {
+	s.room.Loading(s.seat, progress, ready)
+}
+
 func (s *RoomSession) Attach() {
 	if s.resume {
 		s.room.Reconnect(s.seat, s)

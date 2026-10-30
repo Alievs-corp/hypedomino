@@ -31,25 +31,26 @@ namespace Hypedomino.V1 {
             "c192ZXJzaW9uGAQgASgJUglvc1ZlcnNpb24SIQoMZGV2aWNlX21vZGVsGAUg",
             "ASgJUgtkZXZpY2VNb2RlbBIjCg1zZXNzaW9uX3Rva2VuGAYgASgJUgxzZXNz",
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
-            "a2VkU2VxdWVuY2UiyQEKC1NlcnZlckhlbGxvEjIKBnN0YXR1cxgBIAEoDjIa",
+            "a2VkU2VxdWVuY2Ui5AEKC1NlcnZlckhlbGxvEjIKBnN0YXR1cxgBIAEoDjIa",
             "Lmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXNSBnN0YXR1cxIuChNtaW5pbXVt",
             "X2FwcF92ZXJzaW9uGAIgASgJUhFtaW5pbXVtQXBwVmVyc2lvbhItChNzZXJ2",
             "ZXJfdGltZV91bml4X21zGAMgASgEUhBzZXJ2ZXJUaW1lVW5peE1zEicKD2Nh",
-            "dGFsb2dfdmVyc2lvbhgEIAEoCVIOY2F0YWxvZ1ZlcnNpb24qTAoIUGxhdGZv",
-            "cm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRS",
-            "T0lEEAESEAoMUExBVEZPUk1fSU9TEAIqaAoLSGVsbG9TdGF0dXMSHAoYSEVM",
-            "TE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVMTE9fU1RBVFVTX0FDQ0VQ",
-            "VEVEEAESIAocSEVMTE9fU1RBVFVTX1VQREFURV9SRVFVSVJFRBACQsUBChFj",
-            "b20uaHlwZWRvbWluby52MUIKSGVsbG9Qcm90b1ABWk9naXRodWIuY29tL0Fs",
-            "aWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVk",
-            "b21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoC",
-            "DUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIO",
-            "SHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
+            "dGFsb2dfdmVyc2lvbhgEIAEoCVIOY2F0YWxvZ1ZlcnNpb24SGQoIaW5fbWF0",
+            "Y2gYBSABKAhSB2luTWF0Y2gqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5T",
+            "UEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1f",
+            "SU9TEAIqaAoLSGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lG",
+            "SUVEEAASGQoVSEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RB",
+            "VFVTX1VQREFURV9SRVFVSVJFRBACQsUBChFjb20uaHlwZWRvbWluby52MUIK",
+            "SGVsbG9Qcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21p",
+            "bm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlu",
+            "b3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlI",
+            "eXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnBy",
+            "b3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch" }, null, null, null, null)
           }));
     }
     #endregion
@@ -530,6 +531,7 @@ namespace Hypedomino.V1 {
       minimumAppVersion_ = other.minimumAppVersion_;
       serverTimeUnixMs_ = other.serverTimeUnixMs_;
       catalogVersion_ = other.catalogVersion_;
+      inMatch_ = other.inMatch_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -587,6 +589,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "in_match" field.</summary>
+    public const int InMatchFieldNumber = 5;
+    private bool inMatch_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool InMatch {
+      get { return inMatch_; }
+      set {
+        inMatch_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -606,6 +620,7 @@ namespace Hypedomino.V1 {
       if (MinimumAppVersion != other.MinimumAppVersion) return false;
       if (ServerTimeUnixMs != other.ServerTimeUnixMs) return false;
       if (CatalogVersion != other.CatalogVersion) return false;
+      if (InMatch != other.InMatch) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -617,6 +632,7 @@ namespace Hypedomino.V1 {
       if (MinimumAppVersion.Length != 0) hash ^= MinimumAppVersion.GetHashCode();
       if (ServerTimeUnixMs != 0UL) hash ^= ServerTimeUnixMs.GetHashCode();
       if (CatalogVersion.Length != 0) hash ^= CatalogVersion.GetHashCode();
+      if (InMatch != false) hash ^= InMatch.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -651,6 +667,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(34);
         output.WriteString(CatalogVersion);
       }
+      if (InMatch != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(InMatch);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -677,6 +697,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(34);
         output.WriteString(CatalogVersion);
       }
+      if (InMatch != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(InMatch);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -698,6 +722,9 @@ namespace Hypedomino.V1 {
       }
       if (CatalogVersion.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(CatalogVersion);
+      }
+      if (InMatch != false) {
+        size += 1 + 1;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -722,6 +749,9 @@ namespace Hypedomino.V1 {
       }
       if (other.CatalogVersion.Length != 0) {
         CatalogVersion = other.CatalogVersion;
+      }
+      if (other.InMatch != false) {
+        InMatch = other.InMatch;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -758,6 +788,10 @@ namespace Hypedomino.V1 {
             CatalogVersion = input.ReadString();
             break;
           }
+          case 40: {
+            InMatch = input.ReadBool();
+            break;
+          }
         }
       }
     #endif
@@ -791,6 +825,10 @@ namespace Hypedomino.V1 {
           }
           case 34: {
             CatalogVersion = input.ReadString();
+            break;
+          }
+          case 40: {
+            InMatch = input.ReadBool();
             break;
           }
         }

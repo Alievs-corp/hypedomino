@@ -217,6 +217,7 @@ type ServerHello struct {
 	MinimumAppVersion string                 `protobuf:"bytes,2,opt,name=minimum_app_version,json=minimumAppVersion,proto3" json:"minimum_app_version,omitempty"`
 	ServerTimeUnixMs  uint64                 `protobuf:"varint,3,opt,name=server_time_unix_ms,json=serverTimeUnixMs,proto3" json:"server_time_unix_ms,omitempty"`
 	CatalogVersion    string                 `protobuf:"bytes,4,opt,name=catalog_version,json=catalogVersion,proto3" json:"catalog_version,omitempty"`
+	InMatch           bool                   `protobuf:"varint,5,opt,name=in_match,json=inMatch,proto3" json:"in_match,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -279,6 +280,13 @@ func (x *ServerHello) GetCatalogVersion() string {
 	return ""
 }
 
+func (x *ServerHello) GetInMatch() bool {
+	if x != nil {
+		return x.InMatch
+	}
+	return false
+}
+
 var File_hypedomino_v1_hello_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_hello_proto_rawDesc = "" +
@@ -294,12 +302,13 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"os_version\x18\x04 \x01(\tR\tosVersion\x12!\n" +
 	"\fdevice_model\x18\x05 \x01(\tR\vdeviceModel\x12#\n" +
 	"\rsession_token\x18\x06 \x01(\tR\fsessionToken\x12.\n" +
-	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\"\xc9\x01\n" +
+	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\"\xe4\x01\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
 	"\x13server_time_unix_ms\x18\x03 \x01(\x04R\x10serverTimeUnixMs\x12'\n" +
-	"\x0fcatalog_version\x18\x04 \x01(\tR\x0ecatalogVersion*L\n" +
+	"\x0fcatalog_version\x18\x04 \x01(\tR\x0ecatalogVersion\x12\x19\n" +
+	"\bin_match\x18\x05 \x01(\bR\ainMatch*L\n" +
 	"\bPlatform\x12\x18\n" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_ANDROID\x10\x01\x12\x10\n" +

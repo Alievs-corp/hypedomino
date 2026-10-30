@@ -62,7 +62,9 @@ func (systemClock) Now() time.Time { return time.Now() }
 
 type Session interface {
 	Acked() uint64
+	InMatch() bool
 	Attach()
+	Loading(progress int, ready bool)
 	Intent(sequence uint64, intent replay.Intent)
 	Close()
 }

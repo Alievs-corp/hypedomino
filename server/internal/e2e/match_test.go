@@ -185,7 +185,13 @@ func playSeat(ctx context.Context, url, token string, brain *botclient.Brain, lo
 			log.sent = c.Sent
 			return nil
 		}
-		if view.GetState() == pb.MatchState_MATCH_STATE_WAITING || view.GetCurrent() != view.GetSeat() || frame.GetAckedSequence() != c.Sequence {
+		if botclient.NeedsReady(view) {
+			if err := c.Ready(); err != nil {
+				return err
+			}
+			continue
+		}
+		if botclient.Idle(view) || frame.GetAckedSequence() != c.Sequence {
 			continue
 		}
 		intent, err := brain.Decide(view)

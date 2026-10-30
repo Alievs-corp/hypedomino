@@ -47,6 +47,7 @@ type Session struct {
 	acked      uint64
 	active     *connection
 	generation uint64
+	routed     bool
 }
 
 type Router interface {
@@ -61,10 +62,11 @@ type Manager struct {
 	router   Router
 	mu       sync.Mutex
 	sessions map[string]*Session
+	accounts map[string]map[string]*Session
 }
 
 func New(config Config, clock Clock, random Random) *Manager {
-	return &Manager{config: config, clock: clock, random: random, sessions: map[string]*Session{}}
+	return &Manager{config: config, clock: clock, random: random, sessions: map[string]*Session{}, accounts: map[string]map[string]*Session{}}
 }
 
 func (m *Manager) Route(router Router) {
@@ -95,8 +97,40 @@ func (m *Manager) Create(account string) string {
 	token := hex.EncodeToString(raw[:])
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.sessions[token] = &Session{token: token, account: account}
+	s := &Session{token: token, account: account}
+	m.sessions[token] = s
+	if m.accounts[account] == nil {
+		m.accounts[account] = map[string]*Session{}
+	}
+	m.accounts[account][token] = s
 	return token
+}
+
+func (m *Manager) InMatch(account string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, s := range m.accounts[account] {
+		if s.room != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Manager) finish(s *Session, r *room.Room) {
+	<-r.Finished()
+	m.mu.Lock()
+	if s.room != r {
+		m.mu.Unlock()
+		return
+	}
+	s.room, s.joined, s.acked = nil, false, 0
+	routed := s.routed
+	s.routed = false
+	m.mu.Unlock()
+	if routed {
+		m.release(s.token)
+	}
 }
 
 func (m *Manager) Seat(token string, r *room.Room, seat rules.Seat) error {
@@ -112,7 +146,8 @@ func (m *Manager) Seat(token string, r *room.Room, seat rules.Seat) error {
 	if err := m.claim(token); err != nil {
 		return err
 	}
-	s.room, s.seat, s.joined, s.acked = r, seat, false, 0
+	s.room, s.seat, s.joined, s.acked, s.routed = r, seat, false, 0, true
+	go m.finish(s, r)
 	if s.active != nil {
 		s.active.attach(s)
 	}
@@ -123,8 +158,16 @@ func (m *Manager) Revoke(token string) {
 	m.mu.Lock()
 	s, ok := m.sessions[token]
 	delete(m.sessions, token)
+	routed := ok && s.routed
+	if ok {
+		s.routed = false
+		delete(m.accounts[s.account], token)
+		if len(m.accounts[s.account]) == 0 {
+			delete(m.accounts, s.account)
+		}
+	}
 	m.mu.Unlock()
-	if ok && s.room != nil {
+	if routed {
 		m.release(token)
 	}
 	if ok && s.active != nil {
@@ -160,6 +203,21 @@ func (c *connection) Acked() uint64 {
 	c.manager.mu.Lock()
 	defer c.manager.mu.Unlock()
 	return c.session.acked
+}
+
+func (c *connection) InMatch() bool {
+	c.manager.mu.Lock()
+	defer c.manager.mu.Unlock()
+	return c.session.room != nil
+}
+
+func (c *connection) Loading(progress int, ready bool) {
+	c.mu.Lock()
+	seat := c.seat
+	c.mu.Unlock()
+	if seat != nil {
+		seat.Loading(progress, ready)
+	}
 }
 
 func (c *connection) Attach() {
@@ -230,5 +288,8 @@ func (m *Manager) expire(s *Session, generation uint64, due <-chan time.Time) {
 		return
 	}
 	s.room.Leave(s.seat)
-	m.release(s.token)
+	if s.routed {
+		s.routed = false
+		m.release(s.token)
+	}
 }

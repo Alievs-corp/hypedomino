@@ -1,0 +1,21 @@
+{
+  "protocolVersion": 1,
+  "matchView": {
+    "state": "MATCH_STATE_LOADING",
+    "seat": "SEAT_NORTH",
+    "mode": "MODE_2V2",
+    "seats": [
+      { "seat": "SEAT_NORTH", "controller": "CONTROLLER_PLAYER", "loadingProgress": 100, "ready": true },
+      { "seat": "SEAT_EAST", "controller": "CONTROLLER_PLAYER", "loadingProgress": 40 },
+      { "seat": "SEAT_SOUTH", "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_WEST", "controller": "CONTROLLER_PLAYER", "loadingProgress": 100, "ready": true }
+    ],
+    "roster": [
+      { "seat": "SEAT_NORTH", "team": "TEAM_A", "nickname": "ayla", "character": "nar", "frame": "frame.gold", "avatar": "avatar.fox", "rankLabel": "Silver II", "emblems": ["emblem.first-win"] },
+      { "seat": "SEAT_EAST", "team": "TEAM_B", "nickname": "ben", "character": "kaspi", "rankLabel": "Bronze I" },
+      { "seat": "SEAT_SOUTH", "team": "TEAM_A", "nickname": "ceyhun", "character": "nar", "rankLabel": "Silver III" },
+      { "seat": "SEAT_WEST", "team": "TEAM_B", "nickname": "bot", "character": "kaspi", "bot": true }
+    ],
+    "loadingDeadlineUnixMs": "1761480010000"
+  }
+}

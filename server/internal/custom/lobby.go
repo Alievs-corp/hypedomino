@@ -19,7 +19,12 @@ var (
 	ErrStarted       = errors.New("custom: the match has started")
 	ErrInvalidSeat   = errors.New("custom: seat outside the mode")
 	ErrInvalidMode   = errors.New("custom: invalid mode")
+	ErrInMatch       = errors.New("custom: account is in a running match")
 )
+
+type Gate interface {
+	InMatch(account string) bool
+}
 
 const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
@@ -34,6 +39,7 @@ type Opener func(options room.Options) (*room.Room, error)
 type Lobby struct {
 	random Random
 	opener Opener
+	gate   Gate
 	mu     sync.Mutex
 	rooms  map[string]*Room
 }
@@ -42,9 +48,20 @@ func NewLobby(random Random, opener Opener) *Lobby {
 	return &Lobby{random: random, opener: opener, rooms: map[string]*Room{}}
 }
 
+func (l *Lobby) Guard(gate Gate) {
+	l.gate = gate
+}
+
+func (l *Lobby) busy(account string) bool {
+	return l.gate != nil && l.gate.InMatch(account)
+}
+
 func (l *Lobby) Create(creator string, mode rules.Mode) (*Room, error) {
 	if mode != rules.Mode1v1 && mode != rules.Mode2v2 {
 		return nil, ErrInvalidMode
+	}
+	if l.busy(creator) {
+		return nil, ErrInMatch
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -176,6 +193,9 @@ func (r *Room) Join(account string) (rules.Seat, error) {
 	if _, seated := r.seatOf(account); seated {
 		return 0, ErrAlreadyInRoom
 	}
+	if r.lobby.busy(account) {
+		return 0, ErrInMatch
+	}
 	seat, ok := r.freeSeat()
 	if !ok {
 		return 0, ErrFull
@@ -281,6 +301,9 @@ func (r *Room) Add(creator, account string, seat rules.Seat) error {
 	}
 	if _, seated := r.seatOf(account); seated {
 		return ErrAlreadyInRoom
+	}
+	if r.lobby.busy(account) {
+		return ErrInMatch
 	}
 	r.seats[seat] = account
 	if r.table != nil {

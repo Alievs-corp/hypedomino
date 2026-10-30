@@ -106,10 +106,29 @@ func ViewMessage(view room.View) *pb.MatchView {
 	}
 	for _, seat := range view.Mode.Seats() {
 		out.Seats = append(out.Seats, &pb.SeatView{
-			Seat:       seatMessage(seat),
-			HandSize:   uint32(view.HandSizes[seat]),
-			Controller: controllerMessage(view.Controllers[seat]),
+			Seat:            seatMessage(seat),
+			HandSize:        uint32(view.HandSizes[seat]),
+			Controller:      controllerMessage(view.Controllers[seat]),
+			LoadingProgress: uint32(view.Loading[seat]),
+			Ready:           view.Ready[seat],
 		})
+	}
+	for _, player := range view.Roster {
+		out.Roster = append(out.Roster, &pb.RosterEntry{
+			Seat:      seatMessage(player.Seat),
+			Team:      teamMessage(player.Seat.Team()),
+			Nickname:  player.Nickname,
+			Character: player.Character,
+			Frame:     player.Frame,
+			Avatar:    player.Avatar,
+			RankLabel: player.RankLabel,
+			Emblems:   player.Emblems,
+			Bot:       player.Bot,
+		})
+	}
+	if view.State == room.StateLoading {
+		out.LoadingDeadlineUnixMs = uint64(view.LoadingDeadline.UnixMilli())
+		return out
 	}
 	if view.State == room.StateWaiting {
 		return out
