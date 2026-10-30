@@ -263,6 +263,7 @@ jobs:
         with:
           projectPath: client
           testMode: all
+          githubToken: ''
 
   proto:
     needs: changes
