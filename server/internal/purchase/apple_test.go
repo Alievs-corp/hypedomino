@@ -81,7 +81,7 @@ func transaction(environment string) map[string]any {
 	return map[string]any{
 		"transactionId": "2000000123", "originalTransactionId": "2000000100", "bundleId": "com.example.hypedomino",
 		"productId": "offer_starter", "purchaseDate": testNow.UnixMilli(), "environment": environment,
-		"appAccountToken": "5F0D6A2E-3C7B-4E1A-9D8F-2B6C4A1E7F30", "type": "Consumable",
+		"appAccountToken": "0000000A-0000-4000-8000-00000000000B", "type": "Consumable",
 	}
 }
 
@@ -101,7 +101,7 @@ func TestAppleTransactionsVerifyAgainstTheChain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Receipt{Platform: PlatformApple, TransactionID: "2000000123", OrderID: "2000000100", ProductID: "offer_starter", AccountToken: "5f0d6a2e-3c7b-4e1a-9d8f-2b6c4a1e7f30", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: testNow}
+	want := Receipt{Platform: PlatformApple, TransactionID: "2000000123", OrderID: "2000000100", ProductID: "offer_starter", AccountToken: "0000000a-0000-4000-8000-00000000000b", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: testNow}
 	if receipt != want {
 		t.Fatalf("receipt %+v", receipt)
 	}
