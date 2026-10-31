@@ -133,7 +133,7 @@ type harness struct {
 func newHarness(t *testing.T, config Config) *harness {
 	t.Helper()
 	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, config: config, sessions: map[string]*recordingSession{}}
-	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock})
+	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings})
 	h.server = httptest.NewServer(gateway)
 	t.Cleanup(h.server.Close)
 	return h
@@ -261,6 +261,13 @@ func place(sequence uint64, low, high uint32, end pb.BoardEnd) *pb.Envelope {
 	return intentFrame(sequence, &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{Tile: &pb.Tile{Low: low, High: high}, End: end}}})
 }
 
+func activeStrings() Strings {
+	return Strings{
+		Bundles: []*pb.StringBundle{{Language: "en", Version: 4, Hash: "e4"}},
+		Chains:  []*pb.FallbackChain{{Language: "en", Languages: []string{"en"}}},
+	}
+}
+
 func testConfig() Config {
 	config := DefaultConfig()
 	config.CatalogVersion = "2026.10.26-1"
@@ -290,6 +297,12 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	if frame.GetProtocolVersion() != ProtocolVersion {
 		t.Fatalf("protocol version %d", frame.GetProtocolVersion())
 	}
+	if want := activeStrings(); !proto.Equal(reply, &pb.ServerHello{
+		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1",
+		StringBundles: want.Bundles, FallbackChains: want.Chains,
+	}) {
+		t.Fatalf("server hello carries the active string bundles: %v", reply)
+	}
 	h.session("ok-resume").awaitAttached(t)
 }
 
@@ -302,6 +315,9 @@ func TestOldClientGetsUpdateRequiredAndIsClosed(t *testing.T) {
 	frame := c.recv()
 	if frame.GetServerHello().GetStatus() != pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED || frame.GetServerHello().GetMinimumAppVersion() != "1.4.0" {
 		t.Fatalf("old client answered %v", frame)
+	}
+	if len(frame.GetServerHello().GetStringBundles()) != 0 {
+		t.Fatalf("an old client gets no string bundles: %v", frame)
 	}
 	c.expectClose(websocket.StatusNormalClosure)
 	if h.session("ok") != nil {

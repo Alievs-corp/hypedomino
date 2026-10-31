@@ -218,6 +218,8 @@ type ServerHello struct {
 	ServerTimeUnixMs  uint64                 `protobuf:"varint,3,opt,name=server_time_unix_ms,json=serverTimeUnixMs,proto3" json:"server_time_unix_ms,omitempty"`
 	CatalogVersion    string                 `protobuf:"bytes,4,opt,name=catalog_version,json=catalogVersion,proto3" json:"catalog_version,omitempty"`
 	InMatch           bool                   `protobuf:"varint,5,opt,name=in_match,json=inMatch,proto3" json:"in_match,omitempty"`
+	StringBundles     []*StringBundle        `protobuf:"bytes,6,rep,name=string_bundles,json=stringBundles,proto3" json:"string_bundles,omitempty"`
+	FallbackChains    []*FallbackChain       `protobuf:"bytes,7,rep,name=fallback_chains,json=fallbackChains,proto3" json:"fallback_chains,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -287,6 +289,132 @@ func (x *ServerHello) GetInMatch() bool {
 	return false
 }
 
+func (x *ServerHello) GetStringBundles() []*StringBundle {
+	if x != nil {
+		return x.StringBundles
+	}
+	return nil
+}
+
+func (x *ServerHello) GetFallbackChains() []*FallbackChain {
+	if x != nil {
+		return x.FallbackChains
+	}
+	return nil
+}
+
+type StringBundle struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Language      string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	Hash          string                 `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StringBundle) Reset() {
+	*x = StringBundle{}
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StringBundle) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StringBundle) ProtoMessage() {}
+
+func (x *StringBundle) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StringBundle.ProtoReflect.Descriptor instead.
+func (*StringBundle) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *StringBundle) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *StringBundle) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *StringBundle) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+type FallbackChain struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Language      string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
+	Languages     []string               `protobuf:"bytes,2,rep,name=languages,proto3" json:"languages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FallbackChain) Reset() {
+	*x = FallbackChain{}
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FallbackChain) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FallbackChain) ProtoMessage() {}
+
+func (x *FallbackChain) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FallbackChain.ProtoReflect.Descriptor instead.
+func (*FallbackChain) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FallbackChain) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *FallbackChain) GetLanguages() []string {
+	if x != nil {
+		return x.Languages
+	}
+	return nil
+}
+
 var File_hypedomino_v1_hello_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_hello_proto_rawDesc = "" +
@@ -302,13 +430,22 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"os_version\x18\x04 \x01(\tR\tosVersion\x12!\n" +
 	"\fdevice_model\x18\x05 \x01(\tR\vdeviceModel\x12#\n" +
 	"\rsession_token\x18\x06 \x01(\tR\fsessionToken\x12.\n" +
-	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\"\xe4\x01\n" +
+	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\"\xef\x02\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
 	"\x13server_time_unix_ms\x18\x03 \x01(\x04R\x10serverTimeUnixMs\x12'\n" +
 	"\x0fcatalog_version\x18\x04 \x01(\tR\x0ecatalogVersion\x12\x19\n" +
-	"\bin_match\x18\x05 \x01(\bR\ainMatch*L\n" +
+	"\bin_match\x18\x05 \x01(\bR\ainMatch\x12B\n" +
+	"\x0estring_bundles\x18\x06 \x03(\v2\x1b.hypedomino.v1.StringBundleR\rstringBundles\x12E\n" +
+	"\x0ffallback_chains\x18\a \x03(\v2\x1c.hypedomino.v1.FallbackChainR\x0efallbackChains\"X\n" +
+	"\fStringBundle\x12\x1a\n" +
+	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +
+	"\x04hash\x18\x03 \x01(\tR\x04hash\"I\n" +
+	"\rFallbackChain\x12\x1a\n" +
+	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x1c\n" +
+	"\tlanguages\x18\x02 \x03(\tR\tlanguages*L\n" +
 	"\bPlatform\x12\x18\n" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_ANDROID\x10\x01\x12\x10\n" +
@@ -333,21 +470,25 @@ func file_hypedomino_v1_hello_proto_rawDescGZIP() []byte {
 }
 
 var file_hypedomino_v1_hello_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_hypedomino_v1_hello_proto_goTypes = []any{
-	(Platform)(0),       // 0: hypedomino.v1.Platform
-	(HelloStatus)(0),    // 1: hypedomino.v1.HelloStatus
-	(*ClientHello)(nil), // 2: hypedomino.v1.ClientHello
-	(*ServerHello)(nil), // 3: hypedomino.v1.ServerHello
+	(Platform)(0),         // 0: hypedomino.v1.Platform
+	(HelloStatus)(0),      // 1: hypedomino.v1.HelloStatus
+	(*ClientHello)(nil),   // 2: hypedomino.v1.ClientHello
+	(*ServerHello)(nil),   // 3: hypedomino.v1.ServerHello
+	(*StringBundle)(nil),  // 4: hypedomino.v1.StringBundle
+	(*FallbackChain)(nil), // 5: hypedomino.v1.FallbackChain
 }
 var file_hypedomino_v1_hello_proto_depIdxs = []int32{
 	0, // 0: hypedomino.v1.ClientHello.platform:type_name -> hypedomino.v1.Platform
 	1, // 1: hypedomino.v1.ServerHello.status:type_name -> hypedomino.v1.HelloStatus
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 2: hypedomino.v1.ServerHello.string_bundles:type_name -> hypedomino.v1.StringBundle
+	5, // 3: hypedomino.v1.ServerHello.fallback_chains:type_name -> hypedomino.v1.FallbackChain
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_hello_proto_init() }
@@ -361,7 +502,7 @@ func file_hypedomino_v1_hello_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_hello_proto_rawDesc), len(file_hypedomino_v1_hello_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

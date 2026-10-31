@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+
+	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 )
 
 const Domain = "localization"
@@ -80,15 +82,43 @@ func checkChain(language Language, chain []Language) error {
 	return nil
 }
 
-func (s *Store) CheckActive(ctx context.Context, localization Localization) error {
-	for language, version := range localization.Bundles {
-		if _, err := s.Bundle(ctx, language, version); err != nil {
-			return fmt.Errorf("%w: %s version %d: %w", ErrInvalidLocalization, language, version, err)
+type ActiveBundle struct {
+	Language Language
+	Version  int
+	Hash     string
+}
+
+type Active struct {
+	Bundles        []ActiveBundle
+	FallbackChains map[Language][]Language
+}
+
+func (s *Store) Resolve(ctx context.Context, localization Localization) (Active, error) {
+	active := Active{FallbackChains: localization.FallbackChains}
+	var english Published
+	for _, language := range Languages {
+		version, named := localization.Bundles[language]
+		if !named {
+			continue
 		}
+		bundle, err := s.Bundle(ctx, language, version)
+		if err != nil {
+			return Active{}, fmt.Errorf("%w: %s version %d: %w", ErrInvalidLocalization, language, version, err)
+		}
+		if language == English {
+			english = bundle
+		}
+		active.Bundles = append(active.Bundles, ActiveBundle{Language: language, Version: version, Hash: bundle.Hash})
 	}
-	english, err := s.Bundle(ctx, English, localization.Bundles[English])
-	if err != nil {
-		return err
+	if err := s.checkComplete(ctx, english); err != nil {
+		return Active{}, err
+	}
+	return active, nil
+}
+
+func (s *Store) checkComplete(ctx context.Context, english Published) error {
+	if english.Version == 0 {
+		return fmt.Errorf("%w: no en bundle", ErrInvalidLocalization)
 	}
 	var bundle Bundle
 	if err := json.Unmarshal(english.Content, &bundle); err != nil {
@@ -104,4 +134,34 @@ func (s *Store) CheckActive(ctx context.Context, localization Localization) erro
 		}
 	}
 	return nil
+}
+
+func (s *Store) ActiveParser(ctx context.Context) func(raw []byte) (Active, error) {
+	return func(raw []byte) (Active, error) {
+		localization, err := ParseLocalization(raw)
+		if err != nil {
+			return Active{}, err
+		}
+		return s.Resolve(ctx, localization)
+	}
+}
+
+func (a Active) Hello() ([]*pb.StringBundle, []*pb.FallbackChain) {
+	bundles := make([]*pb.StringBundle, 0, len(a.Bundles))
+	for _, bundle := range a.Bundles {
+		bundles = append(bundles, &pb.StringBundle{Language: string(bundle.Language), Version: uint32(bundle.Version), Hash: bundle.Hash})
+	}
+	chains := make([]*pb.FallbackChain, 0, len(a.FallbackChains))
+	for _, language := range Languages {
+		chain, has := a.FallbackChains[language]
+		if !has {
+			continue
+		}
+		steps := make([]string, len(chain))
+		for i, step := range chain {
+			steps[i] = string(step)
+		}
+		chains = append(chains, &pb.FallbackChain{Language: string(language), Languages: steps})
+	}
+	return bundles, chains
 }

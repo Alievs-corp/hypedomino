@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/hello.proto.
  */
 export const file_hypedomino_v1_hello: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIr8BCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQingEKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCCpMCghQbGF0Zm9ybRIYChRQTEFURk9STV9VTlNQRUNJRklFRBAAEhQKEFBMQVRGT1JNX0FORFJPSUQQARIQCgxQTEFURk9STV9JT1MQAipoCgtIZWxsb1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUxMT19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRFX1JFUVVJUkVEEAJCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z");
+  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIr8BCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQiigIKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCBIzCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlEjUKD2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpbiI/CgxTdHJpbmdCdW5kbGUSEAoIbGFuZ3VhZ2UYASABKAkSDwoHdmVyc2lvbhgCIAEoDRIMCgRoYXNoGAMgASgJIjQKDUZhbGxiYWNrQ2hhaW4SEAoIbGFuZ3VhZ2UYASABKAkSEQoJbGFuZ3VhZ2VzGAIgAygJKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hlbGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlSRUQQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM");
 
 /**
  * @generated from message hypedomino.v1.ClientHello
@@ -87,6 +87,16 @@ export type ServerHello = Message<"hypedomino.v1.ServerHello"> & {
    * @generated from field: bool in_match = 5;
    */
   inMatch: boolean;
+
+  /**
+   * @generated from field: repeated hypedomino.v1.StringBundle string_bundles = 6;
+   */
+  stringBundles: StringBundle[];
+
+  /**
+   * @generated from field: repeated hypedomino.v1.FallbackChain fallback_chains = 7;
+   */
+  fallbackChains: FallbackChain[];
 };
 
 /**
@@ -95,6 +105,55 @@ export type ServerHello = Message<"hypedomino.v1.ServerHello"> & {
  */
 export const ServerHelloSchema: GenMessage<ServerHello> = /*@__PURE__*/
   messageDesc(file_hypedomino_v1_hello, 1);
+
+/**
+ * @generated from message hypedomino.v1.StringBundle
+ */
+export type StringBundle = Message<"hypedomino.v1.StringBundle"> & {
+  /**
+   * @generated from field: string language = 1;
+   */
+  language: string;
+
+  /**
+   * @generated from field: uint32 version = 2;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string hash = 3;
+   */
+  hash: string;
+};
+
+/**
+ * Describes the message hypedomino.v1.StringBundle.
+ * Use `create(StringBundleSchema)` to create a new message.
+ */
+export const StringBundleSchema: GenMessage<StringBundle> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 2);
+
+/**
+ * @generated from message hypedomino.v1.FallbackChain
+ */
+export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
+  /**
+   * @generated from field: string language = 1;
+   */
+  language: string;
+
+  /**
+   * @generated from field: repeated string languages = 2;
+   */
+  languages: string[];
+};
+
+/**
+ * Describes the message hypedomino.v1.FallbackChain.
+ * Use `create(FallbackChainSchema)` to create a new message.
+ */
+export const FallbackChainSchema: GenMessage<FallbackChain> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 3);
 
 /**
  * @generated from enum hypedomino.v1.Platform

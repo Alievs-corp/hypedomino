@@ -31,26 +31,34 @@ namespace Hypedomino.V1 {
             "c192ZXJzaW9uGAQgASgJUglvc1ZlcnNpb24SIQoMZGV2aWNlX21vZGVsGAUg",
             "ASgJUgtkZXZpY2VNb2RlbBIjCg1zZXNzaW9uX3Rva2VuGAYgASgJUgxzZXNz",
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
-            "a2VkU2VxdWVuY2Ui5AEKC1NlcnZlckhlbGxvEjIKBnN0YXR1cxgBIAEoDjIa",
+            "a2VkU2VxdWVuY2Ui7wIKC1NlcnZlckhlbGxvEjIKBnN0YXR1cxgBIAEoDjIa",
             "Lmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXNSBnN0YXR1cxIuChNtaW5pbXVt",
             "X2FwcF92ZXJzaW9uGAIgASgJUhFtaW5pbXVtQXBwVmVyc2lvbhItChNzZXJ2",
             "ZXJfdGltZV91bml4X21zGAMgASgEUhBzZXJ2ZXJUaW1lVW5peE1zEicKD2Nh",
             "dGFsb2dfdmVyc2lvbhgEIAEoCVIOY2F0YWxvZ1ZlcnNpb24SGQoIaW5fbWF0",
-            "Y2gYBSABKAhSB2luTWF0Y2gqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5T",
-            "UEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1f",
-            "SU9TEAIqaAoLSGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lG",
-            "SUVEEAASGQoVSEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RB",
-            "VFVTX1VQREFURV9SRVFVSVJFRBACQsUBChFjb20uaHlwZWRvbWluby52MUIK",
-            "SGVsbG9Qcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21p",
-            "bm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlu",
-            "b3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlI",
-            "eXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnBy",
-            "b3RvMw=="));
+            "Y2gYBSABKAhSB2luTWF0Y2gSQgoOc3RyaW5nX2J1bmRsZXMYBiADKAsyGy5o",
+            "eXBlZG9taW5vLnYxLlN0cmluZ0J1bmRsZVINc3RyaW5nQnVuZGxlcxJFCg9m",
+            "YWxsYmFja19jaGFpbnMYByADKAsyHC5oeXBlZG9taW5vLnYxLkZhbGxiYWNr",
+            "Q2hhaW5SDmZhbGxiYWNrQ2hhaW5zIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5n",
+            "dWFnZRgBIAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lv",
+            "bhISCgRoYXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFu",
+            "Z3VhZ2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFu",
+            "Z3VhZ2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAAS",
+            "FAoQUExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hl",
+            "bGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhF",
+            "TExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVf",
+            "UkVRVUlSRUQQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9Q",
+            "AVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9p",
+            "bnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoC",
+            "DUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xW",
+            "MVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.StringBundle), global::Hypedomino.V1.StringBundle.Parser, new[]{ "Language", "Version", "Hash" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
           }));
     }
     #endregion
@@ -532,6 +540,8 @@ namespace Hypedomino.V1 {
       serverTimeUnixMs_ = other.serverTimeUnixMs_;
       catalogVersion_ = other.catalogVersion_;
       inMatch_ = other.inMatch_;
+      stringBundles_ = other.stringBundles_.Clone();
+      fallbackChains_ = other.fallbackChains_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -601,6 +611,28 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "string_bundles" field.</summary>
+    public const int StringBundlesFieldNumber = 6;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.StringBundle> _repeated_stringBundles_codec
+        = pb::FieldCodec.ForMessage(50, global::Hypedomino.V1.StringBundle.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.StringBundle> stringBundles_ = new pbc::RepeatedField<global::Hypedomino.V1.StringBundle>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.StringBundle> StringBundles {
+      get { return stringBundles_; }
+    }
+
+    /// <summary>Field number for the "fallback_chains" field.</summary>
+    public const int FallbackChainsFieldNumber = 7;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.FallbackChain> _repeated_fallbackChains_codec
+        = pb::FieldCodec.ForMessage(58, global::Hypedomino.V1.FallbackChain.Parser);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.FallbackChain> fallbackChains_ = new pbc::RepeatedField<global::Hypedomino.V1.FallbackChain>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.FallbackChain> FallbackChains {
+      get { return fallbackChains_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -621,6 +653,8 @@ namespace Hypedomino.V1 {
       if (ServerTimeUnixMs != other.ServerTimeUnixMs) return false;
       if (CatalogVersion != other.CatalogVersion) return false;
       if (InMatch != other.InMatch) return false;
+      if(!stringBundles_.Equals(other.stringBundles_)) return false;
+      if(!fallbackChains_.Equals(other.fallbackChains_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -633,6 +667,8 @@ namespace Hypedomino.V1 {
       if (ServerTimeUnixMs != 0UL) hash ^= ServerTimeUnixMs.GetHashCode();
       if (CatalogVersion.Length != 0) hash ^= CatalogVersion.GetHashCode();
       if (InMatch != false) hash ^= InMatch.GetHashCode();
+      hash ^= stringBundles_.GetHashCode();
+      hash ^= fallbackChains_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -671,6 +707,8 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(40);
         output.WriteBool(InMatch);
       }
+      stringBundles_.WriteTo(output, _repeated_stringBundles_codec);
+      fallbackChains_.WriteTo(output, _repeated_fallbackChains_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -701,6 +739,8 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(40);
         output.WriteBool(InMatch);
       }
+      stringBundles_.WriteTo(ref output, _repeated_stringBundles_codec);
+      fallbackChains_.WriteTo(ref output, _repeated_fallbackChains_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -726,6 +766,8 @@ namespace Hypedomino.V1 {
       if (InMatch != false) {
         size += 1 + 1;
       }
+      size += stringBundles_.CalculateSize(_repeated_stringBundles_codec);
+      size += fallbackChains_.CalculateSize(_repeated_fallbackChains_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -753,6 +795,8 @@ namespace Hypedomino.V1 {
       if (other.InMatch != false) {
         InMatch = other.InMatch;
       }
+      stringBundles_.Add(other.stringBundles_);
+      fallbackChains_.Add(other.fallbackChains_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -792,6 +836,14 @@ namespace Hypedomino.V1 {
             InMatch = input.ReadBool();
             break;
           }
+          case 50: {
+            stringBundles_.AddEntriesFrom(input, _repeated_stringBundles_codec);
+            break;
+          }
+          case 58: {
+            fallbackChains_.AddEntriesFrom(input, _repeated_fallbackChains_codec);
+            break;
+          }
         }
       }
     #endif
@@ -829,6 +881,510 @@ namespace Hypedomino.V1 {
           }
           case 40: {
             InMatch = input.ReadBool();
+            break;
+          }
+          case 50: {
+            stringBundles_.AddEntriesFrom(ref input, _repeated_stringBundles_codec);
+            break;
+          }
+          case 58: {
+            fallbackChains_.AddEntriesFrom(ref input, _repeated_fallbackChains_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class StringBundle : pb::IMessage<StringBundle>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<StringBundle> _parser = new pb::MessageParser<StringBundle>(() => new StringBundle());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<StringBundle> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StringBundle() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StringBundle(StringBundle other) : this() {
+      language_ = other.language_;
+      version_ = other.version_;
+      hash_ = other.hash_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StringBundle Clone() {
+      return new StringBundle(this);
+    }
+
+    /// <summary>Field number for the "language" field.</summary>
+    public const int LanguageFieldNumber = 1;
+    private string language_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Language {
+      get { return language_; }
+      set {
+        language_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "version" field.</summary>
+    public const int VersionFieldNumber = 2;
+    private uint version_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint Version {
+      get { return version_; }
+      set {
+        version_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "hash" field.</summary>
+    public const int HashFieldNumber = 3;
+    private string hash_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Hash {
+      get { return hash_; }
+      set {
+        hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as StringBundle);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(StringBundle other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Language != other.Language) return false;
+      if (Version != other.Version) return false;
+      if (Hash != other.Hash) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Language.Length != 0) hash ^= Language.GetHashCode();
+      if (Version != 0) hash ^= Version.GetHashCode();
+      if (Hash.Length != 0) hash ^= Hash.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Language.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Language);
+      }
+      if (Version != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Version);
+      }
+      if (Hash.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Hash);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Language.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Language);
+      }
+      if (Version != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(Version);
+      }
+      if (Hash.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Hash);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Language.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Language);
+      }
+      if (Version != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Version);
+      }
+      if (Hash.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hash);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(StringBundle other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Language.Length != 0) {
+        Language = other.Language;
+      }
+      if (other.Version != 0) {
+        Version = other.Version;
+      }
+      if (other.Hash.Length != 0) {
+        Hash = other.Hash;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Language = input.ReadString();
+            break;
+          }
+          case 16: {
+            Version = input.ReadUInt32();
+            break;
+          }
+          case 26: {
+            Hash = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Language = input.ReadString();
+            break;
+          }
+          case 16: {
+            Version = input.ReadUInt32();
+            break;
+          }
+          case 26: {
+            Hash = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class FallbackChain : pb::IMessage<FallbackChain>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<FallbackChain> _parser = new pb::MessageParser<FallbackChain>(() => new FallbackChain());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<FallbackChain> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public FallbackChain() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public FallbackChain(FallbackChain other) : this() {
+      language_ = other.language_;
+      languages_ = other.languages_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public FallbackChain Clone() {
+      return new FallbackChain(this);
+    }
+
+    /// <summary>Field number for the "language" field.</summary>
+    public const int LanguageFieldNumber = 1;
+    private string language_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Language {
+      get { return language_; }
+      set {
+        language_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "languages" field.</summary>
+    public const int LanguagesFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_languages_codec
+        = pb::FieldCodec.ForString(18);
+    private readonly pbc::RepeatedField<string> languages_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> Languages {
+      get { return languages_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as FallbackChain);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(FallbackChain other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Language != other.Language) return false;
+      if(!languages_.Equals(other.languages_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Language.Length != 0) hash ^= Language.GetHashCode();
+      hash ^= languages_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Language.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Language);
+      }
+      languages_.WriteTo(output, _repeated_languages_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Language.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Language);
+      }
+      languages_.WriteTo(ref output, _repeated_languages_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Language.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Language);
+      }
+      size += languages_.CalculateSize(_repeated_languages_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(FallbackChain other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Language.Length != 0) {
+        Language = other.Language;
+      }
+      languages_.Add(other.languages_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Language = input.ReadString();
+            break;
+          }
+          case 18: {
+            languages_.AddEntriesFrom(input, _repeated_languages_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Language = input.ReadString();
+            break;
+          }
+          case 18: {
+            languages_.AddEntriesFrom(ref input, _repeated_languages_codec);
             break;
           }
         }
