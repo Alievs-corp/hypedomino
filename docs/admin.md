@@ -550,6 +550,13 @@ Owner decision (2026-10-26, O-1): the rule covers the high-risk actions below; o
 | Section 4 control in production, except promo code disable | `live_ops` or `super_admin` | Another `live_ops` or `super_admin` |
 | Granting `super_admin` | `super_admin` | Another `super_admin` |
 
+Proposals are stored in the `admin_approvals` table (`server/internal/approval`, migration `00012_admin_approvals`).
+- **Proposing.** A proposal records the kind of action and its object. The object type comes from the kind: players, promo codes, live controls or admin accounts. It also records the change as JSON, a mandatory reason, the proposer and their roles, and an expiry of `AdminApprovalTtlHours` after the proposal.
+- **Deciding.** A proposal can be approved or rejected only by an admin who holds an approver role from the table above and is not the proposer. The database checks this as well.
+- **Expiry and finality.** A proposal can be decided only while it is pending and before it expires. A decision is final. Of several parallel decisions, exactly one wins.
+- **Pending list.** The pending list holds only proposals that are still undecided and not expired.
+- **Not yet.** Running the approved action and writing its audit entries is up to each action's handler. Break-glass is not built yet.
+
 Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 
 ## 9. Security
