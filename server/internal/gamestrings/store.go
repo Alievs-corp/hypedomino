@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -74,7 +75,15 @@ func (s *Store) SetValue(ctx context.Context, key string, language Language, val
 			return err
 		}
 	}
-	_, err = s.pool.Exec(ctx, `insert into game_string_values (key, language, text, status, updated_by, updated_at)
+	return upsertValue(ctx, s.pool, key, language, value, by, now)
+}
+
+type executor interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+}
+
+func upsertValue(ctx context.Context, db executor, key string, language Language, value Value, by string, now time.Time) error {
+	_, err := db.Exec(ctx, `insert into game_string_values (key, language, text, status, updated_by, updated_at)
 		values ($1, $2, $3, $4, $5, $6)
 		on conflict (key, language) do update set text = excluded.text, status = excluded.status,
 			updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
@@ -173,6 +182,45 @@ func (s *Store) store(ctx context.Context, bundle Published) (Published, error) 
 		return err
 	})
 	return stored, err
+}
+
+func (s *Store) Export(ctx context.Context, language Language, format Format) ([]byte, error) {
+	entries, err := s.Entries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	transfer, err := BuildTransfer(entries, language)
+	if err != nil {
+		return nil, err
+	}
+	return transfer.Encode(format)
+}
+
+func (s *Store) Import(ctx context.Context, language Language, format Format, data []byte, by string, now time.Time) ([]Change, []Problem, error) {
+	transfer, err := ParseTransfer(data, format, language)
+	if err != nil {
+		return nil, nil, err
+	}
+	entries, err := s.Entries(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	changes, problems := PlanImport(entries, transfer)
+	if problems != nil {
+		return nil, problems, fmt.Errorf("%w: %d rows fail their checks", ErrImportBlocked, len(problems))
+	}
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		for _, change := range changes {
+			if err := upsertValue(ctx, tx, change.Key, language, Value{Text: change.Text, Status: Draft}, by, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return changes, nil, nil
 }
 
 const bundleColumns = `language, version, hash, content, published_by, published_at`
