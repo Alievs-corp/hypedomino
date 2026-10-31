@@ -94,7 +94,7 @@ func (p *playServer) purchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bodies := map[string]string{
-		"tok-ok":        `{"purchaseState":0,"consumptionState":0,"orderId":"GPA.1234","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"5F0D6A2E-3C7B-4E1A-9D8F-2B6C4A1E7F30","productId":"coins_tier1","acknowledgementState":0}`,
+		"tok-ok":        `{"purchaseState":0,"consumptionState":0,"orderId":"GPA.1234","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"0000000A-0000-4000-8000-00000000000B","productId":"coins_tier1","acknowledgementState":0}`,
 		"tok-pending":   `{"purchaseState":2,"orderId":"GPA.1235","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a"}`,
 		"tok-cancelled": `{"purchaseState":1,"orderId":"GPA.1236","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a"}`,
 		"tok-test":      `{"purchaseState":0,"orderId":"","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a","purchaseType":0}`,
@@ -155,7 +155,7 @@ func TestGooglePurchasesAreLookedUpWithAServiceAccountToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Receipt{Platform: PlatformGoogle, TransactionID: "tok-ok", OrderID: "GPA.1234", ProductID: "coins_tier1", AccountToken: "5f0d6a2e-3c7b-4e1a-9d8f-2b6c4a1e7f30", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: time.UnixMilli(1793448000000).UTC()}
+	want := Receipt{Platform: PlatformGoogle, TransactionID: "tok-ok", OrderID: "GPA.1234", ProductID: "coins_tier1", AccountToken: "0000000a-0000-4000-8000-00000000000b", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: time.UnixMilli(1793448000000).UTC()}
 	if receipt != want {
 		t.Fatalf("receipt %+v", receipt)
 	}
