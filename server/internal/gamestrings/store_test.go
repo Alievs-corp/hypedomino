@@ -214,3 +214,66 @@ func TestPublishedBundlesCannotBeChanged(t *testing.T) {
 		}
 	}
 }
+
+func TestAnImportStoresChangedTextsAsDraftsForReview(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win(), coins())
+	set(t, store, "match.result.win", gamestrings.Russian, "Победа", gamestrings.Approved)
+	set(t, store, "match.result.coins", gamestrings.Russian, "{coins} монета", gamestrings.Approved)
+	file := "key,ru\nmatch.result.win,Победа\nmatch.result.coins,\"{coins, plural, one {# монета} few {# монеты} many {# монет} other {# монеты}}\"\n"
+	changes, problems, err := store.Import(ctx, gamestrings.Russian, gamestrings.CSV, []byte(file), "translator-ru", now)
+	if err != nil || problems != nil || len(changes) != 1 || changes[0].Key != "match.result.coins" {
+		t.Fatalf("changes %+v problems %+v err %v", changes, problems, err)
+	}
+	entries, err := store.Entries(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]gamestrings.Value{
+		"match.result.coins": {Text: "{coins, plural, one {# монета} few {# монеты} many {# монет} other {# монеты}}", Status: gamestrings.Draft},
+		"match.result.win":   {Text: "Победа", Status: gamestrings.Approved},
+	}
+	for _, entry := range entries {
+		if got := entry.Values[gamestrings.Russian]; got != want[entry.Key] {
+			t.Errorf("%s: %+v, want %+v", entry.Key, got, want[entry.Key])
+		}
+	}
+}
+
+func TestABlockedImportStoresNothing(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win(), coins())
+	file := `{"language":"ru","rows":[{"key":"match.result.win","text":"Победа"},{"key":"match.result.coins","text":"{coin} монет"}]}`
+	changes, problems, err := store.Import(ctx, gamestrings.Russian, gamestrings.JSON, []byte(file), "translator-ru", now)
+	if !errors.Is(err, gamestrings.ErrImportBlocked) || changes != nil || len(problems) != 1 || problems[0].Key != "match.result.coins" {
+		t.Fatalf("changes %+v problems %+v err %v", changes, problems, err)
+	}
+	entries, err := store.Entries(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if len(entry.Values) != 0 {
+			t.Fatalf("%s was stored: %+v", entry.Key, entry.Values)
+		}
+	}
+}
+
+func TestAnExportImportsBackWithoutChanges(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win(), coins())
+	set(t, store, "match.result.win", gamestrings.Turkish, "Zafer", gamestrings.Approved)
+	for _, format := range []gamestrings.Format{gamestrings.CSV, gamestrings.JSON} {
+		data, err := store.Export(ctx, gamestrings.Turkish, format)
+		if err != nil {
+			t.Fatal(err)
+		}
+		changes, problems, err := store.Import(ctx, gamestrings.Turkish, format, data, "translator-tr", now)
+		if err != nil || problems != nil || changes != nil {
+			t.Errorf("%s: changes %+v problems %+v err %v", format, changes, problems, err)
+		}
+	}
+}
