@@ -99,6 +99,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, err
 	}
 	inventoryStore := inventory.NewStore(pool, catalog, config.Inventory)
+	manifests := snapshot.New(pool, cosmetics.Domain, cosmetics.Parse, logger)
+	go manifests.Run(ctx, config.ConfigPoll)
+	inventoryStore.Follow(manifests.Current)
 	items := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)

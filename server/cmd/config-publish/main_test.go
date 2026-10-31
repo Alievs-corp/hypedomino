@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -77,5 +78,51 @@ func TestRulesSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
 	tuning, _, _ := watcher.Current()
 	if got := tuning.Apply(rules.DefaultConfig()).TurnSeconds; got != 25 {
 		t.Fatalf("published turn time %d", got)
+	}
+}
+
+func TestACosmeticsManifestMustFollowThePublishedOne(t *testing.T) {
+	url, _ := dbtest.Fresh(t)
+	ctx := context.Background()
+	raw, err := os.ReadFile("../../../docs/cosmetics/examples/catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := cosmetics.ParseManifest(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write := func(m cosmetics.Manifest) string {
+		t.Helper()
+		encoded, err := m.Encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join(t.TempDir(), "manifest.json")
+		if err := os.WriteFile(path, encoded, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	var out bytes.Buffer
+	if err := run(ctx, url, cosmetics.Domain, write(first), &out); err != nil {
+		t.Fatalf("first manifest: %v", err)
+	}
+	if err := run(ctx, url, cosmetics.Domain, write(first), &out); !errors.Is(err, cosmetics.ErrSuccessor) {
+		t.Fatalf("the same manifestVersion again: %v", err)
+	}
+	dropped := first
+	dropped.ManifestVersion++
+	dropped.Items = first.Items[:len(first.Items)-1]
+	if err := run(ctx, url, cosmetics.Domain, write(dropped), &out); !errors.Is(err, cosmetics.ErrSuccessor) {
+		t.Fatalf("a manifest without an earlier item: %v", err)
+	}
+	next := first
+	next.ManifestVersion++
+	if err := run(ctx, url, cosmetics.Domain, write(next), &out); err != nil {
+		t.Fatalf("the next manifest: %v", err)
+	}
+	if err := run(ctx, url, cosmetics.Domain, write(cosmetics.Manifest{SchemaVersion: 1, ManifestVersion: 9}), &out); !errors.Is(err, cosmetics.ErrInvalid) {
+		t.Fatalf("an invalid manifest: %v", err)
 	}
 }

@@ -214,7 +214,8 @@ An invalid manifest is never published. A client that receives one keeps its pre
 Implemented in `server/internal/cosmetics` (#136):
 - **Publish check.** A publish must follow the previous manifest. Its `manifestVersion` is exactly one higher (7.1). V-12 holds: every earlier item is still present and keeps its type. V-13 holds: no revision goes down, and an item whose content changed has a higher revision. Content means every field except `revision`.
 - **Rollback** (`docs/admin.md` 3.7). It builds the next manifest from the current one. An item whose content differs from the target version gets the target's content under the next revision. Unchanged items, and items added after the target, stay as they are. The result passes the publish check.
-- **Not yet.** The checks that need other admin data (V-14 to V-18) and loading the manifest from a config snapshot follow in #136.
+- **Delivery to the game server.** The manifest is the `cosmetics` config domain. `config-publish -domain cosmetics` runs the single-manifest checks and then the publish check against the newest published manifest. Every node polls the domain (`HD_CONFIG_POLL`) and switches its inventory to the new catalog without a restart. A snapshot that fails the checks is logged, and the previous catalog stays.
+- **Not yet.** The checks that need other admin data (V-14 to V-18) follow in #136.
 
 ## 10. Server authority
 
@@ -222,7 +223,7 @@ Implemented in `server/internal/cosmetics` (#136):
 - Ownership is the server inventory. Items are granted only through the reward bundle engine (#102) from a listed source (section 5).
 - Equip is an intent: the server accepts it only for an owned item of that slot's type whose availability is `live` or `retired`. Sending an emoji requires owning it (#150).
 - The client never unlocks, previews as owned or equips locally ahead of the server. A modified client that edits its manifest only changes what it draws for itself.
-- Implemented in `server/internal/cosmetics` and `server/internal/inventory` (#61): a `default` item is owned by every account implicitly, with no inventory row, so it can never be revoked; every other item is a row with its granting source, accepted only when listed in `sources`. Equip checks type, availability and ownership; the loadout is resolved again at match start and recorded with the match (`match_participants.loadout`). The manifest comes from `HD_COSMETICS_MANIFEST` or the built-in copy of `examples/minimal.json` until admin config serves it (ADR 0006).
+- Implemented in `server/internal/cosmetics` and `server/internal/inventory` (#61): a `default` item is owned by every account implicitly, with no inventory row, so it can never be revoked; every other item is a row with its granting source, accepted only when listed in `sources`. Equip checks type, availability and ownership; the loadout is resolved again at match start and recorded with the match (`match_participants.loadout`). The manifest is the newest `cosmetics` config snapshot (section 9, ADR 0006). Until one is published, it is `HD_COSMETICS_MANIFEST` or the built-in copy of `examples/minimal.json`.
 
 ## 11. One schema for admin, server and client
 

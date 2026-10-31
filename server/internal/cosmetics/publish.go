@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+const Domain = "cosmetics"
+
 var ErrSuccessor = errors.New("cosmetics: manifest cannot follow the previous one")
 
 type Manifest struct {

@@ -10,6 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -53,6 +56,11 @@ func run(ctx context.Context, url, domain, file string, out io.Writer) error {
 		return err
 	}
 	defer pool.Close()
+	if domain == cosmetics.Domain {
+		if err := followsPublished(ctx, pool, raw); err != nil {
+			return err
+		}
+	}
 	version, err := snapshot.Publish(ctx, pool, domain, raw)
 	if err != nil {
 		return err
@@ -69,6 +77,28 @@ func validate(domain string, raw []byte) error {
 	case rulesconfig.Domain:
 		_, err := rulesconfig.Parse(raw)
 		return err
+	case cosmetics.Domain:
+		_, err := cosmetics.ParseManifest(raw)
+		return err
 	}
 	return fmt.Errorf("%w: %s", errDomain, domain)
+}
+
+func followsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	_, published, err := snapshot.Latest(ctx, pool, cosmetics.Domain)
+	if errors.Is(err, snapshot.ErrNone) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	previous, err := cosmetics.ParseManifest(published)
+	if err != nil {
+		return err
+	}
+	next, err := cosmetics.ParseManifest(raw)
+	if err != nil {
+		return err
+	}
+	return cosmetics.CheckSuccessor(previous, next)
 }
