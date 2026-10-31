@@ -14,6 +14,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -56,10 +57,8 @@ func run(ctx context.Context, url, domain, file string, out io.Writer) error {
 		return err
 	}
 	defer pool.Close()
-	if domain == cosmetics.Domain {
-		if err := followsPublished(ctx, pool, raw); err != nil {
-			return err
-		}
+	if err := checkAgainstPublished(ctx, pool, domain, raw); err != nil {
+		return err
 	}
 	version, err := snapshot.Publish(ctx, pool, domain, raw)
 	if err != nil {
@@ -80,8 +79,25 @@ func validate(domain string, raw []byte) error {
 	case cosmetics.Domain:
 		_, err := cosmetics.ParseManifest(raw)
 		return err
+	case gamestrings.Domain:
+		_, err := gamestrings.ParseLocalization(raw)
+		return err
 	}
 	return fmt.Errorf("%w: %s", errDomain, domain)
+}
+
+func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain string, raw []byte) error {
+	switch domain {
+	case cosmetics.Domain:
+		return followsPublished(ctx, pool, raw)
+	case gamestrings.Domain:
+		localization, err := gamestrings.ParseLocalization(raw)
+		if err != nil {
+			return err
+		}
+		return gamestrings.NewStore(pool).CheckActive(ctx, localization)
+	}
+	return nil
 }
 
 func followsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
