@@ -56,13 +56,18 @@ func (w *Watcher[T]) Current() (T, int64, bool) {
 	return w.value, w.version, w.loaded
 }
 
-func (w *Watcher[T]) Load(ctx context.Context) (bool, error) {
+func Latest(ctx context.Context, pool *pgxpool.Pool, domain string) (int64, []byte, error) {
 	var version int64
 	var raw []byte
-	err := w.pool.QueryRow(ctx, `select version, content from config_snapshots where domain = $1 order by version desc limit 1`, w.domain).Scan(&version, &raw)
+	err := pool.QueryRow(ctx, `select version, content from config_snapshots where domain = $1 order by version desc limit 1`, domain).Scan(&version, &raw)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, ErrNone
+		return 0, nil, ErrNone
 	}
+	return version, raw, err
+}
+
+func (w *Watcher[T]) Load(ctx context.Context) (bool, error) {
+	version, raw, err := Latest(ctx, w.pool, w.domain)
 	if err != nil {
 		return false, err
 	}

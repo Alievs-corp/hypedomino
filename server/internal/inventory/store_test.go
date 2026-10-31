@@ -198,3 +198,24 @@ func TestFreezeFallsBackToDefaultsAndRevokeUnequips(t *testing.T) {
 		t.Fatalf("owned after regrant %v %v", owns, err)
 	}
 }
+
+func TestTheStoreFollowsThePublishedCatalogOnceThereIsOne(t *testing.T) {
+	builtin := cosmetics.Builtin()
+	published, err := cosmetics.Load("../../../docs/cosmetics/examples/catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := inventory.NewStore(nil, builtin, inventory.DefaultConfig())
+	var current *cosmetics.Catalog
+	store.Follow(func() (*cosmetics.Catalog, int64, bool) { return current, 3, current != nil })
+	if store.Catalog() != builtin {
+		t.Fatal("without a published catalog the store must keep its own")
+	}
+	current = published
+	if store.Catalog() != published {
+		t.Fatal("the store did not switch to the published catalog")
+	}
+	if _, ok := store.Catalog().Item("avatar.comet_fox"); !ok {
+		t.Fatal("an item of the published catalog is unknown")
+	}
+}

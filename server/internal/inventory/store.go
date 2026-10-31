@@ -46,6 +46,7 @@ type Owned struct {
 type Store struct {
 	pool    *pgxpool.Pool
 	catalog *cosmetics.Catalog
+	live    func() (*cosmetics.Catalog, int64, bool)
 	config  Config
 }
 
@@ -53,13 +54,22 @@ func NewStore(pool *pgxpool.Pool, catalog *cosmetics.Catalog, config Config) *St
 	return &Store{pool: pool, catalog: catalog, config: config}
 }
 
+func (s *Store) Follow(live func() (*cosmetics.Catalog, int64, bool)) {
+	s.live = live
+}
+
 func (s *Store) Catalog() *cosmetics.Catalog {
+	if s.live != nil {
+		if catalog, _, ok := s.live(); ok {
+			return catalog
+		}
+	}
 	return s.catalog
 }
 
 func (s *Store) Owned(ctx context.Context, account string) ([]Owned, error) {
 	var owned []Owned
-	for _, item := range s.catalog.Defaults() {
+	for _, item := range s.Catalog().Defaults() {
 		owned = append(owned, Owned{ID: item.ID, Type: item.Type, Source: cosmetics.Source{Type: cosmetics.SourceDefault}})
 	}
 	rows, err := s.pool.Query(ctx, `select item_id, source_type, source_ref, granted_at from inventory_items where account_id = $1 and revoked_at is null order by granted_at, item_id`, account)
@@ -88,7 +98,7 @@ func (s *Store) OwnsIn(ctx context.Context, tx pgx.Tx, account, id string) (bool
 }
 
 func (s *Store) ownsIn(ctx context.Context, q querier, account, id string) (bool, error) {
-	item, ok := s.catalog.Item(id)
+	item, ok := s.Catalog().Item(id)
 	if !ok {
 		return false, nil
 	}
@@ -112,7 +122,7 @@ func (s *Store) Grant(ctx context.Context, account, id string, source cosmetics.
 }
 
 func (s *Store) GrantIn(ctx context.Context, tx pgx.Tx, account, id string, source cosmetics.Source, now time.Time) (bool, error) {
-	item, ok := s.catalog.Item(id)
+	item, ok := s.Catalog().Item(id)
 	switch {
 	case !ok:
 		return false, ErrUnknownItem
@@ -150,7 +160,7 @@ func (s *Store) Revoke(ctx context.Context, account, id string, now time.Time) e
 }
 
 func (s *Store) RevokeIn(ctx context.Context, tx pgx.Tx, account, id string, now time.Time) error {
-	if item, ok := s.catalog.Item(id); ok && item.Default() {
+	if item, ok := s.Catalog().Item(id); ok && item.Default() {
 		return ErrDefaultItem
 	}
 	tag, err := tx.Exec(ctx, `update inventory_items set revoked_at = $3 where account_id = $1 and item_id = $2 and revoked_at is null`, account, id, now)
@@ -242,7 +252,7 @@ type querier interface {
 }
 
 func (s *Store) equippable(ctx context.Context, q querier, account, slot, id string) error {
-	item, ok := s.catalog.Item(id)
+	item, ok := s.Catalog().Item(id)
 	switch {
 	case !ok:
 		return fmt.Errorf("%w: %s", ErrUnknownItem, id)
@@ -275,7 +285,7 @@ func (s *Store) resolve(ctx context.Context, q querier, account string, loadout 
 		id   *string
 	}{{cosmetics.TypeAvatar, &loadout.Avatar}, {cosmetics.TypeFrame, &loadout.Frame}, {cosmetics.TypeCharacter, &loadout.Character}, {cosmetics.TypeTable, &loadout.Table}} {
 		if *slot.id == "" || s.equippable(ctx, q, account, slot.name, *slot.id) != nil {
-			if def, ok := s.catalog.Default(slot.name); ok {
+			if def, ok := s.Catalog().Default(slot.name); ok {
 				*slot.id = def.ID
 			} else {
 				*slot.id = ""
