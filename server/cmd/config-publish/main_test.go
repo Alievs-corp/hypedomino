@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -124,5 +126,56 @@ func TestACosmeticsManifestMustFollowThePublishedOne(t *testing.T) {
 	}
 	if err := run(ctx, url, cosmetics.Domain, write(cosmetics.Manifest{SchemaVersion: 1, ManifestVersion: 9}), &out); !errors.Is(err, cosmetics.ErrInvalid) {
 		t.Fatalf("an invalid manifest: %v", err)
+	}
+}
+
+func TestALocalizationSnapshotNeedsPublishedBundlesAndRollsBackByVersion(t *testing.T) {
+	url, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	now := time.Date(2026, 10, 31, 9, 0, 0, 0, time.UTC)
+	write := func(content string) string {
+		t.Helper()
+		path := filepath.Join(t.TempDir(), "localization.json")
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	var out bytes.Buffer
+	active := write(`{"bundles":{"en":1,"ru":2}}`)
+	if err := run(ctx, url, gamestrings.Domain, active, &out); !errors.Is(err, gamestrings.ErrNoBundle) {
+		t.Fatalf("unpublished bundles: %v", err)
+	}
+	if err := run(ctx, url, gamestrings.Domain, write(`{"bundles":{"ru":1}}`), &out); !errors.Is(err, gamestrings.ErrInvalidLocalization) {
+		t.Fatalf("no en bundle: %v", err)
+	}
+	store := gamestrings.NewStore(pool)
+	if err := store.SaveEntry(ctx, gamestrings.Entry{Key: "match.result.win", Note: "Match end title.", MaxLength: 12}, "content-1", now); err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []struct {
+		language gamestrings.Language
+		text     string
+	}{{gamestrings.English, "Victory"}, {gamestrings.Russian, "Победа"}, {gamestrings.Russian, "Победа!"}} {
+		if err := store.SetValue(ctx, "match.result.win", value.language, gamestrings.Value{Text: value.text, Status: gamestrings.Approved}, "content-1", now); err != nil {
+			t.Fatal(err)
+		}
+		if _, problems, err := store.Publish(ctx, value.language, "content-1", now); err != nil {
+			t.Fatalf("publish %s: %v %v", value.language, problems, err)
+		}
+	}
+	if err := run(ctx, url, gamestrings.Domain, active, &out); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(ctx, url, gamestrings.Domain, write(`{"bundles":{"en":1,"ru":1}}`), &out); err != nil {
+		t.Fatalf("rollback to ru 1: %v", err)
+	}
+	watcher := snapshot.New(pool, gamestrings.Domain, gamestrings.ParseLocalization, slog.New(slog.DiscardHandler))
+	if _, err := watcher.Load(ctx); err != nil {
+		t.Fatal(err)
+	}
+	localization, version, _ := watcher.Current()
+	if localization.Bundles[gamestrings.Russian] != 1 || version != 2 {
+		t.Fatalf("active %+v at version %d", localization, version)
 	}
 }
