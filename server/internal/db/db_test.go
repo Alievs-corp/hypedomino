@@ -61,7 +61,7 @@ func has(names []string, want string) bool {
 	return false
 }
 
-const head = 11
+const head = 12
 
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
@@ -84,7 +84,7 @@ func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "match_events", "match_events_default", "outbox", "reward_grants", "config_snapshots", "admin_audit_entries", "purchases", "purchase_notices", "admin_accounts", "game_strings", "game_string_values", "game_string_bundles", "goose_db_version"} {
+	for _, want := range []string{"accounts", "auth_identities", "profiles", "inventory_items", "wallets", "ledger_entries", "matches", "match_participants", "matches_default", "match_participants_default", "match_events", "match_events_default", "outbox", "reward_grants", "config_snapshots", "admin_audit_entries", "purchases", "purchase_notices", "admin_accounts", "game_strings", "game_string_values", "game_string_bundles", "admin_approvals", "goose_db_version"} {
 		if !has(tables(t, pool), want) {
 			t.Fatalf("table %s missing after up: %v", want, tables(t, pool))
 		}
