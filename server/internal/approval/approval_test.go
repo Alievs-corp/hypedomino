@@ -79,6 +79,9 @@ func TestEachHighRiskActionHasItsProposersAndApprovers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s proposed by %v: %v", test.kind, test.proposer.Roles, err)
 		}
+		if approval.Decides(test.approver.Roles, test.kind) != test.approveOK {
+			t.Errorf("%s decided by %v: Decides disagrees", test.kind, test.approver.Roles)
+		}
 		_, err = store.Approve(ctx, p.ID, test.approver, start.Add(time.Hour))
 		if test.approveOK && err != nil || !test.approveOK && !errors.Is(err, approval.ErrNotAllowed) {
 			t.Errorf("%s approved by %v: %v", test.kind, test.approver.Roles, err)
@@ -107,6 +110,12 @@ func TestAnApprovalRecordsTheSecondAdminAndLeavesThePendingList(t *testing.T) {
 	}
 	if pending, err := store.Pending(ctx, start.Add(time.Hour)); err != nil || len(pending) != 0 {
 		t.Fatalf("still pending %+v %v", pending, err)
+	}
+	if got, err := store.Get(ctx, p.ID); err != nil || got.State != approval.Approved || got.Decider.ID != "s2" || got.Reason != p.Reason {
+		t.Fatalf("get %+v %v", got, err)
+	}
+	if _, err := store.Get(ctx, p.ID+100); !errors.Is(err, approval.ErrNotFound) {
+		t.Fatalf("get unknown: %v", err)
 	}
 }
 

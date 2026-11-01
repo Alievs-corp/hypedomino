@@ -81,12 +81,21 @@ type Filter struct {
 	Limit          int
 }
 
+type querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 type Store struct {
-	pool *pgxpool.Pool
+	db querier
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
-	return &Store{pool: pool}
+	return &Store{db: pool}
+}
+
+func (s *Store) In(tx pgx.Tx) *Store {
+	return &Store{db: tx}
 }
 
 func (e Entry) Validate() error {
@@ -118,7 +127,7 @@ func (s *Store) Append(ctx context.Context, entry Entry, now time.Time) (Recorde
 		return Recorded{}, err
 	}
 	var id int64
-	err := s.pool.QueryRow(ctx, `insert into admin_audit_entries
+	err := s.db.QueryRow(ctx, `insert into admin_audit_entries
 		(created_at, actor_id, actor_roles, environment, action, object_type, object_id, before, after,
 		 reason, approval_id, ref, change_set, config_version, session_id, source_ip, user_agent)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
@@ -157,7 +166,7 @@ func (s *Store) Search(ctx context.Context, viewer []rbac.Role, filter Filter) (
 	}
 	where, args := filter.conditions(visible)
 	args = append(args, filter.limit())
-	rows, err := s.pool.Query(ctx, `select id, created_at, actor_id, actor_roles, environment, action, object_type, object_id,
+	rows, err := s.db.Query(ctx, `select id, created_at, actor_id, actor_roles, environment, action, object_type, object_id,
 		before, after, reason, coalesce(approval_id, 0), ref, change_set, coalesce(config_version, 0), session_id, source_ip, user_agent
 		from admin_audit_entries`+where+` order by id desc limit $`+strconv.Itoa(len(args)), args...)
 	if err != nil {

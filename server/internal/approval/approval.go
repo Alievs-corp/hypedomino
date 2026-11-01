@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
@@ -79,17 +80,32 @@ func DefaultConfig() Config {
 	return Config{TTL: 24 * time.Hour}
 }
 
+type database interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
 type Store struct {
-	pool   *pgxpool.Pool
+	db     database
 	config Config
 }
 
 func NewStore(pool *pgxpool.Pool, config Config) *Store {
-	return &Store{pool: pool, config: config}
+	return &Store{db: pool, config: config}
+}
+
+func (s *Store) In(tx pgx.Tx) *Store {
+	return &Store{db: tx, config: s.config}
 }
 
 func holdsAny(actor audit.Actor, roles []rbac.Role) bool {
 	return slices.ContainsFunc(actor.Roles, func(role rbac.Role) bool { return slices.Contains(roles, role) })
+}
+
+func Decides(roles []rbac.Role, kind Kind) bool {
+	return holdsAny(audit.Actor{Roles: roles}, rules[kind].approvers)
 }
 
 func (s *Store) Propose(ctx context.Context, kind Kind, objectID string, change json.RawMessage, reason string, proposer audit.Actor, now time.Time) (Proposal, error) {
@@ -108,7 +124,7 @@ func (s *Store) Propose(ctx context.Context, kind Kind, objectID string, change 
 		Kind: kind, Object: audit.Object{Type: rule.object, ID: objectID}, Change: change, Reason: reason,
 		Proposer: proposer, ProposedAt: now.UTC().Truncate(time.Microsecond), ExpiresAt: now.Add(s.config.TTL).UTC().Truncate(time.Microsecond), State: Pending,
 	}
-	err := s.pool.QueryRow(ctx, `insert into admin_approvals
+	err := s.db.QueryRow(ctx, `insert into admin_approvals
 		(kind, object_type, object_id, change, reason, proposer_id, proposer_roles, proposed_at, expires_at)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`,
 		p.Kind, p.Object.Type, p.Object.ID, string(p.Change), p.Reason, p.Proposer.ID, p.Proposer.Roles, p.ProposedAt, p.ExpiresAt,
@@ -126,7 +142,7 @@ func (s *Store) Reject(ctx context.Context, id int64, approver audit.Actor, now 
 
 func (s *Store) decide(ctx context.Context, id int64, decider audit.Actor, state State, now time.Time) (Proposal, error) {
 	var decided Proposal
-	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
 		p, err := scan(tx.QueryRow(ctx, `select `+columns+` from admin_approvals where id = $1 for update`, id))
 		if err != nil {
 			return err
@@ -163,8 +179,12 @@ func (p Proposal) decidableBy(decider audit.Actor, now time.Time) error {
 	return nil
 }
 
+func (s *Store) Get(ctx context.Context, id int64) (Proposal, error) {
+	return scan(s.db.QueryRow(ctx, `select `+columns+` from admin_approvals where id = $1`, id))
+}
+
 func (s *Store) Pending(ctx context.Context, now time.Time) ([]Proposal, error) {
-	rows, err := s.pool.Query(ctx, `select `+columns+` from admin_approvals where state = 'pending' and expires_at > $1 order by id`, now.UTC())
+	rows, err := s.db.Query(ctx, `select `+columns+` from admin_approvals where state = 'pending' and expires_at > $1 order by id`, now.UTC())
 	if err != nil {
 		return nil, err
 	}

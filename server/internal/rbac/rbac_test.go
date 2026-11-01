@@ -235,3 +235,30 @@ func TestObjectsAndRolesAreKnownByName(t *testing.T) {
 		t.Error("an unknown role is known")
 	}
 }
+
+func TestGrantedListsExactlyTheAllowedActionsOnce(t *testing.T) {
+	roleSets := [][]Role{nil, {Content}, {LiveOps, Content}, {SuperAdmin, Support, Analyst}, {"owner"}}
+	for _, roles := range roleSets {
+		for object := range matrix {
+			granted := Granted(roles, object)
+			for _, action := range everyAction {
+				if count := countOf(granted, action); count > 1 || (count == 1) != Allows(roles, object, action) {
+					t.Errorf("%v %s %s: listed %d times, allowed %v", roles, object, action, count, Allows(roles, object, action))
+				}
+			}
+		}
+	}
+	if got := Granted([]Role{Support, Analyst}, PromoCodes); !slices.Equal(got, []Action{View, EditTargetedAccounts, ViewCounts}) {
+		t.Errorf("support and analyst on promo codes: %v", got)
+	}
+}
+
+func countOf(actions []Action, action Action) int {
+	count := 0
+	for _, granted := range actions {
+		if granted == action {
+			count++
+		}
+	}
+	return count
+}
