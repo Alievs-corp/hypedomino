@@ -96,6 +96,12 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_ADMIN_GRANT_APPROVAL_COINS: %d is not a positive coin amount", grantApprovalCoins))
 	}
 	c.api.GrantApprovalCoins = int64(grantApprovalCoins)
+	var tempBanHours int
+	integer("HD_TEMP_BAN_HOURS", &tempBanHours)
+	if tempBanHours < 0 {
+		errs = append(errs, fmt.Errorf("HD_TEMP_BAN_HOURS: %d is negative", tempBanHours))
+	}
+	c.api.TempBan = time.Duration(tempBanHours) * time.Hour
 	integer("HD_SHOP_DAILY_SLOTS", &c.api.Shop.DailySlots)
 	integer("HD_SHOP_WEEKLY_SLOTS", &c.api.Shop.WeeklySlots)
 	integer("HD_SHOP_RESET_HOUR_UTC", &c.api.Shop.ResetHourUTC)

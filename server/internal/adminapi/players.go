@@ -17,7 +17,17 @@ type playersView struct {
 }
 
 func (h *Handler) searchPlayers(w http.ResponseWriter, r *http.Request, p principal) {
-	found, err := playerrecord.Search(r.Context(), h.pool, r.URL.Query().Get("q"))
+	query := r.URL.Query()
+	var found []playerrecord.Summary
+	var err error
+	switch {
+	case !query.Has("subject"):
+		found, err = playerrecord.Search(r.Context(), h.pool, query.Get("q"))
+	case !slices.Contains(p.account.Roles, rbac.SuperAdmin):
+		err = errForbidden
+	default:
+		found, err = playerrecord.SearchIdentity(r.Context(), h.pool, query.Get("provider"), query.Get("subject"))
+	}
 	if err != nil {
 		h.refuse(w, err)
 		return

@@ -45,6 +45,7 @@ type Account struct {
 	Summary
 	Emails              []string   `json:"emails"`
 	Identities          []Identity `json:"identities,omitempty"`
+	BannedUntil         *time.Time `json:"banned_until"`
 	DeletionRequestedAt *time.Time `json:"deletion_requested_at"`
 	DeletedAt           *time.Time `json:"deleted_at"`
 }
@@ -159,6 +160,18 @@ func Search(ctx context.Context, db Querier, query string) ([]Summary, error) {
 	})
 }
 
+func SearchIdentity(ctx context.Context, db Querier, provider, subject string) ([]Summary, error) {
+	rows, err := db.Query(ctx, summaryColumns+`where a.id in (select account_id from auth_identities where provider = $1 and subject = $2)`, provider, subject)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Summary, error) {
+		var s Summary
+		err := row.Scan(&s.ID, &s.Nickname, &s.State, &s.Country, &s.CreatedAt)
+		return s, err
+	})
+}
+
 func isAccountID(query string) bool {
 	if len(query) != 36 {
 		return false
@@ -190,10 +203,10 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	}
 	var r Record
 	err := db.QueryRow(ctx, `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at,
-		a.deletion_requested_at, a.deleted_at, coalesce(w.balance, 0)
+		a.banned_until, a.deletion_requested_at, a.deleted_at, coalesce(w.balance, 0)
 		from accounts a left join profiles p on p.account_id = a.id left join wallets w on w.account_id = a.id
 		where a.id = $1::uuid`, accountID).Scan(&r.Account.ID, &r.Account.Nickname, &r.Account.State, &r.Account.Country,
-		&r.Account.CreatedAt, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Balance)
+		&r.Account.CreatedAt, &r.Account.BannedUntil, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Balance)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Record{}, ErrNotFound
 	}
