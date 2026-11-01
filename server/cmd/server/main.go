@@ -197,6 +197,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	purchases.WithPass(passes)
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
 	a.Handle("POST /shop/complete", receipts)
+	a.Handle("GET /purchases", receipts)
 	a.Handle("POST /store/", receipts)
 	promos, err := promos(pool, engine, catalog, config)
 	if err != nil {

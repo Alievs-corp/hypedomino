@@ -53,6 +53,13 @@ func (f *fakePurchases) Complete(_ context.Context, account, offer string, platf
 	return purchase.Result{Platform: platform, TransactionID: tok, Offer: offer, State: purchase.RecordGranted, Balance: 2000, Grant: &reward.Report{ID: 9, Coins: 1500}, Finished: true}, nil
 }
 
+func (f *fakePurchases) History(_ context.Context, account string, limit int) ([]purchase.HistoryEntry, error) {
+	if account == "broken" {
+		return nil, errors.New("database down")
+	}
+	return []purchase.HistoryEntry{{Platform: purchase.PlatformGoogle, TransactionID: "tok-1", OfferID: "offer.starter", State: purchase.RecordGranted, PurchasedAt: now}}[:min(1, limit)], nil
+}
+
 func (f *fakePurchases) Notice(_ context.Context, _ purchase.Platform, notice purchase.Notice, _ time.Time) (bool, error) {
 	f.notices = append(f.notices, notice)
 	if notice.ID == "m-broken" {
@@ -170,5 +177,20 @@ func TestTheHandlerCompletesPurchasesAndTakesStoreNotifications(t *testing.T) {
 	secretless := purchase.NewHandler(fakeVerifier{}, fake, fakeNotifier{}, nil, "", logger, func() time.Time { return now })
 	if code, _ := serve(t, secretless, http.MethodPost, "/store/google/notifications?token=", "", "ok"); code != http.StatusUnauthorized {
 		t.Fatalf("google notice without a configured secret %d", code)
+	}
+}
+
+func TestTheHandlerListsTheAccountsPurchases(t *testing.T) {
+	handler := purchase.NewHandler(fakeVerifier{}, &fakePurchases{}, nil, nil, "", slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return now })
+	code, body := serve(t, handler, http.MethodGet, "/purchases", "access:a1", "")
+	purchases, _ := body["purchases"].([]any)
+	if code != http.StatusOK || len(purchases) != 1 || purchases[0].(map[string]any)["state"] != "granted" || purchases[0].(map[string]any)["offer"] != "offer.starter" {
+		t.Fatalf("history %d %v", code, body)
+	}
+	if code, body := serve(t, handler, http.MethodGet, "/purchases", "", ""); code != http.StatusUnauthorized || body["error"] != "access_rejected" {
+		t.Fatalf("history without a token %d %v", code, body)
+	}
+	if code, body := serve(t, handler, http.MethodGet, "/purchases", "access:broken", ""); code != http.StatusInternalServerError || body["error"] != "internal" {
+		t.Fatalf("history with a broken store %d %v", code, body)
 	}
 }
