@@ -144,7 +144,7 @@ The seat played by the bot after R-51 or R-52 keeps its human player's MMR in `R
 
 Division moves: Gold I 90 LP wins +21: Platinum IV 11 LP. Gold III 10 LP loses -18: Gold IV 75 LP. Iron IV 10 LP loses -18: Iron IV 0 LP.
 
-- Implemented in `server/internal/rating` (#112): sections 3.1, 3.2 (Master by LP; the Grandmaster and Challenger recalculation is #113), 4 and the worked examples are table-driven tests; coefficients are the `rating` config snapshot domain with one `Config` per mode (`docs/ranking/examples/rating.json`), and every applied match records the version it used.
+- Implemented in `server/internal/rating` (#112): sections 3.1, 3.2, 4 and the worked examples are table-driven tests; coefficients are the `rating` config snapshot domain with one `Config` per mode (`docs/ranking/examples/rating.json`), and every applied match records the version it used. Grandmaster and Challenger (#113) are recomputed per mode by `rating.Store.RecalculateApex` once a day at `ApexRecalcHourUtc` under an advisory lock, in the order of 8.1 without its apex part (LP, then the server time of the match that set the LP, ranked wins, account id); the season-end run is #115.
 
 ## 5. Placement
 
@@ -169,6 +169,8 @@ A ranked match has no accept or decline step (R-53), so there is no dodge and no
 - A season is created in the admin panel with a start and an end in server time (ADR 0007). Default length `SeasonLengthMonths` (default 3) calendar months. The next season starts at the end of the previous one, with no gap.
 - Section 3 structure, `PlacementMatches`, the reset table and the apex slot rules are frozen while a season runs. MMR and LP coefficients (section 4) can change mid-season and apply to matches that start after the publish; each match records the config version it used (ADR 0006).
 - Season end runs once per mode and is idempotent (#115): final apex recalculation, leaderboard snapshot, final ranks stored for rewards (#120), reset ranks computed for the next season.
+
+- Implemented in `server/internal/rating` (#115): seasons are rows of `ranked_seasons` (`cmd/ranked-season` until #143), contiguous by construction; the end runs once per mode when the end time has passed (apex recalculation, `season_results` snapshot in the order of 8.1, reset ranks, the next season created with `SeasonLengthMonths` if none exists), a result of a closed season changes MMR only, and `state` is derived from the times and the per-mode close marks. Rank rewards and emblems from the snapshot are #120; the Redis leaderboards are #116.
 
 ### 7.2 Soft reset
 
