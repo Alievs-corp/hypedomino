@@ -555,7 +555,7 @@ Proposals are stored in the `admin_approvals` table (`server/internal/approval`,
 - **Deciding.** A proposal can be approved or rejected only by an admin who holds an approver role from the table above and is not the proposer. The database checks this as well.
 - **Expiry and finality.** A proposal can be decided only while it is pending and before it expires. A decision is final. Of several parallel decisions, exactly one wins.
 - **Pending list.** The pending list holds only proposals that are still undecided and not expired.
-- **Not yet.** Running the approved action and writing its audit entries is up to each action's handler. Break-glass is not built yet.
+- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` and for coin adjustments (9.1). The other kinds follow with their tools: bundle grants and permanent bans in #144, promo codes in #142, live controls in #146. Break-glass is not built yet.
 
 Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 
@@ -575,6 +575,65 @@ Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6
 | Compromise | Disable affected admin accounts, rotate secrets, review the audit log since the first suspect entry (`docs/launch-runbook.md` 6.5) |
 
 The keys of section 11 are deployment config, changed by pull request, not in the panel: an admin who could edit them could weaken the controls that limit admins.
+
+### 9.1 Admin API
+
+`server/cmd/admin-api` is the admin API (`server/internal/adminapi`), a separate binary on its own host. It reads the environment of `docs/environments.md` 2.2. Every route answers JSON with `Cache-Control: no-store`, and every route except `/admin/nonce` and `/admin/session` takes the session token as `Authorization: Bearer`.
+
+| Route | Who | Does |
+|---|---|---|
+| `POST /admin/nonce` | anyone | A single-use nonce for the Google sign-in |
+| `POST /admin/session` `{"id_token","nonce"}` | anyone | Sign-in: answers `{"token","session","account"}` |
+| `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
+| `DELETE /admin/session` | signed in | Sign-out: revokes the session |
+| `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `GET /admin/accounts` | V on admin accounts | Every account |
+| `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
+| `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
+| `POST /admin/accounts/{id}/disable` | R on admin accounts | Disables it |
+| `GET /admin/config/rules` | V on config values | Every key of the `rules` domain with type, unit, bounds, default and current value, and the `config_version` (0 before the first publish) |
+| `PUT /admin/config/rules` `{"values"}` | P on config values | Publishes the next `rules` snapshot. A key left out keeps its default |
+| `GET /admin/config/rules/history` | V on config values | The last 50 `rules` snapshots, newest first |
+| `POST /admin/config/rules/rollback` `{"version"}` | P on config values and S: rollback on snapshots | Publishes the content of an earlier `rules` snapshot as the next version |
+| `GET /admin/config/shop` | V on shop offers | The published shop catalog (offers and rotations of 5.5) and its `config_version`; `catalog` is null before the first publish |
+| `PUT /admin/config/shop` `{"catalog"}` | P on shop offers | Publishes the catalog as the next `shop` snapshot |
+| `GET /admin/config/shop/history` | V on shop offers | The last 50 `shop` snapshots, newest first |
+| `POST /admin/config/shop/rollback` `{"version"}` | P on shop offers and S: rollback on snapshots | Publishes the content of an earlier `shop` snapshot as the next version |
+| `GET /admin/players?q=` | V on players | Search (6.1): an account id, an email (exact, any case) or a nickname prefix (folded as for uniqueness, `docs/localization.md` 5.2); at most 20, by nickname |
+| `GET /admin/players/{id}` | V on players | The player record of 6.1 that exists so far: account (state, country, emails; auth identities for `super_admin` only, D-2), profile, nickname history, inventory with revoked items, balance, and the newest 50 ledger entries, reward grants, purchases and matches |
+| `POST /admin/players/{id}/coins` `{"amount","request_id"}` | S on players: adjust coins | An `admin_adjust` ledger entry, positive or negative (6.2); above `AdminGrantApprovalCoins` it answers 202 with a `player_grant` proposal instead (section 8) |
+| `GET /admin/approvals` | signed in | Pending proposals (section 8) the admin proposed or may decide |
+| `POST /admin/approvals/{id}/approve` | an approver role of section 8 | Approves and carries out the proposal |
+| `POST /admin/approvals/{id}/reject` | an approver role of section 8 | Rejects it |
+| `GET /admin/strings` | V on game strings | Every key with its values per language, and the missing-value report per language (`coverage`: keys, approved, percent, missing keys) |
+| `PUT /admin/strings/{key}` `{"note","max_length","placeholders","deprecated"}` | C for a new key, E for an existing one, R to deprecate it | Saves the key |
+| `PUT /admin/strings/{key}/values/{language}` `{"text","status"}` | E for `draft`, E and P for `approved` | Saves one value |
+| `GET /admin/strings/export?language=&format=` | V on game strings | The translator file of `docs/localization.md` 2.1, `csv` or `json` |
+| `POST /admin/strings/import?language=&format=` | E on game strings | Imports a translator file of at most 4 MiB |
+| `GET /admin/strings/active` | V on game strings | The active bundle version per language and the fallback chains, with their `config_version` (0 before the first publish) |
+| `PUT /admin/strings/active` `{"bundles","fallback_chains"}` | P on game strings; a rollback also S: rollback on snapshots | Publishes the next `localization` snapshot (`docs/localization.md` 2.2) |
+| `GET /admin/strings/bundles` | V on game strings | Every published bundle version, newest first per language |
+| `POST /admin/strings/bundles/{language}` | P on game strings | Publishes the language as its next bundle version |
+
+- **Sign-in.** The Google ID token must have a trusted audience and the nonce, a verified email, the company Workspace as hosted domain (`hd`) and an email in that domain. The email must belong to an active account (5.18). Unknown and disabled accounts get the same answer, `account_refused`.
+- **Session.** The token is random and only its SHA-256 is stored (`admin_sessions`, migration `00013_admin_sessions`). A request is refused with `session_rejected` when the token is unknown or revoked, when the last request was `AdminSessionIdleMinutes` ago or more, when the session is `AdminSessionMaxHours` old, or when the account has been disabled since. Each answer gives `idle_until`, `expires_at` and `step_up_until`, which is the last sign-in plus `AdminStepUpMinutes`.
+- **Roles.** Every route checks the matrix of 2.3 with the roles the account has at that moment, so a role change counts from the next request. A missing action gets 403 `forbidden`.
+- **Audit.** A change and its audit entry are written in one transaction, so an entry exists exactly when the change does. The entry carries the actor with their roles, the environment of `HD_ADMIN_ENVIRONMENT`, the session id, the user agent and the source IP. Before and after hold `email`, `display_name`, `roles` and `state`. A write may carry `reason` and `ref`. The source IP is the last address of the last `X-Forwarded-For` header, else the connection address. The admin web server therefore sets that header to the browser address it sees.
+- **Game strings.** Approving a value is the review step of 5.15, so it needs P besides E: `content` and `super_admin` approve, `live_ops` saves drafts. The audit object is the key: `create`, `edit` and `retire` hold the key fields, and a value change is `edit`, or `approve` for an approved value, with language, text and status. An import writes one `edit` entry per changed key with reason `import`. A publish is `publish` on `bundle:<language>` with the version and hash. A blocked import or publish answers 422 `blocked` with `problems` (`key`, `error`) and stores nothing.
+- **Active versions.** The request is checked like `cmd/config-publish`: every named version is a published bundle and the `en` bundle has every live key. A new snapshot is published under a lock on the domain, so its audit `before` is the snapshot it replaces. It is a `rollback` when a language gets a lower version than the active one or loses its bundle, and a `publish` otherwise. A rollback is an `S` action: it needs rollback on snapshots (`super_admin`, or `content` for this domain, which it owns), a reason and a sign-in no older than `AdminStepUpMinutes`. The audit object is `snapshots` `localization`, with both snapshots and the new `configVersion`.
+- **Rules config (#145).** Values are checked against the bounds of `docs/rules.md` section 13 before publishing, so an unknown key, a value that is not an integer or one out of bounds gets 400 `invalid` and nothing is stored. A publish runs under a lock on the domain, in one transaction with its `publish` entry on `game_config` `rules`, which has both snapshots and the new `configVersion`. A rollback is an `S` action: it needs rollback on snapshots, which `live_ops` and `super_admin` have for this domain because they publish it, plus a reason and a fresh sign-in. It writes a `rollback` entry, and an earlier snapshot that is outside today's bounds is refused. Game servers pick up a new version within `HD_CONFIG_POLL`, and it applies to matches that open afterwards.
+- **Shop catalog (#139).** The catalog is checked by the same `shop.Parse` as the game servers, with the rotation slots and reset hour of `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, so an invalid catalog gets 400 `invalid` and nothing is stored. A publish keeps every offer of the current catalog (AP-5): an offer is ended by its window, and one left out gets 400 `invalid`. The body may be up to 1 MiB; a larger one gets 413 `too_large`. A publish or rollback writes a `publish` or `rollback` entry on `shop_offers` `shop` with both snapshots and the new `configVersion`, under a lock on the domain. A rollback is an `S` action like the rules rollback, and it restores the earlier catalog exactly. Scheduling needs no extra step: offer windows and rotation starts are part of the catalog, and game servers open and close them on server time once they pick up the version within `HD_CONFIG_POLL`.
+- **Player lookup (#144).** Opening a record writes a `view` entry on `players` with the account id in the same transaction as the read (AP-6), so the entry exists exactly when the record was shown. A search writes no entry. An unknown or malformed id gets 404 `not_found`, an empty search 400 `invalid`. Devices, pass and mission progress, rank state, offenses, sanctions, risk signals, reports, social graph and consent records join the record when their server data exists.
+- **Coin adjustment (#144).** It is an `S` action: a reason and a sign-in no older than `AdminStepUpMinutes`. The entry goes through the wallet like any other (`docs/economy.md` section 5): source `admin` with the admin's id, and the idempotency key `admin:<admin id>:<request_id>`, so a repeated request answers the first result with `"repeated":true` and writes nothing, and a request id reused for another amount gets 400 `invalid`. A debit that would take the balance below zero gets 409 `insufficient`; a credit may leave a refund debt partly unpaid. An amount whose absolute value is above `AdminGrantApprovalCoins` (`HD_ADMIN_GRANT_APPROVAL_COINS`) is stored as a `player_grant` proposal with a `submit` entry, and only a `support` admin may propose it. Approving it applies the entry in the same transaction and writes an `approve` entry and an `adjust_coins` entry whose `approval` is the `approve` entry; if the wallet refuses it, nothing changes and the proposal stays pending. Each applied adjustment writes an `adjust_coins` entry on `players` with the balance before and after and the ledger entry id.
+- **Account guards.** An admin cannot change or disable their own account (`own_account`). A new account never starts as `super_admin` (`grant_by_approval`): it is created with other roles, and the role is granted afterwards.
+- **Granting `super_admin`.**
+  - **Proposal.** Adding the role is an `S` action. It needs a reason and a sign-in no older than `AdminStepUpMinutes`. The roles do not change yet: the change is stored as a `super_admin_grant` proposal that expires after `AdminApprovalTtlHours`, and a `submit` entry records it.
+  - **Approval.** It needs another `super_admin` with a fresh sign-in. In one transaction it sets the proposed roles and writes two entries: an `approve` entry by the approver, and an `edit` entry with the before and after roles, the proposal's reason and `approval` set to the `approve` entry's id.
+  - **Reject.** It writes a `reject` entry.
+  - **Errors.** Self-approval gets `self_decision`, a decided proposal `decided` and an expired one `expired`.
+- **First `super_admin`.** `admin-api -bootstrap-email <company email> -bootstrap-name <name>` creates it and exits, only while `admin_accounts` is empty. It locks the table, so two runs cannot both succeed. Its audit entry has actor and session `bootstrap`.
+- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`, `self_decision`; 404 `not_found`; 409 `email_taken`, `grant_by_approval`, `own_account`, `decided`, `expired`, `not_supported`, `insufficient`; 413 `too_large`; 422 `blocked`; 503 `provider_unavailable`.
 
 ## 10. Screens and navigation
 

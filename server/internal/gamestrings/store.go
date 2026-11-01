@@ -27,12 +27,23 @@ type Published struct {
 	At       time.Time
 }
 
+type database interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
 type Store struct {
-	pool *pgxpool.Pool
+	db database
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
-	return &Store{pool: pool}
+	return &Store{db: pool}
+}
+
+func (s *Store) In(tx pgx.Tx) *Store {
+	return &Store{db: tx}
 }
 
 func (s *Store) SaveEntry(ctx context.Context, entry Entry, by string, now time.Time) error {
@@ -43,7 +54,7 @@ func (s *Store) SaveEntry(ctx context.Context, entry Entry, by string, now time.
 	if err != nil {
 		return err
 	}
-	_, err = s.pool.Exec(ctx, `insert into game_strings (key, note, max_length, placeholders, deprecated, updated_by, updated_at)
+	_, err = s.db.Exec(ctx, `insert into game_strings (key, note, max_length, placeholders, deprecated, updated_by, updated_at)
 		values ($1, $2, $3, $4, $5, $6, $7)
 		on conflict (key) do update set note = excluded.note, max_length = excluded.max_length,
 			placeholders = excluded.placeholders, deprecated = excluded.deprecated,
@@ -66,7 +77,7 @@ func (s *Store) SetValue(ctx context.Context, key string, language Language, val
 	if value.Status != Draft && value.Status != Approved {
 		return fmt.Errorf("%w: status %q cannot be set", ErrInvalidValue, value.Status)
 	}
-	entry, err := s.entry(ctx, key)
+	entry, err := s.Entry(ctx, key)
 	if err != nil {
 		return err
 	}
@@ -75,7 +86,7 @@ func (s *Store) SetValue(ctx context.Context, key string, language Language, val
 			return err
 		}
 	}
-	return upsertValue(ctx, s.pool, key, language, value, by, now)
+	return upsertValue(ctx, s.db, key, language, value, by, now)
 }
 
 type executor interface {
@@ -106,8 +117,17 @@ func scanEntry(row pgx.CollectableRow) (Entry, error) {
 	return e, nil
 }
 
-func (s *Store) entry(ctx context.Context, key string) (Entry, error) {
-	rows, err := s.pool.Query(ctx, `select `+entryColumns+` from game_strings where key = $1`, key)
+func (s *Store) Value(ctx context.Context, key string, language Language) (Value, error) {
+	value := Value{Status: Missing}
+	err := s.db.QueryRow(ctx, `select text, status from game_string_values where key = $1 and language = $2`, key, language).Scan(&value.Text, &value.Status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Value{Status: Missing}, nil
+	}
+	return value, err
+}
+
+func (s *Store) Entry(ctx context.Context, key string) (Entry, error) {
+	rows, err := s.db.Query(ctx, `select `+entryColumns+` from game_strings where key = $1`, key)
 	if err != nil {
 		return Entry{}, err
 	}
@@ -119,7 +139,7 @@ func (s *Store) entry(ctx context.Context, key string) (Entry, error) {
 }
 
 func (s *Store) Entries(ctx context.Context) ([]Entry, error) {
-	rows, err := s.pool.Query(ctx, `select `+entryColumns+` from game_strings order by key`)
+	rows, err := s.db.Query(ctx, `select `+entryColumns+` from game_strings order by key`)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +151,7 @@ func (s *Store) Entries(ctx context.Context) ([]Entry, error) {
 	for _, entry := range entries {
 		byKey[entry.Key] = entry
 	}
-	rows, err = s.pool.Query(ctx, `select key, language, text, status from game_string_values`)
+	rows, err = s.db.Query(ctx, `select key, language, text, status from game_string_values`)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +187,7 @@ func (s *Store) Publish(ctx context.Context, language Language, by string, now t
 
 func (s *Store) store(ctx context.Context, bundle Published) (Published, error) {
 	var stored Published
-	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, `select pg_advisory_xact_lock(hashtext('game_string_bundles:' || $1))`, bundle.Language); err != nil {
 			return err
 		}
@@ -209,7 +229,7 @@ func (s *Store) Import(ctx context.Context, language Language, format Format, da
 	if problems != nil {
 		return nil, problems, fmt.Errorf("%w: %d rows fail their checks", ErrImportBlocked, len(problems))
 	}
-	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err = pgx.BeginFunc(ctx, s.db, func(tx pgx.Tx) error {
 		for _, change := range changes {
 			if err := upsertValue(ctx, tx, change.Key, language, Value{Text: change.Text, Status: Draft}, by, now); err != nil {
 				return err
@@ -237,6 +257,14 @@ func scanBundle(row pgx.Row) (Published, error) {
 	return p, nil
 }
 
+func (s *Store) Bundles(ctx context.Context) ([]Published, error) {
+	rows, err := s.db.Query(ctx, `select language, version, hash, ''::bytea, published_by, published_at from game_string_bundles order by language, version desc`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Published, error) { return scanBundle(row) })
+}
+
 func (s *Store) Bundle(ctx context.Context, language Language, version int) (Published, error) {
-	return scanBundle(s.pool.QueryRow(ctx, `select `+bundleColumns+` from game_string_bundles where language = $1 and version = $2`, language, version))
+	return scanBundle(s.db.QueryRow(ctx, `select `+bundleColumns+` from game_string_bundles where language = $1 and version = $2`, language, version))
 }
