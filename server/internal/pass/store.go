@@ -47,6 +47,7 @@ type Store struct {
 	pool    *pgxpool.Pool
 	configs *snapshot.Watcher[*Snapshot]
 	rewards Rewarder
+	wallet  Spender
 }
 
 func NewWatcher(pool *pgxpool.Pool, logger *slog.Logger) *snapshot.Watcher[*Snapshot] {

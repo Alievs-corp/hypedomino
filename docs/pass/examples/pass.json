@@ -13,6 +13,7 @@
   },
   "dailyMatchXpCap": 2000,
   "botSeatRewardPercent": 50,
+  "levelCoinPrice": 200,
   "seasons": [
     {
       "id": "season_1",

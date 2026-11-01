@@ -49,6 +49,7 @@ func newFixture(t *testing.T) *fixture {
 	f := &fixture{pool: pool, watcher: watcher, store: pass.NewStore(pool, watcher), wallet: walletStore}
 	f.engine = reward.NewEngine(pool, walletStore, inventory.NewStore(pool, catalog, inventory.DefaultConfig()), nil, f.store, reward.DefaultConfig())
 	f.store.SetRewards(f.engine)
+	f.store.SetWallet(walletStore)
 	f.publish(t, testSeason("season_1", now.Add(-10*24*time.Hour), now.Add(80*24*time.Hour)))
 	return f
 }
