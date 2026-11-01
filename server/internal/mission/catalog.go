@@ -286,14 +286,20 @@ func (c *Catalog) checkEventBudgets(fail func(string, ...any) error) error {
 	return nil
 }
 
-func (c *Catalog) CheckMedals(lists func(medal string, source cosmetics.Source) bool) error {
+func (c *Catalog) CheckSources(medalLists, itemLists func(id string, source cosmetics.Source) bool) error {
 	for _, mission := range c.Missions {
 		if mission.Bundle == nil {
 			continue
 		}
-		for _, medal := range mission.Bundle.Medals {
-			if !lists(medal, cosmetics.Source{Type: SourceMission, Ref: mission.ID}) {
-				return fmt.Errorf("%w: %s grants %s, whose sources do not list it", ErrInvalidCatalog, mission.ID, medal)
+		source := cosmetics.Source{Type: SourceMission, Ref: mission.ID}
+		for _, grant := range []struct {
+			ids   []string
+			lists func(string, cosmetics.Source) bool
+		}{{mission.Bundle.Medals, medalLists}, {mission.Bundle.Cosmetics, itemLists}} {
+			for _, id := range grant.ids {
+				if !grant.lists(id, source) {
+					return fmt.Errorf("%w: %s grants %s, whose sources do not list it", ErrInvalidCatalog, mission.ID, id)
+				}
 			}
 		}
 	}

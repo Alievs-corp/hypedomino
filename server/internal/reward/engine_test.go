@@ -260,3 +260,48 @@ func TestRevokeTakesBackCoinsItemsAndMedalsOnce(t *testing.T) {
 		t.Fatalf("balance after earning back %d", balance)
 	}
 }
+
+func TestAReinstatedGrantComesBackAndCanBeRevokedAgain(t *testing.T) {
+	f := newFixture(t)
+	engine := f.engine(f.medals, f.pass)
+	ctx := context.Background()
+	ayla := f.account(t)
+	grant := reward.Grant{Account: ayla, Bundle: fox, Source: spring, Reason: wallet.EventReward, Key: "event:spring_cup:r5", ConfigVersion: 5}
+	granted, err := engine.Apply(ctx, grant, start)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := engine.Revoke(ctx, ayla, grant.Key, wallet.RefundRevoke, "refund:google:t11", start.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := f.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx)
+	reinstated, err := engine.ReinstateIn(ctx, tx, ayla, grant.Key, wallet.RefundReversal, "reversal:google:t11", start.Add(2*time.Hour))
+	if err != nil || reinstated.Revoked() {
+		t.Fatalf("reinstate %+v %v", reinstated, err)
+	}
+	if again, err := engine.ReinstateIn(ctx, tx, ayla, grant.Key, wallet.RefundReversal, "reversal:google:t11:again", start.Add(2*time.Hour)); err != nil || again.Revoked() {
+		t.Fatalf("second reinstate %+v %v", again, err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != granted.Coins {
+		t.Fatalf("balance after reinstate %d %v, want %d", balance, err, granted.Coins)
+	}
+	if owns, err := f.inventory.Owns(ctx, ayla, "avatar.comet_fox"); err != nil || !owns {
+		t.Fatalf("item after reinstate %v %v", owns, err)
+	}
+	if !f.medals.held[ayla+":medal.spring"] {
+		t.Fatalf("medal after reinstate %v", f.medals.held)
+	}
+	if _, err := engine.Revoke(ctx, ayla, grant.Key, wallet.RefundRevoke, "refund:google:t12", start.Add(3*time.Hour)); err != nil {
+		t.Fatalf("revoke after reinstate: %v", err)
+	}
+	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 0 {
+		t.Fatalf("balance after the second revoke %d %v", balance, err)
+	}
+}
