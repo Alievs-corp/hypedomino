@@ -17,6 +17,7 @@ var (
 	ErrDigitsOnly        = errors.New("nickname.digits_only")
 	ErrTaken             = errors.New("nickname.taken")
 	ErrCooldown          = errors.New("nickname.cooldown")
+	ErrUnchanged         = errors.New("nickname.unchanged")
 )
 
 type Config struct {
