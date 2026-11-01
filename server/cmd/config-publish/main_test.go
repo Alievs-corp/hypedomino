@@ -14,6 +14,8 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/medal"
+	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -177,5 +179,21 @@ func TestALocalizationSnapshotNeedsPublishedBundlesAndRollsBackByVersion(t *test
 	localization, version, _ := watcher.Current()
 	if localization.Bundles[gamestrings.Russian] != 1 || version != 2 {
 		t.Fatalf("active %+v at version %d", localization, version)
+	}
+}
+
+func TestMissionMedalsMustBePublishedWithTheMissionAsSource(t *testing.T) {
+	url, _ := dbtest.Fresh(t)
+	ctx := context.Background()
+	var out bytes.Buffer
+	missions, medals := "../../../docs/pass/examples/missions.json", "../../../docs/pass/examples/medals.json"
+	if err := run(ctx, url, mission.Domain, missions, &out); !errors.Is(err, mission.ErrInvalidCatalog) {
+		t.Fatalf("missions before their medals = %v", err)
+	}
+	if err := run(ctx, url, medal.Domain, medals, &out); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(ctx, url, mission.Domain, missions, &out); err != nil {
+		t.Fatalf("missions after their medals = %v", err)
 	}
 }

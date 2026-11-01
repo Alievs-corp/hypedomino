@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"slices"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -280,6 +281,20 @@ func (c *Catalog) checkEventBudgets(fail func(string, ...any) error) error {
 	for eventID, total := range xp {
 		if total > c.EventXpBudget {
 			return fail("event %s missions grant %d pass xp, above %d", eventID, total, c.EventXpBudget)
+		}
+	}
+	return nil
+}
+
+func (c *Catalog) CheckMedals(lists func(medal string, source cosmetics.Source) bool) error {
+	for _, mission := range c.Missions {
+		if mission.Bundle == nil {
+			continue
+		}
+		for _, medal := range mission.Bundle.Medals {
+			if !lists(medal, cosmetics.Source{Type: SourceMission, Ref: mission.ID}) {
+				return fmt.Errorf("%w: %s grants %s, whose sources do not list it", ErrInvalidCatalog, mission.ID, medal)
+			}
 		}
 	}
 	return nil
