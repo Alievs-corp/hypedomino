@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -85,6 +86,8 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("PUT /admin/config/rules", h.allowed(rbac.GameConfig, rbac.Publish, h.publishRules))
 	h.mux.HandleFunc("GET /admin/config/rules/history", h.allowed(rbac.GameConfig, rbac.View, h.rulesHistory))
 	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
+	h.mux.HandleFunc("GET /admin/players", h.allowed(rbac.Players, rbac.View, h.searchPlayers))
+	h.mux.HandleFunc("GET /admin/players/{id}", h.allowed(rbac.Players, rbac.View, h.playerRecord))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.shopHistory))
@@ -284,7 +287,7 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "account_refused"
 	case errors.Is(err, errDifferentAccount):
 		return http.StatusForbidden, "different_account"
-	case errors.Is(err, adminaccount.ErrNotFound):
+	case errors.Is(err, adminaccount.ErrNotFound), errors.Is(err, playerrecord.ErrNotFound):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, adminaccount.ErrTaken):
 		return http.StatusConflict, "email_taken"
@@ -306,7 +309,8 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errOwnAccount):
 		return http.StatusConflict, "own_account"
-	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed):
+	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed),
+		errors.Is(err, playerrecord.ErrEmptyQuery):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
