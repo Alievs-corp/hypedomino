@@ -22,6 +22,8 @@ const (
 	KindPass       = "pass"
 	KindPassLevels = "pass_levels"
 
+	ProductPassPremiumPlus = "pass_premium_plus"
+
 	SectionFeatured = "featured"
 	SectionDaily    = "daily_rotation"
 	SectionWeekly   = "weekly_rotation"
