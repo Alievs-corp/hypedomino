@@ -78,9 +78,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
 | `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
 | `HD_SHOP_CATALOG` | No | server | empty (shop closed until a publish) | `/etc/hypedomino/shop.json` | No | from #104 |
-| `HD_SHOP_DAILY_SLOTS` | No | server | `4` | `4` | No | from #104 |
-| `HD_SHOP_WEEKLY_SLOTS` | No | server | `2` | `2` | No | from #104 |
-| `HD_SHOP_RESET_HOUR_UTC` | No | server | `0` | `0` | No | from #104 |
+| `HD_SHOP_DAILY_SLOTS` | No | server, admin-api | `4` | `4` | No | from #104; admin-api from #139 |
+| `HD_SHOP_WEEKLY_SLOTS` | No | server, admin-api | `2` | `2` | No | from #104; admin-api from #139 |
+| `HD_SHOP_RESET_HOUR_UTC` | No | server, admin-api | `0` | `0` | No | from #104; admin-api from #139 |
 | `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
 | `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |
 | `HD_PLAY_PACKAGE` | No | server | empty (Google purchases off) | `com.example.hypedomino` | No | from #106 |
@@ -100,7 +100,23 @@ Today no code on `main` reads an environment variable. The server variables belo
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
-### 2.2 CI
+### 2.2 Admin API runtime
+
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces when more than one instance runs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
+
+| Name | Required | Service | Default | Example placeholder | Secret | Source |
+|---|---|---|---|---|---|---|
+| `HD_ADMIN_LISTEN_ADDR` | No | admin-api | `:8090` | `:8090` | No | from #134 |
+| `HD_ADMIN_ENVIRONMENT` | Yes | admin-api | none | `staging` | No | from #134 |
+| `HD_ADMIN_GOOGLE_DOMAIN` | Yes | admin-api | none | `example.com` | No | from #134 |
+| `HD_ADMIN_GOOGLE_AUDIENCES` | Yes | admin-api | none | `<admin-web-client-id>.apps.googleusercontent.com` | No | from #134 |
+| `HD_ADMIN_SESSION_IDLE` | No | admin-api | `30m` (`AdminSessionIdleMinutes`) | `30m` | No | from #134 |
+| `HD_ADMIN_SESSION_MAX` | No | admin-api | `12h` (`AdminSessionMaxHours`) | `12h` | No | from #134 |
+| `HD_ADMIN_STEP_UP` | No | admin-api | `10m` (`AdminStepUpMinutes`) | `10m` | No | from #134 |
+| `HD_ADMIN_APPROVAL_TTL` | No | admin-api | `24h` (`AdminApprovalTtlHours`) | `24h` | No | from #134 |
+| `HD_ADMIN_GRANT_APPROVAL_COINS` | No | admin-api | `2000` (`AdminGrantApprovalCoins`) | `2000` | No | from #144 |
+
+### 2.3 CI
 
 | Name | Required | Service | Example placeholder | Secret | Stored as |
 |---|---|---|---|---|---|
@@ -108,7 +124,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `UNITY_EMAIL` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
 | `UNITY_PASSWORD` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
 
-### 2.3 Not read yet
+### 2.4 Not read yet
 
 The admin panel and the client read no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
