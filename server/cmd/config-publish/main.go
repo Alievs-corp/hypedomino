@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -32,7 +33,7 @@ func main() {
 	domain := flags.String("domain", shop.Domain, "config domain to publish")
 	file := flags.String("file", "", "JSON file with the new snapshot")
 	flags.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: config-publish -domain shop|rating -file shop.json")
+		fmt.Fprintln(os.Stderr, "usage: config-publish -domain "+strings.Join(domains, "|")+" -file snapshot.json")
 		flags.PrintDefaults()
 	}
 	flags.Parse(os.Args[1:])
@@ -48,6 +49,8 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, rating.Domain, rulesconfig.Domain, shop.Domain}
 
 var errDomain = errors.New("unknown config domain")
 

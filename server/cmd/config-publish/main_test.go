@@ -200,3 +200,11 @@ func TestMissionRewardsMustBePublishedWithTheMissionAsSource(t *testing.T) {
 		t.Fatalf("missions after their medals = %v", err)
 	}
 }
+
+func TestTheUsageNamesEveryDomainThePublisherValidates(t *testing.T) {
+	for _, domain := range domains {
+		if err := validate(domain, []byte(`{`)); errors.Is(err, errDomain) {
+			t.Errorf("%s is listed but not validated", domain)
+		}
+	}
+}
