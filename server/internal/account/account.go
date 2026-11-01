@@ -26,11 +26,12 @@ var (
 )
 
 type Account struct {
-	ID        string
-	State     string
-	Country   string
-	Email     string
-	CreatedAt time.Time
+	ID          string
+	State       string
+	Country     string
+	Email       string
+	CreatedAt   time.Time
+	BannedUntil *time.Time
 }
 
 type Store struct {
@@ -51,7 +52,7 @@ func (s *Store) SignIn(ctx context.Context, identity idtoken.Identity) (Account,
 			return Account{}, false, err
 		}
 		if found {
-			return a, false, admitted(a)
+			return a, false, admitted(a, time.Now())
 		}
 		a, created, err := s.create(ctx, identity)
 		if err != nil {
@@ -67,8 +68,8 @@ func (s *Store) find(ctx context.Context, identity idtoken.Identity) (Account, b
 	var a Account
 	err := s.pool.QueryRow(ctx, `update auth_identities i set email = coalesce(nullif($3, ''), i.email)
 		from accounts a where a.id = i.account_id and i.provider = $1 and i.subject = $2
-		returning a.id, a.state, coalesce(a.country, ''), coalesce(i.email, ''), a.created_at`,
-		identity.Provider.String(), identity.Subject, identity.Email).Scan(&a.ID, &a.State, &a.Country, &a.Email, &a.CreatedAt)
+		returning a.id, a.state, coalesce(a.country, ''), coalesce(i.email, ''), a.created_at, a.banned_until`,
+		identity.Provider.String(), identity.Subject, identity.Email).Scan(&a.ID, &a.State, &a.Country, &a.Email, &a.CreatedAt, &a.BannedUntil)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Account{}, false, nil
 	}
@@ -101,12 +102,14 @@ func isUniqueViolation(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
-func admitted(a Account) error {
-	switch a.State {
-	case StateBanned:
+func admitted(a Account, now time.Time) error {
+	switch {
+	case a.State == StateBanned:
 		return ErrBanned
-	case StateDeleted:
+	case a.State == StateDeleted:
 		return ErrDeleted
+	case a.BannedUntil != nil && now.Before(*a.BannedUntil):
+		return ErrBanned
 	}
 	return nil
 }
