@@ -25,7 +25,7 @@ Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs
 |---|---|---|---|
 | `super_admin` | Admin accounts and roles, retention and privacy config, anti-cheat config, audit log, every permission of the other roles | Every row any admin role can see, plus D-2, D-27, D-28 | Product owner, security lead |
 | `content` | Cosmetics, assets, rarity, medals, emblem art, game strings and their translations, cultural review | None | Art and content team |
-| `live_ops` | Economy config, reward bundles, shop, coin packs, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
+| `live_ops` | Economy config, reward bundles, shop, chests, crystal packs, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
 | `support` | Player lookup and support actions, sanctions, review, report and appeal queues, moderation lists, rights request records, targeted promo account lists | D-1, D-3, D-5, D-6, D-8 to D-10, D-12, D-13, D-15 to D-21, D-23 | Support lead, support agents, moderators |
 | `analyst` | Dashboards, KPI and economy monitors, aggregate exports, pseudonymous analytics events | D-24 only; every other number as an aggregate without ids | Analyst |
 
@@ -56,7 +56,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Rarity table (5.3) | VCEP | VCEP | V | V | V |
 | Reward bundles (5.4) | VCEPRD | V | VCEPRD | V | V |
 | Shop offers and rotations (5.5) | VCEPRD | V | VCEPRD | V | V |
-| Store products and coin packs (5.6) | VCEPR | | VCEPR | V | V |
+| Store products and crystal packs (5.6) | VCEPR | | VCEPR | V | V |
 | Pass seasons (5.7) | VCEPRD | V | VCEPRD | V | V |
 | Missions (5.8) | VCEPRD | V | VCEPRD | V | V |
 | Medals (5.9) | VCEPRD | VCEPRD | V | V | V |
@@ -138,7 +138,7 @@ draft -> submitted -> approved -> [scheduled] -> active -> superseded
 | `cosmetics` | Schema and V-1 to V-11, V-19 for the whole manifest; V-12 to V-18 across manifests and other admin data | `docs/cosmetics.md` section 9; `tools/cosmetics-schema` runs the single-manifest rules on repo examples |
 | `rarity` | Ids, ordinals 1 to N, unique pips, glow order, contrast on all ground layers, no removed id still referenced | `docs/rarity.md` section 7; `tools/design-tokens` runs the same rules on the defaults |
 | `economy` | Offer price is coins or a store product, never both; `mythic` only in time-limited offers; struck-through price is the lowest of `ReferencePriceDays`; bundle has a non-empty field; daily and weekly mission sets within budget | `docs/economy.md` 3.1, 4, 6.2, 6.3, 2.4; `tools/economy-balance` regenerates the balance sheet from the CSV defaults |
-| `progression` | PV-1 to PV-10: track coins within `PassFreeTrackCoins` and `PassPremiumTrackCoins`; every premium level has a bundle; no `medals`, `passXp` or `mythic` item on a track; no overlapping pass seasons and no change to a frozen field of a running one; mission slots within their coin and XP budgets; event mission XP within `EventMissionXpBudget`; medal sources only `mission` or `rank_reward` | `docs/pass-missions-medals.md` 9.1, `docs/economy.md` 2.5; `tools/pass-season` checks the sample season against the curve and the track budgets |
+| `progression` | PV-1 to PV-10: free track coins within `PassFreeTrackCoins`, premium track crystals within `PassPremiumTrackCrystals`; every premium level has a bundle; no `medals`, `passXp` or `mythic` item on a track; no overlapping pass seasons and no change to a frozen field of a running one; mission slots within their coin and XP budgets; event mission XP within `EventMissionXpBudget`; medal sources only `mission` or `rank_reward` | `docs/pass-missions-medals.md` 9.1, `docs/economy.md` 2.5; `tools/pass-season` checks the sample season against the curve and the track budgets |
 | `ranking` | `LpChangeMax` + `OffenseRatingPenalty` below `DivisionLp`; reset table monotone and never above the old rank; structural keys unchanged while a season runs; seasons contiguous | `docs/ranking.md` 3.1, 7.1, 7.2 |
 | `localization` | Only approved values in a bundle; placeholders match the key's declaration; plural categories complete per language; value within the key's max length; `en` complete; `en` last in every fallback chain | `docs/localization.md` 1.2, 2.1, 4.1 to 4.3 |
 | All | Every reference resolves (bundle, offer, item, medal, mission, product); every record that grants an item is listed in the item's `sources`; every value within its schema type and bounds; every `nameKey` has an approved `en` value | `docs/cosmetics.md` V-15, V-16, AP-3 |
@@ -265,12 +265,12 @@ Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use show
 
 A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (owner decision O-3).
 
-### 5.6 Store products and coin packs
+### 5.6 Store products and crystal packs
 
 | Field | Rule |
 |---|---|
-| `productId` | `coins_tier1` to `coins_tier5`, `pass_premium`, `pass_premium_plus`, `offer_starter` (`docs/economy.md` section 7). Created in both store consoles first |
-| `coins` | For coin packs, entry of `CoinPackCoins` |
+| `productId` | `crystals_tier1` to `crystals_tier5`, `pass_premium`, `pass_premium_plus`, `offer_starter` (`docs/economy.md` section 7). Created in both store consoles first |
+| `crystals` | For crystal packs, entry of `CrystalPackCrystals` |
 | `usdReference` | The store price point, recorded for checks; the price itself is set only in the store consoles |
 | `offer` | The offer that sells it |
 | `storeStatus` | Server: product found and active in each store |
@@ -290,7 +290,7 @@ Rules: `docs/pass-missions-medals.md` section 2.
 | `xpTable` | Server: XP to next level and XP total per level from the curve (`docs/pass-missions-medals.md` 2.2) |
 | `freeTrack`, `premiumTrack` | Per level 1 to `levels`: a bundle id; a free level may be empty, a premium level may not. Track bundles carry `coins` and `cosmetics` only, never `medals`, `passXp` or a `mythic` item; each cosmetic lists the source `pass.<seasonId>.<track>.level_<n>` |
 | `products` | `pass_premium`, `pass_premium_plus` bound to the season (`docs/economy.md` 7.2) |
-| `budget` | Server: coin totals per track against `PassFreeTrackCoins` and `PassPremiumTrackCoins` |
+| `budget` | Server: free track coins against `PassFreeTrackCoins`, premium track crystals against `PassPremiumTrackCrystals` |
 
 Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with an item of the same type and rarity, with an audited reason. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
 
@@ -690,7 +690,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CoinPackCoins`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCoins` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
 
 ## 12. Implementation
 

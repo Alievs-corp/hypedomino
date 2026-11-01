@@ -17,7 +17,7 @@ var objectBySpecRow = map[string]Object{
 	"Rarity table (5.3)":                          RarityTable,
 	"Reward bundles (5.4)":                        RewardBundles,
 	"Shop offers and rotations (5.5)":             ShopOffers,
-	"Store products and coin packs (5.6)":         StoreProducts,
+	"Store products and crystal packs (5.6)":      StoreProducts,
 	"Pass seasons (5.7)":                          PassSeasons,
 	"Missions (5.8)":                              Missions,
 	"Medals (5.9)":                                Medals,

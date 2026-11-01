@@ -73,7 +73,7 @@ The behaviour at B is defined by `docs/ranking.md` 7 and 8.3, `docs/pass-mission
 | Item | Admin object | Done when |
 |---|---|---|
 | Ranked season 2: start = B, config per mode, `resetTable`, `rankRewards` | `docs/admin.md` 5.12 (A-19) | Published; validation "seasons contiguous" passes |
-| Pass season `season_2`: window = ranked season 2, tracks within `PassFreeTrackCoins` and `PassPremiumTrackCoins`, products bound | `docs/admin.md` 5.7 (A-16) | Published before its start (PV-1 to PV-10) |
+| Pass season `season_2`: window = ranked season 2, tracks within `PassFreeTrackCoins` and `PassPremiumTrackCrystals`, products bound | `docs/admin.md` 5.7 (A-16) | Published before its start (PV-1 to PV-10) |
 | Season 2 track cosmetics with source `pass.season_2.<track>.level_<n>`; season 1 rank reward items with their `rank_reward` source | `docs/admin.md` 5.1, 5.2 | Cultural review approved, catalog build contains them (V-15, V-17) |
 | Strings for season 2 names, items, banners, push in `az`, `en`, `tr`, `ru` | `docs/admin.md` 5.15 | Approved in all four languages (`docs/localization.md` 2.1) |
 | Structural changes collected during season 1: section 3 structure, `PlacementMatches`, reset table, apex slot rules, `PassLevels`, XP curve, track tables | Season 2 records only | Frozen fields of a running season are never edited (`docs/ranking.md` 7.1, PV-4) |

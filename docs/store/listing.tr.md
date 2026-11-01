@@ -73,7 +73,7 @@ BİLMEN GEREKENLER
 • Reklam yok.
 • Türkçe, İngilizce, Azerbaycan Türkçesi ve Rusça olarak oynanabilir.
 • Hesaplar 13 yaş ve üzeri oyuncular içindir.
-• İsteğe bağlı uygulama içi satın alımlar: coin paketleri, premium sezon kartı ve teklifler. Coin'lerin nakit değeri yoktur ve paraya çevrilemez.
+• İsteğe bağlı uygulama içi satın alımlar: kristal paketleri, premium sezon kartı ve teklifler. Coin'lerin ve kristallerin nakit değeri yoktur ve paraya çevrilemez.
 ```
 
 ## caption.S-1
