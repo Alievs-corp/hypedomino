@@ -61,6 +61,8 @@ Coins per completed match:
 
 `FirstWinBonusCoins` (100) on the first won ranked or casual match of the economy day. Custom rooms do not count.
 
+- Implemented in `server/internal/matchreward` (#103): the `match_rewards` config domain (`docs/economy/examples/match_rewards.json`) holds the table of 2.1, `BotSeatRewardPercent`, `DailyMatchCoinCap` and `FirstWinBonusCoins`. `Award` credits `match_reward` under key `match:<matchId>`, cut to what is left of the cap from that economy day's `match_reward` entries, and `first_win` under key `first_win:<economyDay>`, outside the cap.
+
 ### 2.3 Daily login
 
 - A 7-day cycle. Claiming day n grants entry n of `DailyLoginCoins` (30, 30, 50, 50, 70, 70, 150; 450 per cycle). After day 7 the cycle starts again at day 1.
