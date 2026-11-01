@@ -1,6 +1,7 @@
 package dailylogin
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,8 +19,7 @@ const (
 var ErrInvalidCalendar = errors.New("dailylogin: invalid calendar")
 
 type Day struct {
-	Coins  int64          `json:"coins,omitempty"`
-	Bundle *reward.Bundle `json:"bundle,omitempty"`
+	Coins int64 `json:"coins"`
 }
 
 type Calendar struct {
@@ -38,7 +38,9 @@ func Default() *Calendar {
 
 func Parse(raw []byte) (*Calendar, error) {
 	calendar := &Calendar{}
-	if err := json.Unmarshal(raw, calendar); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(calendar); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidCalendar, err)
 	}
 	if err := calendar.Validate(); err != nil {
@@ -58,33 +60,15 @@ func (c *Calendar) Validate() error {
 		return fail("a calendar has 7 or 30 days, not %d", len(c.Days))
 	}
 	for i, day := range c.Days {
-		if err := day.validate(); err != nil {
-			return fail("day %d: %v", i+1, err)
+		if day.Coins < 1 {
+			return fail("day %d grants %d coins, a daily login day grants coins only", i+1, day.Coins)
 		}
 	}
 	return nil
 }
 
-func (d Day) validate() error {
-	switch {
-	case d.Bundle == nil && d.Coins < 1:
-		return errors.New("needs coins or a bundle")
-	case d.Bundle != nil && d.Coins != 0:
-		return errors.New("takes coins or a bundle, not both")
-	case d.Bundle == nil:
-		return nil
-	case len(d.Bundle.Cosmetics) > 0 || len(d.Bundle.Medals) > 0:
-		return errors.New("a daily login bundle grants coins and pass xp only, since no cosmetic or medal lists a daily login source")
-	}
-	return d.Bundle.Validate()
-}
-
 func (c *Calendar) Reward(day int, version int64) reward.Bundle {
-	entry := c.Days[day-1]
-	if entry.Bundle != nil {
-		return *entry.Bundle
-	}
-	return reward.Bundle{ID: fmt.Sprintf("bundle.daily_login_day_%d", day), Revision: int(max(1, version)), Coins: entry.Coins}
+	return reward.Bundle{ID: fmt.Sprintf("bundle.daily_login_day_%d", day), Revision: int(max(1, version)), Coins: c.Days[day-1].Coins}
 }
 
 func (c *Calendar) Next(claims int64) int {

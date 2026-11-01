@@ -311,7 +311,7 @@ Rules: `docs/pass-missions-medals.md` section 4.
 | `eventId` | `event` only: the live event (5.13) |
 | `availability` | `live` or `retired` |
 
-Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` or a bundle id (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141).
+Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` only (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141).
 
 ### 5.9 Medals
 
