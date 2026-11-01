@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 )
 
 const MaxBodyBytes = 16 * 1024
@@ -78,6 +79,10 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("GET /admin/approvals", h.signedIn(h.pendingApprovals))
 	h.mux.HandleFunc("POST /admin/approvals/{id}/approve", h.signedIn(h.approve))
 	h.mux.HandleFunc("POST /admin/approvals/{id}/reject", h.signedIn(h.reject))
+	h.mux.HandleFunc("GET /admin/config/rules", h.allowed(rbac.GameConfig, rbac.View, h.rules))
+	h.mux.HandleFunc("PUT /admin/config/rules", h.allowed(rbac.GameConfig, rbac.Publish, h.publishRules))
+	h.mux.HandleFunc("GET /admin/config/rules/history", h.allowed(rbac.GameConfig, rbac.View, h.rulesHistory))
+	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -214,6 +219,7 @@ var (
 	errAccountRefused   = errors.New("adminapi: no active admin account for the identity")
 	errDifferentAccount = errors.New("adminapi: step-up identity is another account")
 	errGrantSeparately  = errors.New("adminapi: super_admin is granted to an existing account through an approval")
+	errNoSuchVersion    = errors.New("adminapi: no such config version")
 	errUnsupportedKind  = errors.New("adminapi: this kind of proposal cannot be carried out here yet")
 	errOwnAccount       = errors.New("adminapi: an admin cannot change their own account")
 	errMalformed        = errors.New("adminapi: malformed request")
@@ -294,8 +300,10 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "step_up_required"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
-	case errors.Is(err, gamestrings.ErrInvalidLocalization):
+	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errNoSuchVersion):
+		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrInvalidEntry), errors.Is(err, gamestrings.ErrInvalidValue),

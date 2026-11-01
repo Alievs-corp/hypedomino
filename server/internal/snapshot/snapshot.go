@@ -114,3 +114,36 @@ func Publish(ctx context.Context, pool Querier, domain string, content []byte) (
 	err := pool.QueryRow(ctx, `insert into config_snapshots (domain, content) values ($1, $2) returning version`, domain, content).Scan(&version)
 	return version, err
 }
+
+type Published struct {
+	Version int64
+	Content []byte
+	At      time.Time
+}
+
+func Version(ctx context.Context, q Querier, domain string, version int64) (Published, error) {
+	published := Published{Version: version}
+	err := q.QueryRow(ctx, `select content, published_at from config_snapshots where domain = $1 and version = $2`, domain, version).Scan(&published.Content, &published.At)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Published{}, ErrNone
+	}
+	published.At = published.At.UTC()
+	return published, err
+}
+
+type Lister interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+func History(ctx context.Context, q Lister, domain string, limit int) ([]Published, error) {
+	rows, err := q.Query(ctx, `select version, content, published_at from config_snapshots where domain = $1 order by version desc limit $2`, domain, limit)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Published, error) {
+		var p Published
+		err := row.Scan(&p.Version, &p.Content, &p.At)
+		p.At = p.At.UTC()
+		return p, err
+	})
+}
