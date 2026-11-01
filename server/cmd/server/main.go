@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
+	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
@@ -121,7 +122,10 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	passConfigs := pass.NewWatcher(pool, logger)
 	go passConfigs.Run(ctx, config.ConfigPoll)
 	passes := pass.NewStore(pool, passConfigs)
-	engine := reward.NewEngine(pool, walletStore, inventoryStore, nil, passes, config.Reward)
+	medalCatalog := medal.NewWatcher(pool, logger)
+	go medalCatalog.Run(ctx, config.ConfigPoll)
+	medals := medal.NewStore(pool, medalCatalog)
+	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
@@ -163,6 +167,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	passHandler := pass.NewHandler(tokens, passes, logger, time.Now)
 	a.Handle("/pass", passHandler)
 	a.Handle("/pass/", passHandler)
+	a.Handle("/medals", medal.NewHandler(tokens, medals, logger, time.Now))
+	a.Handle("/medals/", medal.NewHandler(tokens, medals, logger, time.Now))
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
