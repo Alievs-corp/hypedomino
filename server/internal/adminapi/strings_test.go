@@ -22,7 +22,7 @@ func (a *api) raw(method, path, token, body string) *httptest.ResponseRecorder {
 
 func (a *api) entries(token, query string) []map[string]any {
 	a.t.Helper()
-	status, body := a.call("GET", "/admin/audit?object_type=game_strings"+query, token, nil)
+	status, body := a.call("GET", "/admin/audit?"+query, token, nil)
 	if status != http.StatusOK {
 		a.t.Fatalf("audit %d %v", status, body)
 	}
@@ -87,7 +87,7 @@ func TestKeyAndValueChangesAreAudited(t *testing.T) {
 	if status != http.StatusOK || listed["deprecated"] != true || listed["values"].(map[string]any)["az"].(map[string]any)["text"] != "Qələbə!" {
 		t.Fatalf("list %d %v", status, body)
 	}
-	entries := a.entries(content, "&object_id=match.result.win")
+	entries := a.entries(content, "object_type=game_strings&object_id=match.result.win")
 	actions := []string{}
 	for _, entry := range entries {
 		actions = append(actions, entry["action"].(string))
@@ -134,7 +134,7 @@ func TestRefusedStringChangesLeaveNoEntry(t *testing.T) {
 			}
 		})
 	}
-	if entries := a.entries(content, ""); len(entries) != 1 {
+	if entries := a.entries(content, "object_type=game_strings"); len(entries) != 1 {
 		t.Fatalf("entries %v", entries)
 	}
 }
@@ -156,13 +156,13 @@ func TestImportStoresDraftsWithAnEntryPerKey(t *testing.T) {
 	if blocked.Code != http.StatusUnprocessableEntity || !strings.Contains(blocked.Body.String(), `"key":"match.result.draw"`) {
 		t.Fatalf("blocked import %d %s", blocked.Code, blocked.Body)
 	}
-	before := len(a.entries(content, ""))
+	before := len(a.entries(content, "object_type=game_strings"))
 	imported := a.raw("POST", "/admin/strings/import?language=tr&format=json", content,
 		`{"language":"tr","rows":[{"key":"match.result.win","text":"Kazandın!"},{"key":"match.result.lose","text":"Kaybettin"}]}`)
 	if imported.Code != http.StatusOK || imported.Body.String() != "{\"changed\":2}\n" {
 		t.Fatalf("import %d %s", imported.Code, imported.Body)
 	}
-	entries := a.entries(content, "")
+	entries := a.entries(content, "object_type=game_strings")
 	if len(entries) != before+2 {
 		t.Fatalf("import entries %v", entries)
 	}
@@ -199,7 +199,7 @@ func TestPublishingIsAuditedAndBlockedByFailingValues(t *testing.T) {
 	if status != http.StatusOK || len(bundles) != 1 || bundles[0].(map[string]any)["by"] == "" {
 		t.Fatalf("bundles %d %v", status, body)
 	}
-	entries := a.entries(content, "&action=publish")
+	entries := a.entries(content, "object_type=game_strings&action=publish")
 	if len(entries) != 1 || entries[0]["object_id"] != "bundle:en" || entries[0]["reason"] != "launch" || entries[0]["after"].(map[string]any)["version"] != float64(1) {
 		t.Fatalf("publish entries %v", entries)
 	}
