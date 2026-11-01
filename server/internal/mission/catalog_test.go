@@ -105,7 +105,7 @@ func TestEventMissionsWithinTheBudgetPublish(t *testing.T) {
 	}
 }
 
-func TestAMissionMedalMustListTheMission(t *testing.T) {
+func TestAMissionMedalOrCosmeticMustListTheMission(t *testing.T) {
 	raw, err := os.ReadFile("../../../docs/pass/examples/medals.json")
 	if err != nil {
 		t.Fatal(err)
@@ -118,8 +118,16 @@ func TestAMissionMedalMustListTheMission(t *testing.T) {
 		found, ok := medals.Medal(id)
 		return ok && found.Lists(source)
 	}
+	items, err := cosmetics.Load("../../../docs/cosmetics/examples/catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	itemLists := func(id string, source cosmetics.Source) bool {
+		item, ok := items.Item(id)
+		return ok && item.Grantable(source)
+	}
 	catalog := example(t)
-	if err := catalog.CheckMedals(lists); err != nil {
+	if err := catalog.CheckSources(lists, itemLists); err != nil {
 		t.Fatalf("example catalogs disagree: %v", err)
 	}
 	cases := map[string]func(*Catalog){
@@ -131,12 +139,20 @@ func TestAMissionMedalMustListTheMission(t *testing.T) {
 			win, _ := c.Mission("mission.win_250")
 			win.Bundle.Medals = []string{"medal.nobody"}
 		},
+		"cosmetic of another mission": func(c *Catalog) {
+			win, _ := c.Mission("mission.win_250")
+			win.Bundle.Cosmetics = []string{"emoji.laugh_spin"}
+		},
+		"cosmetic outside the catalog": func(c *Catalog) {
+			win, _ := c.Mission("mission.win_5_matches")
+			win.Bundle.Cosmetics = []string{"emoji.nobody"}
+		},
 	}
 	for name, change := range cases {
 		catalog := example(t)
 		change(catalog)
-		if err := catalog.CheckMedals(lists); !errors.Is(err, ErrInvalidCatalog) {
-			t.Errorf("%s: CheckMedals() = %v", name, err)
+		if err := catalog.CheckSources(lists, itemLists); !errors.Is(err, ErrInvalidCatalog) {
+			t.Errorf("%s: CheckSources() = %v", name, err)
 		}
 	}
 }
