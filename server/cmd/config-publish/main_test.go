@@ -182,11 +182,14 @@ func TestALocalizationSnapshotNeedsPublishedBundlesAndRollsBackByVersion(t *test
 	}
 }
 
-func TestMissionMedalsMustBePublishedWithTheMissionAsSource(t *testing.T) {
+func TestMissionRewardsMustBePublishedWithTheMissionAsSource(t *testing.T) {
 	url, _ := dbtest.Fresh(t)
 	ctx := context.Background()
 	var out bytes.Buffer
 	missions, medals := "../../../docs/pass/examples/missions.json", "../../../docs/pass/examples/medals.json"
+	if err := run(ctx, url, cosmetics.Domain, "../../../docs/cosmetics/examples/catalog.json", &out); err != nil {
+		t.Fatal(err)
+	}
 	if err := run(ctx, url, mission.Domain, missions, &out); !errors.Is(err, mission.ErrInvalidCatalog) {
 		t.Fatalf("missions before their medals = %v", err)
 	}
@@ -195,5 +198,13 @@ func TestMissionMedalsMustBePublishedWithTheMissionAsSource(t *testing.T) {
 	}
 	if err := run(ctx, url, mission.Domain, missions, &out); err != nil {
 		t.Fatalf("missions after their medals = %v", err)
+	}
+}
+
+func TestTheUsageNamesEveryDomainThePublisherValidates(t *testing.T) {
+	for _, domain := range domains {
+		if err := validate(domain, []byte(`{`)); errors.Is(err, errDomain) {
+			t.Errorf("%s is listed but not validated", domain)
+		}
 	}
 }

@@ -470,7 +470,11 @@ func (s *Store) grantPass(ctx context.Context, tx pgx.Tx, r record, offer shop.O
 		return err
 	}
 	levels := reward.Bundle{ID: "bundle.pass_premium_plus_levels", Revision: 1, Coins: coins}
-	_, err = s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: levels, Source: cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}, Reason: wallet.Purchase, Key: key + ":levels"}, now)
+	report, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: levels, Source: cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}, Reason: wallet.Purchase, Key: key + ":levels"}, now)
+	if err != nil || !report.Repeated || !report.Revoked() {
+		return err
+	}
+	_, err = s.engine.ReinstateIn(ctx, tx, r.Account, key+":levels", wallet.RefundReversal, key+":levels:reinstate:"+report.RevokeKey, now)
 	return err
 }
 
