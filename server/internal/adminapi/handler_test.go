@@ -70,7 +70,7 @@ func newAPI(t *testing.T) *api {
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
 	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), now: start}
-	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig()}
+	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins}
 	a.handler = adminapi.New(config, verifier, pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)
 	a.create("ayla@example.com", rbac.Content)

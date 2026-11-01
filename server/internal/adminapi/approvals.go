@@ -91,10 +91,13 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request, p principal) {
 		if err != nil {
 			return err
 		}
-		if approved.Kind != approval.SuperAdminGrant {
-			return errUnsupportedKind
+		switch approved.Kind {
+		case approval.SuperAdminGrant:
+			return h.grantSuperAdmin(r.Context(), tx, p, approved, note, now)
+		case approval.PlayerGrant:
+			return h.grantPlayerCoins(r.Context(), tx, p, approved, note, now)
 		}
-		return h.grantSuperAdmin(r.Context(), tx, p, approved, note, now)
+		return errUnsupportedKind
 	})
 	if err != nil {
 		h.refuse(w, err)

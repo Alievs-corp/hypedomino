@@ -172,6 +172,18 @@ func isAccountID(query string) bool {
 	return true
 }
 
+func Lock(ctx context.Context, tx pgx.Tx, accountID string) error {
+	if !isAccountID(accountID) {
+		return ErrNotFound
+	}
+	var state string
+	err := tx.QueryRow(ctx, `select state from accounts where id = $1::uuid for update`, accountID).Scan(&state)
+	if errors.Is(err, pgx.ErrNoRows) || state == "deleted" {
+		return ErrNotFound
+	}
+	return err
+}
+
 func Load(ctx context.Context, db Querier, accountID string, withIdentities bool) (Record, error) {
 	if !isAccountID(accountID) {
 		return Record{}, ErrNotFound
