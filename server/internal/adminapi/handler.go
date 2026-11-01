@@ -24,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const MaxBodyBytes = 16 * 1024
@@ -34,6 +35,8 @@ type Config struct {
 	Session      adminsession.Config
 	ApprovalTTL  time.Duration
 	Shop         shop.Config
+
+	GrantApprovalCoins int64
 }
 
 type Verifier interface {
@@ -50,6 +53,7 @@ type Handler struct {
 	audit     *audit.Store
 	strings   *gamestrings.Store
 	approvals *approval.Store
+	wallet    *wallet.Store
 	now       func() time.Time
 	logger    *slog.Logger
 	mux       *http.ServeMux
@@ -65,6 +69,7 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 		audit:     audit.NewStore(pool),
 		strings:   gamestrings.NewStore(pool),
 		approvals: approval.NewStore(pool, approval.Config{TTL: config.ApprovalTTL}),
+		wallet:    wallet.NewStore(pool),
 		now:       now,
 		logger:    logger,
 		mux:       http.NewServeMux(),
@@ -88,6 +93,7 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
 	h.mux.HandleFunc("GET /admin/players", h.allowed(rbac.Players, rbac.View, h.searchPlayers))
 	h.mux.HandleFunc("GET /admin/players/{id}", h.allowed(rbac.Players, rbac.View, h.playerRecord))
+	h.mux.HandleFunc("POST /admin/players/{id}/coins", h.allowed(rbac.Players, rbac.ActOnPlayer, h.adjustCoins))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.shopHistory))
@@ -312,6 +318,10 @@ func classify(err error) (int, string) {
 	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed),
 		errors.Is(err, playerrecord.ErrEmptyQuery):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errBadAdjustment), errors.Is(err, wallet.ErrInvalid), errors.Is(err, wallet.ErrWrongSign):
+		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, wallet.ErrInsufficient):
+		return http.StatusConflict, "insufficient"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):

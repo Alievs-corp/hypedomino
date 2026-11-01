@@ -42,7 +42,7 @@ type config struct {
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig()}}
+	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -90,6 +90,12 @@ func configFromEnv(env lookup) (config, error) {
 	duration("HD_ADMIN_SESSION_MAX", &c.api.Session.Max)
 	duration("HD_ADMIN_STEP_UP", &c.api.Session.StepUp)
 	duration("HD_ADMIN_APPROVAL_TTL", &c.api.ApprovalTTL)
+	grantApprovalCoins := int(c.api.GrantApprovalCoins)
+	integer("HD_ADMIN_GRANT_APPROVAL_COINS", &grantApprovalCoins)
+	if grantApprovalCoins < 1 {
+		errs = append(errs, fmt.Errorf("HD_ADMIN_GRANT_APPROVAL_COINS: %d is not a positive coin amount", grantApprovalCoins))
+	}
+	c.api.GrantApprovalCoins = int64(grantApprovalCoins)
 	integer("HD_SHOP_DAILY_SLOTS", &c.api.Shop.DailySlots)
 	integer("HD_SHOP_WEEKLY_SLOTS", &c.api.Shop.WeeklySlots)
 	integer("HD_SHOP_RESET_HOUR_UTC", &c.api.Shop.ResetHourUTC)
