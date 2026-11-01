@@ -48,13 +48,14 @@ func (s Stats) WinRatePercent() int {
 }
 
 type Profile struct {
-	Account   string
-	Nickname  string
-	RenamedAt time.Time
-	Level     int
-	XP        int64
-	Loadout   Loadout
-	Stats     Stats
+	Account        string
+	Nickname       string
+	RenamedAt      time.Time
+	RenameRequired bool
+	Level          int
+	XP             int64
+	Loadout        Loadout
+	Stats          Stats
 }
 
 type Store struct {
@@ -66,7 +67,7 @@ func NewStore(pool *pgxpool.Pool, config Config) *Store {
 	return &Store{pool: pool, config: config}
 }
 
-const profileColumns = `account_id, nickname, nickname_changed_at, level, xp, loadout, stats`
+const profileColumns = `account_id, nickname, nickname_changed_at, rename_required, level, xp, loadout, stats`
 
 const noAccount = "00000000-0000-0000-0000-000000000000"
 
@@ -74,7 +75,7 @@ func scan(row pgx.Row) (Profile, error) {
 	var p Profile
 	var loadout, stats []byte
 	var renamed *time.Time
-	if err := row.Scan(&p.Account, &p.Nickname, &renamed, &p.Level, &p.XP, &loadout, &stats); err != nil {
+	if err := row.Scan(&p.Account, &p.Nickname, &renamed, &p.RenameRequired, &p.Level, &p.XP, &loadout, &stats); err != nil {
 		return Profile{}, err
 	}
 	if renamed != nil {
@@ -107,7 +108,7 @@ func (s *Store) Exists(ctx context.Context, account string) (bool, error) {
 }
 
 func (s *Store) RenameAvailableAt(p Profile) (time.Time, bool) {
-	if p.RenamedAt.IsZero() {
+	if p.RenamedAt.IsZero() || p.RenameRequired {
 		return time.Time{}, false
 	}
 	return p.RenamedAt.Add(s.config.NicknameRenameCooldown), true
@@ -128,6 +129,9 @@ func (s *Store) SetNickname(ctx context.Context, account, raw string, now time.T
 	if err != nil {
 		return Profile{}, err
 	}
+	if found && current.RenameRequired && Key(current.Nickname) == key {
+		return Profile{}, ErrUnchanged
+	}
 	if found && current.Nickname == display {
 		return current, nil
 	}
@@ -144,7 +148,8 @@ func (s *Store) SetNickname(ctx context.Context, account, raw string, now time.T
 			account, current.Nickname, Key(current.Nickname), now); err != nil {
 			return Profile{}, err
 		}
-		_, err = tx.Exec(ctx, `update profiles set nickname = $2, nickname_key = $3, nickname_changed_at = $4, updated_at = $4 where account_id = $1`, account, display, key, now)
+		_, err = tx.Exec(ctx, `update profiles set nickname = $2, nickname_key = $3, updated_at = $4, rename_required = false,
+			nickname_changed_at = case when rename_required then nickname_changed_at else $4 end where account_id = $1`, account, display, key, now)
 	} else {
 		_, err = tx.Exec(ctx, `insert into profiles (account_id, nickname, nickname_key, updated_at) values ($1, $2, $3, $4)`, account, display, key, now)
 	}

@@ -51,10 +51,11 @@ type Account struct {
 }
 
 type Profile struct {
-	Level   int             `json:"level"`
-	XP      int64           `json:"xp"`
-	Loadout json.RawMessage `json:"loadout"`
-	Stats   json.RawMessage `json:"stats"`
+	RenameRequired bool            `json:"rename_required"`
+	Level          int             `json:"level"`
+	XP             int64           `json:"xp"`
+	Loadout        json.RawMessage `json:"loadout"`
+	Stats          json.RawMessage `json:"stats"`
 }
 
 type FormerNickname struct {
@@ -267,7 +268,7 @@ func loadIdentities(ctx context.Context, db Querier, r *Record, withIdentities b
 
 func loadProfile(ctx context.Context, db Querier, r *Record) error {
 	var p Profile
-	err := db.QueryRow(ctx, `select level, xp, loadout, stats from profiles where account_id = $1::uuid`, r.Account.ID).Scan(&p.Level, &p.XP, &p.Loadout, &p.Stats)
+	err := db.QueryRow(ctx, `select rename_required, level, xp, loadout, stats from profiles where account_id = $1::uuid`, r.Account.ID).Scan(&p.RenameRequired, &p.Level, &p.XP, &p.Loadout, &p.Stats)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}

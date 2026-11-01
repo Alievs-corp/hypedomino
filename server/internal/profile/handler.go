@@ -46,6 +46,7 @@ type ownView struct {
 	AccountID         string   `json:"account_id"`
 	Nickname          string   `json:"nickname"`
 	SetupRequired     bool     `json:"setup_required"`
+	RenameRequired    bool     `json:"rename_required"`
 	SuggestedNickname string   `json:"suggested_nickname,omitempty"`
 	RenameAvailableAt string   `json:"rename_available_at,omitempty"`
 	Level             int      `json:"level"`
@@ -152,11 +153,12 @@ func (h *Handler) public(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) own(p Profile) ownView {
 	view := ownView{
-		AccountID: p.Account,
-		Nickname:  p.Nickname,
-		Level:     p.Level,
-		XP:        p.XP,
-		Loadout:   p.Loadout,
+		RenameRequired: p.RenameRequired,
+		AccountID:      p.Account,
+		Nickname:       p.Nickname,
+		Level:          p.Level,
+		XP:             p.XP,
+		Loadout:        p.Loadout,
 		Stats: ownStats{
 			Games: p.Stats.Games, Wins: p.Stats.Wins, Losses: p.Stats.Losses, WinRatePercent: p.Stats.WinRatePercent(),
 			Streak: p.Stats.Streak, BestStreak: p.Stats.BestStreak, Modes: p.Stats.Modes,
@@ -191,7 +193,8 @@ func (h *Handler) refuseNickname(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrCooldown):
 		_, retry, _ := strings.Cut(err.Error(), " until ")
 		reply(w, http.StatusTooManyRequests, errorResponse{Error: ErrCooldown.Error(), RetryAt: retry})
-	case errors.Is(err, ErrInvalidLength), errors.Is(err, ErrInvalidCharacters), errors.Is(err, ErrInvalidSeparators), errors.Is(err, ErrMixedScripts), errors.Is(err, ErrDigitsOnly):
+	case errors.Is(err, ErrInvalidLength), errors.Is(err, ErrInvalidCharacters), errors.Is(err, ErrInvalidSeparators), errors.Is(err, ErrMixedScripts), errors.Is(err, ErrDigitsOnly),
+		errors.Is(err, ErrUnchanged):
 		reply(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 	default:
 		h.fail(w, err)

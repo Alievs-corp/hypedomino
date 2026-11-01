@@ -96,6 +96,38 @@ func TestRenamesKeepHistoryHoldTheOldNameAndCoolDown(t *testing.T) {
 	}
 }
 
+func TestAForcedRenameSkipsTheCooldownAndDoesNotStartIt(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	config := profile.DefaultConfig()
+	config.NicknameRenameCooldown = 48 * time.Hour
+	store := profile.NewStore(pool, config)
+	ctx := context.Background()
+	ayla := account(t, pool)
+	if _, err := store.SetNickname(ctx, ayla, "Ayla", start); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.SetNickname(ctx, ayla, "Rude_Name", start.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `update profiles set rename_required = true where account_id = $1`, ayla); err != nil {
+		t.Fatal(err)
+	}
+	flagged, _, err := store.Get(ctx, ayla)
+	if _, cooling := store.RenameAvailableAt(flagged); err != nil || !flagged.RenameRequired || cooling {
+		t.Fatalf("flagged %+v %v %v", flagged, cooling, err)
+	}
+	if _, err := store.SetNickname(ctx, ayla, "rude_name", start.Add(2*time.Hour)); !errors.Is(err, profile.ErrUnchanged) {
+		t.Fatalf("keeping the reported name: %v", err)
+	}
+	renamed, err := store.SetNickname(ctx, ayla, "Ayla_Fine", start.Add(2*time.Hour))
+	if err != nil || renamed.RenameRequired || !renamed.RenamedAt.Equal(start.Add(time.Hour)) {
+		t.Fatalf("forced rename: %+v %v", renamed, err)
+	}
+	if _, err := store.SetNickname(ctx, ayla, "Ayla_Next", start.Add(3*time.Hour)); !errors.Is(err, profile.ErrCooldown) {
+		t.Fatalf("rename after a forced rename: %v", err)
+	}
+}
+
 func TestConcurrentSetupsOfTheSameNicknameLetOneWin(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := profile.NewStore(pool, profile.DefaultConfig())
