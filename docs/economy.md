@@ -67,6 +67,7 @@ Coins per completed match:
 - One claim per economy day, by intent; the server decides the day (V-7).
 - A missed day pauses the cycle; it does not reset it. No streak to lose.
 - The admin may attach a reward bundle (section 4) to any day instead of coins. A 30-day calendar (#131) is not proposed for launch.
+- Implemented in `server/internal/dailylogin` (#131): the `daily_login` config domain (`docs/economy/examples/daily_login.json`) holds 7 or 30 days, each `coins` or a bundle of coins and pass XP (no cosmetic or medal lists a daily login source). A claim grants the next day of the cycle through the reward engine, reason `daily_login`, key `daily_login:<economyDay>`, and counts claims rather than dates, so a missed day pauses the cycle. The economy day is 00:00 UTC until the player reset time zone and its change limit are decided.
 
 ### 2.4 Missions
 
