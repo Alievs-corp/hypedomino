@@ -158,6 +158,8 @@ Division moves: Gold I 90 LP wins +21: Platinum IV 11 LP. Gold III 10 LP loses -
   4. The result is never below Iron IV and never above Diamond I. LP starts at 0.
 - A player who does not finish placement before the season ends has no final rank for that season.
 
+- Implemented in `server/internal/rating` (#114): `Config.Place` sets the first rank of a season from the MMR after `PlacementMatches`, limited for a returning player to the reset rank of 7.2 minus `PlacementMaxDropDivisions` and plus `PlacementMaxClimbDivisions`, and for a new player to `NewPlayerPlacementCap`; LP starts at 0 after the summed placement penalties. The examples of 7.3 are tests.
+
 ## 6. No dodge
 
 A ranked match has no accept or decline step (R-53), so there is no dodge and no dodge penalty. A player who has not loaded when the loading phase ends starts the match disconnected (R-57) and falls under the leave rules of `docs/penalties.md`: back within `ReconnectGraceSeconds` is no offense, later is a leave.
@@ -261,6 +263,8 @@ Every local leaderboard uses the same order. Apex recalculation (section 3.2) us
 - Each board shows the top `LeaderboardTopSize` (default 200) and the viewer's own position and neighbours, whatever their position.
 - The season-end snapshot freezes every board of the season. Past seasons stay readable.
 - Every row of every board opens that player's public profile (`docs/privacy.md` section 5): nickname, equipped cosmetics, rank and the emblem showcase (8.4). A player can browse the global board and any country or region board, not only their own.
+
+- Implemented in `server/internal/leaderboard` (#116): the global board per season and mode as a Redis sorted set in the order of 8.1 (score: rank index, apex tier, LP; member: time the LP was set, wins, account id), updated by the rating store on every change and rebuilt from PostgreSQL when missing; `GET /leaderboard/{mode}` serves the top `LeaderboardTopSize` and the viewer's position with neighbours. Country, region and friends boards are #117.
 
 ### 8.3 Leaderboard emblems
 
