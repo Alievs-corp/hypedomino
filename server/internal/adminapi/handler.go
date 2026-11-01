@@ -76,6 +76,8 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
 	h.mux.HandleFunc("GET /admin/strings/export", h.allowed(rbac.GameStrings, rbac.View, h.exportStrings))
 	h.mux.HandleFunc("POST /admin/strings/import", h.allowed(rbac.GameStrings, rbac.Edit, h.importStrings))
+	h.mux.HandleFunc("GET /admin/strings/active", h.allowed(rbac.GameStrings, rbac.View, h.activeStrings))
+	h.mux.HandleFunc("PUT /admin/strings/active", h.allowed(rbac.GameStrings, rbac.Publish, h.activateStrings))
 	h.mux.HandleFunc("GET /admin/strings/bundles", h.allowed(rbac.GameStrings, rbac.View, h.listBundles))
 	h.mux.HandleFunc("POST /admin/strings/bundles/{language}", h.allowed(rbac.GameStrings, rbac.Publish, h.publishBundle))
 	return h
@@ -194,6 +196,8 @@ var (
 	errOwnAccount       = errors.New("adminapi: an admin cannot change their own account")
 	errMalformed        = errors.New("adminapi: malformed request")
 	errForbidden        = errors.New("adminapi: the roles do not grant the action")
+	errReasonRequired   = errors.New("adminapi: a reason is required")
+	errStepUpRequired   = errors.New("adminapi: the action needs a recent sign-in")
 )
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
@@ -248,8 +252,14 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "own_account"
 	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errReasonRequired):
+		return http.StatusBadRequest, "reason_required"
+	case errors.Is(err, errStepUpRequired):
+		return http.StatusForbidden, "step_up_required"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
+	case errors.Is(err, gamestrings.ErrInvalidLocalization):
+		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrInvalidEntry), errors.Is(err, gamestrings.ErrInvalidValue),
