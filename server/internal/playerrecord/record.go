@@ -1,0 +1,298 @@
+package playerrecord
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
+)
+
+const (
+	SearchLimit = 20
+	ListLimit   = 50
+)
+
+var (
+	ErrNotFound   = errors.New("playerrecord: no such account")
+	ErrEmptyQuery = errors.New("playerrecord: empty search")
+	likeWildcards = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+)
+
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+type Summary struct {
+	ID        string    `json:"id"`
+	Nickname  string    `json:"nickname"`
+	State     string    `json:"state"`
+	Country   string    `json:"country"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Identity struct {
+	Provider string `json:"provider"`
+	Subject  string `json:"subject"`
+}
+
+type Account struct {
+	Summary
+	Emails              []string   `json:"emails"`
+	Identities          []Identity `json:"identities,omitempty"`
+	DeletionRequestedAt *time.Time `json:"deletion_requested_at"`
+	DeletedAt           *time.Time `json:"deleted_at"`
+}
+
+type Profile struct {
+	Level   int             `json:"level"`
+	XP      int64           `json:"xp"`
+	Loadout json.RawMessage `json:"loadout"`
+	Stats   json.RawMessage `json:"stats"`
+}
+
+type FormerNickname struct {
+	Nickname   string    `json:"nickname"`
+	ReplacedAt time.Time `json:"replaced_at"`
+}
+
+type Item struct {
+	ItemID     string     `json:"item_id"`
+	SourceType string     `json:"source_type"`
+	SourceRef  string     `json:"source_ref"`
+	GrantedAt  time.Time  `json:"granted_at"`
+	RevokedAt  *time.Time `json:"revoked_at"`
+}
+
+type LedgerEntry struct {
+	ID            int64     `json:"id"`
+	Amount        int64     `json:"amount"`
+	Reason        string    `json:"reason"`
+	SourceType    string    `json:"source_type"`
+	SourceRef     string    `json:"source_ref"`
+	ConfigVersion int64     `json:"config_version"`
+	BalanceAfter  int64     `json:"balance_after"`
+	At            time.Time `json:"at"`
+}
+
+type Grant struct {
+	ID            int64      `json:"id"`
+	BundleID      string     `json:"bundle_id"`
+	Revision      int        `json:"revision"`
+	SourceType    string     `json:"source_type"`
+	SourceRef     string     `json:"source_ref"`
+	ConfigVersion int64      `json:"config_version"`
+	At            time.Time  `json:"at"`
+	RevokedAt     *time.Time `json:"revoked_at"`
+}
+
+type Purchase struct {
+	Platform      string     `json:"platform"`
+	TransactionID string     `json:"transaction_id"`
+	OrderID       string     `json:"order_id"`
+	OfferID       string     `json:"offer_id"`
+	ProductID     string     `json:"product_id"`
+	Environment   string     `json:"environment"`
+	State         string     `json:"state"`
+	PurchasedAt   time.Time  `json:"purchased_at"`
+	GrantedAt     *time.Time `json:"granted_at"`
+	RefundedAt    *time.Time `json:"refunded_at"`
+}
+
+type Match struct {
+	MatchID   string     `json:"match_id"`
+	StartedAt time.Time  `json:"started_at"`
+	EndedAt   *time.Time `json:"ended_at"`
+	Mode      string     `json:"mode"`
+	Kind      string     `json:"kind"`
+	Seat      int        `json:"seat"`
+	Team      int        `json:"team"`
+	Result    string     `json:"result"`
+	ScoreA    int        `json:"score_a"`
+	ScoreB    int        `json:"score_b"`
+	Cancelled bool       `json:"cancelled"`
+}
+
+type Record struct {
+	Account         Account          `json:"account"`
+	Profile         *Profile         `json:"profile"`
+	NicknameHistory []FormerNickname `json:"nickname_history"`
+	Inventory       []Item           `json:"inventory"`
+	Balance         int64            `json:"balance"`
+	Ledger          []LedgerEntry    `json:"ledger"`
+	Grants          []Grant          `json:"grants"`
+	Purchases       []Purchase       `json:"purchases"`
+	Matches         []Match          `json:"matches"`
+}
+
+const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
+	from accounts a left join profiles p on p.account_id = a.id `
+
+func Search(ctx context.Context, db Querier, query string) ([]Summary, error) {
+	query = strings.TrimSpace(query)
+	var rows pgx.Rows
+	var err error
+	switch {
+	case query == "":
+		return nil, ErrEmptyQuery
+	case isAccountID(query):
+		rows, err = db.Query(ctx, summaryColumns+`where a.id = $1::uuid`, query)
+	case strings.Contains(query, "@"):
+		rows, err = db.Query(ctx, summaryColumns+`where a.id in (select account_id from auth_identities where lower(email) = lower($1))
+			order by a.created_at limit $2`, query, SearchLimit)
+	default:
+		rows, err = db.Query(ctx, summaryColumns+`where p.nickname_key like $1 escape '\' order by p.nickname_key limit $2`,
+			likeWildcards.Replace(profile.Key(query))+"%", SearchLimit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Summary, error) {
+		var s Summary
+		err := row.Scan(&s.ID, &s.Nickname, &s.State, &s.Country, &s.CreatedAt)
+		return s, err
+	})
+}
+
+func isAccountID(query string) bool {
+	if len(query) != 36 {
+		return false
+	}
+	for i, r := range query {
+		dash := i == 8 || i == 13 || i == 18 || i == 23
+		if dash != (r == '-') || (!dash && !strings.ContainsRune("0123456789abcdefABCDEF", r)) {
+			return false
+		}
+	}
+	return true
+}
+
+func Load(ctx context.Context, db Querier, accountID string, withIdentities bool) (Record, error) {
+	if !isAccountID(accountID) {
+		return Record{}, ErrNotFound
+	}
+	var r Record
+	err := db.QueryRow(ctx, `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at,
+		a.deletion_requested_at, a.deleted_at, coalesce(w.balance, 0)
+		from accounts a left join profiles p on p.account_id = a.id left join wallets w on w.account_id = a.id
+		where a.id = $1::uuid`, accountID).Scan(&r.Account.ID, &r.Account.Nickname, &r.Account.State, &r.Account.Country,
+		&r.Account.CreatedAt, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Balance)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Record{}, ErrNotFound
+	}
+	if err != nil {
+		return Record{}, err
+	}
+	if err := loadIdentities(ctx, db, &r, withIdentities); err != nil {
+		return Record{}, err
+	}
+	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches} {
+		if err := load(ctx, db, &r); err != nil {
+			return Record{}, err
+		}
+	}
+	return r, nil
+}
+
+func collect[T any](ctx context.Context, db Querier, into *[]T, sql string, scan func(row pgx.CollectableRow, item *T) error, args ...any) error {
+	rows, err := db.Query(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
+	items, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (T, error) {
+		var item T
+		err := scan(row, &item)
+		return item, err
+	})
+	if err != nil {
+		return err
+	}
+	*into = items
+	return nil
+}
+
+type identityRow struct {
+	Identity
+	email string
+}
+
+func loadIdentities(ctx context.Context, db Querier, r *Record, withIdentities bool) error {
+	var identities []identityRow
+	err := collect(ctx, db, &identities, `select provider, subject, coalesce(email, '') from auth_identities where account_id = $1::uuid order by created_at`,
+		func(row pgx.CollectableRow, i *identityRow) error { return row.Scan(&i.Provider, &i.Subject, &i.email) }, r.Account.ID)
+	if err != nil {
+		return err
+	}
+	r.Account.Emails = []string{}
+	for _, i := range identities {
+		if i.email != "" {
+			r.Account.Emails = append(r.Account.Emails, i.email)
+		}
+		if withIdentities {
+			r.Account.Identities = append(r.Account.Identities, i.Identity)
+		}
+	}
+	return nil
+}
+
+func loadProfile(ctx context.Context, db Querier, r *Record) error {
+	var p Profile
+	err := db.QueryRow(ctx, `select level, xp, loadout, stats from profiles where account_id = $1::uuid`, r.Account.ID).Scan(&p.Level, &p.XP, &p.Loadout, &p.Stats)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err == nil {
+		r.Profile = &p
+	}
+	return err
+}
+
+func loadNicknames(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.NicknameHistory, `select nickname, replaced_at from nickname_history where account_id = $1::uuid order by replaced_at desc, id desc limit $2`,
+		func(row pgx.CollectableRow, n *FormerNickname) error { return row.Scan(&n.Nickname, &n.ReplacedAt) }, r.Account.ID, ListLimit)
+}
+
+func loadInventory(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Inventory, `select item_id, source_type, source_ref, granted_at, revoked_at from inventory_items where account_id = $1::uuid order by granted_at desc, item_id`,
+		func(row pgx.CollectableRow, i *Item) error {
+			return row.Scan(&i.ItemID, &i.SourceType, &i.SourceRef, &i.GrantedAt, &i.RevokedAt)
+		}, r.Account.ID)
+}
+
+func loadLedger(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Ledger, `select id, amount, reason, source_type, source_ref, config_version, balance_after, created_at
+		from ledger_entries where account_id = $1::uuid order by created_at desc, id desc limit $2`,
+		func(row pgx.CollectableRow, e *LedgerEntry) error {
+			return row.Scan(&e.ID, &e.Amount, &e.Reason, &e.SourceType, &e.SourceRef, &e.ConfigVersion, &e.BalanceAfter, &e.At)
+		}, r.Account.ID, ListLimit)
+}
+
+func loadGrants(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Grants, `select id, bundle_id, revision, source_type, source_ref, config_version, created_at, revoked_at
+		from reward_grants where account_id = $1::uuid order by created_at desc, id desc limit $2`,
+		func(row pgx.CollectableRow, g *Grant) error {
+			return row.Scan(&g.ID, &g.BundleID, &g.Revision, &g.SourceType, &g.SourceRef, &g.ConfigVersion, &g.At, &g.RevokedAt)
+		}, r.Account.ID, ListLimit)
+}
+
+func loadPurchases(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Purchases, `select platform, transaction_id, order_id, offer_id, product_id, environment, state, purchased_at, granted_at, refunded_at
+		from purchases where account_id = $1::uuid order by created_at desc, id desc limit $2`,
+		func(row pgx.CollectableRow, p *Purchase) error {
+			return row.Scan(&p.Platform, &p.TransactionID, &p.OrderID, &p.OfferID, &p.ProductID, &p.Environment, &p.State, &p.PurchasedAt, &p.GrantedAt, &p.RefundedAt)
+		}, r.Account.ID, ListLimit)
+}
+
+func loadMatches(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Matches, `select m.id::text, m.started_at, m.ended_at, m.mode, m.kind, mp.seat, mp.team, coalesce(mp.result, ''), m.score_a, m.score_b, m.cancelled
+		from match_participants mp join matches m on m.id = mp.match_id and m.started_at = mp.started_at
+		where mp.account_id = $1::uuid order by mp.started_at desc limit $2`,
+		func(row pgx.CollectableRow, m *Match) error {
+			return row.Scan(&m.MatchID, &m.StartedAt, &m.EndedAt, &m.Mode, &m.Kind, &m.Seat, &m.Team, &m.Result, &m.ScoreA, &m.ScoreB, &m.Cancelled)
+		}, r.Account.ID, ListLimit)
+}
