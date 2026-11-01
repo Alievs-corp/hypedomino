@@ -145,7 +145,7 @@ The admin config fields form the `rules` domain (`docs/admin.md` 3.1, 5.14). The
 - **Missing keys.** A key that the snapshot leaves out keeps its default.
 - **When a new value applies.** Only to matches that open after the server loads it. Matches in progress keep the values they started with.
 
-This is implemented in `server/internal/rulesconfig` (#145). `config-publish -domain rules` validates a snapshot before publishing it.
+This is implemented in `server/internal/rulesconfig` (#145). The admin API edits, publishes and rolls back the domain (`docs/admin.md` 9.1), and `config-publish -domain rules` checks a snapshot the same way before publishing it.
 
 ## 14. Worked examples
 
