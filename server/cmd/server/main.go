@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
@@ -153,6 +154,11 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
+	passConfigs := pass.NewWatcher(pool, logger)
+	go passConfigs.Run(ctx, config.ConfigPoll)
+	passes := pass.NewStore(pool, passConfigs, engine)
+	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	a.Handle("/pass", pass.NewHandler(tokens, passes, logger, time.Now))
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
