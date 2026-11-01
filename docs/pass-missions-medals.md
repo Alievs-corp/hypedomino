@@ -482,7 +482,7 @@ Achievements, one chain per line; together they pay 7900 coins once per account:
 | `medal.points_100k` | `mission.points_100000` | `legendary` |
 | `medal.season1_gold` | Rank reward of `season_1`, Gold (#120, `docs/economy.md` section 4 example) | Set by #120 |
 
-Rarities are first estimates for 5.3, checked against measured earn shares after closed beta.
+Rarities are first estimates for 5.3, checked against measured earn shares after closed beta. The example catalog `docs/pass/examples/medals.json` leaves out `medal.season1_gold` until its rarity is set.
 
 ## 9. Config
 
