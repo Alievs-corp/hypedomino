@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -40,7 +42,7 @@ type config struct {
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL}}
+	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig()}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -55,6 +57,18 @@ func configFromEnv(env lookup) (config, error) {
 		parsed, err := time.ParseDuration(raw)
 		if err != nil || parsed <= 0 {
 			errs = append(errs, fmt.Errorf("%s: %q is not a positive duration", name, raw))
+			return
+		}
+		*value = parsed
+	}
+	integer := func(name string, value *int) {
+		raw, ok := env(name)
+		if !ok {
+			return
+		}
+		parsed, err := strconv.Atoi(strings.TrimSpace(raw))
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %q is not an integer", name, raw))
 			return
 		}
 		*value = parsed
@@ -76,6 +90,12 @@ func configFromEnv(env lookup) (config, error) {
 	duration("HD_ADMIN_SESSION_MAX", &c.api.Session.Max)
 	duration("HD_ADMIN_STEP_UP", &c.api.Session.StepUp)
 	duration("HD_ADMIN_APPROVAL_TTL", &c.api.ApprovalTTL)
+	integer("HD_SHOP_DAILY_SLOTS", &c.api.Shop.DailySlots)
+	integer("HD_SHOP_WEEKLY_SLOTS", &c.api.Shop.WeeklySlots)
+	integer("HD_SHOP_RESET_HOUR_UTC", &c.api.Shop.ResetHourUTC)
+	if err := c.api.Shop.Validate(); err != nil {
+		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
+	}
 	if c.database == "" {
 		errs = append(errs, errors.New("HD_DATABASE_URL is required"))
 	}

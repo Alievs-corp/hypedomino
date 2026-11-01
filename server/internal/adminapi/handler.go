@@ -22,6 +22,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
+	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
 
 const MaxBodyBytes = 16 * 1024
@@ -31,6 +32,7 @@ type Config struct {
 	GoogleDomain string
 	Session      adminsession.Config
 	ApprovalTTL  time.Duration
+	Shop         shop.Config
 }
 
 type Verifier interface {
@@ -83,6 +85,10 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("PUT /admin/config/rules", h.allowed(rbac.GameConfig, rbac.Publish, h.publishRules))
 	h.mux.HandleFunc("GET /admin/config/rules/history", h.allowed(rbac.GameConfig, rbac.View, h.rulesHistory))
 	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
+	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
+	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
+	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.shopHistory))
+	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -229,11 +235,19 @@ var (
 )
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, MaxBodyBytes)).Decode(into); err != nil {
+	return decodeUpTo(w, r, into, MaxBodyBytes)
+}
+
+func decodeUpTo(w http.ResponseWriter, r *http.Request, into any, limit int64) bool {
+	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit)).Decode(into)
+	var tooLarge *http.MaxBytesError
+	switch {
+	case errors.As(err, &tooLarge):
+		reply(w, http.StatusRequestEntityTooLarge, errorResponse{Error: "too_large"})
+	case err != nil:
 		reply(w, http.StatusBadRequest, errorResponse{Error: "malformed"})
-		return false
 	}
-	return true
+	return err == nil
 }
 
 func (h *Handler) refuse(w http.ResponseWriter, err error) {
@@ -300,7 +314,8 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "step_up_required"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
-	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid):
+	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
+		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"

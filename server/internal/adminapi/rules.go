@@ -1,21 +1,19 @@
 package adminapi
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-
-	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
-const RulesHistoryLimit = 50
+var rulesDomain = configDomain{name: rulesconfig.Domain, object: rbac.GameConfig, accept: func(_, after []byte) error {
+	_, err := rulesconfig.Parse(after)
+	return err
+}}
 
 type ruleKeyView struct {
 	Key     string `json:"key"`
@@ -48,12 +46,19 @@ type publishRulesRequest struct {
 	changeNote
 }
 
-type rollbackRulesRequest struct {
+type rollbackRequest struct {
 	Version int64 `json:"version"`
 	changeNote
 }
 
-func viewRules(version int64, tuning rulesconfig.Tuning) rulesView {
+func viewRules(version int64, raw []byte) (rulesView, error) {
+	tuning := rulesconfig.Tuning{}
+	if raw != nil {
+		var err error
+		if tuning, err = rulesconfig.Parse(raw); err != nil {
+			return rulesView{}, err
+		}
+	}
 	keys := make([]ruleKeyView, 0, len(rulesconfig.Keys()))
 	for _, key := range rulesconfig.Keys() {
 		value, set := tuning[key.Name]
@@ -62,32 +67,29 @@ func viewRules(version int64, tuning rulesconfig.Tuning) rulesView {
 		}
 		keys = append(keys, ruleKeyView{Key: key.Name, Type: "integer", Unit: key.Unit, Min: key.Min, Max: key.Max, Default: key.Default(), Value: value, Set: set})
 	}
-	return rulesView{ConfigVersion: version, Keys: keys}
+	return rulesView{ConfigVersion: version, Keys: keys}, nil
 }
 
-func latestRules(ctx context.Context, db snapshot.Querier) (int64, []byte, rulesconfig.Tuning, error) {
-	version, raw, err := snapshot.Latest(ctx, db, rulesconfig.Domain)
-	if errors.Is(err, snapshot.ErrNone) {
-		return 0, nil, rulesconfig.Tuning{}, nil
-	}
-	if err != nil {
-		return 0, nil, nil, err
-	}
-	tuning, err := rulesconfig.Parse(raw)
-	return version, raw, tuning, err
-}
-
-func (h *Handler) rules(w http.ResponseWriter, r *http.Request, p principal) {
-	version, _, tuning, err := latestRules(r.Context(), h.pool)
+func (h *Handler) replyRules(w http.ResponseWriter, version int64, raw []byte) {
+	view, err := viewRules(version, raw)
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, viewRules(version, tuning))
+	reply(w, http.StatusOK, view)
+}
+
+func (h *Handler) rules(w http.ResponseWriter, r *http.Request, p principal) {
+	version, raw, err := latestSnapshot(r.Context(), h.pool, rulesconfig.Domain)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	h.replyRules(w, version, raw)
 }
 
 func (h *Handler) rulesHistory(w http.ResponseWriter, r *http.Request, p principal) {
-	history, err := snapshot.History(r.Context(), h.pool, rulesconfig.Domain, RulesHistoryLimit)
+	history, err := snapshot.History(r.Context(), h.pool, rulesconfig.Domain, ConfigHistoryLimit)
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -112,62 +114,29 @@ func (h *Handler) publishRules(w http.ResponseWriter, r *http.Request, p princip
 	if request.Values == nil {
 		request.Values = map[string]json.RawMessage{}
 	}
-	h.replaceRules(w, r, p, "publish", marshal(request.Values), request.changeNote, nil)
+	raw := marshal(request.Values)
+	version, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "publish", raw, request.changeNote, nil)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	h.replyRules(w, version, raw)
 }
 
 func (h *Handler) rollbackRules(w http.ResponseWriter, r *http.Request, p principal) {
-	var request rollbackRulesRequest
+	var request rollbackRequest
 	if !decode(w, r, &request) {
 		return
 	}
-	target, err := snapshot.Version(r.Context(), h.pool, rulesconfig.Domain, request.Version)
-	if errors.Is(err, snapshot.ErrNone) {
-		err = errNoSuchVersion
-	}
+	raw, err := h.earlierSnapshot(r.Context(), rulesconfig.Domain, request.Version)
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	h.replaceRules(w, r, p, "rollback", target.Content, request.changeNote, h.mayRollBack)
-}
-
-type sensitiveCheck func(p principal, note changeNote, now time.Time) error
-
-func (h *Handler) replaceRules(w http.ResponseWriter, r *http.Request, p principal, action string, raw []byte, note changeNote, check sensitiveCheck) {
-	tuning, err := rulesconfig.Parse(raw)
+	version, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "rollback", raw, request.changeNote, h.mayRollBack)
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	var version int64
-	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
-		if check != nil {
-			if err := check(p, note, now); err != nil {
-				return nil, err
-			}
-		}
-		if err := lockDomain(r.Context(), tx, rulesconfig.Domain); err != nil {
-			return nil, err
-		}
-		_, before, _, err := latestRules(r.Context(), tx)
-		if err != nil {
-			return nil, err
-		}
-		if version, err = snapshot.Publish(r.Context(), tx, rulesconfig.Domain, raw); err != nil {
-			return nil, err
-		}
-		entry := audit.Entry{
-			Action: action, Object: audit.Object{Type: rbac.GameConfig, ID: rulesconfig.Domain}, After: json.RawMessage(raw),
-			ConfigVersion: version, Reason: note.Reason, Ref: note.Ref,
-		}
-		if before != nil {
-			entry.Before = before
-		}
-		return []audit.Entry{entry}, nil
-	})
-	if err != nil {
-		h.refuse(w, err)
-		return
-	}
-	reply(w, http.StatusOK, viewRules(version, tuning))
+	h.replyRules(w, version, raw)
 }
