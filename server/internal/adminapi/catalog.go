@@ -1,0 +1,120 @@
+package adminapi
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
+)
+
+const MaxCatalogBytes = 1 << 20
+
+var errOfferRemoved = errors.New("adminapi: a published offer stays in the catalog, its window ends it")
+
+type catalogView struct {
+	ConfigVersion int64           `json:"config_version"`
+	Catalog       json.RawMessage `json:"catalog"`
+}
+
+type catalogVersionView struct {
+	ConfigVersion int64           `json:"config_version"`
+	PublishedAt   time.Time       `json:"published_at"`
+	Catalog       json.RawMessage `json:"catalog"`
+}
+
+type catalogHistoryView struct {
+	Versions []catalogVersionView `json:"versions"`
+}
+
+type publishCatalogRequest struct {
+	Catalog json.RawMessage `json:"catalog"`
+	changeNote
+}
+
+func (h *Handler) catalogDomain(keepOffers bool) configDomain {
+	return configDomain{name: shop.Domain, object: rbac.ShopOffers, accept: func(before, after []byte) error {
+		next, err := shop.Parse(after, h.config.Shop)
+		if err != nil || !keepOffers || before == nil {
+			return err
+		}
+		var current shop.Catalog
+		if err := json.Unmarshal(before, &current); err != nil {
+			return err
+		}
+		for _, offer := range current.Offers {
+			if _, kept := next.Offer(offer.ID); !kept {
+				return fmt.Errorf("%w: %s", errOfferRemoved, offer.ID)
+			}
+		}
+		return nil
+	}}
+}
+
+func viewCatalog(version int64, raw []byte) catalogView {
+	if raw == nil {
+		raw = []byte("null")
+	}
+	return catalogView{ConfigVersion: version, Catalog: raw}
+}
+
+func (h *Handler) shopCatalog(w http.ResponseWriter, r *http.Request, p principal) {
+	version, raw, err := latestSnapshot(r.Context(), h.pool, shop.Domain)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, viewCatalog(version, raw))
+}
+
+func (h *Handler) shopHistory(w http.ResponseWriter, r *http.Request, p principal) {
+	history, err := snapshot.History(r.Context(), h.pool, shop.Domain, ConfigHistoryLimit)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	versions := make([]catalogVersionView, 0, len(history))
+	for _, published := range history {
+		versions = append(versions, catalogVersionView{ConfigVersion: published.Version, PublishedAt: published.At, Catalog: published.Content})
+	}
+	reply(w, http.StatusOK, catalogHistoryView{Versions: versions})
+}
+
+func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principal) {
+	var request publishCatalogRequest
+	if !decodeUpTo(w, r, &request, MaxCatalogBytes) {
+		return
+	}
+	if len(request.Catalog) == 0 {
+		h.refuse(w, fmt.Errorf("%w: catalog", errMalformed))
+		return
+	}
+	version, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(true), "publish", request.Catalog, request.changeNote, nil)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, viewCatalog(version, request.Catalog))
+}
+
+func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p principal) {
+	var request rollbackRequest
+	if !decode(w, r, &request) {
+		return
+	}
+	raw, err := h.earlierSnapshot(r.Context(), shop.Domain, request.Version)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	version, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(false), "rollback", raw, request.changeNote, h.mayRollBack)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, viewCatalog(version, raw))
+}

@@ -177,6 +177,43 @@ func TestPublishingStoresANumberedBundlePerLanguage(t *testing.T) {
 	}
 }
 
+func TestBundlesListEveryVersionNewestFirstWithoutContent(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win())
+	set(t, store, "match.result.win", gamestrings.English, "Victory!", gamestrings.Approved)
+	first, _, _ := store.Publish(ctx, gamestrings.English, "content-1", now)
+	set(t, store, "match.result.win", gamestrings.English, "You win!", gamestrings.Approved)
+	second, _, _ := store.Publish(ctx, gamestrings.English, "content-1", now)
+	set(t, store, "match.result.win", gamestrings.Azerbaijani, "Qələbə!", gamestrings.Approved)
+	azerbaijani, _, _ := store.Publish(ctx, gamestrings.Azerbaijani, "content-1", now)
+	listed, err := store.Bundles(ctx)
+	if err != nil || len(listed) != 3 {
+		t.Fatalf("bundles %+v %v", listed, err)
+	}
+	for i, want := range []gamestrings.Published{azerbaijani, second, first} {
+		want.Content = []byte{}
+		if !reflect.DeepEqual(listed[i], want) {
+			t.Fatalf("bundle %d %+v, want %+v", i, listed[i], want)
+		}
+	}
+}
+
+func TestValueReadsOneLanguageAndReportsMissing(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win())
+	set(t, store, "match.result.win", gamestrings.English, "Victory", gamestrings.Draft)
+	value, err := store.Value(ctx, "match.result.win", gamestrings.English)
+	if err != nil || value != (gamestrings.Value{Text: "Victory", Status: gamestrings.Draft}) {
+		t.Fatalf("en %+v %v", value, err)
+	}
+	value, err = store.Value(ctx, "match.result.win", gamestrings.Russian)
+	if err != nil || value != (gamestrings.Value{Status: gamestrings.Missing}) {
+		t.Fatalf("ru %+v %v", value, err)
+	}
+}
+
 func TestAnInvalidApprovedValueBlocksPublishing(t *testing.T) {
 	store := newStore(t)
 	ctx := context.Background()
