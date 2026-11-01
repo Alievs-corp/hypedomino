@@ -95,7 +95,8 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		if err != nil {
 			return err
 		}
-		return gamestrings.NewStore(pool).CheckActive(ctx, localization)
+		_, err = gamestrings.NewStore(pool).Resolve(ctx, localization)
+		return err
 	}
 	return nil
 }

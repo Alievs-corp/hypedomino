@@ -36,26 +36,27 @@ func NewLogger(out io.Writer, level string) *slog.Logger {
 }
 
 type App struct {
-	config   Config
-	logger   *slog.Logger
-	gateway  *gateway.Gateway
-	rooms    *Rooms
-	cluster  *cluster.Cluster
-	mux      *http.ServeMux
-	ready    atomic.Bool
-	listener net.Listener
-	addr     chan string
+	config       Config
+	logger       *slog.Logger
+	gateway      *gateway.Gateway
+	rooms        *Rooms
+	cluster      *cluster.Cluster
+	mux          *http.ServeMux
+	ready        atomic.Bool
+	listener     net.Listener
+	addr         chan string
+	localization atomic.Pointer[func() gateway.Strings]
 }
 
 func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 	a := &App{
-		config:  config,
-		logger:  logger,
-		gateway: gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins}),
-		rooms:   NewRooms(),
-		mux:     http.NewServeMux(),
-		addr:    make(chan string, 1),
+		config: config,
+		logger: logger,
+		rooms:  NewRooms(),
+		mux:    http.NewServeMux(),
+		addr:   make(chan string, 1),
 	}
+	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized})
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
 	a.mux.HandleFunc("GET /ws", a.ws)
@@ -65,6 +66,18 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 
 func (a *App) Handle(pattern string, handler http.Handler) {
 	a.mux.Handle(pattern, handler)
+}
+
+func (a *App) Localize(current func() gateway.Strings) {
+	a.localization.Store(&current)
+}
+
+func (a *App) localized() gateway.Strings {
+	current := a.localization.Load()
+	if current == nil {
+		return gateway.Strings{}
+	}
+	return (*current)()
 }
 
 func (a *App) Join(c *cluster.Cluster) {

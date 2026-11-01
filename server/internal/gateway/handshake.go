@@ -41,16 +41,21 @@ func parseVersion(text string) ([3]int, bool) {
 }
 
 func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *pb.Envelope {
+	hello := &pb.ServerHello{
+		Status:            status,
+		MinimumAppVersion: c.options.Config.MinimumAppVersion,
+		ServerTimeUnixMs:  uint64(c.options.Clock.Now().UnixMilli()),
+		CatalogVersion:    c.options.Config.CatalogVersion,
+		InMatch:           inMatch,
+	}
+	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Strings != nil {
+		localized := c.options.Strings()
+		hello.StringBundles, hello.FallbackChains = localized.Bundles, localized.Chains
+	}
 	return &pb.Envelope{
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,
-		Payload: &pb.Envelope_ServerHello{ServerHello: &pb.ServerHello{
-			Status:            status,
-			MinimumAppVersion: c.options.Config.MinimumAppVersion,
-			ServerTimeUnixMs:  uint64(c.options.Clock.Now().UnixMilli()),
-			CatalogVersion:    c.options.Config.CatalogVersion,
-			InMatch:           inMatch,
-		}},
+		Payload:         &pb.Envelope_ServerHello{ServerHello: hello},
 	}
 }
 

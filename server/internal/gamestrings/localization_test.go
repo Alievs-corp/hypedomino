@@ -50,3 +50,26 @@ func TestALocalizationSnapshotIsRefusedWhenItBreaksTheDeliveryRules(t *testing.T
 		}
 	}
 }
+
+func TestTheActiveBundlesGoToTheClientInLanguageOrder(t *testing.T) {
+	localization, err := ParseLocalization([]byte(`{"bundles":{"en":4}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	active := Active{
+		Bundles:        []ActiveBundle{{Language: Azerbaijani, Version: 2, Hash: "a2"}, {Language: English, Version: 4, Hash: "e4"}},
+		FallbackChains: localization.FallbackChains,
+	}
+	bundles, chains := active.Hello()
+	if len(bundles) != 2 || bundles[0].GetLanguage() != "az" || bundles[0].GetVersion() != 2 || bundles[1].GetHash() != "e4" {
+		t.Fatalf("bundles %v", bundles)
+	}
+	var got [][]string
+	for _, chain := range chains {
+		got = append(got, append([]string{chain.GetLanguage()}, chain.GetLanguages()...))
+	}
+	want := [][]string{{"az", "az", "tr", "en"}, {"en", "en"}, {"tr", "tr", "en"}, {"ru", "ru", "en"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("chains %v, want %v", got, want)
+	}
+}

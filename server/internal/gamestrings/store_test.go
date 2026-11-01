@@ -293,23 +293,36 @@ func TestActiveBundlesMustBePublishedAndEnglishComplete(t *testing.T) {
 	publish(gamestrings.English)
 	publish(gamestrings.Russian)
 	active := gamestrings.Localization{Bundles: map[gamestrings.Language]int{gamestrings.English: 1, gamestrings.Russian: 1}}
-	if err := store.CheckActive(ctx, active); !errors.Is(err, gamestrings.ErrInvalidLocalization) {
+	if _, err := store.Resolve(ctx, active); !errors.Is(err, gamestrings.ErrInvalidLocalization) {
 		t.Fatalf("en version 1 lacks match.result.coins: %v", err)
 	}
 	set(t, store, "match.result.coins", gamestrings.English, "{coins, plural, one {# coin} other {# coins}}", gamestrings.Approved)
 	publish(gamestrings.English)
 	active.Bundles[gamestrings.English] = 2
-	if err := store.CheckActive(ctx, active); err != nil {
+	resolved, err := store.Resolve(ctx, active)
+	if err != nil {
 		t.Fatalf("complete en: %v", err)
 	}
+	english, _ := store.Bundle(ctx, gamestrings.English, 2)
+	russian, _ := store.Bundle(ctx, gamestrings.Russian, 1)
+	want := []gamestrings.ActiveBundle{
+		{Language: gamestrings.English, Version: 2, Hash: english.Hash},
+		{Language: gamestrings.Russian, Version: 1, Hash: russian.Hash},
+	}
+	if !reflect.DeepEqual(resolved.Bundles, want) {
+		t.Fatalf("resolved %+v, want %+v", resolved.Bundles, want)
+	}
+	if _, err := store.Resolve(ctx, gamestrings.Localization{Bundles: map[gamestrings.Language]int{gamestrings.Russian: 1}}); !errors.Is(err, gamestrings.ErrInvalidLocalization) {
+		t.Fatalf("no en: %v", err)
+	}
 	active.Bundles[gamestrings.Russian] = 2
-	if err := store.CheckActive(ctx, active); !errors.Is(err, gamestrings.ErrInvalidLocalization) || !errors.Is(err, gamestrings.ErrNoBundle) {
+	if _, err := store.Resolve(ctx, active); !errors.Is(err, gamestrings.ErrInvalidLocalization) || !errors.Is(err, gamestrings.ErrNoBundle) {
 		t.Fatalf("unpublished ru version: %v", err)
 	}
 	retired := coins()
 	retired.Deprecated = true
 	save(t, store, retired)
-	if err := store.CheckActive(ctx, gamestrings.Localization{Bundles: map[gamestrings.Language]int{gamestrings.English: 1}}); err != nil {
+	if _, err := store.Resolve(ctx, gamestrings.Localization{Bundles: map[gamestrings.Language]int{gamestrings.English: 1}}); err != nil {
 		t.Fatalf("a deprecated key is not needed in en: %v", err)
 	}
 }

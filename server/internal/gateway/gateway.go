@@ -79,11 +79,17 @@ func (f HandlerFunc) Connect(ctx context.Context, conn *Conn, hello *pb.ClientHe
 	return f(ctx, conn, hello)
 }
 
+type Strings struct {
+	Bundles []*pb.StringBundle
+	Chains  []*pb.FallbackChain
+}
+
 type Options struct {
 	Config  Config
 	Handler Handler
 	Clock   Clock
 	Origins []string
+	Strings func() Strings
 }
 
 type Gateway struct {

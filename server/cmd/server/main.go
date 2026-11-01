@@ -17,6 +17,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -116,6 +117,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		}
 	}
 	go offers.Run(ctx, config.ConfigPoll)
+	activeStrings := snapshot.New(pool, gamestrings.Domain, gamestrings.NewStore(pool).ActiveParser(ctx), logger)
+	go activeStrings.Run(ctx, config.ConfigPoll)
+	a.Localize(func() gateway.Strings {
+		active, _, _ := activeStrings.Current()
+		bundles, chains := active.Hello()
+		return gateway.Strings{Bundles: bundles, Chains: chains}
+	})
 	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
 	go tuning.Run(ctx, config.ConfigPoll)
 	a.Rooms().Tune(func(base rules.Config) rules.Config {

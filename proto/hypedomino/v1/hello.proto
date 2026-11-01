@@ -30,4 +30,17 @@ message ServerHello {
   uint64 server_time_unix_ms = 3;
   string catalog_version = 4;
   bool in_match = 5;
+  repeated StringBundle string_bundles = 6;
+  repeated FallbackChain fallback_chains = 7;
+}
+
+message StringBundle {
+  string language = 1;
+  uint32 version = 2;
+  string hash = 3;
+}
+
+message FallbackChain {
+  string language = 1;
+  repeated string languages = 2;
 }
