@@ -118,7 +118,11 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/inventory/", items)
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
-	engine := reward.NewEngine(pool, walletStore, inventoryStore, nil, nil, config.Reward)
+	passConfigs := pass.NewWatcher(pool, logger)
+	go passConfigs.Run(ctx, config.ConfigPoll)
+	passes := pass.NewStore(pool, passConfigs)
+	engine := reward.NewEngine(pool, walletStore, inventoryStore, nil, passes, config.Reward)
+	passes.SetRewards(engine)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
 	if config.ShopCatalog != "" {
 		if err := offers.SeedFile(config.ShopCatalog); err != nil {
@@ -154,9 +158,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
-	passConfigs := pass.NewWatcher(pool, logger)
-	go passConfigs.Run(ctx, config.ConfigPoll)
-	passes := pass.NewStore(pool, passConfigs, engine)
 	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	a.Handle("/pass", pass.NewHandler(tokens, passes, logger, time.Now))
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)

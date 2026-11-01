@@ -510,7 +510,7 @@ Rarities are first estimates for 5.3, checked against measured earn shares after
 
 Season windows are records, not keys: they default to the ranked season's window (2.1).
 
-Pass seasons are published as the `pass` config domain: `docs/pass/examples/pass.json` is the sample season of section 8.2 in that format (schema 1, one bundle per level and track, the curve of 2.2 per season).
+Pass seasons are published as the `pass` config domain: `docs/pass/examples/pass.json` is the sample season of section 8.2 in that format (schema 1, one bundle per level and track, the curve of 2.2 per season). The same domain carries the XP values of 2.3 that may change mid-season: `matchXp1v1` and `matchXp2v2` (`win`, `loss`), `dailyMatchXpCap` and `botSeatRewardPercent`.
 
 ### 9.1 Publish validation
 

@@ -3,6 +3,16 @@
   "freeTrackCoins": 1500,
   "premiumTrackCoins": 3000,
   "premiumPlusLevels": 20,
+  "matchXp1v1": {
+    "win": 100,
+    "loss": 60
+  },
+  "matchXp2v2": {
+    "win": 140,
+    "loss": 80
+  },
+  "dailyMatchXpCap": 2000,
+  "botSeatRewardPercent": 50,
   "seasons": [
     {
       "id": "season_1",
