@@ -17,6 +17,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
+	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -76,6 +77,9 @@ func validate(domain string, raw []byte) error {
 	switch domain {
 	case medal.Domain:
 		_, err := medal.Parse(raw)
+		return err
+	case mission.Domain:
+		_, err := mission.Parse(raw)
 		return err
 	case pass.Domain:
 		_, err := pass.Parse(raw)
