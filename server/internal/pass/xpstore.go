@@ -19,7 +19,7 @@ const (
 
 var (
 	ErrUnknownSeason = errors.New("pass: unknown season")
-	ErrPremiumOwned  = errors.New("pass: premium already unlocked by another purchase")
+	ErrPremiumOwned  = errors.New("pass.premium_owned")
 )
 
 type xpEvent struct {

@@ -33,12 +33,13 @@ const (
 )
 
 var (
-	ErrPlatform  = errors.New("purchase.platform_unavailable")
-	ErrProduct   = errors.New("receipt.product")
-	ErrAccount   = errors.New("receipt.account")
-	ErrReused    = errors.New("receipt.reused")
-	ErrCancelled = errors.New("receipt.cancelled")
-	ErrBlocked   = errors.New("purchase.blocked")
+	ErrPlatform     = errors.New("purchase.platform_unavailable")
+	ErrProduct      = errors.New("receipt.product")
+	ErrAccount      = errors.New("receipt.account")
+	ErrReused       = errors.New("receipt.reused")
+	ErrCancelled    = errors.New("receipt.cancelled")
+	ErrBlocked      = errors.New("purchase.blocked")
+	ErrNoPassSeason = errors.New("pass.no_season")
 )
 
 type Config struct {
@@ -65,6 +66,7 @@ type Store struct {
 	validators map[Platform]Validator
 	config     Config
 	logger     *slog.Logger
+	pass       Pass
 }
 
 func NewStore(pool *pgxpool.Pool, wallet *wallet.Store, engine *reward.Engine, offers *snapshot.Watcher[*shop.Catalog], validators map[Platform]Validator, config Config, logger *slog.Logger) *Store {
@@ -93,13 +95,14 @@ type record struct {
 	State         string
 	GrantKey      string
 	BonusKey      string
+	PurchasedAt   time.Time
 }
 
-const recordColumns = `id, platform, transaction_id, account_id, offer_id, product_id, state, grant_key, bonus_key`
+const recordColumns = `id, platform, transaction_id, account_id, offer_id, product_id, state, grant_key, bonus_key, purchased_at`
 
 func scanRecord(row pgx.Row) (record, error) {
 	var r record
-	err := row.Scan(&r.ID, &r.Platform, &r.TransactionID, &r.Account, &r.Offer, &r.Product, &r.State, &r.GrantKey, &r.BonusKey)
+	err := row.Scan(&r.ID, &r.Platform, &r.TransactionID, &r.Account, &r.Offer, &r.Product, &r.State, &r.GrantKey, &r.BonusKey, &r.PurchasedAt)
 	return r, err
 }
 
@@ -188,7 +191,7 @@ func (s *Store) offer(offerID string) (*shop.Catalog, int64, shop.Offer, error) 
 		return nil, 0, shop.Offer{}, shop.ErrUnknownOffer
 	case offer.ProductID == "":
 		return nil, 0, shop.Offer{}, shop.ErrCoinsOnly
-	case offer.Kind == shop.KindPass || offer.Kind == shop.KindPassLevels:
+	case offer.Kind == shop.KindPassLevels || (offer.Kind == shop.KindPass && s.pass == nil):
 		return nil, 0, shop.Offer{}, shop.ErrUnsupported
 	}
 	return catalog, version, offer, nil
@@ -205,13 +208,12 @@ func (s *Store) insert(ctx context.Context, tx pgx.Tx, account string, offer sho
 }
 
 func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Catalog, version int64, offer shop.Offer, now time.Time) (Result, error) {
-	key := "purchase:" + string(r.Platform) + ":" + r.TransactionID
-	source := cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}
-	report, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: offer.Bundle, Source: source, Reason: wallet.Purchase, Key: key, ConfigVersion: int(version)}, now)
+	key := purchaseKey(r)
+	result := Result{Platform: r.Platform, TransactionID: r.TransactionID, Offer: offer.ID, State: RecordGranted}
+	grantKey, err := s.grantGoods(ctx, tx, r, version, offer, key, wallet.Purchase, &result, now)
 	if err != nil {
 		return Result{}, err
 	}
-	result := Result{Platform: r.Platform, TransactionID: r.TransactionID, Offer: offer.ID, State: RecordGranted, Grant: &report}
 	bonusKey := ""
 	if first, err := s.first(ctx, tx, r); err != nil {
 		return Result{}, err
@@ -224,7 +226,7 @@ func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Ca
 		}
 		result.Bonus = &bonus
 	}
-	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, key, bonusKey, now); err != nil {
+	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, bonusKey, now); err != nil {
 		return Result{}, err
 	}
 	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account)
@@ -358,6 +360,9 @@ func (s *Store) settle(ctx context.Context, tx pgx.Tx, platform Platform, r reco
 
 func (s *Store) refund(ctx context.Context, tx pgx.Tx, r record, notice Notice, now time.Time) error {
 	revokeKey := "refund:" + string(r.Platform) + ":" + notice.ID
+	if err := s.revokePass(ctx, tx, r, revokeKey, now); err != nil {
+		return err
+	}
 	for _, key := range []struct{ grant, revoke string }{{r.GrantKey, revokeKey}, {r.BonusKey, revokeKey + ":first"}} {
 		if key.grant == "" {
 			continue
@@ -377,12 +382,15 @@ func (s *Store) reverse(ctx context.Context, tx pgx.Tx, r record, notice Notice,
 	if err != nil {
 		return err
 	}
-	key := "purchase:" + string(r.Platform) + ":" + r.TransactionID + ":reversal:" + notice.ID
-	source := cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}
-	if _, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: offer.Bundle, Source: source, Reason: wallet.RefundReversal, Key: key, ConfigVersion: int(version)}, now); err != nil {
+	key := purchaseKey(r) + ":reversal:" + notice.ID
+	if offer.Kind == shop.KindPass {
+		key = purchaseKey(r)
+	}
+	grantKey, err := s.grantGoods(ctx, tx, r, version, offer, key, wallet.RefundReversal, &Result{}, now)
+	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = '', granted_at = $4, refunded_at = null where id = $1`, r.ID, RecordGranted, key, now); err != nil {
+	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = '', granted_at = $4, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, now); err != nil {
 		return err
 	}
 	return s.publish(ctx, tx, r, EventReversed, now)
@@ -415,4 +423,79 @@ func (s *Store) evidence(ctx context.Context, account string, receipt Receipt, n
 	if _, err := s.pool.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3) on conflict (topic, key) do nothing`, Topic, string(receipt.Platform)+":"+receipt.TransactionID+":"+name+":"+account, encoded); err != nil {
 		s.logger.Error("purchase evidence not recorded", "error", err)
 	}
+}
+
+type Pass interface {
+	ActiveSeason(at time.Time) (string, bool)
+	UnlockPremiumIn(ctx context.Context, tx pgx.Tx, account, season, ref string, now time.Time) (int, error)
+	AddPremiumPlusIn(ctx context.Context, tx pgx.Tx, account, season, key string, now time.Time) (int64, error)
+	RevokePremiumIn(ctx context.Context, tx pgx.Tx, account, season, ref, revokeKey string, now time.Time) error
+}
+
+func (s *Store) WithPass(p Pass) {
+	s.pass = p
+}
+
+func purchaseKey(r record) string {
+	return "purchase:" + string(r.Platform) + ":" + r.TransactionID
+}
+
+func (s *Store) grantGoods(ctx context.Context, tx pgx.Tx, r record, version int64, offer shop.Offer, key string, reason wallet.Reason, result *Result, now time.Time) (string, error) {
+	if offer.Kind == shop.KindPass {
+		return "", s.grantPass(ctx, tx, r, offer, now)
+	}
+	source := cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}
+	report, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: offer.Bundle, Source: source, Reason: reason, Key: key, ConfigVersion: int(version)}, now)
+	if err != nil {
+		return "", err
+	}
+	result.Grant = &report
+	return key, nil
+}
+
+func (s *Store) grantPass(ctx context.Context, tx pgx.Tx, r record, offer shop.Offer, now time.Time) error {
+	season, ok := s.pass.ActiveSeason(r.PurchasedAt)
+	if !ok {
+		return ErrNoPassSeason
+	}
+	key := purchaseKey(r)
+	if _, err := s.pass.UnlockPremiumIn(ctx, tx, r.Account, season, key, now); err != nil {
+		return err
+	}
+	if offer.ProductID != shop.ProductPassPremiumPlus {
+		return nil
+	}
+	coins, err := s.pass.AddPremiumPlusIn(ctx, tx, r.Account, season, key, now)
+	if err != nil || coins == 0 {
+		return err
+	}
+	levels := reward.Bundle{ID: "bundle.pass_premium_plus_levels", Revision: 1, Coins: coins}
+	_, err = s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: levels, Source: cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}, Reason: wallet.Purchase, Key: key + ":levels"}, now)
+	return err
+}
+
+func (s *Store) revokePass(ctx context.Context, tx pgx.Tx, r record, revokeKey string, now time.Time) error {
+	catalog, _, ok := s.offers.Current()
+	if !ok || s.pass == nil {
+		return nil
+	}
+	offer, ok := catalog.Offer(r.Offer)
+	if !ok || offer.Kind != shop.KindPass {
+		return nil
+	}
+	season, ok := s.pass.ActiveSeason(r.PurchasedAt)
+	if !ok {
+		return nil
+	}
+	if err := s.pass.RevokePremiumIn(ctx, tx, r.Account, season, purchaseKey(r), revokeKey, now); err != nil {
+		return err
+	}
+	if offer.ProductID != shop.ProductPassPremiumPlus {
+		return nil
+	}
+	_, err := s.engine.RevokeIn(ctx, tx, r.Account, purchaseKey(r)+":levels", wallet.RefundRevoke, revokeKey+":levels", now)
+	if errors.Is(err, reward.ErrUnknownGrant) {
+		return nil
+	}
+	return err
 }

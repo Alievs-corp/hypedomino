@@ -174,6 +174,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	purchases := purchase.NewStore(pool, walletStore, engine, offers, validators, config.Purchase, logger)
 	shopStore.Guard(purchases)
+	shopStore.WithPass(passes)
+	purchases.WithPass(passes)
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
 	a.Handle("POST /shop/complete", receipts)
 	a.Handle("POST /store/", receipts)

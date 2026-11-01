@@ -131,3 +131,32 @@ func TestALatePremiumUnlockGrantsEveryPremiumLevelReached(t *testing.T) {
 		t.Fatalf("balance at level 7 = %d, want %d", got, 4*20+7*10)
 	}
 }
+
+func TestPremiumPlusAddsItsLevelsAndPaysTheLevelsPastTheLastOneInCoins(t *testing.T) {
+	f := newFixture(t)
+	account := f.account(t)
+	if _, _, _, err := f.store.Enter(context.Background(), account, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.pool.Exec(context.Background(), `update pass_progress set xp_total = 2650 where account_id = $1`, account); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := f.pool.Begin(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(context.Background())
+	if _, err := f.store.UnlockPremiumIn(context.Background(), tx, account, "season_1", "purchase:google:plus", now); err != nil {
+		t.Fatal(err)
+	}
+	coins, err := f.store.AddPremiumPlusIn(context.Background(), tx, account, "season_1", "purchase:google:plus", now)
+	if err != nil || coins != 2*200 {
+		t.Fatalf("AddPremiumPlusIn = %d, %v", coins, err)
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.xp(t, account); got != 2950 {
+		t.Fatalf("xp = %d, want 2950", got)
+	}
+}
