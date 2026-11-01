@@ -59,19 +59,11 @@ func accountEntry(action string, note changeNote, before, after adminaccount.Acc
 type accountChange func(accounts *adminaccount.Store, now time.Time) (adminaccount.Account, audit.Entry, error)
 
 func (h *Handler) changeAccount(ctx context.Context, p principal, change accountChange) (adminaccount.Account, error) {
-	now := h.now()
 	var changed adminaccount.Account
-	err := pgx.BeginFunc(ctx, h.pool, func(tx pgx.Tx) error {
+	err := h.audited(ctx, p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
 		account, entry, err := change(h.accounts.In(tx), now)
-		if err != nil {
-			return err
-		}
-		entry.Actor, entry.Environment, entry.Source = p.actor(), h.config.Environment, p.source
-		if _, err := h.audit.In(tx).Append(ctx, entry, now); err != nil {
-			return err
-		}
 		changed = account
-		return nil
+		return []audit.Entry{entry}, err
 	})
 	return changed, err
 }
