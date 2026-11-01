@@ -1,0 +1,187 @@
+package pass
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"reflect"
+	"regexp"
+	"slices"
+	"time"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+)
+
+const (
+	Domain  = "pass"
+	Schema  = 1
+	Free    = "free"
+	Premium = "premium"
+)
+
+var (
+	ErrInvalidConfig = errors.New("pass: invalid config")
+	ErrFrozen        = errors.New("pass: running season changed")
+	seasonID         = regexp.MustCompile(`^season_[1-9][0-9]*$`)
+)
+
+type Season struct {
+	ID      string                `json:"id"`
+	Start   time.Time             `json:"start"`
+	End     time.Time             `json:"end"`
+	Curve   Curve                 `json:"curve"`
+	Free    map[int]reward.Bundle `json:"free"`
+	Premium map[int]reward.Bundle `json:"premium"`
+}
+
+func (s Season) Running(at time.Time) bool {
+	return !at.Before(s.Start) && at.Before(s.End)
+}
+
+func (s Season) Track(track string) map[int]reward.Bundle {
+	if track == Premium {
+		return s.Premium
+	}
+	return s.Free
+}
+
+type Snapshot struct {
+	Schema            int      `json:"schema"`
+	FreeTrackCoins    int64    `json:"freeTrackCoins"`
+	PremiumTrackCoins int64    `json:"premiumTrackCoins"`
+	PremiumPlusLevels int      `json:"premiumPlusLevels"`
+	Seasons           []Season `json:"seasons"`
+}
+
+func Default() *Snapshot {
+	return &Snapshot{Schema: Schema, FreeTrackCoins: 1500, PremiumTrackCoins: 3000, PremiumPlusLevels: 20}
+}
+
+func Parse(raw []byte) (*Snapshot, error) {
+	snapshot := Default()
+	if err := json.Unmarshal(raw, snapshot); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+	}
+	if err := snapshot.Validate(); err != nil {
+		return nil, err
+	}
+	return snapshot, nil
+}
+
+func (s *Snapshot) Active(at time.Time) (Season, bool) {
+	for _, season := range s.Seasons {
+		if season.Running(at) {
+			return season, true
+		}
+	}
+	return Season{}, false
+}
+
+func (s *Snapshot) Season(id string) (Season, bool) {
+	for _, season := range s.Seasons {
+		if season.ID == id {
+			return season, true
+		}
+	}
+	return Season{}, false
+}
+
+func (s *Snapshot) Validate() error {
+	fail := func(format string, args ...any) error {
+		return fmt.Errorf("%w: %s", ErrInvalidConfig, fmt.Sprintf(format, args...))
+	}
+	if s.Schema != Schema {
+		return fail("schema %d", s.Schema)
+	}
+	if s.FreeTrackCoins < 0 || s.PremiumTrackCoins < 0 || s.PremiumPlusLevels < 0 {
+		return fail("track coin budgets and premiumPlusLevels must not be negative")
+	}
+	ids := map[string]bool{}
+	for _, season := range s.Seasons {
+		if ids[season.ID] {
+			return fail("season %s listed twice", season.ID)
+		}
+		ids[season.ID] = true
+		if err := s.validateSeason(season); err != nil {
+			return fail("season %s: %v", season.ID, err)
+		}
+	}
+	return s.validateWindows(fail)
+}
+
+func (s *Snapshot) validateWindows(fail func(string, ...any) error) error {
+	ordered := slices.Clone(s.Seasons)
+	slices.SortFunc(ordered, func(a, b Season) int { return a.Start.Compare(b.Start) })
+	for i := 1; i < len(ordered); i++ {
+		if ordered[i].Start.Before(ordered[i-1].End) {
+			return fail("seasons %s and %s overlap", ordered[i-1].ID, ordered[i].ID)
+		}
+	}
+	return nil
+}
+
+func (s *Snapshot) validateSeason(season Season) error {
+	curve := season.Curve
+	switch {
+	case !seasonID.MatchString(season.ID):
+		return errors.New("id must be season_<n>")
+	case !season.End.After(season.Start):
+		return errors.New("end must be after start")
+	case curve.Levels < 1 || curve.XpBase < 1 || curve.XpStep < 1 || curve.XpMax < 1:
+		return errors.New("curve values must be at least 1")
+	case curve.XpMax < curve.XpBase:
+		return errors.New("xpMax must be at least xpBase")
+	case curve.Levels <= s.PremiumPlusLevels:
+		return errors.New("levels must be above premiumPlusLevels")
+	}
+	for level := 1; level <= curve.Levels; level++ {
+		if _, ok := season.Premium[level]; !ok {
+			return fmt.Errorf("premium level %d has no bundle", level)
+		}
+	}
+	if err := validateTrack(season.Free, curve.Levels, s.FreeTrackCoins); err != nil {
+		return fmt.Errorf("free track: %w", err)
+	}
+	if err := validateTrack(season.Premium, curve.Levels, s.PremiumTrackCoins); err != nil {
+		return fmt.Errorf("premium track: %w", err)
+	}
+	return nil
+}
+
+func validateTrack(track map[int]reward.Bundle, levels int, budget int64) error {
+	var coins int64
+	for level, bundle := range track {
+		if level < 1 || level > levels {
+			return fmt.Errorf("level %d is outside 1 to %d", level, levels)
+		}
+		if err := bundle.Validate(); err != nil {
+			return fmt.Errorf("level %d: %v", level, err)
+		}
+		if len(bundle.Medals) > 0 || bundle.PassXP != 0 {
+			return fmt.Errorf("level %d grants medals or pass XP", level)
+		}
+		coins += bundle.Coins
+	}
+	if coins > budget {
+		return fmt.Errorf("%d coins exceed the budget of %d", coins, budget)
+	}
+	return nil
+}
+
+func CheckFrozen(published, next *Snapshot, now time.Time) error {
+	for _, running := range published.Seasons {
+		if !running.Running(now) {
+			continue
+		}
+		changed, ok := next.Season(running.ID)
+		switch {
+		case !ok:
+			return fmt.Errorf("%w: season %s removed", ErrFrozen, running.ID)
+		case changed.Curve != running.Curve:
+			return fmt.Errorf("%w: season %s levels or curve", ErrFrozen, running.ID)
+		case !reflect.DeepEqual(changed.Free, running.Free) || !reflect.DeepEqual(changed.Premium, running.Premium):
+			return fmt.Errorf("%w: season %s track bundles", ErrFrozen, running.ID)
+		}
+	}
+	return nil
+}

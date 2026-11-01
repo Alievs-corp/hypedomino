@@ -1,0 +1,256 @@
+package pass
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
+)
+
+const (
+	SourcePass   = "pass"
+	endBatchSize = 500
+)
+
+var (
+	ErrNoSeason   = errors.New("pass: no active season")
+	ErrNoSnapshot = errors.New("pass: no config snapshot")
+)
+
+type Rewarder interface {
+	ApplyIn(ctx context.Context, tx pgx.Tx, grant reward.Grant, now time.Time) (reward.Report, error)
+}
+
+type Progress struct {
+	Season    string
+	XP        int64
+	Premium   bool
+	EnteredAt time.Time
+}
+
+type Closed struct {
+	Season   string
+	Accounts int
+	Granted  int
+}
+
+type Store struct {
+	pool    *pgxpool.Pool
+	configs *snapshot.Watcher[*Snapshot]
+	rewards Rewarder
+}
+
+func NewWatcher(pool *pgxpool.Pool, logger *slog.Logger) *snapshot.Watcher[*Snapshot] {
+	watcher := snapshot.New(pool, Domain, Parse, logger)
+	watcher.Seed(Default(), 0)
+	return watcher
+}
+
+func NewStore(pool *pgxpool.Pool, configs *snapshot.Watcher[*Snapshot], rewards Rewarder) *Store {
+	return &Store{pool: pool, configs: configs, rewards: rewards}
+}
+
+func (s *Store) current() (*Snapshot, int64, error) {
+	current, version, ok := s.configs.Current()
+	if !ok {
+		return nil, 0, ErrNoSnapshot
+	}
+	return current, version, nil
+}
+
+func (s *Store) Enter(ctx context.Context, account string, now time.Time) (Season, Progress, int64, error) {
+	current, version, err := s.current()
+	if err != nil {
+		return Season{}, Progress{}, 0, err
+	}
+	season, ok := current.Active(now)
+	if !ok {
+		return Season{}, Progress{}, version, ErrNoSeason
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return Season{}, Progress{}, 0, err
+	}
+	defer tx.Rollback(ctx)
+	if err := reward.LockIn(ctx, tx, account); err != nil {
+		return Season{}, Progress{}, 0, err
+	}
+	tag, err := tx.Exec(ctx, `insert into pass_progress (account_id, season_id, entered_at) values ($1, $2, $3) on conflict do nothing`, account, season.ID, now)
+	if err != nil {
+		return Season{}, Progress{}, 0, err
+	}
+	progress, err := progressIn(ctx, tx, account, season.ID)
+	if err != nil {
+		return Season{}, Progress{}, 0, err
+	}
+	if tag.RowsAffected() == 1 {
+		if _, err := s.grantReached(ctx, tx, account, season, version, progress, now); err != nil {
+			return Season{}, Progress{}, 0, err
+		}
+	}
+	return season, progress, version, tx.Commit(ctx)
+}
+
+func progressIn(ctx context.Context, tx pgx.Tx, account, season string) (Progress, error) {
+	progress := Progress{Season: season}
+	err := tx.QueryRow(ctx, `select xp_total, premium_ref is not null, entered_at from pass_progress where account_id = $1 and season_id = $2 for update`, account, season).Scan(&progress.XP, &progress.Premium, &progress.EnteredAt)
+	return progress, err
+}
+
+func (s *Store) grantReached(ctx context.Context, tx pgx.Tx, account string, season Season, version int64, progress Progress, now time.Time) (int, error) {
+	if s.rewards == nil {
+		return 0, nil
+	}
+	tracks := []string{Free}
+	if progress.Premium {
+		tracks = append(tracks, Premium)
+	}
+	granted := 0
+	for level := 1; level <= season.Curve.LevelFor(progress.XP); level++ {
+		for _, track := range tracks {
+			bundle, ok := season.Track(track)[level]
+			if !ok {
+				continue
+			}
+			report, err := s.rewards.ApplyIn(ctx, tx, levelGrant(account, season.ID, track, level, bundle, version), now)
+			if err != nil {
+				return granted, fmt.Errorf("%s %s level %d: %w", season.ID, track, level, err)
+			}
+			if !report.Repeated {
+				granted++
+			}
+		}
+	}
+	return granted, nil
+}
+
+func levelGrant(account, season, track string, level int, bundle reward.Bundle, version int64) reward.Grant {
+	return reward.Grant{
+		Account:       account,
+		Bundle:        bundle,
+		Source:        cosmetics.Source{Type: SourcePass, Ref: fmt.Sprintf("pass.%s.%s.level_%d", season, track, level)},
+		Reason:        wallet.PassReward,
+		Key:           fmt.Sprintf("pass:%s:%s:%d", season, track, level),
+		ConfigVersion: int(version),
+	}
+}
+
+func (s *Store) CloseDue(ctx context.Context, now time.Time) ([]Closed, error) {
+	current, version, err := s.current()
+	if err != nil {
+		return nil, err
+	}
+	var closed []Closed
+	var failures []error
+	for _, season := range current.Seasons {
+		if now.Before(season.End) {
+			continue
+		}
+		done, err := s.ended(ctx, season.ID)
+		if err != nil {
+			return closed, err
+		}
+		if done {
+			continue
+		}
+		result, err := s.closeSeason(ctx, season, version, now)
+		if err != nil {
+			failures = append(failures, err)
+			continue
+		}
+		closed = append(closed, result)
+	}
+	return closed, errors.Join(failures...)
+}
+
+func (s *Store) ended(ctx context.Context, season string) (bool, error) {
+	var done bool
+	err := s.pool.QueryRow(ctx, `select exists (select 1 from pass_season_ends where season_id = $1)`, season).Scan(&done)
+	return done, err
+}
+
+func (s *Store) closeSeason(ctx context.Context, season Season, version int64, now time.Time) (Closed, error) {
+	result := Closed{Season: season.ID}
+	var failures []error
+	after := "00000000-0000-0000-0000-000000000000"
+	for {
+		accounts, err := s.accountsAfter(ctx, season.ID, after)
+		if err != nil {
+			return result, err
+		}
+		for _, account := range accounts {
+			granted, err := s.settle(ctx, account, season, version, now)
+			if err != nil {
+				failures = append(failures, fmt.Errorf("account %s: %w", account, err))
+				continue
+			}
+			result.Accounts++
+			result.Granted += granted
+		}
+		if len(accounts) < endBatchSize {
+			break
+		}
+		after = accounts[len(accounts)-1]
+	}
+	if err := errors.Join(failures...); err != nil {
+		return result, fmt.Errorf("season %s end: %w", season.ID, err)
+	}
+	_, err := s.pool.Exec(ctx, `insert into pass_season_ends (season_id, config_version, accounts, closed_at) values ($1, $2, $3, $4) on conflict do nothing`, season.ID, version, result.Accounts, now)
+	return result, err
+}
+
+func (s *Store) accountsAfter(ctx context.Context, season, after string) ([]string, error) {
+	rows, err := s.pool.Query(ctx, `select account_id from pass_progress where season_id = $1 and account_id > $2 order by account_id limit $3`, season, after, endBatchSize)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
+}
+
+func (s *Store) settle(ctx context.Context, account string, season Season, version int64, now time.Time) (int, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+	if err := reward.LockIn(ctx, tx, account); err != nil {
+		return 0, err
+	}
+	progress, err := progressIn(ctx, tx, account, season.ID)
+	if err != nil {
+		return 0, err
+	}
+	granted, err := s.grantReached(ctx, tx, account, season, version, progress, now)
+	if err != nil {
+		return 0, err
+	}
+	return granted, tx.Commit(ctx)
+}
+
+func (s *Store) RunSeasonEnd(ctx context.Context, logger *slog.Logger, every time.Duration, now func() time.Time) {
+	ticker := time.NewTicker(every)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+		closed, err := s.CloseDue(ctx, now())
+		if err != nil {
+			logger.Error("pass season end failed", "error", err)
+		}
+		for _, c := range closed {
+			logger.Info("pass season closed", "season", c.Season, "accounts", c.Accounts, "granted", c.Granted)
+		}
+	}
+}
