@@ -576,6 +576,30 @@ Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6
 
 The keys of section 11 are deployment config, changed by pull request, not in the panel: an admin who could edit them could weaken the controls that limit admins.
 
+### 9.1 Admin API
+
+`server/cmd/admin-api` is the admin API (`server/internal/adminapi`), a separate binary on its own host. It reads the environment of `docs/environments.md` 2.2. Every route answers JSON with `Cache-Control: no-store`, and every route except `/admin/nonce` and `/admin/session` takes the session token as `Authorization: Bearer`.
+
+| Route | Who | Does |
+|---|---|---|
+| `POST /admin/nonce` | anyone | A single-use nonce for the Google sign-in |
+| `POST /admin/session` `{"id_token","nonce"}` | anyone | Sign-in: answers `{"token","session","account"}` |
+| `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
+| `DELETE /admin/session` | signed in | Sign-out: revokes the session |
+| `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `GET /admin/accounts` | V on admin accounts | Every account |
+| `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
+| `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts | Replaces its roles |
+| `POST /admin/accounts/{id}/disable` | R on admin accounts | Disables it |
+
+- **Sign-in.** The Google ID token must have a trusted audience and the nonce, a verified email, the company Workspace as hosted domain (`hd`) and an email in that domain. The email must belong to an active account (5.18). Unknown and disabled accounts get the same answer, `account_refused`.
+- **Session.** The token is random and only its SHA-256 is stored (`admin_sessions`, migration `00013_admin_sessions`). A request is refused with `session_rejected` when the token is unknown or revoked, when the last request was `AdminSessionIdleMinutes` ago or more, when the session is `AdminSessionMaxHours` old, or when the account has been disabled since. Each answer gives `idle_until`, `expires_at` and `step_up_until`, which is the last sign-in plus `AdminStepUpMinutes`.
+- **Roles.** Every route checks the matrix of 2.3 with the roles the account has at that moment, so a role change counts from the next request. A missing action gets 403 `forbidden`.
+- **Audit.** A change and its audit entry are written in one transaction, so an entry exists exactly when the change does. The entry carries the actor with their roles, the environment of `HD_ADMIN_ENVIRONMENT`, the session id, the user agent and the source IP. Before and after hold `email`, `display_name`, `roles` and `state`. A write may carry `reason` and `ref`. The source IP is the last address of the last `X-Forwarded-For` header, else the connection address. The admin web server therefore sets that header to the browser address it sees.
+- **Account guards.** An admin cannot change or disable their own account (`own_account`). Creating a `super_admin` or adding the role is refused with `approval_required` until the section 8 approval runs through the API.
+- **Errors.** 400 `malformed`, `invalid`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`; 404 `not_found`; 409 `email_taken`, `approval_required`, `own_account`; 503 `provider_unavailable`.
+
 ## 10. Screens and navigation
 
 The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. Navigation shows only groups and screens the account's roles allow.
