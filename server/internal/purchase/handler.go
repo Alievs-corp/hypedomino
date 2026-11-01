@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -164,6 +165,8 @@ var statuses = []struct {
 	{ErrApp, http.StatusConflict},
 	{shop.ErrCoinsOnly, http.StatusConflict},
 	{shop.ErrUnsupported, http.StatusConflict},
+	{ErrNoPassSeason, http.StatusConflict},
+	{pass.ErrPremiumOwned, http.StatusConflict},
 	{inventory.ErrSourceNotListed, http.StatusConflict},
 	{wallet.ErrPurchaseReuse, http.StatusConflict},
 	{ErrStore, http.StatusBadGateway},

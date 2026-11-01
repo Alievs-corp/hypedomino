@@ -28,6 +28,7 @@ var (
 
 type Rewarder interface {
 	ApplyIn(ctx context.Context, tx pgx.Tx, grant reward.Grant, now time.Time) (reward.Report, error)
+	RevokeIn(ctx context.Context, tx pgx.Tx, account, key string, reason wallet.Reason, revokeKey string, now time.Time) (reward.Report, error)
 }
 
 type Progress struct {
