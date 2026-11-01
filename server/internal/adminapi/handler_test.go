@@ -66,7 +66,7 @@ func newAPI(t *testing.T) *api {
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
 	a := &api{t: t, accounts: adminaccount.NewStore(pool), now: start}
-	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig()}
+	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour}
 	a.handler = adminapi.New(config, verifier, pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)
 	a.create("ayla@example.com", rbac.Content)
@@ -277,16 +277,17 @@ func TestGuardedAccountChangesAreRefusedWithoutAnEntry(t *testing.T) {
 		status       int
 		error        string
 	}{
-		"create a super admin": {"POST", "/admin/accounts", map[string]any{"email": "x@example.com", "display_name": "X", "roles": []string{"super_admin"}}, http.StatusConflict, "approval_required"},
-		"grant super admin":    {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{"content", "super_admin"}}, http.StatusConflict, "approval_required"},
-		"change own roles":     {"PUT", "/admin/accounts/" + self.ID + "/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusConflict, "own_account"},
-		"disable own account":  {"POST", "/admin/accounts/" + self.ID + "/disable", map[string]any{}, http.StatusConflict, "own_account"},
-		"unknown role":         {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{"owner"}}, http.StatusBadRequest, "invalid"},
-		"no roles":             {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{}}, http.StatusBadRequest, "invalid"},
-		"taken email":          {"POST", "/admin/accounts", map[string]any{"email": "AYLA@example.com", "display_name": "A", "roles": []string{"analyst"}}, http.StatusConflict, "email_taken"},
-		"unknown account":      {"POST", "/admin/accounts/00000000-0000-0000-0000-000000000000/disable", map[string]any{}, http.StatusNotFound, "not_found"},
-		"malformed account id": {"PUT", "/admin/accounts/nope/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusNotFound, "not_found"},
-		"malformed body":       {"POST", "/admin/accounts", "[", http.StatusBadRequest, "malformed"},
+		"create a super admin":   {"POST", "/admin/accounts", map[string]any{"email": "x@example.com", "display_name": "X", "roles": []string{"super_admin"}}, http.StatusConflict, "grant_by_approval"},
+		"grant without a reason": {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{"content", "super_admin"}}, http.StatusBadRequest, "reason_required"},
+		"grant an unknown role":  {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{"super_admin", "owner"}, "reason": "x"}, http.StatusBadRequest, "invalid"},
+		"change own roles":       {"PUT", "/admin/accounts/" + self.ID + "/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusConflict, "own_account"},
+		"disable own account":    {"POST", "/admin/accounts/" + self.ID + "/disable", map[string]any{}, http.StatusConflict, "own_account"},
+		"unknown role":           {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{"owner"}}, http.StatusBadRequest, "invalid"},
+		"no roles":               {"PUT", "/admin/accounts/" + ayla.ID + "/roles", map[string]any{"roles": []string{}}, http.StatusBadRequest, "invalid"},
+		"taken email":            {"POST", "/admin/accounts", map[string]any{"email": "AYLA@example.com", "display_name": "A", "roles": []string{"analyst"}}, http.StatusConflict, "email_taken"},
+		"unknown account":        {"POST", "/admin/accounts/00000000-0000-0000-0000-000000000000/disable", map[string]any{}, http.StatusNotFound, "not_found"},
+		"malformed account id":   {"PUT", "/admin/accounts/nope/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusNotFound, "not_found"},
+		"malformed body":         {"POST", "/admin/accounts", "[", http.StatusBadRequest, "malformed"},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

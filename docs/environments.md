@@ -106,6 +106,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_SESSION_IDLE` | No | admin-api | `30m` (`AdminSessionIdleMinutes`) | `30m` | No | from #134 |
 | `HD_ADMIN_SESSION_MAX` | No | admin-api | `12h` (`AdminSessionMaxHours`) | `12h` | No | from #134 |
 | `HD_ADMIN_STEP_UP` | No | admin-api | `10m` (`AdminStepUpMinutes`) | `10m` | No | from #134 |
+| `HD_ADMIN_APPROVAL_TTL` | No | admin-api | `24h` (`AdminApprovalTtlHours`) | `24h` | No | from #134 |
 
 ### 2.3 CI
 

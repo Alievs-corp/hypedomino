@@ -3,6 +3,7 @@ package adminapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"slices"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
+	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
@@ -95,7 +97,7 @@ func (h *Handler) createAccount(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	if slices.Contains(request.Roles, rbac.SuperAdmin) {
-		h.refuse(w, errApprovalRequired)
+		h.refuse(w, errGrantSeparately)
 		return
 	}
 	account, err := h.changeAccount(r.Context(), p, func(accounts *adminaccount.Store, now time.Time) (adminaccount.Account, audit.Entry, error) {
@@ -103,6 +105,10 @@ func (h *Handler) createAccount(w http.ResponseWriter, r *http.Request, p princi
 		return created, accountEntry("create", request.changeNote, adminaccount.Account{}, created), err
 	})
 	h.replyAccount(w, http.StatusCreated, account, err)
+}
+
+func grantsSuperAdmin(before, after []rbac.Role) bool {
+	return slices.Contains(after, rbac.SuperAdmin) && !slices.Contains(before, rbac.SuperAdmin)
 }
 
 func (h *Handler) setRoles(w http.ResponseWriter, r *http.Request, p principal) {
@@ -115,18 +121,45 @@ func (h *Handler) setRoles(w http.ResponseWriter, r *http.Request, p principal) 
 		h.refuse(w, errOwnAccount)
 		return
 	}
-	account, err := h.changeAccount(r.Context(), p, func(accounts *adminaccount.Store, now time.Time) (adminaccount.Account, audit.Entry, error) {
+	var account adminaccount.Account
+	var proposal approval.Proposal
+	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
+		accounts := h.accounts.In(tx)
 		before, err := accounts.Lock(r.Context(), id)
 		if err != nil {
-			return adminaccount.Account{}, audit.Entry{}, err
+			return nil, err
 		}
-		if slices.Contains(request.Roles, rbac.SuperAdmin) && !slices.Contains(before.Roles, rbac.SuperAdmin) {
-			return adminaccount.Account{}, audit.Entry{}, errApprovalRequired
+		if grantsSuperAdmin(before.Roles, request.Roles) {
+			proposal, err = h.proposeSuperAdmin(r.Context(), tx, p, before.ID, request, now)
+			proposed := before
+			proposed.Roles = request.Roles
+			return []audit.Entry{accountEntry("submit", request.changeNote, before, proposed)}, err
 		}
-		after, err := accounts.SetRoles(r.Context(), id, request.Roles)
-		return after, accountEntry("edit", request.changeNote, before, after), err
+		account, err = accounts.SetRoles(r.Context(), id, request.Roles)
+		return []audit.Entry{accountEntry("edit", request.changeNote, before, account)}, err
 	})
-	h.replyAccount(w, http.StatusOK, account, err)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	if proposal.ID != 0 {
+		reply(w, http.StatusAccepted, viewProposal(proposal))
+		return
+	}
+	reply(w, http.StatusOK, viewAccount(account))
+}
+
+func (h *Handler) proposeSuperAdmin(ctx context.Context, tx pgx.Tx, p principal, accountID string, request setRolesRequest, now time.Time) (approval.Proposal, error) {
+	if err := h.allows(p, rbac.AdminAccounts, rbac.GrantSuperAdmin); err != nil {
+		return approval.Proposal{}, err
+	}
+	if len(request.Roles) == 0 || slices.ContainsFunc(request.Roles, func(role rbac.Role) bool { return !rbac.IsRole(role) }) {
+		return approval.Proposal{}, fmt.Errorf("%w: unknown role in %v", adminaccount.ErrInvalid, request.Roles)
+	}
+	if err := h.sensitive(p, request.changeNote, now); err != nil {
+		return approval.Proposal{}, err
+	}
+	return h.approvals.In(tx).Propose(ctx, approval.SuperAdminGrant, accountID, marshal(rolesChange{Roles: request.Roles}), request.Reason, p.actor(), now)
 }
 
 func (h *Handler) disable(w http.ResponseWriter, r *http.Request, p principal) {

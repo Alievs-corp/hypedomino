@@ -25,6 +25,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		"HD_ADMIN_GOOGLE_AUDIENCES": " web.apps.example , ,other ",
 		"HD_ADMIN_SESSION_IDLE":     "20m",
 		"HD_ADMIN_STEP_UP":          "5m",
+		"HD_ADMIN_APPROVAL_TTL":     "48h",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +34,8 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		listenAddr: ":8090", logLevel: "info", database: "postgres://admin", audiences: []string{"web.apps.example", "other"},
 		api: adminapi.Config{
 			Environment: "staging", GoogleDomain: "example.com",
-			Session: adminsession.Config{Idle: 20 * time.Minute, Max: 12 * time.Hour, StepUp: 5 * time.Minute},
+			Session:     adminsession.Config{Idle: 20 * time.Minute, Max: 12 * time.Hour, StepUp: 5 * time.Minute},
+			ApprovalTTL: 48 * time.Hour,
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
