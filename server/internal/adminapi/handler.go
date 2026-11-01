@@ -97,6 +97,7 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("POST /admin/players/{id}/coins", h.allowed(rbac.Players, rbac.ActOnPlayer, h.adjustCoins))
 	h.mux.HandleFunc("POST /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banTemporarily))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
+	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.shopHistory))
@@ -329,6 +330,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "not_configured"
 	case errors.Is(err, errNotBanned):
 		return http.StatusConflict, "not_banned"
+	case errors.Is(err, errNoProfile):
+		return http.StatusConflict, "no_profile"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):
