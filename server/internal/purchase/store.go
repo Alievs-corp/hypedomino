@@ -499,3 +499,26 @@ func (s *Store) revokePass(ctx context.Context, tx pgx.Tx, r record, revokeKey s
 	}
 	return err
 }
+
+type HistoryEntry struct {
+	Platform      Platform   `json:"platform"`
+	TransactionID string     `json:"transaction_id"`
+	OfferID       string     `json:"offer"`
+	ProductID     string     `json:"product_id"`
+	State         string     `json:"state"`
+	PurchasedAt   time.Time  `json:"purchased_at"`
+	GrantedAt     *time.Time `json:"granted_at"`
+	RefundedAt    *time.Time `json:"refunded_at"`
+}
+
+func (s *Store) History(ctx context.Context, account string, limit int) ([]HistoryEntry, error) {
+	rows, err := s.pool.Query(ctx, `select platform, transaction_id, offer_id, product_id, state, purchased_at, granted_at, refunded_at
+		from purchases where account_id = $1 order by created_at desc, id desc limit $2`, account, limit)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (HistoryEntry, error) {
+		var e HistoryEntry
+		return e, row.Scan(&e.Platform, &e.TransactionID, &e.OfferID, &e.ProductID, &e.State, &e.PurchasedAt, &e.GrantedAt, &e.RefundedAt)
+	})
+}

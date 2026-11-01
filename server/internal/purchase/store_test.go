@@ -352,3 +352,24 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 		t.Fatalf("blocked after the window %v %v", blocked, err)
 	}
 }
+
+func TestHistoryListsOnlyTheAccountsPurchasesNewestFirst(t *testing.T) {
+	f := newFixture(t, purchase.DefaultConfig())
+	ctx := context.Background()
+	ayla, emil := f.account(t), f.account(t)
+	f.receipt("tok-1", "offer_starter", ayla, purchase.StatePurchased)
+	if _, err := f.store.Complete(ctx, ayla, "offer.starter", purchase.PlatformGoogle, "tok-1", now); err != nil {
+		t.Fatal(err)
+	}
+	f.receipt("tok-2", "offer_starter", emil, purchase.StatePurchased)
+	if _, err := f.store.Complete(ctx, emil, "offer.starter", purchase.PlatformGoogle, "tok-2", now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	history, err := f.store.History(ctx, ayla, purchase.HistoryLimit)
+	if err != nil || len(history) != 1 || history[0].TransactionID != "tok-1" || history[0].State != purchase.RecordGranted || history[0].OfferID != "offer.starter" || history[0].GrantedAt == nil {
+		t.Fatalf("history %+v, %v", history, err)
+	}
+	if none, err := f.store.History(ctx, f.account(t), purchase.HistoryLimit); err != nil || none == nil || len(none) != 0 {
+		t.Fatalf("history of an account without purchases %v, %v", none, err)
+	}
+}

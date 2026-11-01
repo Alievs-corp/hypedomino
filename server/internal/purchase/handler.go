@@ -19,12 +19,14 @@ import (
 
 const (
 	MaxBodyBytes   = 64 * 1024
+	HistoryLimit   = 100
 	NotificationID = "token"
 )
 
 type Purchases interface {
 	Complete(ctx context.Context, account, offer string, platform Platform, token string, now time.Time) (Result, error)
 	Notice(ctx context.Context, platform Platform, notice Notice, now time.Time) (bool, error)
+	History(ctx context.Context, account string, limit int) ([]HistoryEntry, error)
 }
 
 type Notifier interface {
@@ -45,6 +47,7 @@ type Handler struct {
 func NewHandler(verifier token.Verifier, purchases Purchases, google, apple Notifier, pushSecret string, logger *slog.Logger, now func() time.Time) *Handler {
 	h := &Handler{verifier: verifier, purchases: purchases, google: google, apple: apple, pushSecret: pushSecret, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("POST /shop/complete", h.complete)
+	h.mux.HandleFunc("GET /purchases", h.history)
 	h.mux.HandleFunc("POST /store/google/notifications", h.googleNotice)
 	h.mux.HandleFunc("POST /store/apple/notifications", h.appleNotice)
 	return h
@@ -58,6 +61,10 @@ type completeRequest struct {
 	Offer    string   `json:"offer"`
 	Platform Platform `json:"platform"`
 	Token    string   `json:"token"`
+}
+
+type historyResponse struct {
+	Purchases []HistoryEntry `json:"purchases"`
 }
 
 type noticeResponse struct {
@@ -89,6 +96,25 @@ func (h *Handler) complete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reply(w, http.StatusOK, result)
+}
+
+func (h *Handler) history(w http.ResponseWriter, r *http.Request) {
+	claims, err := token.Authorize(h.verifier, r)
+	switch {
+	case errors.Is(err, token.ErrExpired):
+		reply(w, http.StatusUnauthorized, errorResponse{Error: "access_expired"})
+		return
+	case err != nil:
+		reply(w, http.StatusUnauthorized, errorResponse{Error: "access_rejected"})
+		return
+	}
+	entries, err := h.purchases.History(r.Context(), claims.Account, HistoryLimit)
+	if err != nil {
+		h.logger.Error("purchase history failed", "error", err)
+		reply(w, http.StatusInternalServerError, errorResponse{Error: "internal"})
+		return
+	}
+	reply(w, http.StatusOK, historyResponse{Purchases: entries})
 }
 
 func (h *Handler) googleNotice(w http.ResponseWriter, r *http.Request) {
