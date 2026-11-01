@@ -34,6 +34,7 @@ type fixture struct {
 	watcher *snapshot.Watcher[*pass.Snapshot]
 	store   *pass.Store
 	wallet  *wallet.Store
+	engine  *reward.Engine
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -44,9 +45,10 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatal(err)
 	}
 	walletStore := wallet.NewStore(pool)
-	engine := reward.NewEngine(pool, walletStore, inventory.NewStore(pool, catalog, inventory.DefaultConfig()), nil, nil, reward.DefaultConfig())
 	watcher := pass.NewWatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	f := &fixture{pool: pool, watcher: watcher, store: pass.NewStore(pool, watcher, engine), wallet: walletStore}
+	f := &fixture{pool: pool, watcher: watcher, store: pass.NewStore(pool, watcher), wallet: walletStore}
+	f.engine = reward.NewEngine(pool, walletStore, inventory.NewStore(pool, catalog, inventory.DefaultConfig()), nil, f.store, reward.DefaultConfig())
+	f.store.SetRewards(f.engine)
 	f.publish(t, testSeason("season_1", now.Add(-10*24*time.Hour), now.Add(80*24*time.Hour)))
 	return f
 }

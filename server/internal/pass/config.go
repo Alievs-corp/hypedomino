@@ -45,16 +45,34 @@ func (s Season) Track(track string) map[int]reward.Bundle {
 	return s.Free
 }
 
+type MatchXp struct {
+	Win  int `json:"win"`
+	Loss int `json:"loss"`
+}
+
 type Snapshot struct {
-	Schema            int      `json:"schema"`
-	FreeTrackCoins    int64    `json:"freeTrackCoins"`
-	PremiumTrackCoins int64    `json:"premiumTrackCoins"`
-	PremiumPlusLevels int      `json:"premiumPlusLevels"`
-	Seasons           []Season `json:"seasons"`
+	Schema               int      `json:"schema"`
+	FreeTrackCoins       int64    `json:"freeTrackCoins"`
+	PremiumTrackCoins    int64    `json:"premiumTrackCoins"`
+	PremiumPlusLevels    int      `json:"premiumPlusLevels"`
+	MatchXp1v1           MatchXp  `json:"matchXp1v1"`
+	MatchXp2v2           MatchXp  `json:"matchXp2v2"`
+	DailyMatchXpCap      int      `json:"dailyMatchXpCap"`
+	BotSeatRewardPercent int      `json:"botSeatRewardPercent"`
+	Seasons              []Season `json:"seasons"`
 }
 
 func Default() *Snapshot {
-	return &Snapshot{Schema: Schema, FreeTrackCoins: 1500, PremiumTrackCoins: 3000, PremiumPlusLevels: 20}
+	return &Snapshot{
+		Schema:               Schema,
+		FreeTrackCoins:       1500,
+		PremiumTrackCoins:    3000,
+		PremiumPlusLevels:    20,
+		MatchXp1v1:           MatchXp{Win: 100, Loss: 60},
+		MatchXp2v2:           MatchXp{Win: 140, Loss: 80},
+		DailyMatchXpCap:      2000,
+		BotSeatRewardPercent: 50,
+	}
 }
 
 func Parse(raw []byte) (*Snapshot, error) {
@@ -95,6 +113,12 @@ func (s *Snapshot) Validate() error {
 	}
 	if s.FreeTrackCoins < 0 || s.PremiumTrackCoins < 0 || s.PremiumPlusLevels < 0 {
 		return fail("track coin budgets and premiumPlusLevels must not be negative")
+	}
+	if s.MatchXp1v1.Win < 0 || s.MatchXp1v1.Loss < 0 || s.MatchXp2v2.Win < 0 || s.MatchXp2v2.Loss < 0 || s.DailyMatchXpCap < 0 {
+		return fail("match XP and dailyMatchXpCap must not be negative")
+	}
+	if s.BotSeatRewardPercent < 0 || s.BotSeatRewardPercent > 100 {
+		return fail("botSeatRewardPercent must be between 0 and 100")
 	}
 	ids := map[string]bool{}
 	for _, season := range s.Seasons {
