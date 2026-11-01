@@ -117,6 +117,8 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return followsPublished(ctx, pool, raw)
 	case pass.Domain:
 		return passFollowsPublished(ctx, pool, raw)
+	case mission.Domain:
+		return missionMedalsArePublished(ctx, pool, raw)
 	case gamestrings.Domain:
 		localization, err := gamestrings.ParseLocalization(raw)
 		if err != nil {
@@ -126,6 +128,27 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return err
 	}
 	return nil
+}
+
+func missionMedalsArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	catalog, err := mission.Parse(raw)
+	if err != nil {
+		return err
+	}
+	medals := medal.Default()
+	_, published, err := snapshot.Latest(ctx, pool, medal.Domain)
+	switch {
+	case err == nil:
+		if medals, err = medal.Parse(published); err != nil {
+			return err
+		}
+	case !errors.Is(err, snapshot.ErrNone):
+		return err
+	}
+	return catalog.CheckMedals(func(id string, source cosmetics.Source) bool {
+		found, ok := medals.Medal(id)
+		return ok && found.Lists(source)
+	})
 }
 
 func followsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {

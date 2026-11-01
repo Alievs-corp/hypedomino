@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 )
 
@@ -100,5 +102,41 @@ func TestEventMissionsWithinTheBudgetPublish(t *testing.T) {
 	catalog.Missions = append(catalog.Missions, eventMission("cup_a", "event.cup", 2000), eventMission("cup_b", "event.cup", 1000), eventMission("fair_a", "event.fair", 3000))
 	if err := catalog.Validate(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAMissionMedalMustListTheMission(t *testing.T) {
+	raw, err := os.ReadFile("../../../docs/pass/examples/medals.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	medals, err := medal.Parse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lists := func(id string, source cosmetics.Source) bool {
+		found, ok := medals.Medal(id)
+		return ok && found.Lists(source)
+	}
+	catalog := example(t)
+	if err := catalog.CheckMedals(lists); err != nil {
+		t.Fatalf("example catalogs disagree: %v", err)
+	}
+	cases := map[string]func(*Catalog){
+		"medal of another mission": func(c *Catalog) {
+			win, _ := c.Mission("mission.win_250")
+			win.Bundle.Medals = []string{"medal.wins_50"}
+		},
+		"medal outside the catalog": func(c *Catalog) {
+			win, _ := c.Mission("mission.win_250")
+			win.Bundle.Medals = []string{"medal.nobody"}
+		},
+	}
+	for name, change := range cases {
+		catalog := example(t)
+		change(catalog)
+		if err := catalog.CheckMedals(lists); !errors.Is(err, ErrInvalidCatalog) {
+			t.Errorf("%s: CheckMedals() = %v", name, err)
+		}
 	}
 }
