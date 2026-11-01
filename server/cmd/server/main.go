@@ -24,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
+	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
@@ -128,6 +129,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
+	missionCatalog := mission.NewWatcher(pool, logger)
+	go missionCatalog.Run(ctx, config.ConfigPoll)
+	missions := mission.NewStore(pool, missionCatalog, engine)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
 	if config.ShopCatalog != "" {
 		if err := offers.SeedFile(config.ShopCatalog); err != nil {
@@ -169,6 +173,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/pass/", passHandler)
 	a.Handle("/medals", medal.NewHandler(tokens, medals, logger, time.Now))
 	a.Handle("/medals/", medal.NewHandler(tokens, medals, logger, time.Now))
+	missionHandler := mission.NewHandler(tokens, missions, logger, time.Now)
+	a.Handle("/missions", missionHandler)
+	a.Handle("/missions/", missionHandler)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
