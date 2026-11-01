@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 )
 
 func TestTheExampleIsTheDefaultCycle(t *testing.T) {
@@ -34,17 +32,8 @@ func TestPublishRulesRefuseBrokenCalendars(t *testing.T) {
 	}{
 		{"wrong schema", func(c *Calendar) { c.Schema = 2 }},
 		{"six days", func(c *Calendar) { c.Days = c.Days[:6] }},
-		{"a day without a reward", func(c *Calendar) { c.Days[0].Coins = 0 }},
-		{"coins and a bundle", func(c *Calendar) {
-			c.Days[0].Bundle = &reward.Bundle{ID: "bundle.login", Revision: 1, Coins: 10}
-		}},
-		{"a bundle with a cosmetic", func(c *Calendar) {
-			c.Days[6] = Day{Bundle: &reward.Bundle{ID: "bundle.login", Revision: 1, Cosmetics: []string{"emoji.laugh_spin"}}}
-		}},
-		{"a bundle with a medal", func(c *Calendar) {
-			c.Days[6] = Day{Bundle: &reward.Bundle{ID: "bundle.login", Revision: 1, Medals: []string{"medal.wins_50"}}}
-		}},
-		{"a broken bundle", func(c *Calendar) { c.Days[6] = Day{Bundle: &reward.Bundle{ID: "login", Revision: 1, Coins: 10}} }},
+		{"a day without coins", func(c *Calendar) { c.Days[0].Coins = 0 }},
+		{"a day with negative coins", func(c *Calendar) { c.Days[6].Coins = -5 }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -57,16 +46,26 @@ func TestPublishRulesRefuseBrokenCalendars(t *testing.T) {
 	}
 }
 
-func TestAThirtyDayCalendarWithABundlePublishes(t *testing.T) {
-	calendar := &Calendar{Schema: Schema}
-	for day := 1; day < 30; day++ {
-		calendar.Days = append(calendar.Days, Day{Coins: 10})
+func TestADayGrantsCoinsOnly(t *testing.T) {
+	for _, raw := range []string{
+		`{"schema":1,"days":[{"coins":30},{"coins":30},{"coins":50},{"coins":50},{"coins":70},{"coins":70},{"bundle":{"id":"bundle.login","revision":1,"passXp":300}}]}`,
+		`{"schema":1,"days":[{"coins":30},{"coins":30},{"coins":50},{"coins":50},{"coins":70},{"coins":70},{"coins":150,"cosmetics":["emoji.laugh_spin"]}]}`,
+	} {
+		if _, err := Parse([]byte(raw)); !errors.Is(err, ErrInvalidCalendar) {
+			t.Fatalf("Parse(%s) = %v", raw, err)
+		}
 	}
-	calendar.Days = append(calendar.Days, Day{Bundle: &reward.Bundle{ID: "bundle.login_month", Revision: 1, Coins: 100, PassXP: 300}})
+}
+
+func TestAThirtyDayCalendarPublishes(t *testing.T) {
+	calendar := &Calendar{Schema: Schema}
+	for day := 1; day <= 30; day++ {
+		calendar.Days = append(calendar.Days, Day{Coins: int64(10 * day)})
+	}
 	if err := calendar.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	if got := calendar.Reward(30, 5); got.ID != "bundle.login_month" || got.PassXP != 300 {
+	if got := calendar.Reward(30, 5); got.Coins != 300 || got.PassXP != 0 || len(got.Cosmetics) != 0 || got.Revision != 5 {
 		t.Fatalf("day 30 = %+v", got)
 	}
 }

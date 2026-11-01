@@ -23,7 +23,7 @@ Owned elsewhere and only referenced: launch timeline, incidents, on-call and rol
 | B | End of season 1 and start of season 2: one moment for ranked and pass seasons (`docs/pass-missions-medals.md` 2.1) |
 
 - Season 1 starts at Day 0 (OD-1). With `SeasonLengthMonths` 3 (`docs/ranking.md` 7.1), B falls on day 89 to 92, so the 90 days cover exactly season 1 and its transition. B may move later while season 1 runs, never earlier (`docs/admin.md` 5.12).
-- Until #131 fixes reset time zones, the economy day starts at 00:00 UTC.
+- The economy day starts at 00:00 UTC for every player (`docs/economy.md` 2).
 - Soft launch (#196) progress does not carry over (OD-1). At Day 0 every account's MMR returns to `InitialMmr` and it plays placement again in both modes, as a new player (`docs/ranking.md` 4.2, 5), and its soft launch pass season ends with the normal season-end job, so purchased levels keep their earned rewards (`docs/pass-missions-medals.md` 2.7). The soft launch ranked season grants no rank rewards. Coins, owned cosmetics and medals are kept.
 
 ## 3. Recurring cadence

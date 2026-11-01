@@ -34,7 +34,7 @@ Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `do
 | Promo codes | 8 | `promo` | #108 |
 | Purchase | 7 | `purchase`, `first_purchase_bonus` | #106 |
 
-**Economy day.** Every daily limit (first win, daily login, daily missions, `DailyMatchCoinCap`) uses one day boundary computed on the server: the player's reset time zone from #131, change-limited by #208. Until #131 fixes it, the day starts at 00:00 UTC.
+**Economy day.** Every daily limit (first win, daily login, daily missions, `DailyMatchCoinCap`) uses one day boundary computed on the server from server time (#208): 00:00 UTC, the same for every player. There is no per-player reset time zone (owner decision, 2026-11-01, #131).
 
 ### 2.1 Match rewards
 
@@ -68,8 +68,8 @@ Coins per completed match:
 - A 7-day cycle. Claiming day n grants entry n of `DailyLoginCoins` (30, 30, 50, 50, 70, 70, 150; 450 per cycle). After day 7 the cycle starts again at day 1.
 - One claim per economy day, by intent; the server decides the day (V-7).
 - A missed day pauses the cycle; it does not reset it. No streak to lose.
-- The admin may attach a reward bundle (section 4) to any day instead of coins. A 30-day calendar (#131) is not proposed for launch.
-- Implemented in `server/internal/dailylogin` (#131): the `daily_login` config domain (`docs/economy/examples/daily_login.json`) holds 7 or 30 days, each `coins` or a bundle of coins and pass XP (no cosmetic or medal lists a daily login source). A claim grants the next day of the cycle through the reward engine, reason `daily_login`, key `daily_login:<economyDay>`, and counts claims rather than dates, so a missed day pauses the cycle. The economy day is 00:00 UTC until the player reset time zone and its change limit are decided.
+- Every day grants coins only (owner decision, 2026-11-01, #131): no pass XP, cosmetic or medal. A 30-day calendar (#131) is not proposed for launch.
+- Implemented in `server/internal/dailylogin` (#131): the `daily_login` config domain (`docs/economy/examples/daily_login.json`) holds 7 or 30 days of `coins`; publish refuses any other field. A claim grants the next day of the cycle through the reward engine, reason `daily_login`, key `daily_login:<economyDay>`, and counts claims rather than dates, so a missed day pauses the cycle.
 
 ### 2.4 Missions
 

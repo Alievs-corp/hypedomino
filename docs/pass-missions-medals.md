@@ -198,7 +198,7 @@ Each slot has a fixed reward; every mission in the slot's pool pays it, so selec
 - Assignment: at the first moment the server needs the player's missions in a period (session start or match end), it draws one live mission per slot by weight with the server's cryptographically secure random source, avoiding the mission the slot had in the previous period when the pool has another. The draw is stored; it happens once per player and period.
 - Expiry: at the end of the period unfinished missions and their progress end. Completed missions were already granted (PM-3).
 - Reroll: `DailyMissionRerolls` (1) per economy day and `WeeklyMissionRerolls` (1) per week, free, by intent. It replaces one uncompleted mission with another live mission of the same slot that the player has not had in this period; progress on the replaced mission is lost. A reroll is rejected when the slot has no such mission. Rerolls are never sold and do not accumulate.
-- Grant key: `mission:<missionId>:<period>`, the period being the economy day (`2026-11-03`) or week (`2026-W45`) of the player's reset time zone (#131, #208).
+- Grant key: `mission:<missionId>:<period>`, the period being the economy day (`2026-11-03`) or ISO week (`2026-W45`) at 00:00 UTC, the same for every player (`docs/economy.md` 2, #131, #208).
 
 ### 4.5 Achievements
 
@@ -541,7 +541,7 @@ Admin publish (#140, #141) rejects:
 | #128 | Mission UI |
 | #129 | Medal system: definition, grant, showcase (5) |
 | #130 | Medal UI: collection, emblem section, profile (5.4, 5.5) |
-| #131 | Daily login, economy day and reset time zone (`docs/economy.md` 2.3) |
+| #131 | Daily login and the 00:00 UTC economy day (`docs/economy.md` 2.3) |
 | #132 | Push notifications; this spec requires none |
 
 Elsewhere: admin #138 (bundles), #140 (pass seasons), #141 (missions and medals); grants #102, ledger #101, purchases #106; rank rewards #120 and season end #115; live events #146; analytics #147; medal art #178; anti-farm #110, #183, #209, #211; server time #208.
