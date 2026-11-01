@@ -56,7 +56,7 @@ type fakePass struct {
 	added  int
 }
 
-func (f *fakePass) AddIn(_ context.Context, _ pgx.Tx, _ string, xp int, _ time.Time) (bool, error) {
+func (f *fakePass) AddIn(_ context.Context, _ pgx.Tx, _ string, xp int, _ cosmetics.Source, _ string, _ time.Time) (bool, error) {
 	if !f.active {
 		return false, nil
 	}

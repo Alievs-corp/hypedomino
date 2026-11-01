@@ -55,8 +55,8 @@ func NewWatcher(pool *pgxpool.Pool, logger *slog.Logger) *snapshot.Watcher[*Snap
 	return watcher
 }
 
-func NewStore(pool *pgxpool.Pool, configs *snapshot.Watcher[*Snapshot], rewards Rewarder) *Store {
-	return &Store{pool: pool, configs: configs, rewards: rewards}
+func NewStore(pool *pgxpool.Pool, configs *snapshot.Watcher[*Snapshot]) *Store {
+	return &Store{pool: pool, configs: configs}
 }
 
 func (s *Store) current() (*Snapshot, int64, error) {
@@ -84,20 +84,28 @@ func (s *Store) Enter(ctx context.Context, account string, now time.Time) (Seaso
 	if err := reward.LockIn(ctx, tx, account); err != nil {
 		return Season{}, Progress{}, 0, err
 	}
-	tag, err := tx.Exec(ctx, `insert into pass_progress (account_id, season_id, entered_at) values ($1, $2, $3) on conflict do nothing`, account, season.ID, now)
+	progress, err := s.enterIn(ctx, tx, account, season, version, now)
 	if err != nil {
 		return Season{}, Progress{}, 0, err
-	}
-	progress, err := progressIn(ctx, tx, account, season.ID)
-	if err != nil {
-		return Season{}, Progress{}, 0, err
-	}
-	if tag.RowsAffected() == 1 {
-		if _, err := s.grantReached(ctx, tx, account, season, version, progress, now); err != nil {
-			return Season{}, Progress{}, 0, err
-		}
 	}
 	return season, progress, version, tx.Commit(ctx)
+}
+
+func (s *Store) enterIn(ctx context.Context, tx pgx.Tx, account string, season Season, version int64, now time.Time) (Progress, error) {
+	tag, err := tx.Exec(ctx, `insert into pass_progress (account_id, season_id, entered_at) values ($1, $2, $3) on conflict do nothing`, account, season.ID, now)
+	if err != nil {
+		return Progress{}, err
+	}
+	progress, err := progressIn(ctx, tx, account, season.ID)
+	if err != nil || tag.RowsAffected() == 0 {
+		return progress, err
+	}
+	_, err = s.grantLevels(ctx, tx, account, season, version, []string{Free}, 1, 1, now)
+	return progress, err
+}
+
+func (s *Store) SetRewards(rewards Rewarder) {
+	s.rewards = rewards
 }
 
 func progressIn(ctx context.Context, tx pgx.Tx, account, season string) (Progress, error) {
@@ -106,16 +114,23 @@ func progressIn(ctx context.Context, tx pgx.Tx, account, season string) (Progres
 	return progress, err
 }
 
+func unlocked(progress Progress) []string {
+	if progress.Premium {
+		return []string{Free, Premium}
+	}
+	return []string{Free}
+}
+
 func (s *Store) grantReached(ctx context.Context, tx pgx.Tx, account string, season Season, version int64, progress Progress, now time.Time) (int, error) {
+	return s.grantLevels(ctx, tx, account, season, version, unlocked(progress), 1, season.Curve.LevelFor(progress.XP), now)
+}
+
+func (s *Store) grantLevels(ctx context.Context, tx pgx.Tx, account string, season Season, version int64, tracks []string, from, to int, now time.Time) (int, error) {
 	if s.rewards == nil {
 		return 0, nil
 	}
-	tracks := []string{Free}
-	if progress.Premium {
-		tracks = append(tracks, Premium)
-	}
 	granted := 0
-	for level := 1; level <= season.Curve.LevelFor(progress.XP); level++ {
+	for level := from; level <= to; level++ {
 		for _, track := range tracks {
 			bundle, ok := season.Track(track)[level]
 			if !ok {
