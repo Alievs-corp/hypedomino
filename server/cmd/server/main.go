@@ -17,6 +17,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
@@ -132,6 +133,11 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	missionCatalog := mission.NewWatcher(pool, logger)
 	go missionCatalog.Run(ctx, config.ConfigPoll)
 	missions := mission.NewStore(pool, missionCatalog, engine)
+	calendar := dailylogin.NewWatcher(pool, logger)
+	go calendar.Run(ctx, config.ConfigPoll)
+	logins := dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now)
+	a.Handle("/daily-login", logins)
+	a.Handle("/daily-login/", logins)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
 	if config.ShopCatalog != "" {
 		if err := offers.SeedFile(config.ShopCatalog); err != nil {

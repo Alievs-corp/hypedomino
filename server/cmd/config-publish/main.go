@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
@@ -75,6 +76,9 @@ func run(ctx context.Context, url, domain, file string, out io.Writer) error {
 
 func validate(domain string, raw []byte) error {
 	switch domain {
+	case dailylogin.Domain:
+		_, err := dailylogin.Parse(raw)
+		return err
 	case medal.Domain:
 		_, err := medal.Parse(raw)
 		return err
