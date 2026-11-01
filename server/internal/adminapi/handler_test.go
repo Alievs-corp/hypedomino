@@ -58,6 +58,8 @@ func newAPI(t *testing.T) *api {
 		"ayla":       company("ayla@example.com"),
 		"vusal":      company("vusal@example.com"),
 		"nobody":     company("nobody@example.com"),
+		"leyla":      company("leyla@example.com"),
+		"orxan":      company("orxan@example.com"),
 		"unverified": {Email: "ayla@example.com", HostedDomain: "example.com"},
 		"personal":   {Email: "ayla@example.com", EmailVerified: true},
 		"elsewhere":  {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "other.com"},
