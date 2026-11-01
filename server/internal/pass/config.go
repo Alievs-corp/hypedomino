@@ -59,6 +59,7 @@ type Snapshot struct {
 	MatchXp2v2           MatchXp  `json:"matchXp2v2"`
 	DailyMatchXpCap      int      `json:"dailyMatchXpCap"`
 	BotSeatRewardPercent int      `json:"botSeatRewardPercent"`
+	LevelCoinPrice       int64    `json:"levelCoinPrice"`
 	Seasons              []Season `json:"seasons"`
 }
 
@@ -72,6 +73,7 @@ func Default() *Snapshot {
 		MatchXp2v2:           MatchXp{Win: 140, Loss: 80},
 		DailyMatchXpCap:      2000,
 		BotSeatRewardPercent: 50,
+		LevelCoinPrice:       200,
 	}
 }
 
@@ -119,6 +121,9 @@ func (s *Snapshot) Validate() error {
 	}
 	if s.BotSeatRewardPercent < 0 || s.BotSeatRewardPercent > 100 {
 		return fail("botSeatRewardPercent must be between 0 and 100")
+	}
+	if s.LevelCoinPrice < 1 {
+		return fail("levelCoinPrice must be at least 1")
 	}
 	ids := map[string]bool{}
 	for _, season := range s.Seasons {

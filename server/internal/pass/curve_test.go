@@ -61,3 +61,21 @@ func TestEveryLevelStartsAtItsXpTotal(t *testing.T) {
 		}
 	}
 }
+
+func TestABoughtLevelAddsTheXpOfTheLevelsSkipped(t *testing.T) {
+	cases := []struct {
+		xp    int64
+		count int
+		want  int64
+	}{
+		{0, 1, 300},
+		{120, 1, 300},
+		{120, 3, 1050},
+		{8750, 5, 5000},
+	}
+	for _, c := range cases {
+		if got := LevelPurchaseXp(defaultCurve, c.xp, c.count); got != c.want {
+			t.Errorf("LevelPurchaseXp(%d, %d) = %d, want %d", c.xp, c.count, got, c.want)
+		}
+	}
+}

@@ -10,21 +10,31 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
-type Enterer interface {
+type Passes interface {
 	Enter(ctx context.Context, account string, now time.Time) (Season, Progress, int64, error)
+	BuyLevels(ctx context.Context, account string, count int, requestID string, now time.Time) (LevelPurchase, error)
 }
 
 type Handler struct {
 	verifier token.Verifier
-	store    Enterer
+	store    Passes
 	logger   *slog.Logger
 	now      func() time.Time
+	mux      *http.ServeMux
 }
 
-func NewHandler(verifier token.Verifier, store Enterer, logger *slog.Logger, now func() time.Time) *Handler {
-	return &Handler{verifier: verifier, store: store, logger: logger, now: now}
+func NewHandler(verifier token.Verifier, store Passes, logger *slog.Logger, now func() time.Time) *Handler {
+	h := &Handler{verifier: verifier, store: store, logger: logger, now: now, mux: http.NewServeMux()}
+	h.mux.HandleFunc("GET /pass", h.view)
+	h.mux.HandleFunc("POST /pass/levels", h.levels)
+	return h
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
 }
 
 type errorResponse struct {
@@ -66,18 +76,22 @@ func NewView(season Season, progress Progress, version int64) View {
 	return view
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		reply(w, http.StatusMethodNotAllowed, errorResponse{Error: "method_not_allowed"})
-		return
-	}
+func (h *Handler) authenticate(w http.ResponseWriter, r *http.Request) (token.Claims, bool) {
 	claims, err := token.Authorize(h.verifier, r)
 	switch {
 	case errors.Is(err, token.ErrExpired):
 		reply(w, http.StatusUnauthorized, errorResponse{Error: "access_expired"})
-		return
+		return token.Claims{}, false
 	case err != nil:
 		reply(w, http.StatusUnauthorized, errorResponse{Error: "access_rejected"})
+		return token.Claims{}, false
+	}
+	return claims, true
+}
+
+func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
+	claims, ok := h.authenticate(w, r)
+	if !ok {
 		return
 	}
 	season, progress, version, err := h.store.Enter(r.Context(), claims.Account, h.now())
@@ -97,4 +111,45 @@ func reply(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(body)
+}
+
+type levelsRequest struct {
+	Count     int    `json:"count"`
+	RequestID string `json:"request_id"`
+}
+
+var levelRefusals = []struct {
+	err    error
+	status int
+	code   string
+}{
+	{ErrRequest, http.StatusBadRequest, ErrRequest.Error()},
+	{ErrLevelCount, http.StatusConflict, ErrLevelCount.Error()},
+	{ErrNoSeason, http.StatusConflict, "pass.no_season"},
+	{wallet.ErrInsufficient, http.StatusPaymentRequired, "wallet.insufficient"},
+}
+
+func (h *Handler) levels(w http.ResponseWriter, r *http.Request) {
+	claims, ok := h.authenticate(w, r)
+	if !ok {
+		return
+	}
+	var request levelsRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&request); err != nil {
+		reply(w, http.StatusBadRequest, errorResponse{Error: "malformed"})
+		return
+	}
+	purchase, err := h.store.BuyLevels(r.Context(), claims.Account, request.Count, request.RequestID, h.now())
+	if err == nil {
+		reply(w, http.StatusOK, purchase)
+		return
+	}
+	for _, refusal := range levelRefusals {
+		if errors.Is(err, refusal.err) {
+			reply(w, refusal.status, errorResponse{Error: refusal.code})
+			return
+		}
+	}
+	h.logger.Error("pass level purchase failed", "error", err)
+	reply(w, http.StatusInternalServerError, errorResponse{Error: "internal"})
 }
