@@ -36,12 +36,22 @@ var (
 )
 
 type Season struct {
-	ID        string     `json:"id"`
-	NameKey   string     `json:"name_key"`
-	Start     time.Time  `json:"start"`
-	End       time.Time  `json:"end"`
-	Closed1v1 *time.Time `json:"closed_1v1,omitempty"`
-	Closed2v2 *time.Time `json:"closed_2v2,omitempty"`
+	ID          string     `json:"id"`
+	NameKey     string     `json:"name_key"`
+	Start       time.Time  `json:"start"`
+	End         time.Time  `json:"end"`
+	Closed1v1   *time.Time `json:"closed_1v1,omitempty"`
+	Closed2v2   *time.Time `json:"closed_2v2,omitempty"`
+	NoRewards   bool       `json:"no_rewards,omitempty"`
+	Rewarded1v1 *time.Time `json:"rewarded_1v1,omitempty"`
+	Rewarded2v2 *time.Time `json:"rewarded_2v2,omitempty"`
+}
+
+func (s Season) RewardedFor(mode rules.Mode) bool {
+	if mode == rules.Mode2v2 {
+		return s.Rewarded2v2 != nil
+	}
+	return s.Rewarded1v1 != nil
 }
 
 func (s Season) ClosedFor(mode rules.Mode) bool {
@@ -70,11 +80,11 @@ type Closed struct {
 	Apex    Recalculated
 }
 
-const seasonColumns = `id, name_key, starts_at, ends_at, closed_1v1_at, closed_2v2_at`
+const seasonColumns = `id, name_key, starts_at, ends_at, closed_1v1_at, closed_2v2_at, not rewards, rewarded_1v1_at, rewarded_2v2_at`
 
 func scanSeason(row pgx.Row) (Season, error) {
 	var s Season
-	if err := row.Scan(&s.ID, &s.NameKey, &s.Start, &s.End, &s.Closed1v1, &s.Closed2v2); err != nil {
+	if err := row.Scan(&s.ID, &s.NameKey, &s.Start, &s.End, &s.Closed1v1, &s.Closed2v2, &s.NoRewards, &s.Rewarded1v1, &s.Rewarded2v2); err != nil {
 		return Season{}, err
 	}
 	s.Start, s.End = s.Start.UTC(), s.End.UTC()
@@ -109,7 +119,7 @@ func (s *Store) CreateSeason(ctx context.Context, season Season, now time.Time) 
 
 func insertSeason(ctx context.Context, tx pgx.Tx, season Season, now time.Time) (Season, error) {
 	season.Start, season.End = season.Start.UTC(), season.End.UTC()
-	_, err := tx.Exec(ctx, `insert into ranked_seasons (id, name_key, starts_at, ends_at, created_at) values ($1, $2, $3, $4, $5)`, season.ID, season.NameKey, season.Start, season.End, now)
+	_, err := tx.Exec(ctx, `insert into ranked_seasons (id, name_key, starts_at, ends_at, rewards, created_at) values ($1, $2, $3, $4, $5, $6)`, season.ID, season.NameKey, season.Start, season.End, !season.NoRewards, now)
 	switch {
 	case err != nil && strings.Contains(err.Error(), "23P01"):
 		return Season{}, fmt.Errorf("%w: %s", ErrSeasonOverlap, season.ID)
@@ -118,7 +128,7 @@ func insertSeason(ctx context.Context, tx pgx.Tx, season Season, now time.Time) 
 	case err != nil:
 		return Season{}, err
 	}
-	return Season{ID: season.ID, NameKey: season.NameKey, Start: season.Start, End: season.End}, nil
+	return Season{ID: season.ID, NameKey: season.NameKey, Start: season.Start, End: season.End, NoRewards: season.NoRewards}, nil
 }
 
 func (s *Store) ExtendSeason(ctx context.Context, id string, end time.Time) (Season, error) {
@@ -214,7 +224,7 @@ func (s *Store) CloseSeason(ctx context.Context, id string, mode rules.Mode, now
 		return Closed{}, err
 	}
 	if _, err := tx.Exec(ctx, `update ratings set season_id = $3, placed = false, placement_played = 0, placement_penalty = 0, lp = 0, wins = 0, apex_tier = null, lp_at = null, updated_at = $4,
-		rank_index = coalesce(reset_index, 0) where mode = $1 and (season_id = $2 or season_id is null)`, mode.String(), id, next.ID, now); err != nil {
+		rank_index = coalesce(reset_index, 0), board_country = null where mode = $1 and (season_id = $2 or season_id is null)`, mode.String(), id, next.ID, now); err != nil {
 		return Closed{}, err
 	}
 	column := "closed_1v1_at"
@@ -249,7 +259,7 @@ func (s *Store) nextSeason(ctx context.Context, tx pgx.Tx, season Season, config
 }
 
 func (s *Store) snapshotSeason(ctx context.Context, tx pgx.Tx, season Season, mode rules.Mode, config Config) (int, error) {
-	rows, err := tx.Query(ctx, `select account_id, rank_index, apex_tier, lp, wins, mmr from ratings where mode = $1 and (season_id = $2 or season_id is null) and placed
+	rows, err := tx.Query(ctx, `select account_id, rank_index, apex_tier, lp, wins, mmr, board_country from ratings where mode = $1 and (season_id = $2 or season_id is null) and placed
 		order by rank_index desc, case apex_tier when $3 then 0 when $4 then 1 else 2 end, lp desc, lp_at asc nulls last, wins desc, account_id asc for update`, mode.String(), season.ID, ApexChallenger, ApexGrandmaster)
 	if err != nil {
 		return 0, err
@@ -262,13 +272,13 @@ func (s *Store) snapshotSeason(ctx context.Context, tx pgx.Tx, season Season, mo
 	for rows.Next() {
 		var account string
 		var index, lp, wins, mmr int
-		var apex *string
-		if err := rows.Scan(&account, &index, &apex, &lp, &wins, &mmr); err != nil {
+		var apex, country *string
+		if err := rows.Scan(&account, &index, &apex, &lp, &wins, &mmr, &country); err != nil {
 			rows.Close()
 			return 0, err
 		}
 		reset := config.ResetIndex(index)
-		results = append(results, []any{season.ID, mode.String(), account, len(results) + 1, index, apex, lp, wins, mmr, reset})
+		results = append(results, []any{season.ID, mode.String(), account, len(results) + 1, index, apex, lp, wins, mmr, reset, country})
 		resets = append(resets, struct {
 			account string
 			reset   int
@@ -278,7 +288,7 @@ func (s *Store) snapshotSeason(ctx context.Context, tx pgx.Tx, season Season, mo
 	if rows.Err() != nil {
 		return 0, rows.Err()
 	}
-	columns := []string{"season_id", "mode", "account_id", "position", "rank_index", "apex_tier", "lp", "wins", "mmr", "reset_index"}
+	columns := []string{"season_id", "mode", "account_id", "position", "rank_index", "apex_tier", "lp", "wins", "mmr", "reset_index", "country"}
 	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"season_results"}, columns, pgx.CopyFromRows(results)); err != nil {
 		return 0, err
 	}
@@ -342,6 +352,16 @@ func (s *Store) RunSeasonEnd(ctx context.Context, logger *slog.Logger, every tim
 		}
 		for _, c := range closed {
 			logger.Info("season closed", "placed", c.Placed, "next", c.Next, "challenger", c.Apex.Challenger, "grandmaster", c.Apex.Grandmaster)
+		}
+		if s.rewards == nil {
+			continue
+		}
+		distributed, err := s.DistributeDue(ctx, now())
+		if err != nil {
+			logger.Error("season rewards failed", "error", err)
+		}
+		for _, d := range distributed {
+			logger.Info("season rewards distributed", "season", d.Season, "mode", d.Mode.String(), "rewarded", d.Rewarded)
 		}
 	}
 }

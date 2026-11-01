@@ -30,6 +30,7 @@ type Config struct {
 	MmrWindowStep        int
 	MmrWindowStepSeconds int
 	MmrWindowMax         int
+	RankWindowDivisions  int
 	CasualBotFillSeconds int
 }
 
@@ -39,6 +40,7 @@ func DefaultConfig() Config {
 		MmrWindowStep:        50,
 		MmrWindowStepSeconds: 10,
 		MmrWindowMax:         400,
+		RankWindowDivisions:  8,
 		CasualBotFillSeconds: 30,
 	}
 }
@@ -49,6 +51,9 @@ type Entry struct {
 	Queue      Queue
 	Region     string
 	Mmr        int
+	Rank       int
+	Placed     bool
+	Avoid      []string
 	EnqueuedAt time.Time
 	SearchFrom time.Time
 }
@@ -64,6 +69,20 @@ type Match struct {
 	Queue  Queue
 	Region string
 	Seats  []Seat
+}
+
+func (m Match) Ranked() bool {
+	return m.Queue == QueueRanked
+}
+
+func (m Match) Teams() [2][]string {
+	var teams [2][]string
+	for _, seat := range m.Seats {
+		if !seat.Bot {
+			teams[seat.Seat.Team()] = append(teams[seat.Seat.Team()], seat.Account)
+		}
+	}
+	return teams
 }
 
 func Window(config Config, waited time.Duration) int {
@@ -122,11 +141,11 @@ func formBucket(config Config, key bucket, entries []Entry, now time.Time, rando
 			if len(group) == players {
 				break
 			}
-			if other == index || taken[other] || entries[other].SearchFrom.After(now) {
+			if other == index || taken[other] || entries[other].SearchFrom.After(now) || avoids(anchor, entries[other]) {
 				continue
 			}
 			tolerance := min(window, Window(config, now.Sub(entries[other].EnqueuedAt)))
-			if abs(anchor.Mmr-entries[other].Mmr) <= tolerance {
+			if abs(anchor.Mmr-entries[other].Mmr) <= tolerance && rankClose(config, key.queue, anchor, entries[other]) {
 				group = append(group, other)
 			}
 		}
@@ -149,6 +168,27 @@ func formBucket(config Config, key bucket, entries []Entry, now time.Time, rando
 		}
 	}
 	return matches, remaining
+}
+
+func avoids(a, b Entry) bool {
+	for _, account := range a.Avoid {
+		if account == b.Account {
+			return true
+		}
+	}
+	for _, account := range b.Avoid {
+		if account == a.Account {
+			return true
+		}
+	}
+	return false
+}
+
+func rankClose(config Config, queue Queue, a, b Entry) bool {
+	if queue != QueueRanked || config.RankWindowDivisions <= 0 || !a.Placed || !b.Placed {
+		return true
+	}
+	return abs(a.Rank-b.Rank) <= config.RankWindowDivisions
 }
 
 func botFill(config Config, queue Queue, waited time.Duration) bool {

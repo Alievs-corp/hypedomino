@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
@@ -96,8 +97,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("HD_TOKEN_KEYS: %w", err)
 	}
 	sessions.Authenticate(tokens)
-	a.Handle("POST /auth/", auth.New(verifier, account.New(pool), tokens, sessions, logger))
-	a.Handle("/profile/", profile.NewHandler(tokens, profile.NewStore(pool, config.Profile), logger, time.Now))
+	accounts := account.New(pool)
+	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
+	signIn.SetCountryHeader(config.CountryHeader)
+	a.Handle("POST /auth/", signIn)
+	profiles := profile.NewHandler(tokens, profile.NewStore(pool, config.Profile), logger, time.Now)
+	profiles.SetCountries(accounts, config.CountryCooldown)
+	a.Handle("/profile/", profiles)
 	catalog, err := loadCatalog(config.Cosmetics)
 	if err != nil {
 		pool.Close()
@@ -112,7 +118,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/inventory/", items)
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
-	engine := reward.NewEngine(pool, walletStore, inventoryStore, nil, nil, config.Reward)
+	passConfigs := pass.NewWatcher(pool, logger)
+	go passConfigs.Run(ctx, config.ConfigPoll)
+	passes := pass.NewStore(pool, passConfigs)
+	engine := reward.NewEngine(pool, walletStore, inventoryStore, nil, passes, config.Reward)
+	passes.SetRewards(engine)
+	passes.SetWallet(walletStore)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
 	if config.ShopCatalog != "" {
 		if err := offers.SeedFile(config.ShopCatalog); err != nil {
@@ -137,15 +148,21 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingConfigs := rating.NewWatcher(pool, logger)
 	go ratingConfigs.Run(ctx, config.ConfigPoll)
 	ratings := rating.NewStore(pool, ratingConfigs)
+	ratings.SetRewards(engine)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	var reader leaderboard.Reader
 	if client != nil {
-		boards := leaderboard.New(client, ratings, leaderboard.DefaultConfig())
+		boards := leaderboard.New(client, ratings, ratings, leaderboard.DefaultConfig())
 		ratings.SetBoards(boards, logger)
 		reader = boards
 	}
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
+	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
+	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	passHandler := pass.NewHandler(tokens, passes, logger, time.Now)
+	a.Handle("/pass", passHandler)
+	a.Handle("/pass/", passHandler)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
 	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
 	a.Handle("/shop", store)
@@ -157,6 +174,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	purchases := purchase.NewStore(pool, walletStore, engine, offers, validators, config.Purchase, logger)
 	shopStore.Guard(purchases)
+	shopStore.WithPass(passes)
+	purchases.WithPass(passes)
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
 	a.Handle("POST /shop/complete", receipts)
 	a.Handle("POST /store/", receipts)

@@ -51,7 +51,7 @@ type Medals interface {
 }
 
 type Pass interface {
-	AddIn(ctx context.Context, tx pgx.Tx, account string, xp int, now time.Time) (bool, error)
+	AddIn(ctx context.Context, tx pgx.Tx, account string, xp int, source cosmetics.Source, key string, now time.Time) (bool, error)
 }
 
 type Grant struct {
@@ -202,7 +202,7 @@ func (e *Engine) ApplyIn(ctx context.Context, tx pgx.Tx, grant Grant, now time.T
 	if grant.Bundle.PassXP > 0 {
 		applied := false
 		if e.pass != nil {
-			if applied, err = e.pass.AddIn(ctx, tx, grant.Account, grant.Bundle.PassXP, now); err != nil {
+			if applied, err = e.pass.AddIn(ctx, tx, grant.Account, grant.Bundle.PassXP, grant.Source, grant.Key, now); err != nil {
 				return Report{}, err
 			}
 		}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -45,10 +46,19 @@ type Store struct {
 	catalog   *snapshot.Watcher[*Catalog]
 	config    Config
 	gate      Gate
+	pass      PassStatus
 }
 
 func (s *Store) Guard(gate Gate) {
 	s.gate = gate
+}
+
+type PassStatus interface {
+	Premium(ctx context.Context, account string, now time.Time) (pass.PremiumState, error)
+}
+
+func (s *Store) WithPass(status PassStatus) {
+	s.pass = status
 }
 
 func NewStore(pool *pgxpool.Pool, wallet *wallet.Store, inventory *inventory.Store, engine *reward.Engine, catalog *snapshot.Watcher[*Catalog], config Config) *Store {
@@ -108,6 +118,8 @@ type standing struct {
 	purchases int
 	counts    map[string]int
 	owns      func(id string) (bool, error)
+	premium   *pass.PremiumState
+	noSeason  bool
 }
 
 func (s *Store) standing(ctx context.Context, q wallet.Querier, account string, owns func(id string) (bool, error), now time.Time) (standing, error) {
@@ -123,6 +135,17 @@ func (s *Store) standing(ctx context.Context, q wallet.Querier, account string, 
 	if s.gate != nil {
 		if st.blocked, err = s.gate.Blocked(ctx, account, now); err != nil {
 			return st, err
+		}
+	}
+	if s.pass != nil {
+		premium, err := s.pass.Premium(ctx, account, now)
+		switch {
+		case errors.Is(err, pass.ErrNoSeason):
+			st.noSeason = true
+		case err != nil:
+			return st, err
+		default:
+			st.premium = &premium
 		}
 	}
 	st.counts, err = reward.CountsIn(ctx, q, account, SourceType)
@@ -152,8 +175,14 @@ func (s *Store) status(offer Offer, st standing, now time.Time) (status, error) 
 	}
 	age := now.Sub(st.created)
 	switch {
-	case offer.Kind == KindPass || offer.Kind == KindPassLevels:
+	case offer.Kind == KindPassLevels || (offer.Kind == KindPass && st.premium == nil && !st.noSeason):
 		out.refusal = ErrUnsupported
+	case offer.Kind == KindPass && st.noSeason:
+		out.refusal = ErrNotEligible
+	case offer.Kind == KindPass && st.premium.Premium:
+		out.refusal = ErrOwned
+	case offer.Kind == KindPass && offer.ProductID == ProductPassPremiumPlus && st.premium.Level > st.premium.Levels-st.premium.PlusLevels:
+		out.refusal = ErrNotEligible
 	case offer.ProductID != "" && st.blocked:
 		out.refusal = ErrBlocked
 	case offer.LimitPerAccount > 0 && out.bought >= offer.LimitPerAccount:

@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
@@ -16,37 +20,38 @@ const (
 var ErrInvalidConfig = errors.New("rating: invalid config")
 
 type Config struct {
-	DivisionLp                  int               `json:"divisionLp"`
-	DemotionLp                  int               `json:"demotionLp"`
-	ApexRecalcHourUtc           int               `json:"apexRecalcHourUtc"`
-	ChallengerSlots             int               `json:"challengerSlots"`
-	ChallengerMinLp             int               `json:"challengerMinLp"`
-	GrandmasterSlots            int               `json:"grandmasterSlots"`
-	GrandmasterMinLp            int               `json:"grandmasterMinLp"`
-	InitialMmr                  int               `json:"initialMmr"`
-	MmrScale                    int               `json:"mmrScale"`
-	MmrK                        int               `json:"mmrK"`
-	MmrKProvisional             int               `json:"mmrKProvisional"`
-	MmrProvisionalMatches       int               `json:"mmrProvisionalMatches"`
-	RankMmrBase                 int               `json:"rankMmrBase"`
-	RankMmrStep                 int               `json:"rankMmrStep"`
-	LpBase                      int               `json:"lpBase"`
-	LpGapScale                  int               `json:"lpGapScale"`
-	LpFactorMin                 float64           `json:"lpFactorMin"`
-	LpFactorMax                 float64           `json:"lpFactorMax"`
-	LpChangeMin                 int               `json:"lpChangeMin"`
-	LpChangeMax                 int               `json:"lpChangeMax"`
-	PlacementMatches            int               `json:"placementMatches"`
-	PlacementMaxDropDivisions   int               `json:"placementMaxDropDivisions"`
-	PlacementMaxClimbDivisions  int               `json:"placementMaxClimbDivisions"`
-	NewPlayerPlacementCap       string            `json:"newPlayerPlacementCap"`
-	SeasonLengthMonths          int               `json:"seasonLengthMonths"`
-	ResetTierDrop               int               `json:"resetTierDrop"`
-	ResetFloor                  string            `json:"resetFloor"`
-	ResetCeiling                string            `json:"resetCeiling"`
-	SeasonResetTable            map[string]string `json:"seasonResetTable,omitempty"`
-	OffenseRatingPenalty        int               `json:"offenseRatingPenalty"`
-	PartnerLossReductionPercent int               `json:"partnerLossReductionPercent"`
+	RankRewards                 map[string]reward.Bundle `json:"rankRewards,omitempty"`
+	DivisionLp                  int                      `json:"divisionLp"`
+	DemotionLp                  int                      `json:"demotionLp"`
+	ApexRecalcHourUtc           int                      `json:"apexRecalcHourUtc"`
+	ChallengerSlots             int                      `json:"challengerSlots"`
+	ChallengerMinLp             int                      `json:"challengerMinLp"`
+	GrandmasterSlots            int                      `json:"grandmasterSlots"`
+	GrandmasterMinLp            int                      `json:"grandmasterMinLp"`
+	InitialMmr                  int                      `json:"initialMmr"`
+	MmrScale                    int                      `json:"mmrScale"`
+	MmrK                        int                      `json:"mmrK"`
+	MmrKProvisional             int                      `json:"mmrKProvisional"`
+	MmrProvisionalMatches       int                      `json:"mmrProvisionalMatches"`
+	RankMmrBase                 int                      `json:"rankMmrBase"`
+	RankMmrStep                 int                      `json:"rankMmrStep"`
+	LpBase                      int                      `json:"lpBase"`
+	LpGapScale                  int                      `json:"lpGapScale"`
+	LpFactorMin                 float64                  `json:"lpFactorMin"`
+	LpFactorMax                 float64                  `json:"lpFactorMax"`
+	LpChangeMin                 int                      `json:"lpChangeMin"`
+	LpChangeMax                 int                      `json:"lpChangeMax"`
+	PlacementMatches            int                      `json:"placementMatches"`
+	PlacementMaxDropDivisions   int                      `json:"placementMaxDropDivisions"`
+	PlacementMaxClimbDivisions  int                      `json:"placementMaxClimbDivisions"`
+	NewPlayerPlacementCap       string                   `json:"newPlayerPlacementCap"`
+	SeasonLengthMonths          int                      `json:"seasonLengthMonths"`
+	ResetTierDrop               int                      `json:"resetTierDrop"`
+	ResetFloor                  string                   `json:"resetFloor"`
+	ResetCeiling                string                   `json:"resetCeiling"`
+	SeasonResetTable            map[string]string        `json:"seasonResetTable,omitempty"`
+	OffenseRatingPenalty        int                      `json:"offenseRatingPenalty"`
+	PartnerLossReductionPercent int                      `json:"partnerLossReductionPercent"`
 }
 
 func DefaultConfig() Config {
@@ -87,6 +92,14 @@ func DefaultConfig() Config {
 func (c Config) Validate() error {
 	fail := func(format string, args ...any) error {
 		return fmt.Errorf("%w: %s", ErrInvalidConfig, fmt.Sprintf(format, args...))
+	}
+	for tier, bundle := range c.RankRewards {
+		if !KnownTier(tier) {
+			return fail("rankRewards tier %q", tier)
+		}
+		if err := bundle.Validate(); err != nil {
+			return fail("rankRewards %s: %v", tier, err)
+		}
 	}
 	switch {
 	case c.DivisionLp < 1:
@@ -143,13 +156,42 @@ type Modes struct {
 }
 
 type Snapshot struct {
-	Schema             int   `json:"schema"`
-	LeaderboardTopSize int   `json:"leaderboardTopSize"`
-	Modes              Modes `json:"modes"`
+	Schema             int                 `json:"schema"`
+	LeaderboardTopSize int                 `json:"leaderboardTopSize"`
+	LeaderboardRegions map[string][]string `json:"leaderboardRegions,omitempty"`
+	RankRewardCoins    map[string]int64    `json:"rankRewardCoins"`
+	EmblemBrackets     []int               `json:"emblemBrackets"`
+	Abuse              Abuse               `json:"abuse"`
+	Modes              Modes               `json:"modes"`
+}
+
+var regionID = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+func (s *Snapshot) Region(country string) (string, bool) {
+	for region, countries := range s.LeaderboardRegions {
+		for _, c := range countries {
+			if c == country {
+				return region, true
+			}
+		}
+	}
+	return "", false
+}
+
+func (s *Snapshot) KnownRegion(region string) bool {
+	_, ok := s.LeaderboardRegions[region]
+	return ok
 }
 
 func Default() *Snapshot {
-	return &Snapshot{Schema: Schema, LeaderboardTopSize: 200, Modes: Modes{OneVsOne: DefaultConfig(), TwoVsTwo: DefaultConfig()}}
+	return &Snapshot{
+		Schema:             Schema,
+		LeaderboardTopSize: 200,
+		RankRewardCoins:    map[string]int64{"Iron": 100, "Bronze": 200, "Silver": 400, "Gold": 700, "Platinum": 1000, "Emerald": 1500, "Diamond": 2000, TierMaster: 3000, TierGrandmaster: 4000, TierChallenger: 5000},
+		EmblemBrackets:     []int{1, 50, 100, 200},
+		Abuse:              DefaultAbuse(),
+		Modes:              Modes{OneVsOne: DefaultConfig(), TwoVsTwo: DefaultConfig()},
+	}
 }
 
 func (s *Snapshot) Mode(mode rules.Mode) (Config, bool) {
@@ -168,6 +210,34 @@ func (s *Snapshot) Validate() error {
 	}
 	if s.LeaderboardTopSize < 1 {
 		return fmt.Errorf("%w: leaderboardTopSize must be at least 1", ErrInvalidConfig)
+	}
+	seen := map[string]string{}
+	for region, countries := range s.LeaderboardRegions {
+		if !regionID.MatchString(region) {
+			return fmt.Errorf("%w: region id %q", ErrInvalidConfig, region)
+		}
+		for _, country := range countries {
+			if len(country) != 2 || strings.ToUpper(country) != country {
+				return fmt.Errorf("%w: country %q of region %s", ErrInvalidConfig, country, region)
+			}
+			if other, dup := seen[country]; dup && other != region {
+				return fmt.Errorf("%w: %s belongs to %s and %s", ErrInvalidConfig, country, other, region)
+			}
+			seen[country] = region
+		}
+	}
+	for tier, coins := range s.RankRewardCoins {
+		if !KnownTier(tier) || coins < 0 {
+			return fmt.Errorf("%w: rankRewardCoins %s = %d", ErrInvalidConfig, tier, coins)
+		}
+	}
+	for i, bracket := range s.EmblemBrackets {
+		if bracket < 1 || (i > 0 && bracket <= s.EmblemBrackets[i-1]) {
+			return fmt.Errorf("%w: emblemBrackets must be increasing positions", ErrInvalidConfig)
+		}
+	}
+	if err := s.Abuse.Validate(); err != nil {
+		return err
 	}
 	if err := s.Modes.OneVsOne.Validate(); err != nil {
 		return fmt.Errorf("1v1: %w", err)

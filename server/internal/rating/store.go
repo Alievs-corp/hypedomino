@@ -52,6 +52,7 @@ type Rating struct {
 	Placed           bool      `json:"placed"`
 	Rank             Rank      `json:"rank"`
 	Season           string    `json:"season"`
+	Country          string    `json:"country,omitempty"`
 	Reset            *Rank     `json:"reset,omitempty"`
 	Tier             string    `json:"tier"`
 	LPAt             time.Time `json:"lp_at"`
@@ -70,6 +71,7 @@ type Recalculated struct {
 
 type Entry struct {
 	Account string    `json:"account_id"`
+	Country string    `json:"country,omitempty"`
 	Rank    Rank      `json:"rank"`
 	Tier    string    `json:"tier"`
 	Wins    int       `json:"wins"`
@@ -85,11 +87,25 @@ type Store struct {
 	pool    *pgxpool.Pool
 	configs *snapshot.Watcher[*Snapshot]
 	boards  Boards
+	rewards Rewarder
 	logger  *slog.Logger
 }
 
 func (s *Store) SetBoards(boards Boards, logger *slog.Logger) {
 	s.boards, s.logger = boards, logger
+}
+
+func (s *Store) Region(country string) (string, bool) {
+	current, _, ok := s.configs.Current()
+	if !ok {
+		return "", false
+	}
+	return current.Region(country)
+}
+
+func (s *Store) KnownRegion(region string) bool {
+	current, _, ok := s.configs.Current()
+	return ok && current.KnownRegion(region)
 }
 
 func (s *Store) TopSize() int {
@@ -101,7 +117,7 @@ func (s *Store) TopSize() int {
 }
 
 func (r Rating) entry() Entry {
-	return Entry{Account: r.Account, Rank: r.Rank, Tier: r.Tier, Wins: r.Wins, LPAt: r.LPAt, Version: r.version}
+	return Entry{Account: r.Account, Country: r.Country, Rank: r.Rank, Tier: r.Tier, Wins: r.Wins, LPAt: r.LPAt, Version: r.version}
 }
 
 func (s *Store) publish(ctx context.Context, season string, mode rules.Mode, entries []Entry) {
@@ -221,10 +237,13 @@ func (s *Store) Apply(ctx context.Context, r Result) (Applied, error) {
 		return Applied{}, err
 	}
 	s.publish(ctx, season.ID, r.Mode, entries)
+	if err := s.inspect(ctx, r); err != nil && s.logger != nil {
+		s.logger.Error("rating abuse inspection failed", "match", r.MatchID, "error", err)
+	}
 	return Applied{ConfigVersion: version, Changes: changes, Late: late, Season: season.ID}, nil
 }
 
-const columns = `account_id, mode, mmr, matches, wins, placement_played, placement_penalty, placed, rank_index, lp, apex_tier, lp_at, season_id, reset_index, updated_at`
+const columns = `account_id, mode, mmr, matches, wins, placement_played, placement_penalty, placed, rank_index, lp, apex_tier, lp_at, season_id, reset_index, updated_at, coalesce(board_country, '')`
 
 func (s *Store) lock(ctx context.Context, tx pgx.Tx, r Result, config Config, season Season) (map[string]Rating, error) {
 	accounts := make([]string, 0, 4)
@@ -237,6 +256,9 @@ func (s *Store) lock(ctx context.Context, tx pgx.Tx, r Result, config Config, se
 	ratings := make(map[string]Rating, len(accounts))
 	for _, account := range accounts {
 		if _, err := tx.Exec(ctx, `insert into ratings (account_id, mode, mmr, season_id, updated_at) values ($1, $2, $3, $4, $5) on conflict (account_id, mode) do nothing`, account, r.Mode.String(), config.InitialMmr, season.ID, r.At); err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(ctx, `update ratings set board_country = (select country from accounts where id = $1) where account_id = $1 and mode = $2 and board_country is null`, account, r.Mode.String()); err != nil {
 			return nil, err
 		}
 		rating, err := scan(tx.QueryRow(ctx, `select `+columns+` from ratings where account_id = $1 and mode = $2 for update`, account, r.Mode.String()))
@@ -308,7 +330,7 @@ func scan(row pgx.Row) (Rating, error) {
 	var r Rating
 	var at *time.Time
 	var updated time.Time
-	if err := row.Scan(&r.Account, &r.Mode, &r.MMR, &r.Matches, &r.Wins, &r.PlacementPlayed, &r.PlacementPenalty, &r.Placed, &r.Rank.Index, &r.Rank.LP, &r.apexTier, &at, &r.season, &r.resetIndex, &updated); err != nil {
+	if err := row.Scan(&r.Account, &r.Mode, &r.MMR, &r.Matches, &r.Wins, &r.PlacementPlayed, &r.PlacementPenalty, &r.Placed, &r.Rank.Index, &r.Rank.LP, &r.apexTier, &at, &r.season, &r.resetIndex, &updated, &r.Country); err != nil {
 		return Rating{}, err
 	}
 	r.version = updated.UnixMilli()

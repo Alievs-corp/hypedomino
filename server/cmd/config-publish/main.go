@@ -9,12 +9,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -71,6 +73,9 @@ func run(ctx context.Context, url, domain, file string, out io.Writer) error {
 
 func validate(domain string, raw []byte) error {
 	switch domain {
+	case pass.Domain:
+		_, err := pass.Parse(raw)
+		return err
 	case shop.Domain:
 		_, err := shop.Parse(raw, shop.DefaultConfig())
 		return err
@@ -94,6 +99,8 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 	switch domain {
 	case cosmetics.Domain:
 		return followsPublished(ctx, pool, raw)
+	case pass.Domain:
+		return passFollowsPublished(ctx, pool, raw)
 	case gamestrings.Domain:
 		localization, err := gamestrings.ParseLocalization(raw)
 		if err != nil {
@@ -122,4 +129,23 @@ func followsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error
 		return err
 	}
 	return cosmetics.CheckSuccessor(previous, next)
+}
+
+func passFollowsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	_, published, err := snapshot.Latest(ctx, pool, pass.Domain)
+	if errors.Is(err, snapshot.ErrNone) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	previous, err := pass.Parse(published)
+	if err != nil {
+		return err
+	}
+	next, err := pass.Parse(raw)
+	if err != nil {
+		return err
+	}
+	return pass.CheckFrozen(previous, next, time.Now())
 }

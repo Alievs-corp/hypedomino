@@ -12,7 +12,7 @@ Related: `docs/rules.md` R-43 to R-55 (match result, timer, AFK, leavers, ranked
 - A match cancelled by the server (server fault, region outage) changes nothing for anyone.
 - A match counts toward the season in which it started.
 - Applying a match result is idempotent by match id: replaying the same match end never changes MMR or LP twice.
-- Matchmaking quality (MMR window, wait expansion) is #48 and #118. Abuse detection (win-trading, boosting) is #121. Season rewards are #120.
+- Matchmaking quality (MMR window, wait expansion) is #48 and #118. Abuse detection (win-trading, boosting) is section 11 (#121). Season rewards are #120.
 
 ## 2. Terms
 
@@ -172,7 +172,8 @@ A ranked match has no accept or decline step (R-53), so there is no dodge and no
 - Section 3 structure, `PlacementMatches`, the reset table and the apex slot rules are frozen while a season runs. MMR and LP coefficients (section 4) can change mid-season and apply to matches that start after the publish; each match records the config version it used (ADR 0006).
 - Season end runs once per mode and is idempotent (#115): final apex recalculation, leaderboard snapshot, final ranks stored for rewards (#120), reset ranks computed for the next season.
 
-- Implemented in `server/internal/rating` (#115): seasons are rows of `ranked_seasons` (`cmd/ranked-season` until #143), contiguous by construction; the end runs once per mode when the end time has passed (apex recalculation, `season_results` snapshot in the order of 8.1, reset ranks, the next season created with `SeasonLengthMonths` if none exists), a result of a closed season changes MMR only, and `state` is derived from the times and the per-mode close marks. Rank rewards and emblems from the snapshot are #120; the Redis leaderboards are #116.
+- Implemented in `server/internal/rating` (#115): seasons are rows of `ranked_seasons` (`cmd/ranked-season` until #143), contiguous by construction; the end runs once per mode when the end time has passed (apex recalculation, `season_results` snapshot in the order of 8.1, reset ranks, the next season created with `SeasonLengthMonths` if none exists), a result of a closed season changes MMR only, and `state` is derived from the times and the per-mode close marks. The Redis leaderboards are #116.
+- Season rewards (#120): once a mode is closed, `rating.Store.DistributeRewards` walks the `season_results` snapshot in position order and, per player in its own transaction, claims a `season_rewards` row (the primary key makes the grant happen once), grants `RankRewardCoins` of the final tier plus the `RankRewards` bundle of that tier through the reward engine (key `rank:<seasonId>:<mode>`, source `rank_reward` with the bundle id), and awards the emblems of 8.3; the mode is then marked rewarded and a lost mark only replays the skip. A season created with `-no-rewards` (beta, soft launch) is marked rewarded without a grant. `GET /ranked/rewards` is the player's mailbox (`unseen` count, `POST /ranked/rewards/seen` clears it) and `GET /ranked/emblems` lists the emblems.
 
 ### 7.2 Soft reset
 
@@ -259,12 +260,12 @@ Every local leaderboard uses the same order. Apex recalculation (section 3.2) us
 | Region | Players whose leaderboard country belongs to that region. `LeaderboardRegions` maps each region to its countries; a country belongs to at most one region. |
 | Friends | The global order filtered to the viewer and their friends (social epic) |
 
-- A player's leaderboard country is their account country (#117: profile, IP fallback) at their first ranked match of the season in the mode. It stays fixed for that season and mode, so moving country cannot be used to top a smaller board. Players without a country appear on the global and friends boards only.
+- A player's leaderboard country is their account country (#117: profile, IP fallback) at their first ranked match of the season in the mode played while the account has a country. It stays fixed for that season and mode, so moving country cannot be used to top a smaller board. Players without a country appear on the global and friends boards only.
 - Each board shows the top `LeaderboardTopSize` (default 200) and the viewer's own position and neighbours, whatever their position.
 - The season-end snapshot freezes every board of the season. Past seasons stay readable.
 - Every row of every board opens that player's public profile (`docs/privacy.md` section 5): nickname, equipped cosmetics, rank and the emblem showcase (8.4). A player can browse the global board and any country or region board, not only their own.
 
-- Implemented in `server/internal/leaderboard` (#116): the global board per season and mode as a Redis sorted set in the order of 8.1 (score: rank index, apex tier, LP; member: time the LP was set, wins, account id), updated by the rating store on every change and rebuilt from PostgreSQL when missing; `GET /leaderboard/{mode}` serves the top `LeaderboardTopSize` and the viewer's position with neighbours. Country, region and friends boards are #117.
+- Implemented in `server/internal/leaderboard` (#116): the global board per season and mode as a Redis sorted set in the order of 8.1 (score: rank index, apex tier, LP; member: time the LP was set, wins, account id), updated by the rating store on every change and rebuilt from PostgreSQL when missing; `GET /leaderboard/{mode}` serves the top `LeaderboardTopSize` and the viewer's position with neighbours. Country and region boards (#117): the same sets per board (`country:<CC>`, `region:<id>` from `LeaderboardRegions`) fed by the same update and rebuild paths; the leaderboard country is frozen in `ratings.board_country` at the first ranked result played while the account has a country, snapshotted into `season_results` and cleared for the next season; the account country is set from the profile (`PUT /profile/country`, one change per `CountryChangeCooldown`, default 180 days) or adopted from the connection country at sign-in. Friends boards are #153.
 
 ### 8.3 Leaderboard emblems
 
@@ -275,6 +276,7 @@ Owner decision (2026-10-26). A season-end finish near the top of a board earns a
 - An emblem records mode, season, board (global, country code or region id) and bracket. It is awarded once by the idempotent season-end job (#115) from the frozen snapshot, never from a live position, and is kept for the account's lifetime.
 - Shadowbanned accounts are not on public boards (`docs/anti-cheat.md` section 3), so they earn no emblem. An emblem awarded through a position later found to be cheated is revoked by an admin with an audited reason (#209).
 - Emblem art is one static asset per bracket and board scope (global, local), with the season and the country or region shown as text, not baked into art (#178).
+- Implemented in `server/internal/rating` (#120): positions on the global, country and region boards come from the frozen `season_results` order (country and region positions are counted inside the snapshot), the best bracket of `EmblemBrackets` per board is written to `leaderboard_emblems` by the season reward run, once per account, mode, season and board; `revoked_at` and `revoke_reason` are reserved for the admin revocation of #209.
 
 ### 8.4 Profile emblem showcase
 
@@ -290,6 +292,16 @@ Owner decision on #8 (2026-10-26).
 - A ranked match starts only when every seat is held by a real player. The ranked queue never fills a seat with a bot, however long the wait.
 - The server bot takes a seat in a ranked match only to replace a player during the match (R-50 to R-52). Its MMR and LP handling is section 4.5.
 - Bot fill after a long wait (#48, config) applies to casual queues only (R-56). Nothing in this document is read or written by a casual match.
+
+## 11. Rating abuse
+
+Rules of #121. Win trading and boosting work through the same pair of accounts, so every rule looks at pairs.
+
+- Repeat limit: two accounts that met in `RepeatPairMax` (default 3) ranked matches of a mode within `RepeatPairWindowHours` (default 24) are not matched again in that mode until the window has passed, whatever their MMR. The queue entry carries the accounts to avoid (`docs/matchmaking.md` section 2).
+- Pair signals: after every applied ranked result, each opponent pair of the match is counted over `PairWindowHours` (default 168). From `PairMinMatches` (default 6) matches a `pair_frequency` signal is recorded for both accounts; when one side won at least `FeedingSharePercent` (default 80) of them it is `feeding` (the loser feeds, the winner is boosted); when both sides won at least `WinTradeSharePercent` (default 35) it is `win_trade`. A signal carries the counterpart, the matches, the wins, the offenses (leaves and AFK of either side, the throw pattern that replaces a dodge, section 6) and the window, is updated as the counts grow and is published on the `rating_signals` outbox topic for the risk score (`docs/anti-cheat.md` 5, `CollusionWeight`).
+- A signal never changes a rating by itself: the response is the risk score, review and an admin's reversal (`docs/anti-cheat.md` V-9, #209).
+
+- Implemented in `server/internal/rating` (#121): `abuse` keys of the `rating` config, `Store.Avoid` and `Store.Queue` for the queue, `rating_signals` table, `Store.Signals` per account and the outbox rows; the admin analysis screen reads `rating_signals` (admin epic).
 
 ## 10. Config
 
@@ -325,6 +337,11 @@ Every key has one value per mode (1v1, 2v2); both start at the same default. Str
 | `SeasonResetTable` | generated, section 7.3 | 7.2 |
 | `LeaderboardTopSize` | 200 | 8.2 |
 | `LeaderboardRegions` | set by the owner before launch | 8.2 |
+| `RankRewards` | none; per final tier a reward bundle | 7.1, `docs/economy.md` 2.6 |
+| `RepeatPairWindowHours`, `RepeatPairMax` | 24, 3 | 11 |
+| `PairWindowHours`, `PairMinMatches` | 168, 6 | 11 |
+| `FeedingSharePercent`, `WinTradeSharePercent` | 80, 35 | 11 |
+| `CountryChangeCooldown` | 180 days | 8.2 |
 | `EmblemBrackets` | 1, 50, 100, 200 | 8.3 |
 | `ProfileEmblemSlots` | 3 | 8.4 |
 
