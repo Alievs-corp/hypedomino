@@ -91,4 +91,21 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 	if state, err := passes.Premium(ctx, ayla, now); err != nil || state.Premium {
 		t.Fatalf("premium after the refund %+v, %v", state, err)
 	}
+	reversal := purchase.Notice{ID: "rr-pass", Kind: purchase.KindReversal, TransactionID: "tok-pass"}
+	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, reversal, now.Add(2*time.Hour)); err != nil || !handled {
+		t.Fatalf("reversal %v %v", handled, err)
+	}
+	if state, err := passes.Premium(ctx, ayla, now); err != nil || !state.Premium || state.Level != 4 {
+		t.Fatalf("premium after the reversal %+v, %v", state, err)
+	}
+	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 40+40 {
+		t.Fatalf("balance after the reversal %d, want the premium levels back", balance)
+	}
+	second := purchase.Notice{ID: "r-pass-2", Kind: purchase.KindRefund, TransactionID: "tok-pass"}
+	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, second, now.Add(3*time.Hour)); err != nil || !handled {
+		t.Fatalf("second refund %v %v", handled, err)
+	}
+	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 40 {
+		t.Fatalf("balance after the second refund %d, want 40", balance)
+	}
 }

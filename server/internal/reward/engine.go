@@ -343,3 +343,36 @@ func (e *Engine) RevokeIn(ctx context.Context, tx pgx.Tx, account, key string, r
 	report.RevokedAt, report.RevokeKey = now, revokeKey
 	return report, nil
 }
+
+func (e *Engine) ReinstateIn(ctx context.Context, tx pgx.Tx, account, key string, reason wallet.Reason, reinstateKey string, now time.Time) (Report, error) {
+	report, err := load(ctx, tx, account, key)
+	if err != nil || !report.Revoked() {
+		return report, err
+	}
+	coins := report.Coins
+	for _, compensation := range report.Duplicates {
+		coins += compensation
+	}
+	if coins > 0 {
+		if _, err := e.wallet.ApplyIn(ctx, tx, wallet.Entry{Account: account, Amount: coins, Reason: reason, Source: wallet.Source{Type: report.Source.Type, Ref: report.Source.Ref}, Key: reinstateKey, ConfigVersion: report.ConfigVersion}, now); err != nil {
+			return Report{}, err
+		}
+	}
+	for _, id := range report.Cosmetics {
+		if _, err := e.inventory.GrantIn(ctx, tx, account, id, report.Source, now); err != nil {
+			return Report{}, err
+		}
+	}
+	if e.medals != nil {
+		for _, id := range report.Medals {
+			if _, err := e.medals.GrantIn(ctx, tx, account, id, report.Source, now); err != nil {
+				return Report{}, err
+			}
+		}
+	}
+	if _, err := tx.Exec(ctx, `update reward_grants set revoked_at = null, revoke_key = null where id = $1`, report.ID); err != nil {
+		return Report{}, err
+	}
+	report.RevokedAt, report.RevokeKey = time.Time{}, ""
+	return report, nil
+}

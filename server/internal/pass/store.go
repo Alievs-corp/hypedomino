@@ -29,6 +29,7 @@ var (
 type Rewarder interface {
 	ApplyIn(ctx context.Context, tx pgx.Tx, grant reward.Grant, now time.Time) (reward.Report, error)
 	RevokeIn(ctx context.Context, tx pgx.Tx, account, key string, reason wallet.Reason, revokeKey string, now time.Time) (reward.Report, error)
+	ReinstateIn(ctx context.Context, tx pgx.Tx, account, key string, reason wallet.Reason, reinstateKey string, now time.Time) (reward.Report, error)
 }
 
 type Progress struct {
@@ -138,7 +139,12 @@ func (s *Store) grantLevels(ctx context.Context, tx pgx.Tx, account string, seas
 			if !ok {
 				continue
 			}
-			report, err := s.rewards.ApplyIn(ctx, tx, levelGrant(account, season.ID, track, level, bundle, version), now)
+			grant := levelGrant(account, season.ID, track, level, bundle, version)
+			report, err := s.rewards.ApplyIn(ctx, tx, grant, now)
+			if err == nil && report.Repeated && report.Revoked() {
+				report, err = s.rewards.ReinstateIn(ctx, tx, account, grant.Key, wallet.RefundReversal, grant.Key+":reinstate:"+report.RevokeKey, now)
+				report.Repeated = false
+			}
 			if err != nil {
 				return granted, fmt.Errorf("%s %s level %d: %w", season.ID, track, level, err)
 			}
