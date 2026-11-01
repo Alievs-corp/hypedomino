@@ -93,7 +93,21 @@ Today no code on `main` reads an environment variable. The server variables belo
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
-### 2.2 CI
+### 2.2 Admin API runtime
+
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, and `HD_REDIS_URL` for its sign-in nonces when more than one instance runs. Each environment has its own values (E-1).
+
+| Name | Required | Service | Default | Example placeholder | Secret | Source |
+|---|---|---|---|---|---|---|
+| `HD_ADMIN_LISTEN_ADDR` | No | admin-api | `:8090` | `:8090` | No | from #134 |
+| `HD_ADMIN_ENVIRONMENT` | Yes | admin-api | none | `staging` | No | from #134 |
+| `HD_ADMIN_GOOGLE_DOMAIN` | Yes | admin-api | none | `example.com` | No | from #134 |
+| `HD_ADMIN_GOOGLE_AUDIENCES` | Yes | admin-api | none | `<admin-web-client-id>.apps.googleusercontent.com` | No | from #134 |
+| `HD_ADMIN_SESSION_IDLE` | No | admin-api | `30m` (`AdminSessionIdleMinutes`) | `30m` | No | from #134 |
+| `HD_ADMIN_SESSION_MAX` | No | admin-api | `12h` (`AdminSessionMaxHours`) | `12h` | No | from #134 |
+| `HD_ADMIN_STEP_UP` | No | admin-api | `10m` (`AdminStepUpMinutes`) | `10m` | No | from #134 |
+
+### 2.3 CI
 
 | Name | Required | Service | Example placeholder | Secret | Stored as |
 |---|---|---|---|---|---|
@@ -101,7 +115,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `UNITY_EMAIL` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
 | `UNITY_PASSWORD` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
 
-### 2.3 Not read yet
+### 2.4 Not read yet
 
 The admin panel and the client read no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 

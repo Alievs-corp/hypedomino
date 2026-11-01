@@ -576,6 +576,41 @@ Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6
 
 The keys of section 11 are deployment config, changed by pull request, not in the panel: an admin who could edit them could weaken the controls that limit admins.
 
+### 9.1 Admin API
+
+`server/cmd/admin-api` is the admin API (`server/internal/adminapi`), a separate binary on its own host. It reads the environment of `docs/environments.md` 2.2. Every route answers JSON with `Cache-Control: no-store`, and every route except `/admin/nonce` and `/admin/session` takes the session token as `Authorization: Bearer`.
+
+| Route | Who | Does |
+|---|---|---|
+| `POST /admin/nonce` | anyone | A single-use nonce for the Google sign-in |
+| `POST /admin/session` `{"id_token","nonce"}` | anyone | Sign-in: answers `{"token","session","account"}` |
+| `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
+| `DELETE /admin/session` | signed in | Sign-out: revokes the session |
+| `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `GET /admin/accounts` | V on admin accounts | Every account |
+| `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
+| `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts | Replaces its roles |
+| `POST /admin/accounts/{id}/disable` | R on admin accounts | Disables it |
+| `GET /admin/strings` | V on game strings | Every key with its values per language, and the missing-value report per language (`coverage`: keys, approved, percent, missing keys) |
+| `PUT /admin/strings/{key}` `{"note","max_length","placeholders","deprecated"}` | C for a new key, E for an existing one, R to deprecate it | Saves the key |
+| `PUT /admin/strings/{key}/values/{language}` `{"text","status"}` | E for `draft`, E and P for `approved` | Saves one value |
+| `GET /admin/strings/export?language=&format=` | V on game strings | The translator file of `docs/localization.md` 2.1, `csv` or `json` |
+| `POST /admin/strings/import?language=&format=` | E on game strings | Imports a translator file of at most 4 MiB |
+| `GET /admin/strings/active` | V on game strings | The active bundle version per language and the fallback chains, with their `config_version` (0 before the first publish) |
+| `PUT /admin/strings/active` `{"bundles","fallback_chains"}` | P on game strings; a rollback also S: rollback on snapshots | Publishes the next `localization` snapshot (`docs/localization.md` 2.2) |
+| `GET /admin/strings/bundles` | V on game strings | Every published bundle version, newest first per language |
+| `POST /admin/strings/bundles/{language}` | P on game strings | Publishes the language as its next bundle version |
+
+- **Sign-in.** The Google ID token must have a trusted audience and the nonce, a verified email, the company Workspace as hosted domain (`hd`) and an email in that domain. The email must belong to an active account (5.18). Unknown and disabled accounts get the same answer, `account_refused`.
+- **Session.** The token is random and only its SHA-256 is stored (`admin_sessions`, migration `00013_admin_sessions`). A request is refused with `session_rejected` when the token is unknown or revoked, when the last request was `AdminSessionIdleMinutes` ago or more, when the session is `AdminSessionMaxHours` old, or when the account has been disabled since. Each answer gives `idle_until`, `expires_at` and `step_up_until`, which is the last sign-in plus `AdminStepUpMinutes`.
+- **Roles.** Every route checks the matrix of 2.3 with the roles the account has at that moment, so a role change counts from the next request. A missing action gets 403 `forbidden`.
+- **Audit.** A change and its audit entry are written in one transaction, so an entry exists exactly when the change does. The entry carries the actor with their roles, the environment of `HD_ADMIN_ENVIRONMENT`, the session id, the user agent and the source IP. Before and after hold `email`, `display_name`, `roles` and `state`. A write may carry `reason` and `ref`. The source IP is the last address of the last `X-Forwarded-For` header, else the connection address. The admin web server therefore sets that header to the browser address it sees.
+- **Game strings.** Approving a value is the review step of 5.15, so it needs P besides E: `content` and `super_admin` approve, `live_ops` saves drafts. The audit object is the key: `create`, `edit` and `retire` hold the key fields, and a value change is `edit`, or `approve` for an approved value, with language, text and status. An import writes one `edit` entry per changed key with reason `import`. A publish is `publish` on `bundle:<language>` with the version and hash. A blocked import or publish answers 422 `blocked` with `problems` (`key`, `error`) and stores nothing.
+- **Active versions.** The request is checked like `cmd/config-publish`: every named version is a published bundle and the `en` bundle has every live key. A new snapshot is published under a lock on the domain, so its audit `before` is the snapshot it replaces. It is a `rollback` when a language gets a lower version than the active one or loses its bundle, and a `publish` otherwise. A rollback is an `S` action: it needs rollback on snapshots (`super_admin`, or `content` for this domain, which it owns), a reason and a sign-in no older than `AdminStepUpMinutes`. The audit object is `snapshots` `localization`, with both snapshots and the new `configVersion`.
+- **Account guards.** An admin cannot change or disable their own account (`own_account`). Creating a `super_admin` or adding the role is refused with `approval_required` until the section 8 approval runs through the API.
+- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`; 404 `not_found`; 409 `email_taken`, `approval_required`, `own_account`; 413 `too_large`; 422 `blocked`; 503 `provider_unavailable`.
+
 ## 10. Screens and navigation
 
 The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. Navigation shows only groups and screens the account's roles allow.

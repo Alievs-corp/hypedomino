@@ -40,12 +40,21 @@ type Account struct {
 	DisabledAt  time.Time
 }
 
+type querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
 type Store struct {
-	pool *pgxpool.Pool
+	db querier
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
-	return &Store{pool: pool}
+	return &Store{db: pool}
+}
+
+func (s *Store) In(tx pgx.Tx) *Store {
+	return &Store{db: tx}
 }
 
 func NormalizeEmail(email string) string {
@@ -68,13 +77,16 @@ func uniqueRoles(roles []rbac.Role) []rbac.Role {
 	return slices.Compact(sorted)
 }
 
+const invalidTextRepresentation = "22P02"
+
 const columns = `id, email, display_name, roles, state, created_at, last_login_at, disabled_at`
 
 func scan(row pgx.Row) (Account, error) {
 	var a Account
 	var lastLogin, disabled *time.Time
 	if err := row.Scan(&a.ID, &a.Email, &a.DisplayName, &a.Roles, &a.State, &a.CreatedAt, &lastLogin, &disabled); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		var pgErr *pgconn.PgError
+		if errors.Is(err, pgx.ErrNoRows) || errors.As(err, &pgErr) && pgErr.Code == invalidTextRepresentation {
 			return Account{}, ErrNotFound
 		}
 		return Account{}, err
@@ -106,7 +118,7 @@ func (s *Store) Create(ctx context.Context, email, displayName string, roles []r
 	if err := validRoles(roles); err != nil {
 		return Account{}, err
 	}
-	account, err := scan(s.pool.QueryRow(ctx, `insert into admin_accounts (email, display_name, roles, created_at)
+	account, err := scan(s.db.QueryRow(ctx, `insert into admin_accounts (email, display_name, roles, created_at)
 		values ($1, $2, $3, $4) returning `+columns, email, displayName, uniqueRoles(roles), now.UTC()))
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -116,11 +128,27 @@ func (s *Store) Create(ctx context.Context, email, displayName string, roles []r
 }
 
 func (s *Store) ByEmail(ctx context.Context, email string) (Account, error) {
-	return scan(s.pool.QueryRow(ctx, `select `+columns+` from admin_accounts where email = $1`, NormalizeEmail(email)))
+	return scan(s.db.QueryRow(ctx, `select `+columns+` from admin_accounts where email = $1`, NormalizeEmail(email)))
+}
+
+func (s *Store) ByID(ctx context.Context, id string) (Account, error) {
+	return scan(s.db.QueryRow(ctx, `select `+columns+` from admin_accounts where id = $1`, id))
+}
+
+func (s *Store) Lock(ctx context.Context, id string) (Account, error) {
+	return scan(s.db.QueryRow(ctx, `select `+columns+` from admin_accounts where id = $1 for update`, id))
+}
+
+func (s *Store) List(ctx context.Context) ([]Account, error) {
+	rows, err := s.db.Query(ctx, `select `+columns+` from admin_accounts order by email`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Account, error) { return scan(row) })
 }
 
 func (s *Store) SignIn(ctx context.Context, email string, now time.Time) (Account, error) {
-	account, err := scan(s.pool.QueryRow(ctx, `update admin_accounts set last_login_at = $2
+	account, err := scan(s.db.QueryRow(ctx, `update admin_accounts set last_login_at = $2
 		where email = $1 and state = 'active' returning `+columns, NormalizeEmail(email), now.UTC()))
 	if !errors.Is(err, ErrNotFound) {
 		return account, err
@@ -135,16 +163,16 @@ func (s *Store) SetRoles(ctx context.Context, id string, roles []rbac.Role) (Acc
 	if err := validRoles(roles); err != nil {
 		return Account{}, err
 	}
-	return scan(s.pool.QueryRow(ctx, `update admin_accounts set roles = $2 where id = $1 returning `+columns, id, uniqueRoles(roles)))
+	return scan(s.db.QueryRow(ctx, `update admin_accounts set roles = $2 where id = $1 returning `+columns, id, uniqueRoles(roles)))
 }
 
 func (s *Store) Disable(ctx context.Context, id string, now time.Time) (Account, error) {
-	return scan(s.pool.QueryRow(ctx, `update admin_accounts set state = 'disabled', disabled_at = coalesce(disabled_at, $2)
+	return scan(s.db.QueryRow(ctx, `update admin_accounts set state = 'disabled', disabled_at = coalesce(disabled_at, $2)
 		where id = $1 returning `+columns, id, now.UTC()))
 }
 
 func (s *Store) DisableInactive(ctx context.Context, now time.Time, inactiveFor time.Duration) ([]Account, error) {
-	rows, err := s.pool.Query(ctx, `update admin_accounts set state = 'disabled', disabled_at = $1
+	rows, err := s.db.Query(ctx, `update admin_accounts set state = 'disabled', disabled_at = $1
 		where state = 'active' and coalesce(last_login_at, created_at) < $2
 		returning `+columns, now.UTC(), now.Add(-inactiveFor).UTC())
 	if err != nil {

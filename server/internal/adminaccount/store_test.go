@@ -38,6 +38,15 @@ func TestAnAccountIsCreatedWithANormalizedEmailAndSortedRoles(t *testing.T) {
 	if err != nil || !reflect.DeepEqual(found, want) {
 		t.Fatalf("by email %+v %v", found, err)
 	}
+	byID, err := store.ByID(ctx, created.ID)
+	if err != nil || !reflect.DeepEqual(byID, want) {
+		t.Fatalf("by id %+v %v", byID, err)
+	}
+	for _, id := range []string{"00000000-0000-0000-0000-000000000000", "not-an-id"} {
+		if _, err := store.ByID(ctx, id); !errors.Is(err, adminaccount.ErrNotFound) {
+			t.Fatalf("by id %q: %v", id, err)
+		}
+	}
 	if _, err := store.Create(ctx, "ayla@EXAMPLE.com", "Other", []rbac.Role{rbac.Analyst}, start); !errors.Is(err, adminaccount.ErrTaken) {
 		t.Fatalf("second account on the same email: %v", err)
 	}
