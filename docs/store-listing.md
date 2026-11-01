@@ -14,7 +14,7 @@ Owned elsewhere and only referenced here: game rules (`docs/rules.md`), economy 
 | Listing languages | `az`, `en`, `tr`, `ru`; the Russian copy serves Russian-speaking players outside Russia | `docs/localization.md` 1 |
 | Accounts | 13 and older only; neutral age gate | `docs/privacy.md` 7.3, 7.4 |
 | Content rating target | IARC lowest tier, PEGI 3, App Store 4+ | `docs/localization.md` 7 |
-| Payments | Store billing only; coin packs, pass products and offers; no paid random items; coins have no cash value | `docs/economy.md` EP-3, EP-5, EP-7, section 7 |
+| Payments | Store billing only; crystal packs, pass products and offers; no paid random items (chests are bought with earned coins only); coins and crystals have no cash value | `docs/economy.md` EP-3, EP-5, EP-7, section 7 |
 | Communication | Emoji and preset quick messages only; no free text chat, no voice | `docs/localization.md` 5.7, #149 |
 | Ads and tracking | None; no advertising id | `docs/privacy.md` P-3 |
 | Support URL | The FAQ web pages | `docs/launch-runbook.md` 9.4 |
@@ -102,13 +102,13 @@ Placeholders in angle brackets are replaced before submission (ST-1, ST-7, ST-8)
 | CL-13 | Nothing for sale changes rank, tiles or rules; no pay-to-win | `docs/economy.md` EP-2 |
 | CL-14 | A bot plays for a player who drops out until they return; the match goes on | R-51, R-52 |
 | CL-15 | Cosmetic types: characters, avatars, frames, tables, emoji, lobby actions | `docs/cosmetics.md` 2 |
-| CL-16 | Every shop offer shows exactly what it grants | `docs/economy.md` EP-3 |
+| CL-16 | Every shop offer shows exactly what it grants; a chest shows its pool, odds and pity before purchase | `docs/economy.md` EP-3 |
 | CL-17 | Emoji and quick messages in a match; friends, online presence, invites | `docs/localization.md` 5.7, #151, #152, #153 |
 | CL-18 | Coins are earned by playing; daily and weekly missions; a season pass; medals | `docs/economy.md` 2, `docs/pass-missions-medals.md` 1 to 5 |
 | CL-19 | No ads | `docs/privacy.md` P-3 |
 | CL-20 | Four languages | `docs/localization.md` 1 |
 | CL-21 | Accounts 13 and older | `docs/privacy.md` 7.3 |
-| CL-22 | Optional purchases: coin packs, the premium pass, offers; coins have no cash value and cannot be withdrawn | `docs/economy.md` EP-5, 7.1 to 7.3 |
+| CL-22 | Optional purchases: crystal packs, the premium pass, offers; coins and crystals have no cash value and cannot be withdrawn | `docs/economy.md` EP-5, 7.1 to 7.3 |
 | CL-23 | The game's help explains the special cases | `docs/launch-runbook.md` 9.4 (FAQ "How to play") |
 
 Claims deliberately left out until they are measured or built: frame rate and device performance (`docs/performance.md` gates are unmeasured), offline or practice play (none exists), any tournament or event format (#146 has not defined one).
@@ -223,8 +223,8 @@ The answers follow from the documents named per row. The questionnaire wording c
 | AR-6 | Alcohol, tobacco, drugs | No | `docs/localization.md` 6 |
 | AR-7 | Simulated gambling | No. Dominoes scoring is not a wager; no casino presentation | `docs/economy.md` EP-4, `docs/localization.md` 6 |
 | AR-8 | Real-money gambling, or winning money or items of real value | No. No entry fees, no stakes, no transfers; coins have no cash value and cannot be withdrawn | `docs/economy.md` EP-4, EP-5 |
-| AR-9 | Digital purchases | Yes: coin packs, pass products, offers | `docs/economy.md` 7 |
-| AR-10 | Purchasable random items | No. No paid randomised items at launch | `docs/economy.md` EP-3 |
+| AR-9 | Digital purchases | Yes: crystal packs, pass products, offers | `docs/economy.md` 7 |
+| AR-10 | Purchasable random items | No. Chests have random contents but are bought only with coins, which are earned by play and never sold, directly or through crystals | `docs/economy.md` EP-3 |
 | AR-11 | Users interact or communicate | Yes. Emoji and preset quick messages from a fixed catalogue, friend invites, nicknames and custom room names that other players see. No free text chat, no voice, no image or file sharing. Names are filtered, players can report, block and mute | `docs/localization.md` 5.7, 5.8, #149, #155 |
 | AR-12 | Shares the user's current physical location with other users | No. The account country is visible through country leaderboards, but it is a profile setting, not a current location | `docs/privacy.md` D-8, 10.3 |
 | AR-13 | Unrestricted internet access | No. The in-game help shows only our own FAQ pages (`docs/launch-runbook.md` 9.4); this holds only if that view cannot browse outside them (ST-16) | |

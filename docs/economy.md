@@ -1,8 +1,8 @@
 # Economy
 
-The single soft currency (coin): where coins come from, where they go, the reward bundle every grant uses, the shop, real-money products, promo codes, refunds and inflation controls. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
+The two currencies, coin and crystal: where they come from, where they go, the chests, the reward bundle every grant uses, the shop, real-money products, promo codes, refunds and inflation controls. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
 
-**Status: approved by the owner on 2026-10-26 (section 13).** Every number in this document and in [`docs/economy/balance.csv`](economy/balance.csv) is a launch default to be tuned with closed-beta data. Every one is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys. The CSV is the single list of their values; section 11 is generated from it.
+**Status: approved by the owner on 2026-10-26 (section 13).** Every number in this document and in [`docs/economy/balance.csv`](economy/balance.csv) is a launch default to be tuned with closed-beta data. Every one is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys. The CSV is the single list of their values; section 11 is generated from it. **Two currencies and chests: owner decision of 2026-11-01 (OQ-11 to OQ-14).** Until the server work of #351 lands, the server keeps the single coin balance of #101.
 
 Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `docs/anti-cheat.md` (V-1, V-3, V-7, V-8, V-11), `docs/cosmetics.md` (acquisition sources), `docs/ranking.md` (final ranks), `docs/penalties.md` (offender rewards), `docs/localization.md` (gambling imagery, age rating, rename), `docs/privacy.md` (D-16, D-17), `docs/launch-runbook.md` (kill switches).
 
@@ -10,11 +10,11 @@ Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `do
 
 | Id | Rule |
 |---|---|
-| EP-1 | One currency: the coin. Earned by play and bought with real money. One integer balance per account. No second premium currency. |
-| EP-2 | No pay-to-win. Coins and real money buy cosmetics, pass levels, the premium pass track and a nickname rename, nothing else. Nothing for sale changes rating, MMR, LP, placement, matchmaking, turn time, penalties, hidden information or any rule in `docs/rules.md`. No rank protection, queue-delay skip or penalty removal is sold. |
-| EP-3 | No paid randomised items at launch. No offer, chest or reward bought with coins or money has random contents; every offer shows exactly what it grants. Free rewards are fixed too. This keeps the IARC lowest tier, PEGI 3 and App Store 4+ targets and the gambling imagery rule (`docs/localization.md` sections 6 and 7). Any random reward is an owner decision and a change to this rule. |
+| EP-1 | Two currencies. The **coin** (`coin`) is earned by play and never sold. The **crystal** (`crystal`) comes only from real-money purchases and what they unlock (crystal packs, offers, the premium pass track). One integer balance per currency per account. Neither converts into the other, and nothing bought with real money or crystals grants coins. |
+| EP-2 | No pay-to-win. Coins, crystals and real money buy cosmetics, chests (coins only), pass levels, the premium pass track and a nickname rename, nothing else. Nothing for sale changes rating, MMR, LP, placement, matchmaking, turn time, penalties, hidden information or any rule in `docs/rules.md`. No rank protection, queue-delay skip or penalty removal is sold. |
+| EP-3 | No paid randomised items. Random contents exist only in chests (3.4), bought with coins only. Coins cannot be bought (EP-1), so a chest is never paid for with real money, directly or through crystals. A chest shows its pool and the odds of every rarity before purchase. Every other offer and reward shows exactly what it grants. This keeps the IARC lowest tier, PEGI 3 and App Store 4+ targets and the gambling imagery rule (`docs/localization.md` sections 6 and 7). |
 | EP-4 | No wagers. No coin entry fee for a match, room or event whose prize is coins or items. Coins are never staked on a result. |
-| EP-5 | No transfers. Coins and items cannot be traded, gifted or moved between accounts. Coins have no cash value, cannot be withdrawn and do not expire. |
+| EP-5 | No transfers. Coins, crystals and items cannot be traded, gifted or moved between accounts. Neither currency has a cash value, can be withdrawn or expires. |
 | EP-6 | Server authority. Every price, amount, eligibility and window is the server's (NT-1, NT-2). Every balance change is a ledger entry (NT-11, section 5). Every window uses server time (NT-6, #208). |
 | EP-7 | Store-only payments. Real money goes through Google Play Billing and the App Store only, granted after server-side receipt validation (NT-5, #106). No own payment path and no own currency conversion (`docs/privacy.md` 7.4). |
 | EP-8 | One price for everyone. No personalised prices. Regional differences come only from the stores' pricing (section 7.4). |
@@ -33,6 +33,8 @@ Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `do
 | Duplicate compensation | 2.7 | `duplicate_compensation` | #102 |
 | Promo codes | 8 | `promo` | #108 |
 | Purchase | 7 | `purchase`, `first_purchase_bonus` | #106 |
+
+Every source grants coins except the purchase, the first-purchase bonus and the premium pass track, which grant crystals (EP-1).
 
 **Economy day.** Every daily limit (first win, daily login, daily missions, `DailyMatchCoinCap`) uses one day boundary computed on the server from server time (#208): 00:00 UTC, the same for every player. There is no per-player reset time zone (owner decision, 2026-11-01, #131).
 
@@ -77,7 +79,7 @@ Mission types, goals and the split of rewards: `docs/pass-missions-medals.md` se
 
 ### 2.5 Pass
 
-Season length, levels and the XP curve: `docs/pass-missions-medals.md` section 2. Coin budget per pass season: `PassFreeTrackCoins` (1500) on the free track, `PassPremiumTrackCoins` (3000) on the premium track. Admin publish rejects a season above its budget. The premium track returns more coins than its price buys at the reference rate (section 11).
+Season length, levels and the XP curve: `docs/pass-missions-medals.md` section 2. Coin budget per pass season: `PassFreeTrackCoins` (1500) on the free track, `PassPremiumTrackCrystals` (600) on the premium track, which is bought with real money and so pays crystals, never coins (EP-1). Admin publish rejects a season above its budget. The premium track returns more crystals than its price buys at the reference rate (section 11).
 
 ### 2.6 Rank rewards
 
@@ -97,8 +99,9 @@ At season end every placed player gets coins for their final rank in each mode, 
 | Cosmetics (shop and event shop) | 3.1, 6 | `shop_purchase` |
 | Pass levels | 3.2 | `pass_level_purchase` |
 | Nickname rename | 3.3 | `rename` |
+| Chests | 3.4 | `chest_purchase` |
 
-Every spend is an intent carrying a client request id (section 5). The server takes the price from its own config and checks ownership and balance. A spend above the balance is rejected and counted (V-1).
+Cosmetics and pass levels are paid in coins or crystals, as the offer states. Chests and rename are paid in coins only. Every spend is an intent carrying a client request id (section 5). The server takes the price from its own config and checks ownership and balance. A spend above the balance is rejected and counted (V-1).
 
 ### 3.1 Cosmetic guide prices
 
@@ -109,17 +112,30 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 ```
 
 - `GuidePriceCoins` per rarity id of #5 in order `common`, `rare`, `epic`, `legendary`, `mythic`: 400, 1500, 3500, 12000, 30000. Rarities are referenced by id only.
+- `GuidePriceCrystals` per rarity, same order: 80, 300, 700, 2400, 6000, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`.
 - `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `emoji`, `action`: 100, 150, 100, 150, 50, 50. A character carries four clips and a table fills the match scene; an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer.
 - The full table and the play time each price takes are in section 11.
 
 ### 3.2 Pass levels
 
-`PassLevelCoinPrice` (200) per level, bought by intent with a count, up to the season's last level. The premium track is a real-money product (7.2), not sold for coins: a coin price would let a completed premium track pay for the next one indefinitely.
+`PassLevelCoinPrice` (200) or `PassLevelCrystalPrice` (40) per level, bought by intent with a count, up to the season's last level. The premium track is a real-money product (7.2), not sold for coins: a coin price would let a completed premium track pay for the next one indefinitely.
 
 ### 3.3 Rename
 
 `RenameCoinPrice` (1000) for each rename after the free one at setup. Cooldown and forced renames: `docs/localization.md` 5.6. A forced rename is free.
+
+### 3.4 Chests
+
+- A chest is a shop offer of kind `chest` in the Chests section (6.1), priced in coins only: `ChestCoinPrice` (500). Publish rejects a chest priced in crystals or as a store product, and a chest granted by a bundle, a promo code or a purchase.
+- Opening a chest grants one cosmetic drawn by the server from the chest's pool. A pool holds `common` and `rare` items only: `rare` is the middle tier a chest reaches (owner decision, 2026-11-01). `epic`, `legendary` and `mythic` items are never in a pool, so they keep their shop and reward value.
+- Odds: `ChestRarityPercent` (85, 15) for `common` and `rare`. Within the drawn rarity every unowned pool item has the same chance.
+- Only unowned items are drawn. If no unowned item of the drawn rarity is left, the other rarity is drawn; a chest whose pool is fully owned is not sold (6.2). A chest never yields a duplicate.
+- Pity: `ChestRarePityCount` (10). The tenth open in a row without a `rare` item gives a `rare` one. The counter is per account across all chests and resets on every `rare` result.
+- One transaction debits the price (`chest_purchase`, key `spend:<requestId>`), draws from the server's cryptographically secure random source and grants the item through the reward engine (source `chest`, ref the chest offer id, key `chest:<requestId>`). Each open records the roll, the pity counter, the result and the config version, for support and abuse checks (#211).
+- Before purchase the client shows the pool, the odds of each rarity and the opens left to the pity, all as the server sends them. The reveal shows the granted item without casino cues (`docs/localization.md` section 6): no reels, wheels, slot sounds or near-miss effects.
+- Every pool item lists a `chest` source with the chest offer id (`docs/cosmetics.md` section 5).
+- Expected value of an avatar or frame chest at guide prices: 0.85 x 400 + 0.15 x 1500 = 565 coins against a price of 500. The player gives up choosing the item and gets a little more value for it.
 
 ## 4. Reward bundle
 
@@ -129,12 +145,13 @@ Every grant is a reward bundle applied by one engine (#102): match rewards, firs
 |---|---|---|
 | `id` | string | `bundle.<slug>`, slug `[a-z0-9_]+`. Stable, never reused |
 | `revision` | integer >= 1 | Increases by 1 on every published change. A grant records the revision it applied |
-| `coins` | integer >= 0 | Coins added |
+| `coins` | integer >= 0 | Coins added. Never in a bundle granted by a purchase, the first-purchase bonus or the premium pass track (EP-1) |
+| `crystals` | integer >= 0 | Crystals added. Only in a bundle granted by a purchase, the first-purchase bonus or the premium pass track |
 | `cosmetics` | array of cosmetic ids | Unique. Each item's `sources` lists the source that grants this bundle (`docs/cosmetics.md` V-15) |
 | `medals` | array of medal ids | Unique. Medal ids from #9 and #129 |
 | `passXp` | integer >= 0 | XP for the pass season active at grant time. With no active season it is dropped, and the grant records that |
 
-At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empty or non-zero.
+At least one field among `coins`, `crystals`, `cosmetics`, `medals` and `passXp` is non-empty or non-zero. Admin publish rejects a bundle whose currency does not match its source.
 
 ```json
 {
@@ -155,7 +172,7 @@ At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empt
 ## 5. Ledger
 
 - Append-only (ADR 0005). The balance is the sum of entries; the stored balance is reconciled against it (#101).
-- An entry holds the account, a signed amount, the reason, source type and ref, idempotency key, config version, server time and the balance after.
+- Each currency has its own balance and entries. An entry holds the account, the currency (`coin` or `crystal`), a signed amount, the reason, source type and ref, idempotency key, config version, server time and the balance after.
 - The idempotency key is unique per account. Repeating a write returns the first result and changes nothing (V-8).
 
 | Reason | Sign | Idempotency key |
@@ -171,11 +188,12 @@ At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empt
 | `promo` | + | `promo:<codeId>` |
 | `purchase` | + | `purchase:<store>:<transactionId>`, also unique across accounts |
 | `first_purchase_bonus` | + | `first_purchase` |
-| `shop_purchase`, `pass_level_purchase`, `rename` | - | `spend:<requestId>` |
+| `shop_purchase`, `pass_level_purchase`, `rename`, `chest_purchase` | - | `spend:<requestId>` |
 | `refund_revoke` | - | `refund:<store>:<transactionId>` |
 | `refund_reversal` | + | `refund_reversal:<store>:<transactionId>` |
 | `admin_adjust` | +/- | `admin:<auditId>`, with a mandatory reason (#144) |
 
+- `purchase`, `first_purchase_bonus`, `refund_revoke` and `refund_reversal` move crystals; `pass_reward` moves coins on the free track and crystals on the premium track; `shop_purchase` and `pass_level_purchase` move the currency of the price; `admin_adjust` moves either. Every other reason moves coins.
 - `<requestId>` is generated by the client per spend intent and scoped to the account by the server, so a reused id only repeats the earlier answer.
 - Spends of one account are serialised; no spend or `admin_adjust` makes the balance negative (#101). The single exception is `refund_revoke` (section 9).
 - Implemented in `server/internal/wallet` (#101): `Apply` is the only writer, idempotent per account and key, serialised per account, refusing any result below zero; `Audit` and `Reconcile` (`cmd/wallet-audit`) compare and restore the stored balance against the sum of entries. A `refund_revoke` entry is the only one that may take the balance below zero (#106); every other debit is refused while it is negative.
@@ -186,12 +204,13 @@ At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empt
 
 | Section | Content | Paid with |
 |---|---|---|
-| Featured | Admin-picked offers with a window | Coins or store product |
-| Daily rotation | `ShopDailyRotationSlots` (4) cosmetic offers | Coins |
-| Weekly rotation | `ShopWeeklyRotationSlots` (2) cosmetic offers | Coins |
-| Event | Event cosmetics while the event runs | Coins |
-| Pass | Premium track products and pass levels | Store product, coins |
-| Coins | Coin packs | Store product |
+| Featured | Admin-picked offers with a window | Crystals or store product |
+| Daily rotation | `ShopDailyRotationSlots` (4) cosmetic offers | Coins or crystals, per offer |
+| Weekly rotation | `ShopWeeklyRotationSlots` (2) cosmetic offers | Coins or crystals, per offer |
+| Event | Event cosmetics while the event runs | Coins or crystals, per offer |
+| Chests | Chest offers (3.4) | Coins |
+| Pass | Premium track products and pass levels | Store product, coins, crystals |
+| Crystals | Crystal packs | Store product |
 
 - Rotations are the same for every player. The daily rotation changes at `ShopRotationResetHourUtc` (0) UTC, the weekly one at that hour on Monday. The admin schedules rotations ahead in the live-ops calendar (#146); a period without a schedule repeats the previous rotation. Rotation contents are scheduled, never drawn at random per player.
 - Shop changes take effect on publish without a server restart (#104): the publish writes the catalog as a versioned snapshot (`config_snapshots`, domain `shop`; `docs/economy/examples/shop.json` is the format) and every node picks the newest version up within `ConfigPoll` (10 s). An invalid catalog is refused at publish and, should one reach the table, ignored by the server. The snapshot version is the config version of every purchase it priced.
@@ -202,15 +221,15 @@ At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empt
 | Field | Rule |
 |---|---|
 | `id` | `offer.<slug>`. Cosmetic `shop` sources reference it |
-| `kind` | `cosmetic`, `bundle`, `coins`, `pass`, `pass_levels` |
-| `price` | Coins (integer > 0) or a store product id (section 7), never both |
+| `kind` | `cosmetic`, `bundle`, `chest`, `crystals`, `pass`, `pass_levels` |
+| `price` | Exactly one of: coins (integer > 0), crystals (integer > 0), a store product id (section 7). A `chest` takes coins only, a `crystals` pack a store product only |
 | `bundle` | The reward bundle it grants |
 | `window` | Start and optional end, server UTC |
-| `limitPerAccount` | Purchases per account; 1 for cosmetics and one-time offers, none for coin packs |
+| `limitPerAccount` | Purchases per account; 1 for cosmetics and one-time offers, none for crystal packs and chests |
 | `eligibility` | Optional: hours since account creation, first purchase only |
 
 - A cosmetic offer is not sold to an account that owns the item; the intent is rejected.
-- A bundle offer is sold while at least one of its cosmetics is not owned, or while it grants coins or pass XP besides them. Owned items get duplicate compensation (2.7), and the shop shows that before purchase.
+- A bundle offer is sold while at least one of its cosmetics is not owned, or while it grants a currency or pass XP besides them. Owned items get duplicate compensation (2.7), and the shop shows that before purchase.
 - The client shows the server's price and never computes one.
 
 ### 6.3 Discounts
@@ -223,9 +242,9 @@ At least one field among `coins`, `cosmetics`, `medals` and `passXp` is non-empt
 
 USD reference price = the App Store price point and the Google Play default price of the product. Every product is consumable. Product ids name a tier, never an amount, so amounts are retuned in config without a new store product. Ownership lives on the server, so restore on a new device is sign-in (#107).
 
-### 7.1 Coin packs
+### 7.1 Crystal packs
 
-Products `coins_tier1` to `coins_tier5`. USD prices `CoinPackUsd` (0.99, 4.99, 9.99, 19.99, 49.99) and coins `CoinPackCoins` (500, 2750, 6000, 13000, 35000). The bonus over `CoinsPerUsdReference` (500 coins per USD) grows from 1% to 40% with pack size (section 11).
+Products `crystals_tier1` to `crystals_tier5`. USD prices `CrystalPackUsd` (0.99, 4.99, 9.99, 19.99, 49.99) and crystals `CrystalPackCrystals` (100, 550, 1200, 2600, 7000). The bonus over `CrystalsPerUsdReference` (100 crystals per USD) grows from 1% to 40% with pack size (section 11). There are no coin packs (EP-1).
 
 ### 7.2 Pass products
 
@@ -235,15 +254,15 @@ Products `coins_tier1` to `coins_tier5`. USD prices `CoinPackUsd` (0.99, 4.99, 9
 
 ### 7.3 Starter and first-purchase offers
 
-- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCoins` (1500) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 4500 coins at guide prices, about 4.5 times its price at the reference rate.
-- First-purchase bonus: the first validated real-money purchase of an account grants `bundle.first_purchase` once: `FirstPurchaseBonusCoins` (500) plus one `epic` frame. Any product counts, including the starter offer.
+- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCrystals` (300) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 900 crystals at crystal guide prices, about 4.5 times its price at the reference rate.
+- First-purchase bonus: the first validated real-money purchase of an account grants `bundle.first_purchase` once: `FirstPurchaseBonusCrystals` (100) plus one `epic` frame. Any product counts, including the starter offer.
 - A refund revokes the bonus with its purchase (section 9). A later purchase does not become "first" again.
 
 ### 7.4 Regional pricing
 
 - Local prices come only from the stores: App Store price equalisation from the base storefront, Google Play pricing templates and automatic conversion. A market-specific override is made in the store console, noted on the admin offer, and needs owner approval.
 - The game holds no exchange rates and computes no local price. The client shows the localized price string from the billing SDK.
-- The coin amount of a product is the same in every market.
+- The crystal amount of a product is the same in every market.
 - Taxes are the stores' as merchant of record (`docs/privacy.md` section 2).
 - Where a store cannot charge in a country, the shop hides real-money products there. No other payment path is added (EP-7).
 
@@ -275,7 +294,7 @@ A code has an id, a campaign id (what cosmetic `promo` sources reference), a bun
 - Redemption is one transaction: the redemption row, unique per code and account, the cap check and the grant. Parallel redemptions never exceed the cap or redeem twice (#108).
 - Abuse limits: `PromoAttemptsPerHour` (10) attempts per account; `PromoFailedAttemptsBeforeLock` (5) failed attempts lock redemption for `PromoLockMinutes` (60). The same limits apply per device and IP (#184). Locks and redemption spikes are signals for #209 (V-11).
 - A leaked code is disabled in admin (`docs/launch-runbook.md` 5.5). Rewards already granted stay.
-- A code never grants a store product or an item whose `sources` lack its campaign. Codes are never sold.
+- A code grants coins, cosmetics, medals and pass XP, never crystals or a chest. It never grants a store product or an item whose `sources` lack its campaign. Codes are never sold.
 - Implemented in `server/internal/promo` (#108): `cmd/promo` creates, batches, approves and disables codes until the admin screens of #142 exist; `POST /promo/redeem` redeems them. The per-account attempt limits and lock are enforced; the per-device and per-IP limits are #184.
 
 ## 9. Refunds and chargebacks
@@ -283,8 +302,8 @@ A code has an id, a campaign id (what cosmetic `promo` sources reference), a bun
 Notices: Google Play real-time developer notifications and the Voided Purchases API; App Store Server Notifications `REFUND` and `REFUND_REVERSED` (#106, #204). Processing is idempotent per notice.
 
 1. Find the purchase by store transaction id.
-2. Revoke what it granted through the ledger: a `refund_revoke` entry for its coins; its cosmetics removed from inventory and unequipped as for `disabled` items (`docs/cosmetics.md` section 6); for a pass product, the premium track and every premium reward claimed (coins debited, cosmetics removed). A starter or first-purchase bonus tied to it is revoked the same way.
-3. Items bought with coins are kept. If the coins are already spent, the balance goes negative and spends are blocked until earnings bring it back to zero or above. This is the only way a balance goes negative.
+2. Revoke what it granted through the ledger: a `refund_revoke` entry for its crystals; its cosmetics removed from inventory and unequipped as for `disabled` items (`docs/cosmetics.md` section 6); for a pass product, the premium track and every premium reward claimed (crystals debited, cosmetics removed). A starter or first-purchase bonus tied to it is revoked the same way.
+3. Items bought with crystals are kept. If the crystals are already spent, the crystal balance goes negative and crystal spends are blocked until purchases bring it back to zero or above. Coins are never touched. This is the only way a balance goes negative.
 4. Flag the account with `RefundWeight` (`docs/anti-cheat.md` section 5). `RefundsBeforePurchaseBlock` (3) refunds within `RefundWindowDays` (365) block further purchases and send the account to review (#209).
 5. `REFUND_REVERSED` re-grants the same contents through a `refund_reversal` entry.
 
@@ -293,6 +312,8 @@ Notices: Google Play real-time developer notifications and the Voided Purchases 
 - Deleting an account refunds nothing (`docs/privacy.md` 8.2).
 
 ## 10. Inflation controls
+
+The monitors below are for coins. Crystals are created only by validated purchases, so crystal sales and spends are revenue analytics (#147), not inflation controls.
 
 Caps: `DailyMatchCoinCap` (2.1), mission and pass budgets (2.4, 2.5), once-per-period idempotency keys (section 5). No transfers (EP-5): a farm account cannot move coins to a main account.
 
@@ -321,7 +342,7 @@ Inputs are [`docs/economy/balance.csv`](economy/balance.csv): one row per key, c
 | `ModelPassSeasonDays` | 90 | Same window as a ranked season (`docs/ranking.md` 7.1, `docs/pass-missions-medals.md` 2.1) |
 | `ModelProfileHours` | 0.5, 1, 3 | Hours of ranked 1v1 per day for light, regular and heavy players |
 | `ModelProfileMissionPercent` | 50, 100, 100 | Share of mission and free-track coins each profile collects |
-| `CoinsPerUsdReference` | 500 | Reference rate the pack bonuses are measured against |
+| `CrystalsPerUsdReference` | 100 | Reference rate the pack bonuses and offer values are measured against |
 
 Every profile is assumed to claim the daily login and one first win each day. The tables below are the output of `node tools/economy-balance/economy-balance.mjs --print`; `npm run test:tools` fails when they no longer match the CSV or when the CSV has a key this document does not name. To change a value: edit the CSV, regenerate, paste.
 
@@ -345,15 +366,15 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 | Pass free track | 8 | 17 | 17 |
 | **Total per day** | **330** | **496** | **714** |
 
-#### Coin packs
+#### Crystal packs
 
-| Product | USD reference | Coins | Bonus over reference rate | Coins per USD |
+| Product | USD reference | Crystals | Bonus over reference rate | Crystals per USD |
 |---|---|---|---|---|
-| coins_tier1 | 0.99 | 500 | 1% | 505 |
-| coins_tier2 | 4.99 | 2750 | 10% | 551 |
-| coins_tier3 | 9.99 | 6000 | 20% | 601 |
-| coins_tier4 | 19.99 | 13000 | 30% | 650 |
-| coins_tier5 | 49.99 | 35000 | 40% | 700 |
+| crystals_tier1 | 0.99 | 100 | 1% | 101 |
+| crystals_tier2 | 4.99 | 550 | 10% | 110 |
+| crystals_tier3 | 9.99 | 1200 | 20% | 120 |
+| crystals_tier4 | 19.99 | 2600 | 30% | 130 |
+| crystals_tier5 | 49.99 | 7000 | 40% | 140 |
 
 #### Guide prices by rarity and type (coins)
 
@@ -367,25 +388,25 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 
 #### Price against earn rate
 
-| Rarity | Guide price (avatar, frame) | Days at 0.5 h/day | Days at 1 h/day | Days at 3 h/day | USD equivalent (best to smallest pack) |
-|---|---|---|---|---|---|
-| `common` | 400 | 1.2 | 0.8 | 0.6 | 0.57 to 0.79 |
-| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 2.14 to 2.97 |
-| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 5.00 to 6.93 |
-| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 17.14 to 23.76 |
-| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 42.85 to 59.40 |
+| Rarity | Guide price in coins (avatar, frame) | Days at 0.5 h/day | Days at 1 h/day | Days at 3 h/day | Guide price in crystals | USD for the crystals (best to smallest pack) |
+|---|---|---|---|---|---|---|
+| `common` | 400 | 1.2 | 0.8 | 0.6 | 80 | 0.57 to 0.79 |
+| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 300 | 2.14 to 2.97 |
+| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 700 | 5.00 to 6.93 |
+| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 2400 | 17.14 to 23.76 |
+| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 6000 | 42.85 to 59.40 |
 
 #### Pass and offer value
 
-| Product | USD reference | Coin value (coins and levels, items excluded) | USD at reference rate | Value multiple |
+| Product | USD reference | Crystal value (crystals and levels, items excluded) | USD at reference rate | Value multiple |
 |---|---|---|---|---|
-| pass_premium | 4.99 | 3000 | 6.00 | 1.20 |
-| pass_premium_plus | 9.99 | 7000 | 14.00 | 1.40 |
-| offer_starter | 1.99 | 1500 | 3.00 | 1.51 |
+| pass_premium | 4.99 | 600 | 6.00 | 1.20 |
+| pass_premium_plus | 9.99 | 1400 | 14.00 | 1.40 |
+| offer_starter | 1.99 | 300 | 3.00 | 1.51 |
 
 Reading the sheet:
 - A regular player (1 h/day) affords a `rare` avatar every 3 days, an `epic` in a week, a `legendary` in about 3.5 weeks and a `mythic` in about two months.
-- One hour of ranked play earns about 109 coins, worth 0.16 to 0.22 USD at pack rates.
+- One hour of ranked play earns about 109 coins, a fifth of a chest.
 - A light player gets about two thirds of a regular player's coins for half the play time, because login, first win and missions do not scale with hours.
 - The heavy player reaches `DailyMatchCoinCap` after 3.7 hours of ranked play.
 
@@ -400,8 +421,8 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | Id | Question | Decision |
 |---|---|---|
 | OQ-1 | Approve the values in `docs/economy/balance.csv` | As listed |
-| OQ-2 | Paid randomised items | None at launch (EP-3) |
-| OQ-3 | What coins and money may buy | Cosmetics, pass levels, premium track, rename only (EP-2) |
+| OQ-2 | Paid randomised items | None (EP-3). Random contents only in chests bought with coins (OQ-12) |
+| OQ-3 | What coins, crystals and money may buy | Cosmetics, chests (coins only), pass levels, premium track, rename only (EP-2) |
 | OQ-4 | Casual queue rewards | About 60% of ranked per hour; half when a seat was bot-filled at start; custom rooms pay nothing |
 | OQ-5 | Premium pass for coins | No, real money only (3.2) |
 | OQ-6 | `mythic` items in the shop | Yes, time-limited offers only (3.1) |
@@ -409,3 +430,7 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-8 | Market-specific price overrides, for example a lower Turkey price | None at launch; store equalisation only (7.4) |
 | OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; sending it later needs a consent purpose first (`docs/privacy.md` 12.2, OQ-13) |
 | OQ-10 | Missed daily login day | Pauses the cycle, no reset (2.3) |
+| OQ-11 | Currencies (2026-11-01) | Two: the coin, earned by play and never sold, and the crystal, from real money only; no conversion either way (EP-1) |
+| OQ-12 | Chests (2026-11-01) | Bought with coins only; `common` and `rare` items, `rare` being the middle tier; odds and pity shown before purchase (3.4) |
+| OQ-13 | Currency names (2026-11-01) | Coin (AZ Sikkə, TR Coin, RU Монета) and Crystal (AZ, TR Kristal, RU Кристалл). Not "gem": its Azerbaijani and Turkish word (`daş`, `taş`) is also the domino tile |
+| OQ-14 | Daily login reward and economy day (2026-11-01) | Coins only; 00:00 UTC for every player, no per-player reset time zone (2.3) |

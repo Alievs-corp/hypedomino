@@ -73,7 +73,7 @@ VACİB MƏLUMAT
 • Reklam yoxdur.
 • Oyun Azərbaycan, ingilis, türk və rus dillərindədir.
 • Hesablar 13 yaş və yuxarı oyunçular üçündür.
-• İxtiyari tətbiqdaxili alışlar: sikkə paketləri, premium mövsüm bileti və təkliflər. Sikkələrin pul dəyəri yoxdur və nağdlaşdırıla bilməz.
+• İxtiyari tətbiqdaxili alışlar: kristal paketləri, premium mövsüm bileti və təkliflər. Sikkələrin və kristalların pul dəyəri yoxdur və nağdlaşdırıla bilməz.
 ```
 
 ## caption.S-1

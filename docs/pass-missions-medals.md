@@ -73,7 +73,7 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 ### 2.4 Tracks and rewards
 
 - Each level has one free-track bundle and one premium-track bundle. A free-track level may be empty; a premium-track level may not.
-- Coin budgets per season, *economy*: `PassFreeTrackCoins` 1500 on the free track, `PassPremiumTrackCoins` 3000 on the premium track. Admin publish rejects a season above either.
+- Coin budgets per season, *economy*: `PassFreeTrackCoins` 1500 coins on the free track, `PassPremiumTrackCrystals` 600 crystals on the premium track: the premium track is bought with real money, so it pays crystals, never coins (`docs/economy.md` EP-1). Admin publish rejects a season above either.
 - Track bundles carry `coins` and `cosmetics`. They never carry `medals` (PM-5) and never `passXp` (a level that grants levels would make the curve meaningless).
 - Track cosmetics list the source `pass` with ref `pass.<seasonId>.<track>.level_<n>`, for example `pass.season_1.premium.level_30` (`docs/cosmetics.md` section 5).
 - Level 1 rewards are granted when the account enters the season (free) and when premium is unlocked (premium), so the premium track gives its headline item at once.
@@ -288,7 +288,7 @@ Uses existing tokens of `docs/ui-motion.md` and `docs/rarity.md`; no new duratio
 - Several grants queue one card each. A tap jumps the current card to its end state; a "collect all" button jumps the whole queue (`docs/ui-motion.md` section 6 rule 4).
 - Reduce motion and effect levels follow `docs/ui-motion.md` (pops become `fast` fades, flow rests).
 - Reveals run outside the match scene and add no particles. Adding any particle effect is a `docs/ui-motion.md` change with its budgets (section 7 there).
-- Nothing in a reveal suggests chance: no chests, reels, wheels or spinning reveals, and the reward shown is the one already granted (`docs/localization.md` section 6, EP-3).
+- Nothing in a reveal suggests chance: no chest imagery (chests exist only in the shop, `docs/economy.md` 3.4), reels, wheels or spinning reveals, and the reward shown is the one already granted (`docs/localization.md` section 6, EP-3).
 
 ## 7. Data and idempotency
 
@@ -327,106 +327,106 @@ Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level.
 
 | Level | XP total to reach | Free | Premium |
 |---|---|---|---|
-| 1 | 0 | 30 coins | 30 coins + `character.s1_navigator` (`epic`) |
-| 2 | 300 | - | 30 coins |
-| 3 | 650 | 30 coins | 30 coins |
-| 4 | 1050 | - | 30 coins |
-| 5 | 1500 | 30 coins | 30 coins |
-| 6 | 2000 | - | 30 coins |
-| 7 | 2550 | 30 coins | 30 coins |
-| 8 | 3150 | - | 30 coins |
-| 9 | 3800 | 30 coins | 30 coins |
-| 10 | 4500 | `emoji.s1_wave` (`common`) | 30 coins + `avatar.s1_pirate` (`rare`) |
-| 11 | 5250 | 30 coins | 30 coins |
-| 12 | 6050 | - | 30 coins |
-| 13 | 6900 | 30 coins | 30 coins |
-| 14 | 7800 | - | 30 coins |
-| 15 | 8750 | 30 coins | 30 coins |
-| 16 | 9750 | - | 30 coins |
-| 17 | 10750 | 30 coins | 30 coins |
-| 18 | 11750 | - | 30 coins |
-| 19 | 12750 | 30 coins | 30 coins |
-| 20 | 13750 | `avatar.s1_sailor` (`common`) | 30 coins + `emoji.s1_wink` (`rare`) |
-| 21 | 14750 | 30 coins | 30 coins |
-| 22 | 15750 | - | 30 coins |
-| 23 | 16750 | 30 coins | 30 coins |
-| 24 | 17750 | - | 30 coins |
-| 25 | 18750 | 30 coins | 30 coins |
-| 26 | 19750 | - | 30 coins |
-| 27 | 20750 | 30 coins | 30 coins |
-| 28 | 21750 | - | 30 coins |
-| 29 | 22750 | 30 coins | 30 coins |
-| 30 | 23750 | `frame.s1_rope` (`common`) | 30 coins + `frame.s1_wave` (`rare`) |
-| 31 | 24750 | 30 coins | 30 coins |
-| 32 | 25750 | - | 30 coins |
-| 33 | 26750 | 30 coins | 30 coins |
-| 34 | 27750 | - | 30 coins |
-| 35 | 28750 | 30 coins | 30 coins |
-| 36 | 29750 | - | 30 coins |
-| 37 | 30750 | 30 coins | 30 coins |
-| 38 | 31750 | - | 30 coins |
-| 39 | 32750 | 30 coins | 30 coins |
-| 40 | 33750 | `emoji.s1_thumbs` (`rare`) | 30 coins + `table.s1_reef` (`rare`) |
-| 41 | 34750 | 30 coins | 30 coins |
-| 42 | 35750 | - | 30 coins |
-| 43 | 36750 | 30 coins | 30 coins |
-| 44 | 37750 | - | 30 coins |
-| 45 | 38750 | 30 coins | 30 coins |
-| 46 | 39750 | - | 30 coins |
-| 47 | 40750 | 30 coins | 30 coins |
-| 48 | 41750 | - | 30 coins |
-| 49 | 42750 | 30 coins | 30 coins |
-| 50 | 43750 | `avatar.s1_captain` (`rare`) | 30 coins + `avatar.s1_admiral` (`epic`) |
-| 51 | 44750 | 30 coins | 30 coins |
-| 52 | 45750 | - | 30 coins |
-| 53 | 46750 | 30 coins | 30 coins |
-| 54 | 47750 | - | 30 coins |
-| 55 | 48750 | 30 coins | 30 coins |
-| 56 | 49750 | - | 30 coins |
-| 57 | 50750 | 30 coins | 30 coins |
-| 58 | 51750 | - | 30 coins |
-| 59 | 52750 | 30 coins | 30 coins |
-| 60 | 53750 | `table.s1_harbor` (`common`) | 30 coins + `emoji.s1_storm` (`epic`) |
-| 61 | 54750 | 30 coins | 30 coins |
-| 62 | 55750 | - | 30 coins |
-| 63 | 56750 | 30 coins | 30 coins |
-| 64 | 57750 | - | 30 coins |
-| 65 | 58750 | 30 coins | 30 coins |
-| 66 | 59750 | - | 30 coins |
-| 67 | 60750 | 30 coins | 30 coins |
-| 68 | 61750 | - | 30 coins |
-| 69 | 62750 | 30 coins | 30 coins |
-| 70 | 63750 | `frame.s1_anchor` (`rare`) | 30 coins + `frame.s1_kraken` (`epic`) |
-| 71 | 64750 | 30 coins | 30 coins |
-| 72 | 65750 | - | 30 coins |
-| 73 | 66750 | 30 coins | 30 coins |
-| 74 | 67750 | - | 30 coins |
-| 75 | 68750 | 30 coins | 30 coins |
-| 76 | 69750 | - | 30 coins |
-| 77 | 70750 | 30 coins | 30 coins |
-| 78 | 71750 | - | 30 coins |
-| 79 | 72750 | 30 coins | 30 coins |
-| 80 | 73750 | `emoji.s1_cheer` (`rare`) | 30 coins + `table.s1_deep_sea` (`epic`) |
-| 81 | 74750 | 30 coins | 30 coins |
-| 82 | 75750 | - | 30 coins |
-| 83 | 76750 | 30 coins | 30 coins |
-| 84 | 77750 | - | 30 coins |
-| 85 | 78750 | 30 coins | 30 coins |
-| 86 | 79750 | - | 30 coins |
-| 87 | 80750 | 30 coins | 30 coins |
-| 88 | 81750 | - | 30 coins |
-| 89 | 82750 | 30 coins | 30 coins |
-| 90 | 83750 | `table.s1_lighthouse` (`rare`) | 30 coins + `emoji.s1_treasure_map` (`epic`) |
-| 91 | 84750 | 30 coins | 30 coins |
-| 92 | 85750 | - | 30 coins |
-| 93 | 86750 | 30 coins | 30 coins |
-| 94 | 87750 | - | 30 coins |
-| 95 | 88750 | 30 coins | 30 coins |
-| 96 | 89750 | - | 30 coins |
-| 97 | 90750 | 30 coins | 30 coins |
-| 98 | 91750 | - | 30 coins |
-| 99 | 92750 | 30 coins | 30 coins |
-| 100 | 93750 | `frame.s1_compass` (`epic`) | 30 coins + `character.s1_sea_queen` (`legendary`) |
+| 1 | 0 | 30 coins | 6 crystals + `character.s1_navigator` (`epic`) |
+| 2 | 300 | - | 6 crystals |
+| 3 | 650 | 30 coins | 6 crystals |
+| 4 | 1050 | - | 6 crystals |
+| 5 | 1500 | 30 coins | 6 crystals |
+| 6 | 2000 | - | 6 crystals |
+| 7 | 2550 | 30 coins | 6 crystals |
+| 8 | 3150 | - | 6 crystals |
+| 9 | 3800 | 30 coins | 6 crystals |
+| 10 | 4500 | `emoji.s1_wave` (`common`) | 6 crystals + `avatar.s1_pirate` (`rare`) |
+| 11 | 5250 | 30 coins | 6 crystals |
+| 12 | 6050 | - | 6 crystals |
+| 13 | 6900 | 30 coins | 6 crystals |
+| 14 | 7800 | - | 6 crystals |
+| 15 | 8750 | 30 coins | 6 crystals |
+| 16 | 9750 | - | 6 crystals |
+| 17 | 10750 | 30 coins | 6 crystals |
+| 18 | 11750 | - | 6 crystals |
+| 19 | 12750 | 30 coins | 6 crystals |
+| 20 | 13750 | `avatar.s1_sailor` (`common`) | 6 crystals + `emoji.s1_wink` (`rare`) |
+| 21 | 14750 | 30 coins | 6 crystals |
+| 22 | 15750 | - | 6 crystals |
+| 23 | 16750 | 30 coins | 6 crystals |
+| 24 | 17750 | - | 6 crystals |
+| 25 | 18750 | 30 coins | 6 crystals |
+| 26 | 19750 | - | 6 crystals |
+| 27 | 20750 | 30 coins | 6 crystals |
+| 28 | 21750 | - | 6 crystals |
+| 29 | 22750 | 30 coins | 6 crystals |
+| 30 | 23750 | `frame.s1_rope` (`common`) | 6 crystals + `frame.s1_wave` (`rare`) |
+| 31 | 24750 | 30 coins | 6 crystals |
+| 32 | 25750 | - | 6 crystals |
+| 33 | 26750 | 30 coins | 6 crystals |
+| 34 | 27750 | - | 6 crystals |
+| 35 | 28750 | 30 coins | 6 crystals |
+| 36 | 29750 | - | 6 crystals |
+| 37 | 30750 | 30 coins | 6 crystals |
+| 38 | 31750 | - | 6 crystals |
+| 39 | 32750 | 30 coins | 6 crystals |
+| 40 | 33750 | `emoji.s1_thumbs` (`rare`) | 6 crystals + `table.s1_reef` (`rare`) |
+| 41 | 34750 | 30 coins | 6 crystals |
+| 42 | 35750 | - | 6 crystals |
+| 43 | 36750 | 30 coins | 6 crystals |
+| 44 | 37750 | - | 6 crystals |
+| 45 | 38750 | 30 coins | 6 crystals |
+| 46 | 39750 | - | 6 crystals |
+| 47 | 40750 | 30 coins | 6 crystals |
+| 48 | 41750 | - | 6 crystals |
+| 49 | 42750 | 30 coins | 6 crystals |
+| 50 | 43750 | `avatar.s1_captain` (`rare`) | 6 crystals + `avatar.s1_admiral` (`epic`) |
+| 51 | 44750 | 30 coins | 6 crystals |
+| 52 | 45750 | - | 6 crystals |
+| 53 | 46750 | 30 coins | 6 crystals |
+| 54 | 47750 | - | 6 crystals |
+| 55 | 48750 | 30 coins | 6 crystals |
+| 56 | 49750 | - | 6 crystals |
+| 57 | 50750 | 30 coins | 6 crystals |
+| 58 | 51750 | - | 6 crystals |
+| 59 | 52750 | 30 coins | 6 crystals |
+| 60 | 53750 | `table.s1_harbor` (`common`) | 6 crystals + `emoji.s1_storm` (`epic`) |
+| 61 | 54750 | 30 coins | 6 crystals |
+| 62 | 55750 | - | 6 crystals |
+| 63 | 56750 | 30 coins | 6 crystals |
+| 64 | 57750 | - | 6 crystals |
+| 65 | 58750 | 30 coins | 6 crystals |
+| 66 | 59750 | - | 6 crystals |
+| 67 | 60750 | 30 coins | 6 crystals |
+| 68 | 61750 | - | 6 crystals |
+| 69 | 62750 | 30 coins | 6 crystals |
+| 70 | 63750 | `frame.s1_anchor` (`rare`) | 6 crystals + `frame.s1_kraken` (`epic`) |
+| 71 | 64750 | 30 coins | 6 crystals |
+| 72 | 65750 | - | 6 crystals |
+| 73 | 66750 | 30 coins | 6 crystals |
+| 74 | 67750 | - | 6 crystals |
+| 75 | 68750 | 30 coins | 6 crystals |
+| 76 | 69750 | - | 6 crystals |
+| 77 | 70750 | 30 coins | 6 crystals |
+| 78 | 71750 | - | 6 crystals |
+| 79 | 72750 | 30 coins | 6 crystals |
+| 80 | 73750 | `emoji.s1_cheer` (`rare`) | 6 crystals + `table.s1_deep_sea` (`epic`) |
+| 81 | 74750 | 30 coins | 6 crystals |
+| 82 | 75750 | - | 6 crystals |
+| 83 | 76750 | 30 coins | 6 crystals |
+| 84 | 77750 | - | 6 crystals |
+| 85 | 78750 | 30 coins | 6 crystals |
+| 86 | 79750 | - | 6 crystals |
+| 87 | 80750 | 30 coins | 6 crystals |
+| 88 | 81750 | - | 6 crystals |
+| 89 | 82750 | 30 coins | 6 crystals |
+| 90 | 83750 | `table.s1_lighthouse` (`rare`) | 6 crystals + `emoji.s1_treasure_map` (`epic`) |
+| 91 | 84750 | 30 coins | 6 crystals |
+| 92 | 85750 | - | 6 crystals |
+| 93 | 86750 | 30 coins | 6 crystals |
+| 94 | 87750 | - | 6 crystals |
+| 95 | 88750 | 30 coins | 6 crystals |
+| 96 | 89750 | - | 6 crystals |
+| 97 | 90750 | 30 coins | 6 crystals |
+| 98 | 91750 | - | 6 crystals |
+| 99 | 92750 | 30 coins | 6 crystals |
+| 100 | 93750 | `frame.s1_compass` (`epic`) | 6 crystals + `character.s1_sea_queen` (`legendary`) |
 
 ### 8.3 Missions
 
@@ -502,7 +502,7 @@ Rarities are first estimates for 5.3, checked against measured earn shares after
 | `ProfileMedalSlots` | 3 | This document | 5.4 |
 | `ProfileEmblemSlots` | 3 | `docs/ranking.md` | 5.5 |
 | Medal rarity shares | Section 5.3 | This document, guidance for admins | 5.3 |
-| `PassFreeTrackCoins`, `PassPremiumTrackCoins` | 1500, 3000 | `docs/economy.md` | 2.4 |
+| `PassFreeTrackCoins`, `PassPremiumTrackCrystals` | 1500, 600 | `docs/economy.md` | 2.4 |
 | `PassLevelCoinPrice` | 200 | `docs/economy.md` | 2.5, 2.6 |
 | `PassPremiumUsd`, `PassPremiumPlusUsd`, `PassPremiumPlusLevels` | 4.99, 9.99, 20 | `docs/economy.md` | 2.5 |
 | `DailyMissionCoinBudget`, `WeeklyMissionCoinBudget` | 120, 600 | `docs/economy.md` | 4.4 |
@@ -518,7 +518,7 @@ Admin publish (#140, #141) rejects:
 
 | Id | Rule |
 |---|---|
-| PV-1 | A track whose coins exceed `PassFreeTrackCoins` or `PassPremiumTrackCoins` |
+| PV-1 | A free track whose coins exceed `PassFreeTrackCoins`, a premium track whose crystals exceed `PassPremiumTrackCrystals`, or a premium reward with coins |
 | PV-2 | A premium level without a bundle, a level outside 1 to `PassLevels`, or a track bundle with `medals` or `passXp` |
 | PV-3 | `PassLevels` <= `PassPremiumPlusLevels`, or a curve value < 1, or `PassXpMax` < `PassXpBase` |
 | PV-4 | Overlapping pass seasons; a change to a frozen field of a running season (2.1) |

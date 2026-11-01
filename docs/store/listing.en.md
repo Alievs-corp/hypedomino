@@ -73,7 +73,7 @@ GOOD TO KNOW
 • No ads.
 • Available in English, Azerbaijani, Turkish and Russian.
 • Accounts are for players aged 13 and older.
-• Optional in-app purchases: coin packs, the premium season pass and offers. Coins have no cash value and cannot be withdrawn.
+• Optional in-app purchases: crystal packs, the premium season pass and offers. Coins and crystals have no cash value and cannot be withdrawn.
 ```
 
 ## caption.S-1

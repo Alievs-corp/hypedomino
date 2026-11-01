@@ -10,7 +10,7 @@ Owned elsewhere and only referenced here: item shape, sources, availability and 
 
 | In | Out (owner) |
 |---|---|
-| Cosmetic and medal counts, item readiness, pass season 1 with its pass products, ranked season 1, mission pools, promo code templates | Coin packs, the starter offer and the licensed test purchase (GN-22); performance budgets (gate 2); UI, banner and FAQ strings (GN-18, GN-26); kill switch and maintenance states (GN-17); leaderboard emblem art, needed only at the first season end (#178, `docs/ranking.md` 8.3) |
+| Cosmetic and medal counts, item readiness, pass season 1 with its pass products, ranked season 1, mission pools, promo code templates | Crystal packs, the starter offer and the licensed test purchase (GN-22); performance budgets (gate 2); UI, banner and FAQ strings (GN-18, GN-26); kill switch and maintenance states (GN-17); leaderboard emblem art, needed only at the first season end (#178, `docs/ranking.md` 8.3) |
 
 `launchAt` is the planned T-0 (`docs/launch-runbook.md` section 4) in server UTC, entered when the report is run. At the first launch, pass season 1 is `season_1` and ranked season 1 is the first ranked season.
 

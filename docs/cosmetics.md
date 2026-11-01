@@ -83,6 +83,7 @@ A source is `{ "type": ..., "ref": ... }`. `ref` is the id of a record owned by 
 | `first_purchase` | First-purchase bonus bundle id, granted once with the first validated real-money purchase (`docs/economy.md` 7) | #106 |
 | `rank_reward` | Ranked season reward bundle id (`RankRewards` in the `rating` config) | #8, #120 |
 | `event` | Live event id | Admin live-ops config |
+| `chest` | Chest offer id. Only `common` and `rare` items (`docs/economy.md` 3.4) | #351 |
 
 Rules:
 - `sources` is the complete list of ways an item can be granted. The admin rejects publishing an offer, reward, mission, campaign or event that grants an item whose `sources` does not list it, and the server's grant path (#102) refuses such a grant. This is what the collection screen shows as the way to earn an item (#99) and what abuse checks (#211) compare against.
