@@ -555,7 +555,7 @@ Proposals are stored in the `admin_approvals` table (`server/internal/approval`,
 - **Deciding.** A proposal can be approved or rejected only by an admin who holds an approver role from the table above and is not the proposer. The database checks this as well.
 - **Expiry and finality.** A proposal can be decided only while it is pending and before it expires. A decision is final. Of several parallel decisions, exactly one wins.
 - **Pending list.** The pending list holds only proposals that are still undecided and not expired.
-- **Not yet.** Running the approved action and writing its audit entries is up to each action's handler. Break-glass is not built yet.
+- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` (9.1). The other kinds follow with their tools: player grants and bans in #144, promo codes in #142, live controls in #146. Break-glass is not built yet.
 
 Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 
@@ -590,8 +590,11 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
-| `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts | Replaces its roles |
+| `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
 | `POST /admin/accounts/{id}/disable` | R on admin accounts | Disables it |
+| `GET /admin/approvals` | signed in | Pending proposals (section 8) the admin proposed or may decide |
+| `POST /admin/approvals/{id}/approve` | an approver role of section 8 | Approves and carries out the proposal |
+| `POST /admin/approvals/{id}/reject` | an approver role of section 8 | Rejects it |
 | `GET /admin/strings` | V on game strings | Every key with its values per language, and the missing-value report per language (`coverage`: keys, approved, percent, missing keys) |
 | `PUT /admin/strings/{key}` `{"note","max_length","placeholders","deprecated"}` | C for a new key, E for an existing one, R to deprecate it | Saves the key |
 | `PUT /admin/strings/{key}/values/{language}` `{"text","status"}` | E for `draft`, E and P for `approved` | Saves one value |
@@ -608,8 +611,14 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 - **Audit.** A change and its audit entry are written in one transaction, so an entry exists exactly when the change does. The entry carries the actor with their roles, the environment of `HD_ADMIN_ENVIRONMENT`, the session id, the user agent and the source IP. Before and after hold `email`, `display_name`, `roles` and `state`. A write may carry `reason` and `ref`. The source IP is the last address of the last `X-Forwarded-For` header, else the connection address. The admin web server therefore sets that header to the browser address it sees.
 - **Game strings.** Approving a value is the review step of 5.15, so it needs P besides E: `content` and `super_admin` approve, `live_ops` saves drafts. The audit object is the key: `create`, `edit` and `retire` hold the key fields, and a value change is `edit`, or `approve` for an approved value, with language, text and status. An import writes one `edit` entry per changed key with reason `import`. A publish is `publish` on `bundle:<language>` with the version and hash. A blocked import or publish answers 422 `blocked` with `problems` (`key`, `error`) and stores nothing.
 - **Active versions.** The request is checked like `cmd/config-publish`: every named version is a published bundle and the `en` bundle has every live key. A new snapshot is published under a lock on the domain, so its audit `before` is the snapshot it replaces. It is a `rollback` when a language gets a lower version than the active one or loses its bundle, and a `publish` otherwise. A rollback is an `S` action: it needs rollback on snapshots (`super_admin`, or `content` for this domain, which it owns), a reason and a sign-in no older than `AdminStepUpMinutes`. The audit object is `snapshots` `localization`, with both snapshots and the new `configVersion`.
-- **Account guards.** An admin cannot change or disable their own account (`own_account`). Creating a `super_admin` or adding the role is refused with `approval_required` until the section 8 approval runs through the API.
-- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`; 404 `not_found`; 409 `email_taken`, `approval_required`, `own_account`; 413 `too_large`; 422 `blocked`; 503 `provider_unavailable`.
+- **Account guards.** An admin cannot change or disable their own account (`own_account`). A new account never starts as `super_admin` (`grant_by_approval`): it is created with other roles, and the role is granted afterwards.
+- **Granting `super_admin`.**
+  - **Proposal.** Adding the role is an `S` action. It needs a reason and a sign-in no older than `AdminStepUpMinutes`. The roles do not change yet: the change is stored as a `super_admin_grant` proposal that expires after `AdminApprovalTtlHours`, and a `submit` entry records it.
+  - **Approval.** It needs another `super_admin` with a fresh sign-in. In one transaction it sets the proposed roles and writes two entries: an `approve` entry by the approver, and an `edit` entry with the before and after roles, the proposal's reason and `approval` set to the `approve` entry's id.
+  - **Reject.** It writes a `reject` entry.
+  - **Errors.** Self-approval gets `self_decision`, a decided proposal `decided` and an expired one `expired`.
+- **First `super_admin`.** `admin-api -bootstrap-email <company email> -bootstrap-name <name>` creates it and exits, only while `admin_accounts` is empty. It locks the table, so two runs cannot both succeed. Its audit entry has actor and session `bootstrap`.
+- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`, `self_decision`; 404 `not_found`; 409 `email_taken`, `grant_by_approval`, `own_account`, `decided`, `expired`, `not_supported`; 413 `too_large`; 422 `blocked`; 503 `provider_unavailable`.
 
 ## 10. Screens and navigation
 

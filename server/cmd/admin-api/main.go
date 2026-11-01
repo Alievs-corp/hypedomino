@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +19,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
+	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
@@ -37,7 +40,7 @@ type config struct {
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig()}}
+	c := config{listenAddr: ":8090", logLevel: "info", api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -72,6 +75,7 @@ func configFromEnv(env lookup) (config, error) {
 	duration("HD_ADMIN_SESSION_IDLE", &c.api.Session.Idle)
 	duration("HD_ADMIN_SESSION_MAX", &c.api.Session.Max)
 	duration("HD_ADMIN_STEP_UP", &c.api.Session.StepUp)
+	duration("HD_ADMIN_APPROVAL_TTL", &c.api.ApprovalTTL)
 	if c.database == "" {
 		errs = append(errs, errors.New("HD_DATABASE_URL is required"))
 	}
@@ -88,6 +92,10 @@ func configFromEnv(env lookup) (config, error) {
 }
 
 func main() {
+	flags := flag.NewFlagSet("admin-api", flag.ExitOnError)
+	email := flags.String("bootstrap-email", "", "create the first super_admin with this company email and exit")
+	name := flags.String("bootstrap-name", "", "display name of the first super_admin")
+	flags.Parse(os.Args[1:])
 	c, err := configFromEnv(os.LookupEnv)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -96,6 +104,13 @@ func main() {
 	logger := app.NewLogger(os.Stdout, c.logLevel)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
+	if *email != "" {
+		if err := bootstrap(ctx, c, *email, *name, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(ctx, c, logger); err != nil {
 		logger.Error("admin api failed", "error", err)
 		os.Exit(1)
@@ -127,6 +142,20 @@ func run(ctx context.Context, c config, logger *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	return server.Shutdown(shutdownCtx)
+}
+
+func bootstrap(ctx context.Context, c config, email, name string, out io.Writer) error {
+	pool, err := db.Open(ctx, c.database)
+	if err != nil {
+		return fmt.Errorf("HD_DATABASE_URL: %w", err)
+	}
+	defer pool.Close()
+	account, err := adminapi.Bootstrap(ctx, pool, c.api, email, name, time.Now())
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "super_admin %s created for %s\n", account.ID, account.Email)
+	return nil
 }
 
 func nonceStore(url string) (idtoken.NonceStore, error) {

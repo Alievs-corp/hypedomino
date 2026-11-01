@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -63,13 +62,7 @@ func (h *Handler) mayRollBack(p principal, note changeNote, now time.Time) error
 	if h.allows(p, rbac.Snapshots, rbac.Rollback) != nil && h.allows(p, rbac.Snapshots, rbac.RollbackOwnDomains) != nil {
 		return errForbidden
 	}
-	if strings.TrimSpace(note.Reason) == "" {
-		return errReasonRequired
-	}
-	if now.After(p.session.AuthenticatedAt.Add(h.config.Session.StepUp)) {
-		return errStepUpRequired
-	}
-	return nil
+	return h.sensitive(p, note, now)
 }
 
 func (h *Handler) activeStrings(w http.ResponseWriter, r *http.Request, p principal) {

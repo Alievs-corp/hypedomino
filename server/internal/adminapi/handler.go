@@ -16,6 +16,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
@@ -28,6 +29,7 @@ type Config struct {
 	Environment  string
 	GoogleDomain string
 	Session      adminsession.Config
+	ApprovalTTL  time.Duration
 }
 
 type Verifier interface {
@@ -36,30 +38,32 @@ type Verifier interface {
 }
 
 type Handler struct {
-	config   Config
-	verifier Verifier
-	pool     *pgxpool.Pool
-	accounts *adminaccount.Store
-	sessions *adminsession.Store
-	audit    *audit.Store
-	strings  *gamestrings.Store
-	now      func() time.Time
-	logger   *slog.Logger
-	mux      *http.ServeMux
+	config    Config
+	verifier  Verifier
+	pool      *pgxpool.Pool
+	accounts  *adminaccount.Store
+	sessions  *adminsession.Store
+	audit     *audit.Store
+	strings   *gamestrings.Store
+	approvals *approval.Store
+	now       func() time.Time
+	logger    *slog.Logger
+	mux       *http.ServeMux
 }
 
 func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.Time, logger *slog.Logger) *Handler {
 	h := &Handler{
-		config:   config,
-		verifier: verifier,
-		pool:     pool,
-		accounts: adminaccount.NewStore(pool),
-		sessions: adminsession.NewStore(pool, config.Session),
-		audit:    audit.NewStore(pool),
-		strings:  gamestrings.NewStore(pool),
-		now:      now,
-		logger:   logger,
-		mux:      http.NewServeMux(),
+		config:    config,
+		verifier:  verifier,
+		pool:      pool,
+		accounts:  adminaccount.NewStore(pool),
+		sessions:  adminsession.NewStore(pool, config.Session),
+		audit:     audit.NewStore(pool),
+		strings:   gamestrings.NewStore(pool),
+		approvals: approval.NewStore(pool, approval.Config{TTL: config.ApprovalTTL}),
+		now:       now,
+		logger:    logger,
+		mux:       http.NewServeMux(),
 	}
 	h.mux.HandleFunc("POST /admin/nonce", h.nonce)
 	h.mux.HandleFunc("POST /admin/session", h.signIn)
@@ -71,6 +75,9 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 	h.mux.HandleFunc("POST /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.Create, h.createAccount))
 	h.mux.HandleFunc("PUT /admin/accounts/{id}/roles", h.allowed(rbac.AdminAccounts, rbac.Edit, h.setRoles))
 	h.mux.HandleFunc("POST /admin/accounts/{id}/disable", h.allowed(rbac.AdminAccounts, rbac.Retire, h.disable))
+	h.mux.HandleFunc("GET /admin/approvals", h.signedIn(h.pendingApprovals))
+	h.mux.HandleFunc("POST /admin/approvals/{id}/approve", h.signedIn(h.approve))
+	h.mux.HandleFunc("POST /admin/approvals/{id}/reject", h.signedIn(h.reject))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -105,13 +112,27 @@ func (h *Handler) audited(ctx context.Context, p principal, change func(tx pgx.T
 			return err
 		}
 		for _, entry := range entries {
-			entry.Actor, entry.Environment, entry.Source = p.actor(), h.config.Environment, p.source
-			if _, err := h.audit.In(tx).Append(ctx, entry, now); err != nil {
+			if _, err := h.audit.In(tx).Append(ctx, h.stamp(p, entry), now); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+}
+
+func (h *Handler) stamp(p principal, entry audit.Entry) audit.Entry {
+	entry.Actor, entry.Environment, entry.Source = p.actor(), h.config.Environment, p.source
+	return entry
+}
+
+func (h *Handler) sensitive(p principal, note changeNote, now time.Time) error {
+	if strings.TrimSpace(note.Reason) == "" {
+		return errReasonRequired
+	}
+	if now.After(p.session.AuthenticatedAt.Add(h.config.Session.StepUp)) {
+		return errStepUpRequired
+	}
+	return nil
 }
 
 type authedHandler func(w http.ResponseWriter, r *http.Request, p principal)
@@ -192,7 +213,8 @@ var (
 	errNotWorkspace     = errors.New("adminapi: identity is not a verified company account")
 	errAccountRefused   = errors.New("adminapi: no active admin account for the identity")
 	errDifferentAccount = errors.New("adminapi: step-up identity is another account")
-	errApprovalRequired = errors.New("adminapi: granting super_admin needs a second super_admin")
+	errGrantSeparately  = errors.New("adminapi: super_admin is granted to an existing account through an approval")
+	errUnsupportedKind  = errors.New("adminapi: this kind of proposal cannot be carried out here yet")
 	errOwnAccount       = errors.New("adminapi: an admin cannot change their own account")
 	errMalformed        = errors.New("adminapi: malformed request")
 	errForbidden        = errors.New("adminapi: the roles do not grant the action")
@@ -246,8 +268,22 @@ func classify(err error) (int, string) {
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, adminaccount.ErrTaken):
 		return http.StatusConflict, "email_taken"
-	case errors.Is(err, errApprovalRequired):
-		return http.StatusConflict, "approval_required"
+	case errors.Is(err, errGrantSeparately):
+		return http.StatusConflict, "grant_by_approval"
+	case errors.Is(err, errUnsupportedKind):
+		return http.StatusConflict, "not_supported"
+	case errors.Is(err, approval.ErrSelfDecision):
+		return http.StatusForbidden, "self_decision"
+	case errors.Is(err, approval.ErrNotAllowed):
+		return http.StatusForbidden, "forbidden"
+	case errors.Is(err, approval.ErrDecided):
+		return http.StatusConflict, "decided"
+	case errors.Is(err, approval.ErrExpired):
+		return http.StatusConflict, "expired"
+	case errors.Is(err, approval.ErrNotFound):
+		return http.StatusNotFound, "not_found"
+	case errors.Is(err, approval.ErrInvalid):
+		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errOwnAccount):
 		return http.StatusConflict, "own_account"
 	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed):
