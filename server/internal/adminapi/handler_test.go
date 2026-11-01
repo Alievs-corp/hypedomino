@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
@@ -45,6 +47,7 @@ func company(email string) idtoken.Identity {
 
 type api struct {
 	t        *testing.T
+	pool     *pgxpool.Pool
 	handler  http.Handler
 	accounts *adminaccount.Store
 	now      time.Time
@@ -65,7 +68,7 @@ func newAPI(t *testing.T) *api {
 		"elsewhere":  {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "other.com"},
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
-	a := &api{t: t, accounts: adminaccount.NewStore(pool), now: start}
+	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), now: start}
 	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour}
 	a.handler = adminapi.New(config, verifier, pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)

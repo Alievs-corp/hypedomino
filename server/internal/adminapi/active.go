@@ -58,6 +58,11 @@ func rollsBack(previous, next map[gamestrings.Language]int) bool {
 	return false
 }
 
+func lockDomain(ctx context.Context, tx pgx.Tx, domain string) error {
+	_, err := tx.Exec(ctx, `select pg_advisory_xact_lock(hashtext('config_snapshots:' || $1))`, domain)
+	return err
+}
+
 func (h *Handler) mayRollBack(p principal, note changeNote, now time.Time) error {
 	if h.allows(p, rbac.Snapshots, rbac.Rollback) != nil && h.allows(p, rbac.Snapshots, rbac.RollbackOwnDomains) != nil {
 		return errForbidden
@@ -87,7 +92,7 @@ func (h *Handler) activateStrings(w http.ResponseWriter, r *http.Request, p prin
 	}
 	var activated published
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
-		if _, err := tx.Exec(r.Context(), `select pg_advisory_xact_lock(hashtext('config_snapshots:' || $1))`, gamestrings.Domain); err != nil {
+		if err := lockDomain(r.Context(), tx, gamestrings.Domain); err != nil {
 			return nil, err
 		}
 		current, err := latestLocalization(r.Context(), tx)
