@@ -102,3 +102,15 @@ func Allows(roles []Role, object Object, action Action) bool {
 	}
 	return false
 }
+
+func Granted(roles []Role, object Object) []Action {
+	var granted []Action
+	for _, role := range roles {
+		for _, action := range matrix[object][role] {
+			if !slices.Contains(granted, action) {
+				granted = append(granted, action)
+			}
+		}
+	}
+	return granted
+}

@@ -106,3 +106,25 @@ func TestTheWatcherAppliesEveryNewPublishedVersion(t *testing.T) {
 		t.Fatal("a missing file seeded")
 	}
 }
+
+func TestVersionAndHistoryReadOneDomain(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	first, _ := snapshot.Publish(ctx, pool, "rules", []byte(`{"TurnSeconds": 20}`))
+	other, _ := snapshot.Publish(ctx, pool, "shop", []byte(`{}`))
+	second, _ := snapshot.Publish(ctx, pool, "rules", []byte(`{"TurnSeconds": 30}`))
+	got, err := snapshot.Version(ctx, pool, "rules", first)
+	if err != nil || got.Version != first || string(got.Content) != `{"TurnSeconds": 20}` || got.At.IsZero() {
+		t.Fatalf("version %+v %v", got, err)
+	}
+	if _, err := snapshot.Version(ctx, pool, "rules", other); !errors.Is(err, snapshot.ErrNone) {
+		t.Fatalf("version of another domain: %v", err)
+	}
+	history, err := snapshot.History(ctx, pool, "rules", 10)
+	if err != nil || len(history) != 2 || history[0].Version != second || history[1].Version != first {
+		t.Fatalf("history %+v %v", history, err)
+	}
+	if limited, err := snapshot.History(ctx, pool, "rules", 1); err != nil || len(limited) != 1 || limited[0].Version != second {
+		t.Fatalf("limited %+v %v", limited, err)
+	}
+}
