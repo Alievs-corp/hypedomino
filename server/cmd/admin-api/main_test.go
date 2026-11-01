@@ -30,6 +30,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		"HD_SHOP_DAILY_SLOTS":           "6",
 		"HD_SHOP_RESET_HOUR_UTC":        "4",
 		"HD_ADMIN_GRANT_APPROVAL_COINS": "5000",
+		"HD_TEMP_BAN_HOURS":             "72",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +43,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 			ApprovalTTL:        48 * time.Hour,
 			Shop:               shop.Config{DailySlots: 6, WeeklySlots: 2, ResetHourUTC: 4},
 			GrantApprovalCoins: 5000,
+			TempBan:            72 * time.Hour,
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -50,11 +52,11 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 }
 
 func TestConfigNamesEveryMissingOrInvalidValue(t *testing.T) {
-	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_ADMIN_GRANT_APPROVAL_COINS": "0"}))
+	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_ADMIN_GRANT_APPROVAL_COINS": "0", "HD_TEMP_BAN_HOURS": "-1"}))
 	if err == nil {
 		t.Fatal("empty environment accepted")
 	}
-	for _, name := range []string{"HD_DATABASE_URL", "HD_ADMIN_ENVIRONMENT", "HD_ADMIN_GOOGLE_DOMAIN", "HD_ADMIN_GOOGLE_AUDIENCES", "HD_ADMIN_SESSION_MAX", "HD_SHOP_WEEKLY_SLOTS", "HD_SHOP_RESET_HOUR_UTC", "HD_ADMIN_GRANT_APPROVAL_COINS"} {
+	for _, name := range []string{"HD_DATABASE_URL", "HD_ADMIN_ENVIRONMENT", "HD_ADMIN_GOOGLE_DOMAIN", "HD_ADMIN_GOOGLE_AUDIENCES", "HD_ADMIN_SESSION_MAX", "HD_SHOP_WEEKLY_SLOTS", "HD_SHOP_RESET_HOUR_UTC", "HD_ADMIN_GRANT_APPROVAL_COINS", "HD_TEMP_BAN_HOURS"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error %q does not name %s", err, name)
 		}
