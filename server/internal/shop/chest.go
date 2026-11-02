@@ -121,3 +121,16 @@ func (c *Catalog) CheckChestPools(items *cosmetics.Catalog) error {
 	}
 	return nil
 }
+
+type ChestOdds struct {
+	Rarity  string `json:"rarity"`
+	Percent int    `json:"percent"`
+}
+
+func (r ChestRules) Odds() []ChestOdds {
+	odds := make([]ChestOdds, 0, len(ChestRarities))
+	for _, rarity := range ChestRarities {
+		odds = append(odds, ChestOdds{Rarity: rarity, Percent: r.RarityPercent[rarity]})
+	}
+	return odds
+}

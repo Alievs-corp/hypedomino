@@ -252,8 +252,8 @@ Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use show
 | Field | Rule |
 |---|---|
 | `id` | `offer.<slug>` |
-| `kind` | `cosmetic`, `bundle`, `crystals`, `pass`, `pass_levels` |
-| `section` | `featured`, `daily_rotation`, `weekly_rotation`, `event`, `pass`, `crystals` (`docs/economy.md` 6.1) |
+| `kind` | `cosmetic`, `bundle`, `chest`, `crystals`, `pass`, `pass_levels` |
+| `section` | `featured`, `daily_rotation`, `weekly_rotation`, `event`, `chests`, `pass`, `crystals` (`docs/economy.md` 6.1) |
 | `price` | Exactly one of `priceCoins` (integer > 0), `priceCrystals` (integer > 0) or a store `productId` (`docs/economy.md` 6.2) |
 | `bundle` | Bundle id |
 | `window` | Start and optional end, UTC |
@@ -262,6 +262,8 @@ Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use show
 | `nameKey` | Game string for the offer title |
 | `referencePrice` | Optional struck-through price in the currency of the price (`referencePriceCoins` or `referencePriceCrystals`), validated by `docs/economy.md` 6.3 |
 | `regionalOverrideNote` | Text; a store-console override needs owner approval (`docs/economy.md` 7.4) |
+| `pool` | Chests only: the `common` and `rare` items of the chest, stored as its bundle cosmetics; the editor offers only published `common` and `rare` items (`docs/economy.md` 3.4) |
+| `chests` | Catalog-wide: `rarityPercent` (`ChestRarityPercent`) and `rarePityCount` (`ChestRarePityCount`) |
 
 A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (owner decision O-3).
 
@@ -597,7 +599,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/config/rules/history` | V on config values | The last 50 `rules` snapshots, newest first |
 | `POST /admin/config/rules/rollback` `{"version"}` | P on config values and S: rollback on snapshots | Publishes the content of an earlier `rules` snapshot as the next version |
 | `GET /admin/config/shop` | V on shop offers | The published shop catalog (offers and rotations of 5.5) and its `config_version`; `catalog` is null before the first publish |
-| `PUT /admin/config/shop` `{"catalog"}` | P on shop offers | Publishes the catalog as the next `shop` snapshot |
+| `PUT /admin/config/shop` `{"catalog"}` | P on shop offers | Publishes the catalog as the next `shop` snapshot. A chest pool item must be a published `common` or `rare` item listing the chest as its `chest` source (V-15) |
+| `GET /admin/cosmetics/items` | V on cosmetic items | The published cosmetic items (`id`, `type`, `rarity`, `availability`, `sources`), the built-in ones before the first publish; the chest pool editor picks from them |
 | `GET /admin/config/shop/history` | V on shop offers | The last 50 `shop` snapshots, newest first |
 | `POST /admin/config/shop/rollback` `{"version"}` | P on shop offers and S: rollback on snapshots | Publishes the content of an earlier `shop` snapshot as the next version |
 | `GET /admin/players?q=` | V on players | With `provider` and `subject` instead of `q`, the account of that auth identity, for `super_admin` only (D-2). Otherwise search (6.1): an account id, an email (exact, any case) or a nickname prefix (folded as for uniqueness, `docs/localization.md` 5.2); at most 20, by nickname |
