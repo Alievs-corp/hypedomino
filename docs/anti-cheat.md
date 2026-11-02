@@ -90,6 +90,8 @@ Risk is the impact if the countermeasures did not exist. Every vector is verifie
 | Response | Block the grant. Forged receipt, reuse on another account and account mismatch are hard evidence: flag and review. Refund or chargeback: revoke and flag |
 | Issues | #204, #202, #209, #212 |
 
+Implemented in `server/internal/purchase` with `server/internal/risk` (#204). A `fake_receipt` signal of weight `FakeReceiptWeight` (20) is recorded in `risk_signals` when a completed purchase is refused for an account mismatch, a transaction already bound to another account, a bad store signature (`receipt.signature`), a token the store does not know (`receipt.unknown`) or a sandbox or test receipt where they are not allowed (`receipt.environment`). Evidence holds the platform, offer, refusal code and, when known, the transaction id; the dedupe key is the transaction id or a SHA-256 of the token, so resending one receipt counts once. A refund or chargeback notice that revokes a purchase records a `refund` signal of weight `RefundWeight` (3), once per transaction, in the same transaction as the revoke. A reversal does not remove the signal. Every refusal is also logged with the account and the code.
+
 ### V-4. Packet tampering through a proxy
 
 | | |
@@ -242,7 +244,7 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight` (launch default 1), `FakeReceiptWeight`, `RefundWeight`, `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |

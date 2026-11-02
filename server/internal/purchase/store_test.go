@@ -16,6 +16,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -65,6 +66,7 @@ type fixture struct {
 	google    *fakeValidator
 	shop      *shop.Store
 	store     *purchase.Store
+	signals   *risk.Store
 }
 
 func newFixture(t *testing.T, config purchase.Config) *fixture {
@@ -85,6 +87,8 @@ func newFixture(t *testing.T, config purchase.Config) *fixture {
 	f.shop = shop.NewStore(pool, f.wallet, f.inventory, f.engine, offers, shop.DefaultConfig())
 	f.store = purchase.NewStore(pool, f.wallet, f.engine, offers, map[purchase.Platform]purchase.Validator{purchase.PlatformGoogle: f.google}, config, logger)
 	f.shop.Guard(f.store)
+	f.signals = risk.NewStore(pool)
+	f.store.Flag(f.signals, risk.DefaultConfig())
 	return f
 }
 

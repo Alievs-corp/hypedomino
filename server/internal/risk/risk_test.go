@@ -64,13 +64,13 @@ func TestASkewedDeviceClockRaisesOneSoftSignalPerDay(t *testing.T) {
 	}
 }
 
-func TestTheClockSkewConfigIsChecked(t *testing.T) {
-	for _, config := range []risk.Config{{ClockSkewTolerance: 0, ClockSkewWeight: 1}, {ClockSkewTolerance: time.Minute, ClockSkewWeight: -1}} {
+func TestTheRiskConfigIsChecked(t *testing.T) {
+	for _, config := range []risk.Config{{ClockSkewTolerance: 0, ClockSkewWeight: 1}, {ClockSkewTolerance: time.Minute, ClockSkewWeight: -1}, {ClockSkewTolerance: time.Minute, FakeReceiptWeight: -1}, {ClockSkewTolerance: time.Minute, RefundWeight: -1}} {
 		if err := config.Validate(); !errors.Is(err, risk.ErrInvalidConfig) {
 			t.Fatalf("%+v: %v", config, err)
 		}
 	}
-	if err := risk.DefaultConfig().Validate(); err != nil {
-		t.Fatal(err)
+	if config := risk.DefaultConfig(); config.Validate() != nil || config.FakeReceiptWeight != 20 || config.RefundWeight != 3 {
+		t.Fatalf("defaults %+v", config)
 	}
 }
