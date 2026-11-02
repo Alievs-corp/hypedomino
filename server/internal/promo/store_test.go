@@ -142,7 +142,7 @@ func TestAMultiUseCodeGrantsOncePerAccountUpToItsCap(t *testing.T) {
 	if redemption.Promo != "promo.welcome" || redemption.Campaign != "campaign.launch_week" || redemption.Grant.Coins != 300 || redemption.Grant.Key != "promo:promo.welcome:"+a {
 		t.Fatalf("redemption %+v", redemption)
 	}
-	if balance, _ := f.wallet.Balance(context.Background(), a); balance != 300 {
+	if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != 300 {
 		t.Fatalf("balance %d", balance)
 	}
 	if _, err := f.store.Redeem(context.Background(), a, "HYPE2345", now.Add(time.Minute)); !errors.Is(err, promo.ErrAlreadyRedeemed) {
@@ -336,7 +336,7 @@ func TestDisabledAndOutOfWindowCodesAreRefused(t *testing.T) {
 	if _, err := f.store.Redeem(context.Background(), a, created.Plaintext, now); !errors.Is(err, promo.ErrDisabled) {
 		t.Fatalf("disabled: %v", err)
 	}
-	if balance, _ := f.wallet.Balance(context.Background(), a); balance != 0 {
+	if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != 0 {
 		t.Fatalf("balance %d", balance)
 	}
 }

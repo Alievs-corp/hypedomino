@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const (
@@ -159,15 +160,15 @@ func (o Offer) validateBundle() error {
 			return nil
 		}
 	}
-	if err := o.Bundle.Validate(); err != nil {
+	if err := o.Bundle.ValidateFor(o.reason()); err != nil {
 		return err
 	}
 	switch {
 	case len(o.Bundle.Medals) > 0:
 		return errors.New("an offer never carries a medal")
-	case o.PriceCoins > 0 && o.Bundle.Coins > 0:
-		return errors.New("a coin-priced offer grants no coins")
-	case o.Kind == KindCosmetic && (len(o.Bundle.Cosmetics) != 1 || o.Bundle.Coins > 0 || o.Bundle.PassXP > 0):
+	case o.PriceCoins > 0 && (o.Bundle.Coins > 0 || o.Bundle.Crystals > 0):
+		return errors.New("a coin-priced offer grants no currency")
+	case o.Kind == KindCosmetic && (len(o.Bundle.Cosmetics) != 1 || o.Bundle.Coins > 0 || o.Bundle.Crystals > 0 || o.Bundle.PassXP > 0):
 		return errors.New("a cosmetic offer grants exactly one cosmetic")
 	case o.Kind == KindCosmetic && o.LimitPerAccount != 1:
 		return errors.New("a cosmetic offer is limited to one per account")
@@ -245,7 +246,7 @@ func Parse(raw []byte, config Config) (*Catalog, error) {
 		return nil, err
 	}
 	if catalog.FirstPurchase != nil {
-		if err := catalog.FirstPurchase.Validate(); err != nil {
+		if err := catalog.FirstPurchase.ValidateFor(wallet.FirstPurchaseBonus); err != nil {
 			return nil, fmt.Errorf("%w: first purchase bonus: %v", ErrInvalid, err)
 		}
 		if len(catalog.FirstPurchase.Medals) > 0 {
@@ -380,4 +381,11 @@ func contains(list []string, value string) bool {
 		}
 	}
 	return false
+}
+
+func (o Offer) reason() wallet.Reason {
+	if o.ProductID != "" {
+		return wallet.Purchase
+	}
+	return wallet.ShopPurchase
 }

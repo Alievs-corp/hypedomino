@@ -73,6 +73,7 @@ type Item struct {
 
 type LedgerEntry struct {
 	ID            int64     `json:"id"`
+	Currency      string    `json:"currency"`
 	Amount        int64     `json:"amount"`
 	Reason        string    `json:"reason"`
 	SourceType    string    `json:"source_type"`
@@ -125,7 +126,8 @@ type Record struct {
 	Profile         *Profile         `json:"profile"`
 	NicknameHistory []FormerNickname `json:"nickname_history"`
 	Inventory       []Item           `json:"inventory"`
-	Balance         int64            `json:"balance"`
+	Coins           int64            `json:"coins"`
+	Crystals        int64            `json:"crystals"`
 	Ledger          []LedgerEntry    `json:"ledger"`
 	Grants          []Grant          `json:"grants"`
 	Purchases       []Purchase       `json:"purchases"`
@@ -204,10 +206,12 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	}
 	var r Record
 	err := db.QueryRow(ctx, `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at,
-		a.banned_until, a.deletion_requested_at, a.deleted_at, coalesce(w.balance, 0)
-		from accounts a left join profiles p on p.account_id = a.id left join wallets w on w.account_id = a.id
+		a.banned_until, a.deletion_requested_at, a.deleted_at, coalesce(c.balance, 0), coalesce(k.balance, 0)
+		from accounts a left join profiles p on p.account_id = a.id
+		left join wallets c on c.account_id = a.id and c.currency = 'coin'
+		left join wallets k on k.account_id = a.id and k.currency = 'crystal'
 		where a.id = $1::uuid`, accountID).Scan(&r.Account.ID, &r.Account.Nickname, &r.Account.State, &r.Account.Country,
-		&r.Account.CreatedAt, &r.Account.BannedUntil, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Balance)
+		&r.Account.CreatedAt, &r.Account.BannedUntil, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Coins, &r.Crystals)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Record{}, ErrNotFound
 	}
@@ -291,10 +295,10 @@ func loadInventory(ctx context.Context, db Querier, r *Record) error {
 }
 
 func loadLedger(ctx context.Context, db Querier, r *Record) error {
-	return collect(ctx, db, &r.Ledger, `select id, amount, reason, source_type, source_ref, config_version, balance_after, created_at
+	return collect(ctx, db, &r.Ledger, `select id, currency, amount, reason, source_type, source_ref, config_version, balance_after, created_at
 		from ledger_entries where account_id = $1::uuid order by created_at desc, id desc limit $2`,
 		func(row pgx.CollectableRow, e *LedgerEntry) error {
-			return row.Scan(&e.ID, &e.Amount, &e.Reason, &e.SourceType, &e.SourceRef, &e.ConfigVersion, &e.BalanceAfter, &e.At)
+			return row.Scan(&e.ID, &e.Currency, &e.Amount, &e.Reason, &e.SourceType, &e.SourceRef, &e.ConfigVersion, &e.BalanceAfter, &e.At)
 		}, r.Account.ID, ListLimit)
 }
 

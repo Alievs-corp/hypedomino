@@ -11,6 +11,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const (
@@ -237,7 +238,7 @@ func validateRewarded(mission Mission) error {
 	case mission.Type == Event && (mission.Next != "" || !eventIDPattern.MatchString(mission.EventID)):
 		return errors.New("an event mission needs an eventId and takes no next")
 	}
-	return mission.Bundle.Validate()
+	return mission.Bundle.ValidateFor(wallet.Mission)
 }
 
 func (c *Catalog) checkChains() error {

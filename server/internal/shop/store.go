@@ -284,7 +284,7 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 	key := "shop:" + requestID
 	earlier, err := reward.GetIn(ctx, tx, account, key)
 	if err == nil {
-		balance, err := s.wallet.BalanceIn(ctx, tx, account)
+		balance, err := s.wallet.BalanceIn(ctx, tx, account, wallet.Coin)
 		if err != nil {
 			return Purchase{}, err
 		}

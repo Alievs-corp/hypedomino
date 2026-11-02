@@ -108,7 +108,7 @@ func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
 	if err != nil || report.Repeated || report.ID == 0 || report.Coins != 300 || len(report.Cosmetics) != 2 || len(report.Duplicates) != 0 || len(report.Medals) != 1 || len(report.MedalsSkipped) != 0 || report.PassXP != 40 || report.PassXPDropped != 0 || !report.At.Equal(start) {
 		t.Fatalf("report %+v %v", report, err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 300 {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 300 {
 		t.Fatalf("balance %d %v", balance, err)
 	}
 	if owns, err := f.inventory.Owns(ctx, ayla, "action.victory_dance"); err != nil || !owns {
@@ -121,7 +121,7 @@ func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
 	if err != nil || !again.Repeated || again.ID != report.ID || again.Coins != 300 {
 		t.Fatalf("repeat %+v %v", again, err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 300 {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 300 {
 		t.Fatalf("balance after the repeat %d %v", balance, err)
 	}
 	if f.pass.added != 40 {
@@ -160,7 +160,7 @@ func TestDuplicatesPayCompensationAndMissingServicesDropTheirParts(t *testing.T)
 	if len(report.Medals) != 0 || len(report.MedalsSkipped) != 1 || report.PassXP != 0 || report.PassXPDropped != 40 {
 		t.Fatalf("medals and xp without services %+v", report)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 300+compensation {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 300+compensation {
 		t.Fatalf("balance %d %v", balance, err)
 	}
 	history, err := f.wallet.History(ctx, ayla, 10)
@@ -178,7 +178,7 @@ func TestARefusedGrantWritesNothing(t *testing.T) {
 	if _, err := engine.Apply(ctx, reward.Grant{Account: ayla, Bundle: unlisted, Source: cosmetics.Source{Type: "mission", Ref: "mission.x"}, Reason: wallet.Mission, Key: "mission:x:1"}, start); !errors.Is(err, inventory.ErrSourceNotListed) {
 		t.Fatalf("unlisted source: %v", err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 0 {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 0 {
 		t.Fatalf("coins credited by a refused grant: %d %v", balance, err)
 	}
 	if _, err := engine.Get(ctx, ayla, "mission:x:1"); !errors.Is(err, reward.ErrUnknownGrant) {
@@ -213,7 +213,7 @@ func TestRevokeTakesBackCoinsItemsAndMedalsOnce(t *testing.T) {
 	if err != nil || !revoked.Revoked() || revoked.RevokeKey != "refund:google:t9" || !revoked.RevokedAt.Equal(start.Add(time.Hour)) {
 		t.Fatalf("revoke %+v %v", revoked, err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 0 {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 0 {
 		t.Fatalf("balance after revoke %d %v", balance, err)
 	}
 	if owns, err := f.inventory.Owns(ctx, ayla, "avatar.comet_fox"); err != nil || owns {
@@ -247,7 +247,7 @@ func TestRevokeTakesBackCoinsItemsAndMedalsOnce(t *testing.T) {
 	if _, err := engine.Revoke(ctx, spent, "event:spring_cup:r4", wallet.RefundRevoke, "refund:google:t10", start); err != nil {
 		t.Fatalf("refund revoke of spent coins: %v", err)
 	}
-	if balance, err := f.wallet.Balance(ctx, spent); err != nil || balance != -100 {
+	if balance, err := f.wallet.Balance(ctx, spent, wallet.Coin); err != nil || balance != -100 {
 		t.Fatalf("balance after a refund revoke of spent coins %d %v", balance, err)
 	}
 	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: spent, Amount: -1, Reason: wallet.Rename, Source: wallet.Source{Type: "rename", Ref: "r"}, Key: "spend:r2"}, start); !errors.Is(err, wallet.ErrInsufficient) {
@@ -256,7 +256,7 @@ func TestRevokeTakesBackCoinsItemsAndMedalsOnce(t *testing.T) {
 	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: spent, Amount: 150, Reason: wallet.MatchReward, Source: wallet.Source{Type: "match", Ref: "m"}, Key: "earn:m"}, start); err != nil {
 		t.Fatal(err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, spent); balance != 50 {
+	if balance, _ := f.wallet.Balance(ctx, spent, wallet.Coin); balance != 50 {
 		t.Fatalf("balance after earning back %d", balance)
 	}
 }
@@ -289,7 +289,7 @@ func TestAReinstatedGrantComesBackAndCanBeRevokedAgain(t *testing.T) {
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != granted.Coins {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != granted.Coins {
 		t.Fatalf("balance after reinstate %d %v, want %d", balance, err, granted.Coins)
 	}
 	if owns, err := f.inventory.Owns(ctx, ayla, "avatar.comet_fox"); err != nil || !owns {
@@ -301,7 +301,72 @@ func TestAReinstatedGrantComesBackAndCanBeRevokedAgain(t *testing.T) {
 	if _, err := engine.Revoke(ctx, ayla, grant.Key, wallet.RefundRevoke, "refund:google:t12", start.Add(3*time.Hour)); err != nil {
 		t.Fatalf("revoke after reinstate: %v", err)
 	}
-	if balance, err := f.wallet.Balance(ctx, ayla); err != nil || balance != 0 {
+	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 0 {
 		t.Fatalf("balance after the second revoke %d %v", balance, err)
+	}
+}
+
+func TestCrystalsAreGrantedRevokedAndReinstatedInTheirOwnBalance(t *testing.T) {
+	f := newFixture(t)
+	engine := f.engine(f.medals, f.pass)
+	ctx := context.Background()
+	ayla := f.account(t)
+	store := cosmetics.Source{Type: "shop", Ref: "offer.crystals_tier2"}
+	pack := reward.Bundle{ID: "bundle.crystals_tier2", Revision: 1, Crystals: 550}
+	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Amount: 70, Reason: wallet.MatchReward, Source: wallet.Source{Type: "match", Ref: "m1"}, Key: "match:m1"}, start); err != nil {
+		t.Fatal(err)
+	}
+	report, err := engine.Apply(ctx, reward.Grant{Account: ayla, Bundle: pack, Source: store, Reason: wallet.Purchase, Key: "purchase:google:t1"}, start)
+	if err != nil || report.Crystals != 550 || report.Coins != 0 {
+		t.Fatalf("crystal grant %+v %v", report, err)
+	}
+	balances := func() (int64, int64) {
+		coins, err := f.wallet.Balance(ctx, ayla, wallet.Coin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		crystals, err := f.wallet.Balance(ctx, ayla, wallet.Crystal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return coins, crystals
+	}
+	if coins, crystals := balances(); coins != 70 || crystals != 550 {
+		t.Fatalf("after the grant coins %d crystals %d", coins, crystals)
+	}
+	if _, err := engine.Revoke(ctx, ayla, "purchase:google:t1", wallet.RefundRevoke, "refund:google:t1", start); err != nil {
+		t.Fatal(err)
+	}
+	if coins, crystals := balances(); coins != 70 || crystals != 0 {
+		t.Fatalf("after the refund coins %d crystals %d", coins, crystals)
+	}
+	tx, err := f.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err := engine.ReinstateIn(ctx, tx, ayla, "purchase:google:t1", wallet.RefundReversal, "refund_reversal:google:t1", start); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if coins, crystals := balances(); coins != 70 || crystals != 550 {
+		t.Fatalf("after the reversal coins %d crystals %d", coins, crystals)
+	}
+}
+
+func TestAFreeSourceCannotGrantCrystals(t *testing.T) {
+	f := newFixture(t)
+	engine := f.engine(f.medals, f.pass)
+	ayla := f.account(t)
+	crystals := reward.Bundle{ID: "bundle.free_crystals", Revision: 1, Crystals: 50}
+	for _, reason := range []wallet.Reason{wallet.MatchReward, wallet.DailyLogin, wallet.Mission, wallet.RankReward, wallet.EventReward, wallet.Promo} {
+		if _, err := engine.Apply(context.Background(), reward.Grant{Account: ayla, Bundle: crystals, Source: spring, Reason: reason, Key: "k:" + string(reason)}, start); !errors.Is(err, reward.ErrInvalidGrant) {
+			t.Errorf("%s granted crystals: %v", reason, err)
+		}
+	}
+	if balance, err := f.wallet.Balance(context.Background(), ayla, wallet.Crystal); err != nil || balance != 0 {
+		t.Fatalf("crystal balance %d %v", balance, err)
 	}
 }

@@ -40,7 +40,7 @@ func TestARecordCarriesInventoryGrantsPurchasesAndMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if record.Account.Country != "AZ" || record.Profile != nil || len(record.Account.Emails) != 0 || record.Balance != 0 {
+	if record.Account.Country != "AZ" || record.Profile != nil || len(record.Account.Emails) != 0 || record.Coins != 0 || record.Crystals != 0 {
 		t.Fatalf("account %+v", record)
 	}
 	if len(record.Inventory) != 1 || record.Inventory[0].RevokedAt == nil || len(record.Grants) != 1 || record.Grants[0].Revision != 2 {

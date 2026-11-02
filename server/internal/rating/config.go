@@ -10,6 +10,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const (
@@ -97,7 +98,7 @@ func (c Config) Validate() error {
 		if !KnownTier(tier) {
 			return fail("rankRewards tier %q", tier)
 		}
-		if err := bundle.Validate(); err != nil {
+		if err := bundle.ValidateFor(wallet.RankReward); err != nil {
 			return fail("rankRewards %s: %v", tier, err)
 		}
 	}

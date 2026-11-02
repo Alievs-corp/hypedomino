@@ -55,7 +55,7 @@ func TestADayIsClaimedOnceAndAMissedDayPausesTheCycle(t *testing.T) {
 	if err != nil || afterGap.Granted.Coins != 50 || afterGap.Day != 4 {
 		t.Fatalf("claim after missed days %+v, %v", afterGap, err)
 	}
-	if balance, err := walletStore.Balance(ctx, account); err != nil || balance != 110 {
+	if balance, err := walletStore.Balance(ctx, account, wallet.Coin); err != nil || balance != 110 {
 		t.Fatalf("balance %d, %v", balance, err)
 	}
 }
@@ -85,7 +85,7 @@ func TestTheWeekEndsOnTheBigDayAndStartsAgain(t *testing.T) {
 	if paid[6] != 150 || paid[7] != 30 {
 		t.Fatalf("paid %v", paid)
 	}
-	if balance, err := walletStore.Balance(ctx, account); err != nil || balance != 480 {
+	if balance, err := walletStore.Balance(ctx, account, wallet.Coin); err != nil || balance != 480 {
 		t.Fatalf("balance %d, %v", balance, err)
 	}
 }

@@ -189,6 +189,9 @@ func validateTrack(track map[int]reward.Bundle, levels int, budget int64) error 
 		if len(bundle.Medals) > 0 || bundle.PassXP != 0 {
 			return fmt.Errorf("level %d grants medals or pass XP", level)
 		}
+		if bundle.Crystals > 0 {
+			return fmt.Errorf("level %d grants crystals", level)
+		}
 		coins += bundle.Coins
 	}
 	if coins > budget {

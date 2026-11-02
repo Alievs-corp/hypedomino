@@ -13,7 +13,7 @@ import (
 
 func (a *api) balance(accountID string) int64 {
 	a.t.Helper()
-	balance, err := wallet.NewStore(a.pool).Balance(context.Background(), accountID)
+	balance, err := wallet.NewStore(a.pool).Balance(context.Background(), accountID, wallet.Coin)
 	if err != nil {
 		a.t.Fatal(err)
 	}
