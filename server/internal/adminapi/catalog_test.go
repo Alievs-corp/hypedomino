@@ -208,7 +208,7 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 		t.Fatalf("chest item %v", kite)
 	}
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
-	if status != http.StatusOK || body["config_version"] != float64(1) {
+	if status != http.StatusOK || body["config_version"] != float64(2) {
 		t.Fatalf("chest after its items %d %v", status, body)
 	}
 	withChest["offers"] = []map[string]any{cometFox(), avatarChest()}

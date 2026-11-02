@@ -1,0 +1,6 @@
+{
+  "entries": [
+    { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
+    { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" }
+  ]
+}

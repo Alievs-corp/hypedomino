@@ -16,7 +16,7 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, UI, Cosmetics |
 | `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | `Google.Protobuf.dll` only; output of `npm run proto:gen`, never edited |
-| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only |
+| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references UI |
 | `Assets/HypeDomino/Settings` | | URP asset, Universal Renderer, texture preset |
 | `Assets/HypeDomino/Scenes` | | `Boot.unity`, the first build scene |
 | `Assets/Plugins/Google.Protobuf` | | Google.Protobuf 3.36.2 (`netstandard2.0`), the runtime matching the `protocolbuffers/csharp:v36.2` plugin in `proto/buf.gen.yaml`, and its dependency System.Runtime.CompilerServices.Unsafe 4.5.3 (`netstandard2.0`, assembly 4.0.4.1), which the player profile lacks; `System.Memory` comes from the .NET Standard 2.1 profile |
@@ -54,3 +54,9 @@ FrameTiming target=<Hz> frames=1200 workP50=<ms>ms workP95=<ms>ms missedVsync=<p
 Work time is `max(cpuFrameTime, gpuFrameTime)`; a missed vsync is a presented interval longer than 1.5 refresh periods (`docs/performance.md` 2). Read it with `adb logcat -s Unity`.
 
 Size: build a release Android player (File > Build Profiles > Android, Development Build off) and read the APK size and the Build Report.
+
+## Shop and wallet
+
+`UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
+
+`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
