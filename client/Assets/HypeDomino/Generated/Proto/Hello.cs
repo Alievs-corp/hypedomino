@@ -32,7 +32,7 @@ namespace Hypedomino.V1 {
             "ASgJUgtkZXZpY2VNb2RlbBIjCg1zZXNzaW9uX3Rva2VuGAYgASgJUgxzZXNz",
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
             "a2VkU2VxdWVuY2USLQoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBFIQY2xp",
-            "ZW50VGltZVVuaXhNcyLvAgoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgO",
+            "ZW50VGltZVVuaXhNcyKUAwoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgO",
             "MhouaHlwZWRvbWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmlt",
             "dW1fYXBwX3ZlcnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3Nl",
             "cnZlcl90aW1lX3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoP",
@@ -40,24 +40,25 @@ namespace Hypedomino.V1 {
             "YXRjaBgFIAEoCFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIb",
             "Lmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUK",
             "D2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJh",
-            "Y2tDaGFpblIOZmFsbGJhY2tDaGFpbnMiWAoMU3RyaW5nQnVuZGxlEhoKCGxh",
-            "bmd1YWdlGAEgASgJUghsYW5ndWFnZRIYCgd2ZXJzaW9uGAIgASgNUgd2ZXJz",
-            "aW9uEhIKBGhhc2gYAyABKAlSBGhhc2giSQoNRmFsbGJhY2tDaGFpbhIaCghs",
-            "YW5ndWFnZRgBIAEoCVIIbGFuZ3VhZ2USHAoJbGFuZ3VhZ2VzGAIgAygJUgls",
-            "YW5ndWFnZXMqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQ",
-            "ABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqaAoL",
-            "SGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoV",
-            "SEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RBVFVTX1VQREFU",
-            "RV9SRVFVSVJFRBACQsUBChFjb20uaHlwZWRvbWluby52MUIKSGVsbG9Qcm90",
-            "b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVy",
-            "L2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhY",
-            "qgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5v",
-            "XFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
+            "Y2tDaGFpblIOZmFsbGJhY2tDaGFpbnMSIwoNc2Vzc2lvbl9ub25jZRgIIAEo",
+            "BlIMc2Vzc2lvbk5vbmNlIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5ndWFnZRgB",
+            "IAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lvbhISCgRo",
+            "YXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3VhZ2UY",
+            "ASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3VhZ2Vz",
+            "KkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExB",
+            "VEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hlbGxvU3Rh",
+            "dHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NU",
+            "QVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlS",
+            "RUQQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0",
+            "aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5h",
+            "bC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVk",
+            "b21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJN",
+            "ZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains", "SessionNonce" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.StringBundle), global::Hypedomino.V1.StringBundle.Parser, new[]{ "Language", "Version", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
           }));
@@ -580,6 +581,7 @@ namespace Hypedomino.V1 {
       inMatch_ = other.inMatch_;
       stringBundles_ = other.stringBundles_.Clone();
       fallbackChains_ = other.fallbackChains_.Clone();
+      sessionNonce_ = other.sessionNonce_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -671,6 +673,18 @@ namespace Hypedomino.V1 {
       get { return fallbackChains_; }
     }
 
+    /// <summary>Field number for the "session_nonce" field.</summary>
+    public const int SessionNonceFieldNumber = 8;
+    private ulong sessionNonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong SessionNonce {
+      get { return sessionNonce_; }
+      set {
+        sessionNonce_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -693,6 +707,7 @@ namespace Hypedomino.V1 {
       if (InMatch != other.InMatch) return false;
       if(!stringBundles_.Equals(other.stringBundles_)) return false;
       if(!fallbackChains_.Equals(other.fallbackChains_)) return false;
+      if (SessionNonce != other.SessionNonce) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -707,6 +722,7 @@ namespace Hypedomino.V1 {
       if (InMatch != false) hash ^= InMatch.GetHashCode();
       hash ^= stringBundles_.GetHashCode();
       hash ^= fallbackChains_.GetHashCode();
+      if (SessionNonce != 0UL) hash ^= SessionNonce.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -747,6 +763,10 @@ namespace Hypedomino.V1 {
       }
       stringBundles_.WriteTo(output, _repeated_stringBundles_codec);
       fallbackChains_.WriteTo(output, _repeated_fallbackChains_codec);
+      if (SessionNonce != 0UL) {
+        output.WriteRawTag(65);
+        output.WriteFixed64(SessionNonce);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -779,6 +799,10 @@ namespace Hypedomino.V1 {
       }
       stringBundles_.WriteTo(ref output, _repeated_stringBundles_codec);
       fallbackChains_.WriteTo(ref output, _repeated_fallbackChains_codec);
+      if (SessionNonce != 0UL) {
+        output.WriteRawTag(65);
+        output.WriteFixed64(SessionNonce);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -806,6 +830,9 @@ namespace Hypedomino.V1 {
       }
       size += stringBundles_.CalculateSize(_repeated_stringBundles_codec);
       size += fallbackChains_.CalculateSize(_repeated_fallbackChains_codec);
+      if (SessionNonce != 0UL) {
+        size += 1 + 8;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -835,6 +862,9 @@ namespace Hypedomino.V1 {
       }
       stringBundles_.Add(other.stringBundles_);
       fallbackChains_.Add(other.fallbackChains_);
+      if (other.SessionNonce != 0UL) {
+        SessionNonce = other.SessionNonce;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -882,6 +912,10 @@ namespace Hypedomino.V1 {
             fallbackChains_.AddEntriesFrom(input, _repeated_fallbackChains_codec);
             break;
           }
+          case 65: {
+            SessionNonce = input.ReadFixed64();
+            break;
+          }
         }
       }
     #endif
@@ -927,6 +961,10 @@ namespace Hypedomino.V1 {
           }
           case 58: {
             fallbackChains_.AddEntriesFrom(ref input, _repeated_fallbackChains_codec);
+            break;
+          }
+          case 65: {
+            SessionNonce = input.ReadFixed64();
             break;
           }
         }

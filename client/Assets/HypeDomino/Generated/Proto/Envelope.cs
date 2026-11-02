@@ -26,32 +26,33 @@ namespace Hypedomino.V1 {
           string.Concat(
             "ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYx",
             "GhloeXBlZG9taW5vL3YxL2Vycm9yLnByb3RvGhloeXBlZG9taW5vL3YxL2hl",
-            "bGxvLnByb3RvGhloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvIscFCghFbnZl",
+            "bGxvLnByb3RvGhloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvIuwFCghFbnZl",
             "bG9wZRIpChBwcm90b2NvbF92ZXJzaW9uGAEgASgNUg9wcm90b2NvbFZlcnNp",
             "b24SGgoIc2VxdWVuY2UYAiABKARSCHNlcXVlbmNlEiUKDmFja2VkX3NlcXVl",
-            "bmNlGAMgASgEUg1hY2tlZFNlcXVlbmNlEj8KDGNsaWVudF9oZWxsbxgKIAEo",
-            "CzIaLmh5cGVkb21pbm8udjEuQ2xpZW50SGVsbG9IAFILY2xpZW50SGVsbG8S",
-            "PwoMc2VydmVyX2hlbGxvGAsgASgLMhouaHlwZWRvbWluby52MS5TZXJ2ZXJI",
-            "ZWxsb0gAUgtzZXJ2ZXJIZWxsbxIsCgVlcnJvchgMIAEoCzIULmh5cGVkb21p",
-            "bm8udjEuRXJyb3JIAFIFZXJyb3ISOQoKbWF0Y2hfdmlldxgNIAEoCzIYLmh5",
-            "cGVkb21pbm8udjEuTWF0Y2hWaWV3SABSCW1hdGNoVmlldxJMChFwbGFjZV90",
-            "aWxlX2ludGVudBgUIAEoCzIeLmh5cGVkb21pbm8udjEuUGxhY2VUaWxlSW50",
-            "ZW50SABSD3BsYWNlVGlsZUludGVudBI8CgtwYXNzX2ludGVudBgVIAEoCzIZ",
-            "Lmh5cGVkb21pbm8udjEuUGFzc0ludGVudEgAUgpwYXNzSW50ZW50EjwKC2Ry",
-            "YXdfaW50ZW50GBYgASgLMhkuaHlwZWRvbWluby52MS5EcmF3SW50ZW50SABS",
-            "CmRyYXdJbnRlbnQSRgoPZW5kX3R1cm5faW50ZW50GBcgASgLMhwuaHlwZWRv",
-            "bWluby52MS5FbmRUdXJuSW50ZW50SABSDWVuZFR1cm5JbnRlbnQSRQoObG9h",
-            "ZGluZ19pbnRlbnQYGCABKAsyHC5oeXBlZG9taW5vLnYxLkxvYWRpbmdJbnRl",
-            "bnRIAFINbG9hZGluZ0ludGVudEIJCgdwYXlsb2FkQsgBChFjb20uaHlwZWRv",
-            "bWluby52MUINRW52ZWxvcGVQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1j",
-            "b3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8v",
-            "djE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVk",
-            "b21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRv",
-            "bWlubzo6VjFiBnByb3RvMw=="));
+            "bmNlGAMgASgEUg1hY2tlZFNlcXVlbmNlEiMKDXNlc3Npb25fbm9uY2UYBCAB",
+            "KAZSDHNlc3Npb25Ob25jZRI/CgxjbGllbnRfaGVsbG8YCiABKAsyGi5oeXBl",
+            "ZG9taW5vLnYxLkNsaWVudEhlbGxvSABSC2NsaWVudEhlbGxvEj8KDHNlcnZl",
+            "cl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IAFIL",
+            "c2VydmVySGVsbG8SLAoFZXJyb3IYDCABKAsyFC5oeXBlZG9taW5vLnYxLkVy",
+            "cm9ySABSBWVycm9yEjkKCm1hdGNoX3ZpZXcYDSABKAsyGC5oeXBlZG9taW5v",
+            "LnYxLk1hdGNoVmlld0gAUgltYXRjaFZpZXcSTAoRcGxhY2VfdGlsZV9pbnRl",
+            "bnQYFCABKAsyHi5oeXBlZG9taW5vLnYxLlBsYWNlVGlsZUludGVudEgAUg9w",
+            "bGFjZVRpbGVJbnRlbnQSPAoLcGFzc19pbnRlbnQYFSABKAsyGS5oeXBlZG9t",
+            "aW5vLnYxLlBhc3NJbnRlbnRIAFIKcGFzc0ludGVudBI8CgtkcmF3X2ludGVu",
+            "dBgWIAEoCzIZLmh5cGVkb21pbm8udjEuRHJhd0ludGVudEgAUgpkcmF3SW50",
+            "ZW50EkYKD2VuZF90dXJuX2ludGVudBgXIAEoCzIcLmh5cGVkb21pbm8udjEu",
+            "RW5kVHVybkludGVudEgAUg1lbmRUdXJuSW50ZW50EkUKDmxvYWRpbmdfaW50",
+            "ZW50GBggASgLMhwuaHlwZWRvbWluby52MS5Mb2FkaW5nSW50ZW50SABSDWxv",
+            "YWRpbmdJbnRlbnRCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFC",
+            "DUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBl",
+            "ZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVk",
+            "b21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx",
+            "4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYx",
+            "YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Hypedomino.V1.ErrorReflection.Descriptor, global::Hypedomino.V1.HelloReflection.Descriptor, global::Hypedomino.V1.MatchReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Envelope), global::Hypedomino.V1.Envelope.Parser, new[]{ "ProtocolVersion", "Sequence", "AckedSequence", "ClientHello", "ServerHello", "Error", "MatchView", "PlaceTileIntent", "PassIntent", "DrawIntent", "EndTurnIntent", "LoadingIntent" }, new[]{ "Payload" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Envelope), global::Hypedomino.V1.Envelope.Parser, new[]{ "ProtocolVersion", "Sequence", "AckedSequence", "SessionNonce", "ClientHello", "ServerHello", "Error", "MatchView", "PlaceTileIntent", "PassIntent", "DrawIntent", "EndTurnIntent", "LoadingIntent" }, new[]{ "Payload" }, null, null, null)
           }));
     }
     #endregion
@@ -96,6 +97,7 @@ namespace Hypedomino.V1 {
       protocolVersion_ = other.protocolVersion_;
       sequence_ = other.sequence_;
       ackedSequence_ = other.ackedSequence_;
+      sessionNonce_ = other.sessionNonce_;
       switch (other.PayloadCase) {
         case PayloadOneofCase.ClientHello:
           ClientHello = other.ClientHello.Clone();
@@ -168,6 +170,18 @@ namespace Hypedomino.V1 {
       get { return ackedSequence_; }
       set {
         ackedSequence_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "session_nonce" field.</summary>
+    public const int SessionNonceFieldNumber = 4;
+    private ulong sessionNonce_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong SessionNonce {
+      get { return sessionNonce_; }
+      set {
+        sessionNonce_ = value;
       }
     }
 
@@ -325,6 +339,7 @@ namespace Hypedomino.V1 {
       if (ProtocolVersion != other.ProtocolVersion) return false;
       if (Sequence != other.Sequence) return false;
       if (AckedSequence != other.AckedSequence) return false;
+      if (SessionNonce != other.SessionNonce) return false;
       if (!object.Equals(ClientHello, other.ClientHello)) return false;
       if (!object.Equals(ServerHello, other.ServerHello)) return false;
       if (!object.Equals(Error, other.Error)) return false;
@@ -345,6 +360,7 @@ namespace Hypedomino.V1 {
       if (ProtocolVersion != 0) hash ^= ProtocolVersion.GetHashCode();
       if (Sequence != 0UL) hash ^= Sequence.GetHashCode();
       if (AckedSequence != 0UL) hash ^= AckedSequence.GetHashCode();
+      if (SessionNonce != 0UL) hash ^= SessionNonce.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.ClientHello) hash ^= ClientHello.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.ServerHello) hash ^= ServerHello.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Error) hash ^= Error.GetHashCode();
@@ -384,6 +400,10 @@ namespace Hypedomino.V1 {
       if (AckedSequence != 0UL) {
         output.WriteRawTag(24);
         output.WriteUInt64(AckedSequence);
+      }
+      if (SessionNonce != 0UL) {
+        output.WriteRawTag(33);
+        output.WriteFixed64(SessionNonce);
       }
       if (payloadCase_ == PayloadOneofCase.ClientHello) {
         output.WriteRawTag(82);
@@ -443,6 +463,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(24);
         output.WriteUInt64(AckedSequence);
       }
+      if (SessionNonce != 0UL) {
+        output.WriteRawTag(33);
+        output.WriteFixed64(SessionNonce);
+      }
       if (payloadCase_ == PayloadOneofCase.ClientHello) {
         output.WriteRawTag(82);
         output.WriteMessage(ClientHello);
@@ -498,6 +522,9 @@ namespace Hypedomino.V1 {
       if (AckedSequence != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(AckedSequence);
       }
+      if (SessionNonce != 0UL) {
+        size += 1 + 8;
+      }
       if (payloadCase_ == PayloadOneofCase.ClientHello) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ClientHello);
       }
@@ -545,6 +572,9 @@ namespace Hypedomino.V1 {
       }
       if (other.AckedSequence != 0UL) {
         AckedSequence = other.AckedSequence;
+      }
+      if (other.SessionNonce != 0UL) {
+        SessionNonce = other.SessionNonce;
       }
       switch (other.PayloadCase) {
         case PayloadOneofCase.ClientHello:
@@ -632,6 +662,10 @@ namespace Hypedomino.V1 {
           }
           case 24: {
             AckedSequence = input.ReadUInt64();
+            break;
+          }
+          case 33: {
+            SessionNonce = input.ReadFixed64();
             break;
           }
           case 82: {
@@ -744,6 +778,10 @@ namespace Hypedomino.V1 {
           }
           case 24: {
             AckedSequence = input.ReadUInt64();
+            break;
+          }
+          case 33: {
+            SessionNonce = input.ReadFixed64();
             break;
           }
           case 82: {

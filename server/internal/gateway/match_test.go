@@ -60,6 +60,7 @@ type player struct {
 	bytes    int
 	buffer   []byte
 	last     *pb.MatchView
+	nonce    uint64
 }
 
 func join(t *testing.T, server *httptest.Server, seat rules.Seat, resume bool) *player {
@@ -82,6 +83,7 @@ func join(t *testing.T, server *httptest.Server, seat rules.Seat, resume bool) *
 	if reply.GetServerHello().GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
 		t.Fatalf("%s: hello answered %v", seat, reply)
 	}
+	p.nonce = reply.GetServerHello().GetSessionNonce()
 	if !resume {
 		p.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}})
 	}
@@ -90,6 +92,9 @@ func join(t *testing.T, server *httptest.Server, seat rules.Seat, resume bool) *
 
 func (p *player) write(frame *pb.Envelope) {
 	p.t.Helper()
+	if frame.GetClientHello() == nil {
+		frame.SessionNonce = p.nonce
+	}
 	data, err := proto.MarshalOptions{}.MarshalAppend(p.buffer[:0], frame)
 	if err != nil {
 		p.t.Fatal(err)

@@ -66,6 +66,7 @@ type Manager struct {
 	router   Router
 	auth     Authenticator
 	clocks   ClockObserver
+	replays  ReplayObserver
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -87,8 +88,22 @@ type ClockObserver interface {
 	Observe(ctx context.Context, account string, clientUnixMs uint64)
 }
 
+type ReplayObserver interface {
+	Observe(ctx context.Context, account string)
+}
+
 func (m *Manager) ObserveClocks(observer ClockObserver) {
 	m.clocks = observer
+}
+
+func (m *Manager) ObserveReplays(observer ReplayObserver) {
+	m.replays = observer
+}
+
+func (c *connection) Replayed() {
+	if c.manager.replays != nil {
+		c.manager.replays.Observe(context.Background(), c.session.account)
+	}
 }
 
 func (m *Manager) claim(token string) error {

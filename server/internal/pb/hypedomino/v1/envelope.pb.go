@@ -26,6 +26,7 @@ type Envelope struct {
 	ProtocolVersion uint32                 `protobuf:"varint,1,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
 	Sequence        uint64                 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	AckedSequence   uint64                 `protobuf:"varint,3,opt,name=acked_sequence,json=ackedSequence,proto3" json:"acked_sequence,omitempty"`
+	SessionNonce    uint64                 `protobuf:"fixed64,4,opt,name=session_nonce,json=sessionNonce,proto3" json:"session_nonce,omitempty"`
 	// Types that are valid to be assigned to Payload:
 	//
 	//	*Envelope_ClientHello
@@ -89,6 +90,13 @@ func (x *Envelope) GetSequence() uint64 {
 func (x *Envelope) GetAckedSequence() uint64 {
 	if x != nil {
 		return x.AckedSequence
+	}
+	return 0
+}
+
+func (x *Envelope) GetSessionNonce() uint64 {
+	if x != nil {
+		return x.SessionNonce
 	}
 	return 0
 }
@@ -243,11 +251,12 @@ var File_hypedomino_v1_envelope_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_envelope_proto_rawDesc = "" +
 	"\n" +
-	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xc7\x05\n" +
+	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xec\x05\n" +
 	"\bEnvelope\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x12%\n" +
-	"\x0eacked_sequence\x18\x03 \x01(\x04R\rackedSequence\x12?\n" +
+	"\x0eacked_sequence\x18\x03 \x01(\x04R\rackedSequence\x12#\n" +
+	"\rsession_nonce\x18\x04 \x01(\x06R\fsessionNonce\x12?\n" +
 	"\fclient_hello\x18\n" +
 	" \x01(\v2\x1a.hypedomino.v1.ClientHelloH\x00R\vclientHello\x12?\n" +
 	"\fserver_hello\x18\v \x01(\v2\x1a.hypedomino.v1.ServerHelloH\x00R\vserverHello\x12,\n" +

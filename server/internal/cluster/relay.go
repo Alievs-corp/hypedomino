@@ -97,6 +97,7 @@ type relaySession struct {
 	conn    *gateway.Conn
 	acked   atomic.Uint64
 	inMatch bool
+	nonce   uint64
 	mu      sync.Mutex
 	done    chan struct{}
 	once    sync.Once
@@ -120,6 +121,7 @@ func (s *relaySession) handshake(ctx context.Context, hello *pb.ClientHello) err
 	}
 	s.acked.Store(reply.GetAckedSequence())
 	s.inMatch = reply.GetServerHello().GetInMatch()
+	s.nonce = reply.GetServerHello().GetSessionNonce()
 	return nil
 }
 
@@ -157,7 +159,7 @@ func (s *relaySession) InMatch() bool {
 }
 
 func (s *relaySession) Loading(progress int, ready bool) {
-	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: uint32(progress), Ready: ready}}}
+	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, SessionNonce: s.nonce, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: uint32(progress), Ready: ready}}}
 	if err := s.write(context.Background(), frame); err != nil {
 		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
 	}
@@ -191,6 +193,7 @@ func (s *relaySession) Intent(sequence uint64, intent replay.Intent) {
 	}
 	frame.ProtocolVersion = gateway.ProtocolVersion
 	frame.Sequence = sequence
+	frame.SessionNonce = s.nonce
 	if err := s.write(context.Background(), frame); err != nil {
 		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
 	}

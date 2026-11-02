@@ -149,6 +149,8 @@ Implemented in `server/internal/purchase` with `server/internal/risk` (#204). A 
 | Response | Block. Flag when rejected replays exceed `ReplayRejectThreshold` in `ReplayRejectWindowMinutes` |
 | Issues | #207, #202, #204, #212 |
 
+Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An accepted `ServerHello` carries a `session_nonce` the server draws from a secure random source for that connection; every later client frame must carry it in `Envelope.session_nonce` (`proto/README.md`). A frame with another or no nonce is answered `Error REPLAY_REJECTED` and dropped; the connection stays open. Each rejection counts for the account; `ReplayRejectThreshold` (5) rejections within `ReplayRejectWindowMinutes` (10) record a `replay_reject` signal of weight `ReplayRejectWeight` (5) with the count and window as evidence, at most once per window. A repeated sequence number inside the session is not a replay: the room drops it silently, so reconnect retries stay safe. Counts live in node memory; a reconnect to another node starts a fresh count.
+
 ### V-9. Collusion and multi-account farming
 
 | | |
@@ -236,7 +238,7 @@ Accepted residual risks:
 |---|---|
 | `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag |
 | `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag |
-| `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag |
+| `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag (launch defaults 5 and 10) |
 | `IntegrityFailureAction` | Block login or flag on failed attestation |
 | `DeviceRiskAction` | Warn, block ranked or flag on a risky device |
 | `IntegrityNonceTtlSeconds` | Lifetime of an attestation nonce (section 5.1) |
@@ -244,7 +246,7 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |
