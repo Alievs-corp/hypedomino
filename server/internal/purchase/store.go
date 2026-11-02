@@ -13,6 +13,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -67,6 +68,12 @@ type Store struct {
 	config     Config
 	logger     *slog.Logger
 	pass       Pass
+	signals    *risk.Store
+	risk       risk.Config
+}
+
+func (s *Store) Flag(signals *risk.Store, config risk.Config) {
+	s.signals, s.risk = signals, config
 }
 
 func NewStore(pool *pgxpool.Pool, wallet *wallet.Store, engine *reward.Engine, offers *snapshot.Watcher[*shop.Catalog], validators map[Platform]Validator, config Config, logger *slog.Logger) *Store {
@@ -124,6 +131,7 @@ func (s *Store) Complete(ctx context.Context, account, offerID string, platform 
 	}
 	receipt, err := validator.Verify(ctx, offer.ProductID, token)
 	if err != nil {
+		s.flagFake(ctx, account, platform, offer.ID, err, "", token, now)
 		return Result{}, err
 	}
 	switch {
@@ -131,6 +139,7 @@ func (s *Store) Complete(ctx context.Context, account, offerID string, platform 
 		return Result{}, fmt.Errorf("%w: %s is not sold by %s", ErrProduct, receipt.ProductID, offer.ID)
 	case receipt.AccountToken != shop.AccountToken(account):
 		s.evidence(ctx, account, receipt, EventAccountMatch)
+		s.flagFake(ctx, account, platform, offer.ID, ErrAccount, receipt.TransactionID, token, now)
 		return Result{}, ErrAccount
 	case receipt.State == StateCancelled:
 		return Result{}, ErrCancelled
@@ -150,6 +159,7 @@ func (s *Store) Complete(ctx context.Context, account, offerID string, platform 
 	found := err == nil
 	if found && existing.Account != account {
 		s.evidence(ctx, account, receipt, EventReuse)
+		s.flagFake(ctx, account, platform, offer.ID, ErrReused, receipt.TransactionID, token, now)
 		return Result{}, ErrReused
 	}
 	if found && existing.State != RecordPending {
@@ -372,6 +382,9 @@ func (s *Store) refund(ctx context.Context, tx pgx.Tx, r record, notice Notice, 
 		}
 	}
 	if _, err := tx.Exec(ctx, `update purchases set state = $2, refunded_at = $3 where id = $1`, r.ID, RecordRefunded, now); err != nil {
+		return err
+	}
+	if err := s.flagRefund(ctx, tx, r, notice, now); err != nil {
 		return err
 	}
 	return s.publish(ctx, tx, r, EventRefunded, now)

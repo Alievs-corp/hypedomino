@@ -104,7 +104,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("HD_TOKEN_KEYS: %w", err)
 	}
 	sessions.Authenticate(tokens)
-	sessions.ObserveClocks(risk.NewClockSkew(risk.NewStore(pool), config.Risk, systemClock{}, logger))
+	signals := risk.NewStore(pool)
+	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	limiter.Authenticate(tokens)
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
@@ -201,6 +202,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	shopStore.Guard(purchases)
 	shopStore.WithPass(passes)
 	purchases.WithPass(passes)
+	purchases.Flag(signals, config.Risk)
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
 	a.Handle("POST /shop/complete", receipts)
 	a.Handle("GET /purchases", receipts)

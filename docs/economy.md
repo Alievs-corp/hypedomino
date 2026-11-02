@@ -316,7 +316,7 @@ Notices: Google Play real-time developer notifications and the Voided Purchases 
 1. Find the purchase by store transaction id.
 2. Revoke what it granted through the ledger: a `refund_revoke` entry for its crystals; its cosmetics removed from inventory and unequipped as for `disabled` items (`docs/cosmetics.md` section 6); for a pass product, the premium track and every premium reward claimed (crystals debited, cosmetics removed). A starter or first-purchase bonus tied to it is revoked the same way.
 3. Items bought with crystals are kept. If the crystals are already spent, the crystal balance goes negative and crystal spends are blocked until purchases bring it back to zero or above. Coins are never touched. This is the only way a balance goes negative.
-4. Flag the account with `RefundWeight` (`docs/anti-cheat.md` section 5). `RefundsBeforePurchaseBlock` (3) refunds within `RefundWindowDays` (365) block further purchases and send the account to review (#209).
+4. Flag the account with `RefundWeight` (3, `docs/anti-cheat.md` section 5 and V-3). `RefundsBeforePurchaseBlock` (3) refunds within `RefundWindowDays` (365) block further purchases and send the account to review (#209).
 5. `REFUND_REVERSED` re-grants the same contents through a `refund_reversal` entry.
 
 - Implemented in `server/internal/purchase` (#106): Google voided purchase notifications and App Store `REFUND` and `REFUND_REVERSED`, each processed once; the purchase block of step 4 is enforced by the server and the refund is published on the `purchases` outbox topic for the risk score of #209.
