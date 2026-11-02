@@ -14,6 +14,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 )
 
 func parseLevel(text string) (slog.Level, bool) {
@@ -42,6 +43,7 @@ type App struct {
 	rooms        *Rooms
 	cluster      *cluster.Cluster
 	mux          *http.ServeMux
+	limiter      *ratelimit.Limiter
 	ready        atomic.Bool
 	listener     net.Listener
 	addr         chan string
@@ -66,6 +68,10 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 
 func (a *App) Handle(pattern string, handler http.Handler) {
 	a.mux.Handle(pattern, handler)
+}
+
+func (a *App) Limit(limiter *ratelimit.Limiter) {
+	a.limiter = limiter
 }
 
 func (a *App) Localize(current func() gateway.Strings) {
@@ -94,7 +100,21 @@ func (a *App) Rooms() *Rooms {
 }
 
 func (a *App) Handler() http.Handler {
-	return a.mux
+	if a.limiter == nil {
+		return a.mux
+	}
+	limited := a.limiter.Wrap(a.mux)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if a.relayed(r) {
+			a.mux.ServeHTTP(w, r)
+			return
+		}
+		limited.ServeHTTP(w, r)
+	})
+}
+
+func (a *App) relayed(r *http.Request) bool {
+	return a.cluster != nil && r.URL.Path == "/ws" && r.Header.Get(cluster.RelayHeader) != ""
 }
 
 func (a *App) Addr() <-chan string {
@@ -117,7 +137,7 @@ func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) ws(w http.ResponseWriter, r *http.Request) {
-	relayed := a.cluster != nil && r.Header.Get(cluster.RelayHeader) != ""
+	relayed := a.relayed(r)
 	if !a.ready.Load() && !relayed {
 		http.Error(w, "draining", http.StatusServiceUnavailable)
 		return
@@ -131,6 +151,9 @@ func (a *App) ws(w http.ResponseWriter, r *http.Request) {
 func (a *App) loadz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	report := map[string]any{"load": a.load()}
+	if a.limiter != nil {
+		report["rateLimited"] = a.limiter.Refused()
+	}
 	if a.cluster != nil {
 		report["node"] = a.cluster.Self()
 		summary, err := a.cluster.Summarize(r.Context())
@@ -150,7 +173,7 @@ func (a *App) Run(ctx context.Context) error {
 	}
 	a.listener = listener
 	a.ready.Store(true)
-	server := &http.Server{Handler: a.mux, ReadHeaderTimeout: 10 * time.Second}
+	server := &http.Server{Handler: a.Handler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: a.config.RateLimit.ReadTimeout, IdleTimeout: a.config.RateLimit.IdleTimeout}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.Serve(listener) }()
 	stopCluster := a.announce()

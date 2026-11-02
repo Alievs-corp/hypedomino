@@ -31,12 +31,13 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		"HD_SHOP_RESET_HOUR_UTC":        "4",
 		"HD_ADMIN_GRANT_APPROVAL_COINS": "5000",
 		"HD_TEMP_BAN_HOURS":             "72",
+		"HD_READ_TIMEOUT":               "30s",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := config{
-		listenAddr: ":8090", logLevel: "info", database: "postgres://admin", audiences: []string{"web.apps.example", "other"},
+		listenAddr: ":8090", logLevel: "info", database: "postgres://admin", audiences: []string{"web.apps.example", "other"}, readLimit: 30 * time.Second, idleLimit: time.Minute,
 		api: adminapi.Config{
 			Environment: "staging", GoogleDomain: "example.com",
 			Session:            adminsession.Config{Idle: 20 * time.Minute, Max: 12 * time.Hour, StepUp: 5 * time.Minute},
