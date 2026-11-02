@@ -28,7 +28,7 @@ func TestTheExampleCatalogParsesWithItsAvailabilityAndSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if catalog.Version < 1 || len(catalog.Items()) != 13 {
+	if catalog.Version < 1 || len(catalog.Items()) != 15 {
 		t.Fatalf("catalog %d %d", catalog.Version, len(catalog.Items()))
 	}
 	fox, ok := catalog.Item("avatar.comet_fox")

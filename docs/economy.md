@@ -136,6 +136,7 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 - Before purchase the client shows the pool, the odds of each rarity and the opens left to the pity, all as the server sends them. The reveal shows the granted item without casino cues (`docs/localization.md` section 6): no reels, wheels, slot sounds or near-miss effects.
 - Every pool item lists a `chest` source with the chest offer id (`docs/cosmetics.md` section 5).
 - Expected value of an avatar or frame chest at guide prices: 0.85 x 400 + 0.15 x 1500 = 565 coins against a price of 500. The player gives up choosing the item and gets a little more value for it.
+- Implemented in `server/internal/shop` (#357). A chest offer's `bundle.cosmetics` is its pool; the grant carries the same bundle id with the drawn item only. `ChestRarityPercent` and `ChestRarePityCount` are the catalog's `chests.rarityPercent` and `chests.rarePityCount` (`docs/economy/examples/shop.json`); a catalog with a chest offer and without them is refused. Only `live` pool items are drawn. `config-publish` refuses a chest whose pool item is unknown, not `common` or `rare`, or does not list the chest's `chest` source. A chest has no `limitPerAccount`. `POST /shop/buy` opens a chest and answers the drawn item, its rarity and the opens left to the pity; `GET /shop` shows a chest offer's pool as `cosmetics`, the odds as `odds` and `opens_to_pity`. Opens are recorded in `chest_opens`. A request id already spent by another action is refused (`request.invalid`).
 
 ## 4. Reward bundle
 

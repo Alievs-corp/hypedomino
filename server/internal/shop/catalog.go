@@ -13,15 +13,20 @@ import (
 )
 
 const (
-	Domain     = "shop"
-	Schema     = 1
-	SourceType = "shop"
+	Domain      = "shop"
+	Schema      = 1
+	SourceType  = "shop"
+	SourceChest = "chest"
+
+	RarityCommon = "common"
+	RarityRare   = "rare"
 
 	KindCosmetic   = "cosmetic"
 	KindBundle     = "bundle"
 	KindCrystals   = "crystals"
 	KindPass       = "pass"
 	KindPassLevels = "pass_levels"
+	KindChest      = "chest"
 
 	ProductPassPremiumPlus = "pass_premium_plus"
 
@@ -29,6 +34,7 @@ const (
 	SectionDaily    = "daily_rotation"
 	SectionWeekly   = "weekly_rotation"
 	SectionEvent    = "event"
+	SectionChests   = "chests"
 	SectionPass     = "pass"
 	SectionCrystals = "crystals"
 
@@ -37,8 +43,9 @@ const (
 )
 
 var (
-	Sections = []string{SectionFeatured, SectionDaily, SectionWeekly, SectionEvent, SectionPass, SectionCrystals}
-	Kinds    = []string{KindCosmetic, KindBundle, KindCrystals, KindPass, KindPassLevels}
+	Sections      = []string{SectionFeatured, SectionDaily, SectionWeekly, SectionEvent, SectionChests, SectionPass, SectionCrystals}
+	Kinds         = []string{KindCosmetic, KindBundle, KindCrystals, KindPass, KindPassLevels, KindChest}
+	ChestRarities = []string{RarityCommon, RarityRare}
 
 	ErrInvalid       = errors.New("shop: invalid catalog")
 	ErrInvalidConfig = errors.New("shop: invalid config")
@@ -180,6 +187,10 @@ func (o Offer) validateBundle() error {
 		return errors.New("a bundle offer grants at least one cosmetic")
 	case o.Kind == KindCrystals && (o.Bundle.Crystals == 0 || o.ProductID == "" || len(o.Bundle.Cosmetics) > 0 || o.Bundle.PassXP > 0):
 		return errors.New("a crystal pack grants only crystals and is a store product")
+	case o.Kind == KindChest && (o.PriceCoins == 0 || o.Bundle.PassXP > 0 || len(o.Bundle.Cosmetics) == 0):
+		return errors.New("a chest is priced in coins and its bundle lists only its pool")
+	case o.Kind == KindChest && (o.LimitPerAccount != 0 || o.Eligibility != Eligibility{}):
+		return errors.New("a chest has no purchase limit or eligibility")
 	}
 	return nil
 }
@@ -214,6 +225,10 @@ func (o Offer) validateSection() error {
 		if o.PriceCoins > 0 {
 			return fail("holds offers paid with crystals or a store product")
 		}
+	case SectionChests:
+		if o.Kind != KindChest {
+			return fail("holds chests")
+		}
 	case SectionCrystals:
 		if o.Kind != KindCrystals {
 			return fail("holds crystal packs")
@@ -237,7 +252,20 @@ type Catalog struct {
 	Offers        []Offer        `json:"offers"`
 	Rotations     []Rotation     `json:"rotations"`
 	FirstPurchase *reward.Bundle `json:"firstPurchase,omitempty"`
+	Chests        ChestRules     `json:"chests,omitzero"`
 	index         map[string]Offer
+}
+
+func (c *Catalog) validateChests() error {
+	for _, offer := range c.Offers {
+		if offer.Kind == KindChest {
+			return c.Chests.Validate()
+		}
+	}
+	if c.Chests.RarePityCount != 0 || len(c.Chests.RarityPercent) != 0 {
+		return c.Chests.Validate()
+	}
+	return nil
 }
 
 func Parser(config Config) func(raw []byte) (*Catalog, error) {
@@ -268,6 +296,9 @@ func Parse(raw []byte, config Config) (*Catalog, error) {
 		catalog.index[offer.ID] = offer
 	}
 	if err := catalog.validateRotations(config); err != nil {
+		return nil, err
+	}
+	if err := catalog.validateChests(); err != nil {
 		return nil, err
 	}
 	if catalog.FirstPurchase != nil {
@@ -409,8 +440,11 @@ func contains(list []string, value string) bool {
 }
 
 func (o Offer) reason() wallet.Reason {
-	if o.ProductID != "" {
+	switch {
+	case o.ProductID != "":
 		return wallet.Purchase
+	case o.Kind == KindChest:
+		return wallet.ChestPurchase
 	}
 	return wallet.ShopPurchase
 }
