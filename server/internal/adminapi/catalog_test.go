@@ -6,10 +6,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -162,5 +164,57 @@ func TestACatalogIsCheckedLikeTheGameServerAndFollowsTheRoleMatrix(t *testing.T)
 	}
 	if got := a.featuredAt(start); len(got) != 0 {
 		t.Fatalf("featured %v", got)
+	}
+}
+
+func avatarChest() map[string]any {
+	return map[string]any{
+		"id": "offer.chest_avatar", "kind": "chest", "section": "chests", "priceCoins": 500,
+		"bundle":  map[string]any{"id": "bundle.chest_avatar", "revision": 1, "cosmetics": []string{"avatar.paper_kite", "avatar.moon_owl"}},
+		"window":  map[string]any{"start": "2026-01-01T00:00:00Z"},
+		"nameKey": "shop.offer.chest_avatar",
+	}
+}
+
+func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	withChest := catalog(cometFox(), avatarChest())
+	withChest["chests"] = map[string]any{"rarityPercent": map[string]int{"common": 85, "rare": 15}, "rarePityCount": 10}
+
+	status, body := a.call("GET", "/admin/cosmetics/items", liveOps, nil)
+	if status != http.StatusOK || len(body["items"].([]any)) != 5 {
+		t.Fatalf("built-in items %d %v", status, body)
+	}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "unknown item avatar.paper_kite") {
+		t.Fatalf("chest before its items %d %v", status, body)
+	}
+	raw, err := os.ReadFile("../../../docs/cosmetics/examples/catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := snapshot.Publish(context.Background(), a.pool, cosmetics.Domain, raw); err != nil {
+		t.Fatal(err)
+	}
+	status, body = a.call("GET", "/admin/cosmetics/items", liveOps, nil)
+	items := body["items"].([]any)
+	if status != http.StatusOK || len(items) != 15 {
+		t.Fatalf("published items %d %v", status, body)
+	}
+	kite := items[6].(map[string]any)
+	if kite["id"] != "avatar.paper_kite" || kite["rarity"] != "common" || kite["availability"] != "live" || kite["sources"].([]any)[0].(map[string]any)["type"] != "chest" {
+		t.Fatalf("chest item %v", kite)
+	}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
+	if status != http.StatusOK || body["config_version"] != float64(2) {
+		t.Fatalf("chest after its items %d %v", status, body)
+	}
+	withChest["offers"] = []map[string]any{cometFox(), avatarChest()}
+	withChest["offers"].([]map[string]any)[1]["bundle"].(map[string]any)["cosmetics"] = []string{"avatar.paper_kite", "frame.season_1_top"}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
+	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "rarity epic") {
+		t.Fatalf("epic pool item %d %v", status, body)
 	}
 }

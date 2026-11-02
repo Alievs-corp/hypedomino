@@ -140,7 +140,7 @@ func chestPoolsArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte)
 	if err != nil {
 		return err
 	}
-	items, err := publishedItems(ctx, pool)
+	items, err := cosmetics.Published(ctx, pool)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func missionSourcesArePublished(ctx context.Context, pool *pgxpool.Pool, raw []b
 	case !errors.Is(err, snapshot.ErrNone):
 		return err
 	}
-	items, err := publishedItems(ctx, pool)
+	items, err := cosmetics.Published(ctx, pool)
 	if err != nil {
 		return err
 	}
@@ -211,15 +211,4 @@ func passFollowsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) e
 		return err
 	}
 	return pass.CheckFrozen(previous, next, time.Now())
-}
-
-func publishedItems(ctx context.Context, pool *pgxpool.Pool) (*cosmetics.Catalog, error) {
-	_, published, err := snapshot.Latest(ctx, pool, cosmetics.Domain)
-	if errors.Is(err, snapshot.ErrNone) {
-		return cosmetics.Builtin(), nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return cosmetics.Parse(published)
 }

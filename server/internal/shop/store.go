@@ -89,7 +89,7 @@ type OfferView struct {
 	Bought                 int              `json:"bought"`
 	Owned                  []string         `json:"owned"`
 	Compensation           map[string]int64 `json:"compensation"`
-	Odds                   map[string]int   `json:"odds,omitempty"`
+	Odds                   []ChestOdds      `json:"odds,omitempty"`
 	OpensToPity            int              `json:"opens_to_pity,omitempty"`
 	Purchasable            bool             `json:"purchasable"`
 	Reason                 string           `json:"reason,omitempty"`
@@ -266,7 +266,7 @@ func (s *Store) offerView(offer Offer, chests ChestRules, st standing, now time.
 		view.Reason = status.refusal.Error()
 	}
 	if offer.Kind == KindChest {
-		view.Odds = chests.RarityPercent
+		view.Odds = chests.Odds()
 		view.OpensToPity = chests.OpensToPity(st.pity)
 	}
 	return view, nil

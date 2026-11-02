@@ -1,12 +1,14 @@
 package adminapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -93,6 +95,10 @@ func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, fmt.Errorf("%w: catalog", errMalformed))
 		return
 	}
+	if err := h.chestPoolsArePublished(r.Context(), request.Catalog); err != nil {
+		h.refuse(w, err)
+		return
+	}
 	version, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(true), "publish", request.Catalog, request.changeNote, nil)
 	if err != nil {
 		h.refuse(w, err)
@@ -117,4 +123,42 @@ func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p princip
 		return
 	}
 	reply(w, http.StatusOK, viewCatalog(version, raw))
+}
+
+func (h *Handler) chestPoolsArePublished(ctx context.Context, raw []byte) error {
+	catalog, err := shop.Parse(raw, h.config.Shop)
+	if err != nil {
+		return err
+	}
+	items, err := cosmetics.Published(ctx, h.pool)
+	if err != nil {
+		return err
+	}
+	return catalog.CheckChestPools(items)
+}
+
+type cosmeticItemView struct {
+	ID           string             `json:"id"`
+	Type         string             `json:"type"`
+	Rarity       string             `json:"rarity"`
+	Availability string             `json:"availability"`
+	Sources      []cosmetics.Source `json:"sources"`
+}
+
+type cosmeticItemsView struct {
+	Items []cosmeticItemView `json:"items"`
+}
+
+func (h *Handler) cosmeticItems(w http.ResponseWriter, r *http.Request, p principal) {
+	catalog, err := cosmetics.Published(r.Context(), h.pool)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	items := catalog.Items()
+	view := cosmeticItemsView{Items: make([]cosmeticItemView, 0, len(items))}
+	for _, item := range items {
+		view.Items = append(view.Items, cosmeticItemView{ID: item.ID, Type: item.Type, Rarity: item.Rarity, Availability: item.Availability, Sources: item.Sources})
+	}
+	reply(w, http.StatusOK, view)
 }

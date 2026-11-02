@@ -45,7 +45,7 @@ func TestAChestGrantsOnlyUnownedItemsUntilItsPoolIsOwned(t *testing.T) {
 	account := f.account(t, 1500)
 	f.store.WithRandom(&fixedRolls{values: []uint64{0, 0, 0, 0, 0}})
 	before := chestOffer(t, f, account)
-	if !before.Purchasable || before.PriceCoins != 500 || len(before.Cosmetics) != 2 || before.Odds["common"] != 85 || before.Odds["rare"] != 15 || before.OpensToPity != 10 || before.Limit != 0 {
+	if !before.Purchasable || before.PriceCoins != 500 || len(before.Cosmetics) != 2 || len(before.Odds) != 2 || before.Odds[0] != (shop.ChestOdds{Rarity: "common", Percent: 85}) || before.Odds[1] != (shop.ChestOdds{Rarity: "rare", Percent: 15}) || before.OpensToPity != 10 || before.Limit != 0 {
 		t.Fatalf("chest before opening %+v", before)
 	}
 	first, err := f.store.Buy(ctx, account, chest, "c1", now)
