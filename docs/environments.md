@@ -83,6 +83,8 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SHOP_RESET_HOUR_UTC` | No | server, admin-api | `0` | `0` | No | from #104; admin-api from #139 |
 | `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
 | `HD_SEASON_POLL` | No | server | `1m` | `1m` | No | from #115 |
+| `HD_CLOCK_SKEW_TOLERANCE` | No | server | `5m` | `5m` | No | from #208 |
+| `HD_CLOCK_SKEW_WEIGHT` | No | server | `1` | `1` | No | from #208 |
 | `HD_COUNTRY_HEADER` | No | server | empty (no IP country fallback) | `CF-IPCountry` | No | from #117; only a header the edge overwrites on every request |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | No | server | `4320h` | `4320h` | No | from #117 |
 | `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |

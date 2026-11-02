@@ -32,6 +32,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
@@ -100,6 +101,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("HD_TOKEN_KEYS: %w", err)
 	}
 	sessions.Authenticate(tokens)
+	sessions.ObserveClocks(risk.NewClockSkew(risk.NewStore(pool), config.Risk, systemClock{}, logger))
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
 	signIn.SetCountryHeader(config.CountryHeader)

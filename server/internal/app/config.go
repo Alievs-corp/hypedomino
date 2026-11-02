@@ -17,6 +17,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -53,6 +54,7 @@ type Config struct {
 	PushSecret      string
 	Promo           promo.Config
 	PromoKey        string
+	Risk            risk.Config
 }
 
 func DefaultConfig() Config {
@@ -77,6 +79,7 @@ func DefaultConfig() Config {
 		Purchase:        purchase.DefaultConfig(),
 		Promo:           promo.DefaultConfig(),
 		Rarities:        cosmetics.DefaultRarities(),
+		Risk:            risk.DefaultConfig(),
 	}
 }
 
@@ -255,6 +258,11 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.Play.PackageName != "" && config.PushSecret == "" {
 		r.errs = append(r.errs, errors.New("HD_PLAY_NOTIFICATION_TOKEN: required with HD_PLAY_PACKAGE"))
+	}
+	r.duration("HD_CLOCK_SKEW_TOLERANCE", &config.Risk.ClockSkewTolerance)
+	r.integer("HD_CLOCK_SKEW_WEIGHT", &config.Risk.ClockSkewWeight)
+	if err := config.Risk.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE and HD_CLOCK_SKEW_WEIGHT: %w", err))
 	}
 	if err := config.Purchase.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_REFUNDS_BEFORE_PURCHASE_BLOCK and HD_REFUND_WINDOW_DAYS: %w", err))

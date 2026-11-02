@@ -43,6 +43,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_SHOP_CATALOG` | empty | Path of a shop catalog JSON (`docs/economy/examples/shop.json`) seeded as version 0 until the first published snapshot; empty answers 503 until one is published |
 | `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS`, `HD_SHOP_RESET_HOUR_UTC` | `4`, `2`, `0` | `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots` and `ShopRotationResetHourUtc` of `docs/economy.md` 6.1 (placeholders for admin config) |
 | `HD_CONFIG_POLL` | `10s` | How often every node reads `config_snapshots` for a newer published version, at least `1s` |
+| `HD_CLOCK_SKEW_TOLERANCE`, `HD_CLOCK_SKEW_WEIGHT` | `5m`, `1` | `ClockSkewToleranceSeconds` and `ClockSkewWeight` of `docs/anti-cheat.md` V-7 (#208): a `ClientHello.client_time_unix_ms` further than the tolerance from server time records a `clock_skew` signal in `risk_signals` (migration 00031), once per account per UTC day; the connection is never refused for it |
 | `HD_SEASON_POLL` | `1m` | How often a node looks for a ranked season whose end has passed and closes it (`docs/ranking.md` 7.1), at least `1s` |
 | `HD_COUNTRY_HEADER` | empty | Request header carrying the two-letter country of the connection, set by the edge (for example `CF-IPCountry`); when set, a sign-in adopts it as the account country if the account has none (`docs/privacy.md` D-8). Empty: no IP fallback |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | `4320h` | Time between two country changes of an account (`docs/ranking.md` 8.2) |

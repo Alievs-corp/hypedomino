@@ -24,38 +24,39 @@ namespace Hypedomino.V1 {
     static HelloReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIpkC",
+            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIsgC",
             "CgtDbGllbnRIZWxsbxIfCgthcHBfdmVyc2lvbhgBIAEoCVIKYXBwVmVyc2lv",
             "bhIdCgpidWlsZF9oYXNoGAIgASgJUglidWlsZEhhc2gSMwoIcGxhdGZvcm0Y",
             "AyABKA4yFy5oeXBlZG9taW5vLnYxLlBsYXRmb3JtUghwbGF0Zm9ybRIdCgpv",
             "c192ZXJzaW9uGAQgASgJUglvc1ZlcnNpb24SIQoMZGV2aWNlX21vZGVsGAUg",
             "ASgJUgtkZXZpY2VNb2RlbBIjCg1zZXNzaW9uX3Rva2VuGAYgASgJUgxzZXNz",
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
-            "a2VkU2VxdWVuY2Ui7wIKC1NlcnZlckhlbGxvEjIKBnN0YXR1cxgBIAEoDjIa",
-            "Lmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXNSBnN0YXR1cxIuChNtaW5pbXVt",
-            "X2FwcF92ZXJzaW9uGAIgASgJUhFtaW5pbXVtQXBwVmVyc2lvbhItChNzZXJ2",
-            "ZXJfdGltZV91bml4X21zGAMgASgEUhBzZXJ2ZXJUaW1lVW5peE1zEicKD2Nh",
-            "dGFsb2dfdmVyc2lvbhgEIAEoCVIOY2F0YWxvZ1ZlcnNpb24SGQoIaW5fbWF0",
-            "Y2gYBSABKAhSB2luTWF0Y2gSQgoOc3RyaW5nX2J1bmRsZXMYBiADKAsyGy5o",
-            "eXBlZG9taW5vLnYxLlN0cmluZ0J1bmRsZVINc3RyaW5nQnVuZGxlcxJFCg9m",
-            "YWxsYmFja19jaGFpbnMYByADKAsyHC5oeXBlZG9taW5vLnYxLkZhbGxiYWNr",
-            "Q2hhaW5SDmZhbGxiYWNrQ2hhaW5zIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5n",
-            "dWFnZRgBIAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lv",
-            "bhISCgRoYXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFu",
-            "Z3VhZ2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFu",
-            "Z3VhZ2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAAS",
-            "FAoQUExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hl",
-            "bGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhF",
-            "TExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVf",
-            "UkVRVUlSRUQQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9Q",
-            "AVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9p",
-            "bnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoC",
-            "DUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xW",
-            "MVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "a2VkU2VxdWVuY2USLQoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBFIQY2xp",
+            "ZW50VGltZVVuaXhNcyLvAgoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgO",
+            "MhouaHlwZWRvbWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmlt",
+            "dW1fYXBwX3ZlcnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3Nl",
+            "cnZlcl90aW1lX3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoP",
+            "Y2F0YWxvZ192ZXJzaW9uGAQgASgJUg5jYXRhbG9nVmVyc2lvbhIZCghpbl9t",
+            "YXRjaBgFIAEoCFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIb",
+            "Lmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUK",
+            "D2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJh",
+            "Y2tDaGFpblIOZmFsbGJhY2tDaGFpbnMiWAoMU3RyaW5nQnVuZGxlEhoKCGxh",
+            "bmd1YWdlGAEgASgJUghsYW5ndWFnZRIYCgd2ZXJzaW9uGAIgASgNUgd2ZXJz",
+            "aW9uEhIKBGhhc2gYAyABKAlSBGhhc2giSQoNRmFsbGJhY2tDaGFpbhIaCghs",
+            "YW5ndWFnZRgBIAEoCVIIbGFuZ3VhZ2USHAoJbGFuZ3VhZ2VzGAIgAygJUgls",
+            "YW5ndWFnZXMqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQ",
+            "ABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqaAoL",
+            "SGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoV",
+            "SEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RBVFVTX1VQREFU",
+            "RV9SRVFVSVJFRBACQsUBChFjb20uaHlwZWRvbWluby52MUIKSGVsbG9Qcm90",
+            "b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVy",
+            "L2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhY",
+            "qgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5v",
+            "XFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.StringBundle), global::Hypedomino.V1.StringBundle.Parser, new[]{ "Language", "Version", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
@@ -122,6 +123,7 @@ namespace Hypedomino.V1 {
       deviceModel_ = other.deviceModel_;
       sessionToken_ = other.sessionToken_;
       lastAckedSequence_ = other.lastAckedSequence_;
+      clientTimeUnixMs_ = other.clientTimeUnixMs_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -215,6 +217,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "client_time_unix_ms" field.</summary>
+    public const int ClientTimeUnixMsFieldNumber = 8;
+    private ulong clientTimeUnixMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong ClientTimeUnixMs {
+      get { return clientTimeUnixMs_; }
+      set {
+        clientTimeUnixMs_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -237,6 +251,7 @@ namespace Hypedomino.V1 {
       if (DeviceModel != other.DeviceModel) return false;
       if (SessionToken != other.SessionToken) return false;
       if (LastAckedSequence != other.LastAckedSequence) return false;
+      if (ClientTimeUnixMs != other.ClientTimeUnixMs) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -251,6 +266,7 @@ namespace Hypedomino.V1 {
       if (DeviceModel.Length != 0) hash ^= DeviceModel.GetHashCode();
       if (SessionToken.Length != 0) hash ^= SessionToken.GetHashCode();
       if (LastAckedSequence != 0UL) hash ^= LastAckedSequence.GetHashCode();
+      if (ClientTimeUnixMs != 0UL) hash ^= ClientTimeUnixMs.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -297,6 +313,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteUInt64(LastAckedSequence);
       }
+      if (ClientTimeUnixMs != 0UL) {
+        output.WriteRawTag(64);
+        output.WriteUInt64(ClientTimeUnixMs);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -335,6 +355,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteUInt64(LastAckedSequence);
       }
+      if (ClientTimeUnixMs != 0UL) {
+        output.WriteRawTag(64);
+        output.WriteUInt64(ClientTimeUnixMs);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -365,6 +389,9 @@ namespace Hypedomino.V1 {
       }
       if (LastAckedSequence != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(LastAckedSequence);
+      }
+      if (ClientTimeUnixMs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(ClientTimeUnixMs);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -398,6 +425,9 @@ namespace Hypedomino.V1 {
       }
       if (other.LastAckedSequence != 0UL) {
         LastAckedSequence = other.LastAckedSequence;
+      }
+      if (other.ClientTimeUnixMs != 0UL) {
+        ClientTimeUnixMs = other.ClientTimeUnixMs;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -446,6 +476,10 @@ namespace Hypedomino.V1 {
             LastAckedSequence = input.ReadUInt64();
             break;
           }
+          case 64: {
+            ClientTimeUnixMs = input.ReadUInt64();
+            break;
+          }
         }
       }
     #endif
@@ -491,6 +525,10 @@ namespace Hypedomino.V1 {
           }
           case 56: {
             LastAckedSequence = input.ReadUInt64();
+            break;
+          }
+          case 64: {
+            ClientTimeUnixMs = input.ReadUInt64();
             break;
           }
         }

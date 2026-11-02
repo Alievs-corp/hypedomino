@@ -65,6 +65,7 @@ type Manager struct {
 	random   Random
 	router   Router
 	auth     Authenticator
+	clocks   ClockObserver
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -80,6 +81,14 @@ func (m *Manager) Route(router Router) {
 
 func (m *Manager) Authenticate(auth Authenticator) {
 	m.auth = auth
+}
+
+type ClockObserver interface {
+	Observe(ctx context.Context, account string, clientUnixMs uint64)
+}
+
+func (m *Manager) ObserveClocks(observer ClockObserver) {
+	m.clocks = observer
 }
 
 func (m *Manager) claim(token string) error {
@@ -206,6 +215,17 @@ func (m *Manager) Revoke(token string) {
 }
 
 func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.ClientHello) (gateway.Session, error) {
+	c, err := m.connect(conn, hello)
+	if err != nil {
+		return nil, err
+	}
+	if m.clocks != nil {
+		m.clocks.Observe(ctx, c.session.account, hello.GetClientTimeUnixMs())
+	}
+	return c, nil
+}
+
+func (m *Manager) connect(conn *gateway.Conn, hello *pb.ClientHello) (*connection, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s, ok := m.sessions[hello.GetSessionToken()]
