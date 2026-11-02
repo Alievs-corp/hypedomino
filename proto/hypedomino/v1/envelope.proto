@@ -10,6 +10,7 @@ message Envelope {
   uint32 protocol_version = 1;
   uint64 sequence = 2;
   uint64 acked_sequence = 3;
+  fixed64 session_nonce = 4;
   oneof payload {
     ClientHello client_hello = 10;
     ServerHello server_hello = 11;

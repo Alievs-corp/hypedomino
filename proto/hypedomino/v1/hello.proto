@@ -33,6 +33,7 @@ message ServerHello {
   bool in_match = 5;
   repeated StringBundle string_bundles = 6;
   repeated FallbackChain fallback_chains = 7;
+  fixed64 session_nonce = 8;
 }
 
 message StringBundle {
