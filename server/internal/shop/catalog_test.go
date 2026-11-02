@@ -33,7 +33,7 @@ func example(t *testing.T) *Catalog {
 
 func TestTheExampleCatalogParses(t *testing.T) {
 	catalog := example(t)
-	if len(catalog.Offers) != 9 || len(catalog.Rotations) != 2 {
+	if len(catalog.Offers) != 10 || len(catalog.Rotations) != 2 {
 		t.Fatalf("parsed %d offers and %d rotations", len(catalog.Offers), len(catalog.Rotations))
 	}
 	fox, ok := catalog.Offer("offer.avatar_comet_fox")

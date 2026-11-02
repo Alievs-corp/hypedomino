@@ -122,6 +122,8 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return passFollowsPublished(ctx, pool, raw)
 	case mission.Domain:
 		return missionSourcesArePublished(ctx, pool, raw)
+	case shop.Domain:
+		return chestPoolsArePublished(ctx, pool, raw)
 	case gamestrings.Domain:
 		localization, err := gamestrings.ParseLocalization(raw)
 		if err != nil {
@@ -131,6 +133,18 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return err
 	}
 	return nil
+}
+
+func chestPoolsArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	catalog, err := shop.Parse(raw, shop.DefaultConfig())
+	if err != nil {
+		return err
+	}
+	items, err := publishedItems(ctx, pool)
+	if err != nil {
+		return err
+	}
+	return catalog.CheckChestPools(items)
 }
 
 func missionSourcesArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {

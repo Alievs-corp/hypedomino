@@ -31,6 +31,19 @@
       "referencePriceCoins": 3500
     },
     {
+      "id": "offer.chest_avatar",
+      "kind": "chest",
+      "section": "chests",
+      "priceCoins": 500,
+      "bundle": {
+        "id": "bundle.chest_avatar",
+        "revision": 1,
+        "cosmetics": ["avatar.paper_kite", "avatar.moon_owl"]
+      },
+      "window": { "start": "2026-01-01T00:00:00Z" },
+      "nameKey": "shop.offer.chest_avatar"
+    },
+    {
       "id": "offer.starter",
       "kind": "bundle",
       "section": "featured",
@@ -108,6 +121,7 @@
     "crystals": 100,
     "cosmetics": ["frame.season_1_top"]
   },
+  "chests": { "rarityPercent": { "common": 85, "rare": 15 }, "rarePityCount": 10 },
   "rotations": [
     { "period": "daily", "start": "2026-01-01T00:00:00Z", "offers": ["offer.avatar_comet_fox"] },
     { "period": "weekly", "start": "2025-12-29T00:00:00Z", "offers": ["offer.table_night_market"] }

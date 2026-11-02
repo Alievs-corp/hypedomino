@@ -351,8 +351,8 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pack := view.Sections[5].Offers[0]; pack.Purchasable || pack.Reason != "purchase.blocked" {
-		t.Fatalf("coin pack while blocked %+v", pack)
+	if pack := view.Sections[6].Offers[0]; pack.Purchasable || pack.Reason != "purchase.blocked" {
+		t.Fatalf("crystal pack while blocked %+v", pack)
 	}
 	if blocked, err := f.store.Blocked(ctx, ayla, now.Add(31*24*time.Hour)); err != nil || blocked {
 		t.Fatalf("blocked after the window %v %v", blocked, err)

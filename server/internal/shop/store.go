@@ -12,6 +12,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
@@ -47,6 +48,7 @@ type Store struct {
 	config    Config
 	gate      Gate
 	pass      PassStatus
+	random    Random
 }
 
 func (s *Store) Guard(gate Gate) {
@@ -61,8 +63,12 @@ func (s *Store) WithPass(status PassStatus) {
 	s.pass = status
 }
 
+func (s *Store) WithRandom(random Random) {
+	s.random = random
+}
+
 func NewStore(pool *pgxpool.Pool, wallet *wallet.Store, inventory *inventory.Store, engine *reward.Engine, catalog *snapshot.Watcher[*Catalog], config Config) *Store {
-	return &Store{pool: pool, wallet: wallet, inventory: inventory, engine: engine, catalog: catalog, config: config}
+	return &Store{pool: pool, wallet: wallet, inventory: inventory, engine: engine, catalog: catalog, config: config, random: secrand.Source{}}
 }
 
 type OfferView struct {
@@ -83,6 +89,8 @@ type OfferView struct {
 	Bought                 int              `json:"bought"`
 	Owned                  []string         `json:"owned"`
 	Compensation           map[string]int64 `json:"compensation"`
+	Odds                   map[string]int   `json:"odds,omitempty"`
+	OpensToPity            int              `json:"opens_to_pity,omitempty"`
 	Purchasable            bool             `json:"purchasable"`
 	Reason                 string           `json:"reason,omitempty"`
 }
@@ -103,6 +111,7 @@ type Purchase struct {
 	Currency wallet.Currency `json:"currency"`
 	Balance  int64           `json:"balance"`
 	Grant    reward.Report   `json:"grant"`
+	Chest    *ChestOpen      `json:"chest,omitempty"`
 	Repeated bool            `json:"repeated"`
 }
 
@@ -124,6 +133,7 @@ type standing struct {
 	owns      func(id string) (bool, error)
 	premium   *pass.PremiumState
 	noSeason  bool
+	pity      int
 }
 
 func (s *Store) standing(ctx context.Context, q wallet.Querier, account string, owns func(id string) (bool, error), now time.Time) (standing, error) {
@@ -152,6 +162,9 @@ func (s *Store) standing(ctx context.Context, q wallet.Querier, account string, 
 			st.premium = &premium
 		}
 	}
+	if st.pity, err = pityIn(ctx, q, account); err != nil {
+		return st, err
+	}
 	st.counts, err = reward.CountsIn(ctx, q, account, SourceType)
 	return st, err
 }
@@ -164,6 +177,9 @@ type status struct {
 }
 
 func (s *Store) status(offer Offer, st standing, now time.Time) (status, error) {
+	if offer.Kind == KindChest {
+		return s.chestStatus(offer, st)
+	}
 	out := status{owned: []string{}, compensation: map[string]int64{}, bought: st.counts[offer.ID]}
 	for _, id := range offer.Bundle.Cosmetics {
 		held, err := st.owns(id)
@@ -222,7 +238,7 @@ func (s *Store) View(ctx context.Context, account string, now time.Time) (View, 
 	for _, section := range catalog.Sections(s.config, now) {
 		sv := SectionView{Section: section.Name, EndsAt: stamp(section.EndsAt), Offers: make([]OfferView, 0, len(section.Offers))}
 		for _, offer := range section.Offers {
-			ov, err := s.offerView(offer, st, now)
+			ov, err := s.offerView(offer, catalog.Chests, st, now)
 			if err != nil {
 				return View{}, err
 			}
@@ -233,7 +249,7 @@ func (s *Store) View(ctx context.Context, account string, now time.Time) (View, 
 	return view, nil
 }
 
-func (s *Store) offerView(offer Offer, st standing, now time.Time) (OfferView, error) {
+func (s *Store) offerView(offer Offer, chests ChestRules, st standing, now time.Time) (OfferView, error) {
 	status, err := s.status(offer, st, now)
 	if err != nil {
 		return OfferView{}, err
@@ -249,34 +265,41 @@ func (s *Store) offerView(offer Offer, st standing, now time.Time) (OfferView, e
 	if status.refusal != nil {
 		view.Reason = status.refusal.Error()
 	}
+	if offer.Kind == KindChest {
+		view.Odds = chests.RarityPercent
+		view.OpensToPity = chests.OpensToPity(st.pity)
+	}
 	return view, nil
 }
 
-func (s *Store) offer(id string, now time.Time) (Offer, int64, error) {
+func (s *Store) offer(id string, now time.Time) (Offer, *Catalog, int64, error) {
 	catalog, version, ok := s.catalog.Current()
 	if !ok {
-		return Offer{}, 0, ErrNoCatalog
+		return Offer{}, nil, 0, ErrNoCatalog
 	}
 	offer, ok := catalog.Offer(id)
 	if !ok {
-		return Offer{}, 0, ErrUnknownOffer
+		return Offer{}, nil, 0, ErrUnknownOffer
 	}
 	if !catalog.Available(s.config, offer, now) {
-		return Offer{}, 0, ErrUnavailable
+		return Offer{}, nil, 0, ErrUnavailable
 	}
-	return offer, version, nil
+	return offer, catalog, version, nil
 }
 
 func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now time.Time) (Purchase, error) {
 	if requestID == "" || len(requestID) > MaxRequestID {
 		return Purchase{}, ErrRequest
 	}
-	offer, version, err := s.offer(offerID, now)
+	offer, catalog, version, err := s.offer(offerID, now)
 	if err != nil {
 		return Purchase{}, err
 	}
 	if offer.ProductID != "" {
 		return Purchase{}, ErrStoreOnly
+	}
+	if offer.Kind == KindChest {
+		return s.open(ctx, account, offer, catalog.Chests, version, requestID, now)
 	}
 	currency, price := offer.Price()
 	tx, err := s.pool.Begin(ctx)
@@ -325,7 +348,7 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 }
 
 func (s *Store) Begin(ctx context.Context, account, offerID string, now time.Time) (Checkout, error) {
-	offer, _, err := s.offer(offerID, now)
+	offer, _, _, err := s.offer(offerID, now)
 	if err != nil {
 		return Checkout{}, err
 	}
