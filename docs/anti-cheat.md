@@ -33,6 +33,8 @@ Code review checks every change against this list. A change that breaks a rule i
 - **NT-11** Every economy write goes through the idempotent ledger with a reason and a source (#101, #202). No code path changes a balance outside it.
 - **NT-12** Intents, logins, promo redemptions and purchases are rate limited and counted per account (ADR 0007, #184).
 
+NT-1 is checked automatically (#202). `tools/proto-lint` refuses a value field (balance, coin, crystal, price, cost, amount, reward, score, points, rating, MMR, LP, XP, rank, tier, inventory, owned, result) in a client message of `proto/`. `server/internal/contract` scans every server handler that takes an `*http.Request` and fails the build when a JSON body it decodes has a field with one of those words, nested structs included. The admin API is left out: staff set prices there under RBAC and audit (`docs/admin.md`). A fuzz test sends tampered `POST /shop/buy` bodies (extra price, coin, balance and reward fields, wrong types, duplicate keys) and checks that no balance rises, that a fall is a catalog price and that the ledger audit stays clean.
+
 ## 3. Responses
 
 | Response | What happens | Who triggers it |

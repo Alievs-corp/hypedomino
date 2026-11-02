@@ -39,7 +39,7 @@ type fixture struct {
 	store     *shop.Store
 }
 
-func newFixture(t *testing.T, seedFile bool) *fixture {
+func newFixture(t testing.TB, seedFile bool) *fixture {
 	t.Helper()
 	_, pool := dbtest.Fresh(t)
 	catalog, err := cosmetics.Load("../../../docs/cosmetics/examples/catalog.json")
@@ -59,7 +59,7 @@ func newFixture(t *testing.T, seedFile bool) *fixture {
 	return f
 }
 
-func (f *fixture) account(t *testing.T, coins int64) string {
+func (f *fixture) account(t testing.TB, coins int64) string {
 	t.Helper()
 	var id string
 	if err := f.pool.QueryRow(context.Background(), `insert into accounts (created_at) values ($1) returning id`, now.Add(-time.Hour)).Scan(&id); err != nil {
