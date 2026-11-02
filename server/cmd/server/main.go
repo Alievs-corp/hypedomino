@@ -30,6 +30,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -82,6 +83,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if err != nil {
 		return nil, nil, err
 	}
+	limiter := ratelimit.New(config.RateLimit, buckets(client, config.Cluster.KeyPrefix), logger, time.Now)
+	a.Limit(limiter)
 	if config.Database == "" {
 		return a, func() {}, nil
 	}
@@ -100,6 +103,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("HD_TOKEN_KEYS: %w", err)
 	}
 	sessions.Authenticate(tokens)
+	limiter.Authenticate(tokens)
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
 	signIn.SetCountryHeader(config.CountryHeader)
@@ -244,6 +248,13 @@ func loadCatalog(path string) (*cosmetics.Catalog, error) {
 		return cosmetics.Builtin(), nil
 	}
 	return cosmetics.Load(path)
+}
+
+func buckets(client *redis.Client, prefix string) ratelimit.Buckets {
+	if client == nil {
+		return ratelimit.NewMemory()
+	}
+	return ratelimit.NewRedis(client, prefix)
 }
 
 func node(config app.Config, logger *slog.Logger, sessions *session.Manager, client *redis.Client) (*app.App, error) {

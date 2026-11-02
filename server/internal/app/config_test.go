@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 )
 
 func lookup(values map[string]string) Lookup {
@@ -22,7 +23,7 @@ func TestConfigDefaultsWhenTheEnvironmentIsEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.ListenAddr != ":8080" || config.LogLevel != "info" || config.DrainTimeout != 15*time.Minute || config.Gateway.MaxFrameBytes != 1024 || config.Origins != nil {
+	if config.ListenAddr != ":8080" || config.LogLevel != "info" || config.DrainTimeout != 15*time.Minute || config.Gateway.MaxFrameBytes != 1024 || config.Origins != nil || config.RateLimit != ratelimit.DefaultConfig() {
 		t.Fatalf("defaults %+v", config)
 	}
 }
@@ -97,6 +98,17 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK": "3",
 		"HD_PROMO_LOCK_MINUTES":                "15",
 		"HD_PROMO_COINS_APPROVAL_THRESHOLD":    "1000",
+		"HD_RATE_IP_PER_MINUTE":                "120",
+		"HD_RATE_IP_BURST":                     "40",
+		"HD_RATE_ACCOUNT_PER_MINUTE":           "90",
+		"HD_RATE_ACCOUNT_BURST":                "30",
+		"HD_RATE_SIGNIN_PER_MINUTE":            "8",
+		"HD_RATE_SIGNIN_BURST":                 "4",
+		"HD_RATE_SPEND_PER_MINUTE":             "6",
+		"HD_RATE_SPEND_BURST":                  "3",
+		"HD_CLIENT_IP_HEADER":                  "CF-Connecting-IP",
+		"HD_READ_TIMEOUT":                      "20s",
+		"HD_IDLE_TIMEOUT":                      "90s",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +155,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.PromoKey != "0123456789abcdef0123456789abcdef" || config.Promo != (promo.Config{CodeLength: 10, MaxValidityDays: 30, AttemptsPerHour: 20, FailedAttemptsBeforeLock: 3, LockMinutes: 15, CoinsApprovalThreshold: 1000}) {
 		t.Fatalf("promo config %q %+v", config.PromoKey, config.Promo)
 	}
+	if config.RateLimit != (ratelimit.Config{IP: ratelimit.Rule{PerMinute: 120, Burst: 40}, Account: ratelimit.Rule{PerMinute: 90, Burst: 30}, SignIn: ratelimit.Rule{PerMinute: 8, Burst: 4}, Spend: ratelimit.Rule{PerMinute: 6, Burst: 3}, IPHeader: "CF-Connecting-IP", ReadTimeout: 20 * time.Second, IdleTimeout: 90 * time.Second}) {
+		t.Fatalf("rate limit config %+v", config.RateLimit)
+	}
 	if len(config.Rarities) != 6 || config.Rarities["cosmic"] != 6 {
 		t.Fatalf("rarities %v", config.Rarities)
 	}
@@ -172,11 +187,12 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 		"HD_REFUND_WINDOW_DAYS":             "0",
 		"HD_PROMO_KEY":                      "short",
 		"HD_PROMO_LOCK_MINUTES":             "0",
+		"HD_RATE_SPEND_BURST":               "0",
 	}))
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}

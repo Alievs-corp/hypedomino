@@ -47,6 +47,17 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_COMPRESSION_THRESHOLD` | No | server | `256` | `256` | No | from #264 |
 | `HD_INTENTS_PER_SECOND` | No | server | `10` | `10` | No | from #264 |
 | `HD_INTENT_BURST` | No | server | `20` | `20` | No | from #264 |
+| `HD_RATE_IP_PER_MINUTE` | No | server | `60` | `60` | No | from #184 |
+| `HD_RATE_IP_BURST` | No | server | `20` | `20` | No | from #184 |
+| `HD_RATE_ACCOUNT_PER_MINUTE` | No | server | `30` | `30` | No | from #184 |
+| `HD_RATE_ACCOUNT_BURST` | No | server | `10` | `10` | No | from #184 |
+| `HD_RATE_SIGNIN_PER_MINUTE` | No | server | `5` | `5` | No | from #184 |
+| `HD_RATE_SIGNIN_BURST` | No | server | `5` | `5` | No | from #184 |
+| `HD_RATE_SPEND_PER_MINUTE` | No | server | `5` | `5` | No | from #184 |
+| `HD_RATE_SPEND_BURST` | No | server | `5` | `5` | No | from #184 |
+| `HD_READ_TIMEOUT` | No | server, admin-api | `15s` | `15s` | No | from #184 |
+| `HD_IDLE_TIMEOUT` | No | server, admin-api | `60s` | `60s` | No | from #184 |
+| `HD_CLIENT_IP_HEADER` | No | server | empty (connection address) | `CF-Connecting-IP` | No | from #184; only a header the edge overwrites on every request |
 | `HD_PING_INTERVAL` | No | server | `15s` | `15s` | No | from #264 (default from #262) |
 | `HD_PONG_TIMEOUT` | No | server | `5s` | `5s` | No | from #264 (default from #262) |
 | `HD_RECONNECT_GRACE` | No | server | `60s` | `60s` | No | from #264 |
@@ -105,7 +116,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces when more than one instance runs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|

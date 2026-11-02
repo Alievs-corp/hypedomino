@@ -48,7 +48,7 @@ type running struct {
 	ended   bool
 }
 
-func start(t *testing.T, config Config) *running {
+func start(t *testing.T, config Config, setups ...func(*App)) *running {
 	t.Helper()
 	config.ListenAddr = "127.0.0.1:0"
 	config.Gateway.IntentsPerSecond = 1000
@@ -56,6 +56,9 @@ func start(t *testing.T, config Config) *running {
 	logs := &bytes.Buffer{}
 	handler := &seatHandler{}
 	a := New(config, NewLogger(logs, "info"), handler)
+	for _, setup := range setups {
+		setup(a)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- a.Run(ctx) }()

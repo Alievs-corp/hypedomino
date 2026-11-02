@@ -16,6 +16,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -53,6 +54,7 @@ type Config struct {
 	PushSecret      string
 	Promo           promo.Config
 	PromoKey        string
+	RateLimit       ratelimit.Config
 }
 
 func DefaultConfig() Config {
@@ -62,6 +64,7 @@ func DefaultConfig() Config {
 		ShutdownTimeout: 10 * time.Second,
 		DrainTimeout:    15 * time.Minute,
 		Gateway:         gateway.DefaultConfig(),
+		RateLimit:       ratelimit.DefaultConfig(),
 		Session:         session.DefaultConfig(),
 		Cluster:         defaultCluster(),
 		Relay:           cluster.DefaultRelayConfig(),
@@ -225,6 +228,17 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_CONFIG_POLL", &config.ConfigPoll)
 	r.duration("HD_SEASON_POLL", &config.SeasonPoll)
 	r.text("HD_COUNTRY_HEADER", &config.CountryHeader)
+	r.integer("HD_RATE_IP_PER_MINUTE", &config.RateLimit.IP.PerMinute)
+	r.integer("HD_RATE_IP_BURST", &config.RateLimit.IP.Burst)
+	r.integer("HD_RATE_ACCOUNT_PER_MINUTE", &config.RateLimit.Account.PerMinute)
+	r.integer("HD_RATE_ACCOUNT_BURST", &config.RateLimit.Account.Burst)
+	r.integer("HD_RATE_SIGNIN_PER_MINUTE", &config.RateLimit.SignIn.PerMinute)
+	r.integer("HD_RATE_SIGNIN_BURST", &config.RateLimit.SignIn.Burst)
+	r.integer("HD_RATE_SPEND_PER_MINUTE", &config.RateLimit.Spend.PerMinute)
+	r.integer("HD_RATE_SPEND_BURST", &config.RateLimit.Spend.Burst)
+	r.text("HD_CLIENT_IP_HEADER", &config.RateLimit.IPHeader)
+	r.duration("HD_READ_TIMEOUT", &config.RateLimit.ReadTimeout)
+	r.duration("HD_IDLE_TIMEOUT", &config.RateLimit.IdleTimeout)
 	r.duration("HD_COUNTRY_CHANGE_COOLDOWN", &config.CountryCooldown)
 	r.integer("HD_DUPLICATE_COMPENSATION_PERCENT", &config.Reward.DuplicateCompensationPercent)
 	if err := config.Shop.Validate(); err != nil {
@@ -292,6 +306,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 		if err := config.Cluster.Validate(); err != nil {
 			r.errs = append(r.errs, err)
 		}
+	}
+	if err := config.RateLimit.Validate(); err != nil {
+		r.errs = append(r.errs, err)
 	}
 	if _, ok := parseLevel(config.LogLevel); !ok {
 		r.errs = append(r.errs, fmt.Errorf("HD_LOG_LEVEL: %q is not debug, info, warn or error", config.LogLevel))
