@@ -21,6 +21,7 @@ type Client struct {
 	socket    *websocket.Conn
 	ctx       context.Context
 	buffer    []byte
+	nonce     uint64
 	Hello     *pb.ServerHello
 	Acked     uint64
 	Sequence  uint64
@@ -75,6 +76,7 @@ func (c *Client) handshake(options Options) error {
 	switch payload := reply.GetPayload().(type) {
 	case *pb.Envelope_ServerHello:
 		c.Hello = payload.ServerHello
+		c.nonce = payload.ServerHello.GetSessionNonce()
 		c.Acked = reply.GetAckedSequence()
 		c.Sequence = c.Acked
 		if payload.ServerHello.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
@@ -88,6 +90,9 @@ func (c *Client) handshake(options Options) error {
 }
 
 func (c *Client) write(frame *pb.Envelope) error {
+	if frame.GetClientHello() == nil {
+		frame.SessionNonce = c.nonce
+	}
 	data, err := proto.MarshalOptions{}.MarshalAppend(c.buffer[:0], frame)
 	if err != nil {
 		return err

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
+	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 )
 
 func VersionAtLeast(version, minimum string) bool {
@@ -48,6 +49,9 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 		CatalogVersion:    c.options.Config.CatalogVersion,
 		InMatch:           inMatch,
 	}
+	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED {
+		hello.SessionNonce = c.nonce
+	}
 	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Strings != nil {
 		localized := c.options.Strings()
 		hello.StringBundles, hello.FallbackChains = localized.Bundles, localized.Chains
@@ -56,6 +60,18 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,
 		Payload:         &pb.Envelope_ServerHello{ServerHello: hello},
+	}
+}
+
+type ReplayCounter interface {
+	Replayed()
+}
+
+func sessionNonce() uint64 {
+	for {
+		if nonce := (secrand.Source{}).Uint64(); nonce != 0 {
+			return nonce
+		}
 	}
 }
 

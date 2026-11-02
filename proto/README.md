@@ -62,7 +62,7 @@ CI runs all of these on every change under `proto/` or a generated directory and
 | Pong within `PongTimeout` after each server ping every `PingInterval` | 5 s, 15 s | Close 1001 (no pong) |
 | One live connection per session token | | The earlier connection is closed 1008 (session replaced) |
 
-Frames above `CompressionThreshold` (256 bytes) are sent with permessage-deflate without context takeover when the client negotiates it; intents stay well under it. Measured over a full 1v1 and 2v2 match in `TestPlayersFinishAMatchOverWebSocket`: 13 to 14 bytes per intent frame on average, against the 64 byte acceptance line of #44.
+Frames above `CompressionThreshold` (256 bytes) are sent with permessage-deflate without context takeover when the client negotiates it; intents stay well under it. Measured over a full 1v1 and 2v2 match in `TestPlayersFinishAMatchOverWebSocket`: 22 to 23 bytes per intent frame on average with the 9 byte `session_nonce` (13 to 14 before #207), against the 64 byte acceptance line of #44.
 
 ## Versioning rules
 

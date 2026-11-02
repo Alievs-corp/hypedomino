@@ -277,8 +277,11 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_CLOCK_SKEW_WEIGHT", &config.Risk.ClockSkewWeight)
 	r.integer("HD_FAKE_RECEIPT_WEIGHT", &config.Risk.FakeReceiptWeight)
 	r.integer("HD_REFUND_WEIGHT", &config.Risk.RefundWeight)
+	r.integer("HD_REPLAY_REJECT_THRESHOLD", &config.Risk.ReplayThreshold)
+	r.duration("HD_REPLAY_REJECT_WINDOW", &config.Risk.ReplayWindow)
+	r.integer("HD_REPLAY_REJECT_WEIGHT", &config.Risk.ReplayWeight)
 	if err := config.Risk.Validate(); err != nil {
-		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT and HD_REFUND_WEIGHT: %w", err))
+		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT, HD_REFUND_WEIGHT and HD_REPLAY_REJECT_*: %w", err))
 	}
 	if err := config.Purchase.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_REFUNDS_BEFORE_PURCHASE_BLOCK and HD_REFUND_WINDOW_DAYS: %w", err))

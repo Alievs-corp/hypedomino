@@ -24,6 +24,7 @@ type Conn struct {
 	status  websocket.StatusCode
 	reason  string
 	session Session
+	nonce   uint64
 	bucket  bucket
 	stop    context.CancelFunc
 	served  chan struct{}
@@ -209,6 +210,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		return false
 	}
 	c.session = session
+	c.nonce = sessionNonce()
 	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked(), session.InMatch())) != nil {
 		return false
 	}
@@ -270,6 +272,12 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_RATE_LIMITED, sequence, c.session.Acked())) == nil
+	}
+	if frame.GetSessionNonce() != c.nonce {
+		if counter, ok := c.session.(ReplayCounter); ok {
+			counter.Replayed()
+		}
+		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_REPLAY_REJECTED, sequence, c.session.Acked())) == nil
 	}
 	if loading != nil {
 		c.session.Loading(int(loading.GetProgress()), loading.GetReady())

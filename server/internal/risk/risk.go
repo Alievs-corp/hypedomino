@@ -17,6 +17,7 @@ const (
 	KindClockSkew   = "clock_skew"
 	KindFakeReceipt = "fake_receipt"
 	KindRefund      = "refund"
+	KindReplay      = "replay_reject"
 )
 
 var ErrInvalidConfig = errors.New("risk: invalid config")
@@ -26,15 +27,21 @@ type Config struct {
 	ClockSkewWeight    int
 	FakeReceiptWeight  int
 	RefundWeight       int
+	ReplayThreshold    int
+	ReplayWindow       time.Duration
+	ReplayWeight       int
 }
 
 func DefaultConfig() Config {
-	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3}
+	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5}
 }
 
 func (c Config) Validate() error {
 	if c.ClockSkewTolerance <= 0 || c.ClockSkewWeight < 0 {
 		return fmt.Errorf("%w: clock skew tolerance must be positive and its weight not negative", ErrInvalidConfig)
+	}
+	if c.ReplayThreshold < 1 || c.ReplayWindow <= 0 || c.ReplayWeight < 0 {
+		return fmt.Errorf("%w: replay threshold must be at least 1, its window positive and its weight not negative", ErrInvalidConfig)
 	}
 	if c.FakeReceiptWeight < 0 || c.RefundWeight < 0 {
 		return fmt.Errorf("%w: fake receipt and refund weights must not be negative", ErrInvalidConfig)

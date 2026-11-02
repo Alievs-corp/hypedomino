@@ -228,6 +228,7 @@ type ServerHello struct {
 	InMatch           bool                   `protobuf:"varint,5,opt,name=in_match,json=inMatch,proto3" json:"in_match,omitempty"`
 	StringBundles     []*StringBundle        `protobuf:"bytes,6,rep,name=string_bundles,json=stringBundles,proto3" json:"string_bundles,omitempty"`
 	FallbackChains    []*FallbackChain       `protobuf:"bytes,7,rep,name=fallback_chains,json=fallbackChains,proto3" json:"fallback_chains,omitempty"`
+	SessionNonce      uint64                 `protobuf:"fixed64,8,opt,name=session_nonce,json=sessionNonce,proto3" json:"session_nonce,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -309,6 +310,13 @@ func (x *ServerHello) GetFallbackChains() []*FallbackChain {
 		return x.FallbackChains
 	}
 	return nil
+}
+
+func (x *ServerHello) GetSessionNonce() uint64 {
+	if x != nil {
+		return x.SessionNonce
+	}
+	return 0
 }
 
 type StringBundle struct {
@@ -439,7 +447,7 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\fdevice_model\x18\x05 \x01(\tR\vdeviceModel\x12#\n" +
 	"\rsession_token\x18\x06 \x01(\tR\fsessionToken\x12.\n" +
 	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\x12-\n" +
-	"\x13client_time_unix_ms\x18\b \x01(\x04R\x10clientTimeUnixMs\"\xef\x02\n" +
+	"\x13client_time_unix_ms\x18\b \x01(\x04R\x10clientTimeUnixMs\"\x94\x03\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
@@ -447,7 +455,8 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x0fcatalog_version\x18\x04 \x01(\tR\x0ecatalogVersion\x12\x19\n" +
 	"\bin_match\x18\x05 \x01(\bR\ainMatch\x12B\n" +
 	"\x0estring_bundles\x18\x06 \x03(\v2\x1b.hypedomino.v1.StringBundleR\rstringBundles\x12E\n" +
-	"\x0ffallback_chains\x18\a \x03(\v2\x1c.hypedomino.v1.FallbackChainR\x0efallbackChains\"X\n" +
+	"\x0ffallback_chains\x18\a \x03(\v2\x1c.hypedomino.v1.FallbackChainR\x0efallbackChains\x12#\n" +
+	"\rsession_nonce\x18\b \x01(\x06R\fsessionNonce\"X\n" +
 	"\fStringBundle\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +

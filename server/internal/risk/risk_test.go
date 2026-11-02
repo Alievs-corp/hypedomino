@@ -65,12 +65,71 @@ func TestASkewedDeviceClockRaisesOneSoftSignalPerDay(t *testing.T) {
 }
 
 func TestTheRiskConfigIsChecked(t *testing.T) {
-	for _, config := range []risk.Config{{ClockSkewTolerance: 0, ClockSkewWeight: 1}, {ClockSkewTolerance: time.Minute, ClockSkewWeight: -1}, {ClockSkewTolerance: time.Minute, FakeReceiptWeight: -1}, {ClockSkewTolerance: time.Minute, RefundWeight: -1}} {
+	for name, change := range map[string]func(*risk.Config){
+		"no skew tolerance":   func(c *risk.Config) { c.ClockSkewTolerance = 0 },
+		"negative skew":       func(c *risk.Config) { c.ClockSkewWeight = -1 },
+		"negative receipt":    func(c *risk.Config) { c.FakeReceiptWeight = -1 },
+		"negative refund":     func(c *risk.Config) { c.RefundWeight = -1 },
+		"no replay threshold": func(c *risk.Config) { c.ReplayThreshold = 0 },
+		"no replay window":    func(c *risk.Config) { c.ReplayWindow = 0 },
+		"negative replay":     func(c *risk.Config) { c.ReplayWeight = -1 },
+	} {
+		config := risk.DefaultConfig()
+		change(&config)
 		if err := config.Validate(); !errors.Is(err, risk.ErrInvalidConfig) {
-			t.Fatalf("%+v: %v", config, err)
+			t.Fatalf("%s: %v", name, err)
 		}
 	}
-	if config := risk.DefaultConfig(); config.Validate() != nil || config.FakeReceiptWeight != 20 || config.RefundWeight != 3 {
+	if config := risk.DefaultConfig(); config.Validate() != nil || config.FakeReceiptWeight != 20 || config.RefundWeight != 3 || config.ReplayThreshold != 5 || config.ReplayWindow != 10*time.Minute || config.ReplayWeight != 5 {
 		t.Fatalf("defaults %+v", config)
+	}
+}
+
+func TestRepeatedReplaysRaiseOneSoftSignalPerWindow(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	var ayla, bora string
+	for _, id := range []*string{&ayla, &bora} {
+		if err := pool.QueryRow(ctx, `insert into accounts (created_at) values (now()) returning id`).Scan(id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	start := time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)
+	clock := &fixedClock{now: start}
+	store := risk.NewStore(pool)
+	replays := risk.NewReplays(store, risk.DefaultConfig(), clock, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	steps := []struct {
+		account string
+		at      time.Duration
+		ayla    int
+	}{
+		{ayla, 0, 0}, {ayla, time.Minute, 0}, {ayla, 2 * time.Minute, 0}, {bora, 2 * time.Minute, 0}, {ayla, 3 * time.Minute, 0},
+		{ayla, 13*time.Minute + time.Second, 0},
+		{ayla, 14 * time.Minute, 0}, {ayla, 15 * time.Minute, 0}, {ayla, 16 * time.Minute, 0},
+		{ayla, 17 * time.Minute, 1},
+		{ayla, 17 * time.Minute, 1}, {ayla, 18 * time.Minute, 1}, {ayla, 18 * time.Minute, 1}, {ayla, 19 * time.Minute, 1},
+		{ayla, 19 * time.Minute, 1},
+		{ayla, 21 * time.Minute, 1}, {ayla, 21 * time.Minute, 1}, {ayla, 22 * time.Minute, 1}, {ayla, 22 * time.Minute, 1}, {ayla, 23 * time.Minute, 2},
+	}
+	for i, step := range steps {
+		clock.now = start.Add(step.at)
+		replays.Observe(ctx, step.account)
+		signals, err := store.Signals(ctx, ayla)
+		if err != nil || len(signals) != step.ayla {
+			t.Fatalf("step %d: %d signals %v", i, len(signals), err)
+		}
+	}
+	signals, _ := store.Signals(ctx, ayla)
+	first := signals[0]
+	if first.Kind != risk.KindReplay || first.Weight != 5 || first.Evidence["rejections"] != float64(5) || first.Evidence["window_seconds"] != float64(600) || first.Dedupe != "2026-11-02T12:10:00Z" || signals[1].Dedupe != "2026-11-02T12:20:00Z" {
+		t.Fatalf("signals %+v", signals)
+	}
+	if others, _ := store.Signals(ctx, bora); len(others) != 0 {
+		t.Fatalf("one rejection flagged bora: %+v", others)
+	}
+	clock.now = start.Add(time.Hour)
+	replays.Observe(ctx, ayla)
+	if replays.Tracked() != 1 {
+		t.Fatalf("%d accounts still tracked after the window", replays.Tracked())
 	}
 }

@@ -106,6 +106,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	sessions.Authenticate(tokens)
 	signals := risk.NewStore(pool)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
+	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
 	limiter.Authenticate(tokens)
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)

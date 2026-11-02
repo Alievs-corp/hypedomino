@@ -107,6 +107,7 @@ type player struct {
 	acked    uint64
 	hello    *pb.Envelope
 	last     *pb.MatchView
+	nonce    uint64
 }
 
 func (tab *table) connect(token string, expectAccepted bool) *player {
@@ -134,6 +135,7 @@ func (tab *table) connectAt(token string, clientUnixMs uint64, expectAccepted bo
 		tab.t.Fatalf("hello answered %v", p.hello)
 	}
 	p.acked = p.hello.GetAckedSequence()
+	p.nonce = p.hello.GetServerHello().GetSessionNonce()
 	p.sequence = p.acked
 	if expectAccepted {
 		p.write(&pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}})
@@ -150,6 +152,9 @@ func (tab *table) join(seat rules.Seat) *player {
 
 func (p *player) write(frame *pb.Envelope) {
 	p.t.Helper()
+	if frame.GetClientHello() == nil {
+		frame.SessionNonce = p.nonce
+	}
 	data, err := proto.Marshal(frame)
 	if err != nil {
 		p.t.Fatal(err)
@@ -538,5 +543,44 @@ func TestAMovedDeviceClockIsObservedButTheServerKeepsItsOwnTime(t *testing.T) {
 	defer clocks.mu.Unlock()
 	if len(clocks.seen) != 1 || clocks.seen[0] != (observedClock{"account-X", twoDaysAhead}) {
 		t.Fatalf("observed clocks %v", clocks.seen)
+	}
+}
+
+type replayLog struct {
+	mu   sync.Mutex
+	seen []string
+}
+
+func (l *replayLog) Observe(_ context.Context, account string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.seen = append(l.seen, account)
+}
+
+func TestAFrameFromAnEarlierConnectionIsCountedForTheAccount(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	replays := &replayLog{}
+	tab.manager.ObserveReplays(replays)
+	earlier := tab.connect(tab.tokens[rules.SeatX], true)
+	captured := earlier.nonce
+	later := tab.connect(tab.tokens[rules.SeatX], true)
+	if later.nonce == captured {
+		t.Fatal("a reconnect kept the nonce")
+	}
+	later.nonce = captured
+	later.write(&pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Sequence: later.sequence + 1, Payload: &pb.Envelope_DrawIntent{DrawIntent: &pb.DrawIntent{}}})
+	for {
+		frame := later.read()
+		if code := frame.GetError().GetCode(); code != pb.ErrorCode_ERROR_CODE_UNSPECIFIED {
+			if code != pb.ErrorCode_ERROR_CODE_REPLAY_REJECTED {
+				t.Fatalf("captured frame answered %v", frame)
+			}
+			break
+		}
+	}
+	replays.mu.Lock()
+	defer replays.mu.Unlock()
+	if len(replays.seen) != 1 || replays.seen[0] != "account-X" {
+		t.Fatalf("observed replays %v", replays.seen)
 	}
 }

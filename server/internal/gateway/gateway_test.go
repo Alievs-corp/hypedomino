@@ -54,6 +54,7 @@ type recordingSession struct {
 	loading  []loadingReport
 	inMatch  bool
 	attached bool
+	replays  int
 	closed   chan struct{}
 }
 
@@ -103,6 +104,18 @@ func (s *recordingSession) Intent(sequence uint64, intent replay.Intent) {
 }
 
 func (s *recordingSession) Close() { close(s.closed) }
+
+func (s *recordingSession) Replayed() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.replays++
+}
+
+func (s *recordingSession) replayCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.replays
+}
 
 func (s *recordingSession) received() []received {
 	s.mu.Lock()
@@ -163,6 +176,7 @@ type client struct {
 	t      *testing.T
 	socket *websocket.Conn
 	ctx    context.Context
+	nonce  uint64
 }
 
 func (h *harness) dial() *client {
@@ -179,6 +193,9 @@ func (h *harness) dial() *client {
 
 func (c *client) send(frame *pb.Envelope) {
 	c.t.Helper()
+	if frame.GetClientHello() == nil && frame.SessionNonce == 0 {
+		frame.SessionNonce = c.nonce
+	}
 	data, err := proto.Marshal(frame)
 	if err != nil {
 		c.t.Fatal(err)
@@ -248,6 +265,7 @@ func (c *client) handshake(token string) *pb.ServerHello {
 	if reply == nil || reply.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
 		c.t.Fatalf("handshake answered %v", frame)
 	}
+	c.nonce = reply.GetSessionNonce()
 	return reply
 }
 
@@ -299,8 +317,8 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	}
 	if want := activeStrings(); !proto.Equal(reply, &pb.ServerHello{
 		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1",
-		StringBundles: want.Bundles, FallbackChains: want.Chains,
-	}) {
+		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(),
+	}) || reply.GetSessionNonce() == 0 {
 		t.Fatalf("server hello carries the active string bundles: %v", reply)
 	}
 	h.session("ok-resume").awaitAttached(t)
@@ -608,5 +626,51 @@ func TestLoadingReportsReachTheSessionWithoutASequence(t *testing.T) {
 	}
 	if got := h.session("ok").received(); len(got) != 1 || got[0].sequence != 1 {
 		t.Fatalf("session received intents %+v", got)
+	}
+}
+
+func TestFramesWithoutTheConnectionNonceAreRejectedAndCounted(t *testing.T) {
+	h := newHarness(t, testConfig())
+	first := h.dial()
+	firstNonce := first.handshake("ok-a").GetSessionNonce()
+	second := h.dial()
+	secondNonce := second.handshake("ok-b").GetSessionNonce()
+	if firstNonce == secondNonce {
+		t.Fatalf("two connections share the nonce %d", firstNonce)
+	}
+	cases := []struct {
+		name  string
+		nonce uint64
+	}{
+		{"another connection", secondNonce},
+		{"missing", 0},
+		{"guessed", firstNonce + 1},
+	}
+	for i, c := range cases {
+		frame := place(uint64(i+1), 0, 1, pb.BoardEnd_BOARD_END_LEFT)
+		frame.SessionNonce = c.nonce
+		if c.nonce == 0 {
+			data, _ := proto.Marshal(frame)
+			first.sendBytes(data)
+		} else {
+			first.send(frame)
+		}
+		reply := first.recv()
+		if reply.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_REPLAY_REJECTED || reply.GetError().GetRejectedSequence() != uint64(i+1) {
+			t.Fatalf("%s: answered %v", c.name, reply)
+		}
+	}
+	first.send(&pb.Envelope{SessionNonce: secondNonce, Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 50}}})
+	if reply := first.recv(); reply.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_REPLAY_REJECTED {
+		t.Fatalf("loading report with a foreign nonce answered %v", reply)
+	}
+	first.send(place(4, 0, 1, pb.BoardEnd_BOARD_END_LEFT))
+	session := h.session("ok-a")
+	session.awaitIntents(t, 1)
+	if got := session.received(); got[0].sequence != 4 || session.replayCount() != 4 || len(session.loadingReports()) != 0 {
+		t.Fatalf("session got %+v after %d replays", got, session.replayCount())
+	}
+	if h.session("ok-b").replayCount() != 0 {
+		t.Fatal("the other session was counted")
 	}
 }
