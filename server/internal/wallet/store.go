@@ -32,6 +32,7 @@ const (
 	RefundRevoke          Reason = "refund_revoke"
 	RefundReversal        Reason = "refund_reversal"
 	AdminAdjust           Reason = "admin_adjust"
+	CoinPackConversion    Reason = "coin_pack_conversion"
 )
 
 type Currency string
@@ -59,7 +60,7 @@ var rules = map[Reason]rule{
 	RankReward: {1, coinOnly}, EventReward: {1, coinOnly}, DuplicateCompensation: {1, coinOnly}, Promo: {1, coinOnly},
 	PassReward: {1, either}, Purchase: {1, crystalOnly}, FirstPurchaseBonus: {1, crystalOnly}, RefundReversal: {1, crystalOnly},
 	ShopPurchase: {-1, either}, PassLevelPurchase: {-1, either}, Rename: {-1, coinOnly}, RefundRevoke: {-1, crystalOnly},
-	AdminAdjust: {0, either},
+	AdminAdjust: {0, either}, CoinPackConversion: {0, either},
 }
 
 func Known(reason Reason) bool {
