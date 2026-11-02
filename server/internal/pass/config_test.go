@@ -44,7 +44,7 @@ func TestPublishRulesRefuseBrokenSeasons(t *testing.T) {
 		change func(*Snapshot)
 	}{
 		{"free track over budget", func(s *Snapshot) { s.FreeTrackCoins = 1499 }},
-		{"premium track over budget", func(s *Snapshot) { s.PremiumTrackCoins = 2999 }},
+		{"premium track over budget", func(s *Snapshot) { s.PremiumTrackCrystals = 599 }},
 		{"premium level without bundle", func(s *Snapshot) { delete(s.Seasons[0].Premium, 42) }},
 		{"level outside the table", func(s *Snapshot) { s.Seasons[0].Free[101] = coinBundle("bundle.extra", 1) }},
 		{"track bundle with a medal", func(s *Snapshot) {

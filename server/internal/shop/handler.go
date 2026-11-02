@@ -129,7 +129,7 @@ var statuses = []struct {
 	{ErrLimit, http.StatusConflict, ErrLimit.Error()},
 	{ErrOwned, http.StatusConflict, ErrOwned.Error()},
 	{ErrStoreOnly, http.StatusConflict, ErrStoreOnly.Error()},
-	{ErrCoinsOnly, http.StatusConflict, ErrCoinsOnly.Error()},
+	{ErrInGameOnly, http.StatusConflict, ErrInGameOnly.Error()},
 	{ErrUnsupported, http.StatusConflict, ErrUnsupported.Error()},
 	{inventory.ErrSourceNotListed, http.StatusConflict, inventory.ErrSourceNotListed.Error()},
 	{ErrNoCatalog, http.StatusServiceUnavailable, ErrNoCatalog.Error()},

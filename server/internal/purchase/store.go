@@ -79,7 +79,7 @@ type Result struct {
 	Offer         string         `json:"offer"`
 	State         string         `json:"state"`
 	Repeated      bool           `json:"repeated"`
-	Balance       int64          `json:"balance"`
+	Crystals      int64          `json:"crystals"`
 	Grant         *reward.Report `json:"grant,omitempty"`
 	Bonus         *reward.Report `json:"bonus,omitempty"`
 	Finished      bool           `json:"finished"`
@@ -190,7 +190,7 @@ func (s *Store) offer(offerID string) (*shop.Catalog, int64, shop.Offer, error) 
 	case !ok:
 		return nil, 0, shop.Offer{}, shop.ErrUnknownOffer
 	case offer.ProductID == "":
-		return nil, 0, shop.Offer{}, shop.ErrCoinsOnly
+		return nil, 0, shop.Offer{}, shop.ErrInGameOnly
 	case offer.Kind == shop.KindPassLevels || (offer.Kind == shop.KindPass && s.pass == nil):
 		return nil, 0, shop.Offer{}, shop.ErrUnsupported
 	}
@@ -229,11 +229,11 @@ func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Ca
 	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, bonusKey, now); err != nil {
 		return Result{}, err
 	}
-	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Coin)
+	crystals, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Crystal)
 	if err != nil {
 		return Result{}, err
 	}
-	result.Balance = balance
+	result.Crystals = crystals
 	return result, s.publish(ctx, tx, r, EventGranted, now)
 }
 
@@ -259,11 +259,11 @@ func (s *Store) load(ctx context.Context, tx pgx.Tx, r record) (Result, error) {
 		}
 		result.Bonus = &bonus
 	}
-	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Coin)
+	crystals, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Crystal)
 	if err != nil {
 		return Result{}, err
 	}
-	result.Balance = balance
+	result.Crystals = crystals
 	return result, nil
 }
 
@@ -465,11 +465,11 @@ func (s *Store) grantPass(ctx context.Context, tx pgx.Tx, r record, offer shop.O
 	if offer.ProductID != shop.ProductPassPremiumPlus {
 		return nil
 	}
-	coins, err := s.pass.AddPremiumPlusIn(ctx, tx, r.Account, season, key, now)
-	if err != nil || coins == 0 {
+	crystals, err := s.pass.AddPremiumPlusIn(ctx, tx, r.Account, season, key, now)
+	if err != nil || crystals == 0 {
 		return err
 	}
-	levels := reward.Bundle{ID: "bundle.pass_premium_plus_levels", Revision: 1, Coins: coins}
+	levels := reward.Bundle{ID: "bundle.pass_premium_plus_levels", Revision: 1, Crystals: crystals}
 	report, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: r.Account, Bundle: levels, Source: cosmetics.Source{Type: shop.SourceType, Ref: offer.ID}, Reason: wallet.Purchase, Key: key + ":levels"}, now)
 	if err != nil || !report.Repeated || !report.Revoked() {
 		return err

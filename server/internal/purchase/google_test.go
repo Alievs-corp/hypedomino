@@ -94,7 +94,7 @@ func (p *playServer) purchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bodies := map[string]string{
-		"tok-ok":        `{"purchaseState":0,"consumptionState":0,"orderId":"GPA.1234","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"0000000A-0000-4000-8000-00000000000B","productId":"coins_tier1","acknowledgementState":0}`,
+		"tok-ok":        `{"purchaseState":0,"consumptionState":0,"orderId":"GPA.1234","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"0000000A-0000-4000-8000-00000000000B","productId":"crystals_tier1","acknowledgementState":0}`,
 		"tok-pending":   `{"purchaseState":2,"orderId":"GPA.1235","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a"}`,
 		"tok-cancelled": `{"purchaseState":1,"orderId":"GPA.1236","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a"}`,
 		"tok-test":      `{"purchaseState":0,"orderId":"","purchaseTimeMillis":"` + millis() + `","obfuscatedExternalAccountId":"a","purchaseType":0}`,
@@ -109,7 +109,7 @@ func (p *playServer) purchase(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "boom", http.StatusInternalServerError)
 	default:
 		body, ok := bodies[token]
-		if !ok || r.PathValue("product") != "coins_tier1" {
+		if !ok || r.PathValue("product") != "crystals_tier1" {
 			http.Error(w, `{"error":{"code":404}}`, http.StatusNotFound)
 			return
 		}
@@ -151,38 +151,38 @@ func TestGooglePurchasesAreLookedUpWithAServiceAccountToken(t *testing.T) {
 	play := newPlayServer(t)
 	g := newGoogle(t, play, false)
 	ctx := context.Background()
-	receipt, err := g.Verify(ctx, "coins_tier1", "tok-ok")
+	receipt, err := g.Verify(ctx, "crystals_tier1", "tok-ok")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Receipt{Platform: PlatformGoogle, TransactionID: "tok-ok", OrderID: "GPA.1234", ProductID: "coins_tier1", AccountToken: "0000000a-0000-4000-8000-00000000000b", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: time.UnixMilli(1793448000000).UTC()}
+	want := Receipt{Platform: PlatformGoogle, TransactionID: "tok-ok", OrderID: "GPA.1234", ProductID: "crystals_tier1", AccountToken: "0000000a-0000-4000-8000-00000000000b", State: StatePurchased, Environment: EnvironmentProduction, PurchasedAt: time.UnixMilli(1793448000000).UTC()}
 	if receipt != want {
 		t.Fatalf("receipt %+v", receipt)
 	}
-	if receipt, err := g.Verify(ctx, "coins_tier1", "tok-pending"); err != nil || receipt.State != StatePending {
+	if receipt, err := g.Verify(ctx, "crystals_tier1", "tok-pending"); err != nil || receipt.State != StatePending {
 		t.Fatalf("pending %+v %v", receipt, err)
 	}
-	if receipt, err := g.Verify(ctx, "coins_tier1", "tok-cancelled"); err != nil || receipt.State != StateCancelled {
+	if receipt, err := g.Verify(ctx, "crystals_tier1", "tok-cancelled"); err != nil || receipt.State != StateCancelled {
 		t.Fatalf("cancelled %+v %v", receipt, err)
 	}
-	if _, err := g.Verify(ctx, "coins_tier1", "tok-test"); !errors.Is(err, ErrEnvironment) {
+	if _, err := g.Verify(ctx, "crystals_tier1", "tok-test"); !errors.Is(err, ErrEnvironment) {
 		t.Fatalf("test purchase in production: %v", err)
 	}
-	if receipt, err := newGoogle(t, play, true).Verify(ctx, "coins_tier1", "tok-test"); err != nil || receipt.Environment != EnvironmentSandbox || receipt.ProductID != "coins_tier1" {
+	if receipt, err := newGoogle(t, play, true).Verify(ctx, "crystals_tier1", "tok-test"); err != nil || receipt.Environment != EnvironmentSandbox || receipt.ProductID != "crystals_tier1" {
 		t.Fatalf("test purchase when allowed %+v %v", receipt, err)
 	}
 	for name, c := range map[string]struct {
 		product, token string
 		want           error
 	}{
-		"gone":          {"coins_tier1", "tok-gone", ErrNotFound},
-		"unknown":       {"coins_tier1", "tok-nope", ErrNotFound},
-		"other product": {"coins_tier2", "tok-ok", ErrNotFound},
-		"broken":        {"coins_tier1", "tok-broken", ErrStore},
-		"weird state":   {"coins_tier1", "tok-weird", ErrStore},
-		"html":          {"coins_tier1", "tok-html", ErrStore},
-		"empty":         {"coins_tier1", "", ErrMalformed},
-		"slash":         {"coins_tier1", "a/b", ErrMalformed},
+		"gone":          {"crystals_tier1", "tok-gone", ErrNotFound},
+		"unknown":       {"crystals_tier1", "tok-nope", ErrNotFound},
+		"other product": {"crystals_tier2", "tok-ok", ErrNotFound},
+		"broken":        {"crystals_tier1", "tok-broken", ErrStore},
+		"weird state":   {"crystals_tier1", "tok-weird", ErrStore},
+		"html":          {"crystals_tier1", "tok-html", ErrStore},
+		"empty":         {"crystals_tier1", "", ErrMalformed},
+		"slash":         {"crystals_tier1", "a/b", ErrMalformed},
 		"no product":    {"", "tok-ok", ErrMalformed},
 	} {
 		if _, err := g.Verify(ctx, c.product, c.token); !errors.Is(err, c.want) {
@@ -192,12 +192,12 @@ func TestGooglePurchasesAreLookedUpWithAServiceAccountToken(t *testing.T) {
 	if err := g.Finish(ctx, receipt); err != nil {
 		t.Fatal(err)
 	}
-	if err := g.Finish(ctx, Receipt{ProductID: "coins_tier1", TransactionID: "tok-stuck"}); !errors.Is(err, ErrStore) {
+	if err := g.Finish(ctx, Receipt{ProductID: "crystals_tier1", TransactionID: "tok-stuck"}); !errors.Is(err, ErrStore) {
 		t.Fatalf("stuck consume: %v", err)
 	}
 	play.mu.Lock()
 	defer play.mu.Unlock()
-	if play.tokens != 2 || len(play.consumed) != 2 || play.consumed[0] != "coins_tier1/tok-ok" {
+	if play.tokens != 2 || len(play.consumed) != 2 || play.consumed[0] != "crystals_tier1/tok-ok" {
 		t.Fatalf("tokens %d consumed %v", play.tokens, play.consumed)
 	}
 }
@@ -220,7 +220,7 @@ func TestGoogleClientNeedsAUsableServiceAccount(t *testing.T) {
 	play := newPlayServer(t)
 	play.server.Close()
 	g := newGoogle(t, play, false)
-	if _, err := g.Verify(context.Background(), "coins_tier1", "tok-ok"); !errors.Is(err, ErrStore) {
+	if _, err := g.Verify(context.Background(), "crystals_tier1", "tok-ok"); !errors.Is(err, ErrStore) {
 		t.Fatalf("store down: %v", err)
 	}
 }
@@ -237,11 +237,11 @@ func push(t *testing.T, id string, data map[string]any) []byte {
 
 func TestGoogleDeveloperNotificationsAreDecoded(t *testing.T) {
 	g := newGoogle(t, newPlayServer(t), false)
-	purchased := push(t, "m-1", map[string]any{"version": "1.0", "packageName": "com.example.hypedomino", "eventTimeMillis": "1", "oneTimeProductNotification": map[string]any{"version": "1.0", "notificationType": 1, "purchaseToken": "tok-ok", "sku": "coins_tier1"}})
-	if notice, err := g.Notice(purchased); err != nil || notice != (Notice{ID: "m-1", Kind: KindPurchased, TransactionID: "tok-ok", ProductID: "coins_tier1", Environment: EnvironmentProduction}) {
+	purchased := push(t, "m-1", map[string]any{"version": "1.0", "packageName": "com.example.hypedomino", "eventTimeMillis": "1", "oneTimeProductNotification": map[string]any{"version": "1.0", "notificationType": 1, "purchaseToken": "tok-ok", "sku": "crystals_tier1"}})
+	if notice, err := g.Notice(purchased); err != nil || notice != (Notice{ID: "m-1", Kind: KindPurchased, TransactionID: "tok-ok", ProductID: "crystals_tier1", Environment: EnvironmentProduction}) {
 		t.Fatalf("purchased %+v %v", notice, err)
 	}
-	cancelled := push(t, "m-2", map[string]any{"packageName": "com.example.hypedomino", "oneTimeProductNotification": map[string]any{"notificationType": 2, "purchaseToken": "tok-ok", "sku": "coins_tier1"}})
+	cancelled := push(t, "m-2", map[string]any{"packageName": "com.example.hypedomino", "oneTimeProductNotification": map[string]any{"notificationType": 2, "purchaseToken": "tok-ok", "sku": "crystals_tier1"}})
 	if notice, err := g.Notice(cancelled); err != nil || notice.Kind != KindOther || notice.TransactionID != "tok-ok" {
 		t.Fatalf("cancelled %+v %v", notice, err)
 	}

@@ -17,7 +17,7 @@ import (
 
 func weekendPack(opens, closes time.Time) map[string]any {
 	return map[string]any{
-		"id": "offer.weekend_pack", "kind": "bundle", "section": "featured", "priceCoins": 900,
+		"id": "offer.weekend_pack", "kind": "bundle", "section": "featured", "priceCrystals": 90,
 		"bundle":  map[string]any{"id": "bundle.weekend_pack", "revision": 1, "cosmetics": []string{"avatar.comet_fox"}},
 		"window":  map[string]any{"start": opens, "end": closes},
 		"nameKey": "shop.offer.weekend_pack",

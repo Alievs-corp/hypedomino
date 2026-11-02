@@ -67,9 +67,9 @@ func testSeason(id string, start, end time.Time) pass.Season {
 		if level%2 == 1 {
 			season.Free[level] = reward.Bundle{ID: "bundle.test_free", Revision: level, Coins: 20}
 		}
-		season.Premium[level] = reward.Bundle{ID: "bundle.test_premium", Revision: level, Coins: 10}
+		season.Premium[level] = reward.Bundle{ID: "bundle.test_premium", Revision: level, Crystals: 2}
 	}
-	season.Premium[30] = reward.Bundle{ID: "bundle.test_premium", Revision: 30, Coins: 10, Cosmetics: []string{premiumItem}}
+	season.Premium[30] = reward.Bundle{ID: "bundle.test_premium", Revision: 30, Crystals: 2, Cosmetics: []string{premiumItem}}
 	return season
 }
 
@@ -190,8 +190,8 @@ func TestTheSeasonEndGrantsEveryMissingLevelOnEveryUnlockedTrackOnce(t *testing.
 	if len(closed) != 1 || closed[0].Season != "season_1" || closed[0].Accounts != 2 || closed[0].Granted != 14+30+2 {
 		t.Fatalf("closed = %+v", closed)
 	}
-	if got := f.balance(t, premium); got != 15*20+30*10 {
-		t.Fatalf("premium balance = %d", got)
+	if got, crystals := f.balance(t, premium), f.crystals(t, premium); got != 15*20 || crystals != 30*2 {
+		t.Fatalf("premium coins %d crystals %d", got, crystals)
 	}
 	if got := f.balance(t, free); got != 3*20 {
 		t.Fatalf("free balance = %d", got)
@@ -203,10 +203,19 @@ func TestTheSeasonEndGrantsEveryMissingLevelOnEveryUnlockedTrackOnce(t *testing.
 	if err != nil || len(again) != 0 {
 		t.Fatalf("second CloseDue = %v, %v", again, err)
 	}
-	if got := f.balance(t, premium); got != 15*20+30*10 {
-		t.Fatalf("premium balance after a second run = %d", got)
+	if got, crystals := f.balance(t, premium), f.crystals(t, premium); got != 15*20 || crystals != 30*2 {
+		t.Fatalf("premium coins %d crystals %d after a second run", got, crystals)
 	}
 	if got := f.count(t, `select accounts from pass_season_ends where season_id = 'season_1'`); got != 2 {
 		t.Fatalf("season end accounts = %d", got)
 	}
+}
+
+func (f *fixture) crystals(t *testing.T, account string) int64 {
+	t.Helper()
+	balance, err := f.wallet.Balance(context.Background(), account, wallet.Crystal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return balance
 }

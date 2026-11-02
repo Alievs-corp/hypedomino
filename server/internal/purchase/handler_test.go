@@ -41,7 +41,7 @@ var refusals = map[string]error{
 	"offer.account": purchase.ErrAccount, "offer.reused": purchase.ErrReused, "offer.blocked": purchase.ErrBlocked,
 	"offer.missing": shop.ErrUnknownOffer, "offer.platform": purchase.ErrPlatform, "offer.product": purchase.ErrProduct,
 	"offer.cancelled": purchase.ErrCancelled, "offer.sandbox": purchase.ErrEnvironment, "offer.app": purchase.ErrApp,
-	"offer.coins": shop.ErrCoinsOnly, "offer.pass": shop.ErrUnsupported, "offer.ledger": wallet.ErrPurchaseReuse,
+	"offer.coins": shop.ErrInGameOnly, "offer.pass": shop.ErrUnsupported, "offer.ledger": wallet.ErrPurchaseReuse,
 	"offer.down": purchase.ErrStore, "offer.closed": shop.ErrNoCatalog, "offer.broken": errors.New("database down"),
 }
 
@@ -50,7 +50,7 @@ func (f *fakePurchases) Complete(_ context.Context, account, offer string, platf
 	if err, ok := refusals[offer]; ok {
 		return purchase.Result{}, err
 	}
-	return purchase.Result{Platform: platform, TransactionID: tok, Offer: offer, State: purchase.RecordGranted, Balance: 2000, Grant: &reward.Report{ID: 9, Coins: 1500}, Finished: true}, nil
+	return purchase.Result{Platform: platform, TransactionID: tok, Offer: offer, State: purchase.RecordGranted, Crystals: 2000, Grant: &reward.Report{ID: 9, Crystals: 1500}, Finished: true}, nil
 }
 
 func (f *fakePurchases) History(_ context.Context, account string, limit int) ([]purchase.HistoryEntry, error) {
@@ -108,7 +108,7 @@ func TestTheHandlerCompletesPurchasesAndTakesStoreNotifications(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	handler := purchase.NewHandler(fakeVerifier{}, fake, fakeNotifier{}, fakeNotifier{}, "push-secret", logger, func() time.Time { return now })
 	code, body := serve(t, handler, http.MethodPost, "/shop/complete", "access:a1", `{"offer":"offer.starter","platform":"google","token":"tok-1"}`)
-	if code != http.StatusOK || body["state"] != "granted" || body["balance"].(float64) != 2000 || body["finished"] != true || body["grant"].(map[string]any)["coins"].(float64) != 1500 {
+	if code != http.StatusOK || body["state"] != "granted" || body["crystals"].(float64) != 2000 || body["finished"] != true || body["grant"].(map[string]any)["crystals"].(float64) != 1500 {
 		t.Fatalf("complete %d %v", code, body)
 	}
 	if code, body := serve(t, handler, http.MethodPost, "/shop/complete", "", `{"offer":"offer.starter","platform":"google","token":"tok-1"}`); code != http.StatusUnauthorized || body["error"] != "access_rejected" {

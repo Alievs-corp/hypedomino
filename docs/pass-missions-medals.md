@@ -87,16 +87,16 @@ Products, *economy* (`docs/economy.md` 7.2): `pass_premium` (`PassPremiumUsd` 4.
 - Purchase flow, receipt validation and binding to the season active at the store's purchase time: `docs/economy.md` 7.5 and #125. A second premium purchase in the same season is rejected before the store flow starts.
 - **Late purchase.** When premium unlocks at level `L`, the server grants the premium bundle of every level 1 to `L` at once, then continues normally. Each level is its own grant with key `pass:<seasonId>:premium:<level>`, so an interrupted batch resumes and a repeated one grants nothing twice.
 - `pass_premium_plus` adds the XP from the current XP total to the total of level `L + 20`, keeping progress inside the current level. Levels crossed grant both tracks.
-- `pass_premium_plus` is offered only while the account's level is at most `PassLevels` - `PassPremiumPlusLevels` (80), so its levels are never wasted. Above that only `pass_premium` is offered. If the account levels up between the buy intent and validation, levels past `PassLevels` are paid out as `PassLevelCoinPrice` (200, *economy*) coins each in the purchase grant.
+- `pass_premium_plus` is offered only while the account's level is at most `PassLevels` - `PassPremiumPlusLevels` (80), so its levels are never wasted. Above that only `pass_premium` is offered. If the account levels up between the buy intent and validation, levels past `PassLevels` are paid out as `PassLevelCrystalPrice` (40, *economy*) crystals each in the purchase grant: a real-money product never pays coins (`docs/economy.md` EP-1).
 - A validated purchase is always granted, even after the season ended (`docs/economy.md` 7.5 step 7). Its premium bundles for the levels reached are granted at validation.
-- Refund (`docs/economy.md` section 9): the premium track and every premium reward granted are revoked. For `pass_premium_plus` the XP it added is also removed, the level is derived again, and both tracks' rewards of levels no longer reached are revoked the same way.
+- Refund (`docs/economy.md` section 9): the premium track and every premium reward granted are revoked. For `pass_premium_plus` the XP it added is also removed, the level is derived again, and both tracks' rewards of levels no longer reached are revoked the same way: their cosmetics are removed and their crystals debited, while free-track coins are kept, since a refund never touches coins (`docs/economy.md` section 9).
 
 ### 2.6 Level purchase
 
-- Intent with a count `k` and a client request id. Price `k` x `PassLevelCoinPrice` (200, *economy*), ledger reason `pass_level_purchase`, key `spend:<requestId>` (`docs/economy.md` 3.2, section 5).
+- Intent with a count `k`, a currency (`coin`, the default, or `crystal`) and a client request id. Price `k` x `PassLevelCoinPrice` (200, *economy*) coins or `k` x `PassLevelCrystalPrice` (40, *economy*) crystals, ledger reason `pass_level_purchase`, key `spend:<requestId>` (`docs/economy.md` 3.2, section 5).
 - The server rejects `k` < 1, a count that would pass `PassLevels`, a balance below the price, and any purchase outside the season window.
 - A bought level adds the XP from the current total to the total of level `L + k`, keeping progress inside the current level. Levels crossed grant the free track, and the premium track if unlocked.
-- Coins are not refunded for levels, and a later premium unlock grants the premium rewards of bought levels as in 2.5.
+- Coins and crystals are not refunded for levels, and a later premium unlock grants the premium rewards of bought levels as in 2.5.
 
 ### 2.7 Season end
 
@@ -323,7 +323,7 @@ Inputs from `docs/economy.md` section 11: ranked 1v1, 10-minute matches plus 1 m
 
 ### 8.2 Levels and rewards
 
-Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level. Premium track: 30 coins on every level (3000), a cosmetic on level 1 and every tenth level. Cosmetics at guide prices (`docs/economy.md` 3.1): free 11850 coins, premium 45000 coins. `node tools/pass-season/pass-season.mjs` checks the table against the curve (2.2) and the track budgets in `docs/economy/balance.csv` (2.4); CI runs it through `npm run test:tools`.
+Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level. Premium track: 6 crystals on every level (600), a cosmetic on level 1 and every tenth level. Cosmetics at guide prices (`docs/economy.md` 3.1): free 11850 coins, premium 45000 coins. `node tools/pass-season/pass-season.mjs` checks the table against the curve (2.2) and the track budgets in `docs/economy/balance.csv` (2.4); CI runs it through `npm run test:tools`.
 
 | Level | XP total to reach | Free | Premium |
 |---|---|---|---|
@@ -503,14 +503,14 @@ Rarities are first estimates for 5.3, checked against measured earn shares after
 | `ProfileEmblemSlots` | 3 | `docs/ranking.md` | 5.5 |
 | Medal rarity shares | Section 5.3 | This document, guidance for admins | 5.3 |
 | `PassFreeTrackCoins`, `PassPremiumTrackCrystals` | 1500, 600 | `docs/economy.md` | 2.4 |
-| `PassLevelCoinPrice` | 200 | `docs/economy.md` | 2.5, 2.6 |
+| `PassLevelCoinPrice`, `PassLevelCrystalPrice` | 200, 40 | `docs/economy.md` | 2.5, 2.6 |
 | `PassPremiumUsd`, `PassPremiumPlusUsd`, `PassPremiumPlusLevels` | 4.99, 9.99, 20 | `docs/economy.md` | 2.5 |
 | `DailyMissionCoinBudget`, `WeeklyMissionCoinBudget` | 120, 600 | `docs/economy.md` | 4.4 |
 | `BotSeatRewardPercent` | 50 | `docs/economy.md` | 3 |
 
 Season windows are records, not keys: they default to the ranked season's window (2.1).
 
-Pass seasons are published as the `pass` config domain: `docs/pass/examples/pass.json` is the sample season of section 8.2 in that format (schema 1, one bundle per level and track, the curve of 2.2 per season). The same domain carries the XP values of 2.3 that may change mid-season: `matchXp1v1` and `matchXp2v2` (`win`, `loss`), `dailyMatchXpCap` and `botSeatRewardPercent`, and the `levelCoinPrice` of 2.6 (`PassLevelCoinPrice`).
+Pass seasons are published as the `pass` config domain: `docs/pass/examples/pass.json` is the sample season of section 8.2 in that format (schema 1, one bundle per level and track, the curve of 2.2 per season). The same domain carries the XP values of 2.3 that may change mid-season: `matchXp1v1` and `matchXp2v2` (`win`, `loss`), `dailyMatchXpCap` and `botSeatRewardPercent`, and the `levelCoinPrice` and `levelCrystalPrice` of 2.6 (`PassLevelCoinPrice`, `PassLevelCrystalPrice`). The track budgets are `freeTrackCoins` and `premiumTrackCrystals`; a free bundle grants no crystals and a premium bundle no coins.
 
 ### 9.1 Publish validation
 

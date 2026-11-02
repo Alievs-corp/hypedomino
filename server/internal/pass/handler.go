@@ -1,6 +1,7 @@
 package pass
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,7 +16,7 @@ import (
 
 type Passes interface {
 	Enter(ctx context.Context, account string, now time.Time) (Season, Progress, int64, error)
-	BuyLevels(ctx context.Context, account string, count int, requestID string, now time.Time) (LevelPurchase, error)
+	BuyLevels(ctx context.Context, account string, count int, currency wallet.Currency, requestID string, now time.Time) (LevelPurchase, error)
 }
 
 type Handler struct {
@@ -114,8 +115,9 @@ func reply(w http.ResponseWriter, status int, body any) {
 }
 
 type levelsRequest struct {
-	Count     int    `json:"count"`
-	RequestID string `json:"request_id"`
+	Count     int             `json:"count"`
+	Currency  wallet.Currency `json:"currency"`
+	RequestID string          `json:"request_id"`
 }
 
 var levelRefusals = []struct {
@@ -139,7 +141,7 @@ func (h *Handler) levels(w http.ResponseWriter, r *http.Request) {
 		reply(w, http.StatusBadRequest, errorResponse{Error: "malformed"})
 		return
 	}
-	purchase, err := h.store.BuyLevels(r.Context(), claims.Account, request.Count, request.RequestID, h.now())
+	purchase, err := h.store.BuyLevels(r.Context(), claims.Account, request.Count, cmp.Or(request.Currency, wallet.Coin), request.RequestID, h.now())
 	if err == nil {
 		reply(w, http.StatusOK, purchase)
 		return

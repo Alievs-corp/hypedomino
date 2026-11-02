@@ -66,7 +66,7 @@ func (s *Store) AddPremiumPlusIn(ctx context.Context, tx pgx.Tx, account, season
 	}
 	level := season.Curve.LevelFor(progress.XP)
 	reached := min(level+current.PremiumPlusLevels, season.Curve.Levels)
-	overflow := int64(level+current.PremiumPlusLevels-reached) * current.LevelCoinPrice
+	overflow := int64(level+current.PremiumPlusLevels-reached) * current.LevelCrystalPrice
 	amount := season.Curve.XpToReach(reached) - season.Curve.XpToReach(level)
 	if amount == 0 {
 		return overflow, nil

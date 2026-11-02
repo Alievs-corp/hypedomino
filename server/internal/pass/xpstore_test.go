@@ -121,18 +121,18 @@ func TestALatePremiumUnlockGrantsEveryPremiumLevelReached(t *testing.T) {
 	if _, err := unlock("purchase:google:2"); !errors.Is(err, pass.ErrPremiumOwned) {
 		t.Fatalf("second purchase = %v", err)
 	}
-	if got := f.balance(t, account); got != 3*20+6*10 {
-		t.Fatalf("balance = %d, want %d", got, 3*20+6*10)
+	if got, crystals := f.balance(t, account), f.crystals(t, account); got != 3*20 || crystals != 6*2 {
+		t.Fatalf("coins %d crystals %d, want %d and %d", got, crystals, 3*20, 6*2)
 	}
 	if got, err := f.store.AwardMatch(context.Background(), win(account, "match-premium", now)); err != nil || got != 100 {
 		t.Fatalf("AwardMatch after premium = %d, %v", got, err)
 	}
-	if got := f.balance(t, account); got != 4*20+7*10 {
-		t.Fatalf("balance at level 7 = %d, want %d", got, 4*20+7*10)
+	if got, crystals := f.balance(t, account), f.crystals(t, account); got != 4*20 || crystals != 7*2 {
+		t.Fatalf("at level 7 coins %d crystals %d, want %d and %d", got, crystals, 4*20, 7*2)
 	}
 }
 
-func TestPremiumPlusAddsItsLevelsAndPaysTheLevelsPastTheLastOneInCoins(t *testing.T) {
+func TestPremiumPlusAddsItsLevelsAndPaysTheLevelsPastTheLastOneInCrystals(t *testing.T) {
 	f := newFixture(t)
 	account := f.account(t)
 	if _, _, _, err := f.store.Enter(context.Background(), account, now); err != nil {
@@ -149,9 +149,9 @@ func TestPremiumPlusAddsItsLevelsAndPaysTheLevelsPastTheLastOneInCoins(t *testin
 	if _, err := f.store.UnlockPremiumIn(context.Background(), tx, account, "season_1", "purchase:google:plus", now); err != nil {
 		t.Fatal(err)
 	}
-	coins, err := f.store.AddPremiumPlusIn(context.Background(), tx, account, "season_1", "purchase:google:plus", now)
-	if err != nil || coins != 2*200 {
-		t.Fatalf("AddPremiumPlusIn = %d, %v", coins, err)
+	crystals, err := f.store.AddPremiumPlusIn(context.Background(), tx, account, "season_1", "purchase:google:plus", now)
+	if err != nil || crystals != 2*40 {
+		t.Fatalf("AddPremiumPlusIn = %d, %v", crystals, err)
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		t.Fatal(err)
