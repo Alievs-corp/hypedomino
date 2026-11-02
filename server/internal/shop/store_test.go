@@ -104,7 +104,7 @@ func TestTheViewShowsEverySectionForTheAccount(t *testing.T) {
 		t.Fatalf("weekly %+v", weekly)
 	}
 	featured := section(t, view, shop.SectionFeatured)
-	if len(featured.Offers) != 1 || featured.Offers[0].ProductID != "offer_starter" || !featured.Offers[0].Purchasable || featured.Offers[0].Coins != 1500 {
+	if len(featured.Offers) != 1 || featured.Offers[0].ProductID != "offer_starter" || !featured.Offers[0].Purchasable || featured.Offers[0].Crystals != 300 {
 		t.Fatalf("featured %+v", featured)
 	}
 	if coins := section(t, view, shop.SectionCrystals); len(coins.Offers) != 2 || coins.Offers[1].ProductID != "crystals_tier2" || coins.Offers[1].Limit != 0 {

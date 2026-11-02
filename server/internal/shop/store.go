@@ -195,7 +195,7 @@ func (s *Store) status(offer Offer, st standing, now time.Time) (status, error) 
 		out.refusal = ErrNotEligible
 	case offer.Eligibility.FirstPurchaseOnly && st.purchases > 0:
 		out.refusal = ErrNotEligible
-	case offer.Bundle.Coins == 0 && offer.Bundle.PassXP == 0 && len(offer.Bundle.Cosmetics) > 0 && len(out.owned) == len(offer.Bundle.Cosmetics):
+	case offer.Bundle.Coins == 0 && offer.Bundle.Crystals == 0 && offer.Bundle.PassXP == 0 && len(offer.Bundle.Cosmetics) > 0 && len(out.owned) == len(offer.Bundle.Cosmetics):
 		out.refusal = ErrOwned
 	}
 	return out, nil

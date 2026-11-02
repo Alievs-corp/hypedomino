@@ -31,7 +31,7 @@ func withPass(t *testing.T, f *fixture) *pass.Store {
 		if level%2 == 1 {
 			season.Free[level] = reward.Bundle{ID: "bundle.test_free", Revision: level, Coins: 20}
 		}
-		season.Premium[level] = reward.Bundle{ID: "bundle.test_premium", Revision: level, Coins: 10}
+		season.Premium[level] = reward.Bundle{ID: "bundle.test_premium", Revision: level, Crystals: 2}
 	}
 	config := pass.Default()
 	config.PremiumPlusLevels = 5
@@ -71,7 +71,7 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 		if err != nil {
 			t.Fatal(err)
 		}
-		if result.State != purchase.RecordGranted || result.Repeated != (i == 1) || result.Crystals != 40+40+500 {
+		if result.State != purchase.RecordGranted || result.Repeated != (i == 1) || result.Crystals != 4*2+100 {
 			t.Fatalf("complete %d: %+v", i, result)
 		}
 	}
@@ -86,8 +86,8 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, refund, now.Add(time.Hour)); err != nil || !handled {
 		t.Fatalf("refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40 {
-		t.Fatalf("balance after the refund %d, want 40", balance)
+	if coins, crystals := balances(t, f, ayla); coins != 40 || crystals != 0 {
+		t.Fatalf("after the refund coins %d crystals %d, want 40 and 0", coins, crystals)
 	}
 	if state, err := passes.Premium(ctx, ayla, now); err != nil || state.Premium {
 		t.Fatalf("premium after the refund %+v, %v", state, err)
@@ -99,14 +99,27 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 	if state, err := passes.Premium(ctx, ayla, now); err != nil || !state.Premium || state.Level != 4 {
 		t.Fatalf("premium after the reversal %+v, %v", state, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40+40 {
-		t.Fatalf("balance after the reversal %d, want the premium levels back", balance)
+	if coins, crystals := balances(t, f, ayla); coins != 40 || crystals != 4*2 {
+		t.Fatalf("after the reversal coins %d crystals %d, want the premium levels back", coins, crystals)
 	}
 	second := purchase.Notice{ID: "r-pass-2", Kind: purchase.KindRefund, TransactionID: "tok-pass"}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, second, now.Add(3*time.Hour)); err != nil || !handled {
 		t.Fatalf("second refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40 {
-		t.Fatalf("balance after the second refund %d, want 40", balance)
+	if coins, crystals := balances(t, f, ayla); coins != 40 || crystals != 0 {
+		t.Fatalf("after the second refund coins %d crystals %d, want 40 and 0", coins, crystals)
 	}
+}
+
+func balances(t *testing.T, f *fixture, account string) (int64, int64) {
+	t.Helper()
+	coins, err := f.wallet.Balance(context.Background(), account, wallet.Coin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	crystals, err := f.wallet.Balance(context.Background(), account, wallet.Crystal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return coins, crystals
 }
