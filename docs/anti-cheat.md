@@ -134,6 +134,8 @@ Risk is the impact if the countermeasures did not exist. Every vector is verifie
 | Response | None needed: the attack gains nothing. Skew is a low-weight signal only, because honest devices are often wrong |
 | Issues | #208, #212 |
 
+- Implemented in `server/internal/risk` (#208): `ClientHello.client_time_unix_ms` carries the device clock at connect. When it is set and differs from server time by more than `ClockSkewToleranceSeconds` (300), the server records a `clock_skew` signal of weight `ClockSkewWeight` (1) in `risk_signals` with the client time, the server time and the skew as evidence, at most once per account per UTC day, so reconnects do not stack it. The signal never blocks the connection and nothing the server decides reads the device clock.
+
 ### V-8. Replay
 
 | | |
@@ -240,7 +242,8 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight`, `FakeReceiptWeight`, `RefundWeight`, `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ClockSkewWeight` (launch default 1), `FakeReceiptWeight`, `RefundWeight`, `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |
 | `RiskDecayDays` | How long a signal keeps counting toward the score |

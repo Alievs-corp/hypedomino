@@ -128,6 +128,7 @@ type ClientHello struct {
 	DeviceModel       string                 `protobuf:"bytes,5,opt,name=device_model,json=deviceModel,proto3" json:"device_model,omitempty"`
 	SessionToken      string                 `protobuf:"bytes,6,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
 	LastAckedSequence uint64                 `protobuf:"varint,7,opt,name=last_acked_sequence,json=lastAckedSequence,proto3" json:"last_acked_sequence,omitempty"`
+	ClientTimeUnixMs  uint64                 `protobuf:"varint,8,opt,name=client_time_unix_ms,json=clientTimeUnixMs,proto3" json:"client_time_unix_ms,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -207,6 +208,13 @@ func (x *ClientHello) GetSessionToken() string {
 func (x *ClientHello) GetLastAckedSequence() uint64 {
 	if x != nil {
 		return x.LastAckedSequence
+	}
+	return 0
+}
+
+func (x *ClientHello) GetClientTimeUnixMs() uint64 {
+	if x != nil {
+		return x.ClientTimeUnixMs
 	}
 	return 0
 }
@@ -419,7 +427,7 @@ var File_hypedomino_v1_hello_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/hello.proto\x12\rhypedomino.v1\"\x99\x02\n" +
+	"\x19hypedomino/v1/hello.proto\x12\rhypedomino.v1\"\xc8\x02\n" +
 	"\vClientHello\x12\x1f\n" +
 	"\vapp_version\x18\x01 \x01(\tR\n" +
 	"appVersion\x12\x1d\n" +
@@ -430,7 +438,8 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"os_version\x18\x04 \x01(\tR\tosVersion\x12!\n" +
 	"\fdevice_model\x18\x05 \x01(\tR\vdeviceModel\x12#\n" +
 	"\rsession_token\x18\x06 \x01(\tR\fsessionToken\x12.\n" +
-	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\"\xef\x02\n" +
+	"\x13last_acked_sequence\x18\a \x01(\x04R\x11lastAckedSequence\x12-\n" +
+	"\x13client_time_unix_ms\x18\b \x01(\x04R\x10clientTimeUnixMs\"\xef\x02\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +

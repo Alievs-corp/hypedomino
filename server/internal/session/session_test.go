@@ -111,6 +111,11 @@ type player struct {
 
 func (tab *table) connect(token string, expectAccepted bool) *player {
 	tab.t.Helper()
+	return tab.connectAt(token, 0, expectAccepted)
+}
+
+func (tab *table) connectAt(token string, clientUnixMs uint64, expectAccepted bool) *player {
+	tab.t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	tab.t.Cleanup(cancel)
 	socket, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(tab.server.URL, "http"), nil)
@@ -122,7 +127,7 @@ func (tab *table) connect(token string, expectAccepted bool) *player {
 	p.write(&pb.Envelope{
 		ProtocolVersion: gateway.ProtocolVersion,
 		Sequence:        1,
-		Payload:         &pb.Envelope_ClientHello{ClientHello: &pb.ClientHello{AppVersion: "1.0.0", SessionToken: token}},
+		Payload:         &pb.Envelope_ClientHello{ClientHello: &pb.ClientHello{AppVersion: "1.0.0", SessionToken: token, ClientTimeUnixMs: clientUnixMs}},
 	})
 	p.hello = p.read()
 	if accepted := p.hello.GetServerHello().GetStatus() == pb.HelloStatus_HELLO_STATUS_ACCEPTED; accepted != expectAccepted {
@@ -499,5 +504,39 @@ func TestAccessTokensOpenSessionsKeyedByTheirSessionIdAndLogoutAllClosesThem(t *
 	}
 	if tab.manager.InMatch("ayla") || tab.manager.RevokeAccount("ayla") != 0 {
 		t.Fatal("sessions survived logout-all")
+	}
+}
+
+type observedClock struct {
+	account string
+	client  uint64
+}
+
+type clockLog struct {
+	mu   sync.Mutex
+	seen []observedClock
+}
+
+func (l *clockLog) Observe(_ context.Context, account string, clientUnixMs uint64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.seen = append(l.seen, observedClock{account, clientUnixMs})
+}
+
+func TestAMovedDeviceClockIsObservedButTheServerKeepsItsOwnTime(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	clocks := &clockLog{}
+	tab.manager.ObserveClocks(clocks)
+	now := time.Now()
+	twoDaysAhead := uint64(now.Add(48 * time.Hour).UnixMilli())
+	tab.connectAt("not-a-token", twoDaysAhead, false)
+	p := tab.connectAt(tab.tokens[rules.SeatX], twoDaysAhead, true)
+	if got := time.UnixMilli(int64(p.hello.GetServerHello().GetServerTimeUnixMs())); got.Sub(now).Abs() > time.Minute {
+		t.Fatalf("server hello time %v follows the device clock", got)
+	}
+	clocks.mu.Lock()
+	defer clocks.mu.Unlock()
+	if len(clocks.seen) != 1 || clocks.seen[0] != (observedClock{"account-X", twoDaysAhead}) {
+		t.Fatalf("observed clocks %v", clocks.seen)
 	}
 }
