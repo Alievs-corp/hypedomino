@@ -128,7 +128,7 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.State != purchase.RecordGranted || result.Repeated || !result.Finished || result.Balance != 2000 || result.Grant == nil || result.Grant.Coins != 1500 || result.Grant.Reason != wallet.Purchase || result.Bonus == nil || result.Bonus.Coins != 500 || len(result.Bonus.Cosmetics) != 1 {
+	if result.State != purchase.RecordGranted || result.Repeated || !result.Finished || result.Crystals != 400 || result.Grant == nil || result.Grant.Crystals != 300 || result.Grant.Coins != 0 || result.Grant.Reason != wallet.Purchase || result.Bonus == nil || result.Bonus.Crystals != 100 || result.Bonus.Coins != 0 || len(result.Bonus.Cosmetics) != 1 {
 		t.Fatalf("result %+v", result)
 	}
 	for _, id := range []string{"avatar.comet_fox", "frame.season_1_top"} {
@@ -143,7 +143,7 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !repeat.Repeated || repeat.Balance != 2000 || repeat.Grant.ID != result.Grant.ID || repeat.Bonus.ID != result.Bonus.ID || !repeat.Finished {
+	if !repeat.Repeated || repeat.Crystals != 400 || repeat.Grant.ID != result.Grant.ID || repeat.Bonus.ID != result.Bonus.ID || !repeat.Finished {
 		t.Fatalf("repeat %+v", repeat)
 	}
 	f.receipt("tok-2", "crystals_tier1", ayla, purchase.StatePurchased)
@@ -151,7 +151,7 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Bonus != nil || second.Balance != 2500 || second.Grant.Coins != 500 {
+	if second.Bonus != nil || second.Crystals != 500 || second.Grant.Crystals != 100 {
 		t.Fatalf("second purchase %+v", second)
 	}
 	if len(f.google.finished) != 3 {
@@ -216,7 +216,7 @@ func TestARefusedPurchaseGrantsNothing(t *testing.T) {
 	if err := f.pool.QueryRow(ctx, `select count(*) from purchases where account_id = $1`, bora).Scan(&rows); err != nil || rows != 0 {
 		t.Fatalf("rows for the refused account %d %v", rows, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, bora, wallet.Coin); balance != 0 {
+	if balance, _ := f.wallet.Balance(ctx, bora, wallet.Crystal); balance != 0 {
 		t.Fatalf("balance %d", balance)
 	}
 	if f.events(t, purchase.EventReuse) != 1 || f.events(t, purchase.EventAccountMatch) != 1 {
@@ -236,7 +236,7 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if again, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || again.State != purchase.RecordPending {
 		t.Fatalf("pending again %+v %v", again, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 0 || f.state(t, "tok-p") != purchase.RecordPending || len(f.google.finished) != 0 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Crystal); balance != 0 || f.state(t, "tok-p") != purchase.RecordPending || len(f.google.finished) != 0 {
 		t.Fatalf("pending purchase granted: balance %d state %s", balance, f.state(t, "tok-p"))
 	}
 	notice := purchase.Notice{ID: "m-1", Kind: purchase.KindPurchased, TransactionID: "tok-p", ProductID: "crystals_tier1"}
@@ -248,7 +248,7 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || !handled {
 		t.Fatalf("purchased notice %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 1000 || f.state(t, "tok-p") != purchase.RecordGranted {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Crystal); balance != 200 || f.state(t, "tok-p") != purchase.RecordGranted {
 		t.Fatalf("after the notice: balance %d state %s", balance, f.state(t, "tok-p"))
 	}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || handled {
@@ -268,7 +268,7 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, purchase.Notice{ID: "m-4", Kind: purchase.KindPurchased, TransactionID: "tok-c"}, now); err != nil || !handled || f.state(t, "tok-c") != purchase.RecordCancelled {
 		t.Fatalf("cancelled pending purchase %v %v %s", handled, err, f.state(t, "tok-c"))
 	}
-	if completed, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || !completed.Repeated || completed.Balance != 1000 || completed.Bonus == nil {
+	if completed, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || !completed.Repeated || completed.Crystals != 200 || completed.Bonus == nil {
 		t.Fatalf("complete after the notice granted %+v %v", completed, err)
 	}
 }
@@ -281,15 +281,21 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if _, err := f.store.Complete(ctx, ayla, "offer.starter", purchase.PlatformGoogle, "tok-1", now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Amount: -1900, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "shop", Ref: "offer.x"}, Key: "spend:1"}, now); err != nil {
+	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Currency: wallet.Crystal, Amount: -390, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "shop", Ref: "offer.x"}, Key: "spend:1"}, now); err != nil {
 		t.Fatal(err)
 	}
 	refund := purchase.Notice{ID: "r-1", Kind: purchase.KindRefund, TransactionID: "tok-1"}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, refund, now.Add(time.Hour)); err != nil || !handled {
 		t.Fatalf("refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != -1900 {
+	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Amount: 70, Reason: wallet.MatchReward, Source: wallet.Source{Type: "match", Ref: "m1"}, Key: "match:m1"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Crystal); balance != -390 {
 		t.Fatalf("balance after the refund %d", balance)
+	}
+	if coins, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); coins != 70 {
+		t.Fatalf("a refund touched coins: %d", coins)
 	}
 	for _, id := range []string{"avatar.comet_fox", "frame.season_1_top"} {
 		if owned, _ := f.inventory.Owns(ctx, ayla, id); owned {
@@ -302,7 +308,7 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, purchase.Notice{ID: "r-2", Kind: purchase.KindRefund, TransactionID: "tok-1"}, now); err != nil || handled {
 		t.Fatalf("second refund of the same purchase %v %v", handled, err)
 	}
-	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Amount: -1, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "shop", Ref: "offer.x"}, Key: "spend:2"}, now); !errors.Is(err, wallet.ErrInsufficient) {
+	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: ayla, Currency: wallet.Crystal, Amount: -1, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "shop", Ref: "offer.x"}, Key: "spend:2"}, now); !errors.Is(err, wallet.ErrInsufficient) {
 		t.Fatalf("spend from a negative balance: %v", err)
 	}
 	if blocked, err := f.store.Blocked(ctx, ayla, now.Add(2*time.Hour)); err != nil || blocked {
@@ -312,7 +318,7 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, reversal, now.Add(2*time.Hour)); err != nil || !handled {
 		t.Fatalf("reversal %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != -400 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Crystal); balance != -90 {
 		t.Fatalf("balance after the reversal %d", balance)
 	}
 	if owned, _ := f.inventory.Owns(ctx, ayla, "avatar.comet_fox"); !owned || f.state(t, "tok-1") != purchase.RecordGranted || f.events(t, purchase.EventReversed) != 1 {
