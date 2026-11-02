@@ -24,7 +24,7 @@ var (
 	ErrNotEligible  = errors.New("offer.not_eligible")
 	ErrOwned        = errors.New("offer.owned")
 	ErrStoreOnly    = errors.New("offer.store_only")
-	ErrCoinsOnly    = errors.New("offer.coins_only")
+	ErrInGameOnly   = errors.New("offer.in_game_only")
 	ErrUnsupported  = errors.New("offer.unsupported")
 	ErrRequest      = errors.New("request.invalid")
 	ErrBlocked      = errors.New("purchase.blocked")
@@ -66,22 +66,25 @@ func NewStore(pool *pgxpool.Pool, wallet *wallet.Store, inventory *inventory.Sto
 }
 
 type OfferView struct {
-	ID                  string           `json:"id"`
-	Kind                string           `json:"kind"`
-	NameKey             string           `json:"name_key"`
-	PriceCoins          int64            `json:"price_coins,omitempty"`
-	ProductID           string           `json:"product_id,omitempty"`
-	ReferencePriceCoins int64            `json:"reference_price_coins,omitempty"`
-	Coins               int64            `json:"coins,omitempty"`
-	Cosmetics           []string         `json:"cosmetics"`
-	PassXP              int              `json:"pass_xp,omitempty"`
-	EndsAt              string           `json:"ends_at,omitempty"`
-	Limit               int              `json:"limit,omitempty"`
-	Bought              int              `json:"bought"`
-	Owned               []string         `json:"owned"`
-	Compensation        map[string]int64 `json:"compensation"`
-	Purchasable         bool             `json:"purchasable"`
-	Reason              string           `json:"reason,omitempty"`
+	ID                     string           `json:"id"`
+	Kind                   string           `json:"kind"`
+	NameKey                string           `json:"name_key"`
+	PriceCoins             int64            `json:"price_coins,omitempty"`
+	PriceCrystals          int64            `json:"price_crystals,omitempty"`
+	ProductID              string           `json:"product_id,omitempty"`
+	ReferencePriceCoins    int64            `json:"reference_price_coins,omitempty"`
+	ReferencePriceCrystals int64            `json:"reference_price_crystals,omitempty"`
+	Coins                  int64            `json:"coins,omitempty"`
+	Crystals               int64            `json:"crystals,omitempty"`
+	Cosmetics              []string         `json:"cosmetics"`
+	PassXP                 int              `json:"pass_xp,omitempty"`
+	EndsAt                 string           `json:"ends_at,omitempty"`
+	Limit                  int              `json:"limit,omitempty"`
+	Bought                 int              `json:"bought"`
+	Owned                  []string         `json:"owned"`
+	Compensation           map[string]int64 `json:"compensation"`
+	Purchasable            bool             `json:"purchasable"`
+	Reason                 string           `json:"reason,omitempty"`
 }
 
 type SectionView struct {
@@ -96,10 +99,11 @@ type View struct {
 }
 
 type Purchase struct {
-	Offer    string        `json:"offer"`
-	Balance  int64         `json:"balance"`
-	Grant    reward.Report `json:"grant"`
-	Repeated bool          `json:"repeated"`
+	Offer    string          `json:"offer"`
+	Currency wallet.Currency `json:"currency"`
+	Balance  int64           `json:"balance"`
+	Grant    reward.Report   `json:"grant"`
+	Repeated bool            `json:"repeated"`
 }
 
 type Checkout struct {
@@ -236,8 +240,9 @@ func (s *Store) offerView(offer Offer, st standing, now time.Time) (OfferView, e
 	}
 	view := OfferView{
 		ID: offer.ID, Kind: offer.Kind, NameKey: offer.NameKey,
-		PriceCoins: offer.PriceCoins, ProductID: offer.ProductID, ReferencePriceCoins: offer.ReferencePriceCoins,
-		Coins: offer.Bundle.Coins, Cosmetics: append([]string{}, offer.Bundle.Cosmetics...), PassXP: offer.Bundle.PassXP,
+		PriceCoins: offer.PriceCoins, PriceCrystals: offer.PriceCrystals, ProductID: offer.ProductID,
+		ReferencePriceCoins: offer.ReferencePriceCoins, ReferencePriceCrystals: offer.ReferencePriceCrystals,
+		Coins: offer.Bundle.Coins, Crystals: offer.Bundle.Crystals, Cosmetics: append([]string{}, offer.Bundle.Cosmetics...), PassXP: offer.Bundle.PassXP,
 		EndsAt: stamp(offer.Window.End), Limit: offer.LimitPerAccount, Bought: status.bought,
 		Owned: status.owned, Compensation: status.compensation, Purchasable: status.refusal == nil,
 	}
@@ -270,9 +275,10 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 	if err != nil {
 		return Purchase{}, err
 	}
-	if offer.PriceCoins == 0 {
+	if offer.ProductID != "" {
 		return Purchase{}, ErrStoreOnly
 	}
+	currency, price := offer.Price()
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return Purchase{}, err
@@ -284,11 +290,11 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 	key := "shop:" + requestID
 	earlier, err := reward.GetIn(ctx, tx, account, key)
 	if err == nil {
-		balance, err := s.wallet.BalanceIn(ctx, tx, account, wallet.Coin)
+		balance, err := s.wallet.BalanceIn(ctx, tx, account, currency)
 		if err != nil {
 			return Purchase{}, err
 		}
-		return Purchase{Offer: earlier.Source.Ref, Balance: balance, Grant: earlier, Repeated: true}, tx.Commit(ctx)
+		return Purchase{Offer: earlier.Source.Ref, Currency: currency, Balance: balance, Grant: earlier, Repeated: true}, tx.Commit(ctx)
 	}
 	if !errors.Is(err, reward.ErrUnknownGrant) {
 		return Purchase{}, err
@@ -305,7 +311,7 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 		return Purchase{}, status.refusal
 	}
 	source := cosmetics.Source{Type: SourceType, Ref: offer.ID}
-	spend := wallet.Entry{Account: account, Amount: -offer.PriceCoins, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: source.Type, Ref: source.Ref}, Key: key + ":spend", ConfigVersion: int(version)}
+	spend := wallet.Entry{Account: account, Currency: currency, Amount: -price, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: source.Type, Ref: source.Ref}, Key: key + ":spend", ConfigVersion: int(version)}
 	applied, err := s.wallet.ApplyIn(ctx, tx, spend, now)
 	if err != nil {
 		return Purchase{}, err
@@ -315,7 +321,7 @@ func (s *Store) Buy(ctx context.Context, account, offerID, requestID string, now
 	if err != nil {
 		return Purchase{}, err
 	}
-	return Purchase{Offer: offer.ID, Balance: applied.BalanceAfter, Grant: report}, tx.Commit(ctx)
+	return Purchase{Offer: offer.ID, Currency: currency, Balance: applied.BalanceAfter, Grant: report}, tx.Commit(ctx)
 }
 
 func (s *Store) Begin(ctx context.Context, account, offerID string, now time.Time) (Checkout, error) {
@@ -324,7 +330,7 @@ func (s *Store) Begin(ctx context.Context, account, offerID string, now time.Tim
 		return Checkout{}, err
 	}
 	if offer.ProductID == "" {
-		return Checkout{}, ErrCoinsOnly
+		return Checkout{}, ErrInGameOnly
 	}
 	st, err := s.standing(ctx, s.pool, account, func(id string) (bool, error) { return s.inventory.Owns(ctx, account, id) }, now)
 	if err != nil {

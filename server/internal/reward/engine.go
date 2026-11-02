@@ -388,7 +388,7 @@ func (e *Engine) move(ctx context.Context, tx pgx.Tx, report Report, sign int64,
 	amounts := report.amounts()
 	source := wallet.Source{Type: report.Source.Type, Ref: report.Source.Ref}
 	for _, currency := range wallet.Currencies {
-		if amounts[currency] == 0 {
+		if amounts[currency] == 0 || !wallet.Moves(reason, currency) {
 			continue
 		}
 		entry := wallet.Entry{Account: report.Account, Currency: currency, Amount: sign * amounts[currency], Reason: reason, Source: source, Key: key, ConfigVersion: report.ConfigVersion}

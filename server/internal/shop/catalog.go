@@ -19,7 +19,7 @@ const (
 
 	KindCosmetic   = "cosmetic"
 	KindBundle     = "bundle"
-	KindCoins      = "coins"
+	KindCrystals   = "crystals"
 	KindPass       = "pass"
 	KindPassLevels = "pass_levels"
 
@@ -30,15 +30,15 @@ const (
 	SectionWeekly   = "weekly_rotation"
 	SectionEvent    = "event"
 	SectionPass     = "pass"
-	SectionCoins    = "coins"
+	SectionCrystals = "crystals"
 
 	PeriodDaily  = "daily"
 	PeriodWeekly = "weekly"
 )
 
 var (
-	Sections = []string{SectionFeatured, SectionDaily, SectionWeekly, SectionEvent, SectionPass, SectionCoins}
-	Kinds    = []string{KindCosmetic, KindBundle, KindCoins, KindPass, KindPassLevels}
+	Sections = []string{SectionFeatured, SectionDaily, SectionWeekly, SectionEvent, SectionPass, SectionCrystals}
+	Kinds    = []string{KindCosmetic, KindBundle, KindCrystals, KindPass, KindPassLevels}
 
 	ErrInvalid       = errors.New("shop: invalid catalog")
 	ErrInvalidConfig = errors.New("shop: invalid config")
@@ -106,18 +106,20 @@ type Eligibility struct {
 }
 
 type Offer struct {
-	ID                   string        `json:"id"`
-	Kind                 string        `json:"kind"`
-	Section              string        `json:"section"`
-	PriceCoins           int64         `json:"priceCoins,omitempty"`
-	ProductID            string        `json:"productId,omitempty"`
-	Bundle               reward.Bundle `json:"bundle"`
-	Window               Window        `json:"window"`
-	LimitPerAccount      int           `json:"limitPerAccount,omitempty"`
-	Eligibility          Eligibility   `json:"eligibility,omitzero"`
-	NameKey              string        `json:"nameKey"`
-	ReferencePriceCoins  int64         `json:"referencePriceCoins,omitempty"`
-	RegionalOverrideNote string        `json:"regionalOverrideNote,omitempty"`
+	ID                     string        `json:"id"`
+	Kind                   string        `json:"kind"`
+	Section                string        `json:"section"`
+	PriceCoins             int64         `json:"priceCoins,omitempty"`
+	PriceCrystals          int64         `json:"priceCrystals,omitempty"`
+	ProductID              string        `json:"productId,omitempty"`
+	Bundle                 reward.Bundle `json:"bundle"`
+	Window                 Window        `json:"window"`
+	LimitPerAccount        int           `json:"limitPerAccount,omitempty"`
+	Eligibility            Eligibility   `json:"eligibility,omitzero"`
+	NameKey                string        `json:"nameKey"`
+	ReferencePriceCoins    int64         `json:"referencePriceCoins,omitempty"`
+	ReferencePriceCrystals int64         `json:"referencePriceCrystals,omitempty"`
+	RegionalOverrideNote   string        `json:"regionalOverrideNote,omitempty"`
 }
 
 func (o Offer) Validate() error {
@@ -133,20 +135,22 @@ func (o Offer) Validate() error {
 		return fail("section %q", o.Section)
 	case o.NameKey == "":
 		return fail("nameKey is required")
-	case o.PriceCoins < 0:
+	case o.PriceCoins < 0 || o.PriceCrystals < 0:
 		return fail("negative price")
-	case (o.PriceCoins > 0) == (o.ProductID != ""):
-		return fail("price is coins or a store product, never both or neither")
+	case o.prices() != 1:
+		return fail("price is exactly one of coins, crystals or a store product")
 	case o.ProductID != "" && !productID.MatchString(o.ProductID):
 		return fail("product id %q", o.ProductID)
 	case o.Window.Start.IsZero():
 		return fail("window start is required")
 	case !o.Window.End.IsZero() && !o.Window.End.After(o.Window.Start):
 		return fail("window ends before it starts")
-	case o.LimitPerAccount < 0 || o.Eligibility.MaxAccountAgeHours < 0 || o.ReferencePriceCoins < 0:
+	case o.LimitPerAccount < 0 || o.Eligibility.MaxAccountAgeHours < 0 || o.ReferencePriceCoins < 0 || o.ReferencePriceCrystals < 0:
 		return fail("negative limit, eligibility or reference price")
-	case o.ReferencePriceCoins > 0 && o.ReferencePriceCoins <= o.PriceCoins:
-		return fail("reference price must be above the coin price")
+	case o.ReferencePriceCoins > 0 && o.ReferencePriceCoins <= o.PriceCoins, o.ReferencePriceCrystals > 0 && o.ReferencePriceCrystals <= o.PriceCrystals:
+		return fail("reference price must be above the price")
+	case o.ReferencePriceCoins > 0 && o.PriceCoins == 0, o.ReferencePriceCrystals > 0 && o.PriceCrystals == 0:
+		return fail("reference price is in the currency of the price")
 	}
 	if err := o.validateBundle(); err != nil {
 		return fail("%v", err)
@@ -166,18 +170,35 @@ func (o Offer) validateBundle() error {
 	switch {
 	case len(o.Bundle.Medals) > 0:
 		return errors.New("an offer never carries a medal")
-	case o.PriceCoins > 0 && (o.Bundle.Coins > 0 || o.Bundle.Crystals > 0):
-		return errors.New("a coin-priced offer grants no currency")
+	case o.ProductID == "" && (o.Bundle.Coins > 0 || o.Bundle.Crystals > 0):
+		return errors.New("an offer priced in coins or crystals grants no currency")
 	case o.Kind == KindCosmetic && (len(o.Bundle.Cosmetics) != 1 || o.Bundle.Coins > 0 || o.Bundle.Crystals > 0 || o.Bundle.PassXP > 0):
 		return errors.New("a cosmetic offer grants exactly one cosmetic")
 	case o.Kind == KindCosmetic && o.LimitPerAccount != 1:
 		return errors.New("a cosmetic offer is limited to one per account")
 	case o.Kind == KindBundle && len(o.Bundle.Cosmetics) == 0:
 		return errors.New("a bundle offer grants at least one cosmetic")
-	case o.Kind == KindCoins && (o.Bundle.Coins == 0 || o.ProductID == ""):
-		return errors.New("a coin pack grants coins and is a store product")
+	case o.Kind == KindCrystals && (o.Bundle.Crystals == 0 || o.ProductID == "" || len(o.Bundle.Cosmetics) > 0 || o.Bundle.PassXP > 0):
+		return errors.New("a crystal pack grants only crystals and is a store product")
 	}
 	return nil
+}
+
+func (o Offer) prices() int {
+	count := 0
+	for _, set := range []bool{o.PriceCoins > 0, o.PriceCrystals > 0, o.ProductID != ""} {
+		if set {
+			count++
+		}
+	}
+	return count
+}
+
+func (o Offer) Price() (wallet.Currency, int64) {
+	if o.PriceCrystals > 0 {
+		return wallet.Crystal, o.PriceCrystals
+	}
+	return wallet.Coin, o.PriceCoins
 }
 
 func (o Offer) validateSection() error {
@@ -185,13 +206,17 @@ func (o Offer) validateSection() error {
 		return fmt.Errorf("%w: %s: section %s %s", ErrInvalid, o.ID, o.Section, message)
 	}
 	switch o.Section {
-	case SectionDaily, SectionWeekly:
-		if o.PriceCoins == 0 || (o.Kind != KindCosmetic && o.Kind != KindBundle) {
-			return fail("holds cosmetic offers paid with coins")
+	case SectionDaily, SectionWeekly, SectionEvent:
+		if o.ProductID != "" || (o.Kind != KindCosmetic && o.Kind != KindBundle) {
+			return fail("holds cosmetic offers paid with coins or crystals")
 		}
-	case SectionCoins:
-		if o.Kind != KindCoins {
-			return fail("holds coin packs")
+	case SectionFeatured:
+		if o.PriceCoins > 0 {
+			return fail("holds offers paid with crystals or a store product")
+		}
+	case SectionCrystals:
+		if o.Kind != KindCrystals {
+			return fail("holds crystal packs")
 		}
 	case SectionPass:
 		if o.Kind != KindPass && o.Kind != KindPassLevels {

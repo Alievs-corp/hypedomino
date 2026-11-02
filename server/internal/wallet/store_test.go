@@ -116,7 +116,7 @@ func TestParallelSpendsNeverOverdraw(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, errs[i] = store.Apply(ctx, wallet.Entry{Account: ayla, Amount: -100, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "offer", Ref: "o1"}, Key: fmt.Sprintf("spend:%d", i)}, start)
+			_, errs[i] = store.Apply(ctx, wallet.Entry{Account: ayla, Currency: wallet.Crystal, Amount: -100, Reason: wallet.ShopPurchase, Source: wallet.Source{Type: "offer", Ref: "o1"}, Key: fmt.Sprintf("spend:%d", i)}, start)
 		}()
 	}
 	wg.Wait()
@@ -129,7 +129,7 @@ func TestParallelSpendsNeverOverdraw(t *testing.T) {
 			t.Fatalf("unexpected error %v", err)
 		}
 	}
-	balance, err := store.Balance(ctx, ayla, wallet.Coin)
+	balance, err := store.Balance(ctx, ayla, wallet.Crystal)
 	if err != nil || won != 5 || balance != 0 {
 		t.Fatalf("%d spends won, balance %d %v", won, balance, err)
 	}
@@ -206,10 +206,10 @@ func TestEveryReasonMovesTheCurrencyOfTheLedgerTable(t *testing.T) {
 		{wallet.ShopPurchase, true, true},
 		{wallet.PassLevelPurchase, true, true},
 		{wallet.AdminAdjust, true, true},
-		{wallet.Purchase, true, true},
-		{wallet.FirstPurchaseBonus, true, true},
-		{wallet.RefundRevoke, true, true},
-		{wallet.RefundReversal, true, true},
+		{wallet.Purchase, false, true},
+		{wallet.FirstPurchaseBonus, false, true},
+		{wallet.RefundRevoke, false, true},
+		{wallet.RefundReversal, false, true},
 	} {
 		if wallet.Moves(c.reason, wallet.Coin) != c.coins || wallet.Moves(c.reason, wallet.Crystal) != c.crystals {
 			t.Errorf("%s: coins %v crystals %v", c.reason, wallet.Moves(c.reason, wallet.Coin), wallet.Moves(c.reason, wallet.Crystal))
@@ -302,5 +302,21 @@ func TestOneKeyIsIdempotentPerCurrency(t *testing.T) {
 	}
 	if balance, err := store.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 40 {
 		t.Fatalf("coins touched by the crystal reconcile %d %v", balance, err)
+	}
+}
+
+func TestMoneyNeverCreatesCoins(t *testing.T) {
+	for _, reason := range []wallet.Reason{wallet.Purchase, wallet.FirstPurchaseBonus, wallet.RefundReversal} {
+		coins := wallet.Entry{Account: "a", Currency: wallet.Coin, Amount: 100, Reason: reason, Source: match, Key: "k"}
+		if err := coins.Validate(); !errors.Is(err, wallet.ErrWrongCurrency) {
+			t.Errorf("%s in coins: %v", reason, err)
+		}
+		if err := (wallet.Entry{Account: "a", Amount: 100, Reason: reason, Source: match, Key: "k"}).Validate(); err != nil {
+			t.Errorf("%s without a currency takes crystals: %v", reason, err)
+		}
+	}
+	refund := wallet.Entry{Account: "a", Currency: wallet.Coin, Amount: -100, Reason: wallet.RefundRevoke, Source: match, Key: "k"}
+	if err := refund.Validate(); !errors.Is(err, wallet.ErrWrongCurrency) {
+		t.Fatalf("a refund debits coins: %v", err)
 	}
 }

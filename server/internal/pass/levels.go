@@ -26,13 +26,14 @@ type Spender interface {
 }
 
 type LevelPurchase struct {
-	Season   string `json:"season"`
-	Count    int    `json:"count"`
-	Price    int64  `json:"price_coins"`
-	Level    int    `json:"level"`
-	XP       int64  `json:"xp"`
-	Balance  int64  `json:"balance"`
-	Repeated bool   `json:"repeated"`
+	Season   string          `json:"season"`
+	Count    int             `json:"count"`
+	Currency wallet.Currency `json:"currency"`
+	Price    int64           `json:"price"`
+	Level    int             `json:"level"`
+	XP       int64           `json:"xp"`
+	Balance  int64           `json:"balance"`
+	Repeated bool            `json:"repeated"`
 }
 
 func (s *Store) SetWallet(spender Spender) {
@@ -44,8 +45,8 @@ func LevelPurchaseXp(curve Curve, xp int64, count int) int64 {
 	return curve.XpToReach(level+count) - curve.XpToReach(level)
 }
 
-func (s *Store) BuyLevels(ctx context.Context, account string, count int, requestID string, now time.Time) (LevelPurchase, error) {
-	if requestID == "" {
+func (s *Store) BuyLevels(ctx context.Context, account string, count int, currency wallet.Currency, requestID string, now time.Time) (LevelPurchase, error) {
+	if requestID == "" || (currency != wallet.Coin && currency != wallet.Crystal) {
 		return LevelPurchase{}, ErrRequest
 	}
 	if s.wallet == nil {
@@ -72,7 +73,7 @@ func (s *Store) BuyLevels(ctx context.Context, account string, count int, reques
 		return LevelPurchase{}, err
 	}
 	key := "spend:" + requestID
-	purchase := LevelPurchase{Season: season.ID, Count: count, Price: int64(count) * current.LevelCoinPrice}
+	purchase := LevelPurchase{Season: season.ID, Count: count, Currency: currency, Price: int64(count) * current.LevelPrice(currency)}
 	repeated, err := s.xpEventExists(ctx, tx, account, key)
 	if err != nil {
 		return LevelPurchase{}, err
@@ -82,7 +83,7 @@ func (s *Store) BuyLevels(ctx context.Context, account string, count int, reques
 		if count < 1 || level+count > season.Curve.Levels {
 			return LevelPurchase{}, ErrLevelCount
 		}
-		spend := wallet.Entry{Account: account, Amount: -purchase.Price, Reason: wallet.PassLevelPurchase, Source: wallet.Source{Type: SourcePass, Ref: season.ID}, Key: key, ConfigVersion: int(version)}
+		spend := wallet.Entry{Account: account, Currency: currency, Amount: -purchase.Price, Reason: wallet.PassLevelPurchase, Source: wallet.Source{Type: SourcePass, Ref: season.ID}, Key: key, ConfigVersion: int(version)}
 		if _, err := s.wallet.ApplyIn(ctx, tx, spend, now); err != nil {
 			return LevelPurchase{}, err
 		}
@@ -95,7 +96,7 @@ func (s *Store) BuyLevels(ctx context.Context, account string, count int, reques
 		return LevelPurchase{}, err
 	}
 	purchase.XP, purchase.Level, purchase.Repeated = progress.XP, season.Curve.LevelFor(progress.XP), repeated
-	if purchase.Balance, err = s.wallet.BalanceIn(ctx, tx, account, wallet.Coin); err != nil {
+	if purchase.Balance, err = s.wallet.BalanceIn(ctx, tx, account, currency); err != nil {
 		return LevelPurchase{}, err
 	}
 	return purchase, tx.Commit(ctx)

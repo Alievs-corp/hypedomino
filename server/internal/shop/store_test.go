@@ -107,7 +107,7 @@ func TestTheViewShowsEverySectionForTheAccount(t *testing.T) {
 	if len(featured.Offers) != 1 || featured.Offers[0].ProductID != "offer_starter" || !featured.Offers[0].Purchasable || featured.Offers[0].Coins != 1500 {
 		t.Fatalf("featured %+v", featured)
 	}
-	if coins := section(t, view, shop.SectionCoins); len(coins.Offers) != 2 || coins.Offers[1].ProductID != "coins_tier2" || coins.Offers[1].Limit != 0 {
+	if coins := section(t, view, shop.SectionCrystals); len(coins.Offers) != 2 || coins.Offers[1].ProductID != "crystals_tier2" || coins.Offers[1].Limit != 0 {
 		t.Fatalf("coins %+v", coins)
 	}
 	if pass := section(t, view, shop.SectionPass); len(pass.Offers) != 1 || pass.Offers[0].Purchasable || pass.Offers[0].Reason != "offer.unsupported" {
@@ -216,13 +216,13 @@ func TestAStoreOfferStartsACheckoutForEligibleAccountsOnly(t *testing.T) {
 	if checkout.Offer != "offer.starter" || checkout.ProductID != "offer_starter" || checkout.AccountToken != shop.AccountToken(account) || checkout.AccountToken == account || len(checkout.AccountToken) != 36 {
 		t.Fatalf("checkout %+v", checkout)
 	}
-	if _, err := f.store.Begin(ctx, account, "offer.avatar_comet_fox", now); !errors.Is(err, shop.ErrCoinsOnly) {
+	if _, err := f.store.Begin(ctx, account, "offer.avatar_comet_fox", now); !errors.Is(err, shop.ErrInGameOnly) {
 		t.Fatalf("checkout of a coin offer: %v", err)
 	}
 	if _, err := f.store.Begin(ctx, account, "offer.starter", now.Add(169*time.Hour)); !errors.Is(err, shop.ErrNotEligible) {
 		t.Fatalf("checkout after the starter window: %v", err)
 	}
-	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: account, Amount: 500, Reason: wallet.Purchase, Source: wallet.Source{Type: "purchase", Ref: "coins_tier1"}, Key: "tx-1"}, now); err != nil {
+	if _, err := f.wallet.Apply(ctx, wallet.Entry{Account: account, Amount: 500, Reason: wallet.Purchase, Source: wallet.Source{Type: "purchase", Ref: "crystals_tier1"}, Key: "tx-1"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := f.store.Begin(ctx, account, "offer.starter", now); !errors.Is(err, shop.ErrNotEligible) {
@@ -235,7 +235,7 @@ func TestAStoreOfferStartsACheckoutForEligibleAccountsOnly(t *testing.T) {
 	if starter := section(t, view, shop.SectionFeatured).Offers[0]; starter.Purchasable || starter.Reason != "offer.not_eligible" {
 		t.Fatalf("starter after a purchase %+v", starter)
 	}
-	if _, err := f.store.Begin(ctx, account, "offer.coins_tier1", now); err != nil {
+	if _, err := f.store.Begin(ctx, account, "offer.crystals_tier1", now); err != nil {
 		t.Fatalf("coin pack checkout: %v", err)
 	}
 }

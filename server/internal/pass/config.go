@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const (
@@ -53,13 +54,14 @@ type MatchXp struct {
 type Snapshot struct {
 	Schema               int      `json:"schema"`
 	FreeTrackCoins       int64    `json:"freeTrackCoins"`
-	PremiumTrackCoins    int64    `json:"premiumTrackCoins"`
+	PremiumTrackCrystals int64    `json:"premiumTrackCrystals"`
 	PremiumPlusLevels    int      `json:"premiumPlusLevels"`
 	MatchXp1v1           MatchXp  `json:"matchXp1v1"`
 	MatchXp2v2           MatchXp  `json:"matchXp2v2"`
 	DailyMatchXpCap      int      `json:"dailyMatchXpCap"`
 	BotSeatRewardPercent int      `json:"botSeatRewardPercent"`
 	LevelCoinPrice       int64    `json:"levelCoinPrice"`
+	LevelCrystalPrice    int64    `json:"levelCrystalPrice"`
 	Seasons              []Season `json:"seasons"`
 }
 
@@ -67,13 +69,14 @@ func Default() *Snapshot {
 	return &Snapshot{
 		Schema:               Schema,
 		FreeTrackCoins:       1500,
-		PremiumTrackCoins:    3000,
+		PremiumTrackCrystals: 600,
 		PremiumPlusLevels:    20,
 		MatchXp1v1:           MatchXp{Win: 100, Loss: 60},
 		MatchXp2v2:           MatchXp{Win: 140, Loss: 80},
 		DailyMatchXpCap:      2000,
 		BotSeatRewardPercent: 50,
 		LevelCoinPrice:       200,
+		LevelCrystalPrice:    40,
 	}
 }
 
@@ -113,8 +116,8 @@ func (s *Snapshot) Validate() error {
 	if s.Schema != Schema {
 		return fail("schema %d", s.Schema)
 	}
-	if s.FreeTrackCoins < 0 || s.PremiumTrackCoins < 0 || s.PremiumPlusLevels < 0 {
-		return fail("track coin budgets and premiumPlusLevels must not be negative")
+	if s.FreeTrackCoins < 0 || s.PremiumTrackCrystals < 0 || s.PremiumPlusLevels < 0 {
+		return fail("track budgets and premiumPlusLevels must not be negative")
 	}
 	if s.MatchXp1v1.Win < 0 || s.MatchXp1v1.Loss < 0 || s.MatchXp2v2.Win < 0 || s.MatchXp2v2.Loss < 0 || s.DailyMatchXpCap < 0 {
 		return fail("match XP and dailyMatchXpCap must not be negative")
@@ -122,8 +125,8 @@ func (s *Snapshot) Validate() error {
 	if s.BotSeatRewardPercent < 0 || s.BotSeatRewardPercent > 100 {
 		return fail("botSeatRewardPercent must be between 0 and 100")
 	}
-	if s.LevelCoinPrice < 1 {
-		return fail("levelCoinPrice must be at least 1")
+	if s.LevelCoinPrice < 1 || s.LevelCrystalPrice < 1 {
+		return fail("levelCoinPrice and levelCrystalPrice must be at least 1")
 	}
 	ids := map[string]bool{}
 	for _, season := range s.Seasons {
@@ -168,17 +171,17 @@ func (s *Snapshot) validateSeason(season Season) error {
 			return fmt.Errorf("premium level %d has no bundle", level)
 		}
 	}
-	if err := validateTrack(season.Free, curve.Levels, s.FreeTrackCoins); err != nil {
+	if err := validateTrack(season.Free, curve.Levels, wallet.Coin, s.FreeTrackCoins); err != nil {
 		return fmt.Errorf("free track: %w", err)
 	}
-	if err := validateTrack(season.Premium, curve.Levels, s.PremiumTrackCoins); err != nil {
+	if err := validateTrack(season.Premium, curve.Levels, wallet.Crystal, s.PremiumTrackCrystals); err != nil {
 		return fmt.Errorf("premium track: %w", err)
 	}
 	return nil
 }
 
-func validateTrack(track map[int]reward.Bundle, levels int, budget int64) error {
-	var coins int64
+func validateTrack(track map[int]reward.Bundle, levels int, currency wallet.Currency, budget int64) error {
+	var paid int64
 	for level, bundle := range track {
 		if level < 1 || level > levels {
 			return fmt.Errorf("level %d is outside 1 to %d", level, levels)
@@ -189,13 +192,16 @@ func validateTrack(track map[int]reward.Bundle, levels int, budget int64) error 
 		if len(bundle.Medals) > 0 || bundle.PassXP != 0 {
 			return fmt.Errorf("level %d grants medals or pass XP", level)
 		}
-		if bundle.Crystals > 0 {
-			return fmt.Errorf("level %d grants crystals", level)
+		amounts := map[wallet.Currency]int64{wallet.Coin: bundle.Coins, wallet.Crystal: bundle.Crystals}
+		for other, amount := range amounts {
+			if other != currency && amount > 0 {
+				return fmt.Errorf("level %d grants %s", level, other)
+			}
 		}
-		coins += bundle.Coins
+		paid += amounts[currency]
 	}
-	if coins > budget {
-		return fmt.Errorf("%d coins exceed the budget of %d", coins, budget)
+	if paid > budget {
+		return fmt.Errorf("%d %s exceed the budget of %d", paid, currency, budget)
 	}
 	return nil
 }
@@ -216,4 +222,11 @@ func CheckFrozen(published, next *Snapshot, now time.Time) error {
 		}
 	}
 	return nil
+}
+
+func (s *Snapshot) LevelPrice(currency wallet.Currency) int64 {
+	if currency == wallet.Crystal {
+		return s.LevelCrystalPrice
+	}
+	return s.LevelCoinPrice
 }

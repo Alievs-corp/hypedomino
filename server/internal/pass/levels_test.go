@@ -22,7 +22,7 @@ func TestBoughtLevelsKeepProgressInsideTheLevelAndChargeOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 2 {
-		purchase, err := f.store.BuyLevels(context.Background(), account, 3, "request-1", now)
+		purchase, err := f.store.BuyLevels(context.Background(), account, 3, wallet.Coin, "request-1", now)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -45,7 +45,7 @@ func TestBoughtLevelsKeepProgressInsideTheLevelAndChargeOnce(t *testing.T) {
 		{"no request id", 1, "", pass.ErrRequest},
 	}
 	for _, c := range cases {
-		if _, err := f.store.BuyLevels(context.Background(), account, c.count, c.request, now); !errors.Is(err, c.want) {
+		if _, err := f.store.BuyLevels(context.Background(), account, c.count, wallet.Coin, c.request, now); !errors.Is(err, c.want) {
 			t.Fatalf("%s: %v", c.name, err)
 		}
 	}

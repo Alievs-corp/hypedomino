@@ -49,15 +49,16 @@ type rule struct {
 }
 
 var (
-	coinOnly = []Currency{Coin}
-	either   = []Currency{Coin, Crystal}
+	coinOnly    = []Currency{Coin}
+	crystalOnly = []Currency{Crystal}
+	either      = []Currency{Coin, Crystal}
 )
 
 var rules = map[Reason]rule{
 	MatchReward: {1, coinOnly}, FirstWin: {1, coinOnly}, DailyLogin: {1, coinOnly}, Mission: {1, coinOnly},
 	RankReward: {1, coinOnly}, EventReward: {1, coinOnly}, DuplicateCompensation: {1, coinOnly}, Promo: {1, coinOnly},
-	PassReward: {1, either}, Purchase: {1, either}, FirstPurchaseBonus: {1, either}, RefundReversal: {1, either},
-	ShopPurchase: {-1, either}, PassLevelPurchase: {-1, either}, Rename: {-1, coinOnly}, RefundRevoke: {-1, either},
+	PassReward: {1, either}, Purchase: {1, crystalOnly}, FirstPurchaseBonus: {1, crystalOnly}, RefundReversal: {1, crystalOnly},
+	ShopPurchase: {-1, either}, PassLevelPurchase: {-1, either}, Rename: {-1, coinOnly}, RefundRevoke: {-1, crystalOnly},
 	AdminAdjust: {0, either},
 }
 

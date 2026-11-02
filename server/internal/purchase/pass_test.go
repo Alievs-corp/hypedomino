@@ -71,7 +71,7 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 		if err != nil {
 			t.Fatal(err)
 		}
-		if result.State != purchase.RecordGranted || result.Repeated != (i == 1) || result.Balance != 40+40+500 {
+		if result.State != purchase.RecordGranted || result.Repeated != (i == 1) || result.Crystals != 40+40+500 {
 			t.Fatalf("complete %d: %+v", i, result)
 		}
 	}

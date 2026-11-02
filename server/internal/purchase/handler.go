@@ -189,7 +189,7 @@ var statuses = []struct {
 	{ErrCancelled, http.StatusConflict},
 	{ErrEnvironment, http.StatusConflict},
 	{ErrApp, http.StatusConflict},
-	{shop.ErrCoinsOnly, http.StatusConflict},
+	{shop.ErrInGameOnly, http.StatusConflict},
 	{shop.ErrUnsupported, http.StatusConflict},
 	{ErrNoPassSeason, http.StatusConflict},
 	{pass.ErrPremiumOwned, http.StatusConflict},

@@ -146,8 +146,8 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 	if !repeat.Repeated || repeat.Balance != 2000 || repeat.Grant.ID != result.Grant.ID || repeat.Bonus.ID != result.Bonus.ID || !repeat.Finished {
 		t.Fatalf("repeat %+v", repeat)
 	}
-	f.receipt("tok-2", "coins_tier1", ayla, purchase.StatePurchased)
-	second, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-2", now)
+	f.receipt("tok-2", "crystals_tier1", ayla, purchase.StatePurchased)
+	second, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-2", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,8 +169,8 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 		t.Fatalf("starter after purchase %+v", starter)
 	}
 	f.google.stuck = true
-	f.receipt("tok-3", "coins_tier2", ayla, purchase.StatePurchased)
-	if third, err := f.store.Complete(ctx, ayla, "offer.coins_tier2", purchase.PlatformGoogle, "tok-3", now); err != nil || third.Finished || third.State != purchase.RecordGranted {
+	f.receipt("tok-3", "crystals_tier2", ayla, purchase.StatePurchased)
+	if third, err := f.store.Complete(ctx, ayla, "offer.crystals_tier2", purchase.PlatformGoogle, "tok-3", now); err != nil || third.Finished || third.State != purchase.RecordGranted {
 		t.Fatalf("purchase with a stuck consume %+v %v", third, err)
 	}
 }
@@ -183,10 +183,10 @@ func TestARefusedPurchaseGrantsNothing(t *testing.T) {
 	if _, err := f.store.Complete(ctx, ayla, "offer.starter", purchase.PlatformGoogle, "tok-1", now); err != nil {
 		t.Fatal(err)
 	}
-	f.receipt("tok-other", "coins_tier1", ayla, purchase.StatePurchased)
+	f.receipt("tok-other", "crystals_tier1", ayla, purchase.StatePurchased)
 	f.receipt("tok-1", "offer_starter", bora, purchase.StatePurchased)
-	f.receipt("tok-wrong-product", "coins_tier2", bora, purchase.StatePurchased)
-	f.receipt("tok-cancelled", "coins_tier1", bora, purchase.StateCancelled)
+	f.receipt("tok-wrong-product", "crystals_tier2", bora, purchase.StatePurchased)
+	f.receipt("tok-cancelled", "crystals_tier1", bora, purchase.StateCancelled)
 	f.google.errs["tok-down"] = purchase.ErrStore
 	f.google.errs["tok-sandbox"] = purchase.ErrEnvironment
 	cases := map[string]struct {
@@ -196,15 +196,15 @@ func TestARefusedPurchaseGrantsNothing(t *testing.T) {
 		want     error
 	}{
 		"reused by another account": {"offer.starter", purchase.PlatformGoogle, "tok-1", purchase.ErrReused},
-		"account mismatch":          {"offer.coins_tier1", purchase.PlatformGoogle, "tok-other", purchase.ErrAccount},
-		"product mismatch":          {"offer.coins_tier1", purchase.PlatformGoogle, "tok-wrong-product", purchase.ErrProduct},
-		"cancelled":                 {"offer.coins_tier1", purchase.PlatformGoogle, "tok-cancelled", purchase.ErrCancelled},
-		"unknown receipt":           {"offer.coins_tier1", purchase.PlatformGoogle, "tok-nope", purchase.ErrNotFound},
-		"store down":                {"offer.coins_tier1", purchase.PlatformGoogle, "tok-down", purchase.ErrStore},
-		"sandbox":                   {"offer.coins_tier1", purchase.PlatformGoogle, "tok-sandbox", purchase.ErrEnvironment},
-		"platform":                  {"offer.coins_tier1", purchase.PlatformApple, "tok-other", purchase.ErrPlatform},
+		"account mismatch":          {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-other", purchase.ErrAccount},
+		"product mismatch":          {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-wrong-product", purchase.ErrProduct},
+		"cancelled":                 {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-cancelled", purchase.ErrCancelled},
+		"unknown receipt":           {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-nope", purchase.ErrNotFound},
+		"store down":                {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-down", purchase.ErrStore},
+		"sandbox":                   {"offer.crystals_tier1", purchase.PlatformGoogle, "tok-sandbox", purchase.ErrEnvironment},
+		"platform":                  {"offer.crystals_tier1", purchase.PlatformApple, "tok-other", purchase.ErrPlatform},
 		"unknown offer":             {"offer.missing", purchase.PlatformGoogle, "tok-other", shop.ErrUnknownOffer},
-		"coin offer":                {"offer.avatar_comet_fox", purchase.PlatformGoogle, "tok-other", shop.ErrCoinsOnly},
+		"coin offer":                {"offer.avatar_comet_fox", purchase.PlatformGoogle, "tok-other", shop.ErrInGameOnly},
 		"pass offer":                {"offer.pass_premium", purchase.PlatformGoogle, "tok-other", shop.ErrUnsupported},
 	}
 	for name, c := range cases {
@@ -228,22 +228,22 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	f := newFixture(t, purchase.DefaultConfig())
 	ctx := context.Background()
 	ayla := f.account(t)
-	f.receipt("tok-p", "coins_tier1", ayla, purchase.StatePending)
-	result, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-p", now)
+	f.receipt("tok-p", "crystals_tier1", ayla, purchase.StatePending)
+	result, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now)
 	if err != nil || result.State != purchase.RecordPending || result.Grant != nil {
 		t.Fatalf("pending result %+v %v", result, err)
 	}
-	if again, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || again.State != purchase.RecordPending {
+	if again, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || again.State != purchase.RecordPending {
 		t.Fatalf("pending again %+v %v", again, err)
 	}
 	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 0 || f.state(t, "tok-p") != purchase.RecordPending || len(f.google.finished) != 0 {
 		t.Fatalf("pending purchase granted: balance %d state %s", balance, f.state(t, "tok-p"))
 	}
-	notice := purchase.Notice{ID: "m-1", Kind: purchase.KindPurchased, TransactionID: "tok-p", ProductID: "coins_tier1"}
+	notice := purchase.Notice{ID: "m-1", Kind: purchase.KindPurchased, TransactionID: "tok-p", ProductID: "crystals_tier1"}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || handled {
 		t.Fatalf("notice while the store still says pending %v %v", handled, err)
 	}
-	f.receipt("tok-p", "coins_tier1", ayla, purchase.StatePurchased)
+	f.receipt("tok-p", "crystals_tier1", ayla, purchase.StatePurchased)
 	notice.ID = "m-2"
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || !handled {
 		t.Fatalf("purchased notice %v %v", handled, err)
@@ -260,15 +260,15 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if _, err := f.store.Notice(ctx, purchase.PlatformGoogle, purchase.Notice{Kind: purchase.KindRefund, TransactionID: "tok-p"}, now); !errors.Is(err, purchase.ErrMalformed) {
 		t.Fatalf("notice without an id: %v", err)
 	}
-	f.receipt("tok-c", "coins_tier1", ayla, purchase.StatePending)
-	if _, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-c", now); err != nil {
+	f.receipt("tok-c", "crystals_tier1", ayla, purchase.StatePending)
+	if _, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-c", now); err != nil {
 		t.Fatal(err)
 	}
-	f.receipt("tok-c", "coins_tier1", ayla, purchase.StateCancelled)
+	f.receipt("tok-c", "crystals_tier1", ayla, purchase.StateCancelled)
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, purchase.Notice{ID: "m-4", Kind: purchase.KindPurchased, TransactionID: "tok-c"}, now); err != nil || !handled || f.state(t, "tok-c") != purchase.RecordCancelled {
 		t.Fatalf("cancelled pending purchase %v %v %s", handled, err, f.state(t, "tok-c"))
 	}
-	if completed, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || !completed.Repeated || completed.Balance != 1000 || completed.Bonus == nil {
+	if completed, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || !completed.Repeated || completed.Balance != 1000 || completed.Bonus == nil {
 		t.Fatalf("complete after the notice granted %+v %v", completed, err)
 	}
 }
@@ -321,10 +321,10 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if completed, err := f.store.Complete(ctx, ayla, "offer.starter", purchase.PlatformGoogle, "tok-1", now); err != nil || !completed.Repeated || completed.Grant.Key != "purchase:google:tok-1:reversal:v-1" {
 		t.Fatalf("complete after the reversal %+v %v", completed, err)
 	}
-	f.receipt("tok-2", "coins_tier1", ayla, purchase.StatePurchased)
-	f.receipt("tok-3", "coins_tier1", ayla, purchase.StatePurchased)
+	f.receipt("tok-2", "crystals_tier1", ayla, purchase.StatePurchased)
+	f.receipt("tok-3", "crystals_tier1", ayla, purchase.StatePurchased)
 	for _, token := range []string{"tok-2", "tok-3"} {
-		if _, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, token, now); err != nil {
+		if _, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, token, now); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := f.store.Notice(ctx, purchase.PlatformGoogle, purchase.Notice{ID: "r-" + token, Kind: purchase.KindRefund, TransactionID: token}, now.Add(3*time.Hour)); err != nil {
@@ -334,11 +334,11 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if blocked, err := f.store.Blocked(ctx, ayla, now.Add(4*time.Hour)); err != nil || !blocked {
 		t.Fatalf("blocked after two refunds %v %v", blocked, err)
 	}
-	f.receipt("tok-4", "coins_tier1", ayla, purchase.StatePurchased)
-	if _, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-4", now.Add(4*time.Hour)); !errors.Is(err, purchase.ErrBlocked) {
+	f.receipt("tok-4", "crystals_tier1", ayla, purchase.StatePurchased)
+	if _, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-4", now.Add(4*time.Hour)); !errors.Is(err, purchase.ErrBlocked) {
 		t.Fatalf("purchase while blocked: %v", err)
 	}
-	if _, err := f.shop.Begin(ctx, ayla, "offer.coins_tier1", now.Add(4*time.Hour)); !errors.Is(err, shop.ErrBlocked) {
+	if _, err := f.shop.Begin(ctx, ayla, "offer.crystals_tier1", now.Add(4*time.Hour)); !errors.Is(err, shop.ErrBlocked) {
 		t.Fatalf("checkout while blocked: %v", err)
 	}
 	view, err := f.shop.View(ctx, ayla, now.Add(4*time.Hour))
