@@ -104,6 +104,7 @@ func TestDefinitionsAreValidated(t *testing.T) {
 		"multi with accounts": func(d *promo.Definition) { d.Accounts = []string{"a"} },
 		"duplicate accounts":  func(d *promo.Definition) { d.Kind, d.Cap, d.Accounts = promo.Targeted, 0, []string{"a", "a"} },
 		"medal":               func(d *promo.Definition) { d.Bundle.Medals = []string{"medal.first"} },
+		"crystals":            func(d *promo.Definition) { d.Bundle.Crystals = 10 },
 		"empty bundle":        func(d *promo.Definition) { d.Bundle = reward.Bundle{ID: "bundle.empty", Revision: 1} },
 		"look-alike in code":  func(d *promo.Definition) { d.Code = "WELC0ME" },
 		"unknown account": func(d *promo.Definition) {

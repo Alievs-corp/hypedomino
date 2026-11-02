@@ -68,6 +68,7 @@ func TestPublishRulesRefuseBrokenMissions(t *testing.T) {
 		{"daily weight zero", func(c *Catalog) { c.Missions[0].Weight = 0 }},
 		{"achievement without a bundle", func(c *Catalog) { c.Missions[len(c.Missions)-1].Bundle = nil }},
 		{"achievement with pass xp", func(c *Catalog) { c.Missions[len(c.Missions)-1].Bundle.PassXP = 100 }},
+		{"achievement with crystals", func(c *Catalog) { c.Missions[len(c.Missions)-1].Bundle.Crystals = 10 }},
 		{"next is not a mission", func(c *Catalog) { c.Missions[len(c.Missions)-1].Next = "mission.nobody" }},
 		{"next is a daily mission", func(c *Catalog) { c.Missions[len(c.Missions)-1].Next = "mission.daily_play_1" }},
 		{"chain loops", func(c *Catalog) { c.Missions[len(c.Missions)-1].Next = "mission.points_10000" }},
