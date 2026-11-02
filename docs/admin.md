@@ -252,15 +252,15 @@ Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use show
 | Field | Rule |
 |---|---|
 | `id` | `offer.<slug>` |
-| `kind` | `cosmetic`, `bundle`, `coins`, `pass`, `pass_levels` |
-| `section` | `featured`, `daily_rotation`, `weekly_rotation`, `event`, `pass`, `coins` (`docs/economy.md` 6.1) |
-| `price` | Coins (integer > 0) or a store product id, never both |
+| `kind` | `cosmetic`, `bundle`, `crystals`, `pass`, `pass_levels` |
+| `section` | `featured`, `daily_rotation`, `weekly_rotation`, `event`, `pass`, `crystals` (`docs/economy.md` 6.1) |
+| `price` | Exactly one of `priceCoins` (integer > 0), `priceCrystals` (integer > 0) or a store `productId` (`docs/economy.md` 6.2) |
 | `bundle` | Bundle id |
 | `window` | Start and optional end, UTC |
 | `limitPerAccount` | Integer or none |
 | `eligibility` | Optional hours since account creation, first purchase only |
 | `nameKey` | Game string for the offer title |
-| `referencePrice` | Optional struck-through price, validated by `docs/economy.md` 6.3 |
+| `referencePrice` | Optional struck-through price in the currency of the price (`referencePriceCoins` or `referencePriceCrystals`), validated by `docs/economy.md` 6.3 |
 | `regionalOverrideNote` | Text; a store-console override needs owner approval (`docs/economy.md` 7.4) |
 
 A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (owner decision O-3).

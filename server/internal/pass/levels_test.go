@@ -26,7 +26,7 @@ func TestBoughtLevelsKeepProgressInsideTheLevelAndChargeOnce(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if purchase.Level != 4 || purchase.XP != 360 || purchase.Price != 600 || purchase.Balance != 20+1000-600+20 {
+		if purchase.Level != 4 || purchase.XP != 360 || purchase.Currency != wallet.Coin || purchase.Price != 600 || purchase.Balance != 20+1000-600+20 {
 			t.Fatalf("purchase = %+v", purchase)
 		}
 	}
@@ -51,5 +51,26 @@ func TestBoughtLevelsKeepProgressInsideTheLevelAndChargeOnce(t *testing.T) {
 	}
 	if got := f.xp(t, account); got != 360 {
 		t.Fatalf("xp after refusals = %d", got)
+	}
+}
+
+func TestLevelsCanBeBoughtWithCrystals(t *testing.T) {
+	f := newFixture(t)
+	account := f.account(t)
+	if _, err := f.wallet.Apply(context.Background(), wallet.Entry{Account: account, Currency: wallet.Crystal, Amount: 100, Reason: wallet.Purchase, Source: wallet.Source{Type: "store", Ref: "t1"}, Key: "purchase:google:t1"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.store.BuyLevels(context.Background(), account, 3, wallet.Crystal, "request-1", now); !errors.Is(err, wallet.ErrInsufficient) {
+		t.Fatalf("three levels for 100 crystals: %v", err)
+	}
+	purchase, err := f.store.BuyLevels(context.Background(), account, 2, wallet.Crystal, "request-2", now)
+	if err != nil || purchase.Currency != wallet.Crystal || purchase.Price != 2*40 || purchase.Balance != 20 || purchase.Level != 3 {
+		t.Fatalf("purchase = %+v, %v", purchase, err)
+	}
+	if got := f.balance(t, account); got != 20+20 {
+		t.Fatalf("coins after a crystal purchase = %d, want the free rewards of levels 1 and 3 only", got)
+	}
+	if _, err := f.store.BuyLevels(context.Background(), account, 1, "gem", "request-3", now); !errors.Is(err, pass.ErrRequest) {
+		t.Fatalf("unknown currency: %v", err)
 	}
 }
