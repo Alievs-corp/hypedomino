@@ -30,6 +30,13 @@ func TestPublishValidatesAndStoresTheSnapshot(t *testing.T) {
 	url, pool := dbtest.Fresh(t)
 	ctx := context.Background()
 	var out bytes.Buffer
+	if err := run(ctx, url, shop.Domain, "../../../docs/economy/examples/shop.json", &out); !errors.Is(err, shop.ErrInvalid) || !strings.Contains(err.Error(), "pool lists unknown item") {
+		t.Fatalf("chest pool before its cosmetics: %v", err)
+	}
+	if err := run(ctx, url, cosmetics.Domain, "../../../docs/cosmetics/examples/catalog.json", &out); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
 	if err := run(ctx, url, shop.Domain, "../../../docs/economy/examples/shop.json", &out); err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +60,7 @@ func TestPublishValidatesAndStoresTheSnapshot(t *testing.T) {
 	if err := run(ctx, url, shop.Domain, filepath.Join(t.TempDir(), "missing.json"), &out); err == nil {
 		t.Fatal("missing file published")
 	}
-	if err := pool.QueryRow(ctx, `select count(*) from config_snapshots`).Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRow(ctx, `select count(*) from config_snapshots`).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("snapshots after refusals %d %v", count, err)
 	}
 }
