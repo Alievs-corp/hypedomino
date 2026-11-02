@@ -216,7 +216,7 @@ func TestARefusedPurchaseGrantsNothing(t *testing.T) {
 	if err := f.pool.QueryRow(ctx, `select count(*) from purchases where account_id = $1`, bora).Scan(&rows); err != nil || rows != 0 {
 		t.Fatalf("rows for the refused account %d %v", rows, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, bora); balance != 0 {
+	if balance, _ := f.wallet.Balance(ctx, bora, wallet.Coin); balance != 0 {
 		t.Fatalf("balance %d", balance)
 	}
 	if f.events(t, purchase.EventReuse) != 1 || f.events(t, purchase.EventAccountMatch) != 1 {
@@ -236,7 +236,7 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if again, err := f.store.Complete(ctx, ayla, "offer.coins_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || again.State != purchase.RecordPending {
 		t.Fatalf("pending again %+v %v", again, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 0 || f.state(t, "tok-p") != purchase.RecordPending || len(f.google.finished) != 0 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 0 || f.state(t, "tok-p") != purchase.RecordPending || len(f.google.finished) != 0 {
 		t.Fatalf("pending purchase granted: balance %d state %s", balance, f.state(t, "tok-p"))
 	}
 	notice := purchase.Notice{ID: "m-1", Kind: purchase.KindPurchased, TransactionID: "tok-p", ProductID: "coins_tier1"}
@@ -248,7 +248,7 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || !handled {
 		t.Fatalf("purchased notice %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 1000 || f.state(t, "tok-p") != purchase.RecordGranted {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 1000 || f.state(t, "tok-p") != purchase.RecordGranted {
 		t.Fatalf("after the notice: balance %d state %s", balance, f.state(t, "tok-p"))
 	}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, notice, now); err != nil || handled {
@@ -288,7 +288,7 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, refund, now.Add(time.Hour)); err != nil || !handled {
 		t.Fatalf("refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != -1900 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != -1900 {
 		t.Fatalf("balance after the refund %d", balance)
 	}
 	for _, id := range []string{"avatar.comet_fox", "frame.season_1_top"} {
@@ -312,7 +312,7 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, reversal, now.Add(2*time.Hour)); err != nil || !handled {
 		t.Fatalf("reversal %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != -400 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != -400 {
 		t.Fatalf("balance after the reversal %d", balance)
 	}
 	if owned, _ := f.inventory.Owns(ctx, ayla, "avatar.comet_fox"); !owned || f.state(t, "tok-1") != purchase.RecordGranted || f.events(t, purchase.EventReversed) != 1 {

@@ -48,7 +48,7 @@ func newRewardFixture(t *testing.T) *rewardFixture {
 
 func (f *rewardFixture) balance(t *testing.T, account string) int64 {
 	t.Helper()
-	balance, err := f.wallet.Balance(context.Background(), account)
+	balance, err := f.wallet.Balance(context.Background(), account, wallet.Coin)
 	if err != nil {
 		t.Fatal(err)
 	}

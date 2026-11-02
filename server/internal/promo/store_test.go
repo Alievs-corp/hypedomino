@@ -104,6 +104,7 @@ func TestDefinitionsAreValidated(t *testing.T) {
 		"multi with accounts": func(d *promo.Definition) { d.Accounts = []string{"a"} },
 		"duplicate accounts":  func(d *promo.Definition) { d.Kind, d.Cap, d.Accounts = promo.Targeted, 0, []string{"a", "a"} },
 		"medal":               func(d *promo.Definition) { d.Bundle.Medals = []string{"medal.first"} },
+		"crystals":            func(d *promo.Definition) { d.Bundle.Crystals = 10 },
 		"empty bundle":        func(d *promo.Definition) { d.Bundle = reward.Bundle{ID: "bundle.empty", Revision: 1} },
 		"look-alike in code":  func(d *promo.Definition) { d.Code = "WELC0ME" },
 		"unknown account": func(d *promo.Definition) {
@@ -142,7 +143,7 @@ func TestAMultiUseCodeGrantsOncePerAccountUpToItsCap(t *testing.T) {
 	if redemption.Promo != "promo.welcome" || redemption.Campaign != "campaign.launch_week" || redemption.Grant.Coins != 300 || redemption.Grant.Key != "promo:promo.welcome:"+a {
 		t.Fatalf("redemption %+v", redemption)
 	}
-	if balance, _ := f.wallet.Balance(context.Background(), a); balance != 300 {
+	if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != 300 {
 		t.Fatalf("balance %d", balance)
 	}
 	if _, err := f.store.Redeem(context.Background(), a, "HYPE2345", now.Add(time.Minute)); !errors.Is(err, promo.ErrAlreadyRedeemed) {
@@ -336,7 +337,7 @@ func TestDisabledAndOutOfWindowCodesAreRefused(t *testing.T) {
 	if _, err := f.store.Redeem(context.Background(), a, created.Plaintext, now); !errors.Is(err, promo.ErrDisabled) {
 		t.Fatalf("disabled: %v", err)
 	}
-	if balance, _ := f.wallet.Balance(context.Background(), a); balance != 0 {
+	if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != 0 {
 		t.Fatalf("balance %d", balance)
 	}
 }

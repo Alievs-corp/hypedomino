@@ -145,7 +145,7 @@ func TestACoinPurchaseIsAtomicIdempotentAndLimited(t *testing.T) {
 	if _, err := f.store.Buy(ctx, account, "offer.avatar_comet_fox", "r2", now); !errors.Is(err, shop.ErrLimit) {
 		t.Fatalf("second purchase of a limited offer: %v", err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, account); balance != 4600 {
+	if balance, _ := f.wallet.Balance(ctx, account, wallet.Coin); balance != 4600 {
 		t.Fatalf("balance after refusals %d", balance)
 	}
 	view, err := f.store.View(ctx, account, now)
@@ -179,7 +179,7 @@ func TestARefusedPurchaseWritesNothing(t *testing.T) {
 	if _, err := f.engine.Get(ctx, poor, "shop:r1"); !errors.Is(err, reward.ErrUnknownGrant) {
 		t.Fatalf("grant after a refused purchase: %v", err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, poor); balance != 100 {
+	if balance, _ := f.wallet.Balance(ctx, poor, wallet.Coin); balance != 100 {
 		t.Fatalf("balance %d", balance)
 	}
 	cases := map[string]struct {

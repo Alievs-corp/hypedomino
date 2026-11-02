@@ -22,7 +22,7 @@ var (
 
 type Spender interface {
 	ApplyIn(ctx context.Context, tx pgx.Tx, entry wallet.Entry, now time.Time) (wallet.Applied, error)
-	BalanceIn(ctx context.Context, q wallet.Querier, account string) (int64, error)
+	BalanceIn(ctx context.Context, q wallet.Querier, account string, currency wallet.Currency) (int64, error)
 }
 
 type LevelPurchase struct {
@@ -95,7 +95,7 @@ func (s *Store) BuyLevels(ctx context.Context, account string, count int, reques
 		return LevelPurchase{}, err
 	}
 	purchase.XP, purchase.Level, purchase.Repeated = progress.XP, season.Curve.LevelFor(progress.XP), repeated
-	if purchase.Balance, err = s.wallet.BalanceIn(ctx, tx, account); err != nil {
+	if purchase.Balance, err = s.wallet.BalanceIn(ctx, tx, account, wallet.Coin); err != nil {
 		return LevelPurchase{}, err
 	}
 	return purchase, tx.Commit(ctx)

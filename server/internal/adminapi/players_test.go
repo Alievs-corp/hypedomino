@@ -64,7 +64,7 @@ func TestSupportFindsAPlayerAndEveryRecordViewIsAudited(t *testing.T) {
 	ledger := body["ledger"].([]any)
 	if player["nickname"] != "Kamal_Star" || player["emails"].([]any)[0] != "Kamal@Mail.example" || player["identities"] != nil ||
 		len(history) != 1 || history[0].(map[string]any)["nickname"] != "OldName" ||
-		body["balance"] != float64(250) || len(ledger) != 1 || ledger[0].(map[string]any)["reason"] != "match_reward" {
+		body["coins"] != float64(250) || body["crystals"] != float64(0) || len(ledger) != 1 || ledger[0].(map[string]any)["reason"] != "match_reward" {
 		t.Fatalf("record %v", body)
 	}
 	status, body = a.call("GET", "/admin/players/"+id, root, nil)

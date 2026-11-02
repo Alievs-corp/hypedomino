@@ -59,7 +59,7 @@ func TestMatchCoinsStopAtTheDailyCapAndTheFirstWinPaysOncePerDay(t *testing.T) {
 	if err != nil || nextDay.Coins != 30 || nextDay.FirstWin != 100 {
 		t.Fatalf("next economy day %+v, %v", nextDay, err)
 	}
-	if balance, err := walletStore.Balance(ctx, account); err != nil || balance != 630 {
+	if balance, err := walletStore.Balance(ctx, account, wallet.Coin); err != nil || balance != 630 {
 		t.Fatalf("balance %d, %v", balance, err)
 	}
 }

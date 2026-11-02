@@ -118,7 +118,7 @@ func TestAMatchCompletesMissionsAndGrantsThemOnce(t *testing.T) {
 	if err != nil || len(completed) != 2 {
 		t.Fatalf("completed %v, %v", completed, err)
 	}
-	if balance, err := f.wallet.Balance(context.Background(), account); err != nil || balance != 130 {
+	if balance, err := f.wallet.Balance(context.Background(), account, wallet.Coin); err != nil || balance != 130 {
 		t.Fatalf("balance %d, %v, want 30 slot coins and 100 achievement coins", balance, err)
 	}
 	if completed, err := f.store.ApplyMatch(context.Background(), account, "m1", rankedWin, now); err != nil || len(completed) != 0 {
@@ -213,7 +213,7 @@ func TestAChainCompletesEveryThresholdAlreadyPassed(t *testing.T) {
 	if err != nil || len(completed) != 1 || completed[0] != "mission.win_2" {
 		t.Fatalf("completed %v, %v", completed, err)
 	}
-	if balance, err := f.wallet.Balance(context.Background(), account); err != nil || balance != 30 {
+	if balance, err := f.wallet.Balance(context.Background(), account, wallet.Coin); err != nil || balance != 30 {
 		t.Fatalf("balance %d, %v", balance, err)
 	}
 }

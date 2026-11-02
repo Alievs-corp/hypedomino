@@ -229,7 +229,7 @@ func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Ca
 	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, bonusKey, now); err != nil {
 		return Result{}, err
 	}
-	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account)
+	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Coin)
 	if err != nil {
 		return Result{}, err
 	}
@@ -259,7 +259,7 @@ func (s *Store) load(ctx context.Context, tx pgx.Tx, r record) (Result, error) {
 		}
 		result.Bonus = &bonus
 	}
-	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account)
+	balance, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Coin)
 	if err != nil {
 		return Result{}, err
 	}

@@ -52,6 +52,11 @@ func TestPublishRulesRefuseBrokenSeasons(t *testing.T) {
 			b.Medals = []string{"medal.wins_50"}
 			s.Seasons[0].Free[1] = b
 		}},
+		{"free track bundle with crystals", func(s *Snapshot) {
+			b := s.Seasons[0].Free[1]
+			b.Crystals = 10
+			s.Seasons[0].Free[1] = b
+		}},
 		{"track bundle with pass xp", func(s *Snapshot) {
 			b := s.Seasons[0].Premium[2]
 			b.PassXP = 100

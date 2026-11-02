@@ -17,6 +17,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
+	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 func withPass(t *testing.T, f *fixture) *pass.Store {
@@ -85,7 +86,7 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, refund, now.Add(time.Hour)); err != nil || !handled {
 		t.Fatalf("refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 40 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40 {
 		t.Fatalf("balance after the refund %d, want 40", balance)
 	}
 	if state, err := passes.Premium(ctx, ayla, now); err != nil || state.Premium {
@@ -98,14 +99,14 @@ func TestAPremiumPurchaseUnlocksThePremiumRewardsAlreadyReachedOnce(t *testing.T
 	if state, err := passes.Premium(ctx, ayla, now); err != nil || !state.Premium || state.Level != 4 {
 		t.Fatalf("premium after the reversal %+v, %v", state, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 40+40 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40+40 {
 		t.Fatalf("balance after the reversal %d, want the premium levels back", balance)
 	}
 	second := purchase.Notice{ID: "r-pass-2", Kind: purchase.KindRefund, TransactionID: "tok-pass"}
 	if handled, err := f.store.Notice(ctx, purchase.PlatformGoogle, second, now.Add(3*time.Hour)); err != nil || !handled {
 		t.Fatalf("second refund %v %v", handled, err)
 	}
-	if balance, _ := f.wallet.Balance(ctx, ayla); balance != 40 {
+	if balance, _ := f.wallet.Balance(ctx, ayla, wallet.Coin); balance != 40 {
 		t.Fatalf("balance after the second refund %d, want 40", balance)
 	}
 }

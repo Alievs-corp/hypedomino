@@ -155,7 +155,7 @@ func (s *Store) validate(d Definition) error {
 	case d.Kind != Targeted && len(d.Accounts) > 0:
 		return fail("only a targeted code lists accounts")
 	}
-	if err := d.Bundle.Validate(); err != nil {
+	if err := d.Bundle.ValidateFor(wallet.Promo); err != nil {
 		return fail("%v", err)
 	}
 	if len(d.Bundle.Medals) > 0 {

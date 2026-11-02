@@ -61,7 +61,7 @@ func has(names []string, want string) bool {
 	return false
 }
 
-const head = 28
+const head = 29
 
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
@@ -191,29 +191,41 @@ func TestWalletAndLedgerConstraints(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	ctx := context.Background()
 	a, b := account(t, pool), account(t, pool)
-	if _, err := pool.Exec(ctx, "insert into wallets (account_id, balance) values ($1, -1)", a); err != nil {
+	if _, err := pool.Exec(ctx, "insert into wallets (account_id, currency, balance) values ($1, 'crystal', -1)", a); err != nil {
 		t.Fatalf("a refund may leave a negative balance (migration 00009): %v", err)
 	}
-	if _, err := pool.Exec(ctx, "insert into wallets (account_id) values ($1)", b); err != nil {
+	if _, err := pool.Exec(ctx, "insert into wallets (account_id, currency) values ($1, 'coin')", b); err != nil {
 		t.Fatal(err)
 	}
-	entry := "insert into ledger_entries (account_id, amount, reason, source_type, source_ref, idempotency_key, config_version, balance_after) values ($1, $2, $3, 'match', 'm1', $4, 1, $5)"
-	if _, err := pool.Exec(ctx, entry, a, 50, "match_reward", "match:m1", 50); err != nil {
+	if _, err := pool.Exec(ctx, "insert into wallets (account_id, currency) values ($1, 'crystal')", b); err != nil {
+		t.Fatalf("a second currency is a second wallet row: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "insert into wallets (account_id, currency) values ($1, 'gem')", b); !check(err) {
+		t.Fatalf("an unknown currency accepted: %v", err)
+	}
+	entry := "insert into ledger_entries (account_id, currency, amount, reason, source_type, source_ref, idempotency_key, config_version, balance_after) values ($1, $6, $2, $3, 'match', 'm1', $4, 1, $5)"
+	if _, err := pool.Exec(ctx, entry, a, 50, "match_reward", "match:m1", 50, "coin"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, entry, a, 50, "match_reward", "match:m1", 100); !unique(err) {
+	if _, err := pool.Exec(ctx, entry, a, 50, "match_reward", "match:m1", 100, "coin"); !unique(err) {
 		t.Fatalf("a repeated idempotency key wrote twice: %v", err)
 	}
-	if _, err := pool.Exec(ctx, entry, b, 50, "match_reward", "match:m1", 50); err != nil {
+	if _, err := pool.Exec(ctx, entry, a, 50, "admin_adjust", "match:m1", 50, "crystal"); err != nil {
+		t.Fatalf("the same key in the other currency is another entry: %v", err)
+	}
+	if _, err := pool.Exec(ctx, entry, a, 50, "admin_adjust", "admin:x", 50, "gem"); !check(err) {
+		t.Fatalf("an unknown ledger currency accepted: %v", err)
+	}
+	if _, err := pool.Exec(ctx, entry, b, 50, "match_reward", "match:m1", 50, "coin"); err != nil {
 		t.Fatalf("the same key on another account is another grant: %v", err)
 	}
-	if _, err := pool.Exec(ctx, entry, a, 500, "purchase", "purchase:play:tx-1", 550); err != nil {
+	if _, err := pool.Exec(ctx, entry, a, 500, "purchase", "purchase:play:tx-1", 550, "coin"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, entry, b, 500, "purchase", "purchase:play:tx-1", 550); !unique(err) {
+	if _, err := pool.Exec(ctx, entry, b, 500, "purchase", "purchase:play:tx-1", 550, "coin"); !unique(err) {
 		t.Fatalf("a purchase transaction credited to two accounts: %v", err)
 	}
-	if _, err := pool.Exec(ctx, entry, a, -2000, "refund_revoke", "refund:play:n1", -1450); err != nil {
+	if _, err := pool.Exec(ctx, entry, a, -2000, "refund_revoke", "refund:play:n1", -1450, "coin"); err != nil {
 		t.Fatalf("a refund revoke below zero refused (migration 00009): %v", err)
 	}
 }
