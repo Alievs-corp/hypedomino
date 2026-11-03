@@ -85,7 +85,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_NICKNAME_ALLOW_MIXED_SCRIPT` | No | server | `false` | `false` | No | from #59 |
 | `HD_NICKNAME_RENAME_COOLDOWN` | No | server | `720h` | `720h` | No | from #59 |
 | `HD_NICKNAME_RELEASE` | No | server | `720h` | `720h` | No | from #59 |
-| `HD_COSMETICS_MANIFEST` | No | server | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61 |
+| `HD_COSMETICS_MANIFEST` | No | server, admin-api | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61; admin-api from #142, for the `mythic` check of promo codes |
 | `HD_EMOJI_SLOTS` | No | server | `6` | `6` | No | from #61 |
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
 | `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
@@ -127,19 +127,19 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_DEVICE_RISK_WEIGHT` | No | server | `5` | `5` | No | from #205 |
 | `HD_REFUNDS_BEFORE_PURCHASE_BLOCK` | No | server | `3` | `3` | No | from #106 |
 | `HD_REFUND_WINDOW_DAYS` | No | server | `365` | `365` | No | from #106 |
-| `HD_PROMO_KEY` | No | server | empty (promo redemption off, 503 `promo.unavailable`) | `<random-32-bytes>` | Yes | from #108; `cmd/promo` needs the same key |
-| `HD_PROMO_CODE_LENGTH` | No | server | `12` | `12` | No | from #108 |
-| `HD_PROMO_MAX_VALIDITY_DAYS` | No | server | `90` | `90` | No | from #108 |
+| `HD_PROMO_KEY` | No | server, admin-api | empty (promo redemption off, 503 `promo.unavailable`; admin promo routes answer `not_configured`) | `<random-32-bytes>` | Yes | from #108; `cmd/promo` and admin-api (#142) need the same key |
+| `HD_PROMO_CODE_LENGTH` | No | server, admin-api | `12` | `12` | No | from #108 |
+| `HD_PROMO_MAX_VALIDITY_DAYS` | No | server, admin-api | `90` | `90` | No | from #108 |
 | `HD_PROMO_ATTEMPTS_PER_HOUR` | No | server | `10` | `10` | No | from #108 |
 | `HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK` | No | server | `5` | `5` | No | from #108 |
 | `HD_PROMO_LOCK_MINUTES` | No | server | `60` | `60` | No | from #108 |
-| `HD_PROMO_COINS_APPROVAL_THRESHOLD` | No | server | `2000` | `2000` | No | from #108 |
+| `HD_PROMO_COINS_APPROVAL_THRESHOLD` | No | server, admin-api | `2000` | `2000` | No | from #108 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|

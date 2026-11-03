@@ -96,6 +96,8 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request, p principal) {
 			return h.grantSuperAdmin(r.Context(), tx, p, approved, note, now)
 		case approval.PlayerGrant:
 			return h.grantPlayerCoins(r.Context(), tx, p, approved, note, now)
+		case approval.PromoCode:
+			return h.activatePromo(r.Context(), tx, p, approved, note, now)
 		}
 		return errUnsupportedKind
 	})
@@ -145,8 +147,15 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, p principal) {
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
 		var err error
 		rejected, err = h.approvals.In(tx).Reject(r.Context(), id, p.actor(), now)
-		entry := audit.Entry{Action: "reject", Object: rejected.Object, After: rejected.Change, Reason: note.Reason, Ref: note.Ref}
-		return []audit.Entry{entry}, err
+		if err != nil {
+			return nil, err
+		}
+		entries := []audit.Entry{{Action: "reject", Object: rejected.Object, After: rejected.Change, Reason: note.Reason, Ref: note.Ref}}
+		if rejected.Kind != approval.PromoCode {
+			return entries, nil
+		}
+		discarded, err := h.discardPromo(r.Context(), tx, rejected, now)
+		return append(entries, discarded), err
 	})
 	if err != nil {
 		h.refuse(w, err)

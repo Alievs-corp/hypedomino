@@ -8,6 +8,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
@@ -64,6 +65,30 @@ func TestConfigNamesEveryMissingOrInvalidValue(t *testing.T) {
 	for _, name := range []string{"HD_DATABASE_URL", "HD_ADMIN_ENVIRONMENT", "HD_ADMIN_GOOGLE_DOMAIN", "HD_ADMIN_GOOGLE_AUDIENCES", "HD_ADMIN_SESSION_MAX", "HD_SHOP_WEEKLY_SLOTS", "HD_SHOP_RESET_HOUR_UTC", "HD_ADMIN_GRANT_APPROVAL_COINS", "HD_TEMP_BAN_HOURS", "HD_ADMIN_RATE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error %q does not name %s", err, name)
+		}
+	}
+}
+
+func TestConfigTakesPromoCodesOnlyWithTheirKey(t *testing.T) {
+	base := map[string]string{"HD_DATABASE_URL": "postgres://admin", "HD_ADMIN_ENVIRONMENT": "staging", "HD_ADMIN_GOOGLE_DOMAIN": "example.com", "HD_ADMIN_GOOGLE_AUDIENCES": "web"}
+	with := func(extra map[string]string) map[string]string {
+		merged := map[string]string{}
+		for key, value := range base {
+			merged[key] = value
+		}
+		for key, value := range extra {
+			merged[key] = value
+		}
+		return merged
+	}
+	got, err := configFromEnv(env(with(map[string]string{"HD_PROMO_KEY": strings.Repeat("k", 32), "HD_PROMO_COINS_APPROVAL_THRESHOLD": "500"})))
+	if err != nil || got.api.Promo.CoinsApprovalThreshold != 500 || got.api.Promo.CodeLength != promo.DefaultConfig().CodeLength || got.api.Cosmetics == nil {
+		t.Fatalf("config %+v, %v", got.api, err)
+	}
+	_, err = configFromEnv(env(with(map[string]string{"HD_PROMO_KEY": "short", "HD_PROMO_CODE_LENGTH": "3", "HD_COSMETICS_MANIFEST": "missing.json"})))
+	for _, name := range []string{"HD_PROMO_KEY", "HD_PROMO_*", "HD_COSMETICS_MANIFEST"} {
+		if err == nil || !strings.Contains(err.Error(), name) {
+			t.Errorf("error %v does not name %s", err, name)
 		}
 	}
 }
