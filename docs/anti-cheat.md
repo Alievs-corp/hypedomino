@@ -103,6 +103,8 @@ Implemented in `server/internal/purchase` with `server/internal/risk` (#204). A 
 | Response | Block the frame. Flag when MAC failures exceed `MacFailureThreshold` in `MacFailureWindowMinutes` |
 | Issues | #207, #202, #212 |
 
+Request MACs are implemented in `server/internal/token` and `server/internal/risk` (#207). Sign-in and refresh return a `request_key` next to the access token: 32 bytes, standard base64, derived on the server as HMAC-SHA256 with the key that signed the access token over `hd-request-mac`, a zero byte and the session id. It is never stored and stays the same for the session until the signing key rotates; the next refresh then returns the new one. Every POST, PUT, PATCH or DELETE to `/shop`, `/shop/complete`, `/inventory`, `/daily-login`, `/pass`, `/medals`, `/missions` and `/promo/redeem` carries `X-HD-Mac`: unpadded base64url of HMAC-SHA256 with the request key over the method, a newline, the request path with its query, a newline, the access token, a newline and the raw body. A request with a valid access token and a missing or wrong MAC is answered 401 `bad_mac` before the handler runs; a request without a valid access token goes on to the handler, which refuses it as before. Each failure counts for the account; `MacFailureThreshold` (5) failures within `MacFailureWindowMinutes` (10) record a `mac_failure` signal of weight `MacFailureWeight` (5) with the count and window as evidence, at most once per window. Counts live in node memory. Binding the access token limits a captured request to the token lifetime; repeating it inside that time gains nothing because the writes are idempotent (V-8).
+
 ### V-5. Runtime hooking and instrumentation
 
 | | |
@@ -237,7 +239,7 @@ Accepted residual risks:
 | Field | Meaning |
 |---|---|
 | `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag |
-| `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag |
+| `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag (launch defaults 5 and 10) |
 | `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag (launch defaults 5 and 10) |
 | `IntegrityFailureAction` | Block login or flag on failed attestation |
 | `DeviceRiskAction` | Warn, block ranked or flag on a risky device |
@@ -246,7 +248,7 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight`, `ReplayRejectWeight`, `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight`, `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight`, `MacFailureWeight` (launch default 5), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |

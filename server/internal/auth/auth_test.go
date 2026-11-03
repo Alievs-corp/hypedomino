@@ -69,7 +69,7 @@ type fakeTokens struct {
 
 func (f *fakeTokens) Issue(_ context.Context, account, device string) (token.Pair, error) {
 	f.issued = append(f.issued, account+"@"+device)
-	return token.Pair{AccessToken: "access:" + account + ":" + device, RefreshToken: "refresh:" + account + ":1", ExpiresIn: 900, Session: "sid-" + account}, nil
+	return token.Pair{AccessToken: "access:" + account + ":" + device, RefreshToken: "refresh:" + account + ":1", ExpiresIn: 900, Session: "sid-" + account, RequestKey: []byte("key-" + account)}, nil
 }
 
 func (f *fakeTokens) Refresh(_ context.Context, refresh, device string) (token.Pair, error) {
@@ -77,7 +77,7 @@ func (f *fakeTokens) Refresh(_ context.Context, refresh, device string) (token.P
 		return token.Pair{}, err
 	}
 	account, _, _ := strings.Cut(strings.TrimPrefix(refresh, "refresh:"), ":")
-	return token.Pair{AccessToken: "access:" + account + ":" + device, RefreshToken: "refresh:" + account + ":2", ExpiresIn: 900, Session: "sid-" + account}, nil
+	return token.Pair{AccessToken: "access:" + account + ":" + device, RefreshToken: "refresh:" + account + ":2", ExpiresIn: 900, Session: "sid-" + account, RequestKey: []byte("key-" + account)}, nil
 }
 
 func (f *fakeTokens) Logout(_ context.Context, refresh string) error {
@@ -180,7 +180,7 @@ func TestNonceIsIssuedByTheVerifier(t *testing.T) {
 func TestSignInVerifiesTheTokenFindsTheAccountAndIssuesTokens(t *testing.T) {
 	f := newFixture(t)
 	status, body := f.post("/auth/signin", `{"provider":"google","id_token":"good","nonce":"nonce-1","device_id":"install-1"}`)
-	if status != http.StatusOK || body["access_token"] != "access:google-sub-1:install-1" || body["refresh_token"] != "refresh:google-sub-1:1" || body["expires_in"] != float64(900) || body["account_id"] != "google-sub-1" || body["created"] != true {
+	if status != http.StatusOK || body["access_token"] != "access:google-sub-1:install-1" || body["refresh_token"] != "refresh:google-sub-1:1" || body["expires_in"] != float64(900) || body["request_key"] != "a2V5LWdvb2dsZS1zdWItMQ==" || body["account_id"] != "google-sub-1" || body["created"] != true {
 		t.Fatalf("first sign-in answered %d %v", status, body)
 	}
 	status, body = f.post("/auth/signin", `{"provider":"apple","id_token":"good","nonce":"nonce-2","device_id":"install-1"}`)
@@ -239,7 +239,7 @@ func TestSignInRefusalsCarryAStatusAndAReason(t *testing.T) {
 func TestRefreshRotatesThePairAndReportsTheft(t *testing.T) {
 	f := newFixture(t)
 	status, body := f.post("/auth/refresh", `{"refresh_token":"refresh:google-sub-1:1","device_id":"install-1"}`)
-	if status != http.StatusOK || body["access_token"] != "access:google-sub-1:install-1" || body["refresh_token"] != "refresh:google-sub-1:2" || body["account_id"] != "google-sub-1" || body["created"] != nil {
+	if status != http.StatusOK || body["access_token"] != "access:google-sub-1:install-1" || body["refresh_token"] != "refresh:google-sub-1:2" || body["request_key"] != "a2V5LWdvb2dsZS1zdWItMQ==" || body["account_id"] != "google-sub-1" || body["created"] != nil {
 		t.Fatalf("refresh answered %d %v", status, body)
 	}
 	f.tokens.refreshes["stolen"] = token.ErrReused

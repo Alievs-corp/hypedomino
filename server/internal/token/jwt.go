@@ -23,10 +23,11 @@ var (
 )
 
 const (
-	Issuer       = "hypedomino"
-	MinKeyBytes  = 32
-	algorithm    = "HS256"
-	maxTokenSize = 4096
+	Issuer          = "hypedomino"
+	MinKeyBytes     = 32
+	algorithm       = "HS256"
+	maxTokenSize    = 4096
+	requestKeyLabel = "hd-request-mac"
 )
 
 var segment = base64.RawURLEncoding.Strict()
@@ -73,6 +74,7 @@ type Claims struct {
 	Device    string `json:"dev"`
 	IssuedAt  int64  `json:"iat"`
 	ExpiresAt int64  `json:"exp"`
+	KeyID     string `json:"-"`
 }
 
 type header struct {
@@ -146,6 +148,7 @@ func (s *Signer) Verify(token string, now time.Time) (Claims, error) {
 	if json.Unmarshal(body, &claims) != nil || claims.Account == "" || claims.Session == "" {
 		return Claims{}, ErrMalformed
 	}
+	claims.KeyID = head.KeyID
 	if claims.Issuer != Issuer {
 		return Claims{}, ErrIssuer
 	}
@@ -159,4 +162,16 @@ func mac(secret []byte, input string) []byte {
 	h := hmac.New(sha256.New, secret)
 	h.Write([]byte(input))
 	return h.Sum(nil)
+}
+
+func (s *Signer) RequestKey(claims Claims) ([]byte, error) {
+	key, ok := s.keys[claims.KeyID]
+	if !ok {
+		return nil, ErrUnknownKey
+	}
+	return requestKey(key.Secret, claims.Session), nil
+}
+
+func requestKey(secret []byte, session string) []byte {
+	return mac(secret, requestKeyLabel+"\x00"+session)
 }
