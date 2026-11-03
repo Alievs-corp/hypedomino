@@ -250,3 +250,11 @@ func deviceRiskAction(policy Policy, purpose Purpose) Action {
 	}
 	return ActionFlag
 }
+
+func (d Decision) ReasonNames() []string {
+	names := make([]string, len(d.Reasons))
+	for i, reason := range d.Reasons {
+		names[i] = reason.String()
+	}
+	return names
+}

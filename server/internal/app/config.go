@@ -58,6 +58,8 @@ type Config struct {
 	PromoKey        string
 	Risk            risk.Config
 	Integrity       integrity.NonceConfig
+	AppAttest       integrity.AppAttestConfig
+	AppAttestRoot   string
 	RateLimit       ratelimit.Config
 }
 
@@ -295,6 +297,13 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_INTEGRITY_NONCE_TTL", &config.Integrity.TTL)
 	if config.Integrity.TTL <= 0 {
 		r.errs = append(r.errs, errors.New("HD_INTEGRITY_NONCE_TTL: must be positive"))
+	}
+	r.text("HD_APP_ATTEST_TEAM_ID", &config.AppAttest.TeamID)
+	r.text("HD_APP_ATTEST_ROOT_CA", &config.AppAttestRoot)
+	r.flag("HD_APP_ATTEST_DEVELOPMENT", &config.AppAttest.AllowDevelopment)
+	config.AppAttest.BundleID = config.Apple.BundleID
+	if config.AppAttest.TeamID != "" && (config.AppAttestRoot == "" || config.AppAttest.BundleID == "") {
+		r.errs = append(r.errs, errors.New("HD_APP_ATTEST_TEAM_ID: needs HD_APP_ATTEST_ROOT_CA and HD_APPLE_BUNDLE_ID"))
 	}
 	r.text("HD_PROMO_KEY", &config.PromoKey)
 	r.integer("HD_PROMO_CODE_LENGTH", &config.Promo.CodeLength)
