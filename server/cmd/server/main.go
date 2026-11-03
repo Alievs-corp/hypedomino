@@ -16,6 +16,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
+	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -228,9 +229,32 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		pool.Close()
 		return nil, nil, fmt.Errorf("HD_INTEGRITY_NONCE_TTL: %w", err)
 	}
-	a.Handle("POST /integrity/nonce", integrity.NewHandler(tokens, integrityNonces, logger))
+	attestation := integrity.NewHandler(tokens, integrityNonces, logger)
+	if err := enableAppAttest(attestation, config, integrityNonces, pool); err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
+	a.Handle("POST /integrity/", attestation)
 	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
 	return a, pool.Close, nil
+}
+
+func enableAppAttest(handler *integrity.Handler, config app.Config, nonces *integrity.Nonces, pool *pgxpool.Pool) error {
+	if config.AppAttest.TeamID == "" {
+		return nil
+	}
+	root, err := os.ReadFile(config.AppAttestRoot)
+	if err != nil {
+		return fmt.Errorf("HD_APP_ATTEST_ROOT_CA: %w", err)
+	}
+	attestConfig := config.AppAttest
+	attestConfig.RootCertificatePEM = root
+	verifier, err := integrity.NewAppAttest(attestConfig, nonces, systemClock{})
+	if err != nil {
+		return fmt.Errorf("HD_APP_ATTEST_*: %w", err)
+	}
+	handler.EnableAppAttest(verifier, attestkey.NewStore(pool), systemClock{})
+	return nil
 }
 
 func stores(config app.Config) (map[purchase.Platform]purchase.Validator, purchase.Notifier, purchase.Notifier, error) {

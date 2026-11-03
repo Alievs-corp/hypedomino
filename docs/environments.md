@@ -113,6 +113,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PLAY_NOTIFICATION_TOKEN` | With `HD_PLAY_PACKAGE` | server | empty | `<random-32-bytes>` | Yes | from #106 |
 | `HD_APPLE_BUNDLE_ID` | No | server | empty (Apple purchases off) | `com.example.hypedomino` | No | from #106 |
 | `HD_STORE_SANDBOX` | No | server | `false` (`true` in dev and staging) | `false` | No | from #106 |
+| `HD_APP_ATTEST_TEAM_ID` | No | server | empty (App Attest off) | Apple team id | No | from #205 |
+| `HD_APP_ATTEST_ROOT_CA` | With team id | server | empty | path of the Apple App Attestation Root CA PEM | No | from #205 |
+| `HD_APP_ATTEST_DEVELOPMENT` | No | server | `false` (`true` in dev) | `false` | No | from #205 |
 | `HD_REFUNDS_BEFORE_PURCHASE_BLOCK` | No | server | `3` | `3` | No | from #106 |
 | `HD_REFUND_WINDOW_DAYS` | No | server | `365` | `365` | No | from #106 |
 | `HD_PROMO_KEY` | No | server | empty (promo redemption off, 503 `promo.unavailable`) | `<random-32-bytes>` | Yes | from #108; `cmd/promo` needs the same key |
