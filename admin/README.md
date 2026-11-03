@@ -60,10 +60,11 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 
 - **Usage:** per campaign, the codes, how many are active, pending approval or disabled, redemptions against the summed cap, and the window. A campaign links to its codes.
 - **Codes:** the newest 200, or those of one campaign: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
-- **Create (`live_ops`, `super_admin`):** one code of any type, or a batch of up to 10,000 `single_use` codes. The bundle is a bundle id with coins, pass XP and cosmetic item ids. The window is entered in UTC. A `multi_use` code takes a cap and an optional chosen code, and a `targeted` code takes account ids. A reason is required.
+- **Create (`live_ops`, `super_admin`):** one code of any type, or a batch of up to 10,000 `single_use` codes. The bundle is a bundle id with coins, pass XP and cosmetic item ids. The window is entered in UTC. A `multi_use` code takes a cap and an optional chosen code. A `targeted` code starts without accounts. A reason is required.
   - **One code:** its plaintext is shown once.
   - **Batch:** downloads as `<id>.csv` from the browser. Nothing keeps the plaintext afterwards, beyond a "download again" button while the page stays open.
   - **Second admin:** a code above the coin threshold or with a `mythic` item says so and waits in `/approvals`.
+- **Code page `/promo/{id}`:** the code's fields for every role that may view it. `support` also sees who redeemed and when, linked to the player. On a targeted code that is not disabled, `support` edits the account list: ids by line or comma, a reason and a fresh sign-in. The screen keeps the save off while an account that redeemed is missing (`docs/admin.md` 9.1).
 - **Disable (`live_ops`):** a code, or the whole batch from its first listed code. It takes a reason and a fresh sign-in (`StepUpPrompt`) and is immediate.
 
 ## Match rules

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -100,7 +101,6 @@ func TestDefinitionsAreValidated(t *testing.T) {
 		"multi without cap":   func(d *promo.Definition) { d.Cap = 0 },
 		"single with cap":     func(d *promo.Definition) { d.Kind = promo.SingleUse },
 		"single chosen code":  func(d *promo.Definition) { d.Kind, d.Cap, d.Code = promo.SingleUse, 0, "HYPE2345" },
-		"targeted without":    func(d *promo.Definition) { d.Kind, d.Cap = promo.Targeted, 0 },
 		"multi with accounts": func(d *promo.Definition) { d.Accounts = []string{"a"} },
 		"duplicate accounts":  func(d *promo.Definition) { d.Kind, d.Cap, d.Accounts = promo.Targeted, 0, []string{"a", "a"} },
 		"medal":               func(d *promo.Definition) { d.Bundle.Medals = []string{"medal.first"} },
@@ -391,5 +391,54 @@ func TestAnUnlistedSourceWritesNothing(t *testing.T) {
 	}
 	if owns, _ := f.inventory.Owns(context.Background(), a, "avatar.comet_fox"); owns {
 		t.Fatal("item granted")
+	}
+}
+
+func TestSupportListsTheAccountsOfATargetedCode(t *testing.T) {
+	f := newFixture(t, promo.DefaultConfig())
+	ctx := context.Background()
+	a, b, c := f.account(t), f.account(t), f.account(t)
+	created := f.create(t, definition("promo.vip", promo.Targeted, coins))
+	if created.Code.Cap != 0 {
+		t.Fatalf("cap before listing %d", created.Code.Cap)
+	}
+	if _, err := f.store.Redeem(ctx, a, created.Plaintext, now); !errors.Is(err, promo.ErrNotEligible) {
+		t.Fatalf("redeem before listing: %v", err)
+	}
+	change, err := f.store.SetTargets(ctx, "promo.vip", []string{a, b})
+	if err != nil || len(change.Added) != 2 || len(change.Removed) != 0 || change.Count != 2 {
+		t.Fatalf("first list %+v %v", change, err)
+	}
+	if _, err := f.store.Redeem(ctx, a, created.Plaintext, now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.store.SetTargets(ctx, "promo.vip", []string{b}); !errors.Is(err, promo.ErrInvalid) {
+		t.Fatalf("dropping a redeemer: %v", err)
+	}
+	change, err = f.store.SetTargets(ctx, "promo.vip", []string{a, c})
+	if err != nil || !slices.Equal(change.Added, []string{c}) || !slices.Equal(change.Removed, []string{b}) {
+		t.Fatalf("second list %+v %v", change, err)
+	}
+	code, _ := f.store.Get(ctx, "promo.vip")
+	targets, _ := f.store.Targets(ctx, "promo.vip")
+	redeemed, _ := f.store.Redemptions(ctx, "promo.vip")
+	if code.Cap != 2 || len(targets) != 2 || !slices.Contains(targets, c) || len(redeemed) != 1 || redeemed[0].Account != a {
+		t.Fatalf("code %+v targets %v redeemed %v", code, targets, redeemed)
+	}
+	for name, accounts := range map[string][]string{"unknown": {"00000000-0000-0000-0000-000000000000"}, "not an id": {"kamal"}, "repeated": {a, a}} {
+		if _, err := f.store.SetTargets(ctx, "promo.vip", accounts); !errors.Is(err, promo.ErrInvalid) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	f.create(t, func() promo.Definition { d := definition("promo.open", promo.MultiUse, coins); d.Cap = 5; return d }())
+	if _, err := f.store.SetTargets(ctx, "promo.open", []string{a}); !errors.Is(err, promo.ErrInvalid) {
+		t.Fatalf("multi_use: %v", err)
+	}
+	if _, err := f.store.SetTargets(ctx, "promo.none", []string{a}); !errors.Is(err, promo.ErrUnknown) {
+		t.Fatalf("unknown code: %v", err)
+	}
+	f.store.Disable(ctx, "promo.vip", now)
+	if _, err := f.store.SetTargets(ctx, "promo.vip", []string{a}); !errors.Is(err, promo.ErrDisabled) {
+		t.Fatalf("disabled: %v", err)
 	}
 }

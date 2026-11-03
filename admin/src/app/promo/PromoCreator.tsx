@@ -124,12 +124,7 @@ export function PromoCreator() {
             </label>
           </>
         )}
-        {!batch && draft.kind === "targeted" && (
-          <label className={`${labelClass} sm:col-span-2`}>
-            {t("promo.accounts")}
-            <textarea rows={3} value={draft.accounts} onChange={(event) => edit("accounts", event.target.value)} className={fieldClass} />
-          </label>
-        )}
+        {!batch && draft.kind === "targeted" && <p className="text-sm text-text-muted sm:col-span-2">{t("promo.targeted_hint")}</p>}
         <label className={`${labelClass} sm:col-span-2`}>
           {t("promo.reason")}
           <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />

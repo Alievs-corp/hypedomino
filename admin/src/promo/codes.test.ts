@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { batchLeads, bundleOf, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+import { batchLeads, bundleOf, detailPath, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
 
 const draft: PromoDraft = {
   ...emptyDraft,
@@ -32,16 +32,15 @@ test("a multi_use request sends its cap and chosen code in UTC", () => {
   assert.equal(request.end, "2026-11-12T09:00:00Z");
   assert.equal(request.cap, 50);
   assert.equal(request.code, "hype 2345");
-  assert.equal(request.accounts, undefined);
 });
 
 test("single_use, targeted and batch requests leave out what the server sets", () => {
   const single = promoRequest({ ...draft, kind: "single_use" }, false);
   assert.equal(single.cap, undefined);
   assert.equal(single.code, undefined);
-  const targeted = promoRequest({ ...draft, kind: "targeted", accounts: "a1\na2, a1" }, false);
-  assert.deepEqual(targeted.accounts, ["a1", "a2"]);
+  const targeted = promoRequest({ ...draft, kind: "targeted" }, false);
   assert.equal(targeted.cap, undefined);
+  assert.equal("accounts" in targeted, false);
   const batch = promoRequest({ ...draft, count: 500 }, true);
   assert.equal(batch.kind, "single_use");
   assert.equal(batch.count, 500);
@@ -54,7 +53,7 @@ test("a draft is ready with a grant, an ordered window and its kind's fields", (
   assert.equal(draftReady({ ...draft, coins: 0, cosmetics: "" }, false), false);
   assert.equal(draftReady({ ...draft, endMinute: draft.startMinute }, false), false);
   assert.equal(draftReady({ ...draft, cap: 0 }, false), false);
-  assert.equal(draftReady({ ...draft, kind: "targeted", accounts: "" }, false), false);
+  assert.equal(draftReady({ ...draft, kind: "targeted" }, false), true);
   assert.equal(draftReady({ ...draft, count: 10001 }, true), false);
   assert.equal(draftReady({ ...draft, count: 10000 }, true), true);
 });
@@ -86,4 +85,16 @@ test("a promo proposal reads as count, campaign, bundle and window", () => {
 test("each batch offers its disable once, on its first listed code", () => {
   const listed = [{ ...code, id: "promo.solo" }, { ...code, id: "promo.gift_2", batch: "promo.gift" }, { ...code, id: "promo.gift_1", batch: "promo.gift" }, { ...code, id: "promo.mass_1", batch: "promo.mass" }];
   assert.deepEqual([...batchLeads(listed)], ["promo.gift_2", "promo.mass_1"]);
+});
+
+test("detail and account paths encode the id", () => {
+  assert.equal(detailPath("promo.vip"), "/admin/promo-codes/promo.vip");
+  assert.equal(targetsPath("promo.a/b"), "/admin/promo-codes/promo.a%2Fb/accounts");
+});
+
+test("a new account list keeps every account that redeemed", () => {
+  const redeemed = [{ account_id: "a1", redeemed_at: "2026-11-04T10:00:00Z" }];
+  assert.equal(keepsRedeemers(["a1", "a2"], redeemed), true);
+  assert.equal(keepsRedeemers(["a2"], redeemed), false);
+  assert.equal(keepsRedeemers([], []), true);
 });

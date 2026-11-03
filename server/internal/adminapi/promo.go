@@ -33,6 +33,7 @@ const (
 var (
 	errPromoNotConfigured = errors.New("adminapi: promo codes need HD_PROMO_KEY")
 	errBadBatchCount      = fmt.Errorf("adminapi: a batch has 1 to %d codes", MaxPromoBatchCount)
+	errAccountsBySupport  = fmt.Errorf("%w: support lists the accounts of a targeted code", promo.ErrInvalid)
 )
 
 type promoRequest struct {
@@ -135,6 +136,9 @@ func (h *Handler) createPromo(w http.ResponseWriter, r *http.Request, p principa
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
 		if err := h.noted(request.changeNote); err != nil {
 			return nil, err
+		}
+		if len(request.Accounts) > 0 {
+			return nil, errAccountsBySupport
 		}
 		definition, err := request.definition(p.account.ID)
 		if err != nil {

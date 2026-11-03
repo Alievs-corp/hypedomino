@@ -115,6 +115,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
 	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
 	h.mux.HandleFunc("POST /admin/promo-codes/batch", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromoBatch))
+	h.mux.HandleFunc("GET /admin/promo-codes/{id}", h.allowed(rbac.PromoCodes, rbac.View, h.promoDetail))
+	h.mux.HandleFunc("PUT /admin/promo-codes/{id}/accounts", h.allowed(rbac.PromoCodes, rbac.EditTargetedAccounts, h.setPromoTargets))
 	h.mux.HandleFunc("POST /admin/promo-codes/{id}/disable", h.allowed(rbac.PromoCodes, rbac.DisablePromo, h.disablePromo))
 	h.mux.HandleFunc("POST /admin/promo-batches/{id}/disable", h.allowed(rbac.PromoCodes, rbac.DisablePromo, h.disablePromoBatch))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
@@ -366,6 +368,8 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "self_decision"
 	case errors.Is(err, promo.ErrNotActive):
 		return http.StatusConflict, "not_pending"
+	case errors.Is(err, promo.ErrDisabled):
+		return http.StatusConflict, "disabled"
 	case errors.Is(err, errBanNotConfigured), errors.Is(err, errPromoNotConfigured):
 		return http.StatusConflict, "not_configured"
 	case errors.Is(err, errNotBanned):
