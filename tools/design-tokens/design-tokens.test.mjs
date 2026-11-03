@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { checkTokens, contrast, loadSpec, loadTokens, stepForPoints } from "./design-tokens.mjs";
+import { checkTokens, contrast, csharpPath, csharpTokens, loadSpec, loadTokens, stepForPoints } from "./design-tokens.mjs";
 
 const repoRoot = new URL("../../", import.meta.url);
 const tokens = loadTokens(fileURLToPath(new URL("docs/design-tokens.json", repoRoot)));
@@ -106,4 +107,24 @@ test("score values map to steps with the chain boost capped at the top step", ()
   assert.equal(stepForPoints(tokens, 10, 3), 4);
   assert.equal(stepForPoints(tokens, 10, 7), 4);
   assert.equal(stepForPoints(tokens, 25, 3), 6);
+});
+
+test("the committed C# tokens match the JSON", () => {
+  const committed = readFileSync(fileURLToPath(new URL(csharpPath, repoRoot)), "utf8");
+  assert.equal(committed, csharpTokens(tokens), "run npm run tokens:gen and commit the result");
+});
+
+test("C# tokens carry hex colours, nested names and float easing points", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public static readonly Color32 BackgroundBase = new Color32(0x0D, 0x0B, 0x24, 0xFF);"));
+  assert.ok(source.includes("public static readonly Color32 RoleTeamAFill = new Color32(0x3D, 0x8B, 0xFF, 0xFF);"));
+  assert.ok(source.includes("public const int Md = 16;"));
+  assert.ok(source.includes("public static readonly Vector4 Overshoot = new Vector4(0.34f, 1.56f, 0.64f, 1f);"));
+  assert.ok(!source.includes("Legendary"), "rarity colours come from admin config, not constants");
+});
+
+test("a fractional integer token stops C# generation", () => {
+  const copy = structuredClone(tokens);
+  copy.spacing.md = 16.5;
+  assert.throws(() => csharpTokens(copy), /md: 16\.5 is not an integer/);
 });

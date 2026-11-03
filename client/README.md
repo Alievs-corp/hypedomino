@@ -64,6 +64,10 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 
 `UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
 
+## Design tokens
+
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`) and `TokenMotion`. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+
 ## Pooling and allocations
 
 Anything that spawns more than once is pooled; a match frame allocates 0 B (`docs/performance.md` 3).
