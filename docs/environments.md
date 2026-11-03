@@ -154,6 +154,13 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_GRANT_APPROVAL_COINS` | No | admin-api | `2000` (`AdminGrantApprovalCoins`) | `2000` | No | from #144 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
 
+The admin web server (`admin/`) reads two variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
+
+| Name | Required | Service | Default | Example placeholder | Secret | Source |
+|---|---|---|---|---|---|---|
+| `HD_ADMIN_API_URL` | Yes | admin | none | `http://admin-api:8090` | No | from #364 |
+| `HD_ADMIN_GOOGLE_CLIENT_ID` | Yes | admin | none | `<admin-web-client-id>.apps.googleusercontent.com`, one of `HD_ADMIN_GOOGLE_AUDIENCES` | No | from #134 |
+
 ### 2.3 CI
 
 | Name | Required | Service | Example placeholder | Secret | Stored as |
@@ -164,7 +171,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.4 Not read yet
 
-The admin panel and the client read no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The client reads no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
 
 ## 3. Where secrets live
 
