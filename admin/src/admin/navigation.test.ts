@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { adminApiHeaders, parseReply } from "./forwarding.ts";
-import { canView, visibleScreens, type Screen } from "./navigation.ts";
-import { signInRefusalKey } from "./refusals.ts";
+import { canRollBack, canView, visibleScreens, type Screen } from "./navigation.ts";
+import { needsStepUp, signInRefusalKey, stepUpRefusalKey } from "./refusals.ts";
 
 const shop: Screen = { href: "/shop", labelKey: "nav.shop", object: "shop_offers" };
 const audit: Screen = { href: "/audit", labelKey: "nav.shop", object: "audit_log" };
@@ -52,4 +52,21 @@ test("sign-in refusals map to a message and unknown codes to the generic one", (
   assert.equal(signInRefusalKey("provider_unavailable"), "signin.unavailable");
   assert.equal(signInRefusalKey("rate_limited"), "signin.rate_limited");
   assert.equal(signInRefusalKey("500"), "signin.failed");
+});
+
+test("rollback needs publish on the object and rollback on snapshots, own domains included", () => {
+  assert.equal(canRollBack({ game_config: ["view", "publish"], snapshots: ["rollback_own_domains"] }, "game_config"), true);
+  assert.equal(canRollBack({ game_config: ["view", "publish"], snapshots: ["rollback"] }, "game_config"), true);
+  assert.equal(canRollBack({ game_config: ["view", "publish"], snapshots: ["view"] }, "game_config"), false);
+  assert.equal(canRollBack({ game_config: ["view"], snapshots: ["rollback"] }, "game_config"), false);
+});
+
+test("a step-up succeeds on an empty error and names a different account apart from sign-in refusals", () => {
+  assert.equal(stepUpRefusalKey(""), null);
+  assert.equal(stepUpRefusalKey("different_account"), "stepup.different_account");
+  assert.equal(stepUpRefusalKey("nonce_rejected"), "signin.retry");
+  assert.equal(stepUpRefusalKey("session_rejected"), "signin.failed");
+  assert.equal(needsStepUp("step_up_required"), true);
+  assert.equal(needsStepUp("reason_required"), false);
+  assert.equal(needsStepUp(undefined), false);
 });

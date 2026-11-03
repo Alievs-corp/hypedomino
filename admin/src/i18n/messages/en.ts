@@ -77,4 +77,11 @@ export const en = {
   "rules.published_at": "Published",
   "rules.values": "Values different from the default",
   "rules.all_defaults": "all defaults",
+  "rules.rollback": "Roll back to this version",
+  "rules.rollback_reason": "Reason for the rollback",
+  "rules.rollback_confirm": "Confirm rollback",
+  "rules.rolled_back": "Rolled back as version",
+  "stepup.title": "Confirm it is you",
+  "stepup.explain": "This change needs a recent sign-in. Sign in again with the same company account; the change is then sent again.",
+  "stepup.different_account": "Sign in with the account you are using in the panel.",
 };

@@ -1,3 +1,4 @@
+import { googleClientId } from "@/admin/google";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import { GoogleSignIn } from "./auth/GoogleSignIn";
@@ -25,12 +26,4 @@ export default async function HomePage() {
       )}
     </main>
   );
-}
-
-function googleClientId(): string {
-  const clientId = process.env.HD_ADMIN_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    throw new Error("HD_ADMIN_GOOGLE_CLIENT_ID is not set");
-  }
-  return clientId;
 }
