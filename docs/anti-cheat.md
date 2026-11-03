@@ -164,7 +164,7 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Response | Flag and review. Confirmed collusion: shadowban or temporary ban, rating changes from the affected matches reverted by an admin |
 | Issues | #209, #212; detection details in #183 (Epic 16), #121 (Epic 10), #110 (Epic 9) |
 
-- Implemented in `server/internal/rating` (#121): the repeat limit of the same pair in ranked matchmaking and the `pair_frequency`, `feeding` and `win_trade` pair signals of `docs/ranking.md` section 11, stored in `rating_signals` and published on the `rating_signals` outbox topic with `CollusionWeight` applied by the risk score of #209.
+- Implemented in `server/internal/rating` (#121): the repeat limit of the same pair in ranked matchmaking and the `pair_frequency`, `feeding` and `win_trade` pair signals of `docs/ranking.md` section 11, stored in `rating_signals` and published on the `rating_signals` outbox topic with `CollusionWeight` applied by the risk score of #209. The partner signals `partner_frequency` and `partner_fit` of the same section (#183) watch teammates in 2v2: the first counts how often two accounts were drawn as partners, the second compares how often a player's placements suit the partner's hidden tiles with that partner and with others. Both are stored and published the same way; the matches behind a signal are the ranked 2v2 matches of the pair in the window, which the admin opens in the replay view (D-13) for review.
 
 ### V-10. Automated play
 
