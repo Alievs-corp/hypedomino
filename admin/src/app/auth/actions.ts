@@ -27,6 +27,11 @@ export async function completeSignIn(idToken: string, nonce: string): Promise<Si
   redirect("/");
 }
 
+export async function completeStepUp(idToken: string, nonce: string): Promise<SignInRefusal> {
+  const reply = await adminApi<{ step_up_until: string }>("POST", "/admin/session/step-up", { id_token: idToken, nonce });
+  return { error: reply.status === 200 ? "" : (reply.body.error ?? String(reply.status)) };
+}
+
 export async function signOut(): Promise<void> {
   await adminApi("DELETE", "/admin/session");
   (await cookies()).delete(sessionCookie);

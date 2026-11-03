@@ -79,4 +79,11 @@ export const az: Messages = {
   "rules.published_at": "Nəşr vaxtı",
   "rules.values": "Default-dan fərqli dəyərlər",
   "rules.all_defaults": "hamısı default",
+  "rules.rollback": "Bu versiyaya qaytar",
+  "rules.rollback_reason": "Geri qaytarmanın səbəbi",
+  "rules.rollback_confirm": "Geri qaytarmanı təsdiqlə",
+  "rules.rolled_back": "Geri qaytarıldı, versiya",
+  "stepup.title": "Bunun siz olduğunuzu təsdiqləyin",
+  "stepup.explain": "Bu dəyişiklik üçün təzə giriş lazımdır. Eyni şirkət hesabı ilə yenidən daxil olun; dəyişiklik sonra yenidən göndəriləcək.",
+  "stepup.different_account": "Paneldə istifadə etdiyiniz hesabla daxil olun.",
 };

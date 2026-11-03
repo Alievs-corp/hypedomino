@@ -10,8 +10,16 @@ export const screens: readonly Screen[] = [
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
 ];
 
+export function can(permissions: Permissions, object: string, action: string): boolean {
+  return permissions[object]?.includes(action) ?? false;
+}
+
 export function canView(permissions: Permissions, object: string): boolean {
-  return permissions[object]?.includes("view") ?? false;
+  return can(permissions, object, "view");
+}
+
+export function canRollBack(permissions: Permissions, object: string): boolean {
+  return can(permissions, object, "publish") && (can(permissions, "snapshots", "rollback") || can(permissions, "snapshots", "rollback_own_domains"));
 }
 
 export function visibleScreens(permissions: Permissions, all: readonly Screen[] = screens): Screen[] {

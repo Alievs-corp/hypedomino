@@ -1,0 +1,58 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { needsStepUp } from "@/admin/refusals";
+import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
+import { useTranslator } from "@/i18n/client";
+import { rollbackRules, type RollbackResult } from "./actions";
+
+export function RulesRollback({ version, clientId }: { version: number; clientId: string }) {
+  const t = useTranslator();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [result, setResult] = useState<RollbackResult | null>(null);
+  const [pending, startTransition] = useTransition();
+  const stepUp = result !== null && !result.ok && needsStepUp(result.error);
+
+  function rollBack() {
+    startTransition(async () => {
+      const outcome = await rollbackRules(version, reason);
+      setResult(outcome);
+      if (outcome.ok) {
+        router.refresh();
+      }
+    });
+  }
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="rounded-md bg-surface px-3 py-1 text-text-secondary">
+        {t("rules.rollback")}
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex flex-col gap-1 text-text-secondary">
+        {t("rules.rollback_reason")}
+        <input value={reason} onChange={(event) => setReason(event.target.value)} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
+      </label>
+      <button
+        type="button"
+        disabled={pending || reason.trim() === ""}
+        onClick={rollBack}
+        className="self-start rounded-md bg-primary px-3 py-1 text-on-primary disabled:opacity-40"
+      >
+        {t("rules.rollback_confirm")}
+      </button>
+      {stepUp && <StepUpPrompt clientId={clientId} onConfirmed={rollBack} />}
+      {result && !stepUp && (
+        <p role="status" className="text-text-secondary">
+          {result.ok ? `${t("rules.rolled_back")}: ${result.version}` : `${t("rules.refused")}: ${result.error} ${result.detail}`}
+        </p>
+      )}
+    </div>
+  );
+}

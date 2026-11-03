@@ -1,11 +1,13 @@
 import { adminApi } from "@/admin/api";
-import { canView } from "@/admin/navigation";
+import { googleClientId } from "@/admin/google";
+import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import type { RulesConfig, RulesVersion } from "@/config/rules";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { RulesEditor } from "./RulesEditor";
+import { RulesRollback } from "./RulesRollback";
 
 export const dynamic = "force-dynamic";
 
@@ -34,13 +36,13 @@ export default async function RulesPage() {
         </p>
         <p className="text-sm text-text-secondary">{t("rules.applies_to_new_matches")}</p>
       </div>
-      <RulesEditor keys={config.body.keys} canPublish={admin.permissions.game_config?.includes("publish") ?? false} />
-      <History versions={history.body.versions} t={t} />
+      <RulesEditor keys={config.body.keys} canPublish={can(admin.permissions, "game_config", "publish")} />
+      <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "game_config") ? googleClientId() : null} t={t} />
     </main>
   );
 }
 
-function History({ versions, t }: { versions: RulesVersion[]; t: Translate }) {
+function History({ versions, rollback, t }: { versions: RulesVersion[]; rollback: string | null; t: Translate }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">{t("rules.history")}</h2>
@@ -53,10 +55,11 @@ function History({ versions, t }: { versions: RulesVersion[]; t: Translate }) {
               <th className="py-2 pr-4">{t("rules.version")}</th>
               <th className="py-2 pr-4">{t("rules.published_at")}</th>
               <th className="py-2 pr-4">{t("rules.values")}</th>
+              {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
           <tbody>
-            {versions.map((version) => (
+            {versions.map((version, index) => (
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
@@ -65,6 +68,7 @@ function History({ versions, t }: { versions: RulesVersion[]; t: Translate }) {
                     .map(([key, value]) => `${key}=${value}`)
                     .join(", ") || t("rules.all_defaults")}
                 </td>
+                {rollback && <td className="py-2 pr-4">{index > 0 && <RulesRollback version={version.config_version} clientId={rollback} />}</td>}
               </tr>
             ))}
           </tbody>
