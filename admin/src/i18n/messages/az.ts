@@ -184,4 +184,6 @@ export const az: Messages = {
   "shop.rotation_order": "Slot sırası",
   "shop.rotation_slots": "Ən azı bir, dövrün slot sayından çox olmayan təklif seçin.",
   "shop.rotation_remove": "Bu rotasiyanı sil",
+  "shop.regional_note": "Regional override qeydi",
+  "shop.regional_note_hint": "Yerli qiymətlər mağazalardan gəlir. Bazar üzrə override mağaza konsolunda edilir və sahibin təsdiqini tələb edir; burada qeyd edin.",
 };

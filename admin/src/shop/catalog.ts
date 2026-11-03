@@ -17,6 +17,7 @@ export type Offer = {
   productId?: string;
   referencePriceCoins?: number;
   referencePriceCrystals?: number;
+  regionalOverrideNote?: string;
   bundle?: Bundle;
   window: { start: string; end?: string };
   limitPerAccount?: number;
@@ -87,15 +88,20 @@ export function priceOf(offer: Offer): Price {
 }
 
 export function withPrice(offer: Offer, price: Price): Offer {
-  const { priceCoins, priceCrystals, productId, referencePriceCoins, referencePriceCrystals, ...rest } = offer;
+  const { priceCoins, priceCrystals, productId, referencePriceCoins, referencePriceCrystals, regionalOverrideNote, ...rest } = offer;
   switch (price.currency) {
     case "product":
-      return { ...rest, productId: price.productId };
+      return { ...rest, productId: price.productId, ...(regionalOverrideNote ? { regionalOverrideNote } : {}) };
     case "crystals":
       return { ...rest, priceCrystals: price.amount, ...(referencePriceCrystals ? { referencePriceCrystals } : {}) };
     case "coins":
       return { ...rest, priceCoins: price.amount, ...(referencePriceCoins ? { referencePriceCoins } : {}) };
   }
+}
+
+export function withRegionalNote(offer: Offer, note: string): Offer {
+  const { regionalOverrideNote, ...rest } = offer;
+  return note.trim() ? { ...rest, regionalOverrideNote: note } : rest;
 }
 
 export function replaceOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
