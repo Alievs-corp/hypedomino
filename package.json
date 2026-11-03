@@ -10,6 +10,7 @@
     "lint": "node tools/comment-lint/comment-lint.mjs",
     "lint:proto": "node tools/proto-lint/proto-lint.mjs proto",
     "proto:gen": "buf generate proto --template proto/buf.gen.yaml",
+    "tokens:gen": "node tools/design-tokens/design-tokens.mjs --csharp",
     "test:tools": "node --test \"tools/**/*.test.mjs\""
   }
 }
