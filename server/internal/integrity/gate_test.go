@@ -11,6 +11,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 )
 
 type recordedSignal struct {
@@ -204,5 +206,45 @@ func TestPurchaseGateFailsClosedAndLeavesAuthToTheHandler(t *testing.T) {
 	}
 	if NewGate(Policy{}, f.signals, nil).Enabled() {
 		t.Fatal("a gate without verifiers claims to be enabled")
+	}
+}
+
+func TestSessionStartFollowsThePolicyAndFailsOpen(t *testing.T) {
+	f := newGateFixture(t)
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	lenient := NewGate(lenientPolicy(), f.signals, quiet)
+	lenient.WithPlay(f.play.verify)
+	lenient.WithAppAttest(f.attest.verifier, f.keys)
+	strict := NewGate(strictPolicy(), f.signals, quiet)
+	strict.WithPlay(f.play.verify)
+	nonce := f.attest.issueNonce(t, sessionBinding())
+	assertion := signAssertion(t, f.attest.credential, assertionAuthData(testAppID, 1), []byte(nonce))
+	cases := []struct {
+		name    string
+		gate    *Gate
+		proof   *pb.IntegrityProof
+		allowed bool
+		signals int
+	}{
+		{"genuine android", lenient, &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: f.play.token(t, sessionBinding(), nil)}}, true, 0},
+		{"genuine ios", lenient, &pb.IntegrityProof{Proof: &pb.IntegrityProof_AppAttest{AppAttest: &pb.AppAttestAssertion{KeyId: keyIDOf(t, f.attest.credential), Nonce: nonce, Assertion: assertion}}}, true, 0},
+		{"no proof under a flag policy", lenient, nil, true, 1},
+		{"no proof under a block policy", strict, nil, false, 1},
+		{"purchase token at session start", strict, &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: f.play.token(t, purchaseBinding(), nil)}}, false, 1},
+	}
+	for _, c := range cases {
+		f.signals.signals = nil
+		if allowed := c.gate.SessionStart(t.Context(), "account-1", "session-1", c.proof); allowed != c.allowed || len(f.signals.signals) != c.signals {
+			t.Fatalf("%s: allowed %v signals %+v", c.name, allowed, f.signals.signals)
+		}
+	}
+	down, err := NewPlayIntegrity(PlayIntegrityConfig{PackageName: testPackage, CertificateDigests: []string{releaseDigest}, TokenMaxAge: time.Minute}, stubDecoder{err: errors.New("google down")}, f.play.nonces, f.play.clock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outage := NewGate(strictPolicy(), f.signals, quiet)
+	outage.WithPlay(down)
+	if !outage.SessionStart(t.Context(), "account-1", "session-1", &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: "token"}}) {
+		t.Fatal("an outage refused the session start")
 	}
 }

@@ -159,6 +159,9 @@ func (h *harness) connect(ctx context.Context, conn *Conn, hello *pb.ClientHello
 	if hello.GetSessionToken() == "ok-broken" {
 		return nil, errors.New("storage down")
 	}
+	if hello.GetSessionToken() == "ok-tampered" {
+		return nil, ErrIntegrityFailed
+	}
 	session := &recordingSession{acked: hello.GetLastAckedSequence(), conn: conn, closed: make(chan struct{}), inMatch: hello.GetSessionToken() == "ok-playing"}
 	h.mu.Lock()
 	h.sessions[hello.GetSessionToken()] = session
@@ -673,4 +676,32 @@ func TestFramesWithoutTheConnectionNonceAreRejectedAndCounted(t *testing.T) {
 	if h.session("ok-b").replayCount() != 0 {
 		t.Fatal("the other session was counted")
 	}
+}
+
+func TestTheHelloMayCarryAnIntegrityTokenLargerThanAnIntent(t *testing.T) {
+	config := testConfig()
+	config.MaxFrameBytes = 256
+	config.MaxHelloBytes = 4096
+	h := newHarness(t, config)
+	withToken := func(token string, size int) *pb.Envelope {
+		frame := hello(token, "1.2.3", 1)
+		frame.GetClientHello().Integrity = &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: strings.Repeat("t", size)}}
+		return frame
+	}
+	c := h.dial()
+	c.send(withToken("ok", 3000))
+	if reply := c.recv().GetServerHello(); reply.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
+		t.Fatalf("hello with a token answered %v", reply)
+	}
+	c.sendBytes(make([]byte, 257))
+	c.expectClose(websocket.StatusMessageTooBig)
+	big := h.dial()
+	big.send(withToken("ok", 5000))
+	big.expectClose(websocket.StatusMessageTooBig)
+	tampered := h.dial()
+	tampered.send(withToken("ok-tampered", 10))
+	if code := tampered.recv().GetError().GetCode(); code != pb.ErrorCode_ERROR_CODE_INTEGRITY_FAILED {
+		t.Fatalf("tampered device answered %v", code)
+	}
+	tampered.expectClose(websocket.StatusPolicyViolation)
 }

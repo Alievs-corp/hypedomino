@@ -27,16 +27,17 @@ namespace Hypedomino.V1 {
             "ChloeXBlZG9taW5vL3YxL2Vycm9yLnByb3RvEg1oeXBlZG9taW5vLnYxImIK",
             "BUVycm9yEiwKBGNvZGUYASABKA4yGC5oeXBlZG9taW5vLnYxLkVycm9yQ29k",
             "ZVIEY29kZRIrChFyZWplY3RlZF9zZXF1ZW5jZRgCIAEoBFIQcmVqZWN0ZWRT",
-            "ZXF1ZW5jZSrIAQoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJ",
+            "ZXF1ZW5jZSrpAQoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJ",
             "RUQQABIjCh9FUlJPUl9DT0RFX1VOU1VQUE9SVEVEX1BST1RPQ09MEAESHgoa",
             "RVJST1JfQ09ERV9VTkFVVEhFTlRJQ0FURUQQAhIdChlFUlJPUl9DT0RFX0lM",
             "TEVHQUxfSU5URU5UEAMSGwoXRVJST1JfQ09ERV9SQVRFX0xJTUlURUQQBBIe",
-            "ChpFUlJPUl9DT0RFX1JFUExBWV9SRUpFQ1RFRBAFQsUBChFjb20uaHlwZWRv",
-            "bWluby52MUIKRXJyb3JQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3Jw",
-            "L2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7",
-            "aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21p",
-            "bm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlu",
-            "bzo6VjFiBnByb3RvMw=="));
+            "ChpFUlJPUl9DT0RFX1JFUExBWV9SRUpFQ1RFRBAFEh8KG0VSUk9SX0NPREVf",
+            "SU5URUdSSVRZX0ZBSUxFRBAGQsUBChFjb20uaHlwZWRvbWluby52MUIKRXJy",
+            "b3JQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8v",
+            "c2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3Yx",
+            "ogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBl",
+            "ZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3Rv",
+            "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -54,6 +55,7 @@ namespace Hypedomino.V1 {
     [pbr::OriginalName("ERROR_CODE_ILLEGAL_INTENT")] IllegalIntent = 3,
     [pbr::OriginalName("ERROR_CODE_RATE_LIMITED")] RateLimited = 4,
     [pbr::OriginalName("ERROR_CODE_REPLAY_REJECTED")] ReplayRejected = 5,
+    [pbr::OriginalName("ERROR_CODE_INTEGRITY_FAILED")] IntegrityFailed = 6,
   }
 
   #endregion

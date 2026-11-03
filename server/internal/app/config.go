@@ -190,6 +190,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.text("HD_MIN_APP_VERSION", &config.Gateway.MinimumAppVersion)
 	r.text("HD_CATALOG_VERSION", &config.Gateway.CatalogVersion)
 	r.integer("HD_MAX_FRAME_BYTES", &config.Gateway.MaxFrameBytes)
+	r.integer("HD_MAX_HELLO_BYTES", &config.Gateway.MaxHelloBytes)
 	r.integer("HD_WRITE_QUEUE", &config.Gateway.WriteQueue)
 	r.duration("HD_HELLO_TIMEOUT", &config.Gateway.HelloTimeout)
 	r.duration("HD_WRITE_TIMEOUT", &config.Gateway.WriteTimeout)

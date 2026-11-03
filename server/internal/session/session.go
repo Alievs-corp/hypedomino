@@ -67,6 +67,7 @@ type Manager struct {
 	auth     Authenticator
 	clocks   ClockObserver
 	replays  ReplayObserver
+	checker  IntegrityChecker
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -90,6 +91,14 @@ type ClockObserver interface {
 
 type ReplayObserver interface {
 	Observe(ctx context.Context, account string)
+}
+
+type IntegrityChecker interface {
+	SessionStart(ctx context.Context, account, session string, proof *pb.IntegrityProof) bool
+}
+
+func (m *Manager) CheckIntegrity(checker IntegrityChecker) {
+	m.checker = checker
 }
 
 func (m *Manager) ObserveClocks(observer ClockObserver) {
@@ -230,6 +239,9 @@ func (m *Manager) Revoke(token string) {
 }
 
 func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.ClientHello) (gateway.Session, error) {
+	if !m.startAllowed(ctx, hello) {
+		return nil, gateway.ErrIntegrityFailed
+	}
 	c, err := m.connect(conn, hello)
 	if err != nil {
 		return nil, err
@@ -364,4 +376,22 @@ func (m *Manager) expire(s *Session, generation uint64, due <-chan time.Time) {
 		s.routed = false
 		m.release(s.token)
 	}
+}
+
+func (m *Manager) startAllowed(ctx context.Context, hello *pb.ClientHello) bool {
+	if m.checker == nil || m.auth == nil {
+		return true
+	}
+	account, id, err := m.auth.Authenticate(hello.GetSessionToken())
+	if err != nil || m.known(id) {
+		return true
+	}
+	return m.checker.SessionStart(ctx, account, id, hello.GetIntegrity())
+}
+
+func (m *Manager) known(id string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, ok := m.sessions[id]
+	return ok
 }

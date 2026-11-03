@@ -227,6 +227,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, err
 	}
 	a.Handle("POST /integrity/", attestation)
+	if gate.Enabled() {
+		sessions.CheckIntegrity(gate)
+	}
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
 	a.Handle("POST /shop/complete", critical(guarded(gate, tokens, integrity.PurposePurchase, receipts)))
 	a.Handle("GET /purchases", receipts)

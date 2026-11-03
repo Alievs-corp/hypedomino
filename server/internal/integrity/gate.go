@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
@@ -140,4 +141,24 @@ func proofFrom(r *http.Request) (Proof, error) {
 		return Proof{}, fmt.Errorf("integrity: assertion: %w", err)
 	}
 	return proof, nil
+}
+
+func (g *Gate) SessionStart(ctx context.Context, account, session string, proof *pb.IntegrityProof) bool {
+	binding := Binding{Account: account, Session: session, Purpose: PurposeSessionStart}
+	decision, err := g.Check(ctx, binding, proofFromHello(proof))
+	if err != nil {
+		g.logger.Error("integrity not checked at session start", "account", account, "error", err)
+		return true
+	}
+	if !decision.Allowed() {
+		g.logger.Warn("integrity refused", "account", account, "purpose", binding.Purpose.String(), "reasons", decision.ReasonNames())
+	}
+	return decision.Allowed()
+}
+
+func proofFromHello(proof *pb.IntegrityProof) Proof {
+	if attest := proof.GetAppAttest(); attest != nil {
+		return Proof{KeyID: attest.GetKeyId(), Nonce: attest.GetNonce(), Assertion: attest.GetAssertion()}
+	}
+	return Proof{PlayToken: proof.GetPlayIntegrityToken()}
 }
