@@ -70,3 +70,8 @@ test("a step-up succeeds on an empty error and names a different account apart f
   assert.equal(needsStepUp("reason_required"), false);
   assert.equal(needsStepUp(undefined), false);
 });
+
+test("a screen without an object shows to every signed-in admin", () => {
+  const approvals: Screen = { href: "/approvals", labelKey: "nav.approvals", object: null };
+  assert.deepEqual(visibleScreens({}, [shop, approvals]), [approvals]);
+});
