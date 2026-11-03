@@ -40,6 +40,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_MIN_APP_VERSION` | No | server | `1.0.0` | `1.0.0` | No | from #264 |
 | `HD_CATALOG_VERSION` | No | server | empty | `<catalog-version>` | No | from #264 |
 | `HD_MAX_FRAME_BYTES` | No | server | `1024` | `1024` | No | from #264 |
+| `HD_MAX_HELLO_BYTES` | No | server | `8192` | `8192` | No | from #205 |
 | `HD_WRITE_QUEUE` | No | server | `32` | `32` | No | from #264 |
 | `HD_HELLO_TIMEOUT` | No | server | `5s` | `5s` | No | from #264 |
 | `HD_WRITE_TIMEOUT` | No | server | `5s` | `5s` | No | from #264 |

@@ -17,6 +17,7 @@ const ProtocolVersion = 1
 
 var (
 	ErrUnauthenticated = errors.New("gateway: session token rejected")
+	ErrIntegrityFailed = errors.New("gateway: device integrity check failed")
 	ErrSlowConsumer    = errors.New("gateway: write queue full")
 	ErrClosed          = errors.New("gateway: connection closed")
 )
@@ -25,6 +26,7 @@ type Config struct {
 	MinimumAppVersion    string
 	CatalogVersion       string
 	MaxFrameBytes        int
+	MaxHelloBytes        int
 	WriteQueue           int
 	HelloTimeout         time.Duration
 	WriteTimeout         time.Duration
@@ -40,6 +42,7 @@ func DefaultConfig() Config {
 	return Config{
 		MinimumAppVersion:    "1.0.0",
 		MaxFrameBytes:        1024,
+		MaxHelloBytes:        8 * 1024,
 		WriteQueue:           32,
 		HelloTimeout:         5 * time.Second,
 		WriteTimeout:         5 * time.Second,

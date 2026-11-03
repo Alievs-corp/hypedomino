@@ -31,7 +31,7 @@ type Conn struct {
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
-	socket.SetReadLimit(int64(options.Config.MaxFrameBytes))
+	socket.SetReadLimit(int64(max(options.Config.MaxHelloBytes, options.Config.MaxFrameBytes)))
 	return &Conn{
 		socket:  socket,
 		options: options,
@@ -205,10 +205,15 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED, frame.GetSequence(), 0))
 		c.Close(websocket.StatusPolicyViolation, "unauthenticated")
 		return false
+	case errors.Is(err, ErrIntegrityFailed):
+		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_INTEGRITY_FAILED, frame.GetSequence(), 0))
+		c.Close(websocket.StatusPolicyViolation, "integrity failed")
+		return false
 	case err != nil:
 		c.Close(websocket.StatusInternalError, "connect")
 		return false
 	}
+	c.socket.SetReadLimit(int64(c.options.Config.MaxFrameBytes))
 	c.session = session
 	c.nonce = sessionNonce()
 	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked(), session.InMatch())) != nil {

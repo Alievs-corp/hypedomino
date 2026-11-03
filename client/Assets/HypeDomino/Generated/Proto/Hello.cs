@@ -24,7 +24,7 @@ namespace Hypedomino.V1 {
     static HelloReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIsgC",
+            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIoUD",
             "CgtDbGllbnRIZWxsbxIfCgthcHBfdmVyc2lvbhgBIAEoCVIKYXBwVmVyc2lv",
             "bhIdCgpidWlsZF9oYXNoGAIgASgJUglidWlsZEhhc2gSMwoIcGxhdGZvcm0Y",
             "AyABKA4yFy5oeXBlZG9taW5vLnYxLlBsYXRmb3JtUghwbGF0Zm9ybRIdCgpv",
@@ -32,32 +32,41 @@ namespace Hypedomino.V1 {
             "ASgJUgtkZXZpY2VNb2RlbBIjCg1zZXNzaW9uX3Rva2VuGAYgASgJUgxzZXNz",
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
             "a2VkU2VxdWVuY2USLQoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBFIQY2xp",
-            "ZW50VGltZVVuaXhNcyKUAwoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgO",
-            "MhouaHlwZWRvbWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmlt",
-            "dW1fYXBwX3ZlcnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3Nl",
-            "cnZlcl90aW1lX3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoP",
-            "Y2F0YWxvZ192ZXJzaW9uGAQgASgJUg5jYXRhbG9nVmVyc2lvbhIZCghpbl9t",
-            "YXRjaBgFIAEoCFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIb",
-            "Lmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUK",
-            "D2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJh",
-            "Y2tDaGFpblIOZmFsbGJhY2tDaGFpbnMSIwoNc2Vzc2lvbl9ub25jZRgIIAEo",
-            "BlIMc2Vzc2lvbk5vbmNlIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5ndWFnZRgB",
-            "IAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lvbhISCgRo",
-            "YXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3VhZ2UY",
-            "ASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3VhZ2Vz",
-            "KkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExB",
-            "VEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hlbGxvU3Rh",
-            "dHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NU",
-            "QVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlS",
-            "RUQQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0",
-            "aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5h",
-            "bC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVk",
-            "b21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJN",
-            "ZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "ZW50VGltZVVuaXhNcxI7CglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5v",
+            "LnYxLkludGVncml0eVByb29mUglpbnRlZ3JpdHkikQEKDkludGVncml0eVBy",
+            "b29mEjIKFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSABSEnBsYXlJbnRl",
+            "Z3JpdHlUb2tlbhJCCgphcHBfYXR0ZXN0GAIgASgLMiEuaHlwZWRvbWluby52",
+            "MS5BcHBBdHRlc3RBc3NlcnRpb25IAFIJYXBwQXR0ZXN0QgcKBXByb29mIl8K",
+            "EkFwcEF0dGVzdEFzc2VydGlvbhIVCgZrZXlfaWQYASABKAxSBWtleUlkEhQK",
+            "BW5vbmNlGAIgASgJUgVub25jZRIcCglhc3NlcnRpb24YAyABKAxSCWFzc2Vy",
+            "dGlvbiKUAwoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgOMhouaHlwZWRv",
+            "bWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmltdW1fYXBwX3Zl",
+            "cnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3NlcnZlcl90aW1l",
+            "X3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoPY2F0YWxvZ192",
+            "ZXJzaW9uGAQgASgJUg5jYXRhbG9nVmVyc2lvbhIZCghpbl9tYXRjaBgFIAEo",
+            "CFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21p",
+            "bm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUKD2ZhbGxiYWNr",
+            "X2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpblIO",
+            "ZmFsbGJhY2tDaGFpbnMSIwoNc2Vzc2lvbl9ub25jZRgIIAEoBlIMc2Vzc2lv",
+            "bk5vbmNlIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5ndWFnZRgBIAEoCVIIbGFu",
+            "Z3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lvbhISCgRoYXNoGAMgASgJ",
+            "UgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3VhZ2UYASABKAlSCGxh",
+            "bmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3VhZ2VzKkwKCFBsYXRm",
+            "b3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExBVEZPUk1fQU5E",
+            "Uk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKmgKC0hlbGxvU3RhdHVzEhwKGEhF",
+            "TExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NUQVRVU19BQ0NF",
+            "UFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlSRUQQAkLFAQoR",
+            "Y29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9B",
+            "bGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBl",
+            "ZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHK",
+            "Ag1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoC",
+            "Dkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs", "Integrity" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.IntegrityProof), global::Hypedomino.V1.IntegrityProof.Parser, new[]{ "PlayIntegrityToken", "AppAttest" }, new[]{ "Proof" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.AppAttestAssertion), global::Hypedomino.V1.AppAttestAssertion.Parser, new[]{ "KeyId", "Nonce", "Assertion" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains", "SessionNonce" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.StringBundle), global::Hypedomino.V1.StringBundle.Parser, new[]{ "Language", "Version", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
@@ -125,6 +134,7 @@ namespace Hypedomino.V1 {
       sessionToken_ = other.sessionToken_;
       lastAckedSequence_ = other.lastAckedSequence_;
       clientTimeUnixMs_ = other.clientTimeUnixMs_;
+      integrity_ = other.integrity_ != null ? other.integrity_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -230,6 +240,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "integrity" field.</summary>
+    public const int IntegrityFieldNumber = 9;
+    private global::Hypedomino.V1.IntegrityProof integrity_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.IntegrityProof Integrity {
+      get { return integrity_; }
+      set {
+        integrity_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -253,6 +275,7 @@ namespace Hypedomino.V1 {
       if (SessionToken != other.SessionToken) return false;
       if (LastAckedSequence != other.LastAckedSequence) return false;
       if (ClientTimeUnixMs != other.ClientTimeUnixMs) return false;
+      if (!object.Equals(Integrity, other.Integrity)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -268,6 +291,7 @@ namespace Hypedomino.V1 {
       if (SessionToken.Length != 0) hash ^= SessionToken.GetHashCode();
       if (LastAckedSequence != 0UL) hash ^= LastAckedSequence.GetHashCode();
       if (ClientTimeUnixMs != 0UL) hash ^= ClientTimeUnixMs.GetHashCode();
+      if (integrity_ != null) hash ^= Integrity.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -318,6 +342,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(64);
         output.WriteUInt64(ClientTimeUnixMs);
       }
+      if (integrity_ != null) {
+        output.WriteRawTag(74);
+        output.WriteMessage(Integrity);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -360,6 +388,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(64);
         output.WriteUInt64(ClientTimeUnixMs);
       }
+      if (integrity_ != null) {
+        output.WriteRawTag(74);
+        output.WriteMessage(Integrity);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -393,6 +425,9 @@ namespace Hypedomino.V1 {
       }
       if (ClientTimeUnixMs != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(ClientTimeUnixMs);
+      }
+      if (integrity_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Integrity);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -429,6 +464,12 @@ namespace Hypedomino.V1 {
       }
       if (other.ClientTimeUnixMs != 0UL) {
         ClientTimeUnixMs = other.ClientTimeUnixMs;
+      }
+      if (other.integrity_ != null) {
+        if (integrity_ == null) {
+          Integrity = new global::Hypedomino.V1.IntegrityProof();
+        }
+        Integrity.MergeFrom(other.Integrity);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -479,6 +520,13 @@ namespace Hypedomino.V1 {
           }
           case 64: {
             ClientTimeUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 74: {
+            if (integrity_ == null) {
+              Integrity = new global::Hypedomino.V1.IntegrityProof();
+            }
+            input.ReadMessage(Integrity);
             break;
           }
         }
@@ -532,6 +580,580 @@ namespace Hypedomino.V1 {
             ClientTimeUnixMs = input.ReadUInt64();
             break;
           }
+          case 74: {
+            if (integrity_ == null) {
+              Integrity = new global::Hypedomino.V1.IntegrityProof();
+            }
+            input.ReadMessage(Integrity);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class IntegrityProof : pb::IMessage<IntegrityProof>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<IntegrityProof> _parser = new pb::MessageParser<IntegrityProof>(() => new IntegrityProof());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<IntegrityProof> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[1]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public IntegrityProof() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public IntegrityProof(IntegrityProof other) : this() {
+      switch (other.ProofCase) {
+        case ProofOneofCase.PlayIntegrityToken:
+          PlayIntegrityToken = other.PlayIntegrityToken;
+          break;
+        case ProofOneofCase.AppAttest:
+          AppAttest = other.AppAttest.Clone();
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public IntegrityProof Clone() {
+      return new IntegrityProof(this);
+    }
+
+    /// <summary>Field number for the "play_integrity_token" field.</summary>
+    public const int PlayIntegrityTokenFieldNumber = 1;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayIntegrityToken {
+      get { return HasPlayIntegrityToken ? (string) proof_ : ""; }
+      set {
+        proof_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        proofCase_ = ProofOneofCase.PlayIntegrityToken;
+      }
+    }
+    /// <summary>Gets whether the "play_integrity_token" field is set</summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool HasPlayIntegrityToken {
+      get { return proofCase_ == ProofOneofCase.PlayIntegrityToken; }
+    }
+    /// <summary> Clears the value of the oneof if it's currently set to "play_integrity_token" </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearPlayIntegrityToken() {
+      if (HasPlayIntegrityToken) {
+        ClearProof();
+      }
+    }
+
+    /// <summary>Field number for the "app_attest" field.</summary>
+    public const int AppAttestFieldNumber = 2;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.AppAttestAssertion AppAttest {
+      get { return proofCase_ == ProofOneofCase.AppAttest ? (global::Hypedomino.V1.AppAttestAssertion) proof_ : null; }
+      set {
+        proof_ = value;
+        proofCase_ = value == null ? ProofOneofCase.None : ProofOneofCase.AppAttest;
+      }
+    }
+
+    private object proof_;
+    /// <summary>Enum of possible cases for the "proof" oneof.</summary>
+    public enum ProofOneofCase {
+      None = 0,
+      PlayIntegrityToken = 1,
+      AppAttest = 2,
+    }
+    private ProofOneofCase proofCase_ = ProofOneofCase.None;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ProofOneofCase ProofCase {
+      get { return proofCase_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void ClearProof() {
+      proofCase_ = ProofOneofCase.None;
+      proof_ = null;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as IntegrityProof);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(IntegrityProof other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (PlayIntegrityToken != other.PlayIntegrityToken) return false;
+      if (!object.Equals(AppAttest, other.AppAttest)) return false;
+      if (ProofCase != other.ProofCase) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (HasPlayIntegrityToken) hash ^= PlayIntegrityToken.GetHashCode();
+      if (proofCase_ == ProofOneofCase.AppAttest) hash ^= AppAttest.GetHashCode();
+      hash ^= (int) proofCase_;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (HasPlayIntegrityToken) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayIntegrityToken);
+      }
+      if (proofCase_ == ProofOneofCase.AppAttest) {
+        output.WriteRawTag(18);
+        output.WriteMessage(AppAttest);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (HasPlayIntegrityToken) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayIntegrityToken);
+      }
+      if (proofCase_ == ProofOneofCase.AppAttest) {
+        output.WriteRawTag(18);
+        output.WriteMessage(AppAttest);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (HasPlayIntegrityToken) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayIntegrityToken);
+      }
+      if (proofCase_ == ProofOneofCase.AppAttest) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(AppAttest);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(IntegrityProof other) {
+      if (other == null) {
+        return;
+      }
+      switch (other.ProofCase) {
+        case ProofOneofCase.PlayIntegrityToken:
+          PlayIntegrityToken = other.PlayIntegrityToken;
+          break;
+        case ProofOneofCase.AppAttest:
+          if (AppAttest == null) {
+            AppAttest = new global::Hypedomino.V1.AppAttestAssertion();
+          }
+          AppAttest.MergeFrom(other.AppAttest);
+          break;
+      }
+
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            PlayIntegrityToken = input.ReadString();
+            break;
+          }
+          case 18: {
+            global::Hypedomino.V1.AppAttestAssertion subBuilder = new global::Hypedomino.V1.AppAttestAssertion();
+            if (proofCase_ == ProofOneofCase.AppAttest) {
+              subBuilder.MergeFrom(AppAttest);
+            }
+            input.ReadMessage(subBuilder);
+            AppAttest = subBuilder;
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            PlayIntegrityToken = input.ReadString();
+            break;
+          }
+          case 18: {
+            global::Hypedomino.V1.AppAttestAssertion subBuilder = new global::Hypedomino.V1.AppAttestAssertion();
+            if (proofCase_ == ProofOneofCase.AppAttest) {
+              subBuilder.MergeFrom(AppAttest);
+            }
+            input.ReadMessage(subBuilder);
+            AppAttest = subBuilder;
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class AppAttestAssertion : pb::IMessage<AppAttestAssertion>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<AppAttestAssertion> _parser = new pb::MessageParser<AppAttestAssertion>(() => new AppAttestAssertion());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<AppAttestAssertion> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AppAttestAssertion() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AppAttestAssertion(AppAttestAssertion other) : this() {
+      keyId_ = other.keyId_;
+      nonce_ = other.nonce_;
+      assertion_ = other.assertion_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AppAttestAssertion Clone() {
+      return new AppAttestAssertion(this);
+    }
+
+    /// <summary>Field number for the "key_id" field.</summary>
+    public const int KeyIdFieldNumber = 1;
+    private pb::ByteString keyId_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pb::ByteString KeyId {
+      get { return keyId_; }
+      set {
+        keyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "nonce" field.</summary>
+    public const int NonceFieldNumber = 2;
+    private string nonce_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Nonce {
+      get { return nonce_; }
+      set {
+        nonce_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "assertion" field.</summary>
+    public const int AssertionFieldNumber = 3;
+    private pb::ByteString assertion_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pb::ByteString Assertion {
+      get { return assertion_; }
+      set {
+        assertion_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as AppAttestAssertion);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(AppAttestAssertion other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (KeyId != other.KeyId) return false;
+      if (Nonce != other.Nonce) return false;
+      if (Assertion != other.Assertion) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (KeyId.Length != 0) hash ^= KeyId.GetHashCode();
+      if (Nonce.Length != 0) hash ^= Nonce.GetHashCode();
+      if (Assertion.Length != 0) hash ^= Assertion.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (KeyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteBytes(KeyId);
+      }
+      if (Nonce.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Nonce);
+      }
+      if (Assertion.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteBytes(Assertion);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (KeyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteBytes(KeyId);
+      }
+      if (Nonce.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Nonce);
+      }
+      if (Assertion.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteBytes(Assertion);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (KeyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(KeyId);
+      }
+      if (Nonce.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Nonce);
+      }
+      if (Assertion.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Assertion);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(AppAttestAssertion other) {
+      if (other == null) {
+        return;
+      }
+      if (other.KeyId.Length != 0) {
+        KeyId = other.KeyId;
+      }
+      if (other.Nonce.Length != 0) {
+        Nonce = other.Nonce;
+      }
+      if (other.Assertion.Length != 0) {
+        Assertion = other.Assertion;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            KeyId = input.ReadBytes();
+            break;
+          }
+          case 18: {
+            Nonce = input.ReadString();
+            break;
+          }
+          case 26: {
+            Assertion = input.ReadBytes();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            KeyId = input.ReadBytes();
+            break;
+          }
+          case 18: {
+            Nonce = input.ReadString();
+            break;
+          }
+          case 26: {
+            Assertion = input.ReadBytes();
+            break;
+          }
         }
       }
     }
@@ -554,7 +1176,7 @@ namespace Hypedomino.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -989,7 +1611,7 @@ namespace Hypedomino.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1261,7 +1883,7 @@ namespace Hypedomino.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

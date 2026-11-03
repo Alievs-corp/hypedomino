@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -582,5 +583,43 @@ func TestAFrameFromAnEarlierConnectionIsCountedForTheAccount(t *testing.T) {
 	defer replays.mu.Unlock()
 	if len(replays.seen) != 1 || replays.seen[0] != "account-X" {
 		t.Fatalf("observed replays %v", replays.seen)
+	}
+}
+
+type integrityLog struct {
+	mu      sync.Mutex
+	allow   bool
+	started []string
+}
+
+func (l *integrityLog) SessionStart(_ context.Context, account, session string, _ *pb.IntegrityProof) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.started = append(l.started, account+"/"+session)
+	return l.allow
+}
+
+func TestOnlyANewSessionIsCheckedForDeviceIntegrity(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	tab.manager.Authenticate(fakeAuthenticator{"jwt-1": {"ayla", "sid-1"}, "jwt-2": {"ayla", "sid-1"}})
+	checks := &integrityLog{}
+	tab.manager.CheckIntegrity(checks)
+	refused := tab.connect("jwt-1", false)
+	if refused.hello.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_INTEGRITY_FAILED || tab.manager.Connected("sid-1") {
+		t.Fatalf("refused start answered %v", refused.hello)
+	}
+	checks.allow = true
+	first := tab.connect("jwt-1", true)
+	first.socket.CloseNow()
+	for tab.manager.Connected("sid-1") {
+		time.Sleep(time.Millisecond)
+	}
+	checks.allow = false
+	tab.connect("jwt-2", true)
+	tab.connect("jwt-bad", false)
+	checks.mu.Lock()
+	defer checks.mu.Unlock()
+	if !slices.Equal(checks.started, []string{"ayla/sid-1", "ayla/sid-1"}) {
+		t.Fatalf("integrity checked for %v", checks.started)
 	}
 }
