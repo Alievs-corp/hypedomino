@@ -624,6 +624,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 - **Sign-in.** The Google ID token must have a trusted audience and the nonce, a verified email, the company Workspace as hosted domain (`hd`) and an email in that domain. The email must belong to an active account (5.18). Unknown and disabled accounts get the same answer, `account_refused`.
 - **Session.** The token is random and only its SHA-256 is stored (`admin_sessions`, migration `00013_admin_sessions`). A request is refused with `session_rejected` when the token is unknown or revoked, when the last request was `AdminSessionIdleMinutes` ago or more, when the session is `AdminSessionMaxHours` old, or when the account has been disabled since. Each answer gives `idle_until`, `expires_at` and `step_up_until`, which is the last sign-in plus `AdminStepUpMinutes`.
+- **Rate limits (#148).** `POST /admin/nonce` and `POST /admin/session` share one bucket per source IP (`AdminRateSignInPerMinute`, burst `AdminRateSignInBurst`), the same address the audit entry records. Every signed-in route takes one bucket per account after the session check (`AdminRateAccountPerMinute`, burst `AdminRateAccountBurst`), so an unknown token gets `session_rejected` and spends nothing. A refused request gets 429 `rate_limited` with `Retry-After` in whole seconds. The buckets live in Redis when `HD_REDIS_URL` is set, so every instance counts together, and in memory otherwise. When Redis fails the request passes and a warning is logged, as on the game server.
 - **Roles.** Every route checks the matrix of 2.3 with the roles the account has at that moment, so a role change counts from the next request. A missing action gets 403 `forbidden`.
 - **Audit.** A change and its audit entry are written in one transaction, so an entry exists exactly when the change does. The entry carries the actor with their roles, the environment of `HD_ADMIN_ENVIRONMENT`, the session id, the user agent and the source IP. Before and after hold `email`, `display_name`, `roles` and `state`. A write may carry `reason` and `ref`. The source IP is the last address of the last `X-Forwarded-For` header, else the connection address. The admin web server therefore sets that header to the browser address it sees.
 - **Game strings.** Approving a value is the review step of 5.15, so it needs P besides E: `content` and `super_admin` approve, `live_ops` saves drafts. The audit object is the key: `create`, `edit` and `retire` hold the key fields, and a value change is `edit`, or `approve` for an approved value, with language, text and status. An import writes one `edit` entry per changed key with reason `import`. A publish is `publish` on `bundle:<language>` with the version and hash. A blocked import or publish answers 422 `blocked` with `problems` (`key`, `error`) and stores nothing.
@@ -641,7 +642,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
   - **Reject.** It writes a `reject` entry.
   - **Errors.** Self-approval gets `self_decision`, a decided proposal `decided` and an expired one `expired`.
 - **First `super_admin`.** `admin-api -bootstrap-email <company email> -bootstrap-name <name>` creates it and exits, only while `admin_accounts` is empty. It locks the table, so two runs cannot both succeed. Its audit entry has actor and session `bootstrap`.
-- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`, `self_decision`; 404 `not_found`; 409 `email_taken`, `grant_by_approval`, `own_account`, `decided`, `expired`, `not_supported`, `insufficient`, `not_configured`, `not_banned`, `no_profile`; 413 `too_large`; 422 `blocked`; 503 `provider_unavailable`.
+- **Errors.** 400 `malformed`, `invalid` (with a `detail` text), `reason_required`; 401 `token_rejected`, `token_expired`, `nonce_rejected`, `session_rejected`; 403 `not_company_account`, `account_refused`, `different_account`, `forbidden`, `step_up_required`, `self_decision`; 404 `not_found`; 409 `email_taken`, `grant_by_approval`, `own_account`, `decided`, `expired`, `not_supported`, `insufficient`, `not_configured`, `not_banned`, `no_profile`; 413 `too_large`; 422 `blocked`; 429 `rate_limited`; 503 `provider_unavailable`.
 
 ## 10. Screens and navigation
 
@@ -690,6 +691,10 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 | `AdminApprovalTtlHours` | 24 | 8 |
 | `AdminGrantApprovalCoins` | 2000, the value of `PromoCoinsApprovalThreshold` | 6.2, 8 |
 | `AdminInactiveDisableDays` | 30 | 5.18 |
+| `AdminRateAccountPerMinute` | 120 | 9.1 |
+| `AdminRateAccountBurst` | 40 | 9.1 |
+| `AdminRateSignInPerMinute` | 10 | 9.1 |
+| `AdminRateSignInBurst` | 10 | 9.1 |
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 

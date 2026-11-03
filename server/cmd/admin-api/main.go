@@ -45,7 +45,7 @@ type config struct {
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins}}
+	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, Limits: adminapi.DefaultLimits()}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -113,6 +113,13 @@ func configFromEnv(env lookup) (config, error) {
 	if err := c.api.Shop.Validate(); err != nil {
 		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
 	}
+	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
+	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)
+	integer("HD_ADMIN_RATE_SIGNIN_PER_MINUTE", &c.api.Limits.SignIn.PerMinute)
+	integer("HD_ADMIN_RATE_SIGNIN_BURST", &c.api.Limits.SignIn.Burst)
+	if err := c.api.Limits.Validate(); err != nil {
+		errs = append(errs, fmt.Errorf("HD_ADMIN_RATE_*: %w", err))
+	}
 	if c.database == "" {
 		errs = append(errs, errors.New("HD_DATABASE_URL is required"))
 	}
@@ -160,14 +167,15 @@ func run(ctx context.Context, c config, logger *slog.Logger) error {
 		return fmt.Errorf("HD_DATABASE_URL: %w", err)
 	}
 	defer pool.Close()
-	nonces, err := nonceStore(c.redis)
+	client, err := redisClient(c.redis)
 	if err != nil {
 		return err
 	}
+	nonces, buckets := stores(client)
 	tokens := idtoken.DefaultConfig()
 	tokens.Google.Audiences = c.audiences
 	verifier := idtoken.New(idtoken.Options{Config: tokens, Nonces: nonces})
-	server := &http.Server{Addr: c.listenAddr, Handler: adminapi.New(c.api, verifier, pool, time.Now, logger), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: c.readLimit, IdleTimeout: c.idleLimit}
+	server := &http.Server{Addr: c.listenAddr, Handler: adminapi.New(c.api, verifier, buckets, pool, time.Now, logger), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: c.readLimit, IdleTimeout: c.idleLimit}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	logger.Info("admin api listening", "addr", c.listenAddr, "environment", c.api.Environment)
@@ -195,13 +203,20 @@ func bootstrap(ctx context.Context, c config, email, name string, out io.Writer)
 	return nil
 }
 
-func nonceStore(url string) (idtoken.NonceStore, error) {
+func redisClient(url string) (*redis.Client, error) {
 	if url == "" {
-		return idtoken.NewMemoryNonces(), nil
+		return nil, nil
 	}
 	options, err := redis.ParseURL(url)
 	if err != nil {
 		return nil, fmt.Errorf("HD_REDIS_URL: %w", err)
 	}
-	return auth.NewRedisNonces(redis.NewClient(options), "hd:admin:"), nil
+	return redis.NewClient(options), nil
+}
+
+func stores(client *redis.Client) (idtoken.NonceStore, ratelimit.Buckets) {
+	if client == nil {
+		return idtoken.NewMemoryNonces(), ratelimit.NewMemory()
+	}
+	return auth.NewRedisNonces(client, "hd:admin:"), ratelimit.NewRedis(client, "hd:admin:")
 }

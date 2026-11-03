@@ -16,6 +16,7 @@ export const az: Messages = {
   "signin.retry": "Girişin vaxtı keçdi. Yenidən cəhd edin.",
   "signin.unavailable": "Giriş hazırda mümkün deyil. Bir az sonra yenidən cəhd edin.",
   "signin.failed": "Giriş alınmadı.",
+  "signin.rate_limited": "Çox sayda giriş cəhdi oldu. Bir dəqiqə gözləyib yenidən cəhd edin.",
   "nav.audit": "Audit jurnalı",
   "audit.title": "Audit jurnalı",
   "audit.actor": "İcraçı (admin hesabının id-si)",
