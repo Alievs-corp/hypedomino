@@ -1,3 +1,5 @@
+import { promoChangeSummary } from "../promo/codes.ts";
+
 export type Proposal = {
   id: number;
   kind: string;
@@ -17,10 +19,17 @@ export function ownProposal(proposal: Proposal, accountId: string): boolean {
 }
 
 export function objectHref(proposal: Proposal): string | null {
+  if (proposal.object_type === "promo_codes") {
+    return "/promo";
+  }
   return proposal.object_type === "players" ? `/players/${encodeURIComponent(proposal.object_id)}` : null;
 }
 
 export function changeSummary(change: unknown): string {
+  const promo = promoChangeSummary(change);
+  if (promo !== null) {
+    return promo;
+  }
   if (change === null || typeof change !== "object" || Array.isArray(change)) {
     return JSON.stringify(change);
   }

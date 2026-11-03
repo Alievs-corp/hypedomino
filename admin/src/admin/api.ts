@@ -24,15 +24,23 @@ export async function anonymousAdminApi<T>(method: string, path: string, body?: 
 }
 
 async function callAdminApi<T>(method: string, path: string, body: unknown, token: string | undefined): Promise<ApiReply<T & ApiRefusal>> {
+  const response = await fetchAdminApi(method, path, body, token);
+  return { status: response.status, body: parseReply<T & ApiRefusal>(await response.text()) };
+}
+
+export async function adminApiResponse(method: string, path: string, body?: unknown): Promise<Response> {
+  return fetchAdminApi(method, path, body, await sessionToken());
+}
+
+async function fetchAdminApi(method: string, path: string, body: unknown, token: string | undefined): Promise<Response> {
   const base = process.env.HD_ADMIN_API_URL;
   if (!base) {
     throw new Error("HD_ADMIN_API_URL is not set");
   }
-  const response = await fetch(new URL(path, base), {
+  return fetch(new URL(path, base), {
     method,
     cache: "no-store",
     headers: adminApiHeaders(await headers(), token),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return { status: response.status, body: parseReply<T & ApiRefusal>(await response.text()) };
 }

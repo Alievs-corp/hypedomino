@@ -52,6 +52,19 @@ The page reloads the record after each change.
 ## Approvals
 
 `/approvals` (two-person rule, `docs/admin.md` section 8) is in the nav for every signed-in admin. It lists what `GET /admin/approvals` returns: pending proposals the admin's roles may decide, and their own. A row shows the kind, the object (a player links to the record), the change without its bookkeeping ids, the reason, the proposer with their roles, and the expiry. An admin's own proposal says another admin decides. On the others, Approve and Reject take an optional note. Approve needs a fresh sign-in and uses `StepUpPrompt`, and the list reloads after a decision.
+A `promo_code` proposal reads as its code count, campaign, bundle and window, and links to `/promo`.
+
+## Promo codes
+
+`/promo` (A-15, `docs/admin.md` 5.11, #142) is in the nav for roles that may view promo codes. It needs `HD_PROMO_KEY` on the admin API; without it the screen says promo codes are off.
+
+- **Usage:** per campaign, the codes, how many are active, pending approval or disabled, redemptions against the summed cap, and the window. A campaign links to its codes.
+- **Codes:** the newest 200, or those of one campaign: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
+- **Create (`live_ops`, `super_admin`):** one code of any type, or a batch of up to 10,000 `single_use` codes. The bundle is a bundle id with coins, pass XP and cosmetic item ids. The window is entered in UTC. A `multi_use` code takes a cap and an optional chosen code, and a `targeted` code takes account ids. A reason is required.
+  - **One code:** its plaintext is shown once.
+  - **Batch:** downloads as `<id>.csv` from the browser. Nothing keeps the plaintext afterwards, beyond a "download again" button while the page stays open.
+  - **Second admin:** a code above the coin threshold or with a `mythic` item says so and waits in `/approvals`.
+- **Disable (`live_ops`):** a code, or the whole batch from its first listed code. It takes a reason and a fresh sign-in (`StepUpPrompt`) and is immediate.
 
 ## Match rules
 

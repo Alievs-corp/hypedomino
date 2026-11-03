@@ -1,0 +1,142 @@
+import Link from "next/link";
+import { adminApi } from "@/admin/api";
+import { googleClientId } from "@/admin/google";
+import { can, canView } from "@/admin/navigation";
+import { currentAdmin } from "@/admin/session";
+import { utcLabel } from "@/audit/query";
+import { serverTranslator } from "@/i18n/server";
+import { batchLeads, bundleSummary, promoApiPath, shownState, type CampaignUsage, type PromoCode } from "@/promo/codes";
+import { Notice } from "../players/Notice";
+import { DisableCode } from "./DisableCode";
+import { PromoCreator } from "./PromoCreator";
+
+export const dynamic = "force-dynamic";
+
+type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
+
+function campaignOf(params: SearchParams): string {
+  const value = params.campaign;
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+export default async function PromoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const t = await serverTranslator();
+  const admin = await currentAdmin();
+  if (!admin) {
+    return <Notice text={t("auth.required")} />;
+  }
+  if (!canView(admin.permissions, "promo_codes")) {
+    return <Notice text={t("auth.forbidden")} />;
+  }
+  const campaign = campaignOf(await searchParams);
+  const reply = await adminApi<{ campaigns: CampaignUsage[]; codes: PromoCode[] }>("GET", promoApiPath(campaign));
+  if (reply.status !== 200) {
+    return <Notice text={reply.body.error === "not_configured" ? t("promo.not_configured") : t("promo.load_failed")} />;
+  }
+  const { campaigns, codes } = reply.body;
+  const mayDisable = can(admin.permissions, "promo_codes", "disable_promo");
+  const now = new Date();
+  const leads = batchLeads(codes);
+  return (
+    <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-semibold">{t("promo.title")}</h1>
+        <p className="text-sm text-text-secondary">{t("promo.explain")}</p>
+      </div>
+      {can(admin.permissions, "promo_codes", "create") && <PromoCreator />}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{t("promo.usage")}</h2>
+        {campaigns.length === 0 ? (
+          <p className="text-text-secondary">{t("promo.none")}</p>
+        ) : (
+          <table className="text-sm">
+            <thead className="text-left text-text-muted">
+              <tr>
+                <th className="py-2 pr-4">{t("promo.campaign_column")}</th>
+                <th className="py-2 pr-4">{t("promo.codes")}</th>
+                <th className="py-2 pr-4">{t("promo.active")}</th>
+                <th className="py-2 pr-4">{t("promo.pending")}</th>
+                <th className="py-2 pr-4">{t("promo.disabled")}</th>
+                <th className="py-2 pr-4">{t("promo.redemptions")}</th>
+                <th className="py-2 pr-4">{t("promo.window")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {campaigns.map((usage) => (
+                <tr key={usage.campaign} className="border-t border-surface">
+                  <td className="py-2 pr-4 font-mono">
+                    <Link href={`/promo?campaign=${encodeURIComponent(usage.campaign)}`} prefetch={false} className="text-primary underline">
+                      {usage.campaign}
+                    </Link>
+                  </td>
+                  <td className="py-2 pr-4">{usage.codes}</td>
+                  <td className="py-2 pr-4">{usage.active}</td>
+                  <td className="py-2 pr-4">{usage.pending}</td>
+                  <td className="py-2 pr-4">{usage.disabled}</td>
+                  <td className="py-2 pr-4">
+                    {usage.redemptions} / {usage.cap}
+                  </td>
+                  <td className="py-2 pr-4 whitespace-nowrap">
+                    {utcLabel(usage.start)} → {utcLabel(usage.end)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline gap-4">
+          <h2 className="text-lg font-semibold">{campaign ? `${t("promo.codes_of")} ${campaign}` : t("promo.newest")}</h2>
+          {campaign && (
+            <Link href="/promo" prefetch={false} className="text-sm text-primary underline">
+              {t("promo.all_campaigns")}
+            </Link>
+          )}
+        </div>
+        {codes.length > 0 && (
+          <table className="text-sm">
+            <thead className="text-left text-text-muted">
+              <tr>
+                <th className="py-2 pr-4">{t("promo.id_column")}</th>
+                <th className="py-2 pr-4">{t("promo.kind")}</th>
+                <th className="py-2 pr-4">{t("promo.state")}</th>
+                <th className="py-2 pr-4">{t("promo.grants")}</th>
+                <th className="py-2 pr-4">{t("promo.window")}</th>
+                <th className="py-2 pr-4">{t("promo.redemptions")}</th>
+                <th className="py-2 pr-4">{t("promo.creator")}</th>
+                {mayDisable && <th className="py-2 pr-4" />}
+              </tr>
+            </thead>
+            <tbody>
+              {codes.map((code) => (
+                <tr key={code.id} className="border-t border-surface align-top">
+                  <td className="py-2 pr-4 font-mono break-all">{code.id}</td>
+                  <td className="py-2 pr-4">{code.kind}</td>
+                  <td className="py-2 pr-4">{shownState(code, now)}</td>
+                  <td className="py-2 pr-4">{bundleSummary(code.bundle)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">
+                    {utcLabel(code.start)} → {utcLabel(code.end)}
+                  </td>
+                  <td className="py-2 pr-4">
+                    {code.redemptions} / {code.cap}
+                  </td>
+                  <td className="py-2 pr-4 break-all">
+                    {code.creator}
+                    {code.approver && ` / ${code.approver}`}
+                  </td>
+                  {mayDisable && (
+                    <td className="flex flex-col gap-2 py-2 pr-4">
+                      {code.state !== "disabled" && <DisableCode id={code.id} batch={false} clientId={googleClientId()} />}
+                      {code.batch && leads.has(code.id) && <DisableCode id={code.batch} batch clientId={googleClientId()} />}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </main>
+  );
+}
