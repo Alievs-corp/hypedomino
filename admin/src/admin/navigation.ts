@@ -6,6 +6,7 @@ export type Screen = { href: string; labelKey: MessageKey; object: string };
 
 export const screens: readonly Screen[] = [
   { href: "/shop", labelKey: "nav.shop", object: "shop_offers" },
+  { href: "/config/rules", labelKey: "nav.rules", object: "game_config" },
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
 ];
 
