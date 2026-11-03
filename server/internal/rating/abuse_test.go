@@ -83,3 +83,51 @@ func TestFeedingAndWinTradingBetweenTheSamePlayersAreFlagged(t *testing.T) {
 		t.Fatalf("trader signals %s", kinds(signals))
 	}
 }
+
+func TestPartnersDrawnTogetherTooOftenAreFlagged(t *testing.T) {
+	f := newFixture(t)
+	sniper, friend, stranger := f.account(t), f.account(t), f.account(t)
+	opponents := make([]string, 8)
+	for i := range opponents {
+		opponents[i] = f.account(t)
+	}
+	for _, account := range append([]string{sniper, friend, stranger}, opponents...) {
+		f.set(t, account, rules.Mode2v2, 1300, 30, rank(t, "Silver I", 40))
+	}
+	play := func(id string, team [2]string, rivals [2]string, won bool, at time.Time) {
+		t.Helper()
+		teams := [2][]rating.Participant{{{Account: team[0]}, {Account: team[1]}}, {{Account: rivals[0]}, {Account: rivals[1]}}}
+		winner := 1
+		if won {
+			winner = 0
+		}
+		if _, err := f.store.Apply(context.Background(), rating.Result{MatchID: id, Mode: rules.Mode2v2, Teams: teams, Winner: winner, At: at}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	play("c0000000-0000-0000-0000-000000000000", [2]string{sniper, stranger}, [2]string{opponents[0], opponents[1]}, true, now)
+	play("c0000000-0000-0000-0000-000000000001", [2]string{sniper, friend}, [2]string{opponents[2], opponents[3]}, true, now.Add(time.Hour))
+	play("c0000000-0000-0000-0000-000000000002", [2]string{sniper, friend}, [2]string{opponents[4], opponents[5]}, false, now.Add(2*time.Hour))
+	if signals, _ := f.store.Signals(context.Background(), sniper); len(signals) != 0 {
+		t.Fatalf("flagged below the minimum: %s", kinds(signals))
+	}
+	play("c0000000-0000-0000-0000-000000000003", [2]string{opponents[6], opponents[7]}, [2]string{friend, sniper}, false, now.Add(3*time.Hour))
+	for _, account := range []string{sniper, friend} {
+		signals, err := f.store.Signals(context.Background(), account)
+		if err != nil || kinds(signals) != "partner_frequency:2/3" || signals[0].Mode != "2v2" || signals[0].WindowHours != 168 {
+			t.Fatalf("%s signals %s %+v %v", account, kinds(signals), signals, err)
+		}
+	}
+	if signals, _ := f.store.Signals(context.Background(), sniper); signals[0].Counterpart != friend {
+		t.Fatalf("counterpart %s", signals[0].Counterpart)
+	}
+	for _, account := range append([]string{stranger}, opponents...) {
+		if signals, _ := f.store.Signals(context.Background(), account); len(signals) != 0 {
+			t.Fatalf("%s flagged %s", account, kinds(signals))
+		}
+	}
+	play("c0000000-0000-0000-0000-000000000004", [2]string{sniper, friend}, [2]string{opponents[0], opponents[2]}, true, now.Add(200*time.Hour))
+	if signals, _ := f.store.Signals(context.Background(), friend); kinds(signals) != "partner_frequency:2/3" {
+		t.Fatalf("matches outside the window counted: %s", kinds(signals))
+	}
+}

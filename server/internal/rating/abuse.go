@@ -12,9 +12,10 @@ import (
 const (
 	SignalTopic = "rating_signals"
 
-	SignalPairFrequency = "pair_frequency"
-	SignalFeeding       = "feeding"
-	SignalWinTrade      = "win_trade"
+	SignalPairFrequency    = "pair_frequency"
+	SignalFeeding          = "feeding"
+	SignalWinTrade         = "win_trade"
+	SignalPartnerFrequency = "partner_frequency"
 )
 
 type Abuse struct {
@@ -24,17 +25,18 @@ type Abuse struct {
 	PairMinMatches        int `json:"pairMinMatches"`
 	FeedingSharePercent   int `json:"feedingSharePercent"`
 	WinTradeSharePercent  int `json:"winTradeSharePercent"`
+	PartnerMinMatches     int `json:"partnerMinMatches"`
 }
 
 func DefaultAbuse() Abuse {
-	return Abuse{RepeatPairWindowHours: 24, RepeatPairMax: 3, PairWindowHours: 168, PairMinMatches: 6, FeedingSharePercent: 80, WinTradeSharePercent: 35}
+	return Abuse{RepeatPairWindowHours: 24, RepeatPairMax: 3, PairWindowHours: 168, PairMinMatches: 6, FeedingSharePercent: 80, WinTradeSharePercent: 35, PartnerMinMatches: 3}
 }
 
 func (a Abuse) Validate() error {
 	switch {
 	case a.RepeatPairWindowHours < 1 || a.PairWindowHours < 1:
 		return fmt.Errorf("%w: abuse windows must be at least 1 hour", ErrInvalidConfig)
-	case a.RepeatPairMax < 1 || a.PairMinMatches < 1:
+	case a.RepeatPairMax < 1 || a.PairMinMatches < 1 || a.PartnerMinMatches < 1:
 		return fmt.Errorf("%w: abuse match counts must be at least 1", ErrInvalidConfig)
 	case a.FeedingSharePercent < 51 || a.FeedingSharePercent > 100:
 		return fmt.Errorf("%w: feedingSharePercent must be between 51 and 100", ErrInvalidConfig)
@@ -78,13 +80,13 @@ func classify(abuse Abuse, stats pairStats) []string {
 	return kinds
 }
 
-func (s *Store) pair(ctx context.Context, a, b string, mode rules.Mode, since time.Time) (pairStats, error) {
+func (s *Store) pair(ctx context.Context, a, b string, mode rules.Mode, since time.Time, partners bool) (pairStats, error) {
 	var stats pairStats
 	err := s.pool.QueryRow(ctx, `select count(*), count(*) filter (where a.won), count(*) filter (where a.offender or b.offender)
 		from rating_changes a
 		join rating_changes b on b.match_id = a.match_id and b.account_id = $2
 		join rating_results r on r.match_id = a.match_id
-		where a.account_id = $1 and r.mode = $3 and r.applied_at > $4 and a.won <> b.won`, a, b, mode.String(), since).Scan(&stats.matches, &stats.wins, &stats.offenses)
+		where a.account_id = $1 and r.mode = $3 and r.applied_at > $4 and (a.won = b.won) = $5`, a, b, mode.String(), since, partners).Scan(&stats.matches, &stats.wins, &stats.offenses)
 	return stats, err
 }
 
@@ -97,7 +99,7 @@ func (s *Store) inspect(ctx context.Context, r Result) error {
 	since := r.At.Add(-time.Duration(abuse.PairWindowHours) * time.Hour)
 	for _, a := range r.Teams[0] {
 		for _, b := range r.Teams[1] {
-			stats, err := s.pair(ctx, a.Account, b.Account, r.Mode, since)
+			stats, err := s.pair(ctx, a.Account, b.Account, r.Mode, since, false)
 			if err != nil {
 				return err
 			}
@@ -105,38 +107,71 @@ func (s *Store) inspect(ctx context.Context, r Result) error {
 			if len(kinds) == 0 {
 				continue
 			}
-			if err := s.flag(ctx, r, a.Account, b.Account, stats, kinds, abuse.PairWindowHours); err != nil {
+			if err := s.flag(ctx, r.At, opponentSignals(r, a.Account, b.Account, stats, kinds, abuse.PairWindowHours)); err != nil {
 				return err
 			}
+		}
+	}
+	return s.inspectPartners(ctx, r, abuse, since)
+}
+
+func (s *Store) inspectPartners(ctx context.Context, r Result, abuse Abuse, since time.Time) error {
+	for _, team := range r.Teams {
+		if len(team) != 2 {
+			continue
+		}
+		stats, err := s.pair(ctx, team[0].Account, team[1].Account, r.Mode, since, true)
+		if err != nil {
+			return err
+		}
+		if stats.matches < abuse.PartnerMinMatches {
+			continue
+		}
+		if err := s.flag(ctx, r.At, partnerSignals(r, team[0].Account, team[1].Account, stats, abuse.PairWindowHours)); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (s *Store) flag(ctx context.Context, r Result, a, b string, stats pairStats, kinds []string, window int) error {
+func opponentSignals(r Result, a, b string, stats pairStats, kinds []string, window int) []Signal {
+	var signals []Signal
+	for _, kind := range kinds {
+		signals = append(signals,
+			Signal{Account: a, Kind: kind, Counterpart: b, Mode: r.Mode.String(), Matches: stats.matches, Wins: stats.wins, Offenses: stats.offenses, WindowHours: window, FirstSeen: r.At, UpdatedAt: r.At},
+			Signal{Account: b, Kind: kind, Counterpart: a, Mode: r.Mode.String(), Matches: stats.matches, Wins: stats.matches - stats.wins, Offenses: stats.offenses, WindowHours: window, FirstSeen: r.At, UpdatedAt: r.At},
+		)
+	}
+	return signals
+}
+
+func partnerSignals(r Result, a, b string, stats pairStats, window int) []Signal {
+	side := Signal{Kind: SignalPartnerFrequency, Mode: r.Mode.String(), Matches: stats.matches, Wins: stats.wins, Offenses: stats.offenses, WindowHours: window, FirstSeen: r.At, UpdatedAt: r.At}
+	first, second := side, side
+	first.Account, first.Counterpart = a, b
+	second.Account, second.Counterpart = b, a
+	return []Signal{first, second}
+}
+
+func (s *Store) flag(ctx context.Context, at time.Time, signals []Signal) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	for _, kind := range kinds {
-		for _, side := range [2]Signal{
-			{Account: a, Kind: kind, Counterpart: b, Mode: r.Mode.String(), Matches: stats.matches, Wins: stats.wins, Offenses: stats.offenses, WindowHours: window, FirstSeen: r.At, UpdatedAt: r.At},
-			{Account: b, Kind: kind, Counterpart: a, Mode: r.Mode.String(), Matches: stats.matches, Wins: stats.matches - stats.wins, Offenses: stats.offenses, WindowHours: window, FirstSeen: r.At, UpdatedAt: r.At},
-		} {
-			if _, err := tx.Exec(ctx, `insert into rating_signals (account_id, kind, counterpart, mode, matches, wins, offenses, window_hours, first_seen, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+	for _, side := range signals {
+		if _, err := tx.Exec(ctx, `insert into rating_signals (account_id, kind, counterpart, mode, matches, wins, offenses, window_hours, first_seen, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
 				on conflict (account_id, kind, counterpart, mode) do update set matches = excluded.matches, wins = excluded.wins, offenses = excluded.offenses, window_hours = excluded.window_hours, updated_at = excluded.updated_at`,
-				side.Account, side.Kind, side.Counterpart, side.Mode, side.Matches, side.Wins, side.Offenses, side.WindowHours, r.At); err != nil {
-				return err
-			}
-			payload, err := json.Marshal(side)
-			if err != nil {
-				return err
-			}
-			key := fmt.Sprintf("%s:%s:%s:%s:%d", side.Account, side.Kind, side.Counterpart, side.Mode, side.Matches)
-			if _, err := tx.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3) on conflict (topic, key) do nothing`, SignalTopic, key, payload); err != nil {
-				return err
-			}
+			side.Account, side.Kind, side.Counterpart, side.Mode, side.Matches, side.Wins, side.Offenses, side.WindowHours, at); err != nil {
+			return err
+		}
+		payload, err := json.Marshal(side)
+		if err != nil {
+			return err
+		}
+		key := fmt.Sprintf("%s:%s:%s:%s:%d", side.Account, side.Kind, side.Counterpart, side.Mode, side.Matches)
+		if _, err := tx.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3) on conflict (topic, key) do nothing`, SignalTopic, key, payload); err != nil {
+			return err
 		}
 	}
 	return tx.Commit(ctx)
