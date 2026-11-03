@@ -2,12 +2,13 @@ import type { MessageKey } from "@/i18n/translate";
 
 export type Permissions = Readonly<Record<string, readonly string[] | undefined>>;
 
-export type Screen = { href: string; labelKey: MessageKey; object: string };
+export type Screen = { href: string; labelKey: MessageKey; object: string | null };
 
 export const screens: readonly Screen[] = [
   { href: "/shop", labelKey: "nav.shop", object: "shop_offers" },
   { href: "/players", labelKey: "nav.players", object: "players" },
   { href: "/config/rules", labelKey: "nav.rules", object: "game_config" },
+  { href: "/approvals", labelKey: "nav.approvals", object: null },
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
 ];
 
@@ -24,5 +25,5 @@ export function canRollBack(permissions: Permissions, object: string): boolean {
 }
 
 export function visibleScreens(permissions: Permissions, all: readonly Screen[] = screens): Screen[] {
-  return all.filter((screen) => canView(permissions, screen.object));
+  return all.filter((screen) => screen.object === null || canView(permissions, screen.object));
 }
