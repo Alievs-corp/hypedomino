@@ -21,7 +21,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_DRAIN_TIMEOUT` | `15m` | Longest wait for live matches to finish; rooms still running after it are cancelled |
 | `HD_MIN_APP_VERSION` | `1.0.0` | Clients below it get `UPDATE_REQUIRED` (admin config in #210) |
 | `HD_CATALOG_VERSION` | empty | Catalog version announced in `ServerHello` |
-| `HD_MAX_FRAME_BYTES`, `HD_WRITE_QUEUE`, `HD_HELLO_TIMEOUT`, `HD_WRITE_TIMEOUT`, `HD_CLOSE_TIMEOUT`, `HD_COMPRESSION_THRESHOLD`, `HD_INTENTS_PER_SECOND`, `HD_INTENT_BURST`, `HD_PING_INTERVAL`, `HD_PONG_TIMEOUT` | `gateway.DefaultConfig` | Gateway limits (`proto/README.md`, Gateway limits) |
+| `HD_MAX_FRAME_BYTES`, `HD_MAX_HELLO_BYTES`, `HD_WRITE_QUEUE`, `HD_HELLO_TIMEOUT`, `HD_WRITE_TIMEOUT`, `HD_CLOSE_TIMEOUT`, `HD_COMPRESSION_THRESHOLD`, `HD_INTENTS_PER_SECOND`, `HD_INTENT_BURST`, `HD_PING_INTERVAL`, `HD_PONG_TIMEOUT` | `gateway.DefaultConfig` | Gateway limits (`proto/README.md`, Gateway limits) |
 | `HD_RECONNECT_GRACE` | `60s` | `ReconnectGraceSeconds` of `docs/penalties.md` |
 | `HD_REDIS_URL` | empty | Redis URL; when set the node joins the cluster of ADR 0011 (membership, routes, relay, `/loadz` summary) |
 | `HD_NODE_ID`, `HD_NODE_ADDR` | hostname, empty | Node id in the registry and the internal `host:port` other nodes dial for relays (the pod IP in `deploy/k8s`) |

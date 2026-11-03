@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/hello.proto.
  */
 export const file_hypedomino_v1_hello: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxItwBCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBCKhAgoLU2VydmVySGVsbG8SKgoGc3RhdHVzGAEgASgOMhouaHlwZWRvbWluby52MS5IZWxsb1N0YXR1cxIbChNtaW5pbXVtX2FwcF92ZXJzaW9uGAIgASgJEhsKE3NlcnZlcl90aW1lX3VuaXhfbXMYAyABKAQSFwoPY2F0YWxvZ192ZXJzaW9uGAQgASgJEhAKCGluX21hdGNoGAUgASgIEjMKDnN0cmluZ19idW5kbGVzGAYgAygLMhsuaHlwZWRvbWluby52MS5TdHJpbmdCdW5kbGUSNQoPZmFsbGJhY2tfY2hhaW5zGAcgAygLMhwuaHlwZWRvbWluby52MS5GYWxsYmFja0NoYWluEhUKDXNlc3Npb25fbm9uY2UYCCABKAYiPwoMU3RyaW5nQnVuZGxlEhAKCGxhbmd1YWdlGAEgASgJEg8KB3ZlcnNpb24YAiABKA0SDAoEaGFzaBgDIAEoCSI0Cg1GYWxsYmFja0NoYWluEhAKCGxhbmd1YWdlGAEgASgJEhEKCWxhbmd1YWdlcxgCIAMoCSpMCghQbGF0Zm9ybRIYChRQTEFURk9STV9VTlNQRUNJRklFRBAAEhQKEFBMQVRGT1JNX0FORFJPSUQQARIQCgxQTEFURk9STV9JT1MQAipoCgtIZWxsb1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUxMT19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRFX1JFUVVJUkVEEAJCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z");
+  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIo4CCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBBIwCglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mInIKDkludGVncml0eVByb29mEh4KFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSAASNwoKYXBwX2F0dGVzdBgCIAEoCzIhLmh5cGVkb21pbm8udjEuQXBwQXR0ZXN0QXNzZXJ0aW9uSABCBwoFcHJvb2YiRgoSQXBwQXR0ZXN0QXNzZXJ0aW9uEg4KBmtleV9pZBgBIAEoDBINCgVub25jZRgCIAEoCRIRCglhc3NlcnRpb24YAyABKAwioQIKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCBIzCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlEjUKD2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpbhIVCg1zZXNzaW9uX25vbmNlGAggASgGIj8KDFN0cmluZ0J1bmRsZRIQCghsYW5ndWFnZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEgwKBGhhc2gYAyABKAkiNAoNRmFsbGJhY2tDaGFpbhIQCghsYW5ndWFnZRgBIAEoCRIRCglsYW5ndWFnZXMYAiADKAkqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqaAoLSGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RBVFVTX1VQREFURV9SRVFVSVJFRBACQsUBChFjb20uaHlwZWRvbWluby52MUIKSGVsbG9Qcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw");
 
 /**
  * @generated from message hypedomino.v1.ClientHello
@@ -55,6 +55,11 @@ export type ClientHello = Message<"hypedomino.v1.ClientHello"> & {
    * @generated from field: uint64 client_time_unix_ms = 8;
    */
   clientTimeUnixMs: bigint;
+
+  /**
+   * @generated from field: hypedomino.v1.IntegrityProof integrity = 9;
+   */
+  integrity?: IntegrityProof | undefined;
 };
 
 /**
@@ -63,6 +68,62 @@ export type ClientHello = Message<"hypedomino.v1.ClientHello"> & {
  */
 export const ClientHelloSchema: GenMessage<ClientHello> = /*@__PURE__*/
   messageDesc(file_hypedomino_v1_hello, 0);
+
+/**
+ * @generated from message hypedomino.v1.IntegrityProof
+ */
+export type IntegrityProof = Message<"hypedomino.v1.IntegrityProof"> & {
+  /**
+   * @generated from oneof hypedomino.v1.IntegrityProof.proof
+   */
+  proof: {
+    /**
+     * @generated from field: string play_integrity_token = 1;
+     */
+    value: string;
+    case: "playIntegrityToken";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.AppAttestAssertion app_attest = 2;
+     */
+    value: AppAttestAssertion;
+    case: "appAttest";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message hypedomino.v1.IntegrityProof.
+ * Use `create(IntegrityProofSchema)` to create a new message.
+ */
+export const IntegrityProofSchema: GenMessage<IntegrityProof> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 1);
+
+/**
+ * @generated from message hypedomino.v1.AppAttestAssertion
+ */
+export type AppAttestAssertion = Message<"hypedomino.v1.AppAttestAssertion"> & {
+  /**
+   * @generated from field: bytes key_id = 1;
+   */
+  keyId: Uint8Array;
+
+  /**
+   * @generated from field: string nonce = 2;
+   */
+  nonce: string;
+
+  /**
+   * @generated from field: bytes assertion = 3;
+   */
+  assertion: Uint8Array;
+};
+
+/**
+ * Describes the message hypedomino.v1.AppAttestAssertion.
+ * Use `create(AppAttestAssertionSchema)` to create a new message.
+ */
+export const AppAttestAssertionSchema: GenMessage<AppAttestAssertion> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 2);
 
 /**
  * @generated from message hypedomino.v1.ServerHello
@@ -114,7 +175,7 @@ export type ServerHello = Message<"hypedomino.v1.ServerHello"> & {
  * Use `create(ServerHelloSchema)` to create a new message.
  */
 export const ServerHelloSchema: GenMessage<ServerHello> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_hello, 1);
+  messageDesc(file_hypedomino_v1_hello, 3);
 
 /**
  * @generated from message hypedomino.v1.StringBundle
@@ -141,7 +202,7 @@ export type StringBundle = Message<"hypedomino.v1.StringBundle"> & {
  * Use `create(StringBundleSchema)` to create a new message.
  */
 export const StringBundleSchema: GenMessage<StringBundle> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_hello, 2);
+  messageDesc(file_hypedomino_v1_hello, 4);
 
 /**
  * @generated from message hypedomino.v1.FallbackChain
@@ -163,7 +224,7 @@ export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
  * Use `create(FallbackChainSchema)` to create a new message.
  */
 export const FallbackChainSchema: GenMessage<FallbackChain> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_hello, 3);
+  messageDesc(file_hypedomino_v1_hello, 5);
 
 /**
  * @generated from enum hypedomino.v1.Platform
