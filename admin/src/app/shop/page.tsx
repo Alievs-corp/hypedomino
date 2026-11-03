@@ -5,7 +5,7 @@ import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedOffers, type CosmeticItem, type ShopCatalog } from "@/shop/catalog";
+import { changedOffers, type CosmeticItem, type RotationRules, type ShopCatalog } from "@/shop/catalog";
 import { Rollback } from "../config/Rollback";
 import { rollbackCatalog } from "./actions";
 import { ShopEditor } from "./ShopEditor";
@@ -22,7 +22,7 @@ export default async function ShopPage() {
     return <Notice text={t("auth.forbidden")} />;
   }
   const [shop, items, history] = await Promise.all([
-    adminApi<{ config_version: number; catalog: ShopCatalog | null }>("GET", "/admin/config/shop"),
+    adminApi<{ config_version: number; catalog: ShopCatalog | null; rotation: RotationRules }>("GET", "/admin/config/shop"),
     adminApi<{ items: CosmeticItem[] }>("GET", "/admin/cosmetics/items"),
     adminApi<{ versions: CatalogVersion[] }>("GET", "/admin/config/shop/history"),
   ]);
@@ -35,7 +35,7 @@ export default async function ShopPage() {
       {shop.body.catalog === null ? (
         <p className="text-text-secondary">{t("shop.empty")}</p>
       ) : (
-        <ShopEditor initialCatalog={shop.body.catalog} version={shop.body.config_version} items={items.body.items} />
+        <ShopEditor initialCatalog={shop.body.catalog} version={shop.body.config_version} items={items.body.items} rules={shop.body.rotation} />
       )}
       <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "shop_offers") ? googleClientId() : null} t={t} />
     </main>

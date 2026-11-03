@@ -29,10 +29,16 @@ export type ChestRules = {
   rarePityCount: number;
 };
 
+export type RotationPeriod = "daily" | "weekly";
+
+export type Rotation = { period: RotationPeriod; start: string; offers: string[] };
+
+export type RotationRules = { daily_slots: number; weekly_slots: number; reset_hour_utc: number };
+
 export type ShopCatalog = {
   schema: number;
   offers: Offer[];
-  rotations: unknown[];
+  rotations: Rotation[];
   chests?: ChestRules;
   [field: string]: unknown;
 };
@@ -145,4 +151,45 @@ export function windowEndsBeforeStart(offer: Offer): boolean {
 export function changedOffers(previous: ShopCatalog | null, next: ShopCatalog): string[] {
   const before = new Map((previous?.offers ?? []).map((offer) => [offer.id, JSON.stringify(offer)]));
   return next.offers.filter((offer) => before.get(offer.id) !== JSON.stringify(offer)).map((offer) => offer.id);
+}
+
+const rotationSections: Record<RotationPeriod, string> = { daily: "daily_rotation", weekly: "weekly_rotation" };
+
+export function rotationCandidates(catalog: ShopCatalog, period: RotationPeriod): string[] {
+  return catalog.offers.filter((offer) => offer.section === rotationSections[period]).map((offer) => offer.id);
+}
+
+export function slotsOf(rules: RotationRules, period: RotationPeriod): number {
+  return period === "weekly" ? rules.weekly_slots : rules.daily_slots;
+}
+
+export function periodStart(period: RotationPeriod, day: string, rules: RotationRules): string | null {
+  const start = new Date(`${day}T${String(rules.reset_hour_utc).padStart(2, "0")}:00:00Z`);
+  if (Number.isNaN(start.getTime()) || (period === "weekly" && start.getUTCDay() !== 1)) {
+    return null;
+  }
+  return start.toISOString().replace(".000Z", "Z");
+}
+
+function sameSlot(a: Rotation, period: RotationPeriod, start: string): boolean {
+  return a.period === period && new Date(a.start).getTime() === new Date(start).getTime();
+}
+
+export function withRotation(catalog: ShopCatalog, rotation: Rotation): ShopCatalog {
+  const others = catalog.rotations.filter((current) => !sameSlot(current, rotation.period, rotation.start));
+  const rotations = [...others, rotation].toSorted((a, b) => a.period.localeCompare(b.period) || new Date(a.start).getTime() - new Date(b.start).getTime());
+  return { ...catalog, rotations };
+}
+
+export function withoutRotation(catalog: ShopCatalog, rotation: Rotation): ShopCatalog {
+  return { ...catalog, rotations: catalog.rotations.filter((current) => !sameSlot(current, rotation.period, rotation.start)) };
+}
+
+export function toggledOffer(rotation: Rotation, offerId: string): Rotation {
+  const offers = rotation.offers.includes(offerId) ? rotation.offers.filter((id) => id !== offerId) : [...rotation.offers, offerId];
+  return { ...rotation, offers };
+}
+
+export function rotationFits(rotation: Rotation, rules: RotationRules): boolean {
+  return rotation.offers.length >= 1 && rotation.offers.length <= slotsOf(rules, rotation.period);
 }
