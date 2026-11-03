@@ -60,6 +60,8 @@ type Config struct {
 	Integrity       integrity.NonceConfig
 	AppAttest       integrity.AppAttestConfig
 	AppAttestRoot   string
+	IntegrityPolicy integrity.Policy
+	PlayIntegrity   integrity.PlayIntegrityConfig
 	RateLimit       ratelimit.Config
 }
 
@@ -88,6 +90,8 @@ func DefaultConfig() Config {
 		Rarities:        cosmetics.DefaultRarities(),
 		Risk:            risk.DefaultConfig(),
 		Integrity:       integrity.NonceConfig{TTL: 5 * time.Minute},
+		IntegrityPolicy: integrity.Policy{IntegrityFailureAction: integrity.ActionFlag, IntegrityFailureWeight: 20, DeviceRiskAction: integrity.DeviceRiskFlag, DeviceRiskWeight: 5, MinDeviceLevel: integrity.DeviceLevelDevice},
+		PlayIntegrity:   integrity.PlayIntegrityConfig{TokenMaxAge: 2 * time.Minute},
 	}
 }
 
@@ -305,6 +309,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	if config.AppAttest.TeamID != "" && (config.AppAttestRoot == "" || config.AppAttest.BundleID == "") {
 		r.errs = append(r.errs, errors.New("HD_APP_ATTEST_TEAM_ID: needs HD_APP_ATTEST_ROOT_CA and HD_APPLE_BUNDLE_ID"))
 	}
+	r.integrity(&config)
 	r.text("HD_PROMO_KEY", &config.PromoKey)
 	r.integer("HD_PROMO_CODE_LENGTH", &config.Promo.CodeLength)
 	r.integer("HD_PROMO_MAX_VALIDITY_DAYS", &config.Promo.MaxValidityDays)
@@ -346,4 +351,42 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 		r.errs = append(r.errs, fmt.Errorf("HD_LOG_LEVEL: %q is not debug, info, warn or error", config.LogLevel))
 	}
 	return config, errors.Join(r.errs...)
+}
+
+func (r *envReader) integrity(config *Config) {
+	policy := &config.IntegrityPolicy
+	r.choice("HD_INTEGRITY_FAILURE_ACTION", func(name string) bool {
+		action, ok := integrity.ParseAction(name)
+		policy.IntegrityFailureAction = action
+		return ok
+	})
+	r.choice("HD_DEVICE_RISK_ACTION", func(name string) bool {
+		action, ok := integrity.ParseDeviceRiskAction(name)
+		policy.DeviceRiskAction = action
+		return ok
+	})
+	r.choice("HD_INTEGRITY_MIN_DEVICE_LEVEL", func(name string) bool {
+		level, ok := integrity.ParseDeviceLevel(name)
+		policy.MinDeviceLevel = level
+		return ok
+	})
+	r.flag("HD_INTEGRITY_REQUIRE_LICENSED", &policy.RequireLicensed)
+	r.integer("HD_INTEGRITY_FAILURE_WEIGHT", &policy.IntegrityFailureWeight)
+	r.integer("HD_DEVICE_RISK_WEIGHT", &policy.DeviceRiskWeight)
+	if policy.IntegrityFailureWeight < 0 || policy.DeviceRiskWeight < 0 {
+		r.errs = append(r.errs, errors.New("HD_INTEGRITY_FAILURE_WEIGHT and HD_DEVICE_RISK_WEIGHT: must not be negative"))
+	}
+	config.PlayIntegrity.PackageName = config.Play.PackageName
+	r.list("HD_PLAY_CERT_DIGESTS", &config.PlayIntegrity.CertificateDigests)
+	r.duration("HD_PLAY_INTEGRITY_MAX_AGE", &config.PlayIntegrity.TokenMaxAge)
+	if len(config.PlayIntegrity.CertificateDigests) > 0 && config.Play.ServiceAccountFile == "" {
+		r.errs = append(r.errs, errors.New("HD_PLAY_CERT_DIGESTS: needs HD_PLAY_PACKAGE and HD_PLAY_SERVICE_ACCOUNT"))
+	}
+}
+
+func (r *envReader) choice(name string, parse func(string) bool) {
+	raw, ok := r.lookup(name)
+	if ok && !parse(raw) {
+		r.errs = append(r.errs, fmt.Errorf("%s: %q is not a known value", name, raw))
+	}
 }

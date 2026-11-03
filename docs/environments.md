@@ -116,6 +116,14 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_APP_ATTEST_TEAM_ID` | No | server | empty (App Attest off) | Apple team id | No | from #205 |
 | `HD_APP_ATTEST_ROOT_CA` | With team id | server | empty | path of the Apple App Attestation Root CA PEM | No | from #205 |
 | `HD_APP_ATTEST_DEVELOPMENT` | No | server | `false` (`true` in dev) | `false` | No | from #205 |
+| `HD_PLAY_CERT_DIGESTS` | Production | server | empty (Play Integrity off) | SHA-256 of the release signing certificates, base64url, comma separated | No | from #205 |
+| `HD_PLAY_INTEGRITY_MAX_AGE` | No | server | `2m` | `2m` | No | from #205 |
+| `HD_INTEGRITY_FAILURE_ACTION` | No | server | `flag` | `flag` | No | from #205 |
+| `HD_DEVICE_RISK_ACTION` | No | server | `flag` | `flag` | No | from #205 |
+| `HD_INTEGRITY_MIN_DEVICE_LEVEL` | No | server | `device` | `device` | No | from #205 |
+| `HD_INTEGRITY_REQUIRE_LICENSED` | No | server | `false` | `false` | No | from #205 |
+| `HD_INTEGRITY_FAILURE_WEIGHT` | No | server | `20` | `20` | No | from #205 |
+| `HD_DEVICE_RISK_WEIGHT` | No | server | `5` | `5` | No | from #205 |
 | `HD_REFUNDS_BEFORE_PURCHASE_BLOCK` | No | server | `3` | `3` | No | from #106 |
 | `HD_REFUND_WINDOW_DAYS` | No | server | `365` | `365` | No | from #106 |
 | `HD_PROMO_KEY` | No | server | empty (promo redemption off, 503 `promo.unavailable`) | `<random-32-bytes>` | Yes | from #108; `cmd/promo` needs the same key |

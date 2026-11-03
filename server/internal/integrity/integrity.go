@@ -258,3 +258,39 @@ func (d Decision) ReasonNames() []string {
 	}
 	return names
 }
+
+func ParseAction(name string) (Action, bool) {
+	switch name {
+	case "flag":
+		return ActionFlag, true
+	case "block":
+		return ActionBlock, true
+	}
+	return 0, false
+}
+
+func ParseDeviceRiskAction(name string) (DeviceRiskAction, bool) {
+	switch name {
+	case "warn":
+		return DeviceRiskWarn, true
+	case "flag":
+		return DeviceRiskFlag, true
+	case "block_ranked":
+		return DeviceRiskBlockRanked, true
+	}
+	return 0, false
+}
+
+func ParseDeviceLevel(name string) (DeviceLevel, bool) {
+	switch name {
+	case "none":
+		return DeviceLevelNone, true
+	case "basic":
+		return DeviceLevelBasic, true
+	case "device":
+		return DeviceLevelDevice, true
+	case "strong":
+		return DeviceLevelStrong, true
+	}
+	return 0, false
+}

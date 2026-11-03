@@ -211,15 +211,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	shopStore.WithPass(passes)
 	purchases.WithPass(passes)
 	purchases.Flag(signals, config.Risk)
-	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
-	a.Handle("POST /shop/complete", critical(receipts))
-	a.Handle("GET /purchases", receipts)
-	a.Handle("POST /store/", receipts)
-	promos, err := promos(pool, engine, catalog, config)
-	if err != nil {
-		pool.Close()
-		return nil, nil, err
-	}
 	var integrityStore integrity.NonceStore = integrity.NewMemoryNonceStore(systemClock{})
 	if client != nil {
 		integrityStore = integrity.NewRedisNonceStore(client, config.Cluster.KeyPrefix, systemClock{})
@@ -230,31 +221,62 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("HD_INTEGRITY_NONCE_TTL: %w", err)
 	}
 	attestation := integrity.NewHandler(tokens, integrityNonces, logger)
-	if err := enableAppAttest(attestation, config, integrityNonces, pool); err != nil {
+	gate, err := integrityGate(config, attestation, integrityNonces, pool, risk.NewIntegrity(signals, systemClock{}, logger), logger)
+	if err != nil {
 		pool.Close()
 		return nil, nil, err
 	}
 	a.Handle("POST /integrity/", attestation)
+	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
+	a.Handle("POST /shop/complete", critical(guarded(gate, tokens, integrity.PurposePurchase, receipts)))
+	a.Handle("GET /purchases", receipts)
+	a.Handle("POST /store/", receipts)
+	promos, err := promos(pool, engine, catalog, config)
+	if err != nil {
+		pool.Close()
+		return nil, nil, err
+	}
 	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
 	return a, pool.Close, nil
 }
 
-func enableAppAttest(handler *integrity.Handler, config app.Config, nonces *integrity.Nonces, pool *pgxpool.Pool) error {
+func integrityGate(config app.Config, handler *integrity.Handler, nonces *integrity.Nonces, pool *pgxpool.Pool, signals integrity.SignalSink, logger *slog.Logger) (*integrity.Gate, error) {
+	gate := integrity.NewGate(config.IntegrityPolicy, signals, logger)
+	if len(config.PlayIntegrity.CertificateDigests) > 0 {
+		decoder, err := integrity.NewPlayDecoder(integrity.PlayDecoderConfig{PackageName: config.Play.PackageName, ServiceAccountFile: config.Play.ServiceAccountFile})
+		if err != nil {
+			return nil, fmt.Errorf("HD_PLAY_SERVICE_ACCOUNT: %w", err)
+		}
+		play, err := integrity.NewPlayIntegrity(config.PlayIntegrity, decoder, nonces, systemClock{})
+		if err != nil {
+			return nil, fmt.Errorf("HD_PLAY_CERT_DIGESTS: %w", err)
+		}
+		gate.WithPlay(play)
+	}
 	if config.AppAttest.TeamID == "" {
-		return nil
+		return gate, nil
 	}
 	root, err := os.ReadFile(config.AppAttestRoot)
 	if err != nil {
-		return fmt.Errorf("HD_APP_ATTEST_ROOT_CA: %w", err)
+		return nil, fmt.Errorf("HD_APP_ATTEST_ROOT_CA: %w", err)
 	}
 	attestConfig := config.AppAttest
 	attestConfig.RootCertificatePEM = root
 	verifier, err := integrity.NewAppAttest(attestConfig, nonces, systemClock{})
 	if err != nil {
-		return fmt.Errorf("HD_APP_ATTEST_*: %w", err)
+		return nil, fmt.Errorf("HD_APP_ATTEST_*: %w", err)
 	}
-	handler.EnableAppAttest(verifier, attestkey.NewStore(pool), systemClock{})
-	return nil
+	keys := attestkey.NewStore(pool)
+	handler.EnableAppAttest(verifier, keys, systemClock{})
+	gate.WithAppAttest(verifier, keys)
+	return gate, nil
+}
+
+func guarded(gate *integrity.Gate, verifier token.Verifier, purpose integrity.Purpose, next http.Handler) http.Handler {
+	if !gate.Enabled() {
+		return next
+	}
+	return gate.Require(verifier, purpose, next)
 }
 
 func stores(config app.Config) (map[purchase.Platform]purchase.Validator, purchase.Notifier, purchase.Notifier, error) {
