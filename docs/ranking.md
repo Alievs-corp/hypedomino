@@ -299,6 +299,7 @@ Rules of #121. Win trading and boosting work through the same pair of accounts, 
 
 - Repeat limit: two accounts that met in `RepeatPairMax` (default 3) ranked matches of a mode within `RepeatPairWindowHours` (default 24) are not matched again in that mode until the window has passed, whatever their MMR. The queue entry carries the accounts to avoid (`docs/matchmaking.md` section 2).
 - Pair signals: after every applied ranked result, each opponent pair of the match is counted over `PairWindowHours` (default 168). From `PairMinMatches` (default 6) matches a `pair_frequency` signal is recorded for both accounts; when one side won at least `FeedingSharePercent` (default 80) of them it is `feeding` (the loser feeds, the winner is boosted); when both sides won at least `WinTradeSharePercent` (default 35) it is `win_trade`. A signal carries the counterpart, the matches, the wins, the offenses (leaves and AFK of either side, the throw pattern that replaces a dodge, section 6) and the window, is updated as the counts grow and is published on the `rating_signals` outbox topic for the risk score (`docs/anti-cheat.md` 5, `CollusionWeight`).
+- Partner signals (#183): ranked 2v2 partners are drawn at random (R-54), so the same two accounts as partners again and again point to queue sniping, the only way to choose a partner in ranked. After every applied ranked 2v2 result the partner pair of each team is counted over `PairWindowHours`; from `PartnerMinMatches` (default 3) matches together a `partner_frequency` signal is recorded for both accounts, with the matches, the wins of the team and the offenses. For an account with a `partner_frequency` signal the recorded deals of the window decide `partner_fit`: a decision is a placement where the player had at least two legal placements that leave a different number of the partner's tiles placeable on the resulting open ends, and it fits when the chosen placement leaves the most (a tie fits). When the account has at least `FitMinDecisions` (default 100) decisions with that partner and as many with its other partners, and its fit rate with that partner is at least `FitMarginPercent` (default 20) percentage points above its fit rate with the others, a `partner_fit` signal is recorded for the account with the partner as counterpart. Hidden tiles are read only from the server's own deal, never from a client.
 - A signal never changes a rating by itself: the response is the risk score, review and an admin's reversal (`docs/anti-cheat.md` V-9, #209).
 
 - Implemented in `server/internal/rating` (#121): `abuse` keys of the `rating` config, `Store.Avoid` and `Store.Queue` for the queue, `rating_signals` table, `Store.Signals` per account and the outbox rows; the admin analysis screen reads `rating_signals` (admin epic).
@@ -341,6 +342,8 @@ Every key has one value per mode (1v1, 2v2); both start at the same default. Str
 | `RepeatPairWindowHours`, `RepeatPairMax` | 24, 3 | 11 |
 | `PairWindowHours`, `PairMinMatches` | 168, 6 | 11 |
 | `FeedingSharePercent`, `WinTradeSharePercent` | 80, 35 | 11 |
+| `PartnerMinMatches` | 3 | 11 |
+| `FitMinDecisions`, `FitMarginPercent` | 100, 20 | 11 |
 | `CountryChangeCooldown` | 180 days | 8.2 |
 | `EmblemBrackets` | 1, 50, 100, 200 | 8.3 |
 | `ProfileEmblemSlots` | 3 | 8.4 |
