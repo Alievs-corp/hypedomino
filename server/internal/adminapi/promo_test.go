@@ -245,3 +245,55 @@ func TestTenThousandCodesComeOutInUnderTenSeconds(t *testing.T) {
 	}
 	t.Logf("%d codes in %s", adminapi.MaxPromoBatchCount, took)
 }
+
+func TestSupportListsTargetedAccountsAndSeesWhoRedeemed(t *testing.T) {
+	a := newPromoAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	liveOps, support, root := a.signIn("leyla"), a.signIn("orxan"), a.signIn("root")
+	first, second := a.player("g-1", "kamal@mail.example", "Kamal"), a.player("g-2", "nigar@mail.example", "Nigar")
+
+	status, body := a.call("POST", "/admin/promo-codes", liveOps, promoBody("promo.vip", 300, map[string]any{"kind": "targeted", "cap": 0, "accounts": []string{first}}))
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, body = a.call("POST", "/admin/promo-codes", liveOps, promoBody("promo.vip", 300, map[string]any{"kind": "targeted", "cap": 0}))
+	if status != http.StatusCreated || body["code"].(map[string]any)["cap"] != float64(0) {
+		t.Fatalf("create %d %v", status, body)
+	}
+
+	path := "/admin/promo-codes/promo.vip/accounts"
+	status, body = a.call("PUT", path, liveOps, map[string]any{"accounts": []string{first}, "reason": "vip list"})
+	expect(t, status, body, http.StatusForbidden, "forbidden")
+	status, body = a.call("PUT", path, support, map[string]any{"accounts": []string{first}})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("PUT", path, support, map[string]any{"accounts": []string{first, second}, "reason": "vip list", "ref": "SUP-4"})
+	if status != http.StatusOK || body["accounts"] != float64(2) || body["added"] != float64(2) {
+		t.Fatalf("set %d %v", status, body)
+	}
+	status, body = a.call("PUT", path, support, map[string]any{"accounts": []string{"kamal"}, "reason": "typo"})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+
+	status, body = a.call("GET", "/admin/promo-codes/promo.vip", support, nil)
+	personal, _ := body["personal"].(map[string]any)
+	if status != http.StatusOK || body["code"].(map[string]any)["cap"] != float64(2) || personal == nil || len(personal["accounts"].([]any)) != 2 || len(personal["redeemed"].([]any)) != 0 {
+		t.Fatalf("support detail %d %v", status, body)
+	}
+	status, body = a.call("GET", "/admin/promo-codes/promo.vip", liveOps, nil)
+	if status != http.StatusOK || body["personal"] != nil || body["code"].(map[string]any)["cap"] != float64(2) {
+		t.Fatalf("live-ops detail %d %v", status, body)
+	}
+	status, body = a.call("GET", "/admin/promo-codes/promo.none", liveOps, nil)
+	expect(t, status, body, http.StatusNotFound, "not_found")
+
+	if entries := a.entries(liveOps, "object_type=promo_codes&action=set_promo_targets"); len(entries) != 1 || entries[0]["after"].(map[string]any)["added"] != float64(2) {
+		t.Fatalf("summary entries %v", entries)
+	}
+	if entries := a.entries(liveOps, "action=add_promo_target"); len(entries) != 0 {
+		t.Fatalf("player entries leaked to live-ops: %v", entries)
+	}
+	if entries := a.entries(root, "object_type=players&action=add_promo_target&object_id="+first); len(entries) != 1 || entries[0]["ref"] != "SUP-4" {
+		t.Fatalf("player entries %v", entries)
+	}
+
+	a.call("POST", "/admin/promo-codes/promo.vip/disable", liveOps, map[string]any{"reason": "ended"})
+	status, body = a.call("PUT", path, support, map[string]any{"accounts": []string{first}, "reason": "late"})
+	expect(t, status, body, http.StatusConflict, "disabled")
+}

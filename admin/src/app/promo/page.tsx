@@ -111,7 +111,11 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
             <tbody>
               {codes.map((code) => (
                 <tr key={code.id} className="border-t border-surface align-top">
-                  <td className="py-2 pr-4 font-mono break-all">{code.id}</td>
+                  <td className="py-2 pr-4 font-mono break-all">
+                    <Link href={`/promo/${encodeURIComponent(code.id)}`} prefetch={false} className="text-primary underline">
+                      {code.id}
+                    </Link>
+                  </td>
                   <td className="py-2 pr-4">{code.kind}</td>
                   <td className="py-2 pr-4">{shownState(code, now)}</td>
                   <td className="py-2 pr-4">{bundleSummary(code.bundle)}</td>

@@ -2,7 +2,7 @@
 
 import { adminApi, adminApiResponse, type ApiRefusal } from "@/admin/api";
 import { parseReply } from "@/admin/forwarding";
-import { disablePath, type PromoCode, type PromoRequest } from "@/promo/codes";
+import { disablePath, listOf, targetsPath, type PromoCode, type PromoRequest } from "@/promo/codes";
 
 export type Refused = { ok: false; error: string; detail: string };
 
@@ -45,4 +45,14 @@ export async function disablePromo(id: string, batch: boolean, reason: string): 
     return refused(reply.status, reply.body);
   }
   return { ok: true, disabled: reply.body.disabled };
+}
+
+export type TargetsResult = { ok: true; accounts: number; added: number; removed: number } | Refused;
+
+export async function setTargets(id: string, accounts: string, reason: string): Promise<TargetsResult> {
+  const reply = await adminApi<{ accounts: number; added: number; removed: number }>("PUT", targetsPath(id), { accounts: listOf(accounts), reason });
+  if (reply.status !== 200) {
+    return refused(reply.status, reply.body);
+  }
+  return { ok: true, accounts: reply.body.accounts, added: reply.body.added, removed: reply.body.removed };
 }

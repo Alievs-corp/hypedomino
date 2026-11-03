@@ -137,6 +137,17 @@ type database interface {
 	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 }
 
+type Redeemed struct {
+	Account string    `json:"account_id"`
+	At      time.Time `json:"redeemed_at"`
+}
+
+type TargetChange struct {
+	Added   []string
+	Removed []string
+	Count   int
+}
+
 type Store struct {
 	db      database
 	engine  *reward.Engine
@@ -178,8 +189,6 @@ func (s *Store) validate(d Definition) error {
 		return fail("the cap of a %s code is set by the server", d.Kind)
 	case d.Kind != MultiUse && d.Code != "":
 		return fail("only a multi_use code may be chosen by the admin")
-	case d.Kind == Targeted && len(d.Accounts) == 0:
-		return fail("a targeted code lists its accounts")
 	case d.Kind != Targeted && len(d.Accounts) > 0:
 		return fail("only a targeted code lists accounts")
 	}
@@ -189,10 +198,14 @@ func (s *Store) validate(d Definition) error {
 	if len(d.Bundle.Medals) > 0 {
 		return fail("a code never carries a medal")
 	}
-	seen := make(map[string]bool, len(d.Accounts))
-	for _, account := range d.Accounts {
+	return uniqueAccounts(d.Accounts)
+}
+
+func uniqueAccounts(accounts []string) error {
+	seen := make(map[string]bool, len(accounts))
+	for _, account := range accounts {
 		if account == "" || seen[account] {
-			return fail("accounts must be unique and non-empty")
+			return fmt.Errorf("%w: accounts must be unique and non-empty", ErrInvalid)
 		}
 		seen[account] = true
 	}
@@ -356,6 +369,100 @@ func (s *Store) DisableBatch(ctx context.Context, batch string, now time.Time) (
 	}
 	tag, err := s.db.Exec(ctx, `update promo_codes set state = $2, disabled_at = $3 where batch_id = $1 and state <> $2`, batch, StateDisabled, now)
 	return int(tag.RowsAffected()), err
+}
+
+func (s *Store) Targets(ctx context.Context, id string) ([]string, error) {
+	return s.accounts(ctx, `select account_id::text from promo_targets where promo_id = $1 order by account_id`, id)
+}
+
+func (s *Store) accounts(ctx context.Context, query, id string) ([]string, error) {
+	rows, err := s.db.Query(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	accounts, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if accounts == nil {
+		accounts = []string{}
+	}
+	return accounts, err
+}
+
+func (s *Store) Redemptions(ctx context.Context, id string) ([]Redeemed, error) {
+	rows, err := s.db.Query(ctx, `select account_id::text, redeemed_at from promo_redemptions where promo_id = $1 order by redeemed_at, account_id`, id)
+	if err != nil {
+		return nil, err
+	}
+	redeemed, err := pgx.CollectRows(rows, pgx.RowToStructByPos[Redeemed])
+	if redeemed == nil {
+		redeemed = []Redeemed{}
+	}
+	return redeemed, err
+}
+
+func (s *Store) SetTargets(ctx context.Context, id string, accounts []string) (TargetChange, error) {
+	if err := uniqueAccounts(accounts); err != nil {
+		return TargetChange{}, err
+	}
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return TargetChange{}, err
+	}
+	defer tx.Rollback(ctx)
+	var kind, state string
+	err = tx.QueryRow(ctx, `select kind, state from promo_codes where promo_id = $1 for update`, id).Scan(&kind, &state)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return TargetChange{}, ErrUnknown
+	}
+	switch {
+	case err != nil:
+		return TargetChange{}, err
+	case kind != Targeted:
+		return TargetChange{}, fmt.Errorf("%w: only a targeted code lists accounts", ErrInvalid)
+	case state == StateDisabled:
+		return TargetChange{}, fmt.Errorf("%w: %s is disabled", ErrDisabled, id)
+	}
+	stored := s.In(tx)
+	current, err := stored.Targets(ctx, id)
+	if err != nil {
+		return TargetChange{}, err
+	}
+	redeemed, err := stored.accounts(ctx, `select account_id::text from promo_redemptions where promo_id = $1`, id)
+	if err != nil {
+		return TargetChange{}, err
+	}
+	change := TargetChange{Added: missingFrom(current, accounts), Removed: missingFrom(accounts, current), Count: len(accounts)}
+	if kept := missingFrom(change.Removed, redeemed); len(kept) < len(redeemed) {
+		return TargetChange{}, fmt.Errorf("%w: an account that redeemed the code stays listed", ErrInvalid)
+	}
+	if _, err := tx.Exec(ctx, `delete from promo_targets where promo_id = $1 and account_id::text = any($2)`, id, change.Removed); err != nil {
+		return TargetChange{}, err
+	}
+	for _, account := range change.Added {
+		if _, err := tx.Exec(ctx, `insert into promo_targets (promo_id, account_id) values ($1, $2)`, id, account); err != nil {
+			if isForeignKeyViolation(err) || isInvalidText(err) {
+				return TargetChange{}, fmt.Errorf("%w: unknown account %s", ErrInvalid, account)
+			}
+			return TargetChange{}, err
+		}
+	}
+	if _, err := tx.Exec(ctx, `update promo_codes set cap = $2 where promo_id = $1`, id, len(accounts)); err != nil {
+		return TargetChange{}, err
+	}
+	return change, tx.Commit(ctx)
+}
+
+func missingFrom(present, wanted []string) []string {
+	have := make(map[string]bool, len(present))
+	for _, account := range present {
+		have[account] = true
+	}
+	missing := []string{}
+	for _, account := range wanted {
+		if !have[account] {
+			missing = append(missing, account)
+		}
+	}
+	return missing
 }
 
 func (s *Store) List(ctx context.Context, campaign string, limit int) ([]Code, error) {
@@ -539,6 +646,10 @@ func (s *Store) check(ctx context.Context, tx pgx.Tx, code Code, account string,
 
 func isUniqueViolation(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "23505")
+}
+
+func isInvalidText(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "22P02")
 }
 
 func isForeignKeyViolation(err error) bool {

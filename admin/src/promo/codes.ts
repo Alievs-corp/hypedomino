@@ -43,7 +43,6 @@ export type PromoDraft = {
   endMinute: string;
   cap: number;
   code: string;
-  accounts: string;
   count: number;
 };
 
@@ -59,7 +58,6 @@ export const emptyDraft: PromoDraft = {
   endMinute: "",
   cap: 1,
   code: "",
-  accounts: "",
   count: 100,
 };
 
@@ -72,7 +70,6 @@ export type PromoRequest = {
   end: string;
   cap?: number;
   code?: string;
-  accounts?: string[];
   count?: number;
 };
 
@@ -113,9 +110,6 @@ export function promoRequest(draft: PromoDraft, batch: boolean): PromoRequest {
       request.code = draft.code.trim();
     }
   }
-  if (draft.kind === "targeted") {
-    request.accounts = listOf(draft.accounts);
-  }
   return request;
 }
 
@@ -132,7 +126,7 @@ export function draftReady(draft: PromoDraft, batch: boolean): boolean {
   if (draft.kind === "multi_use") {
     return Number.isInteger(draft.cap) && draft.cap >= 1;
   }
-  return draft.kind !== "targeted" || listOf(draft.accounts).length > 0;
+  return true;
 }
 
 export const maxBatchCount = 10000;
@@ -185,4 +179,20 @@ export function batchLeads(codes: readonly PromoCode[]): Set<string> {
     }
   }
   return leads;
+}
+
+export type Redeemed = { account_id: string; redeemed_at: string };
+
+export type PromoDetail = { code: PromoCode; personal?: { accounts: string[]; redeemed: Redeemed[] } };
+
+export function detailPath(id: string): string {
+  return `/admin/promo-codes/${encodeURIComponent(id)}`;
+}
+
+export function targetsPath(id: string): string {
+  return `${detailPath(id)}/accounts`;
+}
+
+export function keepsRedeemers(accounts: readonly string[], redeemed: readonly Redeemed[]): boolean {
+  return redeemed.every((entry) => accounts.includes(entry.account_id));
 }
