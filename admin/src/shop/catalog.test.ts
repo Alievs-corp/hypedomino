@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   allowedCurrencies,
+  periodStart,
+  rotationCandidates,
+  rotationFits,
+  toggledOffer,
+  withRotation,
+  withoutRotation,
+  type Rotation,
+  type RotationRules,
   changedOffers,
   windowEndsBeforeStart,
   windowMinute,
@@ -107,4 +115,40 @@ test("a version lists the offers it added or changed against the one before", ()
   const newer: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.a" }), offer({ id: "offer.b", priceCoins: 900 }), offer({ id: "offer.c" })], rotations: [] };
   assert.deepEqual(changedOffers(older, newer), ["offer.b", "offer.c"]);
   assert.deepEqual(changedOffers(null, older), ["offer.a", "offer.b"]);
+});
+
+const rules: RotationRules = { daily_slots: 2, weekly_slots: 1, reset_hour_utc: 4 };
+
+test("a rotation starts at the reset hour, and a weekly one only on a Monday", () => {
+  assert.equal(periodStart("daily", "2026-11-04", rules), "2026-11-04T04:00:00Z");
+  assert.equal(periodStart("weekly", "2026-11-09", rules), "2026-11-09T04:00:00Z");
+  assert.equal(periodStart("weekly", "2026-11-04", rules), null);
+  assert.equal(periodStart("daily", "", rules), null);
+});
+
+test("only offers of the period's rotation section can fill its slots", () => {
+  const catalog: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.d", section: "daily_rotation" }), offer({ id: "offer.w", section: "weekly_rotation" }), offer({ id: "offer.e" })], rotations: [] };
+  assert.deepEqual(rotationCandidates(catalog, "daily"), ["offer.d"]);
+  assert.deepEqual(rotationCandidates(catalog, "weekly"), ["offer.w"]);
+});
+
+test("a rotation fills between one offer and the period's slots, in the order picked", () => {
+  const empty: Rotation = { period: "daily", start: "2026-11-04T04:00:00Z", offers: [] };
+  assert.equal(rotationFits(empty, rules), false);
+  const two = toggledOffer(toggledOffer(empty, "offer.b"), "offer.a");
+  assert.deepEqual(two.offers, ["offer.b", "offer.a"]);
+  assert.equal(rotationFits(two, rules), true);
+  assert.equal(rotationFits(toggledOffer(two, "offer.c"), rules), false);
+  assert.deepEqual(toggledOffer(two, "offer.b").offers, ["offer.a"]);
+});
+
+test("one rotation per period start, kept in date order, and removable", () => {
+  const base: ShopCatalog = { schema: 1, offers: [], rotations: [] };
+  const later: Rotation = { period: "daily", start: "2026-11-05T04:00:00Z", offers: ["offer.a"] };
+  const earlier: Rotation = { period: "daily", start: "2026-11-04T04:00:00.000Z", offers: ["offer.b"] };
+  const both = withRotation(withRotation(base, later), earlier);
+  assert.deepEqual(both.rotations.map((rotation) => rotation.start), [earlier.start, later.start]);
+  const replaced = withRotation(both, { ...earlier, start: "2026-11-04T04:00:00Z", offers: ["offer.c"] });
+  assert.equal(replaced.rotations.length, 2);
+  assert.deepEqual(withoutRotation(replaced, later).rotations.map((rotation) => rotation.offers), [["offer.c"]]);
 });

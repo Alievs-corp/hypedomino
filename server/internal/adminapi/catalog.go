@@ -64,13 +64,25 @@ func viewCatalog(version int64, raw []byte) catalogView {
 	return catalogView{ConfigVersion: version, Catalog: raw}
 }
 
+type rotationRulesView struct {
+	DailySlots   int `json:"daily_slots"`
+	WeeklySlots  int `json:"weekly_slots"`
+	ResetHourUTC int `json:"reset_hour_utc"`
+}
+
+type shopCatalogView struct {
+	catalogView
+	Rotation rotationRulesView `json:"rotation"`
+}
+
 func (h *Handler) shopCatalog(w http.ResponseWriter, r *http.Request, p principal) {
 	version, raw, err := latestSnapshot(r.Context(), h.pool, shop.Domain)
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, viewCatalog(version, raw))
+	rules := rotationRulesView{DailySlots: h.config.Shop.DailySlots, WeeklySlots: h.config.Shop.WeeklySlots, ResetHourUTC: h.config.Shop.ResetHourUTC}
+	reply(w, http.StatusOK, shopCatalogView{catalogView: viewCatalog(version, raw), Rotation: rules})
 }
 
 func (h *Handler) shopHistory(w http.ResponseWriter, r *http.Request, p principal) {

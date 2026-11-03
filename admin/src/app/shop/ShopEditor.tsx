@@ -15,15 +15,26 @@ import {
   replaceOffer,
   withPackCrystals,
   withPoolItem,
+  periodStart,
+  rotationCandidates,
+  rotationFits,
+  slotsOf,
+  toggledOffer,
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
+  withRotation,
   withWindow,
+  withoutRotation,
   type CosmeticItem,
   type Offer,
   type PriceCurrency,
+  type Rotation,
+  type RotationPeriod,
+  type RotationRules,
   type ShopCatalog,
 } from "@/shop/catalog";
+import { utcLabel } from "@/audit/query";
 import { publishCatalog, type PublishResult } from "./actions";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
@@ -34,7 +45,7 @@ const currencyLabel: Record<PriceCurrency, MessageKey> = {
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 
-export function ShopEditor({ initialCatalog, version, items }: { initialCatalog: ShopCatalog; version: number; items: CosmeticItem[] }) {
+export function ShopEditor({ initialCatalog, version, items, rules }: { initialCatalog: ShopCatalog; version: number; items: CosmeticItem[]; rules: RotationRules }) {
   const t = useTranslator();
   const [catalog, setCatalog] = useState(initialCatalog);
   const [selected, setSelected] = useState(initialCatalog.offers[0]?.id ?? "");
@@ -61,6 +72,7 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
       <Chests catalog={catalog} items={items} onChange={update} onRules={(chests) => setCatalog((current) => ({ ...current, chests }))} />
+      <Rotations catalog={catalog} rules={rules} onChange={setCatalog} />
       <section className="flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
           {t("shop.reason")}
@@ -68,7 +80,7 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
         </label>
         <button
           type="button"
-          disabled={pending || catalog.offers.some(windowEndsBeforeStart)}
+          disabled={pending || catalog.offers.some(windowEndsBeforeStart) || catalog.rotations.some((rotation) => !rotationFits(rotation, rules))}
           onClick={() => startTransition(async () => setResult(await publishCatalog(catalog, reason)))}
           className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40"
         >
@@ -81,6 +93,108 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
         )}
       </section>
     </div>
+  );
+}
+
+const periods: readonly RotationPeriod[] = ["daily", "weekly"];
+
+function Rotations({ catalog, rules, onChange }: { catalog: ShopCatalog; rules: RotationRules; onChange: (catalog: ShopCatalog) => void }) {
+  const t = useTranslator();
+  const [period, setPeriod] = useState<RotationPeriod>("daily");
+  const [day, setDay] = useState("");
+  const start = periodStart(period, day, rules);
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">{t("shop.rotations")}</h2>
+      <p className="text-sm text-text-muted">
+        {t("shop.rotation_rules")}: {t("shop.rotation_daily")} {rules.daily_slots}, {t("shop.rotation_weekly")} {rules.weekly_slots}, {t("shop.rotation_reset")} {rules.reset_hour_utc}:00 UTC
+      </p>
+      {catalog.rotations.length === 0 && <p className="text-sm text-text-secondary">{t("shop.rotations_empty")}</p>}
+      {catalog.rotations.map((rotation) => (
+        <RotationRow
+          key={`${rotation.period}-${rotation.start}`}
+          rotation={rotation}
+          candidates={rotationCandidates(catalog, rotation.period)}
+          slots={slotsOf(rules, rotation.period)}
+          fits={rotationFits(rotation, rules)}
+          onChange={(next) => onChange(withRotation(catalog, next))}
+          onRemove={() => onChange(withoutRotation(catalog, rotation))}
+        />
+      ))}
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("shop.rotation_period")}
+          <select value={period} onChange={(event) => setPeriod(event.target.value as RotationPeriod)} className={fieldClass}>
+            {periods.map((candidate) => (
+              <option key={candidate} value={candidate}>
+                {t(candidate === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("shop.rotation_day")}
+          <input type="date" value={day} onChange={(event) => setDay(event.target.value)} className={fieldClass} />
+        </label>
+        <button
+          type="button"
+          disabled={start === null}
+          onClick={() => start && onChange(withRotation(catalog, { period, start, offers: [] }))}
+          className="rounded-md bg-surface px-4 py-2 text-text-secondary disabled:opacity-40"
+        >
+          {t("shop.rotation_add")}
+        </button>
+      </div>
+      {day && start === null && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.rotation_monday")}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function RotationRow({
+  rotation,
+  candidates,
+  slots,
+  fits,
+  onChange,
+  onRemove,
+}: {
+  rotation: Rotation;
+  candidates: string[];
+  slots: number;
+  fits: boolean;
+  onChange: (rotation: Rotation) => void;
+  onRemove: () => void;
+}) {
+  const t = useTranslator();
+  return (
+    <fieldset className="flex flex-col gap-2 rounded-md border border-surface p-3">
+      <legend className="text-sm text-text-secondary">
+        {t(rotation.period === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")} · {utcLabel(rotation.start)}
+      </legend>
+      <div className="flex flex-wrap gap-3">
+        {candidates.map((id) => (
+          <label key={id} className="flex items-center gap-1 font-mono text-sm">
+            <input type="checkbox" checked={rotation.offers.includes(id)} onChange={() => onChange(toggledOffer(rotation, id))} />
+            {id}
+          </label>
+        ))}
+      </div>
+      <p className="text-sm text-text-muted">
+        {t("shop.rotation_order")}: {rotation.offers.join(" → ") || "—"} ({rotation.offers.length}/{slots})
+      </p>
+      {!fits && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.rotation_slots")}
+        </p>
+      )}
+      <button type="button" onClick={onRemove} className="self-start rounded-md bg-surface px-3 py-1 text-sm text-text-secondary">
+        {t("shop.rotation_remove")}
+      </button>
+    </fieldset>
   );
 }
 

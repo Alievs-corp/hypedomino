@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -216,5 +218,15 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
 	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "rarity epic") {
 		t.Fatalf("epic pool item %d %v", status, body)
+	}
+}
+
+func TestTheShopCatalogCarriesTheRotationRulesOfTheServer(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) { c.Shop = shop.Config{DailySlots: 6, WeeklySlots: 3, ResetHourUTC: 4} })
+	a.create("leyla@example.com", rbac.LiveOps)
+	status, body := a.call("GET", "/admin/config/shop", a.signIn("leyla"), nil)
+	want := map[string]any{"daily_slots": float64(6), "weekly_slots": float64(3), "reset_hour_utc": float64(4)}
+	if status != http.StatusOK || !reflect.DeepEqual(body["rotation"], want) {
+		t.Fatalf("got %d %v, want rotation %v", status, body["rotation"], want)
 	}
 }
