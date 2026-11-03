@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { LocaleProvider } from "@/i18n/client";
-import { LocaleSwitcher } from "@/i18n/LocaleSwitcher";
 import { currentLocale, serverTranslator } from "@/i18n/server";
+import { AdminHeader } from "./AdminHeader";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,9 +19,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale}>
       <body className="min-h-screen antialiased">
         <LocaleProvider locale={locale}>
-          <header className="flex justify-end px-6 py-4">
-            <LocaleSwitcher />
-          </header>
+          <AdminHeader />
           {children}
         </LocaleProvider>
       </body>

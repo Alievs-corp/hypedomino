@@ -1,4 +1,6 @@
-import { adminApi, hasSession } from "@/admin/api";
+import { adminApi } from "@/admin/api";
+import { canView } from "@/admin/navigation";
+import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { CosmeticItem, ShopCatalog } from "@/shop/catalog";
 import { ShopEditor } from "./ShopEditor";
@@ -7,8 +9,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
   const t = await serverTranslator();
-  if (!(await hasSession())) {
+  const admin = await currentAdmin();
+  if (!admin) {
     return <Notice text={t("auth.required")} />;
+  }
+  if (!canView(admin.permissions, "shop_offers")) {
+    return <Notice text={t("auth.forbidden")} />;
   }
   const [shop, items] = await Promise.all([
     adminApi<{ config_version: number; catalog: ShopCatalog | null }>("GET", "/admin/config/shop"),

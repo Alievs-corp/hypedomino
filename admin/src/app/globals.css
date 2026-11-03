@@ -10,6 +10,7 @@
   --color-text-muted: #A49DDB;
   --color-primary: #FF3D9A;
   --color-on-primary: #120A2C;
+  --color-danger-text: #FF95A0;
 }
 
 body {
