@@ -2,94 +2,36 @@ package purchase
 
 import (
 	"context"
-	"crypto"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/googleauth/googleauthtest"
 )
 
 type playServer struct {
-	key      *rsa.PrivateKey
-	server   *httptest.Server
+	*googleauthtest.Server
 	mu       sync.Mutex
-	tokens   int
 	consumed []string
-	file     string
 }
 
 func newPlayServer(t *testing.T) *playServer {
 	t.Helper()
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := &playServer{key: key}
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /token", p.token)
-	mux.HandleFunc("GET /androidpublisher/v3/applications/com.example.hypedomino/purchases/products/{product}/tokens/{token}", p.purchase)
-	mux.HandleFunc("POST /androidpublisher/v3/applications/com.example.hypedomino/purchases/products/{product}/tokens/{token}", p.consume)
-	p.server = httptest.NewServer(mux)
-	t.Cleanup(p.server.Close)
-	der, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	account, _ := json.Marshal(map[string]string{
-		"client_email": "billing@example.iam.gserviceaccount.com",
-		"private_key":  string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der})),
-		"token_uri":    p.server.URL + "/token",
-	})
-	p.file = filepath.Join(t.TempDir(), "play.json")
-	if err := os.WriteFile(p.file, account, 0o600); err != nil {
-		t.Fatal(err)
-	}
+	p := &playServer{Server: googleauthtest.New(t, googleScope)}
+	p.Mux.HandleFunc("GET /androidpublisher/v3/applications/com.example.hypedomino/purchases/products/{product}/tokens/{token}", p.purchase)
+	p.Mux.HandleFunc("POST /androidpublisher/v3/applications/com.example.hypedomino/purchases/products/{product}/tokens/{token}", p.consume)
 	return p
 }
 
-func (p *playServer) token(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil || r.Form.Get("grant_type") != googleGrant {
-		http.Error(w, "grant", http.StatusBadRequest)
-		return
-	}
-	segments := strings.Split(r.Form.Get("assertion"), ".")
-	if len(segments) != 3 {
-		http.Error(w, "assertion", http.StatusBadRequest)
-		return
-	}
-	signature, _ := base64.RawURLEncoding.DecodeString(segments[2])
-	digest := sha256.Sum256([]byte(segments[0] + "." + segments[1]))
-	if rsa.VerifyPKCS1v15(&p.key.PublicKey, crypto.SHA256, digest[:], signature) != nil {
-		http.Error(w, "signature", http.StatusUnauthorized)
-		return
-	}
-	payload, _ := base64.RawURLEncoding.DecodeString(segments[1])
-	var claims map[string]any
-	if json.Unmarshal(payload, &claims) != nil || claims["iss"] != "billing@example.iam.gserviceaccount.com" || claims["scope"] != googleScope || claims["aud"] != p.server.URL+"/token" {
-		http.Error(w, "claims", http.StatusUnauthorized)
-		return
-	}
-	p.mu.Lock()
-	p.tokens++
-	p.mu.Unlock()
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"access_token":"at-1","expires_in":3600,"token_type":"Bearer"}`))
-}
-
 func (p *playServer) purchase(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Authorization") != "Bearer at-1" {
+	if !googleauthtest.Authorized(r) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -120,7 +62,7 @@ func (p *playServer) purchase(w http.ResponseWriter, r *http.Request) {
 
 func (p *playServer) consume(w http.ResponseWriter, r *http.Request) {
 	token, ok := strings.CutSuffix(r.PathValue("token"), ":consume")
-	if !ok || r.Header.Get("Authorization") != "Bearer at-1" {
+	if !ok || !googleauthtest.Authorized(r) {
 		http.Error(w, "bad consume", http.StatusBadRequest)
 		return
 	}
@@ -140,7 +82,7 @@ func millis() string {
 
 func newGoogle(t *testing.T, p *playServer, allowTest bool) *Google {
 	t.Helper()
-	g, err := NewGoogle(GoogleConfig{PackageName: "com.example.hypedomino", ServiceAccountFile: p.file, AllowTest: allowTest, Endpoint: p.server.URL, Now: func() time.Time { return testNow }})
+	g, err := NewGoogle(GoogleConfig{PackageName: "com.example.hypedomino", ServiceAccountFile: p.File, AllowTest: allowTest, Endpoint: p.URL, Now: func() time.Time { return testNow }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,8 +139,8 @@ func TestGooglePurchasesAreLookedUpWithAServiceAccountToken(t *testing.T) {
 	}
 	play.mu.Lock()
 	defer play.mu.Unlock()
-	if play.tokens != 2 || len(play.consumed) != 2 || play.consumed[0] != "crystals_tier1/tok-ok" {
-		t.Fatalf("tokens %d consumed %v", play.tokens, play.consumed)
+	if play.Tokens() != 2 || len(play.consumed) != 2 || play.consumed[0] != "crystals_tier1/tok-ok" {
+		t.Fatalf("tokens %d consumed %v", play.Tokens(), play.consumed)
 	}
 }
 
@@ -218,7 +160,7 @@ func TestGoogleClientNeedsAUsableServiceAccount(t *testing.T) {
 		}
 	}
 	play := newPlayServer(t)
-	play.server.Close()
+	play.Close()
 	g := newGoogle(t, play, false)
 	if _, err := g.Verify(context.Background(), "crystals_tier1", "tok-ok"); !errors.Is(err, ErrStore) {
 		t.Fatalf("store down: %v", err)
