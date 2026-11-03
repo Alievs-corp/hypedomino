@@ -12,6 +12,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
@@ -56,6 +57,7 @@ type Config struct {
 	Promo           promo.Config
 	PromoKey        string
 	Risk            risk.Config
+	Integrity       integrity.NonceConfig
 	RateLimit       ratelimit.Config
 }
 
@@ -83,6 +85,7 @@ func DefaultConfig() Config {
 		Promo:           promo.DefaultConfig(),
 		Rarities:        cosmetics.DefaultRarities(),
 		Risk:            risk.DefaultConfig(),
+		Integrity:       integrity.NonceConfig{TTL: 5 * time.Minute},
 	}
 }
 
@@ -288,6 +291,10 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if err := config.Purchase.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_REFUNDS_BEFORE_PURCHASE_BLOCK and HD_REFUND_WINDOW_DAYS: %w", err))
+	}
+	r.duration("HD_INTEGRITY_NONCE_TTL", &config.Integrity.TTL)
+	if config.Integrity.TTL <= 0 {
+		r.errs = append(r.errs, errors.New("HD_INTEGRITY_NONCE_TTL: must be positive"))
 	}
 	r.text("HD_PROMO_KEY", &config.PromoKey)
 	r.integer("HD_PROMO_CODE_LENGTH", &config.Promo.CodeLength)
