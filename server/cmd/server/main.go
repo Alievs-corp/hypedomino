@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
@@ -217,6 +219,16 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		pool.Close()
 		return nil, nil, err
 	}
+	var integrityStore integrity.NonceStore = integrity.NewMemoryNonceStore(systemClock{})
+	if client != nil {
+		integrityStore = integrity.NewRedisNonceStore(client, config.Cluster.KeyPrefix, systemClock{})
+	}
+	integrityNonces, err := integrity.NewNonces(config.Integrity, integrityStore, systemClock{}, rand.Reader)
+	if err != nil {
+		pool.Close()
+		return nil, nil, fmt.Errorf("HD_INTEGRITY_NONCE_TTL: %w", err)
+	}
+	a.Handle("POST /integrity/nonce", integrity.NewHandler(tokens, integrityNonces, logger))
 	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
 	return a, pool.Close, nil
 }
