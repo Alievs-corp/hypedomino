@@ -12,6 +12,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
+	"github.com/Alievs-corp/hypedomino/server/internal/partnerfit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
@@ -276,5 +277,37 @@ func TestEventsArePartitionedWithTheMatch(t *testing.T) {
 	}
 	if partition != "match_events_"+m.StartedAt.Format("200601") {
 		t.Fatalf("events landed in %s", partition)
+	}
+}
+
+func TestFinishKeepsThePartnerFitOfEverySeat(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := matchstore.New(pool)
+	ctx := context.Background()
+	players := accounts(t, pool, 4)
+	id := uuid.NewString()
+	if err := store.Begin(ctx, started(id, matchstore.KindRanked, players)); err != nil {
+		t.Fatal(err)
+	}
+	impossible := finished(id, matchstore.KindRanked)
+	impossible.PartnerFit = map[rules.Seat]partnerfit.Count{rules.SeatNorth: {Decisions: 3, Fits: 4}}
+	if err := store.Finish(ctx, impossible); err == nil {
+		t.Fatal("more fits than decisions were stored")
+	}
+	outside := finished(id, matchstore.KindRanked)
+	outside.PartnerFit = map[rules.Seat]partnerfit.Count{rules.SeatX: {Decisions: 1}}
+	if err := store.Finish(ctx, outside); !errors.Is(err, matchstore.ErrInvalid) {
+		t.Fatalf("a fit for a seat outside the match: %v", err)
+	}
+	done := finished(id, matchstore.KindRanked)
+	done.PartnerFit = map[rules.Seat]partnerfit.Count{rules.SeatNorth: {Decisions: 12, Fits: 11}, rules.SeatEast: {Decisions: 9, Fits: 4}}
+	if err := store.Finish(ctx, done); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, pool, "select count(*) from match_participants where match_id = $1 and seat = $2 and partner_decisions = 12 and partner_fits = 11", id, int16(rules.SeatNorth)); n != 1 {
+		t.Fatal("north fit not stored")
+	}
+	if n := count(t, pool, "select count(*) from match_participants where match_id = $1 and partner_decisions is null", id); n != 2 {
+		t.Fatalf("%d seats without a measurement, want 2", n)
 	}
 }
