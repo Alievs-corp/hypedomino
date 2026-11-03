@@ -10,6 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("app.title"),
     robots: { index: false, follow: false },
+    icons: { icon: "data:," },
   };
 }
 

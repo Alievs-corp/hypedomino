@@ -109,7 +109,7 @@ Unit and component tests run with `pnpm test`, browser e2e as a separate suite. 
 | Audit | Every write produces an audit entry with who, what, before, after and reason | #134 |
 | Config publish e2e | Create a value, publish, see a new version id; publish an earlier version; the game server loads it (section 2.3) | #145 |
 | Catalog e2e | Cosmetic CRUD produces a manifest that passes the cosmetics schema (`tools/cosmetics-schema`) | #136 |
-| Hardening | Lighthouse above 90, no critical vulnerability (#148 acceptance) | #148 |
+| Hardening | Lighthouse above 90, no critical vulnerability (#148 acceptance); procedure and last result in `admin/README.md` | #148 |
 
 ### 2.7 Spec tooling (exists)
 

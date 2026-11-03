@@ -32,6 +32,35 @@ Every page reads `GET /admin/me` once per request (`currentAdmin` in `src/admin/
 
 Cross-site requests: the session cookie is `SameSite=Strict`, every change goes through a server action, which Next.js accepts only when the `Origin` header matches the host, and no `GET` changes anything. If the access proxy in front of the panel rewrites the host, its public host goes into `serverActions.allowedOrigins`.
 
+The admin API limits sign-in per address and requests per account (`docs/admin.md` 9.1); a sign-in refused with `rate_limited` shows `signin.rate_limited`.
+
+## Hardening check
+
+The #148 acceptance is Lighthouse above 90 and no critical vulnerability (`docs/test-strategy.md` 2.6). To repeat it locally:
+
+1. Start PostgreSQL. In `server/`, run `go run ./cmd/migrate up`, then `go run ./cmd/admin-api -bootstrap-email root@example.com -bootstrap-name Root`, then run the admin API.
+2. Google sign-in needs a real client, so a local-only session stands in for it: insert an `admin_sessions` row for that account with `token_hash = sha256('<local token>')`, and send `Cookie: hd_admin_session=<local token>`. Never do this outside a throwaway database.
+3. `pnpm build`, then `pnpm start` with `HD_ADMIN_API_URL` pointing at the local API.
+4. Run `lighthouse <url> --preset=desktop` and the default mobile run on `/` signed out, and on `/`, `/audit` and `/shop` with `--extra-headers '{"Cookie":"hd_admin_session=<local token>"}'`.
+5. Run `pnpm audit` here and `govulncheck ./cmd/admin-api/...` in `server/`.
+
+Last result: 2026-11-03, Lighthouse 13.6.0, headless Chrome on Windows, empty catalog and one audit entry. The scores are performance / accessibility / best practices.
+
+| Page | Desktop | Mobile |
+|---|---|---|
+| `/` signed out (sign-in) | 100 / 100 / 100 | 93 / 100 / 100 |
+| `/` signed in | 99 / 100 / 100 | 97 / 100 / 100 |
+| `/audit` | 100 / 100 / 100 | 97 / 100 / 100 |
+| `/shop` | 100 / 100 / 100 | 98 / 100 / 100 |
+
+Mobile LCP is 0.7 to 0.8 s and CLS is 0. SEO scores 50 by design: every page is `noindex`, which is the failing audit. `pnpm audit` and `govulncheck` found no known vulnerabilities.
+
+The same run probed the panel and the API:
+- Every response carried the headers above.
+- `/audit` without a session, or with a forged cookie, showed only the sign-in prompt.
+- A server action posted with a foreign `Origin` was refused, and one with the panel's origin passed.
+- The API answered 401 `session_rejected` without a bearer token, and the eleventh nonce from one address within a minute got 429 with `Retry-After`.
+
 ## Configuration
 
 `HD_ADMIN_API_URL` and `HD_ADMIN_GOOGLE_CLIENT_ID` (`docs/environments.md` 2.2), read on the server only.
