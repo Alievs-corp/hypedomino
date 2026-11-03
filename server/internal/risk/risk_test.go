@@ -172,3 +172,32 @@ func TestMacFailureConfigIsValidated(t *testing.T) {
 		}
 	}
 }
+
+func TestIntegritySignalsCountOncePerPurposePerDay(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	var account string
+	if err := pool.QueryRow(ctx, `insert into accounts (created_at) values (now()) returning id`).Scan(&account); err != nil {
+		t.Fatal(err)
+	}
+	clock := &fixedClock{now: time.Date(2026, 11, 3, 9, 0, 0, 0, time.UTC)}
+	store := risk.NewStore(pool)
+	sink := risk.NewIntegrity(store, clock, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	sink.RecordIntegrity(ctx, account, "purchase", "integrity_failure", 20, []string{"unknown_signing_certificate"})
+	sink.RecordIntegrity(ctx, account, "purchase", "integrity_failure", 20, []string{"token_rejected"})
+	sink.RecordIntegrity(ctx, account, "purchase", "device_risk", 5, []string{"weak_device"})
+	sink.RecordIntegrity(ctx, account, "ranked_match", "integrity_failure", 20, []string{"token_rejected"})
+	clock.now = clock.now.Add(24 * time.Hour)
+	sink.RecordIntegrity(ctx, account, "purchase", "integrity_failure", 20, []string{"token_rejected"})
+	signals, err := store.Signals(ctx, account)
+	if err != nil || len(signals) != 4 {
+		t.Fatalf("%d signals %v", len(signals), err)
+	}
+	first := signals[0]
+	if first.Kind != "integrity_failure" || first.Weight != 20 || first.Dedupe != "purchase:2026-11-03" || first.Evidence["purpose"] != "purchase" || first.Evidence["reasons"].([]any)[0] != "unknown_signing_certificate" {
+		t.Fatalf("first %+v", first)
+	}
+	if signals[1].Kind != "device_risk" || signals[1].Weight != 5 || signals[3].Dedupe != "purchase:2026-11-04" {
+		t.Fatalf("signals %+v", signals)
+	}
+}

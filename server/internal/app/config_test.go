@@ -3,10 +3,12 @@ package app
 import (
 	"bytes"
 	"encoding/base64"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 )
@@ -237,5 +239,48 @@ func TestADatabaseNeedsASigningKey(t *testing.T) {
 	_, err = ConfigFromEnv(lookup(map[string]string{"HD_DATABASE_URL": "postgres://db/hd", "HD_APPLE_AUDIENCES": "com.example.hypedomino", "HD_TOKEN_KEYS": "k1:c2hvcnQ="}))
 	if err == nil || !strings.Contains(err.Error(), "HD_TOKEN_KEYS") {
 		t.Fatalf("a short signing key was accepted: %v", err)
+	}
+}
+
+func TestIntegrityPolicyStartsAtTheLaunchValuesAndCanBeTightened(t *testing.T) {
+	config, err := ConfigFromEnv(lookup(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	launch := integrity.Policy{IntegrityFailureAction: integrity.ActionFlag, IntegrityFailureWeight: 20, DeviceRiskAction: integrity.DeviceRiskFlag, DeviceRiskWeight: 5, MinDeviceLevel: integrity.DeviceLevelDevice}
+	if config.IntegrityPolicy != launch || config.PlayIntegrity.TokenMaxAge != 2*time.Minute || config.PlayIntegrity.CertificateDigests != nil {
+		t.Fatalf("launch %+v %+v", config.IntegrityPolicy, config.PlayIntegrity)
+	}
+	config, err = ConfigFromEnv(lookup(map[string]string{
+		"HD_INTEGRITY_FAILURE_ACTION":   "block",
+		"HD_DEVICE_RISK_ACTION":         "block_ranked",
+		"HD_INTEGRITY_MIN_DEVICE_LEVEL": "strong",
+		"HD_INTEGRITY_REQUIRE_LICENSED": "true",
+		"HD_INTEGRITY_FAILURE_WEIGHT":   "30",
+		"HD_DEVICE_RISK_WEIGHT":         "7",
+		"HD_PLAY_PACKAGE":               "com.example.hypedomino",
+		"HD_PLAY_SERVICE_ACCOUNT":       "/run/secrets/play.json",
+		"HD_PLAY_NOTIFICATION_TOKEN":    "push-secret",
+		"HD_PLAY_CERT_DIGESTS":          "abc, def",
+		"HD_PLAY_INTEGRITY_MAX_AGE":     "90s",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	strict := integrity.Policy{IntegrityFailureAction: integrity.ActionBlock, IntegrityFailureWeight: 30, DeviceRiskAction: integrity.DeviceRiskBlockRanked, DeviceRiskWeight: 7, MinDeviceLevel: integrity.DeviceLevelStrong, RequireLicensed: true}
+	if config.IntegrityPolicy != strict || config.PlayIntegrity.PackageName != "com.example.hypedomino" || !slices.Equal(config.PlayIntegrity.CertificateDigests, []string{"abc", "def"}) || config.PlayIntegrity.TokenMaxAge != 90*time.Second {
+		t.Fatalf("tightened %+v %+v", config.IntegrityPolicy, config.PlayIntegrity)
+	}
+	_, err = ConfigFromEnv(lookup(map[string]string{
+		"HD_INTEGRITY_FAILURE_ACTION":   "allow",
+		"HD_DEVICE_RISK_ACTION":         "ban",
+		"HD_INTEGRITY_MIN_DEVICE_LEVEL": "perfect",
+		"HD_DEVICE_RISK_WEIGHT":         "-1",
+		"HD_PLAY_CERT_DIGESTS":          "abc",
+	}))
+	for _, name := range []string{"HD_INTEGRITY_FAILURE_ACTION", "HD_DEVICE_RISK_ACTION", "HD_INTEGRITY_MIN_DEVICE_LEVEL", "HD_DEVICE_RISK_WEIGHT", "HD_PLAY_CERT_DIGESTS"} {
+		if err == nil || !strings.Contains(err.Error(), name) {
+			t.Errorf("error does not name %s: %v", name, err)
+		}
 	}
 }

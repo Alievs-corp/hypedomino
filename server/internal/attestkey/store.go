@@ -14,8 +14,8 @@ import (
 
 var (
 	ErrKeyExists    = integrity.ErrKeyExists
-	ErrKeyNotFound  = errors.New("attestkey: no attested key for the account")
-	ErrStaleCounter = errors.New("attestkey: counter did not move forward")
+	ErrKeyNotFound  = integrity.ErrKeyNotFound
+	ErrStaleCounter = integrity.ErrStaleCounter
 )
 
 type Store struct {
