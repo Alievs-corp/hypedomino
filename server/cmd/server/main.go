@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -107,6 +108,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signals := risk.NewStore(pool)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
+	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)
+	critical := func(next http.Handler) http.Handler { return token.RequireMac(tokens, macFailures, next) }
 	limiter.Authenticate(tokens)
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
@@ -124,7 +127,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	manifests := snapshot.New(pool, cosmetics.Domain, cosmetics.Parse, logger)
 	go manifests.Run(ctx, config.ConfigPoll)
 	inventoryStore.Follow(manifests.Current)
-	items := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
+	items := critical(inventory.NewHandler(tokens, inventoryStore, logger, time.Now))
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)
 	walletStore := wallet.NewStore(pool)
@@ -143,7 +146,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	missions := mission.NewStore(pool, missionCatalog, engine)
 	calendar := dailylogin.NewWatcher(pool, logger)
 	go calendar.Run(ctx, config.ConfigPoll)
-	logins := dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now)
+	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
@@ -182,16 +185,17 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
 	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
-	passHandler := pass.NewHandler(tokens, passes, logger, time.Now)
+	passHandler := critical(pass.NewHandler(tokens, passes, logger, time.Now))
 	a.Handle("/pass", passHandler)
 	a.Handle("/pass/", passHandler)
-	a.Handle("/medals", medal.NewHandler(tokens, medals, logger, time.Now))
-	a.Handle("/medals/", medal.NewHandler(tokens, medals, logger, time.Now))
-	missionHandler := mission.NewHandler(tokens, missions, logger, time.Now)
+	medalHandler := critical(medal.NewHandler(tokens, medals, logger, time.Now))
+	a.Handle("/medals", medalHandler)
+	a.Handle("/medals/", medalHandler)
+	missionHandler := critical(mission.NewHandler(tokens, missions, logger, time.Now))
 	a.Handle("/missions", missionHandler)
 	a.Handle("/missions/", missionHandler)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
-	store := shop.NewHandler(tokens, shopStore, logger, time.Now)
+	store := critical(shop.NewHandler(tokens, shopStore, logger, time.Now))
 	a.Handle("/shop", store)
 	a.Handle("/shop/", store)
 	validators, google, apple, err := stores(config)
@@ -205,7 +209,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	purchases.WithPass(passes)
 	purchases.Flag(signals, config.Risk)
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
-	a.Handle("POST /shop/complete", receipts)
+	a.Handle("POST /shop/complete", critical(receipts))
 	a.Handle("GET /purchases", receipts)
 	a.Handle("POST /store/", receipts)
 	promos, err := promos(pool, engine, catalog, config)
@@ -213,7 +217,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		pool.Close()
 		return nil, nil, err
 	}
-	a.Handle("POST /promo/redeem", promo.NewHandler(tokens, promos, logger, time.Now))
+	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
 	return a, pool.Close, nil
 }
 

@@ -133,3 +133,42 @@ func TestRepeatedReplaysRaiseOneSoftSignalPerWindow(t *testing.T) {
 		t.Fatalf("%d accounts still tracked after the window", replays.Tracked())
 	}
 }
+
+func TestRepeatedMacFailuresRaiseOneSoftSignalPerWindow(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	var account string
+	if err := pool.QueryRow(ctx, `insert into accounts (created_at) values (now()) returning id`).Scan(&account); err != nil {
+		t.Fatal(err)
+	}
+	start := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	clock := &fixedClock{now: start}
+	store := risk.NewStore(pool)
+	failures := risk.NewMacFailures(store, risk.DefaultConfig(), clock, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	for i, want := range []int{0, 0, 0, 0, 1, 1, 1, 1, 1, 1} {
+		clock.now = start.Add(time.Duration(i) * time.Second)
+		failures.Observe(ctx, account)
+		signals, err := store.Signals(ctx, account)
+		if err != nil || len(signals) != want {
+			t.Fatalf("failure %d: %d signals %v", i+1, len(signals), err)
+		}
+	}
+	signals, _ := store.Signals(ctx, account)
+	if got := signals[0]; got.Kind != risk.KindMacFailure || got.Weight != 5 || got.Evidence["failures"] != float64(5) || got.Evidence["window_seconds"] != float64(600) || got.Dedupe != "2026-11-03T12:00:00Z" {
+		t.Fatalf("signal %+v", got)
+	}
+}
+
+func TestMacFailureConfigIsValidated(t *testing.T) {
+	for _, change := range []func(*risk.Config){
+		func(c *risk.Config) { c.MacFailureThreshold = 0 },
+		func(c *risk.Config) { c.MacFailureWindow = 0 },
+		func(c *risk.Config) { c.MacFailureWeight = -1 },
+	} {
+		config := risk.DefaultConfig()
+		change(&config)
+		if !errors.Is(config.Validate(), risk.ErrInvalidConfig) {
+			t.Fatalf("accepted %+v", config)
+		}
+	}
+}

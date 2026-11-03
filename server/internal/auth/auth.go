@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -85,6 +86,7 @@ type tokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+	RequestKey   string `json:"request_key"`
 	AccountID    string `json:"account_id"`
 	Created      bool   `json:"created,omitempty"`
 }
@@ -138,7 +140,7 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken, ExpiresIn: pair.ExpiresIn, AccountID: a.ID, Created: created})
+	reply(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken, ExpiresIn: pair.ExpiresIn, RequestKey: base64.StdEncoding.EncodeToString(pair.RequestKey), AccountID: a.ID, Created: created})
 }
 
 func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +162,7 @@ func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken, ExpiresIn: pair.ExpiresIn, AccountID: claims.Account})
+	reply(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken, ExpiresIn: pair.ExpiresIn, RequestKey: base64.StdEncoding.EncodeToString(pair.RequestKey), AccountID: claims.Account})
 }
 
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
