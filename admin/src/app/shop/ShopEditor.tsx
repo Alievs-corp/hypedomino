@@ -15,7 +15,10 @@ import {
   replaceOffer,
   withPackCrystals,
   withPoolItem,
+  windowEndsBeforeStart,
+  windowMinute,
   withPrice,
+  withWindow,
   type CosmeticItem,
   type Offer,
   type PriceCurrency,
@@ -54,6 +57,7 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
           ))}
         </select>
         {offer && <OfferPrice offer={offer} onChange={update} />}
+        {offer && <OfferWindow offer={offer} onChange={update} />}
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
       <Chests catalog={catalog} items={items} onChange={update} onRules={(chests) => setCatalog((current) => ({ ...current, chests }))} />
@@ -64,7 +68,7 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
         </label>
         <button
           type="button"
-          disabled={pending}
+          disabled={pending || catalog.offers.some(windowEndsBeforeStart)}
           onClick={() => startTransition(async () => setResult(await publishCatalog(catalog, reason)))}
           className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40"
         >
@@ -77,6 +81,32 @@ export function ShopEditor({ initialCatalog, version, items }: { initialCatalog:
         )}
       </section>
     </div>
+  );
+}
+
+function OfferWindow({ offer, onChange }: { offer: Offer; onChange: (offer: Offer) => void }) {
+  const t = useTranslator();
+  const start = windowMinute(offer.window.start);
+  const end = windowMinute(offer.window.end);
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm text-text-secondary">{t("shop.window")}</legend>
+      <div className="flex flex-wrap gap-3">
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("shop.window_start")}
+          <input type="datetime-local" required value={start} onChange={(event) => onChange(withWindow(offer, event.target.value, end))} className={fieldClass} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("shop.window_end")}
+          <input type="datetime-local" value={end} onChange={(event) => onChange(withWindow(offer, start, event.target.value))} className={fieldClass} />
+        </label>
+      </div>
+      {windowEndsBeforeStart(offer) && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.window_end_before_start")}
+        </p>
+      )}
+    </fieldset>
   );
 }
 
