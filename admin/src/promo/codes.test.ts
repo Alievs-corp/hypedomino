@@ -1,0 +1,89 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { batchLeads, bundleOf, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+
+const draft: PromoDraft = {
+  ...emptyDraft,
+  id: " promo.launch ",
+  campaign: "campaign.launch_week",
+  bundleId: "bundle.launch",
+  coins: 300,
+  cosmetics: "avatar.comet_fox, avatar.comet_fox table.night_market",
+  startMinute: "2026-11-05T09:00",
+  endMinute: "2026-11-12T09:00",
+  cap: 50,
+  code: " hype 2345 ",
+};
+
+test("lists split on commas and whitespace and drop repeats", () => {
+  assert.deepEqual(listOf(" a, b\nc;a "), ["a", "b", "c"]);
+  assert.deepEqual(listOf("  "), []);
+});
+
+test("the bundle carries only what it grants", () => {
+  assert.deepEqual(bundleOf(draft), { id: "bundle.launch", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "table.night_market"] });
+  assert.deepEqual(bundleOf({ ...draft, coins: 0, cosmetics: "", passXp: 250 }), { id: "bundle.launch", revision: 1, passXp: 250 });
+});
+
+test("a multi_use request sends its cap and chosen code in UTC", () => {
+  const request = promoRequest(draft, false);
+  assert.equal(request.id, "promo.launch");
+  assert.equal(request.start, "2026-11-05T09:00:00Z");
+  assert.equal(request.end, "2026-11-12T09:00:00Z");
+  assert.equal(request.cap, 50);
+  assert.equal(request.code, "hype 2345");
+  assert.equal(request.accounts, undefined);
+});
+
+test("single_use, targeted and batch requests leave out what the server sets", () => {
+  const single = promoRequest({ ...draft, kind: "single_use" }, false);
+  assert.equal(single.cap, undefined);
+  assert.equal(single.code, undefined);
+  const targeted = promoRequest({ ...draft, kind: "targeted", accounts: "a1\na2, a1" }, false);
+  assert.deepEqual(targeted.accounts, ["a1", "a2"]);
+  assert.equal(targeted.cap, undefined);
+  const batch = promoRequest({ ...draft, count: 500 }, true);
+  assert.equal(batch.kind, "single_use");
+  assert.equal(batch.count, 500);
+  assert.equal(batch.cap, undefined);
+  assert.equal(batch.code, undefined);
+});
+
+test("a draft is ready with a grant, an ordered window and its kind's fields", () => {
+  assert.equal(draftReady(draft, false), true);
+  assert.equal(draftReady({ ...draft, coins: 0, cosmetics: "" }, false), false);
+  assert.equal(draftReady({ ...draft, endMinute: draft.startMinute }, false), false);
+  assert.equal(draftReady({ ...draft, cap: 0 }, false), false);
+  assert.equal(draftReady({ ...draft, kind: "targeted", accounts: "" }, false), false);
+  assert.equal(draftReady({ ...draft, count: 10001 }, true), false);
+  assert.equal(draftReady({ ...draft, count: 10000 }, true), true);
+});
+
+const code: PromoCode = {
+  id: "promo.launch", campaign: "campaign.launch_week", kind: "multi_use", bundle: { id: "bundle.launch", revision: 1, coins: 300 },
+  start: "2026-11-05T09:00:00Z", end: "2026-11-12T09:00:00Z", cap: 50, state: "active", creator: "a", redemptions: 3,
+};
+
+test("an active code past its end shows as expired", () => {
+  assert.equal(shownState(code, new Date("2026-11-06T00:00:00Z")), "active");
+  assert.equal(shownState(code, new Date("2026-11-12T09:00:00Z")), "expired");
+  assert.equal(shownState({ ...code, state: "disabled" }, new Date("2026-12-01T00:00:00Z")), "disabled");
+});
+
+test("paths encode the campaign and the id", () => {
+  assert.equal(promoApiPath(""), "/admin/promo-codes");
+  assert.equal(promoApiPath("campaign.a&b"), "/admin/promo-codes?campaign=campaign.a%26b");
+  assert.equal(disablePath("promo.x/../y", false), "/admin/promo-codes/promo.x%2F..%2Fy/disable");
+  assert.equal(disablePath("promo.gift", true), "/admin/promo-batches/promo.gift/disable");
+});
+
+test("a promo proposal reads as count, campaign, bundle and window", () => {
+  assert.equal(promoChangeSummary({ batch: true, count: 3, code }), "3 single_use codes; campaign.launch_week; 300 coins; 2026-11-05T09:00:00Z to 2026-11-12T09:00:00Z");
+  assert.equal(promoChangeSummary({ batch: false, count: 1, code }), "multi_use; campaign.launch_week; 300 coins; 2026-11-05T09:00:00Z to 2026-11-12T09:00:00Z");
+  assert.equal(promoChangeSummary({ coins: 5 }), null);
+});
+
+test("each batch offers its disable once, on its first listed code", () => {
+  const listed = [{ ...code, id: "promo.solo" }, { ...code, id: "promo.gift_2", batch: "promo.gift" }, { ...code, id: "promo.gift_1", batch: "promo.gift" }, { ...code, id: "promo.mass_1", batch: "promo.mass" }];
+  assert.deepEqual([...batchLeads(listed)], ["promo.gift_2", "promo.mass_1"]);
+});

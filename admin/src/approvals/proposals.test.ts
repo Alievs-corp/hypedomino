@@ -31,3 +31,15 @@ test("the change summary shows what changes and hides bookkeeping ids", () => {
   assert.equal(changeSummary({ roles: ["super_admin", "content"] }), "roles: super_admin, content");
   assert.equal(changeSummary("raw"), '"raw"');
 });
+
+test("a promo proposal links to the promo screen and reads as its code", () => {
+  const promo: Proposal = {
+    ...grant,
+    kind: "promo_code",
+    object_type: "promo_codes",
+    object_id: "promo.gift",
+    change: { batch: true, count: 3, code: { id: "promo.gift", campaign: "campaign.launch_week", kind: "single_use", bundle: { id: "bundle.gift", revision: 1, coins: 2500 }, start: "s", end: "e", cap: 1, state: "pending_approval", creator: "a", redemptions: 0 } },
+  };
+  assert.equal(objectHref(promo), "/promo");
+  assert.equal(changeSummary(promo.change), "3 single_use codes; campaign.launch_week; 2500 coins; s to e");
+});
