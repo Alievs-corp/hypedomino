@@ -23,6 +23,7 @@ import {
   withPackCrystals,
   withPoolItem,
   withPrice,
+  withRegionalNote,
   type CosmeticItem,
   type Offer,
   type ShopCatalog,
@@ -59,6 +60,14 @@ test("a new price replaces every other price and keeps only its own reference pr
   assert.equal(product.priceCrystals, undefined);
   assert.equal(product.referencePriceCrystals, undefined);
   assert.deepEqual(priceOf(withPrice(product, { currency: "coins", amount: 300, productId: "" })), { currency: "coins", amount: 300, productId: "" });
+});
+
+test("a regional override note belongs to a store product price only", () => {
+  const product = withRegionalNote(offer({ productId: "offer_starter" }), "TR override approved 2026-10-30");
+  assert.equal(product.regionalOverrideNote, "TR override approved 2026-10-30");
+  assert.equal(withPrice(product, { currency: "product", amount: 0, productId: "offer_bundle" }).regionalOverrideNote, "TR override approved 2026-10-30");
+  assert.equal("regionalOverrideNote" in withPrice(product, { currency: "crystals", amount: 60, productId: "" }), false);
+  assert.equal("regionalOverrideNote" in withRegionalNote(product, "  "), false);
 });
 
 test("crystal packs list in tier order and change only their crystals", () => {

@@ -182,4 +182,6 @@ export const en = {
   "shop.rotation_order": "Slot order",
   "shop.rotation_slots": "Pick at least one offer and no more than the period's slots.",
   "shop.rotation_remove": "Remove this rotation",
+  "shop.regional_note": "Regional override note",
+  "shop.regional_note_hint": "Local prices come from the stores. A market override is made in the store console and needs owner approval; note it here.",
 };

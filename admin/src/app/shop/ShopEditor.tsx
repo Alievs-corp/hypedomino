@@ -23,6 +23,7 @@ import {
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
+  withRegionalNote,
   withRotation,
   withWindow,
   withoutRotation,
@@ -239,7 +240,14 @@ function OfferPrice({ offer, onChange }: { offer: Offer; onChange: (offer: Offer
         ))}
       </div>
       {price.currency === "product" ? (
-        <input aria-label={t("shop.price.product")} value={price.productId} onChange={(event) => onChange(withPrice(offer, { ...price, productId: event.target.value }))} className={fieldClass} />
+        <>
+          <input aria-label={t("shop.price.product")} value={price.productId} onChange={(event) => onChange(withPrice(offer, { ...price, productId: event.target.value }))} className={fieldClass} />
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            {t("shop.regional_note")}
+            <textarea rows={2} value={offer.regionalOverrideNote ?? ""} onChange={(event) => onChange(withRegionalNote(offer, event.target.value))} className={fieldClass} />
+            <span className="text-text-muted">{t("shop.regional_note_hint")}</span>
+          </label>
+        </>
       ) : (
         <input
           type="number"

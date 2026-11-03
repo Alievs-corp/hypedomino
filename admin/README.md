@@ -31,7 +31,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 ## Shop offers
 
 `/shop` (A-17, `docs/admin.md` 5.5) edits the published catalog of `GET /admin/config/shop`.
-- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish.
+- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish. A store product price also takes the regional override note (`docs/economy.md` 7.4): local prices come from the stores, and a market override made in the store console is noted here; switching to coins or crystals drops it.
 - **Catalog-wide:** crystal pack amounts, and chest pools and odds.
 - **Rotations:** plan the offers of a daily or weekly period ahead. The slot counts and reset hour come from the server (`rotation` in `GET /admin/config/shop`). A daily period starts at the reset hour, a weekly one on a Monday at the reset hour. Candidates are the offers of the period's rotation section; checked offers take the slots in the order they were checked. A rotation with no offers or more offers than slots blocks the publish.
 - **Publish** (`PUT /admin/config/shop`) takes a reason. The API checks the catalog like the game servers, and they open and close offers on server time once they load the version.
