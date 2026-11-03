@@ -127,3 +127,22 @@ export function chestRulesOf(catalog: ShopCatalog): ChestRules {
 export function oddsTotal(rules: ChestRules): number {
   return chestRarities.reduce((total, rarity) => total + (rules.rarityPercent[rarity] ?? 0), 0);
 }
+
+export function windowMinute(instant: string | undefined): string {
+  const date = instant ? new Date(instant) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 16) : "";
+}
+
+export function withWindow(offer: Offer, startMinute: string, endMinute: string): Offer {
+  const start = startMinute ? `${startMinute}:00Z` : offer.window.start;
+  return { ...offer, window: endMinute ? { start, end: `${endMinute}:00Z` } : { start } };
+}
+
+export function windowEndsBeforeStart(offer: Offer): boolean {
+  return offer.window.end !== undefined && new Date(offer.window.end) <= new Date(offer.window.start);
+}
+
+export function changedOffers(previous: ShopCatalog | null, next: ShopCatalog): string[] {
+  const before = new Map((previous?.offers ?? []).map((offer) => [offer.id, JSON.stringify(offer)]));
+  return next.offers.filter((offer) => before.get(offer.id) !== JSON.stringify(offer)).map((offer) => offer.id);
+}

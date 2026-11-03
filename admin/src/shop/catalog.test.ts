@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   allowedCurrencies,
+  changedOffers,
+  windowEndsBeforeStart,
+  windowMinute,
+  withWindow,
   chestCandidates,
   crystalPacks,
   listsChest,
@@ -76,4 +80,31 @@ test("the chest pool editor offers only live common and rare items", () => {
   assert.deepEqual(withPoolItem(withPoolItem(added, "avatar.moon_owl", true), "avatar.paper_kite", false).bundle?.cosmetics, ["avatar.moon_owl"]);
   assert.equal(oddsTotal({ rarityPercent: { common: 85, rare: 15 }, rarePityCount: 10 }), 100);
   assert.equal(oddsTotal({ rarityPercent: { common: 85 }, rarePityCount: 10 }), 85);
+});
+
+test("a window instant shows as its UTC minute and an empty end stays empty", () => {
+  assert.equal(windowMinute("2026-11-04T09:30:00Z"), "2026-11-04T09:30");
+  assert.equal(windowMinute("2026-11-04T13:30:00+04:00"), "2026-11-04T09:30");
+  assert.equal(windowMinute(undefined), "");
+  assert.equal(windowMinute("not a time"), "");
+});
+
+test("editing a window sets UTC instants and an empty end removes the end", () => {
+  const start = offer({ window: { start: "2026-01-01T00:00:00Z", end: "2026-02-01T00:00:00Z" } });
+  assert.deepEqual(withWindow(start, "2026-11-10T08:00", "2026-11-17T08:00").window, { start: "2026-11-10T08:00:00Z", end: "2026-11-17T08:00:00Z" });
+  assert.deepEqual(withWindow(start, "2026-11-10T08:00", "").window, { start: "2026-11-10T08:00:00Z" });
+  assert.deepEqual(withWindow(start, "", "").window, { start: "2026-01-01T00:00:00Z" });
+});
+
+test("a window must end after it starts", () => {
+  assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z" } })), false);
+  assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z", end: "2026-11-10T09:00:00Z" } })), false);
+  assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z", end: "2026-11-10T08:00:00Z" } })), true);
+});
+
+test("a version lists the offers it added or changed against the one before", () => {
+  const older: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.a" }), offer({ id: "offer.b" })], rotations: [] };
+  const newer: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.a" }), offer({ id: "offer.b", priceCoins: 900 }), offer({ id: "offer.c" })], rotations: [] };
+  assert.deepEqual(changedOffers(older, newer), ["offer.b", "offer.c"]);
+  assert.deepEqual(changedOffers(null, older), ["offer.a", "offer.b"]);
 });

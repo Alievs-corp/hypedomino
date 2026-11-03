@@ -1,8 +1,13 @@
 import { adminApi } from "@/admin/api";
-import { canView } from "@/admin/navigation";
+import { googleClientId } from "@/admin/google";
+import { canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
+import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
-import type { CosmeticItem, ShopCatalog } from "@/shop/catalog";
+import type { Translate } from "@/i18n/translate";
+import { changedOffers, type CosmeticItem, type ShopCatalog } from "@/shop/catalog";
+import { Rollback } from "../config/Rollback";
+import { rollbackCatalog } from "./actions";
 import { ShopEditor } from "./ShopEditor";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +21,12 @@ export default async function ShopPage() {
   if (!canView(admin.permissions, "shop_offers")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const [shop, items] = await Promise.all([
+  const [shop, items, history] = await Promise.all([
     adminApi<{ config_version: number; catalog: ShopCatalog | null }>("GET", "/admin/config/shop"),
     adminApi<{ items: CosmeticItem[] }>("GET", "/admin/cosmetics/items"),
+    adminApi<{ versions: CatalogVersion[] }>("GET", "/admin/config/shop/history"),
   ]);
-  if (shop.status !== 200 || items.status !== 200) {
+  if (shop.status !== 200 || items.status !== 200 || history.status !== 200) {
     return <Notice text={t("shop.load_failed")} />;
   }
   return (
@@ -31,7 +37,44 @@ export default async function ShopPage() {
       ) : (
         <ShopEditor initialCatalog={shop.body.catalog} version={shop.body.config_version} items={items.body.items} />
       )}
+      <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "shop_offers") ? googleClientId() : null} t={t} />
     </main>
+  );
+}
+
+type CatalogVersion = { config_version: number; published_at: string; catalog: ShopCatalog };
+
+function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollback: string | null; t: Translate }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">{t("shop.history")}</h2>
+      {versions.length === 0 ? (
+        <p className="text-text-secondary">{t("shop.history_empty")}</p>
+      ) : (
+        <table className="text-sm">
+          <thead className="text-left text-text-muted">
+            <tr>
+              <th className="py-2 pr-4">{t("shop.version")}</th>
+              <th className="py-2 pr-4">{t("shop.published_at")}</th>
+              <th className="py-2 pr-4">{t("shop.offer_count")}</th>
+              <th className="py-2 pr-4">{t("shop.changed_offers")}</th>
+              {rollback && <th className="py-2 pr-4" />}
+            </tr>
+          </thead>
+          <tbody>
+            {versions.map((version, index) => (
+              <tr key={version.config_version} className="border-t border-surface align-top">
+                <td className="py-2 pr-4">{version.config_version}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
+                <td className="py-2 pr-4">{version.catalog.offers.length}</td>
+                <td className="py-2 pr-4 font-mono break-all">{changedOffers(versions[index + 1]?.catalog ?? null, version.catalog).join(", ")}</td>
+                {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackCatalog} />}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 

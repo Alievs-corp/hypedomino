@@ -7,7 +7,8 @@ import type { RulesConfig, RulesVersion } from "@/config/rules";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { RulesEditor } from "./RulesEditor";
-import { RulesRollback } from "./RulesRollback";
+import { Rollback } from "../Rollback";
+import { rollbackRules } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ function History({ versions, rollback, t }: { versions: RulesVersion[]; rollback
                     .map(([key, value]) => `${key}=${value}`)
                     .join(", ") || t("rules.all_defaults")}
                 </td>
-                {rollback && <td className="py-2 pr-4">{index > 0 && <RulesRollback version={version.config_version} clientId={rollback} />}</td>}
+                {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackRules} />}</td>}
               </tr>
             ))}
           </tbody>
