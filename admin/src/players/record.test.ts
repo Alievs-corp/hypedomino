@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { banActive, playerApiPath, playersApiPath, searchQuery, signedAmount, type PlayerAccount } from "./record.ts";
+import { banActive, playerApiPath, playersApiPath, searchQuery, signedAmount, validAdjustment, type PlayerAccount } from "./record.ts";
 
 test("the search query is the first trimmed q value", () => {
   assert.equal(searchQuery({ q: "  ayla " }), "ayla");
@@ -27,4 +27,13 @@ test("ledger amounts show their sign", () => {
   assert.equal(signedAmount(50), "+50");
   assert.equal(signedAmount(-20), "-20");
   assert.equal(signedAmount(0), "0");
+});
+
+test("a coin adjustment is a whole, non-zero number of coins, credit or debit", () => {
+  assert.ok(validAdjustment(100));
+  assert.ok(validAdjustment(-40));
+  assert.ok(!validAdjustment(0));
+  assert.ok(!validAdjustment(1.5));
+  assert.ok(!validAdjustment(Number.NaN));
+  assert.ok(!validAdjustment(2 ** 60));
 });

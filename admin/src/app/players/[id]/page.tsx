@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { adminApi } from "@/admin/api";
-import { canView } from "@/admin/navigation";
+import { googleClientId } from "@/admin/google";
+import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { MessageKey, Translate } from "@/i18n/translate";
 import { banActive, playerApiPath, signedAmount, type PlayerRecord } from "@/players/record";
 import { Notice } from "../Notice";
+import { PlayerActions } from "./PlayerActions";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {profile && <Fact label={t("player.level")} value={`${profile.level} (${profile.xp} XP)`} />}
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
+      {can(admin.permissions, "players", "act_on_player") && account.state !== "deleted" && (
+        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} renameRequired={profile?.rename_required ?? false} />
+      )}
       <Rows title="player.nickname_history" t={t} rows={record.nickname_history} columns={[
         { label: "players.nickname", cell: (row) => row.nickname },
         { label: "player.replaced_at", cell: (row) => when(row.replaced_at) },

@@ -32,6 +32,13 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 `/players` (A-30 lookup, `docs/admin.md` 6.1) searches `GET /admin/players?q=` by account id, exact email or nickname prefix, up to 20 results. A search writes no audit entry. `/players/{id}` shows the record from `GET /admin/players/{id}`: account state, country, emails (sign-in identities only for `super_admin`), the temporary ban while it runs, balances, level, the forced-rename flag, nickname history, and the newest 50 ledger entries, inventory items, reward grants, purchases and matches. The API writes a `view` entry for every opening (AP-6), so the links to a record do not prefetch it: a prefetch would log a view nobody made.
 
+Roles with `act_on_player` (support and `super_admin`) get the support actions of 6.2 on a record that is not deleted. Each one needs a reason and a fresh sign-in, and `StepUpPrompt` covers the second.
+- **Coins:** a whole, non-zero amount; a minus sign debits. The form keeps one `request_id` until the adjustment is applied, so a resend after step-up cannot apply it twice (`repeated`). An amount above `AdminGrantApprovalCoins` becomes a proposal for a second admin (202).
+- **Temporary ban:** ban or lift, whichever applies now. The ban is refused with `not_configured` while `HD_TEMP_BAN_HOURS` is unset.
+- **Force rename:** offered while the player is not already flagged.
+
+The page reloads the record after each change.
+
 ## Match rules
 
 `/config/rules` is the `rules` part of A-26 (`docs/admin.md` 5.14). It lists the keys of `GET /admin/config/rules` with their unit, allowed range, default and current value. Roles with publish on config values may edit them; a value outside the range or not a whole number blocks the publish before the API sees it, and the API checks the bounds again. A publish (`PUT /admin/config/rules`) sends only the values that differ from their defaults, with the reason, and the page then shows the new `config_version`. Below, the last 50 published versions show their non-default values. A value applies to matches that open after the game servers pick it up (`HD_CONFIG_POLL`). Each earlier version has a rollback for roles with publish on config values and rollback on snapshots. It needs a reason and a fresh sign-in, and it publishes that version's values as the next version (`POST /admin/config/rules/rollback`).

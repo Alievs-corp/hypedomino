@@ -45,3 +45,7 @@ export function banActive(account: PlayerAccount, now: Date): boolean {
 export function signedAmount(amount: number): string {
   return amount > 0 ? `+${amount}` : String(amount);
 }
+
+export function validAdjustment(amount: number): boolean {
+  return Number.isSafeInteger(amount) && amount !== 0;
+}
