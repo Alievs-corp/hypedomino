@@ -81,20 +81,22 @@ namespace HypeDomino.Tests.PlayMode
         [Test]
         public void GenericPoolsCycleWithoutAllocatingOnceWarm()
         {
-            var tiles = new ObjectPool<List<int>>(() => new List<int>(Prewarm), list => list.Clear());
-            tiles.Release(tiles.Get());
-            ListPool<int>.Release(ListPool<int>.Get());
+            var tiles = new ObjectPool<List<int>>(() => new List<int>(Prewarm), actionOnRelease: list => list.Clear());
+
+            void Cycle()
+            {
+                var list = tiles.Get();
+                for (var i = 0; i < Prewarm; i++) list.Add(i);
+                var scratch = ListPool<int>.Get();
+                scratch.Add(list.Count);
+                ListPool<int>.Release(scratch);
+                tiles.Release(list);
+            }
+
+            Cycle();
             Assert.That(() =>
             {
-                for (var cycle = 0; cycle < Cycles; cycle++)
-                {
-                    var list = tiles.Get();
-                    for (var i = 0; i < Prewarm; i++) list.Add(i);
-                    tiles.Release(list);
-                    var scratch = ListPool<int>.Get();
-                    scratch.Add(cycle);
-                    ListPool<int>.Release(scratch);
-                }
+                for (var cycle = 0; cycle < Cycles; cycle++) Cycle();
             }, Is.Not.AllocatingGCMemory());
         }
     }
