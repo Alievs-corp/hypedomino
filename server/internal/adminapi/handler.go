@@ -18,9 +18,11 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
+	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -40,6 +42,10 @@ type Config struct {
 	GrantApprovalCoins int64
 	TempBan            time.Duration
 	Limits             Limits
+
+	PromoKey  string
+	Promo     promo.Config
+	Cosmetics *cosmetics.Catalog
 }
 
 type Verifier interface {
@@ -58,6 +64,7 @@ type Handler struct {
 	strings   *gamestrings.Store
 	approvals *approval.Store
 	wallet    *wallet.Store
+	promos    *promo.Store
 	now       func() time.Time
 	logger    *slog.Logger
 	mux       *http.ServeMux
@@ -78,6 +85,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 		now:       now,
 		logger:    logger,
 		mux:       http.NewServeMux(),
+	}
+	if hasher, err := promo.NewHasher(config.PromoKey); err == nil && config.Cosmetics != nil {
+		h.promos = promo.NewStore(pool, nil, config.Cosmetics, hasher, config.Promo)
 	}
 	h.mux.HandleFunc("POST /admin/nonce", h.signingIn(h.nonce))
 	h.mux.HandleFunc("POST /admin/session", h.signingIn(h.signIn))
@@ -102,6 +112,11 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banTemporarily))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
+	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
+	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
+	h.mux.HandleFunc("POST /admin/promo-codes/batch", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromoBatch))
+	h.mux.HandleFunc("POST /admin/promo-codes/{id}/disable", h.allowed(rbac.PromoCodes, rbac.DisablePromo, h.disablePromo))
+	h.mux.HandleFunc("POST /admin/promo-batches/{id}/disable", h.allowed(rbac.PromoCodes, rbac.DisablePromo, h.disablePromoBatch))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
@@ -154,9 +169,16 @@ func (h *Handler) stamp(p principal, entry audit.Entry) audit.Entry {
 	return entry
 }
 
-func (h *Handler) sensitive(p principal, note changeNote, now time.Time) error {
+func (h *Handler) noted(note changeNote) error {
 	if strings.TrimSpace(note.Reason) == "" {
 		return errReasonRequired
+	}
+	return nil
+}
+
+func (h *Handler) sensitive(p principal, note changeNote, now time.Time) error {
+	if err := h.noted(note); err != nil {
+		return err
 	}
 	if now.After(p.session.AuthenticatedAt.Add(h.config.Session.StepUp)) {
 		return errStepUpRequired
@@ -334,7 +356,17 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, wallet.ErrInsufficient):
 		return http.StatusConflict, "insufficient"
-	case errors.Is(err, errBanNotConfigured):
+	case errors.Is(err, promo.ErrUnknown):
+		return http.StatusNotFound, "not_found"
+	case errors.Is(err, promo.ErrInvalid), errors.Is(err, errBadBatchCount):
+		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, promo.ErrDuplicate):
+		return http.StatusConflict, "duplicate"
+	case errors.Is(err, promo.ErrApprover):
+		return http.StatusForbidden, "self_decision"
+	case errors.Is(err, promo.ErrNotActive):
+		return http.StatusConflict, "not_pending"
+	case errors.Is(err, errBanNotConfigured), errors.Is(err, errPromoNotConfigured):
 		return http.StatusConflict, "not_configured"
 	case errors.Is(err, errNotBanned):
 		return http.StatusConflict, "not_banned"

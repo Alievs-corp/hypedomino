@@ -23,8 +23,10 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
@@ -113,6 +115,7 @@ func configFromEnv(env lookup) (config, error) {
 	if err := c.api.Shop.Validate(); err != nil {
 		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
 	}
+	errs = append(errs, promoFromEnv(&c.api, text, integer)...)
 	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
 	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)
 	integer("HD_ADMIN_RATE_SIGNIN_PER_MINUTE", &c.api.Limits.SignIn.PerMinute)
@@ -133,6 +136,36 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, errors.New("HD_ADMIN_GOOGLE_AUDIENCES is required"))
 	}
 	return c, errors.Join(errs...)
+}
+
+func promoFromEnv(api *adminapi.Config, text func(string, *string), integer func(string, *int)) []error {
+	text("HD_PROMO_KEY", &api.PromoKey)
+	if api.PromoKey == "" {
+		return nil
+	}
+	api.Promo = promo.DefaultConfig()
+	var errs []error
+	if _, err := promo.NewHasher(api.PromoKey); err != nil {
+		errs = append(errs, fmt.Errorf("HD_PROMO_KEY: %w", err))
+	}
+	integer("HD_PROMO_CODE_LENGTH", &api.Promo.CodeLength)
+	integer("HD_PROMO_MAX_VALIDITY_DAYS", &api.Promo.MaxValidityDays)
+	integer("HD_PROMO_COINS_APPROVAL_THRESHOLD", &api.Promo.CoinsApprovalThreshold)
+	if err := api.Promo.Validate(); err != nil {
+		errs = append(errs, fmt.Errorf("HD_PROMO_*: %w", err))
+	}
+	api.Cosmetics = cosmetics.Builtin()
+	var manifest string
+	text("HD_COSMETICS_MANIFEST", &manifest)
+	if manifest == "" {
+		return errs
+	}
+	catalog, err := cosmetics.Load(manifest)
+	if err != nil {
+		return append(errs, fmt.Errorf("HD_COSMETICS_MANIFEST: %w", err))
+	}
+	api.Cosmetics = catalog
+	return errs
 }
 
 func main() {

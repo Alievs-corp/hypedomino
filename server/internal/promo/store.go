@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -101,7 +102,20 @@ type Code struct {
 	State       string        `json:"state"`
 	Creator     string        `json:"creator"`
 	Approver    string        `json:"approver,omitempty"`
+	Batch       string        `json:"batch,omitempty"`
 	Redemptions int           `json:"redemptions"`
+}
+
+type CampaignUsage struct {
+	Campaign    string    `json:"campaign"`
+	Codes       int       `json:"codes"`
+	Active      int       `json:"active"`
+	Pending     int       `json:"pending"`
+	Disabled    int       `json:"disabled"`
+	Cap         int       `json:"cap"`
+	Redemptions int       `json:"redemptions"`
+	Start       time.Time `json:"start"`
+	End         time.Time `json:"end"`
 }
 
 type Created struct {
@@ -115,8 +129,16 @@ type Redemption struct {
 	Grant    reward.Report `json:"grant"`
 }
 
+type database interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
+}
+
 type Store struct {
-	pool    *pgxpool.Pool
+	db      database
 	engine  *reward.Engine
 	catalog *cosmetics.Catalog
 	hasher  Hasher
@@ -124,7 +146,13 @@ type Store struct {
 }
 
 func NewStore(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, hasher Hasher, config Config) *Store {
-	return &Store{pool: pool, engine: engine, catalog: catalog, hasher: hasher, config: config}
+	return &Store{db: pool, engine: engine, catalog: catalog, hasher: hasher, config: config}
+}
+
+func (s *Store) In(tx pgx.Tx) *Store {
+	copied := *s
+	copied.db = tx
+	return &copied
 }
 
 func (s *Store) validate(d Definition) error {
@@ -208,7 +236,7 @@ func (s *Store) Create(ctx context.Context, d Definition, now time.Time) (Create
 	if err != nil {
 		return Created{}, fmt.Errorf("%w: %v", ErrInvalid, err)
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return Created{}, err
 	}
@@ -274,12 +302,12 @@ func (s *Store) Batch(ctx context.Context, d Definition, count int, now time.Tim
 		if err != nil {
 			return nil, err
 		}
-		code := Code{ID: fmt.Sprintf("%s_%0*d", d.ID, width, i), Campaign: d.Campaign, Kind: SingleUse, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: 1, State: state, Creator: d.Creator}
+		code := Code{ID: fmt.Sprintf("%s_%0*d", d.ID, width, i), Campaign: d.Campaign, Kind: SingleUse, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: 1, State: state, Creator: d.Creator, Batch: d.ID}
 		created = append(created, Created{Code: code, Plaintext: plaintext})
-		rows = append(rows, []any{code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now})
+		rows = append(rows, []any{code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now, code.Batch})
 	}
-	columns := []string{"promo_id", "campaign_id", "kind", "bundle", "code_hash", "starts_at", "ends_at", "cap", "state", "created_by", "created_at"}
-	if _, err := s.pool.CopyFrom(ctx, pgx.Identifier{"promo_codes"}, columns, pgx.CopyFromRows(rows)); err != nil {
+	columns := []string{"promo_id", "campaign_id", "kind", "bundle", "code_hash", "starts_at", "ends_at", "cap", "state", "created_by", "created_at", "batch_id"}
+	if _, err := s.db.CopyFrom(ctx, pgx.Identifier{"promo_codes"}, columns, pgx.CopyFromRows(rows)); err != nil {
 		if isUniqueViolation(err) {
 			return nil, fmt.Errorf("%w: id or code already exists", ErrDuplicate)
 		}
@@ -299,11 +327,72 @@ func (s *Store) Approve(ctx context.Context, id, approver string, now time.Time)
 	case approver == "" || approver == code.Creator:
 		return Code{}, fmt.Errorf("%w: a second admin approves", ErrApprover)
 	}
-	if _, err := s.pool.Exec(ctx, `update promo_codes set state = $2, approved_by = $3 where promo_id = $1`, id, StateActive, approver); err != nil {
+	if _, err := s.db.Exec(ctx, `update promo_codes set state = $2, approved_by = $3 where promo_id = $1`, id, StateActive, approver); err != nil {
 		return Code{}, err
 	}
 	code.State, code.Approver = StateActive, approver
 	return code, nil
+}
+
+func (s *Store) ApproveBatch(ctx context.Context, batch, approver string) (int, error) {
+	var creator string
+	err := s.db.QueryRow(ctx, `select created_by from promo_codes where batch_id = $1 and batch_id <> '' and state = $2 limit 1`, batch, StatePending).Scan(&creator)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("%w: batch %s has no code pending approval", ErrNotActive, batch)
+	}
+	if err != nil {
+		return 0, err
+	}
+	if approver == "" || approver == creator {
+		return 0, fmt.Errorf("%w: a second admin approves", ErrApprover)
+	}
+	tag, err := s.db.Exec(ctx, `update promo_codes set state = $3, approved_by = $4 where batch_id = $1 and state = $2`, batch, StatePending, StateActive, approver)
+	return int(tag.RowsAffected()), err
+}
+
+func (s *Store) DisableBatch(ctx context.Context, batch string, now time.Time) (int, error) {
+	if batch == "" {
+		return 0, ErrUnknown
+	}
+	tag, err := s.db.Exec(ctx, `update promo_codes set state = $2, disabled_at = $3 where batch_id = $1 and state <> $2`, batch, StateDisabled, now)
+	return int(tag.RowsAffected()), err
+}
+
+func (s *Store) List(ctx context.Context, campaign string, limit int) ([]Code, error) {
+	rows, err := s.db.Query(ctx, `select `+codeColumns+` from promo_codes c where $1 = '' or c.campaign_id = $1 order by c.created_at desc, c.promo_id limit $2`, campaign, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	codes := []Code{}
+	for rows.Next() {
+		code, err := scanCode(rows)
+		if err != nil {
+			return nil, err
+		}
+		codes = append(codes, code)
+	}
+	return codes, rows.Err()
+}
+
+func (s *Store) Campaigns(ctx context.Context) ([]CampaignUsage, error) {
+	rows, err := s.db.Query(ctx, `select c.campaign_id, count(*), count(*) filter (where c.state = $1), count(*) filter (where c.state = $2), count(*) filter (where c.state = $3),
+		sum(c.cap), coalesce(sum(r.redemptions), 0), min(c.starts_at), max(c.ends_at)
+		from promo_codes c left join (select promo_id, count(*) redemptions from promo_redemptions group by promo_id) r on r.promo_id = c.promo_id
+		group by c.campaign_id order by max(c.created_at) desc, c.campaign_id`, StateActive, StatePending, StateDisabled)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	usage := []CampaignUsage{}
+	for rows.Next() {
+		var u CampaignUsage
+		if err := rows.Scan(&u.Campaign, &u.Codes, &u.Active, &u.Pending, &u.Disabled, &u.Cap, &u.Redemptions, &u.Start, &u.End); err != nil {
+			return nil, err
+		}
+		usage = append(usage, u)
+	}
+	return usage, rows.Err()
 }
 
 func (s *Store) Disable(ctx context.Context, id string, now time.Time) (Code, error) {
@@ -311,20 +400,20 @@ func (s *Store) Disable(ctx context.Context, id string, now time.Time) (Code, er
 	if err != nil {
 		return Code{}, err
 	}
-	if _, err := s.pool.Exec(ctx, `update promo_codes set state = $2, disabled_at = $3 where promo_id = $1`, id, StateDisabled, now); err != nil {
+	if _, err := s.db.Exec(ctx, `update promo_codes set state = $2, disabled_at = $3 where promo_id = $1`, id, StateDisabled, now); err != nil {
 		return Code{}, err
 	}
 	code.State = StateDisabled
 	return code, nil
 }
 
-const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by,
+const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by, c.batch_id,
 	(select count(*) from promo_redemptions r where r.promo_id = c.promo_id)`
 
 func scanCode(row pgx.Row) (Code, error) {
 	var code Code
 	var bundle []byte
-	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Redemptions); err != nil {
+	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Batch, &code.Redemptions); err != nil {
 		return Code{}, err
 	}
 	if err := json.Unmarshal(bundle, &code.Bundle); err != nil {
@@ -334,7 +423,7 @@ func scanCode(row pgx.Row) (Code, error) {
 }
 
 func (s *Store) Get(ctx context.Context, id string) (Code, error) {
-	code, err := scanCode(s.pool.QueryRow(ctx, `select `+codeColumns+` from promo_codes c where c.promo_id = $1`, id))
+	code, err := scanCode(s.db.QueryRow(ctx, `select `+codeColumns+` from promo_codes c where c.promo_id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Code{}, ErrUnknown
 	}
@@ -354,7 +443,7 @@ func (s *Store) Redeem(ctx context.Context, account, raw string, now time.Time) 
 		return Redemption{}, err
 	}
 	if err != nil {
-		if _, recordErr := s.pool.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, false, $2)`, account, now); recordErr != nil {
+		if _, recordErr := s.db.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, false, $2)`, account, now); recordErr != nil {
 			return Redemption{}, recordErr
 		}
 		return Redemption{}, err
@@ -375,7 +464,7 @@ func (s *Store) throttle(ctx context.Context, account string, now time.Time) err
 	var attempts, failed int
 	hour := now.Add(-time.Hour)
 	lock := now.Add(-time.Duration(s.config.LockMinutes) * time.Minute)
-	if err := s.pool.QueryRow(ctx, `select count(*) filter (where attempted_at > $2), count(*) filter (where not ok and attempted_at > $3) from promo_attempts where account_id = $1 and attempted_at > least($2, $3)`, account, hour, lock).Scan(&attempts, &failed); err != nil {
+	if err := s.db.QueryRow(ctx, `select count(*) filter (where attempted_at > $2), count(*) filter (where not ok and attempted_at > $3) from promo_attempts where account_id = $1 and attempted_at > least($2, $3)`, account, hour, lock).Scan(&attempts, &failed); err != nil {
 		return err
 	}
 	switch {
@@ -388,7 +477,7 @@ func (s *Store) throttle(ctx context.Context, account string, now time.Time) err
 }
 
 func (s *Store) redeem(ctx context.Context, account string, hash []byte, now time.Time) (Redemption, error) {
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return Redemption{}, err
 	}
