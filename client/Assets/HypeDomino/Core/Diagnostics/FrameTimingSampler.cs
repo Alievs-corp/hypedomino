@@ -1,4 +1,5 @@
 using System;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace HypeDomino.Core.Diagnostics
@@ -9,16 +10,30 @@ namespace HypeDomino.Core.Diagnostics
         const double MissedVsyncFactor = 1.5;
 
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
-        readonly double[] workTimesMs = new double[WindowFrames];
-        int sampledFrames;
-        int missedVsyncs;
-        double missedVsyncThresholdSeconds;
+        FrameWindow window;
+        ProfilerRecorder gcAllocatedInFrame;
+        ProfilerRecorder batchesCount;
+        int collectionsAtWindowStart;
+        bool skipReportFrame;
 
         void Awake()
         {
             var refreshRate = HighestRefreshRate();
             Application.targetFrameRate = refreshRate;
-            missedVsyncThresholdSeconds = MissedVsyncFactor / refreshRate;
+            window = new FrameWindow(WindowFrames, MissedVsyncFactor / refreshRate);
+            collectionsAtWindowStart = GC.CollectionCount(0);
+        }
+
+        void OnEnable()
+        {
+            gcAllocatedInFrame = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
+            batchesCount = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Batches Count");
+        }
+
+        void OnDisable()
+        {
+            gcAllocatedInFrame.Dispose();
+            batchesCount.Dispose();
         }
 
         void Update()
@@ -26,23 +41,27 @@ namespace HypeDomino.Core.Diagnostics
             FrameTimingManager.CaptureFrameTimings();
             if (FrameTimingManager.GetLatestTimings(1, latestTiming) == 0) return;
 
-            workTimesMs[sampledFrames++] = Math.Max(latestTiming[0].cpuFrameTime, latestTiming[0].gpuFrameTime);
-            if (Time.unscaledDeltaTime > missedVsyncThresholdSeconds) missedVsyncs++;
-            if (sampledFrames < WindowFrames) return;
+            var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
+            skipReportFrame = false;
+            var work = Math.Max(latestTiming[0].cpuFrameTime, latestTiming[0].gpuFrameTime);
+            window.Add(work, Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
+            if (!window.IsFull) return;
 
-            Report();
-            sampledFrames = 0;
-            missedVsyncs = 0;
+            Report(window.Close());
+            skipReportFrame = true;
+            collectionsAtWindowStart = GC.CollectionCount(0);
         }
 
-        void Report()
+        void Report(FrameWindowReport report)
         {
-            Array.Sort(workTimesMs);
-            var p50 = workTimesMs[WindowFrames / 2];
-            var p95 = workTimesMs[WindowFrames * 95 / 100];
-            var missedPercent = 100.0 * missedVsyncs / WindowFrames;
-            Debug.Log($"FrameTiming target={Application.targetFrameRate} frames={WindowFrames} workP50={p50:F2}ms workP95={p95:F2}ms missedVsync={missedPercent:F2}%");
+            var collections = GC.CollectionCount(0) - collectionsAtWindowStart;
+            Debug.Log($"FrameTiming target={Application.targetFrameRate} frames={report.Frames} workP50={report.WorkP50Ms:F2}ms workP95={report.WorkP95Ms:F2}ms missedVsync={report.MissedVsyncPercent:F2}% " +
+                      $"gcFrames={Counter(gcAllocatedInFrame, report.AllocatingFrames)} gcMax={Counter(gcAllocatedInFrame, report.MaxGcBytes)}B gcCollections={collections} batchesMax={Counter(batchesCount, report.MaxBatches)}");
         }
+
+        static long LastValue(ProfilerRecorder recorder) => recorder.Valid ? recorder.LastValue : 0;
+
+        static string Counter(ProfilerRecorder recorder, long value) => recorder.Valid ? value.ToString() : "n/a";
 
         static int HighestRefreshRate()
         {
