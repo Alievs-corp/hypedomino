@@ -572,7 +572,7 @@ Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6
 | Step-up | Every `S` action and every approval needs a sign-in no older than `AdminStepUpMinutes` |
 | Admin API | Separate host and credentials, never player tokens (ADR 0006). The browser talks only to the admin web server; the admin API authorises every request from the admin's identity and roles |
 | Data access | The admin API's database role writes config, audit and admin tables and calls the ledger and sanction services; it has no direct write on ledger, inventory or rank tables |
-| Web hardening | CSRF tokens, strict CSP, rate limits per account, server-side pagination (#148) |
+| Web hardening | Cross-site request protection (`SameSite=Strict` session cookie, every change through a server action that checks `Origin`, no change on `GET`), strict CSP with a per-request nonce, rate limits per account, server-side pagination (#148, `admin/README.md`) |
 | Secrets | From the environment only (ADR 0006). Promo plaintext is shown once and never logged |
 | Compromise | Disable affected admin accounts, rotate secrets, review the audit log since the first suspect entry (`docs/launch-runbook.md` 6.5) |
 

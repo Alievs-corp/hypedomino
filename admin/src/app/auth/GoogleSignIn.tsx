@@ -1,7 +1,6 @@
 "use client";
 
-import Script from "next/script";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signInRefusalKey } from "@/admin/refusals";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
@@ -20,6 +19,25 @@ declare global {
   interface Window {
     google?: GoogleIdentity;
   }
+}
+
+const googleIdentityScript = "https://accounts.google.com/gsi/client";
+
+function documentNonce(): string {
+  return document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";
+}
+
+function loadGoogleIdentity(): Promise<void> {
+  if (window.google?.accounts) {
+    return Promise.resolve();
+  }
+  const script =
+    document.querySelector<HTMLScriptElement>(`script[src="${googleIdentityScript}"]`) ??
+    document.head.appendChild(Object.assign(document.createElement("script"), { src: googleIdentityScript, async: true, nonce: documentNonce() }));
+  return new Promise((resolve, reject) => {
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener("error", () => reject(new Error("Google Identity Services did not load")), { once: true });
+  });
 }
 
 export function GoogleSignIn({ clientId }: { clientId: string }) {
@@ -47,9 +65,12 @@ export function GoogleSignIn({ clientId }: { clientId: string }) {
     identity.renderButton(button.current, { type: "standard", theme: "filled_black", size: "large", text: "signin_with" });
   }
 
+  useEffect(() => {
+    loadGoogleIdentity().then(prepare, () => setProblem("signin.unavailable"));
+  }, []);
+
   return (
     <div className="flex flex-col items-start gap-4">
-      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => void prepare()} />
       <div ref={button} />
       {problem && (
         <p role="alert" className="text-danger-text">
