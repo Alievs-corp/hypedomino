@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/partnerfit"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
@@ -83,6 +84,7 @@ type Finished struct {
 	Cancelled   bool
 	Replay      []byte
 	Results     map[rules.Seat]string
+	PartnerFit  map[rules.Seat]partnerfit.Count
 	Events      []Event
 	Outbox      []Message
 }
@@ -175,6 +177,16 @@ func (s *Store) Finish(ctx context.Context, f Finished) error {
 		}
 		if tag.RowsAffected() == 0 {
 			return fmt.Errorf("%w: seat %s is not in match %s", ErrInvalid, seat, f.ID)
+		}
+	}
+	for seat, fit := range f.PartnerFit {
+		tag, err := tx.Exec(ctx, `update match_participants set partner_decisions = $4, partner_fits = $5 where match_id = $1 and started_at = $2 and seat = $3`,
+			f.ID, f.StartedAt, int16(seat), fit.Decisions, fit.Fits)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("%w: partner fit for seat %s outside match %s", ErrInvalid, seat, f.ID)
 		}
 	}
 	for _, e := range f.Events {
