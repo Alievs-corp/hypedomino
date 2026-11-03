@@ -139,7 +139,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
@@ -152,6 +152,10 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_STEP_UP` | No | admin-api | `10m` (`AdminStepUpMinutes`) | `10m` | No | from #134 |
 | `HD_ADMIN_APPROVAL_TTL` | No | admin-api | `24h` (`AdminApprovalTtlHours`) | `24h` | No | from #134 |
 | `HD_ADMIN_GRANT_APPROVAL_COINS` | No | admin-api | `2000` (`AdminGrantApprovalCoins`) | `2000` | No | from #144 |
+| `HD_ADMIN_RATE_ACCOUNT_PER_MINUTE` | No | admin-api | `120` (`AdminRateAccountPerMinute`) | `120` | No | from #148 |
+| `HD_ADMIN_RATE_ACCOUNT_BURST` | No | admin-api | `40` (`AdminRateAccountBurst`) | `40` | No | from #148 |
+| `HD_ADMIN_RATE_SIGNIN_PER_MINUTE` | No | admin-api | `10` (`AdminRateSignInPerMinute`) | `10` | No | from #148 |
+| `HD_ADMIN_RATE_SIGNIN_BURST` | No | admin-api | `10` (`AdminRateSignInBurst`) | `10` | No | from #148 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
 
 The admin web server (`admin/`) reads two variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.

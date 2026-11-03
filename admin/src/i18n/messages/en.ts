@@ -14,6 +14,7 @@ export const en = {
   "signin.retry": "The sign-in expired. Try again.",
   "signin.unavailable": "Sign-in is not available right now. Try again shortly.",
   "signin.failed": "Sign-in failed.",
+  "signin.rate_limited": "Too many sign-in attempts. Wait a minute and try again.",
   "nav.audit": "Audit log",
   "audit.title": "Audit log",
   "audit.actor": "Actor (admin account id)",

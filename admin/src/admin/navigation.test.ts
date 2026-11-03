@@ -50,5 +50,6 @@ test("sign-in refusals map to a message and unknown codes to the generic one", (
   assert.equal(signInRefusalKey("nonce_rejected"), "signin.retry");
   assert.equal(signInRefusalKey("token_expired"), "signin.retry");
   assert.equal(signInRefusalKey("provider_unavailable"), "signin.unavailable");
+  assert.equal(signInRefusalKey("rate_limited"), "signin.rate_limited");
   assert.equal(signInRefusalKey("500"), "signin.failed");
 });

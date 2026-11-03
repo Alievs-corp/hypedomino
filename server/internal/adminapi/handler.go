@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -38,6 +39,7 @@ type Config struct {
 
 	GrantApprovalCoins int64
 	TempBan            time.Duration
+	Limits             Limits
 }
 
 type Verifier interface {
@@ -48,6 +50,7 @@ type Verifier interface {
 type Handler struct {
 	config    Config
 	verifier  Verifier
+	buckets   ratelimit.Buckets
 	pool      *pgxpool.Pool
 	accounts  *adminaccount.Store
 	sessions  *adminsession.Store
@@ -60,10 +63,11 @@ type Handler struct {
 	mux       *http.ServeMux
 }
 
-func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.Time, logger *slog.Logger) *Handler {
+func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxpool.Pool, now func() time.Time, logger *slog.Logger) *Handler {
 	h := &Handler{
 		config:    config,
 		verifier:  verifier,
+		buckets:   buckets,
 		pool:      pool,
 		accounts:  adminaccount.NewStore(pool),
 		sessions:  adminsession.NewStore(pool, config.Session),
@@ -75,8 +79,8 @@ func New(config Config, verifier Verifier, pool *pgxpool.Pool, now func() time.T
 		logger:    logger,
 		mux:       http.NewServeMux(),
 	}
-	h.mux.HandleFunc("POST /admin/nonce", h.nonce)
-	h.mux.HandleFunc("POST /admin/session", h.signIn)
+	h.mux.HandleFunc("POST /admin/nonce", h.signingIn(h.nonce))
+	h.mux.HandleFunc("POST /admin/session", h.signingIn(h.signIn))
 	h.mux.HandleFunc("POST /admin/session/step-up", h.signedIn(h.stepUp))
 	h.mux.HandleFunc("DELETE /admin/session", h.signedIn(h.signOut))
 	h.mux.HandleFunc("GET /admin/me", h.signedIn(h.me))
@@ -167,6 +171,9 @@ func (h *Handler) signedIn(next authedHandler) http.HandlerFunc {
 		p, err := h.authenticate(r)
 		if err != nil {
 			h.refuse(w, err)
+			return
+		}
+		if h.throttled(w, r, "account:"+p.account.ID, h.config.Limits.Account) {
 			return
 		}
 		next(w, r, p)

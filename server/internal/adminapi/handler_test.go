@@ -20,11 +20,15 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
 
-var start = time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
+var (
+	start       = time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
+	unthrottled = adminapi.Limits{Account: ratelimit.Rule{PerMinute: 60000, Burst: 10000}, SignIn: ratelimit.Rule{PerMinute: 60000, Burst: 10000}}
+)
 
 func TestMain(m *testing.M) {
 	os.Exit(dbtest.Main(m))
@@ -75,9 +79,9 @@ func newAPIWith(t *testing.T, adjust func(*adminapi.Config)) *api {
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
 	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), now: start}
-	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour}
+	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour, Limits: unthrottled}
 	adjust(&config)
-	a.handler = adminapi.New(config, verifier, pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	a.handler = adminapi.New(config, verifier, ratelimit.NewMemory(), pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)
 	a.create("ayla@example.com", rbac.Content)
 	return a
