@@ -36,6 +36,11 @@ func TestMovesOfALiveMatchReachTheMetrics(t *testing.T) {
 	if !strings.Contains(w.Body.String(), `move_roundtrip_seconds_bucket{le="0.1"}`) {
 		t.Fatal("no bucket at the 100 ms budget")
 	}
+	for _, gauge := range []string{`(?m)^go_heap_live_bytes [1-9]`, `(?m)^go_goroutines [1-9]`, `(?m)^hd_rooms \d+$`, `(?m)^hd_connections \d+$`} {
+		if !regexp.MustCompile(gauge).MatchString(w.Body.String()) {
+			t.Fatalf("missing %s in\n%s", gauge, w.Body.String())
+		}
+	}
 	profile := httptest.NewRecorder()
 	r.app.debugHandler().ServeHTTP(profile, httptest.NewRequest(http.MethodGet, "/debug/pprof/heap", nil))
 	if profile.Code != http.StatusOK {
