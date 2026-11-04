@@ -95,7 +95,7 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request, p principal) {
 		case approval.SuperAdminGrant:
 			return h.grantSuperAdmin(r.Context(), tx, p, approved, note, now)
 		case approval.PlayerGrant:
-			return h.grantPlayerCoins(r.Context(), tx, p, approved, note, now)
+			return h.approvePlayerGrant(r.Context(), tx, p, approved, note, now)
 		case approval.PromoCode:
 			return h.activatePromo(r.Context(), tx, p, approved, note, now)
 		}
