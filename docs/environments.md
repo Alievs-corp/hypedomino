@@ -89,6 +89,8 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_COSMETICS_MANIFEST` | No | server, admin-api | empty (built-in manifest) | `/etc/hypedomino/cosmetics.json` | No | from #61; admin-api from #142, for the `mythic` check of promo codes |
 | `HD_EMOJI_SLOTS` | No | server | `6` | `6` | No | from #61 |
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
+| `HD_EMOJI_BURST` | No | server | `3` | `3` | No | from #151 |
+| `HD_EMOJI_REFILL` | No | server | `2s` | `2s` | No | from #151 |
 | `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
 | `HD_SHOP_CATALOG` | No | server | empty (shop closed until a publish) | `/etc/hypedomino/shop.json` | No | from #104 |
 | `HD_SHOP_DAILY_SLOTS` | No | server, admin-api | `4` | `4` | No | from #104; admin-api from #139 |

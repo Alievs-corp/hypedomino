@@ -19,6 +19,7 @@ type Rooms struct {
 	changed chan struct{}
 	tune    func(rules.Config) rules.Config
 	moves   room.MoveObserver
+	emoji   room.EmojiLimit
 }
 
 func NewRooms() *Rooms {
@@ -42,6 +43,9 @@ func (rs *Rooms) Open(options room.Options) (*room.Room, error) {
 	}
 	if options.Moves == nil {
 		options.Moves = rs.moves
+	}
+	if options.Emoji == (room.EmojiLimit{}) {
+		options.Emoji = rs.emoji
 	}
 	r := room.New(options)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -99,6 +103,12 @@ func (rs *Rooms) Stop() {
 	}
 	rs.mu.Unlock()
 	rs.wg.Wait()
+}
+
+func (rs *Rooms) LimitEmoji(limit room.EmojiLimit) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	rs.emoji = limit
 }
 
 func (rs *Rooms) ObserveMoves(moves room.MoveObserver) {

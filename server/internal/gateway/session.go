@@ -46,6 +46,10 @@ func (s *RoomSession) Loading(progress int, ready bool) {
 	s.room.Loading(s.seat, progress, ready)
 }
 
+func (s *RoomSession) Emoji(item string) {
+	s.room.Emoji(s.seat, item)
+}
+
 func (s *RoomSession) Attach() {
 	if s.resume {
 		s.room.Reconnect(s.seat, s)
@@ -63,6 +67,13 @@ func (s *RoomSession) Close() {
 }
 
 func (s *RoomSession) Deliver(message room.Message) {
+	if message.Emoji != nil {
+		s.conn.Send(&pb.Envelope{
+			AckedSequence: s.acked.Load(),
+			Payload:       &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{Seat: seatMessage(message.Emoji.Seat), ItemId: message.Emoji.Item}},
+		})
+		return
+	}
 	if message.Rejected && message.Sequence == 0 {
 		s.conn.Close(websocket.StatusPolicyViolation, message.Reason.Error())
 		return

@@ -26,7 +26,12 @@ func (realClock) After(d time.Duration) <-chan time.Time { return time.After(d) 
 
 func roomServer(t *testing.T, mode rules.Mode, seed uint64) (*httptest.Server, *room.Room) {
 	t.Helper()
-	r := room.New(room.Options{Mode: mode, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: seed, Clock: realClock{}})
+	return serveRoom(t, room.Options{Mode: mode, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: seed, Clock: realClock{}})
+}
+
+func serveRoom(t *testing.T, options room.Options) (*httptest.Server, *room.Room) {
+	t.Helper()
+	r := room.New(options)
 	ctx, cancel := context.WithCancel(context.Background())
 	go r.Run(ctx)
 	t.Cleanup(func() { cancel(); <-r.Done() })
@@ -335,4 +340,26 @@ func mustRead(t *testing.T, path string) []byte {
 		t.Fatal(err)
 	}
 	return data
+}
+
+func TestAnEmojiReachesTheOtherSeatOverWebSocket(t *testing.T) {
+	server, _ := serveRoom(t, room.Options{
+		Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: 7, Clock: realClock{},
+		Roster: []room.Player{{Seat: rules.SeatX, Emoji: []string{"emoji.laugh"}}, {Seat: rules.SeatY}},
+		Emoji:  room.DefaultEmojiLimit(),
+	})
+	x := join(t, server, rules.SeatX, false)
+	y := join(t, server, rules.SeatY, false)
+	sent := time.Now()
+	x.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}})
+	for {
+		frame := y.read()
+		if shown := frame.GetEmojiShown(); shown != nil {
+			if shown.GetSeat() != pb.Seat_SEAT_X || shown.GetItemId() != "emoji.laugh" {
+				t.Fatalf("shown %v", shown)
+			}
+			t.Logf("emoji relayed in %v", time.Since(sent))
+			return
+		}
+	}
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
+	"github.com/Alievs-corp/hypedomino/server/internal/room"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -44,6 +45,7 @@ type Config struct {
 	Cosmetics       string
 	Rarities        cosmetics.Rarities
 	Inventory       inventory.Config
+	Emoji           room.EmojiLimit
 	Shop            shop.Config
 	ShopCatalog     string
 	ConfigPoll      time.Duration
@@ -81,6 +83,7 @@ func DefaultConfig() Config {
 		Token:           token.DefaultConfig(),
 		Profile:         profile.DefaultConfig(),
 		Inventory:       inventory.DefaultConfig(),
+		Emoji:           room.DefaultEmojiLimit(),
 		Shop:            shop.DefaultConfig(),
 		ConfigPoll:      10 * time.Second,
 		SeasonPoll:      time.Minute,
@@ -236,6 +239,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
 	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
+	r.integer("HD_EMOJI_BURST", &config.Emoji.Burst)
+	r.duration("HD_EMOJI_REFILL", &config.Emoji.Refill)
 	r.text("HD_SHOP_CATALOG", &config.ShopCatalog)
 	r.integer("HD_SHOP_DAILY_SLOTS", &config.Shop.DailySlots)
 	r.integer("HD_SHOP_WEEKLY_SLOTS", &config.Shop.WeeklySlots)
@@ -330,6 +335,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
 		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))
+	}
+	if config.Emoji.Burst < 1 || config.Emoji.Refill <= 0 {
+		r.errs = append(r.errs, errors.New("HD_EMOJI_BURST and HD_EMOJI_REFILL: a burst of at least 1 and a positive refill"))
 	}
 	if config.Profile.NicknameMinLength < 1 || config.Profile.NicknameMaxLength < config.Profile.NicknameMinLength {
 		r.errs = append(r.errs, errors.New("HD_NICKNAME_MIN_LENGTH and HD_NICKNAME_MAX_LENGTH: the minimum must be at least 1 and not above the maximum"))

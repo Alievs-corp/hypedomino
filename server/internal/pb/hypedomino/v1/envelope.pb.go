@@ -33,11 +33,13 @@ type Envelope struct {
 	//	*Envelope_ServerHello
 	//	*Envelope_Error
 	//	*Envelope_MatchView
+	//	*Envelope_EmojiShown
 	//	*Envelope_PlaceTileIntent
 	//	*Envelope_PassIntent
 	//	*Envelope_DrawIntent
 	//	*Envelope_EndTurnIntent
 	//	*Envelope_LoadingIntent
+	//	*Envelope_EmojiIntent
 	Payload       isEnvelope_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -144,6 +146,15 @@ func (x *Envelope) GetMatchView() *MatchView {
 	return nil
 }
 
+func (x *Envelope) GetEmojiShown() *EmojiShown {
+	if x != nil {
+		if x, ok := x.Payload.(*Envelope_EmojiShown); ok {
+			return x.EmojiShown
+		}
+	}
+	return nil
+}
+
 func (x *Envelope) GetPlaceTileIntent() *PlaceTileIntent {
 	if x != nil {
 		if x, ok := x.Payload.(*Envelope_PlaceTileIntent); ok {
@@ -189,6 +200,15 @@ func (x *Envelope) GetLoadingIntent() *LoadingIntent {
 	return nil
 }
 
+func (x *Envelope) GetEmojiIntent() *EmojiIntent {
+	if x != nil {
+		if x, ok := x.Payload.(*Envelope_EmojiIntent); ok {
+			return x.EmojiIntent
+		}
+	}
+	return nil
+}
+
 type isEnvelope_Payload interface {
 	isEnvelope_Payload()
 }
@@ -207,6 +227,10 @@ type Envelope_Error struct {
 
 type Envelope_MatchView struct {
 	MatchView *MatchView `protobuf:"bytes,13,opt,name=match_view,json=matchView,proto3,oneof"`
+}
+
+type Envelope_EmojiShown struct {
+	EmojiShown *EmojiShown `protobuf:"bytes,14,opt,name=emoji_shown,json=emojiShown,proto3,oneof"`
 }
 
 type Envelope_PlaceTileIntent struct {
@@ -229,6 +253,10 @@ type Envelope_LoadingIntent struct {
 	LoadingIntent *LoadingIntent `protobuf:"bytes,24,opt,name=loading_intent,json=loadingIntent,proto3,oneof"`
 }
 
+type Envelope_EmojiIntent struct {
+	EmojiIntent *EmojiIntent `protobuf:"bytes,25,opt,name=emoji_intent,json=emojiIntent,proto3,oneof"`
+}
+
 func (*Envelope_ClientHello) isEnvelope_Payload() {}
 
 func (*Envelope_ServerHello) isEnvelope_Payload() {}
@@ -236,6 +264,8 @@ func (*Envelope_ServerHello) isEnvelope_Payload() {}
 func (*Envelope_Error) isEnvelope_Payload() {}
 
 func (*Envelope_MatchView) isEnvelope_Payload() {}
+
+func (*Envelope_EmojiShown) isEnvelope_Payload() {}
 
 func (*Envelope_PlaceTileIntent) isEnvelope_Payload() {}
 
@@ -247,11 +277,13 @@ func (*Envelope_EndTurnIntent) isEnvelope_Payload() {}
 
 func (*Envelope_LoadingIntent) isEnvelope_Payload() {}
 
+func (*Envelope_EmojiIntent) isEnvelope_Payload() {}
+
 var File_hypedomino_v1_envelope_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_envelope_proto_rawDesc = "" +
 	"\n" +
-	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xec\x05\n" +
+	"\x1chypedomino/v1/envelope.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/error.proto\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xeb\x06\n" +
 	"\bEnvelope\x12)\n" +
 	"\x10protocol_version\x18\x01 \x01(\rR\x0fprotocolVersion\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x12%\n" +
@@ -262,14 +294,17 @@ const file_hypedomino_v1_envelope_proto_rawDesc = "" +
 	"\fserver_hello\x18\v \x01(\v2\x1a.hypedomino.v1.ServerHelloH\x00R\vserverHello\x12,\n" +
 	"\x05error\x18\f \x01(\v2\x14.hypedomino.v1.ErrorH\x00R\x05error\x129\n" +
 	"\n" +
-	"match_view\x18\r \x01(\v2\x18.hypedomino.v1.MatchViewH\x00R\tmatchView\x12L\n" +
+	"match_view\x18\r \x01(\v2\x18.hypedomino.v1.MatchViewH\x00R\tmatchView\x12<\n" +
+	"\vemoji_shown\x18\x0e \x01(\v2\x19.hypedomino.v1.EmojiShownH\x00R\n" +
+	"emojiShown\x12L\n" +
 	"\x11place_tile_intent\x18\x14 \x01(\v2\x1e.hypedomino.v1.PlaceTileIntentH\x00R\x0fplaceTileIntent\x12<\n" +
 	"\vpass_intent\x18\x15 \x01(\v2\x19.hypedomino.v1.PassIntentH\x00R\n" +
 	"passIntent\x12<\n" +
 	"\vdraw_intent\x18\x16 \x01(\v2\x19.hypedomino.v1.DrawIntentH\x00R\n" +
 	"drawIntent\x12F\n" +
 	"\x0fend_turn_intent\x18\x17 \x01(\v2\x1c.hypedomino.v1.EndTurnIntentH\x00R\rendTurnIntent\x12E\n" +
-	"\x0eloading_intent\x18\x18 \x01(\v2\x1c.hypedomino.v1.LoadingIntentH\x00R\rloadingIntentB\t\n" +
+	"\x0eloading_intent\x18\x18 \x01(\v2\x1c.hypedomino.v1.LoadingIntentH\x00R\rloadingIntent\x12?\n" +
+	"\femoji_intent\x18\x19 \x01(\v2\x1a.hypedomino.v1.EmojiIntentH\x00R\vemojiIntentB\t\n" +
 	"\apayloadB\xc8\x01\n" +
 	"\x11com.hypedomino.v1B\rEnvelopeProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -292,27 +327,31 @@ var file_hypedomino_v1_envelope_proto_goTypes = []any{
 	(*ServerHello)(nil),     // 2: hypedomino.v1.ServerHello
 	(*Error)(nil),           // 3: hypedomino.v1.Error
 	(*MatchView)(nil),       // 4: hypedomino.v1.MatchView
-	(*PlaceTileIntent)(nil), // 5: hypedomino.v1.PlaceTileIntent
-	(*PassIntent)(nil),      // 6: hypedomino.v1.PassIntent
-	(*DrawIntent)(nil),      // 7: hypedomino.v1.DrawIntent
-	(*EndTurnIntent)(nil),   // 8: hypedomino.v1.EndTurnIntent
-	(*LoadingIntent)(nil),   // 9: hypedomino.v1.LoadingIntent
+	(*EmojiShown)(nil),      // 5: hypedomino.v1.EmojiShown
+	(*PlaceTileIntent)(nil), // 6: hypedomino.v1.PlaceTileIntent
+	(*PassIntent)(nil),      // 7: hypedomino.v1.PassIntent
+	(*DrawIntent)(nil),      // 8: hypedomino.v1.DrawIntent
+	(*EndTurnIntent)(nil),   // 9: hypedomino.v1.EndTurnIntent
+	(*LoadingIntent)(nil),   // 10: hypedomino.v1.LoadingIntent
+	(*EmojiIntent)(nil),     // 11: hypedomino.v1.EmojiIntent
 }
 var file_hypedomino_v1_envelope_proto_depIdxs = []int32{
-	1, // 0: hypedomino.v1.Envelope.client_hello:type_name -> hypedomino.v1.ClientHello
-	2, // 1: hypedomino.v1.Envelope.server_hello:type_name -> hypedomino.v1.ServerHello
-	3, // 2: hypedomino.v1.Envelope.error:type_name -> hypedomino.v1.Error
-	4, // 3: hypedomino.v1.Envelope.match_view:type_name -> hypedomino.v1.MatchView
-	5, // 4: hypedomino.v1.Envelope.place_tile_intent:type_name -> hypedomino.v1.PlaceTileIntent
-	6, // 5: hypedomino.v1.Envelope.pass_intent:type_name -> hypedomino.v1.PassIntent
-	7, // 6: hypedomino.v1.Envelope.draw_intent:type_name -> hypedomino.v1.DrawIntent
-	8, // 7: hypedomino.v1.Envelope.end_turn_intent:type_name -> hypedomino.v1.EndTurnIntent
-	9, // 8: hypedomino.v1.Envelope.loading_intent:type_name -> hypedomino.v1.LoadingIntent
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: hypedomino.v1.Envelope.client_hello:type_name -> hypedomino.v1.ClientHello
+	2,  // 1: hypedomino.v1.Envelope.server_hello:type_name -> hypedomino.v1.ServerHello
+	3,  // 2: hypedomino.v1.Envelope.error:type_name -> hypedomino.v1.Error
+	4,  // 3: hypedomino.v1.Envelope.match_view:type_name -> hypedomino.v1.MatchView
+	5,  // 4: hypedomino.v1.Envelope.emoji_shown:type_name -> hypedomino.v1.EmojiShown
+	6,  // 5: hypedomino.v1.Envelope.place_tile_intent:type_name -> hypedomino.v1.PlaceTileIntent
+	7,  // 6: hypedomino.v1.Envelope.pass_intent:type_name -> hypedomino.v1.PassIntent
+	8,  // 7: hypedomino.v1.Envelope.draw_intent:type_name -> hypedomino.v1.DrawIntent
+	9,  // 8: hypedomino.v1.Envelope.end_turn_intent:type_name -> hypedomino.v1.EndTurnIntent
+	10, // 9: hypedomino.v1.Envelope.loading_intent:type_name -> hypedomino.v1.LoadingIntent
+	11, // 10: hypedomino.v1.Envelope.emoji_intent:type_name -> hypedomino.v1.EmojiIntent
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_envelope_proto_init() }
@@ -328,11 +367,13 @@ func file_hypedomino_v1_envelope_proto_init() {
 		(*Envelope_ServerHello)(nil),
 		(*Envelope_Error)(nil),
 		(*Envelope_MatchView)(nil),
+		(*Envelope_EmojiShown)(nil),
 		(*Envelope_PlaceTileIntent)(nil),
 		(*Envelope_PassIntent)(nil),
 		(*Envelope_DrawIntent)(nil),
 		(*Envelope_EndTurnIntent)(nil),
 		(*Envelope_LoadingIntent)(nil),
+		(*Envelope_EmojiIntent)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

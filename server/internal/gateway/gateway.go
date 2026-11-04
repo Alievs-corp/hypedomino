@@ -68,6 +68,7 @@ type Session interface {
 	InMatch() bool
 	Attach()
 	Loading(progress int, ready bool)
+	Emoji(item string)
 	Intent(sequence uint64, intent replay.Intent)
 	Close()
 }

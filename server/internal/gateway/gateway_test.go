@@ -52,6 +52,7 @@ type recordingSession struct {
 	mu       sync.Mutex
 	intents  []received
 	loading  []loadingReport
+	emojis   []string
 	inMatch  bool
 	attached bool
 	replays  int
@@ -66,6 +67,12 @@ func (s *recordingSession) Loading(progress int, ready bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.loading = append(s.loading, loadingReport{progress: progress, ready: ready})
+}
+
+func (s *recordingSession) Emoji(item string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.emojis = append(s.emojis, item)
 }
 
 func (s *recordingSession) loadingReports() []loadingReport {
@@ -615,17 +622,24 @@ func TestHelloTellsAResumingClientWhetherItIsInAMatch(t *testing.T) {
 	}
 }
 
-func TestLoadingReportsReachTheSessionWithoutASequence(t *testing.T) {
+func TestLoadingReportsAndEmojiReachTheSessionWithoutASequence(t *testing.T) {
 	h := newHarness(t, testConfig())
 	c := h.dial()
 	c.handshake("ok")
 	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 40}}}))
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}}))
 	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}}))
 	c.send(place(1, 2, 3, pb.BoardEnd_BOARD_END_UNSPECIFIED))
 	h.session("ok").awaitIntents(t, 1)
 	want := []loadingReport{{40, false}, {100, true}}
 	if got := h.session("ok").loadingReports(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("session received loading reports %+v", got)
+	}
+	h.session("ok").mu.Lock()
+	emojis := h.session("ok").emojis
+	h.session("ok").mu.Unlock()
+	if !reflect.DeepEqual(emojis, []string{"emoji.laugh"}) {
+		t.Fatalf("session received emoji %v", emojis)
 	}
 	if got := h.session("ok").received(); len(got) != 1 || got[0].sequence != 1 {
 		t.Fatalf("session received intents %+v", got)

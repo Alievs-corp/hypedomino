@@ -43,3 +43,31 @@ func TestNewRoomsTakeTheTunedRulesAndOpenRoomsKeepTheirs(t *testing.T) {
 		t.Fatalf("a room opened before the change loads for %v", got)
 	}
 }
+
+type emojiSink chan room.Message
+
+func (s emojiSink) Deliver(m room.Message) {
+	if m.Emoji != nil {
+		s <- m
+	}
+}
+
+func TestRoomsApplyTheConfiguredEmojiLimit(t *testing.T) {
+	rooms := NewRooms()
+	defer rooms.Stop()
+	rooms.LimitEmoji(room.EmojiLimit{Burst: 1, Refill: time.Hour})
+	r, err := rooms.Open(room.Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Seed: 9, Clock: realClock{}, Roster: []room.Player{{Seat: rules.SeatX, Emoji: []string{"emoji.laugh"}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sink := make(emojiSink, 4)
+	r.Join(rules.SeatX, sink)
+	r.Emoji(rules.SeatX, "emoji.laugh")
+	r.Emoji(rules.SeatX, "emoji.laugh")
+	reply := make(chan room.View, 1)
+	r.Snapshot(rules.SeatX, reply)
+	<-reply
+	if len(sink) != 1 {
+		t.Fatalf("%d emoji shown under a burst of 1", len(sink))
+	}
+}

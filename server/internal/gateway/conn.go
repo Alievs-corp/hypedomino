@@ -271,8 +271,9 @@ func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	sequence := frame.GetSequence()
 	loading := frame.GetLoadingIntent()
+	emoji := frame.GetEmojiIntent()
 	intent, ok := DecodeIntent(frame)
-	if !ok && loading == nil {
+	if !ok && loading == nil && emoji == nil {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
@@ -286,6 +287,10 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	}
 	if loading != nil {
 		c.session.Loading(int(loading.GetProgress()), loading.GetReady())
+		return true
+	}
+	if emoji != nil {
+		c.session.Emoji(emoji.GetItemId())
 		return true
 	}
 	c.session.Intent(sequence, intent)

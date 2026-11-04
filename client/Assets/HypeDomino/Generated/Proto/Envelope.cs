@@ -26,7 +26,7 @@ namespace Hypedomino.V1 {
           string.Concat(
             "ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYx",
             "GhloeXBlZG9taW5vL3YxL2Vycm9yLnByb3RvGhloeXBlZG9taW5vL3YxL2hl",
-            "bGxvLnByb3RvGhloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvIuwFCghFbnZl",
+            "bGxvLnByb3RvGhloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvIusGCghFbnZl",
             "bG9wZRIpChBwcm90b2NvbF92ZXJzaW9uGAEgASgNUg9wcm90b2NvbFZlcnNp",
             "b24SGgoIc2VxdWVuY2UYAiABKARSCHNlcXVlbmNlEiUKDmFja2VkX3NlcXVl",
             "bmNlGAMgASgEUg1hY2tlZFNlcXVlbmNlEiMKDXNlc3Npb25fbm9uY2UYBCAB",
@@ -35,24 +35,26 @@ namespace Hypedomino.V1 {
             "cl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IAFIL",
             "c2VydmVySGVsbG8SLAoFZXJyb3IYDCABKAsyFC5oeXBlZG9taW5vLnYxLkVy",
             "cm9ySABSBWVycm9yEjkKCm1hdGNoX3ZpZXcYDSABKAsyGC5oeXBlZG9taW5v",
-            "LnYxLk1hdGNoVmlld0gAUgltYXRjaFZpZXcSTAoRcGxhY2VfdGlsZV9pbnRl",
-            "bnQYFCABKAsyHi5oeXBlZG9taW5vLnYxLlBsYWNlVGlsZUludGVudEgAUg9w",
-            "bGFjZVRpbGVJbnRlbnQSPAoLcGFzc19pbnRlbnQYFSABKAsyGS5oeXBlZG9t",
-            "aW5vLnYxLlBhc3NJbnRlbnRIAFIKcGFzc0ludGVudBI8CgtkcmF3X2ludGVu",
-            "dBgWIAEoCzIZLmh5cGVkb21pbm8udjEuRHJhd0ludGVudEgAUgpkcmF3SW50",
-            "ZW50EkYKD2VuZF90dXJuX2ludGVudBgXIAEoCzIcLmh5cGVkb21pbm8udjEu",
-            "RW5kVHVybkludGVudEgAUg1lbmRUdXJuSW50ZW50EkUKDmxvYWRpbmdfaW50",
-            "ZW50GBggASgLMhwuaHlwZWRvbWluby52MS5Mb2FkaW5nSW50ZW50SABSDWxv",
-            "YWRpbmdJbnRlbnRCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFC",
-            "DUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBl",
-            "ZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVk",
-            "b21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx",
-            "4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYx",
-            "YgZwcm90bzM="));
+            "LnYxLk1hdGNoVmlld0gAUgltYXRjaFZpZXcSPAoLZW1vamlfc2hvd24YDiAB",
+            "KAsyGS5oeXBlZG9taW5vLnYxLkVtb2ppU2hvd25IAFIKZW1vamlTaG93bhJM",
+            "ChFwbGFjZV90aWxlX2ludGVudBgUIAEoCzIeLmh5cGVkb21pbm8udjEuUGxh",
+            "Y2VUaWxlSW50ZW50SABSD3BsYWNlVGlsZUludGVudBI8CgtwYXNzX2ludGVu",
+            "dBgVIAEoCzIZLmh5cGVkb21pbm8udjEuUGFzc0ludGVudEgAUgpwYXNzSW50",
+            "ZW50EjwKC2RyYXdfaW50ZW50GBYgASgLMhkuaHlwZWRvbWluby52MS5EcmF3",
+            "SW50ZW50SABSCmRyYXdJbnRlbnQSRgoPZW5kX3R1cm5faW50ZW50GBcgASgL",
+            "MhwuaHlwZWRvbWluby52MS5FbmRUdXJuSW50ZW50SABSDWVuZFR1cm5JbnRl",
+            "bnQSRQoObG9hZGluZ19pbnRlbnQYGCABKAsyHC5oeXBlZG9taW5vLnYxLkxv",
+            "YWRpbmdJbnRlbnRIAFINbG9hZGluZ0ludGVudBI/CgxlbW9qaV9pbnRlbnQY",
+            "GSABKAsyGi5oeXBlZG9taW5vLnYxLkVtb2ppSW50ZW50SABSC2Vtb2ppSW50",
+            "ZW50QgkKB3BheWxvYWRCyAEKEWNvbS5oeXBlZG9taW5vLnYxQg1FbnZlbG9w",
+            "ZVByb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9z",
+            "ZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGi",
+            "AgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVk",
+            "b21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Hypedomino.V1.ErrorReflection.Descriptor, global::Hypedomino.V1.HelloReflection.Descriptor, global::Hypedomino.V1.MatchReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Envelope), global::Hypedomino.V1.Envelope.Parser, new[]{ "ProtocolVersion", "Sequence", "AckedSequence", "SessionNonce", "ClientHello", "ServerHello", "Error", "MatchView", "PlaceTileIntent", "PassIntent", "DrawIntent", "EndTurnIntent", "LoadingIntent" }, new[]{ "Payload" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.Envelope), global::Hypedomino.V1.Envelope.Parser, new[]{ "ProtocolVersion", "Sequence", "AckedSequence", "SessionNonce", "ClientHello", "ServerHello", "Error", "MatchView", "EmojiShown", "PlaceTileIntent", "PassIntent", "DrawIntent", "EndTurnIntent", "LoadingIntent", "EmojiIntent" }, new[]{ "Payload" }, null, null, null)
           }));
     }
     #endregion
@@ -111,6 +113,9 @@ namespace Hypedomino.V1 {
         case PayloadOneofCase.MatchView:
           MatchView = other.MatchView.Clone();
           break;
+        case PayloadOneofCase.EmojiShown:
+          EmojiShown = other.EmojiShown.Clone();
+          break;
         case PayloadOneofCase.PlaceTileIntent:
           PlaceTileIntent = other.PlaceTileIntent.Clone();
           break;
@@ -125,6 +130,9 @@ namespace Hypedomino.V1 {
           break;
         case PayloadOneofCase.LoadingIntent:
           LoadingIntent = other.LoadingIntent.Clone();
+          break;
+        case PayloadOneofCase.EmojiIntent:
+          EmojiIntent = other.EmojiIntent.Clone();
           break;
       }
 
@@ -233,6 +241,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "emoji_shown" field.</summary>
+    public const int EmojiShownFieldNumber = 14;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.EmojiShown EmojiShown {
+      get { return payloadCase_ == PayloadOneofCase.EmojiShown ? (global::Hypedomino.V1.EmojiShown) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.EmojiShown;
+      }
+    }
+
     /// <summary>Field number for the "place_tile_intent" field.</summary>
     public const int PlaceTileIntentFieldNumber = 20;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -293,6 +313,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "emoji_intent" field.</summary>
+    public const int EmojiIntentFieldNumber = 25;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.EmojiIntent EmojiIntent {
+      get { return payloadCase_ == PayloadOneofCase.EmojiIntent ? (global::Hypedomino.V1.EmojiIntent) payload_ : null; }
+      set {
+        payload_ = value;
+        payloadCase_ = value == null ? PayloadOneofCase.None : PayloadOneofCase.EmojiIntent;
+      }
+    }
+
     private object payload_;
     /// <summary>Enum of possible cases for the "payload" oneof.</summary>
     public enum PayloadOneofCase {
@@ -301,11 +333,13 @@ namespace Hypedomino.V1 {
       ServerHello = 11,
       Error = 12,
       MatchView = 13,
+      EmojiShown = 14,
       PlaceTileIntent = 20,
       PassIntent = 21,
       DrawIntent = 22,
       EndTurnIntent = 23,
       LoadingIntent = 24,
+      EmojiIntent = 25,
     }
     private PayloadOneofCase payloadCase_ = PayloadOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -344,11 +378,13 @@ namespace Hypedomino.V1 {
       if (!object.Equals(ServerHello, other.ServerHello)) return false;
       if (!object.Equals(Error, other.Error)) return false;
       if (!object.Equals(MatchView, other.MatchView)) return false;
+      if (!object.Equals(EmojiShown, other.EmojiShown)) return false;
       if (!object.Equals(PlaceTileIntent, other.PlaceTileIntent)) return false;
       if (!object.Equals(PassIntent, other.PassIntent)) return false;
       if (!object.Equals(DrawIntent, other.DrawIntent)) return false;
       if (!object.Equals(EndTurnIntent, other.EndTurnIntent)) return false;
       if (!object.Equals(LoadingIntent, other.LoadingIntent)) return false;
+      if (!object.Equals(EmojiIntent, other.EmojiIntent)) return false;
       if (PayloadCase != other.PayloadCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -365,11 +401,13 @@ namespace Hypedomino.V1 {
       if (payloadCase_ == PayloadOneofCase.ServerHello) hash ^= ServerHello.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.Error) hash ^= Error.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.MatchView) hash ^= MatchView.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.EmojiShown) hash ^= EmojiShown.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) hash ^= PlaceTileIntent.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.PassIntent) hash ^= PassIntent.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.DrawIntent) hash ^= DrawIntent.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.EndTurnIntent) hash ^= EndTurnIntent.GetHashCode();
       if (payloadCase_ == PayloadOneofCase.LoadingIntent) hash ^= LoadingIntent.GetHashCode();
+      if (payloadCase_ == PayloadOneofCase.EmojiIntent) hash ^= EmojiIntent.GetHashCode();
       hash ^= (int) payloadCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -421,6 +459,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(106);
         output.WriteMessage(MatchView);
       }
+      if (payloadCase_ == PayloadOneofCase.EmojiShown) {
+        output.WriteRawTag(114);
+        output.WriteMessage(EmojiShown);
+      }
       if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) {
         output.WriteRawTag(162, 1);
         output.WriteMessage(PlaceTileIntent);
@@ -440,6 +482,10 @@ namespace Hypedomino.V1 {
       if (payloadCase_ == PayloadOneofCase.LoadingIntent) {
         output.WriteRawTag(194, 1);
         output.WriteMessage(LoadingIntent);
+      }
+      if (payloadCase_ == PayloadOneofCase.EmojiIntent) {
+        output.WriteRawTag(202, 1);
+        output.WriteMessage(EmojiIntent);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -483,6 +529,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(106);
         output.WriteMessage(MatchView);
       }
+      if (payloadCase_ == PayloadOneofCase.EmojiShown) {
+        output.WriteRawTag(114);
+        output.WriteMessage(EmojiShown);
+      }
       if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) {
         output.WriteRawTag(162, 1);
         output.WriteMessage(PlaceTileIntent);
@@ -502,6 +552,10 @@ namespace Hypedomino.V1 {
       if (payloadCase_ == PayloadOneofCase.LoadingIntent) {
         output.WriteRawTag(194, 1);
         output.WriteMessage(LoadingIntent);
+      }
+      if (payloadCase_ == PayloadOneofCase.EmojiIntent) {
+        output.WriteRawTag(202, 1);
+        output.WriteMessage(EmojiIntent);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -537,6 +591,9 @@ namespace Hypedomino.V1 {
       if (payloadCase_ == PayloadOneofCase.MatchView) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MatchView);
       }
+      if (payloadCase_ == PayloadOneofCase.EmojiShown) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(EmojiShown);
+      }
       if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(PlaceTileIntent);
       }
@@ -551,6 +608,9 @@ namespace Hypedomino.V1 {
       }
       if (payloadCase_ == PayloadOneofCase.LoadingIntent) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(LoadingIntent);
+      }
+      if (payloadCase_ == PayloadOneofCase.EmojiIntent) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(EmojiIntent);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -601,6 +661,12 @@ namespace Hypedomino.V1 {
           }
           MatchView.MergeFrom(other.MatchView);
           break;
+        case PayloadOneofCase.EmojiShown:
+          if (EmojiShown == null) {
+            EmojiShown = new global::Hypedomino.V1.EmojiShown();
+          }
+          EmojiShown.MergeFrom(other.EmojiShown);
+          break;
         case PayloadOneofCase.PlaceTileIntent:
           if (PlaceTileIntent == null) {
             PlaceTileIntent = new global::Hypedomino.V1.PlaceTileIntent();
@@ -630,6 +696,12 @@ namespace Hypedomino.V1 {
             LoadingIntent = new global::Hypedomino.V1.LoadingIntent();
           }
           LoadingIntent.MergeFrom(other.LoadingIntent);
+          break;
+        case PayloadOneofCase.EmojiIntent:
+          if (EmojiIntent == null) {
+            EmojiIntent = new global::Hypedomino.V1.EmojiIntent();
+          }
+          EmojiIntent.MergeFrom(other.EmojiIntent);
           break;
       }
 
@@ -704,6 +776,15 @@ namespace Hypedomino.V1 {
             MatchView = subBuilder;
             break;
           }
+          case 114: {
+            global::Hypedomino.V1.EmojiShown subBuilder = new global::Hypedomino.V1.EmojiShown();
+            if (payloadCase_ == PayloadOneofCase.EmojiShown) {
+              subBuilder.MergeFrom(EmojiShown);
+            }
+            input.ReadMessage(subBuilder);
+            EmojiShown = subBuilder;
+            break;
+          }
           case 162: {
             global::Hypedomino.V1.PlaceTileIntent subBuilder = new global::Hypedomino.V1.PlaceTileIntent();
             if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) {
@@ -747,6 +828,15 @@ namespace Hypedomino.V1 {
             }
             input.ReadMessage(subBuilder);
             LoadingIntent = subBuilder;
+            break;
+          }
+          case 202: {
+            global::Hypedomino.V1.EmojiIntent subBuilder = new global::Hypedomino.V1.EmojiIntent();
+            if (payloadCase_ == PayloadOneofCase.EmojiIntent) {
+              subBuilder.MergeFrom(EmojiIntent);
+            }
+            input.ReadMessage(subBuilder);
+            EmojiIntent = subBuilder;
             break;
           }
         }
@@ -820,6 +910,15 @@ namespace Hypedomino.V1 {
             MatchView = subBuilder;
             break;
           }
+          case 114: {
+            global::Hypedomino.V1.EmojiShown subBuilder = new global::Hypedomino.V1.EmojiShown();
+            if (payloadCase_ == PayloadOneofCase.EmojiShown) {
+              subBuilder.MergeFrom(EmojiShown);
+            }
+            input.ReadMessage(subBuilder);
+            EmojiShown = subBuilder;
+            break;
+          }
           case 162: {
             global::Hypedomino.V1.PlaceTileIntent subBuilder = new global::Hypedomino.V1.PlaceTileIntent();
             if (payloadCase_ == PayloadOneofCase.PlaceTileIntent) {
@@ -863,6 +962,15 @@ namespace Hypedomino.V1 {
             }
             input.ReadMessage(subBuilder);
             LoadingIntent = subBuilder;
+            break;
+          }
+          case 202: {
+            global::Hypedomino.V1.EmojiIntent subBuilder = new global::Hypedomino.V1.EmojiIntent();
+            if (payloadCase_ == PayloadOneofCase.EmojiIntent) {
+              subBuilder.MergeFrom(EmojiIntent);
+            }
+            input.ReadMessage(subBuilder);
+            EmojiIntent = subBuilder;
             break;
           }
         }
