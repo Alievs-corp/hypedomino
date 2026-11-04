@@ -1,9 +1,12 @@
 package app
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"runtime"
+	rtmetrics "runtime/metrics"
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
@@ -23,6 +26,7 @@ func (a *App) debugHandler() http.Handler {
 	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 		a.moves.WriteTo(w)
+		a.writeNodeGauges(w)
 	})
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -44,4 +48,13 @@ func (a *App) serveDebug() (func(), error) {
 	go server.Serve(listener)
 	a.logger.Info("debug listening", "addr", listener.Addr().String())
 	return func() { server.Close() }, nil
+}
+
+func (a *App) writeNodeGauges(w io.Writer) {
+	samples := []rtmetrics.Sample{{Name: "/gc/heap/live:bytes"}}
+	rtmetrics.Read(samples)
+	metrics.WriteGauge(w, "go_heap_live_bytes", "Heap bytes live after the last garbage collection.", float64(samples[0].Value.Uint64()))
+	metrics.WriteGauge(w, "go_goroutines", "Goroutines that currently exist.", float64(runtime.NumGoroutine()))
+	metrics.WriteGauge(w, "hd_rooms", "Rooms open on this node.", float64(a.rooms.Len()))
+	metrics.WriteGauge(w, "hd_connections", "WebSocket connections open on this node.", float64(a.gateway.Connections()))
 }

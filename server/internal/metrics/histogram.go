@@ -59,3 +59,8 @@ func (h *Histogram) WriteTo(w io.Writer) (int64, error) {
 func seconds(d time.Duration) string {
 	return strconv.FormatFloat(d.Seconds(), 'g', -1, 64)
 }
+
+func WriteGauge(w io.Writer, name, help string, value float64) error {
+	_, err := fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s gauge\n%s %s\n", name, help, name, name, strconv.FormatFloat(value, 'g', -1, 64))
+	return err
+}
