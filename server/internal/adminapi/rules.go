@@ -115,7 +115,7 @@ func (h *Handler) publishRules(w http.ResponseWriter, r *http.Request, p princip
 		request.Values = map[string]json.RawMessage{}
 	}
 	raw := marshal(request.Values)
-	version, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "publish", raw, request.changeNote, nil)
+	version, _, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "publish", raw, request.changeNote, nil)
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -133,7 +133,7 @@ func (h *Handler) rollbackRules(w http.ResponseWriter, r *http.Request, p princi
 		h.refuse(w, err)
 		return
 	}
-	version, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "rollback", raw, request.changeNote, h.mayRollBack)
+	version, _, err := h.replaceSnapshot(r.Context(), p, rulesDomain, "rollback", raw, request.changeNote, h.mayRollBack)
 	if err != nil {
 		h.refuse(w, err)
 		return
