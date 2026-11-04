@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
@@ -219,6 +220,29 @@ func CheckFrozen(published, next *Snapshot, now time.Time) error {
 			return fmt.Errorf("%w: season %s levels or curve", ErrFrozen, running.ID)
 		case !reflect.DeepEqual(changed.Free, running.Free) || !reflect.DeepEqual(changed.Premium, running.Premium):
 			return fmt.Errorf("%w: season %s track bundles", ErrFrozen, running.ID)
+		}
+	}
+	return nil
+}
+
+func TrackSource(season, track string, level int) cosmetics.Source {
+	return cosmetics.Source{Type: SourcePass, Ref: fmt.Sprintf("pass.%s.%s.level_%d", season, track, level)}
+}
+
+func (s *Snapshot) CheckSources(grantable func(id string, source cosmetics.Source) bool, mythic func(id string) bool) error {
+	for _, season := range s.Seasons {
+		for _, track := range []string{Free, Premium} {
+			for level := 1; level <= season.Curve.Levels; level++ {
+				source := TrackSource(season.ID, track, level)
+				for _, id := range season.Track(track)[level].Cosmetics {
+					if mythic(id) {
+						return fmt.Errorf("%w: %s grants the mythic item %s", ErrInvalidConfig, source.Ref, id)
+					}
+					if !grantable(id, source) {
+						return fmt.Errorf("%w: %s grants %s, whose sources do not list it", ErrInvalidConfig, source.Ref, id)
+					}
+				}
+			}
 		}
 	}
 	return nil

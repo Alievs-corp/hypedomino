@@ -3,9 +3,11 @@ package pass
 import (
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 )
 
@@ -152,4 +154,33 @@ func TestASeasonThatHasNotStartedMayChange(t *testing.T) {
 
 func coinBundle(id string, coins int64) reward.Bundle {
 	return reward.Bundle{ID: id, Revision: 1, Coins: coins}
+}
+
+func TestTrackCosmeticsMustListTheirLevelAndNeverBeMythic(t *testing.T) {
+	snapshot := example(t)
+	listed := map[cosmetics.Source]bool{}
+	for _, season := range snapshot.Seasons {
+		for _, track := range []string{Free, Premium} {
+			for level := range season.Track(track) {
+				listed[TrackSource(season.ID, track, level)] = true
+			}
+		}
+	}
+	grantable := func(_ string, source cosmetics.Source) bool { return listed[source] }
+	never := func(string) bool { return false }
+	if err := snapshot.CheckSources(grantable, never); err != nil {
+		t.Fatalf("listed: %v", err)
+	}
+	if got := TrackSource("season_1", Premium, 30).Ref; got != "pass.season_1.premium.level_30" {
+		t.Fatalf("ref = %s", got)
+	}
+	delete(listed, TrackSource("season_1", Premium, 100))
+	err := snapshot.CheckSources(grantable, never)
+	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "pass.season_1.premium.level_100 grants character.s1_sea_queen") {
+		t.Fatalf("unlisted: %v", err)
+	}
+	err = snapshot.CheckSources(func(string, cosmetics.Source) bool { return true }, func(id string) bool { return id == "character.s1_sea_queen" })
+	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "mythic item character.s1_sea_queen") {
+		t.Fatalf("mythic: %v", err)
+	}
 }

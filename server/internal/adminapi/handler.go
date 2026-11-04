@@ -24,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
@@ -140,6 +141,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
 	h.mux.HandleFunc("POST /admin/config/missions/rollback", h.allowed(rbac.Missions, rbac.Publish, h.rollbackDomain(func() configDomain { return h.missionDomain(true) })))
+	h.mux.HandleFunc("GET /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.View, h.passConfig))
+	h.mux.HandleFunc("PUT /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.Publish, h.publishDomain(func() configDomain { return h.passDomain(false) })))
+	h.mux.HandleFunc("GET /admin/config/pass/history", h.allowed(rbac.PassSeasons, rbac.View, h.domainHistory(pass.Domain)))
+	h.mux.HandleFunc("POST /admin/config/pass/rollback", h.allowed(rbac.PassSeasons, rbac.Publish, h.rollbackDomain(func() configDomain { return h.passDomain(true) })))
 	h.mux.HandleFunc("GET /admin/config/medals", h.allowed(rbac.Medals, rbac.View, h.medalCatalog))
 	h.mux.HandleFunc("PUT /admin/config/medals", h.allowed(rbac.Medals, rbac.Publish, h.publishDomain(func() configDomain { return h.medalDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
@@ -409,8 +414,11 @@ func classify(err error) (int, string) {
 	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
 		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
-		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved):
+		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
+		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, pass.ErrFrozen):
+		return http.StatusConflict, "frozen"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):
