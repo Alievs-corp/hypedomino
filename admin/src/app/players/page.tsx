@@ -4,7 +4,7 @@ import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
-import { playersApiPath, searchQuery, type PlayerSummary, type SearchParams } from "@/players/record";
+import { identityProviders, playerSearch, playersApiPath, type PlayerSummary, type SearchParams } from "@/players/record";
 import { Notice } from "./Notice";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +18,9 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
   if (!canView(admin.permissions, "players")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const query = searchQuery(await searchParams);
-  const reply = query ? await adminApi<{ players: PlayerSummary[] | null }>("GET", playersApiPath(query)) : null;
+  const search = playerSearch(await searchParams);
+  const mayFindIdentity = admin.account.roles.includes("super_admin");
+  const reply = search ? await adminApi<{ players: PlayerSummary[] | null }>("GET", playersApiPath(search)) : null;
   const players = reply?.status === 200 ? (reply.body.players ?? []) : null;
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
@@ -27,12 +28,34 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="flex min-w-80 flex-col gap-1 text-sm text-text-secondary">
           {t("players.query")}
-          <input name="q" defaultValue={query} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
+          <input name="q" defaultValue={search && "q" in search ? search.q : ""} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
         </label>
         <button type="submit" className="rounded-md bg-primary px-4 py-2 text-on-primary">
           {t("players.search")}
         </button>
       </form>
+      {mayFindIdentity && (
+        <form method="get" className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            {t("players.provider")}
+            <select name="provider" defaultValue={search && "provider" in search ? search.provider : "google"} className="rounded-md bg-surface px-3 py-1 text-text-primary">
+              {identityProviders.map((provider) => (
+                <option key={provider} value={provider}>
+                  {provider}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex min-w-80 flex-col gap-1 text-sm text-text-secondary">
+            {t("players.subject")}
+            <input name="subject" defaultValue={search && "subject" in search ? search.subject : ""} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
+          </label>
+          <button type="submit" className="rounded-md bg-primary px-4 py-2 text-on-primary">
+            {t("players.find_identity")}
+          </button>
+          <p className="basis-full text-sm text-text-muted">{t("players.identity_hint")}</p>
+        </form>
+      )}
       {reply && reply.status !== 200 && (
         <p role="alert" className="text-danger-text">
           {t("players.search_failed")}

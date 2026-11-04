@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { banActive, playerApiPath, playersApiPath, searchQuery, signedAmount, validAdjustment, type PlayerAccount } from "./record.ts";
+import { banActive, playerApiPath, playerSearch, playersApiPath, searchQuery, signedAmount, validAdjustment, type PlayerAccount } from "./record.ts";
 
 test("the search query is the first trimmed q value", () => {
   assert.equal(searchQuery({ q: "  ayla " }), "ayla");
@@ -9,8 +9,9 @@ test("the search query is the first trimmed q value", () => {
 });
 
 test("query and id are encoded into the admin API paths", () => {
-  assert.equal(playersApiPath("ayla@example.com"), "/admin/players?q=ayla%40example.com");
-  assert.equal(playersApiPath("a&b=c"), "/admin/players?q=a%26b%3Dc");
+  assert.equal(playersApiPath({ q: "ayla@example.com" }), "/admin/players?q=ayla%40example.com");
+  assert.equal(playersApiPath({ q: "a&b=c" }), "/admin/players?q=a%26b%3Dc");
+  assert.equal(playersApiPath({ provider: "apple", subject: "001.a&b" }), "/admin/players?provider=apple&subject=001.a%26b");
   assert.equal(playerApiPath("../admin/me"), "/admin/players/..%2Fadmin%2Fme");
 });
 
@@ -36,4 +37,11 @@ test("a coin adjustment is a whole, non-zero number of coins, credit or debit", 
   assert.ok(!validAdjustment(1.5));
   assert.ok(!validAdjustment(Number.NaN));
   assert.ok(!validAdjustment(2 ** 60));
+});
+
+test("a subject searches by auth identity, otherwise q searches the text", () => {
+  assert.deepEqual(playerSearch({ provider: "apple", subject: " 001.abc ", q: "ayla" }), { provider: "apple", subject: "001.abc" });
+  assert.deepEqual(playerSearch({ provider: "other", subject: "1234" }), { provider: "google", subject: "1234" });
+  assert.deepEqual(playerSearch({ q: " ayla ", subject: " " }), { q: "ayla" });
+  assert.equal(playerSearch({}), null);
 });

@@ -25,13 +25,33 @@ export type PlayerRecord = {
 
 export type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
 
-export function searchQuery(params: SearchParams): string {
-  const value = params.q;
+export const identityProviders = ["google", "apple"] as const;
+
+export type IdentityProvider = (typeof identityProviders)[number];
+
+export type PlayerSearch = { q: string } | { provider: IdentityProvider; subject: string };
+
+function firstValue(params: SearchParams, key: string): string {
+  const value = params[key];
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
-export function playersApiPath(query: string): string {
-  return `/admin/players?${new URLSearchParams({ q: query })}`;
+export function searchQuery(params: SearchParams): string {
+  return firstValue(params, "q");
+}
+
+export function playerSearch(params: SearchParams): PlayerSearch | null {
+  const subject = firstValue(params, "subject");
+  if (subject) {
+    const provider = identityProviders.find((candidate) => candidate === firstValue(params, "provider")) ?? "google";
+    return { provider, subject };
+  }
+  const q = searchQuery(params);
+  return q ? { q } : null;
+}
+
+export function playersApiPath(search: PlayerSearch): string {
+  return `/admin/players?${new URLSearchParams(search)}`;
 }
 
 export function playerApiPath(id: string): string {
