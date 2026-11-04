@@ -65,6 +65,10 @@ type Sink interface {
 	Deliver(Message)
 }
 
+type MoveObserver interface {
+	Observe(elapsed time.Duration)
+}
+
 type Player struct {
 	Seat      rules.Seat
 	Nickname  string
@@ -88,6 +92,7 @@ type Options struct {
 	Clock          Clock
 	Roster         []Player
 	ReconnectGrace time.Duration
+	Moves          MoveObserver
 }
 
 type seatState struct {
@@ -217,7 +222,8 @@ func (r *Room) Disconnect(seat rules.Seat, sink Sink) {
 }
 
 func (r *Room) Intent(seat rules.Seat, sequence uint64, intent replay.Intent) {
-	r.enqueue(func(r *Room) { r.intent(seat, sequence, intent) })
+	received := r.options.Clock.Now()
+	r.enqueue(func(r *Room) { r.intent(seat, sequence, intent, received) })
 }
 
 func (r *Room) Snapshot(seat rules.Seat, reply chan<- View) {
@@ -296,7 +302,7 @@ func (r *Room) leave(seat rules.Seat) {
 	r.settle()
 }
 
-func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent) {
+func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent, received time.Time) {
 	if err := r.admit(seat, sequence); err != nil {
 		if !errors.Is(err, ErrStaleSequence) {
 			r.reject(seat, sequence, err)
@@ -311,6 +317,9 @@ func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent) {
 	r.seats[seat].acked = sequence
 	r.presence.Move(seat)
 	r.settle()
+	if r.options.Moves != nil {
+		r.options.Moves.Observe(r.options.Clock.Now().Sub(received))
+	}
 }
 
 func (r *Room) admit(seat rules.Seat, sequence uint64) error {

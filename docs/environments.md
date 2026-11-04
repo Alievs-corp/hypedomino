@@ -33,6 +33,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
 | `HD_LISTEN_ADDR` | No | server | `:8080` | `:8080` | No | from #264 |
+| `HD_DEBUG_ADDR` | No | server | empty (off) | `127.0.0.1:6060` | No | #192 |
 | `HD_LOG_LEVEL` | No | server | `info` | `info` | No | from #264 |
 | `HD_ORIGINS` | No | server | none | `play.example.com,admin.example.com` | No | from #264 |
 | `HD_SHUTDOWN_TIMEOUT` | No | server | `10s` | `10s` | No | from #264 |

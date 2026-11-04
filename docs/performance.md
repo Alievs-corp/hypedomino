@@ -64,7 +64,7 @@ Run on the reference node spec (CPU, RAM, region) fixed in #192 and recorded wit
 
 | Budget | Target | Environment | Method | Sample and duration | Pass / fail |
 |---|---|---|---|---|---|
-| Move round-trip | p99 < 100 ms | Load bot in the same cloud region as the node, on a different host; production-like TLS and WebSocket | Load bot (`server/cmd/loadbot`, #192) timestamps each move intent send and the resulting broadcast receive. The server also exports a Prometheus histogram `move_roundtrip_seconds` (receive to last broadcast write) for its in-process share | 30 min steady state at the 10k-room load, at least 100,000 moves, first 2 min discarded as warm-up | Bot-measured p99 < 100 ms overall and in every 1-minute window; server histogram p99 reported alongside |
+| Move round-trip | p99 < 100 ms | Load bot in the same cloud region as the node, on a different host; production-like TLS and WebSocket | Load bot (`server/cmd/loadbot`, #192) timestamps each move intent send and the resulting broadcast receive. The server also exports a Prometheus histogram `move_roundtrip_seconds` for its in-process share: an accepted move intent from its receive by the gateway to the resulting broadcast queued for every seat, so the socket writes are left to the bot measurement | 30 min steady state at the 10k-room load, at least 100,000 moves, first 2 min discarded as warm-up | Bot-measured p99 < 100 ms overall and in every 1-minute window; server histogram p99 reported alongside |
 | Concurrent rooms | 10,000 per node | Reference node | Load bot ramps to 10,000 active rooms (1v1 and 2v2 mix, moves at human cadence inside the admin-config turn time), then holds. Observe with pprof, `runtime/metrics` and node CPU / RAM | Ramp, then 30 min hold | Holds 10,000 rooms within the move budget; error and disconnect rate under 0.1%; average CPU under 80%; heap flat within 5% between minute 10 and minute 30 |
 | Hot-path cost | No regression | Developer machine and CI | `go test -run='^$' -bench=. -benchmem -count=10 ./internal/rules/... > new.txt`, then `benchstat old.txt new.txt` | 10 runs per side | No benchmark slower than 5% at `p < 0.05`; allocs/op not higher |
 
@@ -77,7 +77,7 @@ go tool pprof -http=:0 "http://<node>:<debug-port>/debug/pprof/profile?seconds=3
 go tool pprof -http=:0 "http://<node>:<debug-port>/debug/pprof/heap"
 ```
 
-The debug port is never exposed publicly.
+The debug port is `HD_DEBUG_ADDR`; it is never exposed publicly.
 
 ## 7. Tools
 
@@ -127,4 +127,4 @@ Not affected and why:
 
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
 - Skinned 3D characters (ADR 0009) are part of the match scene: their skinning, draw calls and memory are inside the client budgets above and are first measured in #93.
-- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The replay harness, the `move_roundtrip_seconds` server histogram and the metrics endpoint do not exist yet (#192); until they do, client gates are checked by hand with the Profiler and the commands above.
+- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` and pprof at `/debug/pprof/` on the debug listener (`HD_DEBUG_ADDR`, off when empty, `server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.

@@ -27,6 +27,7 @@ import (
 
 type Config struct {
 	ListenAddr      string
+	DebugAddr       string
 	LogLevel        string
 	Origins         []string
 	ShutdownTimeout time.Duration
@@ -183,6 +184,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	config := DefaultConfig()
 	r := &envReader{lookup: lookup}
 	r.text("HD_LISTEN_ADDR", &config.ListenAddr)
+	r.text("HD_DEBUG_ADDR", &config.DebugAddr)
 	r.text("HD_LOG_LEVEL", &config.LogLevel)
 	r.list("HD_ORIGINS", &config.Origins)
 	r.duration("HD_SHUTDOWN_TIMEOUT", &config.ShutdownTimeout)
