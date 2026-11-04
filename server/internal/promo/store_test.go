@@ -165,7 +165,7 @@ func TestAMultiUseCodeGrantsOncePerAccountUpToItsCap(t *testing.T) {
 }
 
 func TestParallelRedemptionsNeverExceedTheCap(t *testing.T) {
-	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 100, FailedAttemptsBeforeLock: 100, LockMinutes: 1, CoinsApprovalThreshold: 2000})
+	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 100, FailedAttemptsBeforeLock: 100, LockMinutes: 1, CoinsApprovalThreshold: 2000, LockSignalWeight: 5, SpikePercent: 100, SpikeWindowMinutes: 1})
 	d := definition("promo.rush", promo.MultiUse, coins)
 	d.Cap = 3
 	created := f.create(t, d)
@@ -210,7 +210,7 @@ func TestParallelRedemptionsNeverExceedTheCap(t *testing.T) {
 }
 
 func TestParallelAccountsRaceForTheLastSlots(t *testing.T) {
-	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 100, FailedAttemptsBeforeLock: 100, LockMinutes: 1, CoinsApprovalThreshold: 2000})
+	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 100, FailedAttemptsBeforeLock: 100, LockMinutes: 1, CoinsApprovalThreshold: 2000, LockSignalWeight: 5, SpikePercent: 100, SpikeWindowMinutes: 1})
 	d := definition("promo.race", promo.MultiUse, coins)
 	d.Cap = 4
 	created := f.create(t, d)
@@ -343,7 +343,7 @@ func TestDisabledAndOutOfWindowCodesAreRefused(t *testing.T) {
 }
 
 func TestFailedAttemptsLockAndAttemptsAreRateLimited(t *testing.T) {
-	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 4, FailedAttemptsBeforeLock: 2, LockMinutes: 30, CoinsApprovalThreshold: 2000})
+	f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 4, FailedAttemptsBeforeLock: 2, LockMinutes: 30, CoinsApprovalThreshold: 2000, LockSignalWeight: 5, SpikePercent: 50, SpikeWindowMinutes: 60})
 	a := f.account(t)
 	d := definition("promo.limits", promo.MultiUse, coins)
 	d.Cap = 10
@@ -358,6 +358,9 @@ func TestFailedAttemptsLockAndAttemptsAreRateLimited(t *testing.T) {
 	}
 	if _, err := f.store.Redeem(context.Background(), a, "WRXNGCDE", now.Add(time.Minute)); !errors.Is(err, promo.ErrLocked) {
 		t.Fatalf("locked failure: %v", err)
+	}
+	if kind, weight, failed := f.lockSignal(t, a); kind != 1 || weight != 5 || failed != 2 {
+		t.Fatalf("lock signals %d, weight %d, failed %d", kind, weight, failed)
 	}
 	unlocked := now.Add(31 * time.Minute)
 	if _, err := f.store.Redeem(context.Background(), a, created.Plaintext, unlocked); err != nil {
@@ -488,5 +491,52 @@ func TestATemplateStaysADraftOutsideTheCodes(t *testing.T) {
 	}
 	if codes, err := f.store.List(ctx, "", 10); err != nil || len(codes) != 0 {
 		t.Fatalf("codes %v %v", codes, err)
+	}
+}
+
+func (f *fixture) lockSignal(t *testing.T, account string) (int, int, int) {
+	t.Helper()
+	var count, weight, failed int
+	if err := f.pool.QueryRow(context.Background(), `select count(*), coalesce(max(weight), 0), coalesce(max((evidence->>'failed')::int), 0) from risk_signals where account_id = $1 and kind = $2`, account, promo.SignalLock).Scan(&count, &weight, &failed); err != nil {
+		t.Fatal(err)
+	}
+	return count, weight, failed
+}
+
+func TestAMultiUseCodeIsMarkedOnceWhenHalfItsCapGoesWithinTheWindow(t *testing.T) {
+	f := newFixture(t, promo.DefaultConfig())
+	d := definition("promo.leaky", promo.MultiUse, coins)
+	d.Cap, d.Code = 4, "LEAK2345"
+	f.create(t, d)
+	slow := definition("promo.steady", promo.MultiUse, coins)
+	slow.Cap, slow.Code = 4, "STEADY23"
+	f.create(t, slow)
+	for i, want := range []bool{false, true, false} {
+		redemption, err := f.store.Redeem(context.Background(), f.account(t), "LEAK2345", now.Add(time.Duration(i)*time.Minute))
+		if err != nil || redemption.Spiked != want {
+			t.Fatalf("redemption %d: spiked %v, want %v, %v", i+1, redemption.Spiked, want, err)
+		}
+	}
+	code, err := f.store.Get(context.Background(), "promo.leaky")
+	if err != nil || code.SpikeAt == nil || !code.SpikeAt.Equal(now.Add(time.Minute)) {
+		t.Fatalf("leaky code %+v %v", code, err)
+	}
+	for i := range 3 {
+		redemption, err := f.store.Redeem(context.Background(), f.account(t), "STEADY23", now.Add(time.Duration(i)*61*time.Minute))
+		if err != nil || redemption.Spiked {
+			t.Fatalf("steady redemption %d: spiked %v, %v", i+1, redemption.Spiked, err)
+		}
+	}
+	if code, err := f.store.Get(context.Background(), "promo.steady"); err != nil || code.SpikeAt != nil {
+		t.Fatalf("steady code %+v %v", code, err)
+	}
+}
+
+func TestSingleUseCodesAreNeverMarkedAsSpikes(t *testing.T) {
+	f := newFixture(t, promo.DefaultConfig())
+	created := f.create(t, definition("promo.once", promo.SingleUse, coins))
+	redemption, err := f.store.Redeem(context.Background(), f.account(t), created.Plaintext, now)
+	if err != nil || redemption.Spiked {
+		t.Fatalf("single use: spiked %v, %v", redemption.Spiked, err)
 	}
 }

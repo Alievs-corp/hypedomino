@@ -103,6 +103,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK": "3",
 		"HD_PROMO_LOCK_MINUTES":                "15",
 		"HD_PROMO_COINS_APPROVAL_THRESHOLD":    "1000",
+		"HD_PROMO_LOCK_SIGNAL_WEIGHT":          "7",
+		"HD_PROMO_SPIKE_PERCENT":               "40",
+		"HD_PROMO_SPIKE_WINDOW_MINUTES":        "30",
 		"HD_RATE_IP_PER_MINUTE":                "120",
 		"HD_RATE_IP_BURST":                     "40",
 		"HD_RATE_ACCOUNT_PER_MINUTE":           "90",
@@ -157,10 +160,10 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Play.PackageName != "com.example.hypedomino" || config.Play.ServiceAccountFile != "/etc/hypedomino/play.json" || !config.Play.AllowTest || config.PushSecret != "push-secret" || config.Apple.BundleID != "com.example.hypedomino" || !config.Apple.AllowSandbox || config.Purchase.RefundsBeforePurchaseBlock != 2 || config.Purchase.RefundWindowDays != 90 {
 		t.Fatalf("purchase config %+v %+v %+v", config.Play, config.Apple, config.Purchase)
 	}
-	if config.PromoKey != "0123456789abcdef0123456789abcdef" || config.Promo != (promo.Config{CodeLength: 10, MaxValidityDays: 30, AttemptsPerHour: 20, FailedAttemptsBeforeLock: 3, LockMinutes: 15, CoinsApprovalThreshold: 1000}) {
+	if config.PromoKey != "0123456789abcdef0123456789abcdef" || config.Promo != (promo.Config{CodeLength: 10, MaxValidityDays: 30, AttemptsPerHour: 20, FailedAttemptsBeforeLock: 3, LockMinutes: 15, CoinsApprovalThreshold: 1000, LockSignalWeight: 7, SpikePercent: 40, SpikeWindowMinutes: 30}) {
 		t.Fatalf("promo config %q %+v", config.PromoKey, config.Promo)
 	}
-	if config.PromoKey != "0123456789abcdef0123456789abcdef" || config.Promo != (promo.Config{CodeLength: 10, MaxValidityDays: 30, AttemptsPerHour: 20, FailedAttemptsBeforeLock: 3, LockMinutes: 15, CoinsApprovalThreshold: 1000}) {
+	if config.PromoKey != "0123456789abcdef0123456789abcdef" || config.Promo != (promo.Config{CodeLength: 10, MaxValidityDays: 30, AttemptsPerHour: 20, FailedAttemptsBeforeLock: 3, LockMinutes: 15, CoinsApprovalThreshold: 1000, LockSignalWeight: 7, SpikePercent: 40, SpikeWindowMinutes: 30}) {
 		t.Fatalf("promo config %q %+v", config.PromoKey, config.Promo)
 	}
 	if config.RateLimit != (ratelimit.Config{IP: ratelimit.Rule{PerMinute: 120, Burst: 40}, Account: ratelimit.Rule{PerMinute: 90, Burst: 30}, SignIn: ratelimit.Rule{PerMinute: 8, Burst: 4}, Spend: ratelimit.Rule{PerMinute: 6, Burst: 3}, IPHeader: "CF-Connecting-IP", ReadTimeout: 20 * time.Second, IdleTimeout: 90 * time.Second}) {

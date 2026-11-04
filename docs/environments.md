@@ -137,6 +137,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK` | No | server | `5` | `5` | No | from #108 |
 | `HD_PROMO_LOCK_MINUTES` | No | server | `60` | `60` | No | from #108 |
 | `HD_PROMO_COINS_APPROVAL_THRESHOLD` | No | server, admin-api | `2000` | `2000` | No | from #108 |
+| `HD_PROMO_LOCK_SIGNAL_WEIGHT` | No | server | `5` | `5` | No | from #211 |
+| `HD_PROMO_SPIKE_PERCENT` | No | server | `50` | `50` | No | from #211 |
+| `HD_PROMO_SPIKE_WINDOW_MINUTES` | No | server | `60` | `60` | No | from #211 |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 

@@ -70,6 +70,9 @@ func (h *Handler) redeem(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w, err)
 		return
 	}
+	if redemption.Spiked {
+		h.logger.Warn("promo redemption spike", "promo", redemption.Promo, "campaign", redemption.Campaign)
+	}
 	reply(w, http.StatusOK, redemption)
 }
 

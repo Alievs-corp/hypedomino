@@ -188,6 +188,8 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Response | Block the intent. Flag repeated attempts. A leaked promo code is disabled by an admin |
 | Issues | #211, #202, #209, #212 |
 
+Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/economy.md` 8): a lock records a `promo_lock` signal of weight `PromoLockSignalWeight` (5), and a `multi_use` code whose redemptions within `PromoSpikeWindowMinutes` (60) reach `PromoSpikePercent` (50) of its cap is marked `spike_at` once and logged, so an admin can disable it.
+
 ## 5. Signals and risk score
 
 | Signal | Source | Kind | Weight (config) |
@@ -199,6 +201,7 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Root, jailbreak or emulator | #185 | Soft | `DeviceRiskWeight` |
 | MAC failure rate over threshold | #207 | Soft | `MacFailureWeight` |
 | Replay rejection rate over threshold | #207 | Soft | `ReplayRejectWeight` |
+| Promo redemption lock | #211 | Soft | `PromoLockSignalWeight` |
 | Clock skew | #208 | Soft | `ClockSkewWeight` |
 | Forged receipt, receipt reuse on another account, account mismatch | #204 | Hard | `FakeReceiptWeight` |
 | Refund or chargeback | #106, #204 | Soft | `RefundWeight` |
