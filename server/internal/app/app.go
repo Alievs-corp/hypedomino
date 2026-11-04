@@ -14,6 +14,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
+	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 )
 
@@ -48,6 +49,7 @@ type App struct {
 	listener     net.Listener
 	addr         chan string
 	localization atomic.Pointer[func() gateway.Strings]
+	moves        *metrics.Histogram
 }
 
 func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
@@ -55,9 +57,11 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 		config: config,
 		logger: logger,
 		rooms:  NewRooms(),
+		moves:  newMoveRoundTrip(),
 		mux:    http.NewServeMux(),
 		addr:   make(chan string, 1),
 	}
+	a.rooms.ObserveMoves(a.moves)
 	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized})
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
@@ -171,6 +175,12 @@ func (a *App) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	stopDebug, err := a.serveDebug()
+	if err != nil {
+		listener.Close()
+		return err
+	}
+	defer stopDebug()
 	a.listener = listener
 	a.ready.Store(true)
 	server := &http.Server{Handler: a.Handler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: a.config.RateLimit.ReadTimeout, IdleTimeout: a.config.RateLimit.IdleTimeout}

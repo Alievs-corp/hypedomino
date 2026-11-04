@@ -18,6 +18,7 @@ type Rooms struct {
 	wg      sync.WaitGroup
 	changed chan struct{}
 	tune    func(rules.Config) rules.Config
+	moves   room.MoveObserver
 }
 
 func NewRooms() *Rooms {
@@ -38,6 +39,9 @@ func (rs *Rooms) Open(options room.Options) (*room.Room, error) {
 	}
 	if rs.tune != nil {
 		options.Config = rs.tune(options.Config)
+	}
+	if options.Moves == nil {
+		options.Moves = rs.moves
 	}
 	r := room.New(options)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -95,4 +99,10 @@ func (rs *Rooms) Stop() {
 	}
 	rs.mu.Unlock()
 	rs.wg.Wait()
+}
+
+func (rs *Rooms) ObserveMoves(moves room.MoveObserver) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	rs.moves = moves
 }
