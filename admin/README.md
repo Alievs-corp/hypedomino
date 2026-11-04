@@ -40,7 +40,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 ## Missions
 
-`/missions` (#141, `docs/admin.md` 5.8) edits the mission catalog of `GET /admin/config/missions` without a code change. With no published catalog the editor starts empty and the first publish creates version 1.
+`/missions` (#141, `docs/admin.md` 5.8) edits the mission catalog of `GET /admin/config/missions` without a code change. With no published catalog the editor starts with no missions. The API fills slot rewards, budgets and rerolls from its defaults, so the first publish needs a live daily and weekly mission for every default slot.
 - **New mission:** a slug (lowercase letters, digits, underscores) becomes `mission.<slug>`; a taken id is refused. The type sets the fields: daily and weekly take a slot and a weight, achievement and event take a reward bundle `bundle.mission_<slug>`, an achievement may chain to another achievement, and an event takes an event id.
 - **Condition:** the counted progress event, the target, and optional queue and mode filters. Events, types, queues and modes come from the server (`rules` in the response), so the editor offers only what the game servers count.
 - **Reward:** periodic missions pay their slot's reward from the catalog. An achievement or event bundle grants coins, cosmetic ids and medal ids, and an event bundle also pass XP. Editing a published bundle raises its revision once; restoring the published content restores its revision.
@@ -48,6 +48,17 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Checks:** a target, slot or weight below 1, a slot outside the type's slots, a bundle granting nothing or a malformed event id marks the mission and blocks the publish. Everything else, such as a granted medal or cosmetic that does not list the mission as a source, is refused by the API with its reason.
 - **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired.
 - **History and rollback:** as for shop offers, on `/admin/config/missions/history` and `/admin/config/missions/rollback`.
+
+## Medals
+
+`/medals` (#141, `docs/admin.md` 5.9) edits the medal catalog of `GET /admin/config/medals`. With no published catalog the editor starts empty and the first publish creates it.
+- **Catalog-wide:** the number of profile showcase slots, a whole number of 0 or more.
+- **New medal:** a slug (lowercase letters, digits, underscores) becomes `medal.<slug>`; a taken id is refused. It starts with the server's first rarity and availability and one source to fill.
+- **Fields:** rarity and availability (live, retired, disabled) come from the server (`rules` in the response). Sources are a list of a type (mission or rank reward) and an id; a medal needs at least one, every source needs an id, and a source listed twice blocks the publish.
+- **Server fields:** `nameKey`, `descriptionKey`, `staticAddress` and the revision are shown, never typed; the API sets them on publish.
+- **Order with missions:** a medal must list every published mission that grants it, and the API refuses a medal publish that drops one. Publish a new medal listing its mission first, then the mission that grants it.
+- **Publish** (`PUT /admin/config/medals`) takes a reason and is shown only to roles with publish on medals. A published medal is never removed; retire or disable it.
+- **History and rollback:** as for shop offers, on `/admin/config/medals/history` and `/admin/config/medals/rollback`.
 
 ## Players
 
