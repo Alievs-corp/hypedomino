@@ -616,6 +616,9 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/promo-codes/{id}/accounts` `{"accounts"}` | S on promo codes: targeted account list | Replaces the account list of a `targeted` code; its cap becomes the number listed |
 | `POST /admin/promo-codes/{id}/disable` | S on promo codes: disable | Stops the code redeeming at once; granted rewards stay (section 4) |
 | `POST /admin/promo-batches/{id}/disable` | S on promo codes: disable | Disables every code of the batch |
+| `GET /admin/promo-templates` | V on promo codes | The promo templates (`docs/launch-content-gate.md` 3.6), by id; each is a `draft` with `template` true and holds only `id`, `campaign`, `kind` and an optional `bundle` |
+| `POST /admin/promo-templates` `{"id","campaign","kind","bundle"}` | C on promo codes | Saves a new template and answers 201. It has no window, cap, code or accounts, never redeems and is not listed with the codes |
+| `PUT /admin/promo-templates/{id}` `{"campaign","kind","bundle"}` | E on promo codes | Replaces the template's fields; its creator stays |
 | `GET /admin/approvals` | signed in | Pending proposals (section 8) the admin proposed or may decide |
 | `POST /admin/approvals/{id}/approve` | an approver role of section 8 | Approves and carries out the proposal |
 | `POST /admin/approvals/{id}/reject` | an approver role of section 8 | Rejects it |
