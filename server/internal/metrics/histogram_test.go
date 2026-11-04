@@ -34,3 +34,13 @@ func TestHistogramObserveDoesNotAllocate(t *testing.T) {
 		t.Fatalf("%v allocations", allocs)
 	}
 }
+
+func TestGaugeWritesLargeValuesWithoutExponent(t *testing.T) {
+	var out strings.Builder
+	if err := WriteGauge(&out, "go_heap_live_bytes", "Live heap.", 40566560); err != nil {
+		t.Fatal(err)
+	}
+	if want := "# HELP go_heap_live_bytes Live heap.\n# TYPE go_heap_live_bytes gauge\ngo_heap_live_bytes 40566560\n"; out.String() != want {
+		t.Fatalf("got %q", out.String())
+	}
+}
