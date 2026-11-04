@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -16,9 +18,10 @@ import (
 const ConfigHistoryLimit = 50
 
 type configDomain struct {
-	name   string
-	object rbac.Object
-	accept func(before, after []byte) error
+	name    string
+	object  rbac.Object
+	prepare func(ctx context.Context, tx pgx.Tx, before, after []byte) ([]byte, error)
+	accept  func(before, after []byte) error
 }
 
 type sensitiveCheck func(p principal, note changeNote, now time.Time) error
@@ -42,7 +45,7 @@ func (h *Handler) earlierSnapshot(ctx context.Context, domain string, version in
 	return target.Content, nil
 }
 
-func (h *Handler) replaceSnapshot(ctx context.Context, p principal, d configDomain, action string, raw []byte, note changeNote, check sensitiveCheck) (int64, error) {
+func (h *Handler) replaceSnapshot(ctx context.Context, p principal, d configDomain, action string, raw []byte, note changeNote, check sensitiveCheck) (int64, []byte, error) {
 	var version int64
 	err := h.audited(ctx, p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
 		if check != nil {
@@ -57,6 +60,11 @@ func (h *Handler) replaceSnapshot(ctx context.Context, p principal, d configDoma
 		if err != nil {
 			return nil, err
 		}
+		if d.prepare != nil {
+			if raw, err = d.prepare(ctx, tx, before, raw); err != nil {
+				return nil, err
+			}
+		}
 		if err := d.accept(before, raw); err != nil {
 			return nil, err
 		}
@@ -69,5 +77,71 @@ func (h *Handler) replaceSnapshot(ctx context.Context, p principal, d configDoma
 		}
 		return []audit.Entry{entry}, nil
 	})
-	return version, err
+	return version, raw, err
+}
+
+func (h *Handler) domainHistory(domain string) func(http.ResponseWriter, *http.Request, principal) {
+	return func(w http.ResponseWriter, r *http.Request, p principal) {
+		history, err := snapshot.History(r.Context(), h.pool, domain, ConfigHistoryLimit)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		versions := make([]catalogVersionView, 0, len(history))
+		for _, published := range history {
+			versions = append(versions, catalogVersionView{ConfigVersion: published.Version, PublishedAt: published.At, Catalog: published.Content})
+		}
+		reply(w, http.StatusOK, catalogHistoryView{Versions: versions})
+	}
+}
+
+func (h *Handler) domainCatalog(domain string) func(http.ResponseWriter, *http.Request, principal) {
+	return func(w http.ResponseWriter, r *http.Request, p principal) {
+		version, raw, err := latestSnapshot(r.Context(), h.pool, domain)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		reply(w, http.StatusOK, viewCatalog(version, raw))
+	}
+}
+
+func (h *Handler) publishDomain(domain func() configDomain) func(http.ResponseWriter, *http.Request, principal) {
+	return func(w http.ResponseWriter, r *http.Request, p principal) {
+		var request publishCatalogRequest
+		if !decodeUpTo(w, r, &request, MaxCatalogBytes) {
+			return
+		}
+		if len(request.Catalog) == 0 {
+			h.refuse(w, fmt.Errorf("%w: catalog", errMalformed))
+			return
+		}
+		version, published, err := h.replaceSnapshot(r.Context(), p, domain(), "publish", request.Catalog, request.changeNote, nil)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		reply(w, http.StatusOK, viewCatalog(version, published))
+	}
+}
+
+func (h *Handler) rollbackDomain(domain func() configDomain) func(http.ResponseWriter, *http.Request, principal) {
+	return func(w http.ResponseWriter, r *http.Request, p principal) {
+		var request rollbackRequest
+		if !decode(w, r, &request) {
+			return
+		}
+		d := domain()
+		raw, err := h.earlierSnapshot(r.Context(), d.name, request.Version)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		version, published, err := h.replaceSnapshot(r.Context(), p, d, "rollback", raw, request.changeNote, h.mayRollBack)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		reply(w, http.StatusOK, viewCatalog(version, published))
+	}
 }

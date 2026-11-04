@@ -11,7 +11,6 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
-	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
 const MaxCatalogBytes = 1 << 20
@@ -85,19 +84,6 @@ func (h *Handler) shopCatalog(w http.ResponseWriter, r *http.Request, p principa
 	reply(w, http.StatusOK, shopCatalogView{catalogView: viewCatalog(version, raw), Rotation: rules})
 }
 
-func (h *Handler) shopHistory(w http.ResponseWriter, r *http.Request, p principal) {
-	history, err := snapshot.History(r.Context(), h.pool, shop.Domain, ConfigHistoryLimit)
-	if err != nil {
-		h.refuse(w, err)
-		return
-	}
-	versions := make([]catalogVersionView, 0, len(history))
-	for _, published := range history {
-		versions = append(versions, catalogVersionView{ConfigVersion: published.Version, PublishedAt: published.At, Catalog: published.Content})
-	}
-	reply(w, http.StatusOK, catalogHistoryView{Versions: versions})
-}
-
 func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principal) {
 	var request publishCatalogRequest
 	if !decodeUpTo(w, r, &request, MaxCatalogBytes) {
@@ -111,7 +97,7 @@ func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
-	version, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(true), "publish", request.Catalog, request.changeNote, nil)
+	version, _, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(true), "publish", request.Catalog, request.changeNote, nil)
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -129,7 +115,7 @@ func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p princip
 		h.refuse(w, err)
 		return
 	}
-	version, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(false), "rollback", raw, request.changeNote, h.mayRollBack)
+	version, _, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(false), "rollback", raw, request.changeNote, h.mayRollBack)
 	if err != nil {
 		h.refuse(w, err)
 		return

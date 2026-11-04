@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
+	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
@@ -133,8 +134,16 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
-	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.shopHistory))
+	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
+	h.mux.HandleFunc("GET /admin/config/missions", h.allowed(rbac.Missions, rbac.View, h.missionCatalog))
+	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
+	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
+	h.mux.HandleFunc("POST /admin/config/missions/rollback", h.allowed(rbac.Missions, rbac.Publish, h.rollbackDomain(func() configDomain { return h.missionDomain(true) })))
+	h.mux.HandleFunc("GET /admin/config/medals", h.allowed(rbac.Medals, rbac.View, h.medalCatalog))
+	h.mux.HandleFunc("PUT /admin/config/medals", h.allowed(rbac.Medals, rbac.Publish, h.publishDomain(func() configDomain { return h.medalDomain(false) })))
+	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
+	h.mux.HandleFunc("POST /admin/config/medals/rollback", h.allowed(rbac.Medals, rbac.Publish, h.rollbackDomain(func() configDomain { return h.medalDomain(true) })))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -398,7 +407,9 @@ func classify(err error) (int, string) {
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
 	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
-		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved):
+		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
+		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
+		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"

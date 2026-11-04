@@ -38,8 +38,9 @@ var (
 	ErrInvalidCatalog = errors.New("mission: invalid catalog")
 	idPattern         = regexp.MustCompile(`^mission\.([a-z0-9_]+)$`)
 	eventIDPattern    = regexp.MustCompile(`^[a-z0-9_.]+$`)
-	progressEvents    = []string{MatchCompleted, MatchWon, HandWon, Domino, BoardPoints, DoubleChain}
-	queues            = []string{matchstore.KindRanked, matchstore.KindCasual}
+	Types             = []string{Daily, Weekly, Achievement, Event}
+	ProgressEvents    = []string{MatchCompleted, MatchWon, HandWon, Domino, BoardPoints, DoubleChain}
+	Queues            = []string{matchstore.KindRanked, matchstore.KindCasual}
 )
 
 type Filters struct {
@@ -188,11 +189,11 @@ func (c *Catalog) validateMission(mission Mission) error {
 		return errors.New("revision must be at least 1")
 	case mission.NameKey != "mission."+match[1]+".name":
 		return errors.New("nameKey must be mission.<slug>.name")
-	case !slices.Contains(progressEvents, mission.Event):
+	case !slices.Contains(ProgressEvents, mission.Event):
 		return fmt.Errorf("unknown event %q", mission.Event)
 	case mission.Target < 1:
 		return errors.New("target must be at least 1")
-	case mission.Filters.Queue != "" && !slices.Contains(queues, mission.Filters.Queue):
+	case mission.Filters.Queue != "" && !slices.Contains(Queues, mission.Filters.Queue):
 		return fmt.Errorf("unknown queue filter %q", mission.Filters.Queue)
 	case mission.Filters.Mode != "" && !validMode(mission.Filters.Mode):
 		return fmt.Errorf("unknown mode filter %q", mission.Filters.Mode)
