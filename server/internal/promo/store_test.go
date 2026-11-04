@@ -506,13 +506,13 @@ func (f *fixture) lockSignal(t *testing.T, account string) (int, int, int) {
 func TestAMultiUseCodeIsMarkedOnceWhenHalfItsCapGoesWithinTheWindow(t *testing.T) {
 	f := newFixture(t, promo.DefaultConfig())
 	d := definition("promo.leaky", promo.MultiUse, coins)
-	d.Cap, d.Code = 4, "LEAK2345"
+	d.Cap, d.Code = 4, "WAVE2345"
 	f.create(t, d)
 	slow := definition("promo.steady", promo.MultiUse, coins)
 	slow.Cap, slow.Code = 4, "STEADY23"
 	f.create(t, slow)
 	for i, want := range []bool{false, true, false} {
-		redemption, err := f.store.Redeem(context.Background(), f.account(t), "LEAK2345", now.Add(time.Duration(i)*time.Minute))
+		redemption, err := f.store.Redeem(context.Background(), f.account(t), "WAVE2345", now.Add(time.Duration(i)*time.Minute))
 		if err != nil || redemption.Spiked != want {
 			t.Fatalf("redemption %d: spiked %v, want %v, %v", i+1, redemption.Spiked, want, err)
 		}
