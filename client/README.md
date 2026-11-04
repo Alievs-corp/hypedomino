@@ -12,12 +12,12 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 |---|---|---|
 | `Assets/HypeDomino/Core` | `HypeDomino.Core` | none |
 | `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto |
-| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core |
+| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core, `UnityEngine.UI` |
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, UI, Cosmetics |
 | `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | `Google.Protobuf.dll` only; output of `npm run proto:gen`, never edited |
 | `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core and UI |
-| `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | References Core |
+| `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | References Core, UI and `UnityEngine.UI` |
 | `Assets/HypeDomino/Settings` | | URP asset, Universal Renderer, texture preset |
 | `Assets/HypeDomino/Scenes` | | `Boot.unity`, the first build scene |
 | `Assets/Plugins/Google.Protobuf` | | Google.Protobuf 3.36.2 (`netstandard2.0`), the runtime matching the `protocolbuffers/csharp:v36.2` plugin in `proto/buf.gen.yaml`, and its dependency System.Runtime.CompilerServices.Unsafe 4.5.3 (`netstandard2.0`, assembly 4.0.4.1), which the player profile lacks; `System.Memory` comes from the .NET Standard 2.1 profile |
@@ -66,11 +66,21 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`) and `TokenMotion`. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion` and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Safe area
 
 `UI/Layout/SafeAreaFitter` sits on the root `RectTransform` of each screen and anchors it to `Screen.safeArea`, so camera holes, notches, the island and the home indicator never cover UI. It refits when the safe area or the resolution changes (rotation, split screen, a folding display) and does nothing on other frames. `SafeAreaAnchors` turns the safe area into anchors, clamped to the screen; an empty screen or safe area falls back to the full screen. The `SafeAreaTests` EditMode tests cover 20:9 Android with a camera hole, iPhone landscape and portrait, a 4:3 tablet and 16:9 without insets. Orientation is still open (`docs/ui-motion.md` 9), so nothing here assumes one.
+
+## Emoji
+
+`UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
+- **`EmojiWheel`:** holds the equipped emoji, up to the slot count, and opens and closes the wheel. `TrySend` returns the id to send as `EmojiIntent` and closes the wheel. After a send the wheel stays calm for `TokenEffect.EmojiDurationMs`, and `OwnEmojiShown` restarts that time when the player's own `EmojiShown` arrives.
+- **`EmojiPop`:** the pop's scale and opacity at a given time, including reduce motion.
+- **`EmojiArt`:** the static sprite and the loop frames with their frame rate. It picks the static sprite on `EffectLevel.Low` or while the loop is not loaded.
+- **`SeatEmojiLayer`:** prewarms `TokenEffect.EmojiPooled` `EmojiPopup` instances in `Build`, so build it when the match scene loads. It shows one emoji per seat anchor (a new one restarts the seat's popup) and returns a popup to the pool when its pop ends.
+
+`EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
 
 ## Pooling and allocations
 

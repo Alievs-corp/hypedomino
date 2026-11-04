@@ -123,6 +123,13 @@ test("C# tokens carry hex colours, nested names and float easing points", () => 
   assert.ok(!source.includes("Legendary"), "rarity colours come from admin config, not constants");
 });
 
+test("C# tokens carry each effect's duration and pool size", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public const int EmojiDurationMs = 1800;"));
+  assert.ok(source.includes("public const int EmojiPooled = 4;"));
+  assert.ok(source.includes("public const int ScorePopupPooled = 6;"));
+});
+
 test("a fractional integer token stops C# generation", () => {
   const copy = structuredClone(tokens);
   copy.spacing.md = 16.5;

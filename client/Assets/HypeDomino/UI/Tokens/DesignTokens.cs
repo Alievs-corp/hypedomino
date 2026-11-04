@@ -98,4 +98,26 @@ namespace HypeDomino.UI.Tokens
         public const float PressScale = 0.94f;
         public const float PanelEnterScale = 0.92f;
     }
+
+    public static class TokenEffect
+    {
+        public const int TilePlaceDurationMs = 300;
+        public const int TilePlacePooled = 4;
+        public const int ScorePopupDurationMs = 1160;
+        public const int ScorePopupPooled = 6;
+        public const int ScoreCascadeDurationMs = 1000;
+        public const int ScoreCascadePooled = 2;
+        public const int SpinnerFormationDurationMs = 600;
+        public const int SpinnerFormationPooled = 1;
+        public const int DominoDurationMs = 1200;
+        public const int DominoPooled = 1;
+        public const int BlockDurationMs = 900;
+        public const int BlockPooled = 1;
+        public const int MatchWinDurationMs = 2400;
+        public const int MatchWinPooled = 1;
+        public const int RankUpDurationMs = 2000;
+        public const int RankUpPooled = 1;
+        public const int EmojiDurationMs = 1800;
+        public const int EmojiPooled = 4;
+    }
 }

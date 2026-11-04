@@ -277,6 +277,17 @@ An effect is within budget when the replay harness (`docs/performance.md` sectio
 
 A PR that adds or changes an effect reports these numbers as `docs/performance.md` section 8 requires.
 
+### Emoji wheel
+
+In-match emoji (#151) and the `emoji` effect:
+
+- **Wheel.** An emoji button on the match HUD opens the wheel as a panel (section 5, panel motion). Its slots are the emoji equipped in the player's loadout, in loadout order, up to `EmojiSlots` (#150). With no emoji equipped the button is hidden. Each slot shows the emoji's static art and is at least `touchTargetMin`.
+- **Send.** A tap on a slot sends `EmojiIntent` at once (section 6 rule 4) and closes the wheel. The client shows nothing on its own: the emoji appears for every seat, the sender included, when `EmojiShown` arrives (`proto/README.md`). The server enforces ownership and the spam limit.
+- **Calm down.** After a send the button and the slots show `opacity.disabled` until the sender's own emoji has finished its `durationMs` (1800). If no `EmojiShown` comes back, because the server dropped the emoji, they are enabled again 1800 ms after the send. Opening and closing the wheel stay possible.
+- **Pop.** The emoji pops at the sender's avatar: scale 0 to 1 in `base` with `overshoot`, a hold, then opacity 1 to 0 in `base` with `exit`, `durationMs` in total. With reduce motion the scale pop becomes an opacity fade in `fast` with `standard` (Reduce motion table). Each seat shows one live emoji; a new one replaces it from the start.
+- **Art.** On the low effect level the emoji shows its static art (`staticAddress`). On medium and high it plays its one looping animation (`animationAddress`) at the frame rate stored with that animation, and falls back to the static art until the animation is loaded (ADR 0002).
+- **Pooling.** The `pooled` count of the `emoji` budget (4) is prewarmed when the match scene loads, so no instance is created during the match. A match has at most four seats with one live emoji each, so the pool never runs out.
+
 ## 8. Score cascade
 
 Board points are multiples of 5 (R-25); a score event's step comes from its value:
