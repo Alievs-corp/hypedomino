@@ -60,11 +60,27 @@ Initial target, to be recalibrated after the #164 measurement.
 
 ## 6. Server budgets
 
-Run on the reference node spec (CPU, RAM, region) fixed in #192 and recorded with the results.
+Run on the reference node spec fixed in #192 and recorded with the results.
+
+### 6.1 Reference run
+
+- Node under test: Hetzner Cloud CCX23 (4 dedicated vCPU, 16 GB RAM), location Falkenstein (`fsn1`), Ubuntu 24.04, one server process and nothing else. Dedicated vCPU keeps a neighbour's load out of the numbers, so runs can be compared.
+- Bot host: a second CCX23 in the same location, joined to the node by a Hetzner private network; the load bot never runs on the node. The debug port (`HD_DEBUG_ADDR`) listens on the private address only.
+- Peak target: the issue's "expected first-days peak ×3" has no number yet. It is set from the CB-3 size after the closed beta (`docs/closed-beta.md` CE-14); until then the run proves the 10,000-room node target of 6.2.
+
+Steps:
+
+1. Build on any machine: `cd server && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o loadbot ./cmd/loadbot`, then copy `loadbot` and `tools/loadtest/*.sh` to both hosts.
+2. Node: `./node.sh <node private address> node-run`. It raises the file limit, records the machine (`node.txt`), samples CPU every 10 s (`vmstat.log`) and runs `loadbot serve` with the same `HD_*` variables as the server.
+3. Bot host: `./bot.sh <node private address> bot-run`. Defaults are those of 6.2: 10,000 rooms, 50% 2v2, 5 min ramp, 30 min hold; extra `loadbot run` flags are appended and override them. It samples `/metrics` every 60 s, keeps the bot report (`report.json`, `report.txt`), the final metrics and a heap profile, and exits non-zero when the bot gates fail.
+4. Copy `node-run/vmstat.log` into `bot-run`, then `./check.sh bot-run 5 30`. It checks heap drift between hold minute 10 and minute 30 (live heap after GC, `go_heap_live_bytes`) and average CPU during the hold, and prints the server histogram p99. Exit code 1 means a gate failed.
+5. Record in #192: commit, `node.txt`, `report.txt` and the `check.sh` output. A soak is the same with `-hold 12h` and `./check.sh bot-run 5 720`.
+
+### 6.2 Budgets
 
 | Budget | Target | Environment | Method | Sample and duration | Pass / fail |
 |---|---|---|---|---|---|
-| Move round-trip | p99 < 100 ms | Load bot in the same cloud region as the node, on a different host; production-like TLS and WebSocket | Load bot (`server/cmd/loadbot`, #192) timestamps each move intent send and the resulting broadcast receive. The server also exports a Prometheus histogram `move_roundtrip_seconds` for its in-process share: an accepted move intent from its receive by the gateway to the resulting broadcast queued for every seat, so the socket writes are left to the bot measurement | 30 min steady state at the 10k-room load, at least 100,000 moves, first 2 min discarded as warm-up | Bot-measured p99 < 100 ms overall and in every 1-minute window; server histogram p99 reported alongside |
+| Move round-trip | p99 < 100 ms | Load bot in the same cloud region as the node, on a different host; production-like TLS and WebSocket | Load bot (`server/cmd/loadbot`, #192) timestamps each move intent send and the resulting broadcast receive. The server also exports a Prometheus histogram `move_roundtrip_seconds` (with the node gauges `go_heap_live_bytes`, `go_goroutines`, `hd_rooms` and `hd_connections` beside it) for its in-process share: an accepted move intent from its receive by the gateway to the resulting broadcast queued for every seat, so the socket writes are left to the bot measurement | 30 min steady state at the 10k-room load, at least 100,000 moves, first 2 min discarded as warm-up | Bot-measured p99 < 100 ms overall and in every 1-minute window; server histogram p99 reported alongside |
 | Concurrent rooms | 10,000 per node | Reference node | Load bot ramps to 10,000 active rooms (1v1 and 2v2 mix, moves at human cadence inside the admin-config turn time), then holds. Observe with pprof, `runtime/metrics` and node CPU / RAM | Ramp, then 30 min hold | Holds 10,000 rooms within the move budget; error and disconnect rate under 0.1%; average CPU under 80%; heap flat within 5% between minute 10 and minute 30 |
 | Hot-path cost | No regression | Developer machine and CI | `go test -run='^$' -bench=. -benchmem -count=10 ./internal/rules/... > new.txt`, then `benchstat old.txt new.txt` | 10 runs per side | No benchmark slower than 5% at `p < 0.05`; allocs/op not higher |
 

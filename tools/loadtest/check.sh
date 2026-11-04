@@ -14,10 +14,11 @@ heap_at() {
   awk '$1 == "go_heap_live_bytes" { print $2 }' "$file"
 }
 
-early=$(heap_at "$ramp + 10")
+early_minute=$(( hold < 30 ? hold / 3 : 10 ))
+early=$(heap_at "$ramp + $early_minute")
 late=$(heap_at "$ramp + $hold")
 drift=$(awk -v a="$early" -v b="$late" 'BEGIN { printf "%.2f", (b - a) * 100 / a }')
-echo "heap minute 10: $early bytes, minute $hold: $late bytes, drift $drift%"
+echo "heap hold minute $early_minute: $early bytes, hold minute $hold: $late bytes, drift $drift%"
 awk -v d="$drift" 'BEGIN { exit !(d > 5 || d < -5) }' && { echo "FAIL heap drift over 5%"; failed=1; }
 
 cpu=$(awk -v skip="$(( ramp * 6 + 2 ))" -v take="$(( hold * 6 ))" 'NR > skip && NR <= skip + take { busy += 100 - $15; n++ } END { if (n) printf "%.1f", busy / n }' "$run_dir/vmstat.log")

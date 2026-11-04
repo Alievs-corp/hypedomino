@@ -61,6 +61,6 @@ func seconds(d time.Duration) string {
 }
 
 func WriteGauge(w io.Writer, name, help string, value float64) error {
-	_, err := fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s gauge\n%s %s\n", name, help, name, name, strconv.FormatFloat(value, 'g', -1, 64))
+	_, err := fmt.Fprintf(w, "# HELP %s %s\n# TYPE %s gauge\n%s %s\n", name, help, name, name, strconv.FormatFloat(value, 'f', -1, 64))
 	return err
 }
