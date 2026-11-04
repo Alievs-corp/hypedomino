@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { draftReady, emptyDraft, maxBatchCount, promoKinds, promoRequest, type PromoDraft } from "@/promo/codes";
-import { createPromo, createPromoBatch, type CreatedResult } from "./actions";
+import { draftFromTemplate, draftReady, emptyDraft, maxBatchCount, promoKinds, promoRequest, templateRequest, type PromoDraft, type PromoTemplate } from "@/promo/codes";
+import { createPromo, createPromoBatch, saveTemplate, type CreatedResult, type TemplateResult } from "./actions";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -22,16 +22,36 @@ function stateKey(result: CreatedResult & { ok: true }): MessageKey {
   return result.approvalId === null ? "promo.created" : "promo.created_pending";
 }
 
-export function PromoCreator() {
+export function PromoCreator({ templates, mayEditTemplates }: { templates: readonly PromoTemplate[]; mayEditTemplates: boolean }) {
   const t = useTranslator();
   const router = useRouter();
   const [draft, setDraft] = useState<PromoDraft>(emptyDraft);
   const [batch, setBatch] = useState(false);
   const [reason, setReason] = useState("");
   const [result, setResult] = useState<CreatedResult | null>(null);
+  const [templateResult, setTemplateResult] = useState<TemplateResult | null>(null);
   const [pending, startTransition] = useTransition();
   const edit = <K extends keyof PromoDraft>(key: K, value: PromoDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
   const ready = draftReady(draft, batch) && reason.trim() !== "";
+  const existingTemplate = templates.some((template) => template.id === draft.id.trim());
+  const templateReady = !batch && reason.trim() !== "" && (mayEditTemplates || !existingTemplate);
+
+  function startFrom(id: string) {
+    const template = templates.find((candidate) => candidate.id === id);
+    setDraft(template ? draftFromTemplate(template) : emptyDraft);
+    setResult(null);
+    setTemplateResult(null);
+  }
+
+  function keepTemplate() {
+    startTransition(async () => {
+      const outcome = await saveTemplate(templateRequest(draft), existingTemplate, reason);
+      setTemplateResult(outcome);
+      if (outcome.ok) {
+        router.refresh();
+      }
+    });
+  }
 
   function create() {
     startTransition(async () => {
@@ -52,6 +72,19 @@ export function PromoCreator() {
   return (
     <section className="flex flex-col gap-4 rounded-md border border-surface p-4">
       <h2 className="text-lg font-semibold">{t("promo.create")}</h2>
+      {templates.length > 0 && (
+        <label className={`${labelClass} self-start`}>
+          {t("promo.from_template")}
+          <select defaultValue="" onChange={(event) => startFrom(event.target.value)} className={fieldClass}>
+            <option value="">{t("promo.no_template")}</option>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.id}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="flex gap-4 text-sm">
         <label className="flex items-center gap-2">
           <input type="radio" checked={!batch} onChange={() => setBatch(false)} />
@@ -131,9 +164,26 @@ export function PromoCreator() {
         </label>
       </div>
       <p className="text-sm text-text-muted">{t("promo.utc_hint")}</p>
-      <button type="button" disabled={pending || !ready} onClick={create} className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40">
-        {batch ? t("promo.generate") : t("promo.create")}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button type="button" disabled={pending || !ready} onClick={create} className="rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40">
+          {batch ? t("promo.generate") : t("promo.create")}
+        </button>
+        {!batch && (
+          <button type="button" disabled={pending || !templateReady} onClick={keepTemplate} className="rounded-md bg-surface px-4 py-2 text-text-secondary disabled:opacity-40">
+            {existingTemplate ? t("promo.update_template") : t("promo.save_template")}
+          </button>
+        )}
+      </div>
+      {templateResult && !templateResult.ok && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("promo.refused")}: {templateResult.error} {templateResult.detail}
+        </p>
+      )}
+      {templateResult?.ok && (
+        <p role="status" className="text-sm text-text-secondary">
+          {t("promo.template_saved")}
+        </p>
+      )}
       {result && !result.ok && (
         <p role="alert" className="text-sm text-danger-text">
           {t("promo.refused")}: {result.error} {result.detail}

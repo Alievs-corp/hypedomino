@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { batchLeads, bundleOf, detailPath, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+import { batchLeads, bundleOf, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
 
 const draft: PromoDraft = {
   ...emptyDraft,
@@ -97,4 +97,18 @@ test("a new account list keeps every account that redeemed", () => {
   assert.equal(keepsRedeemers(["a1", "a2"], redeemed), true);
   assert.equal(keepsRedeemers(["a2"], redeemed), false);
   assert.equal(keepsRedeemers([], []), true);
+});
+
+test("a template keeps only id, campaign, kind and what it grants", () => {
+  assert.deepEqual(templateRequest(draft), { id: "promo.launch", campaign: "campaign.launch_week", kind: "multi_use", bundle: { id: "bundle.launch", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "table.night_market"] } });
+  assert.equal(templateRequest({ ...draft, coins: 0, cosmetics: "" }).bundle, null);
+});
+
+test("cloning a template fills the code form and leaves the window, cap and code to set", () => {
+  const template: PromoTemplate = { id: "promo.welcome", campaign: "campaign.launch", kind: "multi_use", bundle: { id: "bundle.welcome", revision: 1, coins: 200, cosmetics: ["avatar.comet_fox"] }, creator: "leyla", updated: "2026-11-04T10:00:00Z" };
+  const clone = draftFromTemplate(template);
+  assert.deepEqual(clone, { ...emptyDraft, id: "promo.welcome", campaign: "campaign.launch", kind: "multi_use", bundleId: "bundle.welcome", coins: 200, cosmetics: "avatar.comet_fox", passXp: 0 });
+  assert.equal(draftReady(clone, false), false);
+  assert.deepEqual(draftFromTemplate({ ...template, kind: "single_use", bundle: null }), { ...emptyDraft, id: "promo.welcome", campaign: "campaign.launch", kind: "single_use" });
+  assert.equal(templatePath("promo.welcome"), "/admin/promo-templates/promo.welcome");
 });
