@@ -306,7 +306,7 @@ Rules of #121. Win trading and boosting work through the same pair of accounts, 
 
 ## 10. Config
 
-Every key has one value per mode (1v1, 2v2); both start at the same default. Structural keys (section 7.1) are frozen while a season runs.
+Every key has one value per mode (1v1, 2v2); both start at the same default. Structural keys (section 7.1) are frozen while a season runs; the admin API refuses them with 409 `frozen` until the season is closed in both modes (`docs/admin.md`, Ranking config note).
 
 | Key | Default | Section |
 |---|---|---|
