@@ -38,6 +38,18 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **History:** the last 50 versions, each with its offer count and the offers it added or changed against the version before.
 - **Rollback:** roles with publish on shop offers and rollback on snapshots can roll back to an earlier version. It needs a reason and a fresh sign-in (`POST /admin/config/shop/rollback`), using the same `Rollback` component as match rules.
 
+## Pass seasons
+
+`/pass` (#140, `docs/admin.md` 5.7) edits the pass config of `GET /admin/config/pass` without a code change.
+- **Settings:** track budgets, premium plus levels, match XP, the daily XP cap, the bot seat share and level prices apply to every season and may change at any time. An empty field keeps the server default.
+- **New season:** clone a season or start an empty one, with a start and end in UTC. The new season takes the next `season_<n>`. A clone copies the curve and every coin and crystal reward under new bundle ids `bundle.pass_<season>_<track>_<level>`; cosmetics are left out, because each item must first list the new level as its `pass` source. An empty season gets an empty premium bundle per level.
+- **Curve:** levels, XP base, step and max, with the XP to the next level and the running total per level as the server computes them. Changing the levels adds or trims premium levels and trims free levels above the last.
+- **Level rewards:** per level, free coins and cosmetic ids, premium crystals and cosmetic ids, with the track totals against the budgets. An emptied free level is removed; a premium level must grant something. Editing a published bundle raises its revision once.
+- **Running seasons:** the state (planned, running, ended) comes from server time (`rules.server_time`). Once a season has started its start, curve and level rewards are read-only; only the end of a running season may change. A planned season may be removed until it starts.
+- **Checks:** a window that ends before it starts, an overlap, curve values below 1, XP max below XP base, levels not above premium plus levels, an empty premium level, a track over its budget or an invalid setting marks the field and blocks the publish. Item sources and mythic items are checked by the API.
+- **Publish** takes a reason and a confirmation step that lists the added or changed seasons with their totals, dropped seasons and changed settings (`PUT /admin/config/pass`). It is shown only to roles with publish on pass seasons.
+- **History and rollback:** as for shop offers, on `/admin/config/pass/history` and `/admin/config/pass/rollback`; each version lists the seasons and settings it changed.
+
 ## Missions
 
 `/missions` (#141, `docs/admin.md` 5.8) edits the mission catalog of `GET /admin/config/missions` without a code change. With no published catalog the editor starts with no missions. The API fills slot rewards, budgets and rerolls from its defaults, so the first publish needs a live daily and weekly mission for every default slot.
