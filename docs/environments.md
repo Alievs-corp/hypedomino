@@ -106,6 +106,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_MAC_FAILURE_THRESHOLD` | No | server | `5` | `5` | No | from #207 |
 | `HD_MAC_FAILURE_WINDOW` | No | server | `10m` | `10m` | No | from #207 |
 | `HD_MAC_FAILURE_WEIGHT` | No | server | `5` | `5` | No | from #207 |
+| `HD_UNOWNED_EQUIP_THRESHOLD` | No | server | `5` | `5` | No | from #211 |
+| `HD_UNOWNED_EQUIP_WINDOW` | No | server | `10m` | `10m` | No | from #211 |
+| `HD_UNOWNED_EQUIP_WEIGHT` | No | server | `5` | `5` | No | from #211 |
 | `HD_INTEGRITY_NONCE_TTL` | No | server | `5m` | `5m` | No | from #205 |
 | `HD_FAKE_RECEIPT_WEIGHT` | No | server | `20` | `20` | No | from #204 |
 | `HD_REFUND_WEIGHT` | No | server | `3` | `3` | No | from #204 |
