@@ -65,3 +65,6 @@ pnpm-debug.log*
 
 *.blend1
 *.blend2
+
+graphify-out/
+.claude/settings.local.json
