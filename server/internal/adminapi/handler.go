@@ -146,6 +146,11 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/rating", h.allowed(rbac.RankedSeasons, rbac.Publish, h.publishDomain(h.ratingDomain)))
 	h.mux.HandleFunc("GET /admin/config/rating/history", h.allowed(rbac.RankedSeasons, rbac.View, h.domainHistory(rating.Domain)))
 	h.mux.HandleFunc("POST /admin/config/rating/rollback", h.allowed(rbac.RankedSeasons, rbac.Publish, h.rollbackDomain(h.ratingDomain)))
+	h.mux.HandleFunc("GET /admin/ranked/seasons", h.allowed(rbac.RankedSeasons, rbac.View, h.rankedSeasons))
+	h.mux.HandleFunc("POST /admin/ranked/seasons", h.allowed(rbac.RankedSeasons, rbac.Create, h.createSeason))
+	h.mux.HandleFunc("PATCH /admin/ranked/seasons/{id}", h.allowed(rbac.RankedSeasons, rbac.Edit, h.rescheduleSeason))
+	h.mux.HandleFunc("POST /admin/ranked/seasons/{id}/extend", h.allowed(rbac.RankedSeasons, rbac.Edit, h.extendSeason))
+	h.mux.HandleFunc("DELETE /admin/ranked/seasons/{id}", h.allowed(rbac.RankedSeasons, rbac.Delete, h.deleteSeason))
 	h.mux.HandleFunc("GET /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.View, h.passConfig))
 	h.mux.HandleFunc("PUT /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.Publish, h.publishDomain(func() configDomain { return h.passDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/pass/history", h.allowed(rbac.PassSeasons, rbac.View, h.domainHistory(pass.Domain)))
@@ -410,6 +415,14 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "not_banned"
 	case errors.Is(err, errNoProfile):
 		return http.StatusConflict, "no_profile"
+	case errors.Is(err, rating.ErrSeason), errors.Is(err, rating.ErrSeasonGap), errors.Is(err, rating.ErrSeasonOverlap), errors.Is(err, rating.ErrSeasonEarlier):
+		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, rating.ErrSeasonUnknown):
+		return http.StatusNotFound, "not_found"
+	case errors.Is(err, rating.ErrSeasonStarted):
+		return http.StatusConflict, "season_started"
+	case errors.Is(err, errSeasonNotLive):
+		return http.StatusConflict, "season_not_live"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):

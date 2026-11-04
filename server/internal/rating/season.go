@@ -27,6 +27,7 @@ var (
 	ErrSeasonOverlap    = errors.New("rating.season_overlap")
 	ErrSeasonGap        = errors.New("rating.season_gap")
 	ErrSeasonEarlier    = errors.New("rating.season_earlier")
+	ErrSeasonStarted    = errors.New("rating.season_started")
 	ErrNoSeason         = errors.New("rating.no_season")
 	ErrSeasonTransition = errors.New("rating.season_transition")
 	ErrSeasonOpen       = errors.New("rating.season_open")
@@ -92,17 +93,22 @@ func scanSeason(row pgx.Row) (Season, error) {
 }
 
 func (s *Store) CreateSeason(ctx context.Context, season Season, now time.Time) (Season, error) {
+	var created Season
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		var err error
+		created, err = CreateSeasonIn(ctx, tx, season, now)
+		return err
+	})
+	return created, err
+}
+
+func CreateSeasonIn(ctx context.Context, tx pgx.Tx, season Season, now time.Time) (Season, error) {
 	switch {
 	case !seasonID.MatchString(season.ID):
 		return Season{}, fmt.Errorf("%w: id %q", ErrSeason, season.ID)
 	case season.Start.IsZero() || !season.End.After(season.Start):
 		return Season{}, fmt.Errorf("%w: the end must follow the start", ErrSeason)
 	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return Season{}, err
-	}
-	defer tx.Rollback(ctx)
 	var latestEnd *time.Time
 	if err := tx.QueryRow(ctx, `select max(ends_at) from ranked_seasons`).Scan(&latestEnd); err != nil {
 		return Season{}, err
@@ -110,11 +116,7 @@ func (s *Store) CreateSeason(ctx context.Context, season Season, now time.Time) 
 	if latestEnd != nil && !latestEnd.Equal(season.Start) {
 		return Season{}, fmt.Errorf("%w: the next season starts at %s", ErrSeasonGap, latestEnd.UTC().Format(time.RFC3339))
 	}
-	created, err := insertSeason(ctx, tx, season, now)
-	if err != nil {
-		return Season{}, err
-	}
-	return created, tx.Commit(ctx)
+	return insertSeason(ctx, tx, season, now)
 }
 
 func insertSeason(ctx context.Context, tx pgx.Tx, season Season, now time.Time) (Season, error) {
@@ -132,33 +134,154 @@ func insertSeason(ctx context.Context, tx pgx.Tx, season Season, now time.Time) 
 }
 
 func (s *Store) ExtendSeason(ctx context.Context, id string, end time.Time) (Season, error) {
-	tx, err := s.pool.Begin(ctx)
+	var extended Season
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		var err error
+		_, extended, err = ExtendSeasonIn(ctx, tx, id, end)
+		return err
+	})
+	return extended, err
+}
+
+func LockSeason(ctx context.Context, tx pgx.Tx, id string) (Season, error) {
+	season, err := scanSeason(tx.QueryRow(ctx, `select `+seasonColumns+` from ranked_seasons where id = $1 for update`, id))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Season{}, ErrSeasonUnknown
+	}
+	return season, err
+}
+
+func ExtendSeasonIn(ctx context.Context, tx pgx.Tx, id string, end time.Time) (Season, Season, error) {
+	season, err := LockSeason(ctx, tx, id)
+	if err != nil {
+		return Season{}, Season{}, err
+	}
+	if end.Before(season.End) {
+		return Season{}, Season{}, fmt.Errorf("%w: a season end only moves later", ErrSeasonEarlier)
+	}
+	moved, err := moveEnd(ctx, tx, season, end)
+	return season, moved, err
+}
+
+type Schedule struct {
+	Start     time.Time
+	End       time.Time
+	NoRewards bool
+}
+
+func RescheduleSeasonIn(ctx context.Context, tx pgx.Tx, id string, schedule Schedule, now time.Time) (Season, Season, error) {
+	before, err := LockSeason(ctx, tx, id)
+	if err != nil {
+		return Season{}, Season{}, err
+	}
+	startMoves := !schedule.Start.Equal(before.Start)
+	switch {
+	case !now.Before(before.Start):
+		return Season{}, Season{}, fmt.Errorf("%w: %s", ErrSeasonStarted, id)
+	case !schedule.End.After(schedule.Start):
+		return Season{}, Season{}, fmt.Errorf("%w: the end must follow the start", ErrSeason)
+	case startMoves && !now.Before(schedule.Start):
+		return Season{}, Season{}, fmt.Errorf("%w: the start must be in the future", ErrSeason)
+	}
+	if startMoves {
+		var previous bool
+		if err := tx.QueryRow(ctx, `select exists (select 1 from ranked_seasons where ends_at = $1)`, before.Start).Scan(&previous); err != nil {
+			return Season{}, Season{}, err
+		}
+		if previous {
+			return Season{}, Season{}, fmt.Errorf("%w: the season starts at the end of the previous one", ErrSeasonGap)
+		}
+	}
+	season := before
+	setStart := func() error {
+		season.Start = schedule.Start.UTC()
+		_, err := tx.Exec(ctx, `update ranked_seasons set starts_at = $2 where id = $1`, id, season.Start)
+		return err
+	}
+	if startMoves && schedule.Start.Before(before.Start) {
+		if err := setStart(); err != nil {
+			return Season{}, Season{}, err
+		}
+	}
+	if season, err = moveEnd(ctx, tx, season, schedule.End); err != nil {
+		return Season{}, Season{}, err
+	}
+	if startMoves && schedule.Start.After(before.Start) {
+		if err := setStart(); err != nil {
+			return Season{}, Season{}, err
+		}
+	}
+	if _, err := tx.Exec(ctx, `update ranked_seasons set rewards = $2 where id = $1`, id, !schedule.NoRewards); err != nil {
+		return Season{}, Season{}, err
+	}
+	season.NoRewards = schedule.NoRewards
+	return before, season, nil
+}
+
+func DeleteSeasonIn(ctx context.Context, tx pgx.Tx, id string, now time.Time) (Season, error) {
+	season, err := LockSeason(ctx, tx, id)
 	if err != nil {
 		return Season{}, err
 	}
-	defer tx.Rollback(ctx)
-	season, err := scanSeason(tx.QueryRow(ctx, `select `+seasonColumns+` from ranked_seasons where id = $1 for update`, id))
-	switch {
-	case errors.Is(err, pgx.ErrNoRows):
-		return Season{}, ErrSeasonUnknown
-	case err != nil:
-		return Season{}, err
-	case end.Before(season.End):
-		return Season{}, fmt.Errorf("%w: a season end only moves later", ErrSeasonEarlier)
+	if !now.Before(season.Start) {
+		return Season{}, fmt.Errorf("%w: %s", ErrSeasonStarted, id)
 	}
+	var following bool
+	if err := tx.QueryRow(ctx, `select exists (select 1 from ranked_seasons where starts_at >= $1)`, season.End).Scan(&following); err != nil {
+		return Season{}, err
+	}
+	if following {
+		return Season{}, fmt.Errorf("%w: only the last season can be removed", ErrSeasonGap)
+	}
+	_, err = tx.Exec(ctx, `delete from ranked_seasons where id = $1`, id)
+	return season, err
+}
+
+func moveEnd(ctx context.Context, tx pgx.Tx, season Season, end time.Time) (Season, error) {
+	end = end.UTC()
 	shift := end.Sub(season.End)
-	if _, err := tx.Exec(ctx, `update ranked_seasons set starts_at = starts_at + $2, ends_at = ends_at + $2 where starts_at >= $1`, season.End, shift); err != nil {
+	if shift == 0 {
+		return season, nil
+	}
+	order := "desc"
+	if shift < 0 {
+		order = "asc"
+		if _, err := tx.Exec(ctx, `update ranked_seasons set ends_at = $2 where id = $1`, season.ID, end); err != nil {
+			return Season{}, err
+		}
+	}
+	rows, err := tx.Query(ctx, `select id from ranked_seasons where starts_at >= $1 order by starts_at `+order, season.End)
+	if err != nil {
 		return Season{}, err
 	}
-	if _, err := tx.Exec(ctx, `update ranked_seasons set ends_at = $2 where id = $1`, id, end.UTC()); err != nil {
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
 		return Season{}, err
 	}
-	season.End = end.UTC()
-	return season, tx.Commit(ctx)
+	for _, following := range ids {
+		if _, err := tx.Exec(ctx, `update ranked_seasons set starts_at = starts_at + $2, ends_at = ends_at + $2 where id = $1`, following, shift); err != nil {
+			return Season{}, err
+		}
+	}
+	if shift > 0 {
+		if _, err := tx.Exec(ctx, `update ranked_seasons set ends_at = $2 where id = $1`, season.ID, end); err != nil {
+			return Season{}, err
+		}
+	}
+	season.End = end
+	return season, nil
 }
 
 func (s *Store) Seasons(ctx context.Context) ([]Season, error) {
-	rows, err := s.pool.Query(ctx, `select `+seasonColumns+` from ranked_seasons order by starts_at`)
+	return ListSeasons(ctx, s.pool)
+}
+
+type rowsQuerier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+func ListSeasons(ctx context.Context, q rowsQuerier) ([]Season, error) {
+	rows, err := q.Query(ctx, `select `+seasonColumns+` from ranked_seasons order by starts_at`)
 	if err != nil {
 		return nil, err
 	}
