@@ -28,6 +28,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
+	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -141,6 +142,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
 	h.mux.HandleFunc("POST /admin/config/missions/rollback", h.allowed(rbac.Missions, rbac.Publish, h.rollbackDomain(func() configDomain { return h.missionDomain(true) })))
+	h.mux.HandleFunc("GET /admin/config/rating", h.allowed(rbac.RankedSeasons, rbac.View, h.ratingConfig))
+	h.mux.HandleFunc("PUT /admin/config/rating", h.allowed(rbac.RankedSeasons, rbac.Publish, h.publishDomain(h.ratingDomain)))
+	h.mux.HandleFunc("GET /admin/config/rating/history", h.allowed(rbac.RankedSeasons, rbac.View, h.domainHistory(rating.Domain)))
+	h.mux.HandleFunc("POST /admin/config/rating/rollback", h.allowed(rbac.RankedSeasons, rbac.Publish, h.rollbackDomain(h.ratingDomain)))
 	h.mux.HandleFunc("GET /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.View, h.passConfig))
 	h.mux.HandleFunc("PUT /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.Publish, h.publishDomain(func() configDomain { return h.passDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/pass/history", h.allowed(rbac.PassSeasons, rbac.View, h.domainHistory(pass.Domain)))
@@ -328,7 +333,7 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 		h.logger.Info("admin request refused", "reason", code)
 	}
 	response := errorResponse{Error: code}
-	if status == http.StatusBadRequest {
+	if status == http.StatusBadRequest || code == "frozen" {
 		response.Detail = err.Error()
 	}
 	reply(w, status, response)
@@ -415,9 +420,10 @@ func classify(err error) (int, string) {
 		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
-		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved):
+		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
+		errors.Is(err, rating.ErrInvalidConfig):
 		return http.StatusBadRequest, "invalid"
-	case errors.Is(err, pass.ErrFrozen):
+	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):
 		return http.StatusConflict, "frozen"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"

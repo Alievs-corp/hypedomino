@@ -119,6 +119,15 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 			if err != nil {
 				return nil, err
 			}
+			ranked, err := publishedRating(ctx, tx)
+			if err != nil {
+				return nil, err
+			}
+			if ranked != nil {
+				if err := rankRewardSourcesListed(ctx, tx, ranked, medals); err != nil {
+					return nil, err
+				}
+			}
 			_, raw, err := latestSnapshot(ctx, tx, mission.Domain)
 			if err != nil || raw == nil {
 				return stamped, err

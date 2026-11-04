@@ -13,7 +13,12 @@ import (
 
 func exampleCatalog(t *testing.T, name string) map[string]any {
 	t.Helper()
-	raw, err := os.ReadFile("../../../docs/pass/examples/" + name + ".json")
+	return exampleAt(t, "pass/examples/"+name)
+}
+
+func exampleAt(t *testing.T, path string) map[string]any {
+	t.Helper()
+	raw, err := os.ReadFile("../../../docs/" + path + ".json")
 	if err != nil {
 		t.Fatal(err)
 	}
