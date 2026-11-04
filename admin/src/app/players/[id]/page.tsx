@@ -6,6 +6,7 @@ import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
+import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
 import { banActive, playerApiPath, signedAmount, type PlayerRecord } from "@/players/record";
 import { Notice } from "../Notice";
@@ -93,6 +94,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         { label: "player.at", cell: (row) => when(row.started_at) },
         { label: "player.mode", cell: (row) => `${row.mode} ${row.kind}` },
         { label: "player.result", cell: (row) => (row.cancelled ? t("player.cancelled") : `${row.result} ${row.score_a}:${row.score_b}`) },
+        { label: "match.open_replay", cell: (row) => <Link href={matchHref(row.match_id)} prefetch={false} className="text-primary underline">{t("match.open_replay")}</Link> },
       ]} />
     </main>
   );
