@@ -38,6 +38,17 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **History:** the last 50 versions, each with its offer count and the offers it added or changed against the version before.
 - **Rollback:** roles with publish on shop offers and rollback on snapshots can roll back to an earlier version. It needs a reason and a fresh sign-in (`POST /admin/config/shop/rollback`), using the same `Rollback` component as match rules.
 
+## Missions
+
+`/missions` (#141, `docs/admin.md` 5.8) edits the mission catalog of `GET /admin/config/missions` without a code change. With no published catalog the editor starts empty and the first publish creates version 1.
+- **New mission:** a slug (lowercase letters, digits, underscores) becomes `mission.<slug>`; a taken id is refused. The type sets the fields: daily and weekly take a slot and a weight, achievement and event take a reward bundle `bundle.mission_<slug>`, an achievement may chain to another achievement, and an event takes an event id.
+- **Condition:** the counted progress event, the target, and optional queue and mode filters. Events, types, queues and modes come from the server (`rules` in the response), so the editor offers only what the game servers count.
+- **Reward:** periodic missions pay their slot's reward from the catalog. An achievement or event bundle grants coins, cosmetic ids and medal ids, and an event bundle also pass XP. Editing a published bundle raises its revision once; restoring the published content restores its revision.
+- **Server fields:** `nameKey` and the mission revision are shown, never typed; the API sets them on publish.
+- **Checks:** a target, slot or weight below 1, a slot outside the type's slots, a bundle granting nothing or a malformed event id marks the mission and blocks the publish. Everything else, such as a granted medal or cosmetic that does not list the mission as a source, is refused by the API with its reason.
+- **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired.
+- **History and rollback:** as for shop offers, on `/admin/config/missions/history` and `/admin/config/missions/rollback`.
+
 ## Players
 
 `/players` (A-30 lookup, `docs/admin.md` 6.1) searches `GET /admin/players?q=` by account id, exact email or nickname prefix, up to 20 results. A `super_admin` also gets a second form that finds the account of one sign-in identity, a provider (`google` or `apple`) and its subject, through `GET /admin/players?provider=&subject=` (D-2). A search writes no audit entry. `/players/{id}` shows the record from `GET /admin/players/{id}`: account state, country, emails (sign-in identities only for `super_admin`), the temporary ban while it runs, balances, level, the forced-rename flag, nickname history, and the newest 50 ledger entries, inventory items, reward grants, purchases and matches. The API writes a `view` entry for every opening (AP-6), so the links to a record do not prefetch it: a prefetch would log a view nobody made.
