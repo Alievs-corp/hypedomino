@@ -64,6 +64,7 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
   - **One code:** its plaintext is shown once.
   - **Batch:** downloads as `<id>.csv` from the browser. Nothing keeps the plaintext afterwards, beyond a "download again" button while the page stays open.
   - **Second admin:** a code above the coin threshold or with a `mythic` item says so and waits in `/approvals`.
+- **Templates (`docs/launch-content-gate.md` 3.6):** every role that may view promo codes sees them: id, campaign, type, what they grant (or "set when cloned" without a bundle), creator and last change. In the create form, "Save as template" keeps the id, campaign, type and bundle with a reason; on an existing id it updates that template. "Start from a template" fills the form, and the code still needs its own window, cap or code. A template never redeems and is not listed with the codes.
 - **Code page `/promo/{id}`:** the code's fields for every role that may view it. `support` also sees who redeemed and when, linked to the player. On a targeted code that is not disabled, `support` edits the account list: ids by line or comma, a reason and a fresh sign-in. The screen keeps the save off while an account that redeemed is missing (`docs/admin.md` 9.1).
 - **Disable (`live_ops`):** a code, or the whole batch from its first listed code. It takes a reason and a fresh sign-in (`StepUpPrompt`) and is immediate.
 

@@ -196,3 +196,40 @@ export function targetsPath(id: string): string {
 export function keepsRedeemers(accounts: readonly string[], redeemed: readonly Redeemed[]): boolean {
   return redeemed.every((entry) => accounts.includes(entry.account_id));
 }
+
+export type PromoTemplate = {
+  id: string;
+  campaign: string;
+  kind: PromoKind;
+  bundle: Bundle | null;
+  creator: string;
+  updated: string;
+};
+
+export type TemplateRequest = { id: string; campaign: string; kind: PromoKind; bundle: Bundle | null };
+
+export const templatesPath = "/admin/promo-templates";
+
+export function templatePath(id: string): string {
+  return `${templatesPath}/${encodeURIComponent(id)}`;
+}
+
+export function templateRequest(draft: PromoDraft): TemplateRequest {
+  const bundle = bundleOf(draft);
+  const grants = (bundle.coins ?? 0) > 0 || (bundle.cosmetics?.length ?? 0) > 0 || (bundle.passXp ?? 0) > 0;
+  return { id: draft.id.trim(), campaign: draft.campaign.trim(), kind: draft.kind, bundle: grants ? bundle : null };
+}
+
+export function draftFromTemplate(template: PromoTemplate): PromoDraft {
+  const bundle = template.bundle;
+  return {
+    ...emptyDraft,
+    id: template.id,
+    campaign: template.campaign,
+    kind: template.kind,
+    bundleId: bundle?.id ?? emptyDraft.bundleId,
+    coins: bundle?.coins ?? 0,
+    cosmetics: bundle?.cosmetics?.join(", ") ?? "",
+    passXp: bundle?.passXp ?? 0,
+  };
+}
