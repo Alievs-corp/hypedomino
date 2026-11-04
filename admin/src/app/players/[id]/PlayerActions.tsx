@@ -6,13 +6,15 @@ import { needsStepUp } from "@/admin/refusals";
 import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
+import { emptyGrant, grantReady, grantRequest, grantSourceTypes, type GrantDraft } from "@/players/grant";
 import { validAdjustment } from "@/players/record";
-import { adjustCoins, banTemporarily, forceRename, liftTemporaryBan, type PlayerActionResult } from "./actions";
+import { adjustCoins, banTemporarily, forceRename, grantReward, liftTemporaryBan, type PlayerActionResult } from "./actions";
 
 type Pending = { action: () => Promise<PlayerActionResult>; onApplied?: () => void };
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const buttonClass = "rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40";
+const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
 
 function outcomeKey(result: PlayerActionResult): MessageKey {
   if (!result.ok) {
@@ -30,6 +32,8 @@ export function PlayerActions({ id, clientId, banned, renameRequired }: { id: st
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState(Number.NaN);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [grant, setGrant] = useState<GrantDraft>(emptyGrant);
+  const [grantId, setGrantId] = useState(() => crypto.randomUUID());
   const [last, setLast] = useState<Pending | null>(null);
   const [result, setResult] = useState<PlayerActionResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -53,6 +57,13 @@ export function PlayerActions({ id, clientId, banned, renameRequired }: { id: st
     setAmount(Number.NaN);
     setRequestId(crypto.randomUUID());
   };
+
+  const resetGrant = () => {
+    setGrant(emptyGrant);
+    setGrantId(crypto.randomUUID());
+  };
+
+  const editGrant = <K extends keyof GrantDraft>(key: K, value: GrantDraft[K]) => setGrant((current) => ({ ...current, [key]: value }));
 
   return (
     <section className="flex flex-col gap-4 rounded-md border border-surface p-4">
@@ -81,6 +92,54 @@ export function PlayerActions({ id, clientId, banned, renameRequired }: { id: st
           {t("actions.adjust_coins")}
         </button>
       </div>
+      <fieldset className="flex flex-col gap-3 rounded-md border border-surface p-3">
+        <legend className="px-1 text-sm font-semibold">{t("actions.grant")}</legend>
+        <p className="text-sm text-text-muted">{t("actions.grant_hint")}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={labelClass}>
+            {t("actions.grant_source_type")}
+            <select value={grant.sourceType} onChange={(event) => editGrant("sourceType", event.target.value as GrantDraft["sourceType"])} className={fieldClass}>
+              {grantSourceTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={labelClass}>
+            {t("actions.grant_source_ref")}
+            <input value={grant.sourceRef} onChange={(event) => editGrant("sourceRef", event.target.value)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            {t("promo.bundle_id")}
+            <input value={grant.bundleId} onChange={(event) => editGrant("bundleId", event.target.value)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            {t("promo.coins")}
+            <input type="number" min={0} step={1} value={Number.isNaN(grant.coins) ? "" : grant.coins} onChange={(event) => editGrant("coins", event.target.valueAsNumber)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            {t("promo.pass_xp")}
+            <input type="number" min={0} step={1} value={Number.isNaN(grant.passXp) ? "" : grant.passXp} onChange={(event) => editGrant("passXp", event.target.valueAsNumber)} className={fieldClass} />
+          </label>
+          <label className={labelClass}>
+            {t("actions.grant_medals")}
+            <input value={grant.medals} onChange={(event) => editGrant("medals", event.target.value)} className={fieldClass} />
+          </label>
+          <label className={`${labelClass} sm:col-span-2`}>
+            {t("actions.grant_cosmetics")}
+            <input value={grant.cosmetics} onChange={(event) => editGrant("cosmetics", event.target.value)} className={fieldClass} />
+          </label>
+        </div>
+        <button
+          type="button"
+          disabled={pending || noReason || !grantReady(grant)}
+          onClick={() => run({ action: () => grantReward(id, grantRequest(grant), grantId, reason), onApplied: resetGrant })}
+          className={`${buttonClass} self-start`}
+        >
+          {t("actions.grant_apply")}
+        </button>
+      </fieldset>
       <div className="flex flex-wrap gap-3">
         {banned ? (
           <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => liftTemporaryBan(id, reason) })} className={buttonClass}>

@@ -45,7 +45,14 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 Roles with `act_on_player` (support and `super_admin`) get the support actions of 6.2 on a record that is not deleted. Each one needs a reason and a fresh sign-in, and `StepUpPrompt` covers the second.
 - **Coins:** a whole, non-zero amount; a minus sign debits. The form keeps one `request_id` until the adjustment is applied, so a resend after step-up cannot apply it twice (`repeated`). An amount above `AdminGrantApprovalCoins` becomes a proposal for a second admin (202).
 - **Temporary ban:** ban or lift, whichever applies now. The ban is refused with `not_configured` while `HD_TEMP_BAN_HOURS` is unset.
+- **Grant:** a reward bundle (bundle id, coins, pass XP, cosmetic and medal ids) under a source picked by type and id, such as the event or campaign whose reward the player missed. Every cosmetic and medal must list that source, or the API refuses the grant and says which one. Like coins, the form keeps one `request_id` until the grant is applied. Above `AdminGrantApprovalCoins` coins or with a `mythic` item it becomes a proposal, which `/approvals` shows as bundle, grants and source.
 - **Force rename:** offered while the player is not already flagged.
+
+**Replay `/matches/{id}`** (D-13, for support and `super_admin`) opens from the Replay link in a player's matches. It shows:
+- the match and its seats, with links to the players;
+- every hand: the tiles dealt to each seat in seat order, each move with tile, end and points, and the hand's outcome.
+
+A record that does not decode, is refused by the engine or ends on another result shows the problem above the hands. Each opening is a `view_replay` audit entry.
 
 The page reloads the record after each change.
 

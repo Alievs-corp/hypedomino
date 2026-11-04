@@ -50,3 +50,19 @@ func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p princip
 	}
 	reply(w, http.StatusOK, record)
 }
+
+func (h *Handler) matchReplay(w http.ResponseWriter, r *http.Request, p principal) {
+	var match playerrecord.MatchReplay
+	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
+		var err error
+		if match, err = playerrecord.LoadReplay(r.Context(), tx, r.PathValue("id")); err != nil {
+			return nil, err
+		}
+		return []audit.Entry{{Action: ViewReplayAction, Object: audit.Object{Type: rbac.Players, ID: match.MatchID}}}, nil
+	})
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, match)
+}

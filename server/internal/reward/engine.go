@@ -58,6 +58,7 @@ type Grant struct {
 	Account       string
 	Bundle        Bundle
 	Source        cosmetics.Source
+	LedgerSource  wallet.Source
 	Reason        wallet.Reason
 	Key           string
 	ConfigVersion int
@@ -113,7 +114,7 @@ func (g Grant) validate() error {
 	if !wallet.Known(g.Reason) {
 		return fmt.Errorf("%w: unknown reason %q", ErrInvalidGrant, g.Reason)
 	}
-	source := wallet.Source{Type: g.Source.Type, Ref: g.Source.Ref}
+	source := g.ledgerSource()
 	amounts := map[wallet.Currency]int64{wallet.Coin: g.Bundle.Coins, wallet.Crystal: g.Bundle.Crystals}
 	for _, currency := range wallet.Currencies {
 		if amounts[currency] == 0 {
@@ -125,6 +126,13 @@ func (g Grant) validate() error {
 		}
 	}
 	return nil
+}
+
+func (g Grant) ledgerSource() wallet.Source {
+	if g.LedgerSource.Type != "" {
+		return g.LedgerSource
+	}
+	return wallet.Source{Type: g.Source.Type, Ref: g.Source.Ref}
 }
 
 func (e *Engine) Apply(ctx context.Context, grant Grant, now time.Time) (Report, error) {
@@ -165,7 +173,7 @@ func (e *Engine) ApplyIn(ctx context.Context, tx pgx.Tx, grant Grant, now time.T
 		return Report{}, err
 	}
 	report := Report{Account: grant.Account, BundleID: grant.Bundle.ID, Revision: grant.Bundle.Revision, Source: grant.Source, Reason: grant.Reason, Key: grant.Key, ConfigVersion: grant.ConfigVersion, Cosmetics: []string{}, Duplicates: map[string]int64{}, Medals: []string{}, MedalsSkipped: []string{}, At: now}
-	source := wallet.Source{Type: grant.Source.Type, Ref: grant.Source.Ref}
+	source := grant.ledgerSource()
 	if grant.Bundle.Coins > 0 {
 		if _, err := e.wallet.ApplyIn(ctx, tx, wallet.Entry{Account: grant.Account, Amount: grant.Bundle.Coins, Reason: grant.Reason, Source: source, Key: grant.Key, ConfigVersion: grant.ConfigVersion}, now); err != nil {
 			return Report{}, err

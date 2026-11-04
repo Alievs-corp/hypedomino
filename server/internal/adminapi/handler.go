@@ -21,16 +21,22 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
+	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
-const MaxBodyBytes = 16 * 1024
+const (
+	MaxBodyBytes     = 16 * 1024
+	ViewReplayAction = "view_replay"
+)
 
 type Config struct {
 	Environment  string
@@ -112,6 +118,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banTemporarily))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
+	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
+	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
 	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
 	h.mux.HandleFunc("POST /admin/promo-codes/batch", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromoBatch))
@@ -332,7 +340,7 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "account_refused"
 	case errors.Is(err, errDifferentAccount):
 		return http.StatusForbidden, "different_account"
-	case errors.Is(err, adminaccount.ErrNotFound), errors.Is(err, playerrecord.ErrNotFound):
+	case errors.Is(err, adminaccount.ErrNotFound), errors.Is(err, playerrecord.ErrNotFound), errors.Is(err, playerrecord.ErrUnknownMatch):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, adminaccount.ErrTaken):
 		return http.StatusConflict, "email_taken"
@@ -358,6 +366,10 @@ func classify(err error) (int, string) {
 		errors.Is(err, playerrecord.ErrEmptyQuery):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errBadAdjustment), errors.Is(err, wallet.ErrInvalid), errors.Is(err, wallet.ErrWrongSign):
+		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errBadGrant), errors.Is(err, reward.ErrInvalidBundle), errors.Is(err, reward.ErrInvalidGrant),
+		errors.Is(err, inventory.ErrUnknownItem), errors.Is(err, inventory.ErrSourceNotListed), errors.Is(err, inventory.ErrDefaultItem),
+		errors.Is(err, medal.ErrUnknownMedal), errors.Is(err, medal.ErrSourceNotListed), errors.Is(err, medal.ErrNoCatalog):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, wallet.ErrInsufficient):
 		return http.StatusConflict, "insufficient"
