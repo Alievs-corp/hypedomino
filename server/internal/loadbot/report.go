@@ -34,6 +34,10 @@ type Report struct {
 	ReadFailures    uint64
 	Drops           uint64
 	Reconnects      uint64
+	StormAt         time.Duration
+	StormDrops      uint64
+	StormRecovered  uint64
+	StormRecovery   time.Duration
 	ErrorRate       float64
 	BytesPerIntent  float64
 	Heap            []HeapSample
@@ -62,6 +66,10 @@ func (r *Runner) report() *Report {
 		ReadFailures:    r.counters.ReadFailures.Load(),
 		Drops:           r.counters.Drops.Load(),
 		Reconnects:      r.counters.Reconnects.Load(),
+		StormAt:         r.config.StormAt,
+		StormDrops:      r.counters.StormDrops.Load(),
+		StormRecovered:  r.counters.Recovered.Load(),
+		StormRecovery:   time.Duration(r.recovery.Load()),
 		Budget:          r.config.Budget,
 	}
 	warmupWindows := int(r.config.Warmup / r.config.Window)
@@ -134,6 +142,9 @@ func (rep *Report) Text() string {
 	fmt.Fprintf(b, "steady state: moves %d p99 %s, worst window p99 %s, budget %s\n", rep.SteadyMoves, rep.SteadyP99, rep.WorstWindowP99, rep.Budget)
 	fmt.Fprintf(b, "drops %d reconnects %d rejected %d dial failures %d read failures %d, error rate %.4f%%\n", rep.Drops, rep.Reconnects, rep.Rejected, rep.DialFailures, rep.ReadFailures, rep.ErrorRate*100)
 	fmt.Fprintf(b, "bytes per intent %.1f\n", rep.BytesPerIntent)
+	if rep.StormAt > 0 {
+		fmt.Fprintf(b, "storm at %s: dropped %d, back in their match %d, slowest return %s\n", rep.StormAt, rep.StormDrops, rep.StormRecovered, rep.StormRecovery.Round(time.Millisecond))
+	}
 	if len(rep.Heap) > 0 {
 		fmt.Fprintf(b, "heap: first %d bytes, last %d bytes, steady drift %.1f%%\n", rep.Heap[0].Bytes, rep.Heap[len(rep.Heap)-1].Bytes, rep.HeapDriftPct)
 	}

@@ -76,6 +76,8 @@ Steps:
 4. Copy `node-run/vmstat.log` into `bot-run`, then `./check.sh bot-run 5 30`. It checks heap drift between hold minute 10 and minute 30 (live heap after GC, `go_heap_live_bytes`) and average CPU during the hold, and prints the server histogram p99. Exit code 1 means a gate failed.
 5. Record in #192: commit, `node.txt`, `report.txt` and the `check.sh` output. A soak is the same with `-hold 12h` and `./check.sh bot-run 5 720`.
 
+Reconnect storm: the same run with `./bot.sh <node private address> storm-run -storm 15m` drops every live connection at once at hold minute 10, and each seat dials again at once and resumes with its acked sequence. The report adds the dropped seats, the seats back in their match and the slowest return; the 1-minute windows around the storm show its cost on the move round-trip. The usual gates still decide the exit code. There is no recovery target yet: the first reference storm run is recorded in #192 and the owner sets the target from it.
+
 ### 6.2 Budgets
 
 | Budget | Target | Environment | Method | Sample and duration | Pass / fail |

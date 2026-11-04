@@ -95,6 +95,7 @@ func loadFlags(flags *flag.FlagSet, config *loadbot.Config) *string {
 	flags.DurationVar(&config.ThinkMax, "think-max", config.ThinkMax, "longest pause before a move")
 	flags.DurationVar(&config.ThinkFollow, "think-follow", config.ThinkFollow, "pause before a further action in the same turn, such as a draw")
 	flags.Float64Var(&config.DropsPerMinute, "drops", config.DropsPerMinute, "connection drops per connection per minute")
+	flags.DurationVar(&config.StormAt, "storm", config.StormAt, "time from the start when every connection drops at once and reconnects; 0 turns it off")
 	flags.DurationVar(&config.Window, "window", config.Window, "latency window length")
 	flags.DurationVar(&config.Warmup, "warmup", config.Warmup, "time discarded before the steady state")
 	flags.DurationVar(&config.ReportEvery, "report", config.ReportEvery, "progress log interval")

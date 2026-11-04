@@ -209,3 +209,38 @@ func TestRunRequiresRoomsAndATarget(t *testing.T) {
 		t.Fatal("empty config accepted")
 	}
 }
+
+func TestStormDropsEveryLiveConnectionOnceAndTimesTheReturn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("load smoke needs a few seconds")
+	}
+	target, _ := startServer(t, 30)
+	config := DefaultConfig()
+	config.Target = target
+	config.Rooms = 6
+	config.TwoVersusTwoPct = 0
+	config.Ramp = 0
+	config.Hold = 4 * time.Second
+	config.ThinkMin = 50 * time.Millisecond
+	config.ThinkMax = 100 * time.Millisecond
+	config.ThinkFollow = time.Millisecond
+	config.DropsPerMinute = 0
+	config.StormAt = time.Second
+	config.Window = time.Second
+	config.Warmup = 0
+	config.Budget = time.Second
+	report, err := New(config, app.NewLogger(&bytes.Buffer{}, "info")).Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("\n" + report.Text())
+	if report.StormDrops != 12 || report.Drops != 12 || report.Reconnects != 12 {
+		t.Fatalf("storm dropped %d, drops %d, reconnects %d; want each of the 12 seats once", report.StormDrops, report.Drops, report.Reconnects)
+	}
+	if report.StormRecovered != 12 || report.StormRecovery <= 0 || report.StormRecovery > 2*time.Second {
+		t.Fatalf("recovered %d, slowest %s", report.StormRecovered, report.StormRecovery)
+	}
+	if report.DialFailures+report.ReadFailures+report.Rejected != 0 || !strings.Contains(report.Text(), "storm at 1s: dropped 12") {
+		t.Fatalf("failures after the storm: %+v", report)
+	}
+}
