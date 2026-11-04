@@ -33,7 +33,10 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
-const MaxBodyBytes = 16 * 1024
+const (
+	MaxBodyBytes     = 16 * 1024
+	ViewReplayAction = "view_replay"
+)
 
 type Config struct {
 	Environment  string
@@ -116,6 +119,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
+	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
 	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
 	h.mux.HandleFunc("POST /admin/promo-codes/batch", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromoBatch))
@@ -336,7 +340,7 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "account_refused"
 	case errors.Is(err, errDifferentAccount):
 		return http.StatusForbidden, "different_account"
-	case errors.Is(err, adminaccount.ErrNotFound), errors.Is(err, playerrecord.ErrNotFound):
+	case errors.Is(err, adminaccount.ErrNotFound), errors.Is(err, playerrecord.ErrNotFound), errors.Is(err, playerrecord.ErrUnknownMatch):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, adminaccount.ErrTaken):
 		return http.StatusConflict, "email_taken"
