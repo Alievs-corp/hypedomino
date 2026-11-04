@@ -29,9 +29,10 @@ npm install
 
 ## Agent setup
 
-The skills named in [CLAUDE.md](CLAUDE.md) come from pinned sources. The plugins are listed in the repository's marketplace `hypedomino-agents` (`.claude-plugin/marketplace.json`), each pinned to a release tag and its commit; `.claude/settings.json` declares the marketplace and enables the plugins. After you trust the folder in Claude Code, install them once:
+The skills named in [CLAUDE.md](CLAUDE.md) come from pinned sources. The plugins are listed in the repository's marketplace `hypedomino-agents` (`.claude-plugin/marketplace.json`), each pinned to a release tag and its commit; `.claude/settings.json` declares the marketplace and enables the plugins. After you trust the folder in Claude Code, register the marketplace for yourself and install the plugins once. Registering with `--scope local` keeps the shared `.claude/settings.json` unchanged; `--scope project` would rewrite it.
 
 ```bash
+claude plugin marketplace add Alievs-corp/hypedomino --scope local
 claude plugin install caveman@hypedomino-agents --scope project
 claude plugin install ponytail@hypedomino-agents --scope project
 claude plugin install andrej-karpathy-skills@hypedomino-agents --scope project
