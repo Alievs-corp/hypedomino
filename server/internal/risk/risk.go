@@ -14,30 +14,34 @@ import (
 )
 
 const (
-	KindClockSkew   = "clock_skew"
-	KindFakeReceipt = "fake_receipt"
-	KindRefund      = "refund"
-	KindReplay      = "replay_reject"
-	KindMacFailure  = "mac_failure"
+	KindClockSkew    = "clock_skew"
+	KindFakeReceipt  = "fake_receipt"
+	KindRefund       = "refund"
+	KindReplay       = "replay_reject"
+	KindMacFailure   = "mac_failure"
+	KindUnownedEquip = "unowned_equip"
 )
 
 var ErrInvalidConfig = errors.New("risk: invalid config")
 
 type Config struct {
-	ClockSkewTolerance  time.Duration
-	ClockSkewWeight     int
-	FakeReceiptWeight   int
-	RefundWeight        int
-	ReplayThreshold     int
-	ReplayWindow        time.Duration
-	ReplayWeight        int
-	MacFailureThreshold int
-	MacFailureWindow    time.Duration
-	MacFailureWeight    int
+	ClockSkewTolerance    time.Duration
+	ClockSkewWeight       int
+	FakeReceiptWeight     int
+	RefundWeight          int
+	ReplayThreshold       int
+	ReplayWindow          time.Duration
+	ReplayWeight          int
+	MacFailureThreshold   int
+	MacFailureWindow      time.Duration
+	MacFailureWeight      int
+	UnownedEquipThreshold int
+	UnownedEquipWindow    time.Duration
+	UnownedEquipWeight    int
 }
 
 func DefaultConfig() Config {
-	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5}
+	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5, UnownedEquipThreshold: 5, UnownedEquipWindow: 10 * time.Minute, UnownedEquipWeight: 5}
 }
 
 func (c Config) Validate() error {
@@ -49,6 +53,9 @@ func (c Config) Validate() error {
 	}
 	if c.MacFailureThreshold < 1 || c.MacFailureWindow <= 0 || c.MacFailureWeight < 0 {
 		return fmt.Errorf("%w: mac failure threshold must be at least 1, its window positive and its weight not negative", ErrInvalidConfig)
+	}
+	if c.UnownedEquipThreshold < 1 || c.UnownedEquipWindow <= 0 || c.UnownedEquipWeight < 0 {
+		return fmt.Errorf("%w: unowned equip threshold must be at least 1, its window positive and its weight not negative", ErrInvalidConfig)
 	}
 	if c.FakeReceiptWeight < 0 || c.RefundWeight < 0 {
 		return fmt.Errorf("%w: fake receipt and refund weights must not be negative", ErrInvalidConfig)

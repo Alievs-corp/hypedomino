@@ -16,9 +16,14 @@ type Medals interface {
 	SetShowcase(ctx context.Context, account string, medals []string, now time.Time) ([]string, error)
 }
 
+type UnownedObserver interface {
+	Observe(ctx context.Context, account string)
+}
+
 type Handler struct {
 	verifier token.Verifier
 	store    Medals
+	unowned  UnownedObserver
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
@@ -88,11 +93,22 @@ func (h *Handler) showcase(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, ErrShowcase):
 		reply(w, http.StatusBadRequest, errorResponse{Error: ErrShowcase.Error()})
 	case errors.Is(err, ErrNotOwned):
+		h.observeUnowned(r.Context(), claims.Account)
 		reply(w, http.StatusConflict, errorResponse{Error: ErrNotOwned.Error()})
 	case err != nil:
 		h.fail(w, err)
 	default:
 		reply(w, http.StatusOK, showcaseResponse{Showcase: showcase})
+	}
+}
+
+func (h *Handler) FlagUnowned(observer UnownedObserver) {
+	h.unowned = observer
+}
+
+func (h *Handler) observeUnowned(ctx context.Context, account string) {
+	if h.unowned != nil {
+		h.unowned.Observe(ctx, account)
 	}
 }
 

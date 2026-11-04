@@ -33,6 +33,10 @@ func NewMacFailures(store *Store, config Config, clock Clock, logger *slog.Logge
 	return newBurst(store, burstRule{kind: KindMacFailure, countName: "failures", threshold: config.MacFailureThreshold, window: config.MacFailureWindow, weight: config.MacFailureWeight}, clock, logger)
 }
 
+func NewUnownedEquips(store *Store, config Config, clock Clock, logger *slog.Logger) *Burst {
+	return newBurst(store, burstRule{kind: KindUnownedEquip, countName: "attempts", threshold: config.UnownedEquipThreshold, window: config.UnownedEquipWindow, weight: config.UnownedEquipWeight}, clock, logger)
+}
+
 func newBurst(store *Store, rule burstRule, clock Clock, logger *slog.Logger) *Burst {
 	return &Burst{store: store, rule: rule, clock: clock, logger: logger, recent: map[string][]time.Time{}}
 }

@@ -188,6 +188,8 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Response | Block the intent. Flag repeated attempts. A leaked promo code is disabled by an admin |
 | Issues | #211, #202, #209, #212 |
 
+Unowned equips are flagged in `server/internal/risk`, `server/internal/inventory` and `server/internal/medal` (#211). An equip (`PUT /inventory/equip`) or a medal showcase (`PUT /medals/showcase`) refused because the account does not own the item counts for the account; `UnownedEquipThreshold` (5) refusals within `UnownedEquipWindowMinutes` (10) record an `unowned_equip` signal of weight `UnownedEquipWeight` (5) with the count and window as evidence, at most once per window. Counts live in node memory. The refusal itself does not change.
+
 ## 5. Signals and risk score
 
 | Signal | Source | Kind | Weight (config) |
@@ -199,6 +201,7 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Root, jailbreak or emulator | #185 | Soft | `DeviceRiskWeight` |
 | MAC failure rate over threshold | #207 | Soft | `MacFailureWeight` |
 | Replay rejection rate over threshold | #207 | Soft | `ReplayRejectWeight` |
+| Equip or showcase of an unowned item over threshold | #211 | Soft | `UnownedEquipWeight` |
 | Clock skew | #208 | Soft | `ClockSkewWeight` |
 | Forged receipt, receipt reuse on another account, account mismatch | #204 | Hard | `FakeReceiptWeight` |
 | Refund or chargeback | #106, #204 | Soft | `RefundWeight` |
@@ -243,6 +246,7 @@ Accepted residual risks:
 | `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag |
 | `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag (launch defaults 5 and 10) |
 | `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag (launch defaults 5 and 10) |
+| `UnownedEquipThreshold`, `UnownedEquipWindowMinutes` | Refused equips or showcases of unowned items within the window that raise a flag (launch defaults 5 and 10) |
 | `IntegrityFailureAction` | Block login or flag on failed attestation (launch default flag; purchase and ranked match start block regardless) |
 | `DeviceRiskAction` | Warn, block ranked or flag on a risky device (launch default flag) |
 | `IntegrityNonceTtlSeconds` | Lifetime of an attestation nonce (section 5.1, launch default 300) |
@@ -250,7 +254,7 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong (launch default device) |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict (launch default off) |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `UnownedEquipWeight` (launch default 5), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |
