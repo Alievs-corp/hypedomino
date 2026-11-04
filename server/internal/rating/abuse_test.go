@@ -131,3 +131,94 @@ func TestPartnersDrawnTogetherTooOftenAreFlagged(t *testing.T) {
 		t.Fatalf("matches outside the window counted: %s", kinds(signals))
 	}
 }
+
+type measuredSeat struct {
+	account         string
+	team            int
+	decisions, fits int
+}
+
+func (f *fixture) measured(t *testing.T, id string, at time.Time, seats [4]measuredSeat) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := f.pool.Exec(ctx, `insert into matches (id, started_at, mode, kind, config_version, seed) values ($1, $2, '2v2', 'ranked', 1, 1)`, id, at); err != nil {
+		t.Fatal(err)
+	}
+	for seat, s := range seats {
+		if _, err := f.pool.Exec(ctx, `insert into match_participants (match_id, started_at, seat, team, account_id, partner_decisions, partner_fits) values ($1, $2, $3, $4, $5, $6, $7)`,
+			id, at, seat, s.team, s.account, s.decisions, s.fits); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestPartnerWhosePlacementsSuitTheirHandIsFlagged(t *testing.T) {
+	f := newFixture(t)
+	sniper, friend, stranger := f.account(t), f.account(t), f.account(t)
+	opponents := make([]string, 8)
+	for i := range opponents {
+		opponents[i] = f.account(t)
+	}
+	for _, account := range append([]string{sniper, friend, stranger}, opponents...) {
+		f.set(t, account, rules.Mode2v2, 1300, 30, rank(t, "Silver I", 40))
+	}
+	play := func(id string, partner string, rivals [2]string, sniperFit, partnerFit [2]int, won bool, at time.Time) {
+		t.Helper()
+		f.measured(t, id, at, [4]measuredSeat{
+			{account: sniper, team: 0, decisions: sniperFit[0], fits: sniperFit[1]},
+			{account: rivals[0], team: 1},
+			{account: partner, team: 0, decisions: partnerFit[0], fits: partnerFit[1]},
+			{account: rivals[1], team: 1},
+		})
+		teams := [2][]rating.Participant{{{Account: sniper}, {Account: partner}}, {{Account: rivals[0]}, {Account: rivals[1]}}}
+		winner := 1
+		if won {
+			winner = 0
+		}
+		if _, err := f.store.Apply(context.Background(), rating.Result{MatchID: id, Mode: rules.Mode2v2, Teams: teams, Winner: winner, At: at}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	play("d0000000-0000-0000-0000-000000000000", stranger, [2]string{opponents[0], opponents[1]}, [2]int{100, 50}, [2]int{100, 50}, true, now)
+	play("d0000000-0000-0000-0000-000000000001", friend, [2]string{opponents[2], opponents[3]}, [2]int{30, 22}, [2]int{40, 20}, true, now.Add(time.Hour))
+	play("d0000000-0000-0000-0000-000000000002", friend, [2]string{opponents[4], opponents[5]}, [2]int{30, 22}, [2]int{40, 20}, false, now.Add(2*time.Hour))
+	play("d0000000-0000-0000-0000-000000000003", friend, [2]string{opponents[6], opponents[7]}, [2]int{39, 29}, [2]int{40, 20}, true, now.Add(3*time.Hour))
+	if signals, _ := f.store.Signals(context.Background(), sniper); kinds(signals) != "partner_frequency:2/3" {
+		t.Fatalf("flagged with 99 decisions: %s", kinds(signals))
+	}
+	play("d0000000-0000-0000-0000-000000000004", friend, [2]string{opponents[0], opponents[2]}, [2]int{1, 1}, [2]int{1, 0}, true, now.Add(4*time.Hour))
+	signals, err := f.store.Signals(context.Background(), sniper)
+	if err != nil || kinds(signals) != "partner_fit:3/4 partner_frequency:3/4" || signals[0].Counterpart != friend {
+		t.Fatalf("sniper signals %s %+v %v", kinds(signals), signals, err)
+	}
+	if signals, _ := f.store.Signals(context.Background(), friend); kinds(signals) != "partner_frequency:3/4" {
+		t.Fatalf("friend without other partners flagged: %s", kinds(signals))
+	}
+}
+
+func TestPartnerFitNeedsTheMarginOverOtherPartners(t *testing.T) {
+	f := newFixture(t)
+	player, partner, other := f.account(t), f.account(t), f.account(t)
+	opponents := make([]string, 6)
+	for i := range opponents {
+		opponents[i] = f.account(t)
+	}
+	for _, account := range append([]string{player, partner, other}, opponents...) {
+		f.set(t, account, rules.Mode2v2, 1300, 30, rank(t, "Silver I", 40))
+	}
+	apply := func(id string, mate string, rivals [2]string, fit [2]int, at time.Time) {
+		t.Helper()
+		f.measured(t, id, at, [4]measuredSeat{{account: player, team: 0, decisions: fit[0], fits: fit[1]}, {account: rivals[0], team: 1}, {account: mate, team: 0}, {account: rivals[1], team: 1}})
+		teams := [2][]rating.Participant{{{Account: player}, {Account: mate}}, {{Account: rivals[0]}, {Account: rivals[1]}}}
+		if _, err := f.store.Apply(context.Background(), rating.Result{MatchID: id, Mode: rules.Mode2v2, Teams: teams, Winner: 0, At: at}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	apply("e0000000-0000-0000-0000-000000000000", other, [2]string{opponents[0], opponents[1]}, [2]int{100, 50}, now)
+	apply("e0000000-0000-0000-0000-000000000001", partner, [2]string{opponents[2], opponents[3]}, [2]int{50, 34}, now.Add(time.Hour))
+	apply("e0000000-0000-0000-0000-000000000002", partner, [2]string{opponents[4], opponents[5]}, [2]int{50, 34}, now.Add(2*time.Hour))
+	apply("e0000000-0000-0000-0000-000000000003", partner, [2]string{opponents[0], opponents[2]}, [2]int{0, 0}, now.Add(3*time.Hour))
+	if signals, _ := f.store.Signals(context.Background(), player); kinds(signals) != "partner_frequency:3/3" {
+		t.Fatalf("68 against 50 is under the margin: %s", kinds(signals))
+	}
+}

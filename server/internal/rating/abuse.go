@@ -16,6 +16,7 @@ const (
 	SignalFeeding          = "feeding"
 	SignalWinTrade         = "win_trade"
 	SignalPartnerFrequency = "partner_frequency"
+	SignalPartnerFit       = "partner_fit"
 )
 
 type Abuse struct {
@@ -26,22 +27,26 @@ type Abuse struct {
 	FeedingSharePercent   int `json:"feedingSharePercent"`
 	WinTradeSharePercent  int `json:"winTradeSharePercent"`
 	PartnerMinMatches     int `json:"partnerMinMatches"`
+	FitMinDecisions       int `json:"fitMinDecisions"`
+	FitMarginPercent      int `json:"fitMarginPercent"`
 }
 
 func DefaultAbuse() Abuse {
-	return Abuse{RepeatPairWindowHours: 24, RepeatPairMax: 3, PairWindowHours: 168, PairMinMatches: 6, FeedingSharePercent: 80, WinTradeSharePercent: 35, PartnerMinMatches: 3}
+	return Abuse{RepeatPairWindowHours: 24, RepeatPairMax: 3, PairWindowHours: 168, PairMinMatches: 6, FeedingSharePercent: 80, WinTradeSharePercent: 35, PartnerMinMatches: 3, FitMinDecisions: 100, FitMarginPercent: 20}
 }
 
 func (a Abuse) Validate() error {
 	switch {
 	case a.RepeatPairWindowHours < 1 || a.PairWindowHours < 1:
 		return fmt.Errorf("%w: abuse windows must be at least 1 hour", ErrInvalidConfig)
-	case a.RepeatPairMax < 1 || a.PairMinMatches < 1 || a.PartnerMinMatches < 1:
+	case a.RepeatPairMax < 1 || a.PairMinMatches < 1 || a.PartnerMinMatches < 1 || a.FitMinDecisions < 1:
 		return fmt.Errorf("%w: abuse match counts must be at least 1", ErrInvalidConfig)
 	case a.FeedingSharePercent < 51 || a.FeedingSharePercent > 100:
 		return fmt.Errorf("%w: feedingSharePercent must be between 51 and 100", ErrInvalidConfig)
 	case a.WinTradeSharePercent < 1 || a.WinTradeSharePercent > 50:
 		return fmt.Errorf("%w: winTradeSharePercent must be between 1 and 50", ErrInvalidConfig)
+	case a.FitMarginPercent < 1 || a.FitMarginPercent > 100:
+		return fmt.Errorf("%w: fitMarginPercent must be between 1 and 100", ErrInvalidConfig)
 	}
 	return nil
 }
@@ -127,7 +132,19 @@ func (s *Store) inspectPartners(ctx context.Context, r Result, abuse Abuse, sinc
 		if stats.matches < abuse.PartnerMinMatches {
 			continue
 		}
-		if err := s.flag(ctx, r.At, partnerSignals(r, team[0].Account, team[1].Account, stats, abuse.PairWindowHours)); err != nil {
+		signals := partnerSignals(r, team[0].Account, team[1].Account, stats, abuse.PairWindowHours)
+		for _, side := range signals {
+			fits, err := s.fitsPartner(ctx, side.Account, side.Counterpart, r.Mode, since, abuse)
+			if err != nil {
+				return err
+			}
+			if fits {
+				fit := side
+				fit.Kind = SignalPartnerFit
+				signals = append(signals, fit)
+			}
+		}
+		if err := s.flag(ctx, r.At, signals); err != nil {
 			return err
 		}
 	}
@@ -219,4 +236,30 @@ func (s *Store) Avoid(ctx context.Context, account string, mode rules.Mode, now 
 		out = append(out, other)
 	}
 	return out, rows.Err()
+}
+
+type fitStats struct {
+	decisions, fits int64
+}
+
+func (f fitStats) rate(scale int64) int64 {
+	return f.fits * 100 * scale
+}
+
+func (s *Store) fitsPartner(ctx context.Context, account, partner string, mode rules.Mode, since time.Time, abuse Abuse) (bool, error) {
+	var with, others fitStats
+	err := s.pool.QueryRow(ctx, `select coalesce(sum(m.partner_decisions) filter (where p.account_id = $2), 0), coalesce(sum(m.partner_fits) filter (where p.account_id = $2), 0),
+			coalesce(sum(m.partner_decisions) filter (where p.account_id <> $2), 0), coalesce(sum(m.partner_fits) filter (where p.account_id <> $2), 0)
+		from match_participants m
+		join match_participants p on p.match_id = m.match_id and p.started_at = m.started_at and p.team = m.team and p.seat <> m.seat
+		join rating_results r on r.match_id = m.match_id
+		where m.account_id = $1 and m.partner_decisions is not null and r.mode = $3 and r.applied_at > $4`, account, partner, mode.String(), since).Scan(&with.decisions, &with.fits, &others.decisions, &others.fits)
+	if err != nil {
+		return false, err
+	}
+	minimum := int64(abuse.FitMinDecisions)
+	if with.decisions < minimum || others.decisions < minimum {
+		return false, nil
+	}
+	return with.rate(others.decisions)-others.rate(with.decisions) >= int64(abuse.FitMarginPercent)*with.decisions*others.decisions, nil
 }
