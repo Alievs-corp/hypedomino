@@ -26,7 +26,7 @@ echo "average CPU during the hold: $cpu%"
 awk -v c="$cpu" 'BEGIN { exit !(c == "" || c >= 80) }' && { echo "FAIL average CPU not under 80%"; failed=1; }
 
 awk -F'[{}" ]+' '
-  $1 ~ /_seconds_bucket$/ { name = $1; sub(/_bucket$/, "", name); if (!(name in rows)) order[k++] = name; bound[name, rows[name]] = $3; cum[name, rows[name]++] = $NF }
+  $1 ~ /_seconds_bucket$/ { name = $1; sub(/_bucket$/, "", name); if (!(name in rows)) order[k++] = name; row = rows[name]++ + 0; bound[name, row] = $3; cum[name, row] = $NF }
   $1 ~ /_seconds_count$/ { name = $1; sub(/_count$/, "", name); count[name] = $2 }
   $1 == "hd_store_failures" { failures = $2 }
   END {
