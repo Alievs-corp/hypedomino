@@ -1,3 +1,4 @@
+import { grantChangeSummary } from "../players/grant.ts";
 import { promoChangeSummary } from "../promo/codes.ts";
 
 export type Proposal = {
@@ -26,9 +27,9 @@ export function objectHref(proposal: Proposal): string | null {
 }
 
 export function changeSummary(change: unknown): string {
-  const promo = promoChangeSummary(change);
-  if (promo !== null) {
-    return promo;
+  const special = promoChangeSummary(change) ?? grantChangeSummary(change);
+  if (special !== null) {
+    return special;
   }
   if (change === null || typeof change !== "object" || Array.isArray(change)) {
     return JSON.stringify(change);
