@@ -283,6 +283,14 @@ func (r *Room) Record(reply chan<- replay.Record) {
 	})
 }
 
+func (r *Room) FinalRecord() (replay.Record, bool) {
+	<-r.done
+	if r.recorder == nil {
+		return replay.Record{}, false
+	}
+	return r.recorder.Record(), true
+}
+
 func (r *Room) join(seat rules.Seat, sink Sink) {
 	if !r.seated(seat) || r.seats[seat].sink != nil {
 		sink.Deliver(Message{Rejected: true, Reason: ErrSeatTaken})
