@@ -69,6 +69,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS` | `12`, `90` | `PromoCodeLength` and `PromoMaxValidityDays` of `docs/economy.md` 8 (placeholders for admin config) |
 | `HD_PROMO_ATTEMPTS_PER_HOUR`, `HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK`, `HD_PROMO_LOCK_MINUTES` | `10`, `5`, `60` | `PromoAttemptsPerHour`, `PromoFailedAttemptsBeforeLock` and `PromoLockMinutes` of `docs/economy.md` 8, per account (placeholders for admin config) |
 | `HD_PROMO_COINS_APPROVAL_THRESHOLD` | `2000` | `PromoCoinsApprovalThreshold` of `docs/economy.md` 8: a code granting more coins, or any `mythic` item, waits for a second admin (placeholder for admin config) |
+| `HD_PROMO_LOCK_SIGNAL_WEIGHT`, `HD_PROMO_SPIKE_PERCENT`, `HD_PROMO_SPIKE_WINDOW_MINUTES` | `5`, `50`, `60` | `PromoLockSignalWeight`, `PromoSpikePercent` and `PromoSpikeWindowMinutes` of `docs/economy.md` 8 (#211): a lock records a `promo_lock` risk signal; a `multi_use` code reaching the percent of its cap within the window is marked `spike_at` and logged (placeholders for admin config) |
 
 `/healthz` answers 200 while the process runs. `/readyz` answers 200 while the server accepts work and 503 from the first drain step on. A bad value in the environment stops the start with every bad variable named, exit code 2.
 

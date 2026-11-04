@@ -41,6 +41,9 @@ PromoAttemptsPerHour,10,attempts,config,8
 PromoFailedAttemptsBeforeLock,5,attempts,config,8
 PromoLockMinutes,60,minutes,config,8
 PromoCoinsApprovalThreshold,2000,coins,config,8
+PromoLockSignalWeight,5,weight,config,8
+PromoSpikePercent,50,percent,config,8
+PromoSpikeWindowMinutes,60,minutes,config,8
 RefundsBeforePurchaseBlock,3,refunds,config,9
 RefundWindowDays,365,days,config,9
 SinkRatioAlertPercent,60;120,percent low;high,config,10

@@ -328,6 +328,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK", &config.Promo.FailedAttemptsBeforeLock)
 	r.integer("HD_PROMO_LOCK_MINUTES", &config.Promo.LockMinutes)
 	r.integer("HD_PROMO_COINS_APPROVAL_THRESHOLD", &config.Promo.CoinsApprovalThreshold)
+	r.integer("HD_PROMO_LOCK_SIGNAL_WEIGHT", &config.Promo.LockSignalWeight)
+	r.integer("HD_PROMO_SPIKE_PERCENT", &config.Promo.SpikePercent)
+	r.integer("HD_PROMO_SPIKE_WINDOW_MINUTES", &config.Promo.SpikeWindowMinutes)
 	if config.PromoKey != "" {
 		if _, err := promo.NewHasher(config.PromoKey); err != nil {
 			r.errs = append(r.errs, fmt.Errorf("HD_PROMO_KEY: %w", err))

@@ -49,6 +49,9 @@ func (f *fakePromos) Redeem(_ context.Context, account, code string, at time.Tim
 	if err := outcomes[normalized]; err != nil {
 		return promo.Redemption{}, err
 	}
+	if normalized == "SPKE2345" {
+		return promo.Redemption{Promo: "promo.leaky", Campaign: "campaign.launch_week", Spiked: true}, nil
+	}
 	return promo.Redemption{Promo: "promo.welcome", Campaign: "campaign.launch_week", Grant: reward.Report{Coins: 300}}, nil
 }
 
@@ -107,5 +110,22 @@ func TestTheHandlerRedeemsAndMapsEveryRefusal(t *testing.T) {
 	disabled.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusServiceUnavailable || !strings.Contains(recorder.Body.String(), "promo.unavailable") {
 		t.Fatalf("without a key: %d %s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestASpikeIsLoggedOnceAndNeverShownToThePlayer(t *testing.T) {
+	logs := &strings.Builder{}
+	handler := promo.NewHandler(fakeVerifier{}, &fakePromos{}, slog.New(slog.NewTextHandler(logs, nil)), time.Now)
+	for _, code := range []string{"SPKE2345", "HYPE2345"} {
+		request := httptest.NewRequest(http.MethodPost, "/promo/redeem", strings.NewReader(`{"code":"`+code+`"}`))
+		request.Header.Set("Authorization", "Bearer access:acc-1")
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		if recorder.Code != http.StatusOK || strings.Contains(recorder.Body.String(), "pike") {
+			t.Fatalf("%s answered %d %s", code, recorder.Code, recorder.Body.String())
+		}
+	}
+	if strings.Count(logs.String(), "promo redemption spike") != 1 || !strings.Contains(logs.String(), "promo=promo.leaky") {
+		t.Fatalf("logs %q", logs.String())
 	}
 }
