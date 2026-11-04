@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -160,7 +159,7 @@ func levelGrant(account, season, track string, level int, bundle reward.Bundle, 
 	return reward.Grant{
 		Account:       account,
 		Bundle:        bundle,
-		Source:        cosmetics.Source{Type: SourcePass, Ref: fmt.Sprintf("pass.%s.%s.level_%d", season, track, level)},
+		Source:        TrackSource(season, track, level),
 		Reason:        wallet.PassReward,
 		Key:           fmt.Sprintf("pass:%s:%s:%d", season, track, level),
 		ConfigVersion: int(version),
