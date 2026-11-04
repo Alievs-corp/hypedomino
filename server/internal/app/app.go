@@ -50,6 +50,7 @@ type App struct {
 	addr         chan string
 	localization atomic.Pointer[func() gateway.Strings]
 	moves        *metrics.Histogram
+	exposed      []io.WriterTo
 }
 
 func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
@@ -77,6 +78,10 @@ func (a *App) Handle(pattern string, handler http.Handler) {
 
 func (a *App) Limit(limiter *ratelimit.Limiter) {
 	a.limiter = limiter
+}
+
+func (a *App) Expose(source io.WriterTo) {
+	a.exposed = append(a.exposed, source)
 }
 
 func (a *App) Localize(current func() gateway.Strings) {

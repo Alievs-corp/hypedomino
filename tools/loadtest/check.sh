@@ -26,10 +26,16 @@ echo "average CPU during the hold: $cpu%"
 awk -v c="$cpu" 'BEGIN { exit !(c == "" || c >= 80) }' && { echo "FAIL average CPU not under 80%"; failed=1; }
 
 awk -F'[{}" ]+' '
-  $1 == "move_roundtrip_seconds_bucket" { bound[n] = $3; cum[n] = $NF; n++ }
-  $1 == "move_roundtrip_seconds_count" { count = $2 }
+  $1 ~ /_seconds_bucket$/ { name = $1; sub(/_bucket$/, "", name); if (!(name in rows)) order[k++] = name; row = rows[name]++ + 0; bound[name, row] = $3; cum[name, row] = $NF }
+  $1 ~ /_seconds_count$/ { name = $1; sub(/_count$/, "", name); count[name] = $2 }
+  $1 == "hd_store_failures" { failures = $2 }
   END {
-    for (i = 0; i < n; i++) if (cum[i] >= count * 0.99) { print "server move_roundtrip_seconds p99 <= " bound[i] " s over " count " moves"; exit }
+    for (j = 0; j < k; j++) {
+      name = order[j]
+      if (count[name] == 0) continue
+      for (i = 0; i < rows[name]; i++) if (cum[name, i] >= count[name] * 0.99) { print "server " name " p99 <= " bound[name, i] " s over " count[name]; break }
+    }
+    if (failures != "") print "store failures " failures
   }' "$run_dir/final.prom"
 
 exit "$failed"

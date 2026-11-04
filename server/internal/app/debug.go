@@ -27,6 +27,9 @@ func (a *App) debugHandler() http.Handler {
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 		a.moves.WriteTo(w)
 		a.writeNodeGauges(w)
+		for _, exposed := range a.exposed {
+			exposed.WriteTo(w)
+		}
 	})
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)

@@ -78,6 +78,8 @@ Steps:
 
 Reconnect storm: the same run with `./bot.sh <node private address> storm-run -storm 15m` drops every live connection at once at hold minute 10, and each seat dials again at once and resumes with its acked sequence. The report adds the dropped seats, the seats back in their match and the slowest return; the 1-minute windows around the storm show its cost on the move round-trip. The usual gates still decide the exit code. There is no recovery target yet: the first reference storm run is recorded in #192 and the owner sets the target from it.
 
+Database and Redis run: a move touches neither PostgreSQL nor Redis, and a connection verifies its token in process, so their load comes per match: the match row and its participants when the room opens, the result, replay and seat results when it ends, and one route claim and one release in Redis per seat. The node runs `node.sh` with `HD_DATABASE_URL` (migrated with `cmd/migrate up`) and `HD_REDIS_URL` plus `HD_NODE_ID` exported, and `loadbot serve` makes those writes for every room. `check.sh` then prints the p99 of `match_begin_seconds`, `match_finish_seconds`, `route_claim_seconds` and `route_release_seconds` and the `hd_store_failures` count; the matches finished in the bot report over the run time give the write rate the node needs. The usual gates still decide the exit code, so the run shows whether the writes cost the move round-trip. Record the database and Redis hosts with the results. There is no write latency target yet: the owner sets it from the first run. Rating, reward and outbox writes after a match are not wired to rooms yet and are not in this run.
+
 ### 6.2 Budgets
 
 | Budget | Target | Environment | Method | Sample and duration | Pass / fail |
