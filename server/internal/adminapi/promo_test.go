@@ -297,3 +297,54 @@ func TestSupportListsTargetedAccountsAndSeesWhoRedeemed(t *testing.T) {
 	status, body = a.call("PUT", path, support, map[string]any{"accounts": []string{first}, "reason": "late"})
 	expect(t, status, body, http.StatusConflict, "disabled")
 }
+
+func TestLiveOpsKeepsPromoTemplatesThatNeverRedeem(t *testing.T) {
+	a := newPromoAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	liveOps, other, support, root := a.signIn("leyla"), a.signIn("vusal"), a.signIn("orxan"), a.signIn("root")
+	welcome := map[string]any{
+		"id": "promo.welcome", "campaign": "campaign.launch", "kind": "multi_use",
+		"bundle": map[string]any{"id": "bundle.welcome", "revision": 1, "coins": 500}, "reason": "launch templates",
+	}
+
+	status, body := a.call("POST", "/admin/promo-templates", support, welcome)
+	expect(t, status, body, http.StatusForbidden, "forbidden")
+	status, body = a.call("POST", "/admin/promo-templates", liveOps, map[string]any{"id": "promo.welcome", "campaign": "campaign.launch", "kind": "multi_use"})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("POST", "/admin/promo-templates", liveOps, map[string]any{"id": "promo.medal", "campaign": "campaign.launch", "kind": "multi_use", "bundle": map[string]any{"id": "bundle.medal", "revision": 1, "medals": []string{"medal.first_win"}}, "reason": "medal"})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+
+	status, body = a.call("POST", "/admin/promo-templates", liveOps, welcome)
+	if status != http.StatusCreated || body["template"] != true || body["state"] != "draft" || body["creator"] == "" {
+		t.Fatalf("create %d %v", status, body)
+	}
+	creator := body["creator"]
+	status, body = a.call("POST", "/admin/promo-templates", liveOps, welcome)
+	expect(t, status, body, http.StatusConflict, "duplicate")
+	status, body = a.call("POST", "/admin/promo-templates", liveOps, map[string]any{"id": "promo.compensation", "campaign": "campaign.compensation", "kind": "single_use", "reason": "launch templates"})
+	if status != http.StatusCreated || body["bundle"] != nil {
+		t.Fatalf("compensation %d %v", status, body)
+	}
+
+	status, body = a.call("PUT", "/admin/promo-templates/promo.welcome", other, map[string]any{"campaign": "campaign.launch_week", "kind": "multi_use", "bundle": welcome["bundle"], "reason": "rename"})
+	if status != http.StatusOK || body["campaign"] != "campaign.launch_week" || body["creator"] != creator {
+		t.Fatalf("edit %d %v", status, body)
+	}
+	status, body = a.call("PUT", "/admin/promo-templates/promo.unknown", other, map[string]any{"campaign": "campaign.launch", "kind": "multi_use", "reason": "missing"})
+	expect(t, status, body, http.StatusNotFound, "not_found")
+
+	status, body = a.call("GET", "/admin/promo-templates", support, nil)
+	templates, _ := body["templates"].([]any)
+	if status != http.StatusOK || len(templates) != 2 || templates[0].(map[string]any)["id"] != "promo.compensation" {
+		t.Fatalf("list %d %v", status, body)
+	}
+	if listed := a.promoCodes(liveOps, ""); len(listed["codes"].([]any)) != 0 || len(listed["campaigns"].([]any)) != 0 {
+		t.Fatalf("templates listed as codes %v", listed)
+	}
+	if entries := a.entries(root, "object_type=promo_codes&action=create_promo_template"); len(entries) != 2 {
+		t.Fatalf("create entries %v", entries)
+	}
+	if entries := a.entries(root, "object_type=promo_codes&action=edit_promo_template"); len(entries) != 1 || entries[0]["object_id"] != "promo.welcome" || entries[0]["before"] == nil {
+		t.Fatalf("edit entries %v", entries)
+	}
+}

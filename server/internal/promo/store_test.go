@@ -442,3 +442,51 @@ func TestSupportListsTheAccountsOfATargetedCode(t *testing.T) {
 		t.Fatalf("disabled: %v", err)
 	}
 }
+
+func TestATemplateStaysADraftOutsideTheCodes(t *testing.T) {
+	f := newFixture(t, promo.DefaultConfig())
+	ctx := context.Background()
+	welcome := promo.Template{ID: "promo.welcome", Campaign: "campaign.launch", Kind: promo.MultiUse, Bundle: &nite, Creator: "leyla"}
+
+	for name, broken := range map[string]promo.Template{
+		"id":       {ID: "welcome", Campaign: "campaign.launch", Kind: promo.MultiUse, Creator: "leyla"},
+		"campaign": {ID: "promo.welcome", Campaign: "launch", Kind: promo.MultiUse, Creator: "leyla"},
+		"kind":     {ID: "promo.welcome", Campaign: "campaign.launch", Kind: "gift", Creator: "leyla"},
+		"creator":  {ID: "promo.welcome", Campaign: "campaign.launch", Kind: promo.MultiUse},
+		"medal":    {ID: "promo.welcome", Campaign: "campaign.launch", Kind: promo.MultiUse, Creator: "leyla", Bundle: &reward.Bundle{ID: "bundle.medal", Revision: 1, Medals: []string{"medal.first_win"}}},
+		"bundle":   {ID: "promo.welcome", Campaign: "campaign.launch", Kind: promo.MultiUse, Creator: "leyla", Bundle: &reward.Bundle{ID: "bundle.empty", Revision: 1}},
+	} {
+		if _, err := f.store.CreateTemplate(ctx, broken, now); !errors.Is(err, promo.ErrInvalid) {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+
+	created, err := f.store.CreateTemplate(ctx, welcome, now)
+	if err != nil || !created.Template || created.State != promo.StateDraft {
+		t.Fatalf("create %+v %v", created, err)
+	}
+	if _, err := f.store.CreateTemplate(ctx, welcome, now); !errors.Is(err, promo.ErrDuplicate) {
+		t.Fatalf("duplicate %v", err)
+	}
+	compensation := promo.Template{ID: "promo.compensation", Campaign: "campaign.compensation", Kind: promo.SingleUse, Creator: "leyla"}
+	if _, err := f.store.CreateTemplate(ctx, compensation, now); err != nil {
+		t.Fatal(err)
+	}
+
+	later := now.Add(time.Hour)
+	before, after, err := f.store.EditTemplate(ctx, promo.Template{ID: "promo.welcome", Campaign: "campaign.launch_week", Kind: promo.MultiUse, Bundle: &coins, Creator: "vusal"}, later)
+	if err != nil || before.Campaign != "campaign.launch" || after.Campaign != "campaign.launch_week" || after.Creator != "leyla" || !after.Updated.Equal(later) {
+		t.Fatalf("edit %+v %+v %v", before, after, err)
+	}
+	if _, _, err := f.store.EditTemplate(ctx, promo.Template{ID: "promo.missing", Campaign: "campaign.launch", Kind: promo.MultiUse}, later); !errors.Is(err, promo.ErrUnknown) {
+		t.Fatalf("unknown %v", err)
+	}
+
+	templates, err := f.store.Templates(ctx)
+	if err != nil || len(templates) != 2 || templates[0].ID != "promo.compensation" || templates[0].Bundle != nil || templates[1].Bundle.Coins != coins.Coins || templates[1].State != promo.StateDraft {
+		t.Fatalf("templates %+v %v", templates, err)
+	}
+	if codes, err := f.store.List(ctx, "", 10); err != nil || len(codes) != 0 {
+		t.Fatalf("codes %v %v", codes, err)
+	}
+}
