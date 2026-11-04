@@ -5,7 +5,7 @@ import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
-import { batchLeads, bundleSummary, promoApiPath, shownState, type CampaignUsage, type PromoCode } from "@/promo/codes";
+import { batchLeads, bundleSummary, promoApiPath, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoTemplate } from "@/promo/codes";
 import { Notice } from "../players/Notice";
 import { DisableCode } from "./DisableCode";
 import { PromoCreator } from "./PromoCreator";
@@ -29,11 +29,15 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
     return <Notice text={t("auth.forbidden")} />;
   }
   const campaign = campaignOf(await searchParams);
-  const reply = await adminApi<{ campaigns: CampaignUsage[]; codes: PromoCode[] }>("GET", promoApiPath(campaign));
-  if (reply.status !== 200) {
+  const [reply, templateReply] = await Promise.all([
+    adminApi<{ campaigns: CampaignUsage[]; codes: PromoCode[] }>("GET", promoApiPath(campaign)),
+    adminApi<{ templates: PromoTemplate[] }>("GET", templatesPath),
+  ]);
+  if (reply.status !== 200 || templateReply.status !== 200) {
     return <Notice text={reply.body.error === "not_configured" ? t("promo.not_configured") : t("promo.load_failed")} />;
   }
   const { campaigns, codes } = reply.body;
+  const { templates } = templateReply.body;
   const mayDisable = can(admin.permissions, "promo_codes", "disable_promo");
   const now = new Date();
   const leads = batchLeads(codes);
@@ -43,7 +47,39 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
         <h1 className="text-2xl font-semibold">{t("promo.title")}</h1>
         <p className="text-sm text-text-secondary">{t("promo.explain")}</p>
       </div>
-      {can(admin.permissions, "promo_codes", "create") && <PromoCreator />}
+      {can(admin.permissions, "promo_codes", "create") && <PromoCreator templates={templates} mayEditTemplates={can(admin.permissions, "promo_codes", "edit")} />}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{t("promo.templates")}</h2>
+        <p className="text-sm text-text-secondary">{t("promo.templates_explain")}</p>
+        {templates.length === 0 ? (
+          <p className="text-text-secondary">{t("promo.templates_none")}</p>
+        ) : (
+          <table className="text-sm">
+            <thead className="text-left text-text-muted">
+              <tr>
+                <th className="py-2 pr-4">{t("promo.id_column")}</th>
+                <th className="py-2 pr-4">{t("promo.campaign_column")}</th>
+                <th className="py-2 pr-4">{t("promo.kind")}</th>
+                <th className="py-2 pr-4">{t("promo.grants")}</th>
+                <th className="py-2 pr-4">{t("promo.template_creator")}</th>
+                <th className="py-2 pr-4">{t("promo.updated")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {templates.map((template) => (
+                <tr key={template.id} className="border-t border-surface align-top">
+                  <td className="py-2 pr-4 font-mono break-all">{template.id}</td>
+                  <td className="py-2 pr-4 font-mono">{template.campaign}</td>
+                  <td className="py-2 pr-4">{template.kind}</td>
+                  <td className="py-2 pr-4">{template.bundle ? bundleSummary(template.bundle) : t("promo.template_no_bundle")}</td>
+                  <td className="py-2 pr-4 break-all">{template.creator}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(template.updated)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{t("promo.usage")}</h2>
         {campaigns.length === 0 ? (
