@@ -8,7 +8,7 @@ import type { Error } from "./error_pb";
 import { file_hypedomino_v1_error } from "./error_pb";
 import type { ClientHello, ServerHello } from "./hello_pb";
 import { file_hypedomino_v1_hello } from "./hello_pb";
-import type { DrawIntent, EndTurnIntent, LoadingIntent, MatchView, PassIntent, PlaceTileIntent } from "./match_pb";
+import type { DrawIntent, EmojiIntent, EmojiShown, EndTurnIntent, LoadingIntent, MatchView, PassIntent, PlaceTileIntent } from "./match_pb";
 import { file_hypedomino_v1_match } from "./match_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/envelope.proto.
  */
 export const file_hypedomino_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIsEECghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABI7ChFwbGFjZV90aWxlX2ludGVudBgUIAEoCzIeLmh5cGVkb21pbm8udjEuUGxhY2VUaWxlSW50ZW50SAASMAoLcGFzc19pbnRlbnQYFSABKAsyGS5oeXBlZG9taW5vLnYxLlBhc3NJbnRlbnRIABIwCgtkcmF3X2ludGVudBgWIAEoCzIZLmh5cGVkb21pbm8udjEuRHJhd0ludGVudEgAEjcKD2VuZF90dXJuX2ludGVudBgXIAEoCzIcLmh5cGVkb21pbm8udjEuRW5kVHVybkludGVudEgAEjYKDmxvYWRpbmdfaW50ZW50GBggASgLMhwuaHlwZWRvbWluby52MS5Mb2FkaW5nSW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
+  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIqcFCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABIwCgtlbW9qaV9zaG93bhgOIAEoCzIZLmh5cGVkb21pbm8udjEuRW1vamlTaG93bkgAEjsKEXBsYWNlX3RpbGVfaW50ZW50GBQgASgLMh4uaHlwZWRvbWluby52MS5QbGFjZVRpbGVJbnRlbnRIABIwCgtwYXNzX2ludGVudBgVIAEoCzIZLmh5cGVkb21pbm8udjEuUGFzc0ludGVudEgAEjAKC2RyYXdfaW50ZW50GBYgASgLMhkuaHlwZWRvbWluby52MS5EcmF3SW50ZW50SAASNwoPZW5kX3R1cm5faW50ZW50GBcgASgLMhwuaHlwZWRvbWluby52MS5FbmRUdXJuSW50ZW50SAASNgoObG9hZGluZ19pbnRlbnQYGCABKAsyHC5oeXBlZG9taW5vLnYxLkxvYWRpbmdJbnRlbnRIABIyCgxlbW9qaV9pbnRlbnQYGSABKAsyGi5oeXBlZG9taW5vLnYxLkVtb2ppSW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
 
 /**
  * @generated from message hypedomino.v1.Envelope
@@ -71,6 +71,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
     case: "matchView";
   } | {
     /**
+     * @generated from field: hypedomino.v1.EmojiShown emoji_shown = 14;
+     */
+    value: EmojiShown;
+    case: "emojiShown";
+  } | {
+    /**
      * @generated from field: hypedomino.v1.PlaceTileIntent place_tile_intent = 20;
      */
     value: PlaceTileIntent;
@@ -99,6 +105,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
      */
     value: LoadingIntent;
     case: "loadingIntent";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.EmojiIntent emoji_intent = 25;
+     */
+    value: EmojiIntent;
+    case: "emojiIntent";
   } | { case: undefined; value?: undefined };
 };
 

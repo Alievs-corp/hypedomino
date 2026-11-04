@@ -16,10 +16,12 @@ message Envelope {
     ServerHello server_hello = 11;
     Error error = 12;
     MatchView match_view = 13;
+    EmojiShown emoji_shown = 14;
     PlaceTileIntent place_tile_intent = 20;
     PassIntent pass_intent = 21;
     DrawIntent draw_intent = 22;
     EndTurnIntent end_turn_intent = 23;
     LoadingIntent loading_intent = 24;
+    EmojiIntent emoji_intent = 25;
   }
 }

@@ -68,6 +68,15 @@ message LoadingIntent {
   bool ready = 2;
 }
 
+message EmojiIntent {
+  string item_id = 1;
+}
+
+message EmojiShown {
+  Seat seat = 1;
+  string item_id = 2;
+}
+
 message OrientedTile {
   uint32 first = 1;
   uint32 second = 2;

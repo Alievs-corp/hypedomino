@@ -40,6 +40,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_NICKNAME_RENAME_COOLDOWN`, `HD_NICKNAME_RELEASE` | `720h`, `720h` | Time between renames after the free one, and how long a replaced nickname stays reserved for its previous holder |
 | `HD_COSMETICS_MANIFEST` | empty | Path of the cosmetics manifest (`docs/cosmetics.md` 7); empty uses the built-in copy of `docs/cosmetics/examples/minimal.json`; a published `cosmetics` snapshot replaces either within one `HD_CONFIG_POLL` |
 | `HD_EMOJI_SLOTS`, `HD_ACTION_SLOTS` | `6`, `4` | Equipped emoji and lobby action slots (placeholders for the admin values of #150 and #278) |
+| `HD_EMOJI_BURST`, `HD_EMOJI_REFILL` | `3`, `2s` | In-match emoji spam limit per seat: bucket size and the time to refill one emoji (#151, `proto/README.md`) |
 | `HD_RARITY_ORDINALS` | the five tiers of `docs/rarity.md` | Rarity ordinals `id:ordinal,…`, gapless from 1, used for table background selection (placeholder for the admin rarity table) |
 | `HD_SHOP_CATALOG` | empty | Path of a shop catalog JSON (`docs/economy/examples/shop.json`) seeded as version 0 until the first published snapshot; empty answers 503 until one is published |
 | `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS`, `HD_SHOP_RESET_HOUR_UTC` | `4`, `2`, `0` | `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots` and `ShopRotationResetHourUtc` of `docs/economy.md` 6.1 (placeholders for admin config) |

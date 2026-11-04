@@ -304,6 +304,15 @@ func (c *connection) Loading(progress int, ready bool) {
 	}
 }
 
+func (c *connection) Emoji(item string) {
+	c.mu.Lock()
+	seat := c.seat
+	c.mu.Unlock()
+	if seat != nil {
+		seat.Emoji(item)
+	}
+}
+
 func (c *connection) Attach() {
 	c.manager.mu.Lock()
 	defer c.manager.mu.Unlock()

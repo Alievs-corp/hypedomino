@@ -165,6 +165,13 @@ func (s *relaySession) Loading(progress int, ready bool) {
 	}
 }
 
+func (s *relaySession) Emoji(item string) {
+	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, SessionNonce: s.nonce, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}}
+	if err := s.write(context.Background(), frame); err != nil {
+		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
+	}
+}
+
 func (s *relaySession) Attach() {
 	go s.pump()
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
+	"github.com/Alievs-corp/hypedomino/server/internal/room"
 )
 
 func lookup(values map[string]string) Lookup {
@@ -77,6 +78,8 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_RARITY_ORDINALS":                   "common:1,rare:2,epic:3,legendary:4,mythic:5,cosmic:6",
 		"HD_EMOJI_SLOTS":                       "8",
 		"HD_ACTION_SLOTS":                      "2",
+		"HD_EMOJI_BURST":                       "4",
+		"HD_EMOJI_REFILL":                      "3s",
 		"HD_SHOP_CATALOG":                      "/etc/hypedomino/shop.json",
 		"HD_SHOP_DAILY_SLOTS":                  "5",
 		"HD_SHOP_WEEKLY_SLOTS":                 "3",
@@ -145,6 +148,9 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 || config.Inventory.ActionSlots != 2 {
 		t.Fatalf("inventory config %q %+v", config.Cosmetics, config.Inventory)
 	}
+	if config.Emoji != (room.EmojiLimit{Burst: 4, Refill: 3 * time.Second}) {
+		t.Fatalf("emoji limit %+v", config.Emoji)
+	}
 	if config.ShopCatalog != "/etc/hypedomino/shop.json" || config.Shop.DailySlots != 5 || config.Shop.WeeklySlots != 3 || config.Shop.ResetHourUTC != 6 || config.ConfigPoll != 30*time.Second || config.SeasonPoll != 45*time.Second || config.CountryHeader != "CF-IPCountry" || config.CountryCooldown != 720*time.Hour || config.Reward.DuplicateCompensationPercent != 25 {
 		t.Fatalf("shop config %q %+v %s %+v", config.ShopCatalog, config.Shop, config.ConfigPoll, config.Reward)
 	}
@@ -179,6 +185,7 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 		"HD_NICKNAME_ALLOW_MIXED_SCRIPT":    "maybe",
 		"HD_NICKNAME_MAX_LENGTH":            "2",
 		"HD_EMOJI_SLOTS":                    "0",
+		"HD_EMOJI_REFILL":                   "0s",
 		"HD_RARITY_ORDINALS":                "common:1,rare:1",
 		"HD_SHOP_RESET_HOUR_UTC":            "24",
 		"HD_CONFIG_POLL":                    "100ms",
@@ -194,7 +201,7 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_EMOJI_REFILL", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}
