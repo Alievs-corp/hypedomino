@@ -1,7 +1,7 @@
 {
     "name": "HypeDomino.UI",
     "rootNamespace": "HypeDomino.UI",
-    "references": ["HypeDomino.Core"],
+    "references": ["HypeDomino.Core", "UnityEngine.UI"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
