@@ -3,8 +3,8 @@ package loadbot
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
