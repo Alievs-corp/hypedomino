@@ -81,6 +81,7 @@ type Entry struct {
 
 type Boards interface {
 	Update(ctx context.Context, season string, mode rules.Mode, entries []Entry) error
+	Remove(ctx context.Context, season string, mode rules.Mode, entries []Entry) error
 }
 
 type Store struct {
@@ -124,7 +125,14 @@ func (s *Store) publish(ctx context.Context, season string, mode rules.Mode, ent
 	if s.boards == nil || len(entries) == 0 {
 		return
 	}
-	if err := s.boards.Update(ctx, season, mode, entries); err != nil && s.logger != nil {
+	listed, err := s.listable(ctx, entries)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.Error("leaderboard update skipped", "season", season, "mode", mode.String(), "error", err)
+		}
+		return
+	}
+	if err := s.boards.Update(ctx, season, mode, listed); err != nil && s.logger != nil {
 		s.logger.Error("leaderboard update failed", "season", season, "mode", mode.String(), "error", err)
 	}
 }

@@ -111,7 +111,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	sessions.Authenticate(tokens)
 	signals := risk.NewStore(pool)
-	go risk.NewWave(pool, config.Risk, logger).Run(ctx, config.SeasonPoll, time.Now)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
 	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)
@@ -194,6 +193,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingConfigs := rating.NewWatcher(pool, logger)
 	go ratingConfigs.Run(ctx, config.ConfigPoll)
 	ratings := rating.NewStore(pool, ratingConfigs)
+	wave := risk.NewWave(pool, config.Risk, logger)
+	wave.OnShadowban(ratings.HideFromBoards)
+	go wave.Run(ctx, config.SeasonPoll, time.Now)
 	ratings.SetRewards(engine)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
