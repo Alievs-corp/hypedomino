@@ -260,7 +260,7 @@ func (s *Store) nextSeason(ctx context.Context, tx pgx.Tx, season Season, config
 
 func (s *Store) snapshotSeason(ctx context.Context, tx pgx.Tx, season Season, mode rules.Mode, config Config) (int, error) {
 	rows, err := tx.Query(ctx, `select account_id, rank_index, apex_tier, lp, wins, mmr, board_country from ratings where mode = $1 and (season_id = $2 or season_id is null) and placed
-		order by rank_index desc, case apex_tier when $3 then 0 when $4 then 1 else 2 end, lp desc, lp_at asc nulls last, wins desc, account_id asc for update`, mode.String(), season.ID, ApexChallenger, ApexGrandmaster)
+		order by (select a.shadowbanned_at is not null from accounts a where a.id = account_id), rank_index desc, case apex_tier when $3 then 0 when $4 then 1 else 2 end, lp desc, lp_at asc nulls last, wins desc, account_id asc for update`, mode.String(), season.ID, ApexChallenger, ApexGrandmaster)
 	if err != nil {
 		return 0, err
 	}

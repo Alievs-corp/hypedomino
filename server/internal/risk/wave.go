@@ -29,10 +29,15 @@ type Wave struct {
 	pool   *pgxpool.Pool
 	config Config
 	logger *slog.Logger
+	hide   func(ctx context.Context, account string) error
 }
 
 func NewWave(pool *pgxpool.Pool, config Config, logger *slog.Logger) *Wave {
 	return &Wave{pool: pool, config: config, logger: logger}
+}
+
+func (w *Wave) OnShadowban(hide func(ctx context.Context, account string) error) {
+	w.hide = hide
 }
 
 type WaveResult struct {
@@ -65,9 +70,19 @@ func (w *Wave) RunDue(ctx context.Context, now time.Time) (WaveResult, error) {
 		result.Reviewed++
 		if shadowbanned {
 			result.Shadowbanned++
+			w.hideFromBoards(ctx, current.account)
 		}
 	}
 	return result, nil
+}
+
+func (w *Wave) hideFromBoards(ctx context.Context, account string) {
+	if w.hide == nil {
+		return
+	}
+	if err := w.hide(ctx, account); err != nil {
+		w.logger.Error("shadowbanned account still on a board until it rebuilds", "account", account, "error", err)
+	}
 }
 
 func (w *Wave) overReview(ctx context.Context, now time.Time) ([]standing, error) {

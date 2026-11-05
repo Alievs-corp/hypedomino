@@ -253,7 +253,7 @@ The score of an account is the sum of the weights of its signals from the last `
 - **Shadowban.** A score at `ShadowbanScore` also sets `accounts.shadowbanned_at` and stores a `risk_actions` row with the score and wave. Soft signals may reach this step alone, because a shadowban does not block login (section 3, `docs/privacy.md` OQ-9).
 - **Temporary ban.** The wave applies none yet. A score-based temporary ban needs a hard signal among the counted signals (owner decision, 2026-11-05) and must skip accounts under 18 (section 3), and the server does not store the age gate result yet. Until it does, such an account stays in review, where an admin can ban it.
 
-Wave actions have no admin actor, so `risk_actions` is their record rather than the admin audit log. The admin queue, lifting a shadowban, the shadowban's effect on leaderboards and ranked pairing, and appeals follow in #209.
+Wave actions have no admin actor, so `risk_actions` is their record rather than the admin audit log. A shadowbanned account leaves the live boards at the wave, and a later rating change does not bring it back. At season end it takes the last positions of the frozen snapshot, so nobody is pushed down, stays off the frozen board and earns no emblem; its rank reward is still granted, so the sanction stays hidden (`docs/ranking.md` 8.3). The admin queue, lifting a shadowban, ranked pairing in the cheater pool and appeals follow in #209.
 
 ## 6. Residual risk
 

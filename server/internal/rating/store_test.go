@@ -250,6 +250,14 @@ func TestAReturningPlayerPlacesInsideTheResetRange(t *testing.T) {
 
 type fakeBoards struct {
 	updates []string
+	removed []string
+}
+
+func (f *fakeBoards) Remove(_ context.Context, season string, mode rules.Mode, entries []rating.Entry) error {
+	for _, e := range entries {
+		f.removed = append(f.removed, fmt.Sprintf("%s %s %s", season, mode, e.Account))
+	}
+	return nil
 }
 
 func (f *fakeBoards) Update(_ context.Context, season string, mode rules.Mode, entries []rating.Entry) error {
