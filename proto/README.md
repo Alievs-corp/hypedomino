@@ -54,6 +54,7 @@ CI runs all of these on every change under `proto/` or a generated directory and
 | First frame is a `ClientHello` within `HelloTimeout` | 5 s | Close 1008 |
 | `protocol_version` equals the server's | 1 | `Error UNSUPPORTED_PROTOCOL`, close 1002 |
 | `app_version` at least `MinimumAppVersion` (numeric `major.minor.patch`) | 1.0.0 | `ServerHello UPDATE_REQUIRED`, close 1000 |
+| `build_hash` on the build allowlist, when `build_allowlist_enforced` is on (`docs/anti-cheat.md` 5.2) | off | `ServerHello UPDATE_REQUIRED`, close 1000 |
 | Session token accepted by the handler | | `Error UNAUTHENTICATED`, close 1008 |
 | Device integrity of a new session (`docs/anti-cheat.md` 5.1) | | `Error INTEGRITY_FAILED`, close 1008 |
 | Hello frame size `MaxHelloBytes` (room for a Play Integrity token) | 8192 | Close 1009 |

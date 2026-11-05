@@ -27,6 +27,7 @@ type Handler struct {
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
+	closed   func() bool
 }
 
 func NewHandler(verifier token.Verifier, shop Shop, logger *slog.Logger, now func() time.Time) *Handler {
@@ -35,6 +36,10 @@ func NewHandler(verifier token.Verifier, shop Shop, logger *slog.Logger, now fun
 	h.mux.HandleFunc("POST /shop/buy", h.buy)
 	h.mux.HandleFunc("POST /shop/begin", h.begin)
 	return h
+}
+
+func (h *Handler) CloseCheckoutWhen(closed func() bool) {
+	h.closed = closed
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +86,10 @@ func (h *Handler) begin(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if h.closed != nil && h.closed() {
+		h.refuse(w, ErrPurchasesClosed)
+		return
+	}
 	checkout, err := h.shop.Begin(r.Context(), claims.Account, request.Offer, h.now())
 	if err != nil {
 		h.refuse(w, err)
@@ -123,6 +132,7 @@ var statuses = []struct {
 	{ErrRequest, http.StatusBadRequest, ErrRequest.Error()},
 	{ErrNotEligible, http.StatusForbidden, ErrNotEligible.Error()},
 	{ErrBlocked, http.StatusForbidden, ErrBlocked.Error()},
+	{ErrPurchasesClosed, http.StatusServiceUnavailable, ErrPurchasesClosed.Error()},
 	{ErrUnknownOffer, http.StatusNotFound, ErrUnknownOffer.Error()},
 	{wallet.ErrInsufficient, http.StatusPaymentRequired, "wallet.insufficient"},
 	{ErrUnavailable, http.StatusConflict, ErrUnavailable.Error()},

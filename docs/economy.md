@@ -278,7 +278,7 @@ Products `crystals_tier1` to `crystals_tier5`. USD prices `CrystalPackUsd` (0.99
 6. Pending purchases (deferred payment, parental approval) are granted only when the store's server notification reports them purchased (#106).
 7. A validated purchase is always granted, even if the offer window closed or the purchase kill switch went on after payment (`docs/launch-runbook.md` 5.5). The grant uses the offer's revision at validation time.
 
-- Implemented in `server/internal/purchase` (#106): step 1 is `/shop/begin` (#104), steps 3 to 7 are `/shop/complete` and the store notification endpoints; the client side of step 2 and the kill switch and attestation checks of step 1 are #210 and V-2. An offer has exactly one of `priceCoins`, `priceCrystals` and `productId`; `POST /shop/buy` spends the offer's currency and answers it with the balance after; a store-product bundle grants no coins, an in-game priced one no currency, and a `crystals` pack only crystals (#356).
+- Implemented in `server/internal/purchase` (#106): step 1 is `/shop/begin` (#104), steps 3 to 7 are `/shop/complete` and the store notification endpoints; the client side of step 2 and the attestation check of step 1 are V-2; the kill switch of step 1 is `docs/anti-cheat.md` 5.2. An offer has exactly one of `priceCoins`, `priceCrystals` and `productId`; `POST /shop/buy` spends the offer's currency and answers it with the balance after; a store-product bundle grants no coins, an in-game priced one no currency, and a `crystals` pack only crystals (#356).
 
 ### 7.6 Coin pack conversion
 

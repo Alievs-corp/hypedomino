@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,6 +29,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
+	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
@@ -163,6 +165,18 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		}
 	}
 	go offers.Run(ctx, config.ConfigPoll)
+	controls := snapshot.New(pool, livecontrol.Domain, livecontrol.Parse, logger)
+	controls.Seed(livecontrol.Controls{MinimumAppVersion: config.Gateway.MinimumAppVersion}, 0)
+	if _, err := controls.Load(ctx); err != nil && !errors.Is(err, snapshot.ErrNone) {
+		pool.Close()
+		return nil, nil, fmt.Errorf("live controls: %w", err)
+	}
+	controls.OnApplied(a.EnforceAdmission)
+	go controls.Run(ctx, config.ConfigPoll)
+	a.Admit(func() gateway.Admission {
+		current, _, _ := controls.Current()
+		return current.Admission()
+	})
 	activeStrings := snapshot.New(pool, gamestrings.Domain, gamestrings.NewStore(pool).ActiveParser(ctx), logger)
 	go activeStrings.Run(ctx, config.ConfigPoll)
 	a.Localize(func() gateway.Strings {
@@ -203,7 +217,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/missions", missionHandler)
 	a.Handle("/missions/", missionHandler)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
-	store := critical(shop.NewHandler(tokens, shopStore, logger, time.Now))
+	shopHandler := shop.NewHandler(tokens, shopStore, logger, time.Now)
+	shopHandler.CloseCheckoutWhen(func() bool {
+		current, _, _ := controls.Current()
+		return current.PurchasesDisabled
+	})
+	store := critical(shopHandler)
 	a.Handle("/shop", store)
 	a.Handle("/shop/", store)
 	validators, google, apple, err := stores(config)

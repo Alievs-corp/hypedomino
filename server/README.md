@@ -20,7 +20,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_ORIGINS` | none | Comma separated origin host patterns allowed to open a WebSocket besides the request host |
 | `HD_SHUTDOWN_TIMEOUT` | `10s` | Time given to close connections and the listener after the drain |
 | `HD_DRAIN_TIMEOUT` | `15m` | Longest wait for live matches to finish; rooms still running after it are cancelled |
-| `HD_MIN_APP_VERSION` | `1.0.0` | Clients below it get `UPDATE_REQUIRED` (admin config in #210) |
+| `HD_MIN_APP_VERSION` | `1.0.0` | Clients below it get `UPDATE_REQUIRED` until a `live_controls` snapshot is published (`docs/anti-cheat.md` 5.2) |
 | `HD_CATALOG_VERSION` | empty | Catalog version announced in `ServerHello` |
 | `HD_MAX_FRAME_BYTES`, `HD_MAX_HELLO_BYTES`, `HD_WRITE_QUEUE`, `HD_HELLO_TIMEOUT`, `HD_WRITE_TIMEOUT`, `HD_CLOSE_TIMEOUT`, `HD_COMPRESSION_THRESHOLD`, `HD_INTENTS_PER_SECOND`, `HD_INTENT_BURST`, `HD_PING_INTERVAL`, `HD_PONG_TIMEOUT` | `gateway.DefaultConfig` | Gateway limits (`proto/README.md`, Gateway limits) |
 | `HD_RECONNECT_GRACE` | `60s` | `ReconnectGraceSeconds` of `docs/penalties.md` |

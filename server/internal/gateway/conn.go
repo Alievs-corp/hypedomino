@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -28,6 +29,7 @@ type Conn struct {
 	bucket  bucket
 	stop    context.CancelFunc
 	served  chan struct{}
+	build   atomic.Pointer[clientBuild]
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
@@ -194,7 +196,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_UNSUPPORTED_PROTOCOL, frame.GetSequence(), 0))
 		c.Close(websocket.StatusProtocolError, "unsupported protocol")
 		return false
-	case !VersionAtLeast(hello.GetAppVersion(), c.options.Config.MinimumAppVersion):
+	case !c.admission().Admits(hello.GetAppVersion(), hello.GetBuildHash()):
 		c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0, false))
 		c.Close(websocket.StatusNormalClosure, "update required")
 		return false
@@ -216,6 +218,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 	c.socket.SetReadLimit(int64(c.options.Config.MaxFrameBytes))
 	c.session = session
 	c.nonce = sessionNonce()
+	c.build.Store(&clientBuild{version: hello.GetAppVersion(), hash: hello.GetBuildHash()})
 	if c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_ACCEPTED, session.Acked(), session.InMatch())) != nil {
 		return false
 	}

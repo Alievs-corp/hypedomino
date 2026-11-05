@@ -89,11 +89,12 @@ type Strings struct {
 }
 
 type Options struct {
-	Config  Config
-	Handler Handler
-	Clock   Clock
-	Origins []string
-	Strings func() Strings
+	Config    Config
+	Handler   Handler
+	Clock     Clock
+	Origins   []string
+	Strings   func() Strings
+	Admission func() Admission
 }
 
 type Gateway struct {
@@ -125,6 +126,18 @@ func (g *Gateway) Connections() int {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return len(g.conns)
+}
+
+func (g *Gateway) Enforce() {
+	g.mu.Lock()
+	conns := make([]*Conn, 0, len(g.conns))
+	for conn := range g.conns {
+		conns = append(conns, conn)
+	}
+	g.mu.Unlock()
+	for _, conn := range conns {
+		conn.enforce()
+	}
 }
 
 func (g *Gateway) Shutdown(ctx context.Context) error {
