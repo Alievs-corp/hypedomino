@@ -174,3 +174,23 @@ func TestTheHandlerAnswersViewPurchaseAndCheckout(t *testing.T) {
 		t.Fatalf("calls %v", fake.calls)
 	}
 }
+
+func TestTheKillSwitchClosesCheckoutOnly(t *testing.T) {
+	fake := &fakeShop{}
+	handler := shop.NewHandler(fakeVerifier{}, fake, slog.New(slog.NewTextHandler(io.Discard, nil)), time.Now)
+	closed := true
+	handler.CloseCheckoutWhen(func() bool { return closed })
+	if code, body := serve(t, handler, http.MethodPost, "/shop/begin", "access:a1", `{"offer":"offer.starter"}`); code != http.StatusServiceUnavailable || body["error"] != "purchases.disabled" {
+		t.Fatalf("closed checkout %d %v", code, body)
+	}
+	if len(fake.calls) != 0 {
+		t.Fatalf("a closed checkout reached the shop: %v", fake.calls)
+	}
+	if code, _ := serve(t, handler, http.MethodPost, "/shop/buy", "access:a1", `{"offer":"offer.coins","request_id":"r1"}`); code == http.StatusServiceUnavailable {
+		t.Fatal("the kill switch closed a coin purchase")
+	}
+	closed = false
+	if code, _ := serve(t, handler, http.MethodPost, "/shop/begin", "access:a1", `{"offer":"offer.starter"}`); code != http.StatusOK {
+		t.Fatalf("open checkout %d", code)
+	}
+}

@@ -49,6 +49,7 @@ type App struct {
 	listener     net.Listener
 	addr         chan string
 	localization atomic.Pointer[func() gateway.Strings]
+	admission    atomic.Pointer[func() gateway.Admission]
 	moves        *metrics.Histogram
 	exposed      []io.WriterTo
 }
@@ -64,7 +65,7 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 	}
 	a.rooms.ObserveMoves(a.moves)
 	a.rooms.LimitEmoji(config.Emoji)
-	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized})
+	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized, Admission: a.admitted})
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
 	a.mux.HandleFunc("GET /ws", a.ws)
@@ -94,6 +95,22 @@ func (a *App) localized() gateway.Strings {
 		return gateway.Strings{}
 	}
 	return (*current)()
+}
+
+func (a *App) Admit(current func() gateway.Admission) {
+	a.admission.Store(&current)
+}
+
+func (a *App) admitted() gateway.Admission {
+	current := a.admission.Load()
+	if current == nil {
+		return gateway.Admission{MinimumAppVersion: a.config.Gateway.MinimumAppVersion}
+	}
+	return (*current)()
+}
+
+func (a *App) EnforceAdmission() {
+	a.gateway.Enforce()
 }
 
 func (a *App) Join(c *cluster.Cluster) {
