@@ -40,6 +40,7 @@ func TestAShadowbannedAccountLeavesTheBoards(t *testing.T) {
 	f.set(t, honest, rules.Mode1v1, 1400, 50, rank(t, "Gold II", 50))
 	f.set(t, cheater, rules.Mode1v1, 1500, 50, rank(t, "Gold I", 50))
 
+	f.play(t, "66666666-6666-6666-6666-666666666666", cheater, honest, now, false)
 	if got := f.placed(t, "season.test"); !slices.Contains(got, cheater) {
 		t.Fatalf("placed before the shadowban %v", got)
 	}
