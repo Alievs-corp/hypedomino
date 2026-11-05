@@ -370,6 +370,10 @@ func TestAnEmojiReachesTheOtherSeatOverWebSocket(t *testing.T) {
 	})
 	x := join(t, server, rules.SeatX, false)
 	y := join(t, server, rules.SeatY, false)
+	for _, seat := range []*player{x, y} {
+		for seat.read().GetMatchView() == nil {
+		}
+	}
 	sent := time.Now()
 	x.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}})
 	for {
