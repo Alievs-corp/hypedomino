@@ -32,6 +32,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -157,6 +158,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/config/medals/rollback", h.allowed(rbac.Medals, rbac.Publish, h.rollbackDomain(func() configDomain { return h.medalDomain(true) })))
 	h.mux.HandleFunc("GET /admin/live-controls", h.allowed(rbac.LiveControls, rbac.View, h.liveControls))
 	h.mux.HandleFunc("PUT /admin/live-controls", h.allowed(rbac.LiveControls, rbac.SwitchLiveControl, h.switchLiveControls))
+	h.mux.HandleFunc("GET /admin/reviews", h.allowed(rbac.Queues, rbac.View, h.listReviews))
+	h.mux.HandleFunc("POST /admin/reviews/{id}/clear", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionClear, ClearReviewAction)))
+	h.mux.HandleFunc("POST /admin/reviews/{id}/confirm", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionConfirm, ConfirmReviewAction)))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -374,11 +378,11 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "self_decision"
 	case errors.Is(err, approval.ErrNotAllowed):
 		return http.StatusForbidden, "forbidden"
-	case errors.Is(err, approval.ErrDecided):
+	case errors.Is(err, approval.ErrDecided), errors.Is(err, risk.ErrReviewClosed):
 		return http.StatusConflict, "decided"
 	case errors.Is(err, approval.ErrExpired):
 		return http.StatusConflict, "expired"
-	case errors.Is(err, approval.ErrNotFound):
+	case errors.Is(err, approval.ErrNotFound), errors.Is(err, risk.ErrNoReview):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, approval.ErrInvalid):
 		return http.StatusBadRequest, "invalid"
