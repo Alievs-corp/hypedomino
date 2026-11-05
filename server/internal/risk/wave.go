@@ -86,8 +86,9 @@ func (w *Wave) hideFromBoards(ctx context.Context, account string) {
 }
 
 func (w *Wave) overReview(ctx context.Context, now time.Time) ([]standing, error) {
-	rows, err := w.pool.Query(ctx, `select account_id, sum(weight)::int from risk_signals where created_at > $1
-		group by account_id having sum(weight) >= $2`, now.Add(-w.config.Decay), w.config.ReviewScore)
+	rows, err := w.pool.Query(ctx, `select s.account_id, sum(s.weight)::int from risk_signals s join accounts a on a.id = s.account_id
+		where s.created_at > $1 and (a.risk_reviewed_at is null or s.created_at > a.risk_reviewed_at)
+		group by s.account_id having sum(s.weight) >= $2`, now.Add(-w.config.Decay), w.config.ReviewScore)
 	if err != nil {
 		return nil, err
 	}
