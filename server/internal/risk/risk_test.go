@@ -66,13 +66,17 @@ func TestASkewedDeviceClockRaisesOneSoftSignalPerDay(t *testing.T) {
 
 func TestTheRiskConfigIsChecked(t *testing.T) {
 	for name, change := range map[string]func(*risk.Config){
-		"no skew tolerance":   func(c *risk.Config) { c.ClockSkewTolerance = 0 },
-		"negative skew":       func(c *risk.Config) { c.ClockSkewWeight = -1 },
-		"negative receipt":    func(c *risk.Config) { c.FakeReceiptWeight = -1 },
-		"negative refund":     func(c *risk.Config) { c.RefundWeight = -1 },
-		"no replay threshold": func(c *risk.Config) { c.ReplayThreshold = 0 },
-		"no replay window":    func(c *risk.Config) { c.ReplayWindow = 0 },
-		"negative replay":     func(c *risk.Config) { c.ReplayWeight = -1 },
+		"no skew tolerance":      func(c *risk.Config) { c.ClockSkewTolerance = 0 },
+		"negative skew":          func(c *risk.Config) { c.ClockSkewWeight = -1 },
+		"negative receipt":       func(c *risk.Config) { c.FakeReceiptWeight = -1 },
+		"no decay":               func(c *risk.Config) { c.Decay = 0 },
+		"no wave interval":       func(c *risk.Config) { c.BanWaveInterval = 0 },
+		"no review score":        func(c *risk.Config) { c.ReviewScore = 0 },
+		"shadowban below review": func(c *risk.Config) { c.ShadowbanScore = c.ReviewScore - 1 },
+		"negative refund":        func(c *risk.Config) { c.RefundWeight = -1 },
+		"no replay threshold":    func(c *risk.Config) { c.ReplayThreshold = 0 },
+		"no replay window":       func(c *risk.Config) { c.ReplayWindow = 0 },
+		"negative replay":        func(c *risk.Config) { c.ReplayWeight = -1 },
 	} {
 		config := risk.DefaultConfig()
 		change(&config)

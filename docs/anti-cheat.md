@@ -243,6 +243,18 @@ Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/e
 
 `build_hash` is reported by the client. The allowlist stops builds we distributed, which report their real hash; a re-signed build that lies about it is stopped by the signing digest of section 5.1.
 
+### 5.3 Risk score and ban waves (#209)
+
+The score of an account is the sum of the weights of its signals from the last `RiskDecayDays`. Values are owner decisions of 2026-11-05.
+
+- **Hard signals.** A `fake_receipt` signal opens a review in the same write, whatever the score. The ledger mismatch signal joins it when `cmd/wallet-audit` records one.
+- **Ban wave.** Every `BanWaveIntervalHours` one node wins the interval's row in `risk_waves` and runs the wave. Slots are fixed UTC multiples of the interval. A node down during a wave loses nothing: the next wave reads the same signals.
+- **Review.** A score at `ReviewScore` opens a review with cause `score` at the next wave. An account has at most one open review.
+- **Shadowban.** A score at `ShadowbanScore` also sets `accounts.shadowbanned_at` and stores a `risk_actions` row with the score and wave. Soft signals may reach this step alone, because a shadowban does not block login (section 3, `docs/privacy.md` OQ-9).
+- **Temporary ban.** The wave applies none yet. A score-based temporary ban needs a hard signal among the counted signals (owner decision, 2026-11-05) and must skip accounts under 18 (section 3), and the server does not store the age gate result yet. Until it does, such an account stays in review, where an admin can ban it.
+
+Wave actions have no admin actor, so `risk_actions` is their record rather than the admin audit log. The admin queue, lifting a shadowban, the shadowban's effect on leaderboards and ranked pairing, and appeals follow in #209.
+
 ## 6. Residual risk
 
 Complete protection is impossible. A determined attacker controls the device and can bypass any client-side check, obfuscation or detection given time. The goal is not to make cheating impossible but to make it worthless where it matters: no path may create currency, items or pass progress, change a balance, or move a rating outside legal play. The release gate checks exactly that (#212, `docs/roadmap.md`).
@@ -274,10 +286,10 @@ Accepted residual risks:
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |
-| `RiskDecayDays` | How long a signal keeps counting toward the score |
-| `ReviewScore`, `ShadowbanScore`, `TempBanScore` | Risk score at which each response starts |
+| `RiskDecayDays` | How long a signal keeps counting toward the score (launch default 30) |
+| `ReviewScore`, `ShadowbanScore`, `TempBanScore` | Risk score at which each response starts (launch defaults 20, 40 and 60) |
 | `TempBanHours` | Temporary ban length |
-| `BanWaveIntervalHours` | Interval between ban waves |
+| `BanWaveIntervalHours` | Interval between ban waves (launch default 24) |
 | Minimum version, build allowlist, purchase and ranked kill switches | Managed in the admin panel (#210) |
 
 Values are set in the admin panel before launch. Every config change is audited.
