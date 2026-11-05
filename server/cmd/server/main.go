@@ -111,6 +111,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	sessions.Authenticate(tokens)
 	signals := risk.NewStore(pool)
+	go risk.NewWave(pool, config.Risk, logger).Run(ctx, config.SeasonPoll, time.Now)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
 	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)

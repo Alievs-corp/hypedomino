@@ -38,10 +38,14 @@ type Config struct {
 	UnownedEquipThreshold int
 	UnownedEquipWindow    time.Duration
 	UnownedEquipWeight    int
+	Decay                 time.Duration
+	ReviewScore           int
+	ShadowbanScore        int
+	BanWaveInterval       time.Duration
 }
 
 func DefaultConfig() Config {
-	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5, UnownedEquipThreshold: 5, UnownedEquipWindow: 10 * time.Minute, UnownedEquipWeight: 5}
+	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5, UnownedEquipThreshold: 5, UnownedEquipWindow: 10 * time.Minute, UnownedEquipWeight: 5, Decay: 30 * 24 * time.Hour, ReviewScore: 20, ShadowbanScore: 40, BanWaveInterval: 24 * time.Hour}
 }
 
 func (c Config) Validate() error {
@@ -56,6 +60,12 @@ func (c Config) Validate() error {
 	}
 	if c.UnownedEquipThreshold < 1 || c.UnownedEquipWindow <= 0 || c.UnownedEquipWeight < 0 {
 		return fmt.Errorf("%w: unowned equip threshold must be at least 1, its window positive and its weight not negative", ErrInvalidConfig)
+	}
+	if c.Decay <= 0 || c.BanWaveInterval <= 0 {
+		return fmt.Errorf("%w: decay and ban wave interval must be positive", ErrInvalidConfig)
+	}
+	if c.ReviewScore < 1 || c.ShadowbanScore < c.ReviewScore {
+		return fmt.Errorf("%w: review score must be at least 1 and the shadowban score not below it", ErrInvalidConfig)
 	}
 	if c.FakeReceiptWeight < 0 || c.RefundWeight < 0 {
 		return fmt.Errorf("%w: fake receipt and refund weights must not be negative", ErrInvalidConfig)
@@ -95,7 +105,13 @@ func RecordIn(ctx context.Context, db Executor, signal Signal) (bool, error) {
 	}
 	tag, err := db.Exec(ctx, `insert into risk_signals (account_id, kind, weight, dedupe_key, evidence, created_at) values ($1, $2, $3, $4, $5, $6)
 		on conflict (account_id, kind, dedupe_key) do nothing`, signal.Account, signal.Kind, signal.Weight, signal.Dedupe, evidence, signal.At)
-	return tag.RowsAffected() == 1, err
+	if err != nil || tag.RowsAffected() == 0 {
+		return false, err
+	}
+	if isHard(signal.Kind) {
+		return true, openReview(ctx, db, signal.Account, CauseHardSignal, signal.At)
+	}
+	return true, nil
 }
 
 func (s *Store) Signals(ctx context.Context, account string) ([]Signal, error) {
