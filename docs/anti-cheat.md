@@ -239,6 +239,8 @@ Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/e
 - **Purchase kill switch.** With `purchases_disabled`, `POST /shop/begin` is answered 503 `purchases.disabled`. Coin and crystal offers stay open, and `POST /shop/complete` and the store notifications still grant validated receipts (`docs/economy.md` 7.5).
 - **Ranked kill switch.** `ranked_disabled` is stored; the matchmaking entry reads it once matchmaking is wired to the network.
 
+`GET /admin/live-controls` shows the controls to every role with view rights. `PUT /admin/live-controls` `{"controls","reason","ref"}` needs the `switch` permission, a reason and a recent sign-in (`docs/admin.md` 9). In staging it publishes at once. In production it answers 202 with `approval_id`, and the switch happens when a second admin approves (`docs/admin.md` 8).
+
 `build_hash` is reported by the client. The allowlist stops builds we distributed, which report their real hash; a re-signed build that lies about it is stopped by the signing digest of section 5.1.
 
 ## 6. Residual risk

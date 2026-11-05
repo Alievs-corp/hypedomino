@@ -22,6 +22,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
+	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
@@ -154,6 +155,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/medals", h.allowed(rbac.Medals, rbac.Publish, h.publishDomain(func() configDomain { return h.medalDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
 	h.mux.HandleFunc("POST /admin/config/medals/rollback", h.allowed(rbac.Medals, rbac.Publish, h.rollbackDomain(func() configDomain { return h.medalDomain(true) })))
+	h.mux.HandleFunc("GET /admin/live-controls", h.allowed(rbac.LiveControls, rbac.View, h.liveControls))
+	h.mux.HandleFunc("PUT /admin/live-controls", h.allowed(rbac.LiveControls, rbac.SwitchLiveControl, h.switchLiveControls))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -421,10 +424,12 @@ func classify(err error) (int, string) {
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
 		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
-		errors.Is(err, rating.ErrInvalidConfig):
+		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):
 		return http.StatusConflict, "frozen"
+	case errors.Is(err, errStaleLiveControls):
+		return http.StatusConflict, "stale_proposal"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):
