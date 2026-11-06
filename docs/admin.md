@@ -247,6 +247,8 @@ Fields and rules are `docs/rarity.md` section 7: tier id, `ordinal`, `nameKey`, 
 
 Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use shows `usedBy` and needs confirmation (#138 acceptance). A bundle in use cannot be retired.
 
+Today a bundle is stored inside each object that grants it, not in a catalog of its own. `GET /admin/reward-bundles` derives the list from the published shop, pass, missions, rating and daily login config and from promo codes and templates. The same id holding different content is shown as two rows marked `differs`. Events are not listed because they have no published config yet. Editing stays on the screen of the object that holds the bundle.
+
 ### 5.5 Shop offers and rotations
 
 | Field | Rule |
@@ -634,6 +636,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/players/{id}/temporary-ban` | S on players: temporary ban | Bans sign-in for `TempBanHours` (`HD_TEMP_BAN_HOURS`) from now and revokes every refresh session of the account (6.2) |
 | `DELETE /admin/players/{id}/temporary-ban` | S on players: lift a ban | Ends a running temporary ban |
 | `POST /admin/players/{id}/force-rename` | S on players: force rename | Requires the player to pick a new nickname (`docs/localization.md` 5.6) |
+| `GET /admin/reward-bundles` | V on reward bundles | Every bundle in published config with `guideValue`, `usedBy` and `differs`; `promo_truncated` when only the newest `MaxPromoListed` codes were read (5.4) |
 | `POST /admin/players/{id}/grant` `{"bundle","source","request_id"}` | S on players: grant | Applies the bundle through the reward engine (6.2); above `AdminGrantApprovalCoins` coins or with a `mythic` item it answers 202 with a `player_grant` proposal instead (section 8) |
 | `GET /admin/matches/{id}/replay` | V on players | The match (mode, kind, window, scores, winner, config version), its seats with account, nickname, bot and result, and the replay record (D-13) played back hand by hand: the tiles dealt to each seat, every intent with its tile, end, points or drawn tile, and each hand's outcome; `timeline` is null when no record was stored |
 | `GET /admin/promo-codes?campaign=` | V on promo codes | Usage per campaign (`campaigns`: codes, active, pending, disabled, cap, redemptions, earliest start, latest end) and the newest 200 codes (`codes`), of one campaign when `campaign` is given; never a code's plaintext |

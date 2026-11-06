@@ -136,6 +136,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/promo-templates", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromoTemplate))
 	h.mux.HandleFunc("PUT /admin/promo-templates/{id}", h.allowed(rbac.PromoCodes, rbac.Edit, h.editPromoTemplate))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
+	h.mux.HandleFunc("GET /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.View, h.listRewardBundles))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
