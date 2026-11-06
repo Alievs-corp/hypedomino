@@ -204,3 +204,7 @@ func (c *Catalog) Defaults() []Item {
 	}
 	return items
 }
+
+func ValidItemID(id string) bool {
+	return idPattern.MatchString(id)
+}

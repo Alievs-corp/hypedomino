@@ -26,6 +26,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
@@ -58,6 +59,7 @@ type Config struct {
 	PromoKey  string
 	Promo     promo.Config
 	Cosmetics *cosmetics.Catalog
+	Assets    AssetStore
 }
 
 type Verifier interface {
@@ -118,6 +120,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/rules", h.allowed(rbac.GameConfig, rbac.Publish, h.publishRules))
 	h.mux.HandleFunc("GET /admin/config/rules/history", h.allowed(rbac.GameConfig, rbac.View, h.rulesHistory))
 	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
+	h.mux.HandleFunc("GET /admin/assets", h.allowed(rbac.Assets, rbac.View, h.listAssets))
+	h.mux.HandleFunc("POST /admin/assets/uploads", h.allowed(rbac.Assets, rbac.Create, h.startAssetUpload))
+	h.mux.HandleFunc("POST /admin/assets/{id}/check", h.allowed(rbac.Assets, rbac.Create, h.checkAsset))
 	h.mux.HandleFunc("GET /admin/players", h.allowed(rbac.Players, rbac.View, h.searchPlayers))
 	h.mux.HandleFunc("GET /admin/players/{id}", h.allowed(rbac.Players, rbac.View, h.playerRecord))
 	h.mux.HandleFunc("POST /admin/players/{id}/coins", h.allowed(rbac.Players, rbac.ActOnPlayer, h.adjustCoins))
@@ -441,6 +446,20 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "season_started"
 	case errors.Is(err, errSeasonNotLive):
 		return http.StatusConflict, "season_not_live"
+	case errors.Is(err, errAssetStoreOff):
+		return http.StatusServiceUnavailable, "asset_store_off"
+	case errors.Is(err, objectstore.ErrUnavailable):
+		return http.StatusServiceUnavailable, "asset_store_unavailable"
+	case errors.Is(err, objectstore.ErrNotFound):
+		return http.StatusConflict, "asset_file_missing"
+	case errors.Is(err, errAssetChecked):
+		return http.StatusConflict, "asset_already_checked"
+	case errors.Is(err, errAssetUnknown):
+		return http.StatusNotFound, "not_found"
+	case errors.Is(err, errAssetSlot):
+		return http.StatusBadRequest, "asset_slot_unsupported"
+	case errors.Is(err, errAssetItem):
+		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errBundleUnknown):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, errBundleDiffers), errors.Is(err, errBundleHeld):

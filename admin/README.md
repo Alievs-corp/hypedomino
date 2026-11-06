@@ -89,6 +89,12 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired.
 - **History and rollback:** as for shop offers, on `/admin/config/missions/history` and `/admin/config/missions/rollback`.
 
+## Assets
+
+`/assets` (#135, `docs/admin.md` 5.2) uploads the static PNG of a cosmetic item. The panel asks `POST /admin/assets/uploads` for a signed URL, the browser sends the file straight to the object store, and `POST /admin/assets/{id}/check` makes the server read it back and record format, alpha, width, height, bytes and SHA-256. A file that fails stays listed as rejected and is never shown; a new upload makes a new row. The file does not reach players yet.
+
+The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its origin to `img-src` and `connect-src` of the Content Security Policy, and the bucket's CORS rules must allow `PUT` from the panel's origin. Without `HD_ASSET_STORE_URL` on the admin API, the page lists rows and closes uploads.
+
 ## Daily login
 
 `/daily-login` (#141, `docs/admin.md` 5.8, `docs/economy.md` 2.3) edits the coins of each day of the calendar and publishes through `/admin/config/daily-login`, with a reason, history and rollback. Until a calendar is published the server has none and claims are refused, which the page says. The number of days is not edited here: a 30-day calendar is not proposed for launch.

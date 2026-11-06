@@ -228,6 +228,8 @@ Lifecycle: create and edit as drafts; publish adds the item to the next manifest
 
 Lifecycle: upload, check, include in a catalog build, publish with the item. An asset of a published item is never deleted; a new upload makes a new item revision.
 
+Built so far (#135): the `static` slot only, through `/assets`. `POST /admin/assets/uploads` records the row and returns a signed `PUT` URL; `POST /admin/assets/{id}/check` reads the object back and records `format`, `width`, `height`, `bytes`, `frames` and `contentHash`, with `format` (a PNG) and `alpha` (straight alpha, `docs/asset-workflow.md` 5.3) as the checks that can refuse. A rejected row stays listed; a new upload makes a new row. Every step is audited; a signed URL is never stored. Other slots answer `asset_slot_unsupported` until #93 settles their file format. Size, atlas and frame limits are measured where possible but refuse nothing until O-5 and O-6 of `docs/asset-workflow.md` set them. `catalogVersion`, the catalog build and publishing with the item are not built, so an uploaded file does not reach players yet.
+
 ### 5.3 Rarity table
 
 Fields and rules are `docs/rarity.md` section 7: tier id, `ordinal`, `nameKey`, `fill`, `on`, `text`, `pips`, `glow`, `flow`, `diamondMinSize`, `flowPeriodMs`. Values come from `docs/design-tokens.json` as defaults. A tier is never removed while an item references it (V-14). Changing ordinals changes table selection for matches started after the publish.

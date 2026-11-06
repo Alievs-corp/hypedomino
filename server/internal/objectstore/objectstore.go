@@ -1,0 +1,130 @@
+package objectstore
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+)
+
+const (
+	amzTime  = "20060102T150405Z"
+	amzDay   = "20060102"
+	maxTTL   = 7 * 24 * time.Hour
+	service  = "s3"
+	scopeEnd = "aws4_request"
+)
+
+var (
+	ErrNotFound    = errors.New("objectstore: no such object")
+	ErrUnavailable = errors.New("objectstore: the store did not answer")
+	ErrConfig      = errors.New("objectstore: invalid config")
+)
+
+type Config struct {
+	BaseURL   string
+	Region    string
+	AccessKey string
+	SecretKey string
+	URLTTL    time.Duration
+}
+
+type Store struct {
+	base   *url.URL
+	config Config
+	client *http.Client
+}
+
+func New(config Config) (*Store, error) {
+	base, err := url.Parse(strings.TrimRight(config.BaseURL, "/"))
+	if err != nil || base.Host == "" || (base.Scheme != "http" && base.Scheme != "https") {
+		return nil, fmt.Errorf("%w: base url %q", ErrConfig, config.BaseURL)
+	}
+	if config.Region == "" || config.AccessKey == "" || config.SecretKey == "" {
+		return nil, fmt.Errorf("%w: region, access key and secret key are required", ErrConfig)
+	}
+	if config.URLTTL <= 0 || config.URLTTL > maxTTL {
+		return nil, fmt.Errorf("%w: url lifetime %s is outside 0 to %s", ErrConfig, config.URLTTL, maxTTL)
+	}
+	return &Store{base: base, config: config, client: &http.Client{}}, nil
+}
+
+func (s *Store) SignedPut(key string, now time.Time) string {
+	return s.signed(http.MethodPut, key, now)
+}
+
+func (s *Store) SignedGet(key string, now time.Time) string {
+	return s.signed(http.MethodGet, key, now)
+}
+
+func (s *Store) Open(ctx context.Context, key string, now time.Time) (io.ReadCloser, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, s.SignedGet(key, now), nil)
+	if err != nil {
+		return nil, err
+	}
+	response, err := s.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
+	}
+	switch response.StatusCode {
+	case http.StatusOK:
+		return response.Body, nil
+	case http.StatusNotFound:
+		response.Body.Close()
+		return nil, ErrNotFound
+	}
+	response.Body.Close()
+	return nil, fmt.Errorf("%w: status %d", ErrUnavailable, response.StatusCode)
+}
+
+func (s *Store) signed(method, key string, now time.Time) string {
+	now = now.UTC()
+	day := now.Format(amzDay)
+	scope := strings.Join([]string{day, s.config.Region, service, scopeEnd}, "/")
+	path := s.base.EscapedPath() + "/" + escapePath(key)
+	query := url.Values{
+		"X-Amz-Algorithm":     {"AWS4-HMAC-SHA256"},
+		"X-Amz-Credential":    {s.config.AccessKey + "/" + scope},
+		"X-Amz-Date":          {now.Format(amzTime)},
+		"X-Amz-Expires":       {strconv.FormatInt(int64(s.config.URLTTL/time.Second), 10)},
+		"X-Amz-SignedHeaders": {"host"},
+	}.Encode()
+	canonical := strings.Join([]string{method, path, query, "host:" + s.base.Host, "", "host", "UNSIGNED-PAYLOAD"}, "\n")
+	toSign := strings.Join([]string{"AWS4-HMAC-SHA256", now.Format(amzTime), scope, hexHash(canonical)}, "\n")
+	signature := hex.EncodeToString(mac(s.signingKey(day), toSign))
+	return s.base.Scheme + "://" + s.base.Host + path + "?" + query + "&X-Amz-Signature=" + signature
+}
+
+func (s *Store) signingKey(day string) []byte {
+	key := mac([]byte("AWS4"+s.config.SecretKey), day)
+	key = mac(key, s.config.Region)
+	key = mac(key, service)
+	return mac(key, scopeEnd)
+}
+
+func escapePath(key string) string {
+	segments := strings.Split(key, "/")
+	for at, segment := range segments {
+		segments[at] = strings.ReplaceAll(url.QueryEscape(segment), "+", "%20")
+	}
+	return strings.Join(segments, "/")
+}
+
+func mac(key []byte, message string) []byte {
+	digest := hmac.New(sha256.New, key)
+	digest.Write([]byte(message))
+	return digest.Sum(nil)
+}
+
+func hexHash(message string) string {
+	sum := sha256.Sum256([]byte(message))
+	return hex.EncodeToString(sum[:])
+}
