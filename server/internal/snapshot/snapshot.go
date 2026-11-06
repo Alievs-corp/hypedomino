@@ -25,10 +25,15 @@ type Watcher[T any] struct {
 	version int64
 	value   T
 	loaded  bool
+	applied func()
 }
 
 func New[T any](pool *pgxpool.Pool, domain string, parse Parse[T], logger *slog.Logger) *Watcher[T] {
 	return &Watcher[T]{pool: pool, domain: domain, parse: parse, logger: logger}
+}
+
+func (w *Watcher[T]) OnApplied(applied func()) {
+	w.applied = applied
 }
 
 func (w *Watcher[T]) Seed(value T, version int64) {
@@ -100,6 +105,9 @@ func (w *Watcher[T]) Run(ctx context.Context, every time.Duration) {
 		case changed:
 			_, version, _ := w.Current()
 			w.logger.Info("config snapshot applied", "domain", w.domain, "version", version)
+			if w.applied != nil {
+				w.applied()
+			}
 		}
 		select {
 		case <-ctx.Done():

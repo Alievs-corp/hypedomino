@@ -92,6 +92,10 @@ The page reloads the record after each change.
 
 ## Approvals
 
+`/live-controls` (A-25, `docs/admin.md` section 4, #210) is in the nav for roles that may view live controls. It edits the purchase and ranked kill switches, the minimum app version and the build allowlist of `docs/anti-cheat.md` 5.2. A change needs a reason and a fresh sign-in. Staging applies it at once; production waits in `/approvals` for a second admin.
+
+`/reviews` (A-31, `docs/admin.md` 6.4, #209) is in the nav for roles that may view queues. It lists the open reviews of `GET /admin/reviews` with their signals and evidence, and links each account to its player record. Clear lifts a shadowban and confirm keeps it (`docs/anti-cheat.md` 5.3). Both need a reason and a fresh sign-in. An admin who wants a temporary ban uses the player record first, then confirms.
+
 `/approvals` (two-person rule, `docs/admin.md` section 8) is in the nav for every signed-in admin. It lists what `GET /admin/approvals` returns: pending proposals the admin's roles may decide, and their own. A row shows the kind, the object (a player links to the record), the change without its bookkeeping ids, the reason, the proposer with their roles, and the expiry. An admin's own proposal says another admin decides. On the others, Approve and Reject take an optional note. Approve needs a fresh sign-in and uses `StepUpPrompt`, and the list reloads after a decision.
 A `promo_code` proposal reads as its code count, campaign, bundle and window, and links to `/promo`.
 

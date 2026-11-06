@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -61,6 +62,7 @@ type finalRow struct {
 	tier     string
 	position int
 	country  string
+	hidden   bool
 }
 
 func (s *Store) SetRewards(engine Rewarder) {
@@ -108,7 +110,7 @@ func rankBundle(config Config, snapshot *Snapshot, tier string, version int64) (
 }
 
 func (s *Store) finals(ctx context.Context, season string, mode rules.Mode) ([]finalRow, error) {
-	rows, err := s.pool.Query(ctx, `select account_id, rank_index, lp, apex_tier, position, coalesce(country, '') from season_results where season_id = $1 and mode = $2 order by position`, season, mode.String())
+	rows, err := s.pool.Query(ctx, `select account_id, rank_index, lp, apex_tier, position, coalesce(country, ''), not (`+notShadowbanned+`) from season_results where season_id = $1 and mode = $2 order by position`, season, mode.String())
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +119,7 @@ func (s *Store) finals(ctx context.Context, season string, mode rules.Mode) ([]f
 	for rows.Next() {
 		var row finalRow
 		var apex *string
-		if err := rows.Scan(&row.account, &row.rank.Index, &row.rank.LP, &apex, &row.position, &row.country); err != nil {
+		if err := rows.Scan(&row.account, &row.rank.Index, &row.rank.LP, &apex, &row.position, &row.country, &row.hidden); err != nil {
 			return nil, err
 		}
 		row.tier = tierOf(row.rank, apex)
@@ -152,7 +154,7 @@ func (s *Store) DistributeRewards(ctx context.Context, id string, mode rules.Mod
 		if err != nil {
 			return Distributed{}, err
 		}
-		emblems := awardEmblems(snapshot, rows)
+		emblems := awardEmblems(snapshot, slices.DeleteFunc(slices.Clone(rows), func(row finalRow) bool { return row.hidden }))
 		for _, row := range rows {
 			granted, err := s.rewardOne(ctx, id, mode, row, emblems[row.account], config, snapshot, version, now)
 			if err != nil {

@@ -66,13 +66,17 @@ func TestASkewedDeviceClockRaisesOneSoftSignalPerDay(t *testing.T) {
 
 func TestTheRiskConfigIsChecked(t *testing.T) {
 	for name, change := range map[string]func(*risk.Config){
-		"no skew tolerance":   func(c *risk.Config) { c.ClockSkewTolerance = 0 },
-		"negative skew":       func(c *risk.Config) { c.ClockSkewWeight = -1 },
-		"negative receipt":    func(c *risk.Config) { c.FakeReceiptWeight = -1 },
-		"negative refund":     func(c *risk.Config) { c.RefundWeight = -1 },
-		"no replay threshold": func(c *risk.Config) { c.ReplayThreshold = 0 },
-		"no replay window":    func(c *risk.Config) { c.ReplayWindow = 0 },
-		"negative replay":     func(c *risk.Config) { c.ReplayWeight = -1 },
+		"no skew tolerance":      func(c *risk.Config) { c.ClockSkewTolerance = 0 },
+		"negative skew":          func(c *risk.Config) { c.ClockSkewWeight = -1 },
+		"negative receipt":       func(c *risk.Config) { c.FakeReceiptWeight = -1 },
+		"no decay":               func(c *risk.Config) { c.Decay = 0 },
+		"no wave interval":       func(c *risk.Config) { c.BanWaveInterval = 0 },
+		"no review score":        func(c *risk.Config) { c.ReviewScore = 0 },
+		"shadowban below review": func(c *risk.Config) { c.ShadowbanScore = c.ReviewScore - 1 },
+		"negative refund":        func(c *risk.Config) { c.RefundWeight = -1 },
+		"no replay threshold":    func(c *risk.Config) { c.ReplayThreshold = 0 },
+		"no replay window":       func(c *risk.Config) { c.ReplayWindow = 0 },
+		"negative replay":        func(c *risk.Config) { c.ReplayWeight = -1 },
 	} {
 		config := risk.DefaultConfig()
 		change(&config)
@@ -199,5 +203,44 @@ func TestIntegritySignalsCountOncePerPurposePerDay(t *testing.T) {
 	}
 	if signals[1].Kind != "device_risk" || signals[1].Weight != 5 || signals[3].Dedupe != "purchase:2026-11-04" {
 		t.Fatalf("signals %+v", signals)
+	}
+}
+
+func TestRepeatedUnownedEquipsRaiseOneSoftSignalPerWindow(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	var account string
+	if err := pool.QueryRow(ctx, `insert into accounts (created_at) values (now()) returning id`).Scan(&account); err != nil {
+		t.Fatal(err)
+	}
+	start := time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC)
+	clock := &fixedClock{now: start}
+	store := risk.NewStore(pool)
+	attempts := risk.NewUnownedEquips(store, risk.DefaultConfig(), clock, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	for i, want := range []int{0, 0, 0, 0, 1, 1, 1, 1, 1, 1} {
+		clock.now = start.Add(time.Duration(i) * time.Second)
+		attempts.Observe(ctx, account)
+		signals, err := store.Signals(ctx, account)
+		if err != nil || len(signals) != want {
+			t.Fatalf("attempt %d: %d signals %v", i+1, len(signals), err)
+		}
+	}
+	signals, _ := store.Signals(ctx, account)
+	if got := signals[0]; got.Kind != risk.KindUnownedEquip || got.Weight != 5 || got.Evidence["attempts"] != float64(5) || got.Evidence["window_seconds"] != float64(600) || got.Dedupe != "2026-11-04T12:00:00Z" {
+		t.Fatalf("signal %+v", got)
+	}
+}
+
+func TestUnownedEquipConfigIsValidated(t *testing.T) {
+	for _, change := range []func(*risk.Config){
+		func(c *risk.Config) { c.UnownedEquipThreshold = 0 },
+		func(c *risk.Config) { c.UnownedEquipWindow = 0 },
+		func(c *risk.Config) { c.UnownedEquipWeight = -1 },
+	} {
+		config := risk.DefaultConfig()
+		change(&config)
+		if !errors.Is(config.Validate(), risk.ErrInvalidConfig) {
+			t.Fatalf("accepted %+v", config)
+		}
 	}
 }

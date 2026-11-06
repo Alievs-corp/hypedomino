@@ -15,12 +15,14 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
+	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
 const (
 	SourceType = "promo"
 	Topic      = "promo"
+	SignalLock = "promo_lock"
 
 	SingleUse = "single_use"
 	MultiUse  = "multi_use"
@@ -60,10 +62,13 @@ type Config struct {
 	FailedAttemptsBeforeLock int
 	LockMinutes              int
 	CoinsApprovalThreshold   int
+	LockSignalWeight         int
+	SpikePercent             int
+	SpikeWindowMinutes       int
 }
 
 func DefaultConfig() Config {
-	return Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 10, FailedAttemptsBeforeLock: 5, LockMinutes: 60, CoinsApprovalThreshold: 2000}
+	return Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: 10, FailedAttemptsBeforeLock: 5, LockMinutes: 60, CoinsApprovalThreshold: 2000, LockSignalWeight: 5, SpikePercent: 50, SpikeWindowMinutes: 60}
 }
 
 func (c Config) Validate() error {
@@ -74,6 +79,10 @@ func (c Config) Validate() error {
 		return errors.New("promo: validity days, attempts per hour, failed attempts before lock and lock minutes must be at least 1")
 	case c.CoinsApprovalThreshold < 0:
 		return errors.New("promo: approval threshold must not be negative")
+	case c.LockSignalWeight < 0:
+		return errors.New("promo: lock signal weight must not be negative")
+	case c.SpikePercent < 1 || c.SpikePercent > 100 || c.SpikeWindowMinutes < 1:
+		return errors.New("promo: spike percent between 1 and 100 and spike window at least 1 minute")
 	}
 	return nil
 }
@@ -104,6 +113,7 @@ type Code struct {
 	Approver    string        `json:"approver,omitempty"`
 	Batch       string        `json:"batch,omitempty"`
 	Redemptions int           `json:"redemptions"`
+	SpikeAt     *time.Time    `json:"spike_at,omitempty"`
 }
 
 type CampaignUsage struct {
@@ -127,6 +137,7 @@ type Redemption struct {
 	Promo    string        `json:"promo"`
 	Campaign string        `json:"campaign"`
 	Grant    reward.Report `json:"grant"`
+	Spiked   bool          `json:"-"`
 }
 
 type database interface {
@@ -514,13 +525,13 @@ func (s *Store) Disable(ctx context.Context, id string, now time.Time) (Code, er
 	return code, nil
 }
 
-const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by, c.batch_id,
+const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by, c.batch_id, c.spike_at,
 	(select count(*) from promo_redemptions r where r.promo_id = c.promo_id)`
 
 func scanCode(row pgx.Row) (Code, error) {
 	var code Code
 	var bundle []byte
-	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Batch, &code.Redemptions); err != nil {
+	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Batch, &code.SpikeAt, &code.Redemptions); err != nil {
 		return Code{}, err
 	}
 	if err := json.Unmarshal(bundle, &code.Bundle); err != nil {
@@ -552,6 +563,9 @@ func (s *Store) Redeem(ctx context.Context, account, raw string, now time.Time) 
 	if err != nil {
 		if _, recordErr := s.db.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, false, $2)`, account, now); recordErr != nil {
 			return Redemption{}, recordErr
+		}
+		if lockErr := s.flagLock(ctx, account, now); lockErr != nil {
+			return Redemption{}, lockErr
 		}
 		return Redemption{}, err
 	}
@@ -614,7 +628,38 @@ func (s *Store) redeem(ctx context.Context, account string, hash []byte, now tim
 	if _, err := tx.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, true, $2)`, account, now); err != nil {
 		return Redemption{}, err
 	}
-	return Redemption{Promo: code.ID, Campaign: code.Campaign, Grant: report}, tx.Commit(ctx)
+	spiked, err := s.markSpike(ctx, tx, code, now)
+	if err != nil {
+		return Redemption{}, err
+	}
+	return Redemption{Promo: code.ID, Campaign: code.Campaign, Grant: report, Spiked: spiked}, tx.Commit(ctx)
+}
+
+func (s *Store) flagLock(ctx context.Context, account string, now time.Time) error {
+	var failed int
+	since := now.Add(-time.Duration(s.config.LockMinutes) * time.Minute)
+	if err := s.db.QueryRow(ctx, `select count(*) from promo_attempts where account_id = $1 and not ok and attempted_at > $2`, account, since).Scan(&failed); err != nil {
+		return err
+	}
+	if failed != s.config.FailedAttemptsBeforeLock {
+		return nil
+	}
+	signal := risk.Signal{
+		Account: account, Kind: SignalLock, Weight: s.config.LockSignalWeight, Dedupe: now.UTC().Format(time.RFC3339Nano), At: now,
+		Evidence: map[string]any{"failed": failed, "lock_minutes": s.config.LockMinutes},
+	}
+	_, err := risk.RecordIn(ctx, s.db, signal)
+	return err
+}
+
+func (s *Store) markSpike(ctx context.Context, tx pgx.Tx, code Code, now time.Time) (bool, error) {
+	if code.Kind != MultiUse || code.SpikeAt != nil {
+		return false, nil
+	}
+	since := now.Add(-time.Duration(s.config.SpikeWindowMinutes) * time.Minute)
+	tag, err := tx.Exec(ctx, `update promo_codes set spike_at = $3 where promo_id = $1 and spike_at is null
+		and (select count(*) from promo_redemptions where promo_id = $1 and redeemed_at > $2) * 100 >= cap * $4`, code.ID, since, now, s.config.SpikePercent)
+	return tag.RowsAffected() == 1, err
 }
 
 func (s *Store) check(ctx context.Context, tx pgx.Tx, code Code, account string, now time.Time) error {

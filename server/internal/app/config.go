@@ -294,12 +294,19 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_CLOCK_SKEW_WEIGHT", &config.Risk.ClockSkewWeight)
 	r.integer("HD_FAKE_RECEIPT_WEIGHT", &config.Risk.FakeReceiptWeight)
 	r.integer("HD_REFUND_WEIGHT", &config.Risk.RefundWeight)
+	r.duration("HD_RISK_DECAY", &config.Risk.Decay)
+	r.integer("HD_RISK_REVIEW_SCORE", &config.Risk.ReviewScore)
+	r.integer("HD_RISK_SHADOWBAN_SCORE", &config.Risk.ShadowbanScore)
+	r.duration("HD_BAN_WAVE_INTERVAL", &config.Risk.BanWaveInterval)
 	r.integer("HD_REPLAY_REJECT_THRESHOLD", &config.Risk.ReplayThreshold)
 	r.duration("HD_REPLAY_REJECT_WINDOW", &config.Risk.ReplayWindow)
 	r.integer("HD_REPLAY_REJECT_WEIGHT", &config.Risk.ReplayWeight)
 	r.integer("HD_MAC_FAILURE_THRESHOLD", &config.Risk.MacFailureThreshold)
 	r.duration("HD_MAC_FAILURE_WINDOW", &config.Risk.MacFailureWindow)
 	r.integer("HD_MAC_FAILURE_WEIGHT", &config.Risk.MacFailureWeight)
+	r.integer("HD_UNOWNED_EQUIP_THRESHOLD", &config.Risk.UnownedEquipThreshold)
+	r.duration("HD_UNOWNED_EQUIP_WINDOW", &config.Risk.UnownedEquipWindow)
+	r.integer("HD_UNOWNED_EQUIP_WEIGHT", &config.Risk.UnownedEquipWeight)
 	if err := config.Risk.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT, HD_REFUND_WEIGHT, HD_REPLAY_REJECT_* and HD_MAC_FAILURE_*: %w", err))
 	}
@@ -325,6 +332,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_PROMO_FAILED_ATTEMPTS_BEFORE_LOCK", &config.Promo.FailedAttemptsBeforeLock)
 	r.integer("HD_PROMO_LOCK_MINUTES", &config.Promo.LockMinutes)
 	r.integer("HD_PROMO_COINS_APPROVAL_THRESHOLD", &config.Promo.CoinsApprovalThreshold)
+	r.integer("HD_PROMO_LOCK_SIGNAL_WEIGHT", &config.Promo.LockSignalWeight)
+	r.integer("HD_PROMO_SPIKE_PERCENT", &config.Promo.SpikePercent)
+	r.integer("HD_PROMO_SPIKE_WINDOW_MINUTES", &config.Promo.SpikeWindowMinutes)
 	if config.PromoKey != "" {
 		if _, err := promo.NewHasher(config.PromoKey); err != nil {
 			r.errs = append(r.errs, fmt.Errorf("HD_PROMO_KEY: %w", err))

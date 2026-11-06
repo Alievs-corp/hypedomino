@@ -128,3 +128,28 @@ func TestVersionAndHistoryReadOneDomain(t *testing.T) {
 		t.Fatalf("limited %+v %v", limited, err)
 	}
 }
+
+func TestTheWatcherReportsEveryAppliedVersion(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	w := snapshot.New(pool, "shop", parse, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	applied := make(chan int64, 2)
+	w.OnApplied(func() {
+		_, version, _ := w.Current()
+		applied <- version
+	})
+	go w.Run(ctx, 10*time.Millisecond)
+	version, err := snapshot.Publish(ctx, pool, "shop", []byte(`{"slots":2}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-applied:
+		if got != version {
+			t.Fatalf("applied %d, want %d", got, version)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("no applied report")
+	}
+}

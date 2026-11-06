@@ -20,9 +20,14 @@ type Inventory interface {
 	Freeze(ctx context.Context, account string) (profile.Loadout, error)
 }
 
+type UnownedObserver interface {
+	Observe(ctx context.Context, account string)
+}
+
 type Handler struct {
 	verifier  token.Verifier
 	inventory Inventory
+	unowned   UnownedObserver
 	logger    *slog.Logger
 	now       func() time.Time
 	mux       *http.ServeMux
@@ -33,6 +38,10 @@ func NewHandler(verifier token.Verifier, inventory Inventory, logger *slog.Logge
 	h.mux.HandleFunc("GET /inventory", h.list)
 	h.mux.HandleFunc("PUT /inventory/equip", h.equip)
 	return h
+}
+
+func (h *Handler) FlagUnowned(observer UnownedObserver) {
+	h.unowned = observer
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -103,10 +112,17 @@ func (h *Handler) equip(w http.ResponseWriter, r *http.Request) {
 	}
 	loadout, err := h.inventory.Equip(r.Context(), claims.Account, request.Slot, request.Items, h.now())
 	if err != nil {
+		h.observeUnowned(r.Context(), claims.Account, err)
 		h.refuse(w, err)
 		return
 	}
 	reply(w, http.StatusOK, loadoutView{Loadout: loadout})
+}
+
+func (h *Handler) observeUnowned(ctx context.Context, account string, err error) {
+	if h.unowned != nil && errors.Is(err, ErrNotOwned) {
+		h.unowned.Observe(ctx, account)
+	}
 }
 
 func (h *Handler) authenticate(w http.ResponseWriter, r *http.Request) (token.Claims, bool) {

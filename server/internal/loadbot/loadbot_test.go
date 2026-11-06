@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -234,13 +235,13 @@ func TestStormDropsEveryLiveConnectionOnceAndTimesTheReturn(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("\n" + report.Text())
-	if report.StormDrops != 12 || report.Drops != 12 || report.Reconnects != 12 {
-		t.Fatalf("storm dropped %d, drops %d, reconnects %d; want each of the 12 seats once", report.StormDrops, report.Drops, report.Reconnects)
+	if report.StormDrops < 6 || report.StormDrops > 12 || report.Drops != report.StormDrops || report.Reconnects != report.StormDrops {
+		t.Fatalf("storm dropped %d, drops %d, reconnects %d; want every seat in a match once, a seat between matches has no connection", report.StormDrops, report.Drops, report.Reconnects)
 	}
-	if report.StormRecovered != 12 || report.StormRecovery <= 0 || report.StormRecovery > 2*time.Second {
-		t.Fatalf("recovered %d, slowest %s", report.StormRecovered, report.StormRecovery)
+	if report.StormRecovered != report.StormDrops || report.StormRecovery <= 0 || report.StormRecovery > 2*time.Second {
+		t.Fatalf("recovered %d of %d, slowest %s", report.StormRecovered, report.StormDrops, report.StormRecovery)
 	}
-	if report.DialFailures+report.ReadFailures+report.Rejected != 0 || !strings.Contains(report.Text(), "storm at 1s: dropped 12") {
+	if report.DialFailures+report.ReadFailures+report.Rejected != 0 || !strings.Contains(report.Text(), fmt.Sprintf("storm at 1s: dropped %d", report.StormDrops)) {
 		t.Fatalf("failures after the storm: %+v", report)
 	}
 }

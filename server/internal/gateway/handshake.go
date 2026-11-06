@@ -1,8 +1,11 @@
 package gateway
 
 import (
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/coder/websocket"
 
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
@@ -41,10 +44,44 @@ func parseVersion(text string) ([3]int, bool) {
 	return parts, true
 }
 
+type Admission struct {
+	MinimumAppVersion string
+	EnforceBuilds     bool
+	Builds            []string
+}
+
+func (a Admission) Admits(version, build string) bool {
+	if !VersionAtLeast(version, a.MinimumAppVersion) {
+		return false
+	}
+	return !a.EnforceBuilds || slices.Contains(a.Builds, build)
+}
+
+type clientBuild struct {
+	version string
+	hash    string
+}
+
+func (c *Conn) admission() Admission {
+	if c.options.Admission == nil {
+		return Admission{MinimumAppVersion: c.options.Config.MinimumAppVersion}
+	}
+	return c.options.Admission()
+}
+
+func (c *Conn) enforce() {
+	build := c.build.Load()
+	if build == nil || c.admission().Admits(build.version, build.hash) {
+		return
+	}
+	c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0, false))
+	c.Close(websocket.StatusNormalClosure, "update required")
+}
+
 func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *pb.Envelope {
 	hello := &pb.ServerHello{
 		Status:            status,
-		MinimumAppVersion: c.options.Config.MinimumAppVersion,
+		MinimumAppVersion: c.admission().MinimumAppVersion,
 		ServerTimeUnixMs:  uint64(c.options.Clock.Now().UnixMilli()),
 		CatalogVersion:    c.options.Config.CatalogVersion,
 		InMatch:           inMatch,

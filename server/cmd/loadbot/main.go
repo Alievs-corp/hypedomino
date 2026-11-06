@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"runtime"
@@ -12,9 +13,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/bot"
+	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/loadbot"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
@@ -47,25 +53,70 @@ func usage() {
 }
 
 func serverConfig() (app.Config, error) {
-	config, err := app.ConfigFromEnv(os.LookupEnv)
-	if err != nil {
-		return config, err
-	}
-	return config, nil
+	return app.ConfigFromEnv(func(key string) (string, bool) {
+		if key == "HD_DATABASE_URL" {
+			return "", false
+		}
+		return os.LookupEnv(key)
+	})
 }
 
 func startServer(ctx context.Context, config app.Config) (string, <-chan error, error) {
+	logger := app.NewLogger(os.Stderr, config.LogLevel)
 	handler := loadbot.NewHandler(rules.DefaultConfig(), bot.DefaultConfig())
-	a := app.New(config, app.NewLogger(os.Stderr, config.LogLevel), handler)
+	a := app.New(config, logger, handler)
 	handler.Bind(a.Rooms())
+	closeStores, err := stores(ctx, config, logger, a, handler)
+	if err != nil {
+		return "", nil, err
+	}
 	done := make(chan error, 1)
-	go func() { done <- a.Run(ctx) }()
+	go func() {
+		err := a.Run(ctx)
+		closeStores()
+		done <- err
+	}()
 	select {
 	case addr := <-a.Addr():
 		return addr, done, nil
 	case err := <-done:
 		return "", done, err
 	}
+}
+
+func stores(ctx context.Context, config app.Config, logger *slog.Logger, a *app.App, handler *loadbot.Handler) (func(), error) {
+	database := os.Getenv("HD_DATABASE_URL")
+	if database == "" && config.Redis == "" {
+		return func() {}, nil
+	}
+	var archive loadbot.Archive
+	closeStores := func() {}
+	if database != "" {
+		pool, err := db.Open(ctx, database)
+		if err != nil {
+			return nil, fmt.Errorf("HD_DATABASE_URL: %w", err)
+		}
+		archive, closeStores = matchstore.New(pool), pool.Close
+	}
+	var router loadbot.Router
+	if config.Redis != "" {
+		options, err := redis.ParseURL(config.Redis)
+		if err != nil {
+			closeStores()
+			return nil, fmt.Errorf("HD_REDIS_URL: %w", err)
+		}
+		members, err := cluster.New(config.Cluster, redis.NewClient(options), logger)
+		if err != nil {
+			closeStores()
+			return nil, err
+		}
+		a.Join(members)
+		router = members
+	}
+	s := loadbot.NewStores(archive, router)
+	handler.Store(s)
+	a.Expose(s)
+	return closeStores, nil
 }
 
 func serve(ctx context.Context, args []string) error {

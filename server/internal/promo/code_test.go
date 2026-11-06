@@ -51,12 +51,16 @@ func TestConfigRejectsOutOfRangeValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, mutate := range map[string]func(*promo.Config){
-		"code length": func(c *promo.Config) { c.CodeLength = 2 },
-		"validity":    func(c *promo.Config) { c.MaxValidityDays = 0 },
-		"attempts":    func(c *promo.Config) { c.AttemptsPerHour = 0 },
-		"failures":    func(c *promo.Config) { c.FailedAttemptsBeforeLock = 0 },
-		"lock":        func(c *promo.Config) { c.LockMinutes = 0 },
-		"threshold":   func(c *promo.Config) { c.CoinsApprovalThreshold = -1 },
+		"code length":  func(c *promo.Config) { c.CodeLength = 2 },
+		"validity":     func(c *promo.Config) { c.MaxValidityDays = 0 },
+		"attempts":     func(c *promo.Config) { c.AttemptsPerHour = 0 },
+		"failures":     func(c *promo.Config) { c.FailedAttemptsBeforeLock = 0 },
+		"lock":         func(c *promo.Config) { c.LockMinutes = 0 },
+		"threshold":    func(c *promo.Config) { c.CoinsApprovalThreshold = -1 },
+		"lock weight":  func(c *promo.Config) { c.LockSignalWeight = -1 },
+		"spike low":    func(c *promo.Config) { c.SpikePercent = 0 },
+		"spike high":   func(c *promo.Config) { c.SpikePercent = 101 },
+		"spike window": func(c *promo.Config) { c.SpikeWindowMinutes = 0 },
 	} {
 		config := promo.DefaultConfig()
 		mutate(&config)

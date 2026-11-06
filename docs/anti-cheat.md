@@ -188,6 +188,10 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Response | Block the intent. Flag repeated attempts. A leaked promo code is disabled by an admin |
 | Issues | #211, #202, #209, #212 |
 
+Unowned equips are flagged in `server/internal/risk`, `server/internal/inventory` and `server/internal/medal` (#211). An equip (`PUT /inventory/equip`) or a medal showcase (`PUT /medals/showcase`) refused because the account does not own the item counts for the account; `UnownedEquipThreshold` (5) refusals within `UnownedEquipWindowMinutes` (10) record an `unowned_equip` signal of weight `UnownedEquipWeight` (5) with the count and window as evidence, at most once per window. Counts live in node memory. The refusal itself does not change.
+
+Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/economy.md` 8): a lock records a `promo_lock` signal of weight `PromoLockSignalWeight` (5), and a `multi_use` code whose redemptions within `PromoSpikeWindowMinutes` (60) reach `PromoSpikePercent` (50) of its cap is marked `spike_at` once and logged, so an admin can disable it.
+
 ## 5. Signals and risk score
 
 | Signal | Source | Kind | Weight (config) |
@@ -199,6 +203,8 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 | Root, jailbreak or emulator | #185 | Soft | `DeviceRiskWeight` |
 | MAC failure rate over threshold | #207 | Soft | `MacFailureWeight` |
 | Replay rejection rate over threshold | #207 | Soft | `ReplayRejectWeight` |
+| Equip or showcase of an unowned item over threshold | #211 | Soft | `UnownedEquipWeight` |
+| Promo redemption lock | #211 | Soft | `PromoLockSignalWeight` |
 | Clock skew | #208 | Soft | `ClockSkewWeight` |
 | Forged receipt, receipt reuse on another account, account mismatch | #204 | Hard | `FakeReceiptWeight` |
 | Refund or chargeback | #106, #204 | Soft | `RefundWeight` |
@@ -224,6 +230,33 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 - **Session start.** A new session (not a reconnect to a known session id) is checked from `ClientHello.integrity` with a `session_start` nonce before the hello is accepted. It follows `IntegrityFailureAction` and `DeviceRiskAction`; a block is answered `Error INTEGRITY_FAILED` and the connection closes. A decoding outage lets the session start: the spec fails closed only for purchases and ranked entry. The hello may be up to `MaxHelloBytes` (8 KiB) so a Play Integrity token fits; later frames keep `MaxFrameBytes`.
 - **Purchase gate.** `POST /shop/complete` runs the check with a `purchase` nonce before the receipt is read. Android sends the Play Integrity token in `X-HD-Play-Integrity`; iOS sends `X-HD-Attest-Key` (key id, standard base64), `X-HD-Attest-Nonce` and `X-HD-Attest-Assertion` (standard base64) for a key attested earlier, and the stored counter moves forward only. No proof, or a proof for a platform the server is not configured for, is `token_rejected`. A blocked purchase is answered 403 `integrity_failed` (reasons logged, not returned), a decoding outage 503 `integrity_unavailable`. Every signal is stored in `risk_signals` as `integrity_failure` or `device_risk` with the purpose and reason names as evidence, once per purpose per UTC day. The gate is on when Play Integrity (`HD_PLAY_CERT_DIGESTS`) or App Attest (`HD_APP_ATTEST_TEAM_ID`) is configured; production must configure both.
 
+### 5.2 Live controls (#210)
+
+`server/internal/livecontrol` holds the live controls of `docs/admin.md` section 4 that this document names, as one config snapshot of domain `live_controls`: `minimum_app_version`, `build_allowlist_enforced`, `build_allowlist`, `purchases_disabled` and `ranked_disabled`. Unknown fields, an invalid version and an enforced empty allowlist are refused. Nodes read the snapshot at start and refresh it every `HD_CONFIG_POLL` (default 10 s); a node that cannot read a published snapshot at start does not start. Until the first publish `HD_MIN_APP_VERSION` is the minimum version and nothing else is restricted.
+
+- **Hello.** A client below the minimum version, or with a `build_hash` off an enforced allowlist, gets `UPDATE_REQUIRED` and is closed before its session token is read.
+- **Connected clients.** When a node applies a new snapshot it checks every open connection against it the same way. A client that no longer passes gets `UPDATE_REQUIRED` and is closed, also in a match; the match treats it as a disconnect (`docs/rules.md`). So publish a raised minimum version only to cut a build off, or when older clients must stop now.
+- **Purchase kill switch.** With `purchases_disabled`, `POST /shop/begin` is answered 503 `purchases.disabled`. Coin and crystal offers stay open, and `POST /shop/complete` and the store notifications still grant validated receipts (`docs/economy.md` 7.5).
+- **Ranked kill switch.** `ranked_disabled` is stored; the matchmaking entry reads it once matchmaking is wired to the network.
+
+`GET /admin/live-controls` shows the controls to every role with view rights. `PUT /admin/live-controls` `{"controls","reason","ref"}` needs the `switch` permission, a reason and a recent sign-in (`docs/admin.md` 9). In staging it publishes at once. In production it answers 202 with `approval_id`, and the switch happens when a second admin approves (`docs/admin.md` 8).
+
+`build_hash` is reported by the client. The allowlist stops builds we distributed, which report their real hash; a re-signed build that lies about it is stopped by the signing digest of section 5.1.
+
+### 5.3 Risk score and ban waves (#209)
+
+The score of an account is the sum of the weights of its signals from the last `RiskDecayDays`. Values are owner decisions of 2026-11-05.
+
+- **Hard signals.** A `fake_receipt` signal opens a review in the same write, whatever the score. The ledger mismatch signal joins it when `cmd/wallet-audit` records one.
+- **Ban wave.** Every `BanWaveIntervalHours` one node wins the interval's row in `risk_waves` and runs the wave. Slots are fixed UTC multiples of the interval. A node down during a wave loses nothing: the next wave reads the same signals.
+- **Review.** A score at `ReviewScore` opens a review with cause `score` at the next wave. An account has at most one open review.
+- **Shadowban.** A score at `ShadowbanScore` also sets `accounts.shadowbanned_at` and stores a `risk_actions` row with the score and wave. Soft signals may reach this step alone, because a shadowban does not block login (section 3, `docs/privacy.md` OQ-9).
+- **Temporary ban.** The wave applies none yet. A score-based temporary ban needs a hard signal among the counted signals (owner decision, 2026-11-05) and must skip accounts under 18 (section 3), and the server does not store the age gate result yet. Until it does, such an account stays in review, where an admin can ban it.
+
+Wave actions have no admin actor, so `risk_actions` is their record rather than the admin audit log. A shadowbanned account leaves the live boards at the wave, and a later rating change does not bring it back. At season end it takes the last positions of the frozen snapshot, so nobody is pushed down, stays off the frozen board and earns no emblem; its rank reward is still granted, so the sanction stays hidden (`docs/ranking.md` 8.3). Ranked pairing in the cheater pool and appeals follow in #209.
+
+`GET /admin/reviews` lists open reviews, oldest first, with each account's signals since its last decision. `POST /admin/reviews/{id}/clear` and `/confirm` take a reason and a recent sign-in, and are audited on the `queues` object. Either decision closes the review, and the signals it covered stop counting, so only a new signal can bring the account back. Clear also lifts the shadowban; confirm keeps it. A cleared account returns to the boards at its next rating change or board rebuild. An admin who wants a temporary ban uses the player action (`docs/admin.md` 6.2), then confirms. A permanent ban from the queue follows with its two-person flow.
+
 ## 6. Residual risk
 
 Complete protection is impossible. A determined attacker controls the device and can bypass any client-side check, obfuscation or detection given time. The goal is not to make cheating impossible but to make it worthless where it matters: no path may create currency, items or pass progress, change a balance, or move a rating outside legal play. The release gate checks exactly that (#212, `docs/roadmap.md`).
@@ -243,6 +276,7 @@ Accepted residual risks:
 | `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag |
 | `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag (launch defaults 5 and 10) |
 | `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag (launch defaults 5 and 10) |
+| `UnownedEquipThreshold`, `UnownedEquipWindowMinutes` | Refused equips or showcases of unowned items within the window that raise a flag (launch defaults 5 and 10) |
 | `IntegrityFailureAction` | Block login or flag on failed attestation (launch default flag; purchase and ranked match start block regardless) |
 | `DeviceRiskAction` | Warn, block ranked or flag on a risky device (launch default flag) |
 | `IntegrityNonceTtlSeconds` | Lifetime of an attestation nonce (section 5.1, launch default 300) |
@@ -250,14 +284,14 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong (launch default device) |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict (launch default off) |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight`, `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `UnownedEquipWeight` (launch default 5), `PromoLockSignalWeight` (launch default 5, `docs/economy.md` 8), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight`, `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |
-| `RiskDecayDays` | How long a signal keeps counting toward the score |
-| `ReviewScore`, `ShadowbanScore`, `TempBanScore` | Risk score at which each response starts |
+| `RiskDecayDays` | How long a signal keeps counting toward the score (launch default 30) |
+| `ReviewScore`, `ShadowbanScore`, `TempBanScore` | Risk score at which each response starts (launch defaults 20, 40 and 60) |
 | `TempBanHours` | Temporary ban length |
-| `BanWaveIntervalHours` | Interval between ban waves |
+| `BanWaveIntervalHours` | Interval between ban waves (launch default 24) |
 | Minimum version, build allowlist, purchase and ranked kill switches | Managed in the admin panel (#210) |
 
 Values are set in the admin panel before launch. Every config change is audited.

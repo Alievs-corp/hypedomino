@@ -215,6 +215,26 @@ func TestPlayersFinishAMatchOverWebSocket(t *testing.T) {
 	}
 }
 
+func joinOnceTheSeatIsFree(t *testing.T, server *httptest.Server, seat rules.Seat) *player {
+	t.Helper()
+	for {
+		p := join(t, server, seat, false)
+		_, data, err := p.socket.Read(p.ctx)
+		if err == nil {
+			frame := &pb.Envelope{}
+			if err := proto.Unmarshal(data, frame); err != nil {
+				t.Fatal(err)
+			}
+			p.last = frame.GetMatchView()
+			return p
+		}
+		if websocket.CloseStatus(err) != websocket.StatusPolicyViolation || p.ctx.Err() != nil {
+			t.Fatalf("%s: joining again: %v", seat, err)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
 func TestSeatTakenAndResume(t *testing.T) {
 	server, _ := roomServer(t, rules.Mode1v1, 3)
 	first := join(t, server, rules.SeatX, false)
@@ -227,8 +247,8 @@ func TestSeatTakenAndResume(t *testing.T) {
 		t.Fatalf("second connection for the same seat: %v", err)
 	}
 	first.socket.Close(websocket.StatusNormalClosure, "")
-	resumed := join(t, server, rules.SeatX, false)
-	if view := resumed.read().GetMatchView(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING {
+	resumed := joinOnceTheSeatIsFree(t, server, rules.SeatX)
+	if view := resumed.last; view.GetState() != pb.MatchState_MATCH_STATE_LOADING {
 		t.Fatalf("after leaving, joining again: %v", view)
 	}
 	other := join(t, server, rules.SeatY, false)
@@ -350,6 +370,10 @@ func TestAnEmojiReachesTheOtherSeatOverWebSocket(t *testing.T) {
 	})
 	x := join(t, server, rules.SeatX, false)
 	y := join(t, server, rules.SeatY, false)
+	for _, seat := range []*player{x, y} {
+		for seat.read().GetMatchView() == nil {
+		}
+	}
 	sent := time.Now()
 	x.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}})
 	for {

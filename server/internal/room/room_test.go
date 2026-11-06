@@ -342,6 +342,11 @@ func TestALeaverIsPlayedByTheBotUntilTheyComeBack(t *testing.T) {
 	if err := replay.Verify(tab.record()); err != nil {
 		t.Fatal(err)
 	}
+	recorded := tab.record()
+	tab.stop()
+	if kept, ok := tab.room.FinalRecord(); !ok || !kept.HasResult || len(kept.Intents) != len(recorded.Intents) {
+		t.Fatalf("final record %v %+v", ok, kept.Result)
+	}
 	if final.Presence[leaver] != (rules.PresenceReport{Left: true}) || final.Presence[other] != (rules.PresenceReport{}) {
 		t.Fatalf("presence reports %+v", final.Presence)
 	}

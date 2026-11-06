@@ -108,7 +108,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 
 - The game server loads a snapshot, validates it again (`docs/cosmetics.md` section 9) and swaps it in without a restart. A server that rejects a snapshot keeps its current one and alerts.
 - A snapshot records its parent version, its change set, author, approver, activation time and the revision of every domain. Files it references on the CDN (manifest, string bundles) are immutable and content-hashed (ADR 0002).
-- Live controls (section 4), promo codes and player records are not snapshot content: they change immediately, and a config rollback never touches them.
+- Live controls (section 4), promo codes and player records are not part of a config rollback: they change immediately and a rollback never touches them. The controls of `docs/anti-cheat.md` 5.2 are kept in their own `live_controls` snapshot domain, which has no rollback route.
 
 ### 3.2 States
 
@@ -557,7 +557,7 @@ Proposals are stored in the `admin_approvals` table (`server/internal/approval`,
 - **Deciding.** A proposal can be approved or rejected only by an admin who holds an approver role from the table above and is not the proposer. The database checks this as well.
 - **Expiry and finality.** A proposal can be decided only while it is pending and before it expires. A decision is final. Of several parallel decisions, exactly one wins.
 - **Pending list.** The pending list holds only proposals that are still undecided and not expired.
-- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` and for coin adjustments (9.1). The other kinds follow with their tools: bundle grants and permanent bans in #144, promo codes in #142, live controls in #146. Break-glass is not built yet.
+- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` and for coin adjustments (9.1). The other kinds follow with their tools: bundle grants and permanent bans in #144, promo codes in #142. Live controls are carried out for the controls of `docs/anti-cheat.md` 5.2 (#210); maintenance mode follows in #146. A live control approval is refused with `stale_proposal` when the controls changed after it was proposed, so an old proposal cannot undo a newer switch; reject it and propose again. Break-glass is not built yet.
 
 Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 
