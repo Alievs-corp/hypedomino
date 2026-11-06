@@ -41,9 +41,8 @@ func TestRewardBundlesListTheDefaultsAnyRoleCanSee(t *testing.T) {
 	a.create("leyla@example.com", rbac.Analyst)
 	analyst := a.signIn("leyla")
 
-	daily := bundleRows(t, a, analyst, "bundle.daily_login_day_1")
-	if len(daily) != 1 || daily[0]["guideValue"].(float64) != 30 {
-		t.Fatalf("daily %v", daily)
+	if daily := bundleRows(t, a, analyst, "bundle.daily_login_day_1"); len(daily) != 0 {
+		t.Fatalf("an unpublished calendar grants nothing, yet it lists %v", daily)
 	}
 	gold := bundleRows(t, a, analyst, "bundle.rank_gold")
 	if len(gold) != 1 || gold[0]["differs"] != false || len(gold[0]["usedBy"].([]any)) != 2 || gold[0]["guideValue"].(float64) != 700 {
@@ -196,11 +195,13 @@ func TestARewardBundleWithAnotherHolderOrDifferingContentIsNotEditedHere(t *test
 	a.create("leyla@example.com", rbac.LiveOps)
 	liveOps := a.signIn("leyla")
 
+	status, body := a.call("PUT", "/admin/config/daily-login", liveOps, map[string]any{"catalog": calendarOf(30, 30, 50, 50, 70, 70, 150), "reason": "launch"})
+	expect(t, status, body, http.StatusOK, "")
 	daily := bundleRows(t, a, liveOps, "bundle.daily_login_day_1")
 	if daily[0]["editable"] != false {
 		t.Fatalf("daily %v", daily)
 	}
-	status, body := a.call("PUT", "/admin/reward-bundles/bundle.daily_login_day_1", liveOps, editedBundle(1, 40, 0))
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.daily_login_day_1", liveOps, editedBundle(1, 40, 0))
 	expect(t, status, body, http.StatusConflict, "bundle_not_editable")
 
 	publishMissions(t, a, liveOps, grantingMission("mission.first", 100), grantingMission("mission.second", 200))

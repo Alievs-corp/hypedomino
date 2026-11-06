@@ -89,6 +89,10 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired.
 - **History and rollback:** as for shop offers, on `/admin/config/missions/history` and `/admin/config/missions/rollback`.
 
+## Daily login
+
+`/daily-login` (#141, `docs/admin.md` 5.8, `docs/economy.md` 2.3) edits the coins of each day of the calendar and publishes through `/admin/config/daily-login`, with a reason, history and rollback. Until a calendar is published the server has none and claims are refused, which the page says. The number of days is not edited here: a 30-day calendar is not proposed for launch.
+
 ## Medals
 
 `/medals` (#141, `docs/admin.md` 5.9) edits the medal catalog of `GET /admin/config/medals`. With no published catalog the editor starts empty and the first publish creates it.

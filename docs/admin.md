@@ -315,6 +315,8 @@ Rules: `docs/pass-missions-medals.md` section 4.
 | `eventId` | `event` only: the live event (5.13) |
 | `availability` | `live` or `retired` |
 
+The daily login calendar is edited at `/daily-login` (`docs/economy.md` 2.3): the coins of each existing day, under the missions permissions. Until one is published the server has no calendar and refuses claims.
+
 Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` only (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141).
 
 ### 5.9 Medals
@@ -596,6 +598,10 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
 | `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
 | `POST /admin/accounts/{id}/disable` | R on admin accounts | Disables it |
+| `GET /admin/config/daily-login` | V on missions | The published calendar, its `config_version` (0 and `null` before the first publish) and `rules.default` |
+| `PUT /admin/config/daily-login` `{"catalog","reason"}` | P on missions | Publishes the next `daily_login` snapshot through `dailylogin.Parse`: 7 or 30 days, each with whole coins from 1 and no other field |
+| `GET /admin/config/daily-login/history` | V on missions | The last 50 `daily_login` snapshots, newest first |
+| `POST /admin/config/daily-login/rollback` `{"version","reason"}` | P on missions and S: rollback on snapshots | Publishes the content of an earlier calendar as the next version |
 | `GET /admin/config/rules` | V on config values | Every key of the `rules` domain with type, unit, bounds, default and current value, and the `config_version` (0 before the first publish) |
 | `PUT /admin/config/rules` `{"values"}` | P on config values | Publishes the next `rules` snapshot. A key left out keeps its default |
 | `GET /admin/config/rules/history` | V on config values | The last 50 `rules` snapshots, newest first |
