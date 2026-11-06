@@ -1,6 +1,7 @@
 using System;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Motion;
+using HypeDomino.UI.Tokens;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,7 @@ namespace HypeDomino.Bench
         const float LoopFramesPerSecond = 12f;
         const double MissedVsyncFactor = 1.5;
         const int PanelCount = 40;
+        const float PanelAlpha = 0.5f;
         const int ColumnCount = 2;
         const float AvatarSize = 300f;
 
@@ -156,7 +158,7 @@ namespace HypeDomino.Bench
 
         void BuildScreen()
         {
-            new GameObject("Camera", typeof(Camera)).GetComponent<Camera>().backgroundColor = Color.black;
+            new GameObject("Camera", typeof(Camera)).GetComponent<Camera>().backgroundColor = TokenColor.BackgroundBase;
             var canvas = new GameObject("Screen", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler)).GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvas.GetComponent<CanvasScaler>();
@@ -173,12 +175,14 @@ namespace HypeDomino.Bench
         void AddStaticPanels()
         {
             var white = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            Color panelColor = TokenColor.SurfaceDefault;
+            panelColor.a = PanelAlpha;
             for (var at = 0; at < PanelCount; at++)
             {
                 var image = new GameObject("Panel", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
                 image.sprite = white;
                 image.raycastTarget = false;
-                image.color = new Color(0.1f, 0.1f, 0.2f + 0.01f * at, 0.5f);
+                image.color = panelColor;
                 image.transform.SetParent(screenRoot, false);
                 Place(image.rectTransform, at % 4, at / 4, 4, 10, 240f);
             }
