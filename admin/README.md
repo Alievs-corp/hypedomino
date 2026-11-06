@@ -41,6 +41,10 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Publish** (`PUT /admin/config/cosmetics`) takes a reason and a confirmation step that lists added, changed and newly disabled items. It is shown only to roles with publish on cosmetic items.
 - **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions.
 
+## Reward bundles
+
+`/rewards` (#138, `docs/admin.md` 5.4) reads `GET /admin/reward-bundles`: every bundle the published config grants, with its contents, guide value and uses. It searches ids, items, medals and objects, and filters by the domain using a bundle or by ids holding differing content. It is read only for now, because bundles live inside the objects that grant them.
+
 ## Shop offers
 
 `/shop` (A-17, `docs/admin.md` 5.5) edits the published catalog of `GET /admin/config/shop`.

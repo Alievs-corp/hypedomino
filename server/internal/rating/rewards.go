@@ -99,7 +99,7 @@ func awardEmblems(snapshot *Snapshot, rows []finalRow) map[string][]Emblem {
 	return out
 }
 
-func rankBundle(config Config, snapshot *Snapshot, tier string, version int64) (reward.Bundle, bool) {
+func RankBundle(config Config, snapshot *Snapshot, tier string, version int64) (reward.Bundle, bool) {
 	bundle := reward.Bundle{ID: "bundle.rank_" + strings.ToLower(tier), Revision: int(max(version, 1)), Coins: snapshot.RankRewardCoins[tier]}
 	if extra, ok := config.RankRewards[tier]; ok {
 		bundle.ID, bundle.Revision = extra.ID, extra.Revision
@@ -179,7 +179,7 @@ func (s *Store) rewardOne(ctx context.Context, season string, mode rules.Mode, r
 		return false, err
 	}
 	defer tx.Rollback(ctx)
-	bundle, grants := rankBundle(config, snapshot, row.tier, version)
+	bundle, grants := RankBundle(config, snapshot, row.tier, version)
 	names := make([]string, 0, len(emblems))
 	for _, e := range emblems {
 		names = append(names, e.String())
