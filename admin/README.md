@@ -28,6 +28,19 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 `/audit` (A-38) searches `GET /admin/audit` by actor, object type and id, action, reason text and a time range, newest first, 50 per page; "older entries" continues below the last id shown (`before_id`). The form takes and shows times in UTC (AP-8): a `datetime-local` value is sent as that minute in UTC. Each entry shows the actor with the roles it used, environment, reason, reference, config version, source (address, user agent, session) and its before and after values. Which entries a role sees is decided by the API (`docs/admin.md` section 7); a malformed filter shows a notice instead of results.
 
+## Cosmetics
+
+`/cosmetics` (A-5 and A-6, #136, `docs/admin.md` 5.1) edits the manifest of `GET /admin/config/cosmetics` without a code change. With no published manifest it starts from the built-in one.
+- **Catalog:** every item with its rarity, availability, animation, sources and revision. It can be searched by id or source record and filtered by type, rarity, availability and source type.
+- **Bulk edit:** rarity and availability over the checked items. The header box checks every listed item.
+- **New item:** a type and a slug become `<type>.<slug>`; a taken id is refused. The id and the type never change, and a published item cannot be removed: retire or disable it.
+- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a character's high detail model, a table's ordered layers. Turning animation off drops the fields a static item must not have.
+- **Server fields:** `revision`, `nameKey` and every address are set by the API on publish, so they are shown and never typed.
+- **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
+- **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.
+- **Publish** (`PUT /admin/config/cosmetics`) takes a reason and a confirmation step that lists added, changed and newly disabled items. It is shown only to roles with publish on cosmetic items.
+- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions.
+
 ## Shop offers
 
 `/shop` (A-17, `docs/admin.md` 5.5) edits the published catalog of `GET /admin/config/shop`.

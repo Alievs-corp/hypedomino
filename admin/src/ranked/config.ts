@@ -1,3 +1,4 @@
+import { sameContent } from "../config/sameContent.ts";
 import type { MessageKey } from "@/i18n/translate";
 import type { Bundle } from "@/shop/catalog";
 
@@ -163,19 +164,8 @@ export function bundleIdFor(tier: string): string {
   return `bundle.rank_${tier.toLowerCase()}`;
 }
 
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(canonical);
-  }
-  if (value === null || typeof value !== "object") {
-    return value;
-  }
-  const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : 1));
-  return Object.fromEntries(entries.map(([key, inner]) => [key, canonical(inner)]));
-}
-
 function differs(a: unknown, b: unknown): boolean {
-  return JSON.stringify(canonical(a)) !== JSON.stringify(canonical(b));
+  return !sameContent(a, b);
 }
 
 function bundleContent(bundle: Bundle): Bundle {
