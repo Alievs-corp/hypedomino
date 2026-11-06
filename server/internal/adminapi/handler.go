@@ -140,6 +140,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
+	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
+	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, h.publishDomain(func() configDomain { return h.cosmeticsDomain(false) })))
+	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
+	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, h.rollbackDomain(func() configDomain { return h.cosmeticsDomain(true) })))
 	h.mux.HandleFunc("GET /admin/config/missions", h.allowed(rbac.Missions, rbac.View, h.missionCatalog))
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
@@ -441,7 +445,8 @@ func classify(err error) (int, string) {
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
 		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
-		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid):
+		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid),
+		errors.Is(err, cosmetics.ErrInvalid), errors.Is(err, cosmetics.ErrSchema), errors.Is(err, cosmetics.ErrSuccessor):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):
 		return http.StatusConflict, "frozen"

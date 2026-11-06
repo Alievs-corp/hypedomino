@@ -97,6 +97,10 @@ func trackSourcesListed(ctx context.Context, tx pgx.Tx, config *pass.Snapshot) e
 	if err != nil {
 		return err
 	}
+	return trackSourcesIn(items, config)
+}
+
+func trackSourcesIn(items *cosmetics.Catalog, config *pass.Snapshot) error {
 	grantable := func(id string, source cosmetics.Source) bool {
 		item, ok := items.Item(id)
 		return ok && item.Grantable(source)
