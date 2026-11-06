@@ -1,5 +1,5 @@
 import { adminApi } from "@/admin/api";
-import { canView } from "@/admin/navigation";
+import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { RewardBundle } from "@/rewards/bundles";
@@ -25,7 +25,7 @@ export default async function RewardsPage() {
       <h1 className="text-2xl font-semibold">{t("rewards.title")}</h1>
       <p className="text-text-secondary">{t("rewards.intro")}</p>
       {reply.body.promo_truncated && <p className="text-sm text-text-muted">{t("rewards.promo_truncated")}</p>}
-      <BundleList bundles={reply.body.bundles} />
+      <BundleList bundles={reply.body.bundles} canEdit={can(admin.permissions, "reward_bundles", "publish")} />
     </main>
   );
 }

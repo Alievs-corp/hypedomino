@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BundleEditor } from "./BundleEditor";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { emptyBundleFilter, filteredBundles, useLabel, usedDomains, type RewardBundle } from "@/rewards/bundles";
@@ -18,11 +19,13 @@ const domainLabel: Record<string, MessageKey> = {
   promo_template: "rewards.domain.promo_template",
 };
 
-export function BundleList({ bundles }: { bundles: RewardBundle[] }) {
+export function BundleList({ bundles, canEdit }: { bundles: RewardBundle[]; canEdit: boolean }) {
   const t = useTranslator();
   const [filter, setFilter] = useState(emptyBundleFilter);
+  const [selected, setSelected] = useState("");
   const label = (domain: string) => (domainLabel[domain] ? t(domainLabel[domain]) : domain);
   const visible = filteredBundles(bundles, filter);
+  const editing = bundles.find((bundle) => bundle.id === selected && bundle.editable);
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
@@ -57,6 +60,7 @@ export function BundleList({ bundles }: { bundles: RewardBundle[] }) {
             <th className="py-1 pr-3">{t("rewards.contents")}</th>
             <th className="py-1 pr-3">{t("rewards.guide_value")}</th>
             <th className="py-1 pr-3">{t("rewards.used_in")}</th>
+            {canEdit && <th className="py-1 pr-3" />}
           </tr>
         </thead>
         <tbody>
@@ -80,11 +84,23 @@ export function BundleList({ bundles }: { bundles: RewardBundle[] }) {
                   ))}
                 </ul>
               </td>
+              {canEdit && (
+                <td className="py-1 pr-3">
+                  {bundle.editable ? (
+                    <button type="button" aria-label={`${t("rewards.edit")} ${bundle.id}`} onClick={() => setSelected(bundle.id)} className="rounded-md bg-surface px-3 py-1 text-text-secondary">
+                      {t("rewards.edit")}
+                    </button>
+                  ) : (
+                    <span className="text-text-muted">{t("rewards.edit_elsewhere")}</span>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
       {visible.length === 0 && <p className="text-sm text-text-secondary">{t("rewards.no_match")}</p>}
+      {canEdit && editing && <BundleEditor key={`${editing.id}:${editing.revision}`} bundle={editing} domainLabel={label} />}
     </section>
   );
 }
