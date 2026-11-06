@@ -57,6 +57,25 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 	}
 }
 
+func TestTheAssetStoreIsOptionalButACompleteOneIsRequiredOnceNamed(t *testing.T) {
+	base := map[string]string{"HD_DATABASE_URL": "postgres://admin", "HD_ADMIN_ENVIRONMENT": "staging", "HD_ADMIN_GOOGLE_DOMAIN": "example.com", "HD_ADMIN_GOOGLE_AUDIENCES": "web.apps.example"}
+	without, err := configFromEnv(env(base))
+	if err != nil || without.api.Assets != nil {
+		t.Fatalf("without a store: %v %v", without.api.Assets, err)
+	}
+
+	base["HD_ASSET_STORE_URL"] = "https://store.example/bucket"
+	if _, err := configFromEnv(env(base)); err == nil || !strings.Contains(err.Error(), "HD_ASSET_STORE_") {
+		t.Fatalf("incomplete store: %v", err)
+	}
+
+	base["HD_ASSET_STORE_REGION"], base["HD_ASSET_STORE_ACCESS_KEY"], base["HD_ASSET_STORE_SECRET_KEY"] = "auto", "<access>", "<secret>"
+	with, err := configFromEnv(env(base))
+	if err != nil || with.api.Assets == nil {
+		t.Fatalf("complete store: %v %v", with.api.Assets, err)
+	}
+}
+
 func TestConfigNamesEveryMissingOrInvalidValue(t *testing.T) {
 	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_ADMIN_GRANT_APPROVAL_COINS": "0", "HD_TEMP_BAN_HOURS": "-1", "HD_ADMIN_RATE_SIGNIN_BURST": "0"}))
 	if err == nil {

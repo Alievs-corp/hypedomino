@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { contentSecurityPolicy, newNonce } from "./security/headers";
+import { assetStoreOrigin, contentSecurityPolicy, newNonce } from "./security/headers";
 
 export function proxy(request: NextRequest) {
   const nonce = newNonce();
-  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development", assetStoreOrigin(process.env.HD_ADMIN_ASSET_ORIGIN));
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", policy);

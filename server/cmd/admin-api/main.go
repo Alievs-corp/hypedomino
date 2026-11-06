@@ -26,6 +26,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -43,6 +44,8 @@ type config struct {
 	idleLimit  time.Duration
 	api        adminapi.Config
 }
+
+const defaultAssetURLTTL = 15 * time.Minute
 
 type lookup func(name string) (string, bool)
 
@@ -116,6 +119,7 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
 	}
 	errs = append(errs, promoFromEnv(&c.api, text, integer)...)
+	errs = append(errs, assetStoreFromEnv(&c.api, text, duration)...)
 	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
 	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)
 	integer("HD_ADMIN_RATE_SIGNIN_PER_MINUTE", &c.api.Limits.SignIn.PerMinute)
@@ -136,6 +140,24 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, errors.New("HD_ADMIN_GOOGLE_AUDIENCES is required"))
 	}
 	return c, errors.Join(errs...)
+}
+
+func assetStoreFromEnv(api *adminapi.Config, text func(string, *string), duration func(string, *time.Duration)) []error {
+	config := objectstore.Config{URLTTL: defaultAssetURLTTL}
+	text("HD_ASSET_STORE_URL", &config.BaseURL)
+	if config.BaseURL == "" {
+		return nil
+	}
+	text("HD_ASSET_STORE_REGION", &config.Region)
+	text("HD_ASSET_STORE_ACCESS_KEY", &config.AccessKey)
+	text("HD_ASSET_STORE_SECRET_KEY", &config.SecretKey)
+	duration("HD_ASSET_STORE_URL_TTL", &config.URLTTL)
+	store, err := objectstore.New(config)
+	if err != nil {
+		return []error{fmt.Errorf("HD_ASSET_STORE_*: %w", err)}
+	}
+	api.Assets = store
+	return nil
 }
 
 func promoFromEnv(api *adminapi.Config, text func(string, *string), integer func(string, *int)) []error {

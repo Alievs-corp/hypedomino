@@ -165,14 +165,20 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_RATE_ACCOUNT_BURST` | No | admin-api | `40` (`AdminRateAccountBurst`) | `40` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_PER_MINUTE` | No | admin-api | `10` (`AdminRateSignInPerMinute`) | `10` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_BURST` | No | admin-api | `10` (`AdminRateSignInBurst`) | `10` | No | from #148 |
+| `HD_ASSET_STORE_URL` | No | admin-api | none: `/admin/assets` lists rows and answers `asset_store_off` to uploads | `https://<bucket>.<object-store-host>` or `https://<object-store-host>/<bucket>` | No | from #135 |
+| `HD_ASSET_STORE_REGION` | With `HD_ASSET_STORE_URL` | admin-api | none | `<store-region>` | No | from #135 |
+| `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |
+| `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
+| `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
 
-The admin web server (`admin/`) reads two variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
+The admin web server (`admin/`) reads three variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
 | `HD_ADMIN_API_URL` | Yes | admin | none | `http://admin-api:8090` | No | from #364 |
 | `HD_ADMIN_GOOGLE_CLIENT_ID` | Yes | admin | none | `<admin-web-client-id>.apps.googleusercontent.com`, one of `HD_ADMIN_GOOGLE_AUDIENCES` | No | from #134 |
+| `HD_ADMIN_ASSET_ORIGIN` | With `HD_ASSET_STORE_URL` | admin | none | `https://<object-store-host>` | No | from #135 |
 
 ### 2.3 CI
 

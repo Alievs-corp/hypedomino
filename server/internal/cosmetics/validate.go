@@ -163,24 +163,24 @@ func (i strictItem) checkLayers() error {
 }
 
 func (i strictItem) checkAddresses() error {
-	expected := map[string]string{addressOf(i.ID, "static"): i.StaticAddress}
+	expected := map[string]string{AddressOf(i.ID, "static"): i.StaticAddress}
 	if i.AnimationAddress != "" {
-		expected[addressOf(i.ID, "anim")] = i.AnimationAddress
+		expected[AddressOf(i.ID, "anim")] = i.AnimationAddress
 	}
 	if i.ModelAddress != "" {
-		expected[addressOf(i.ID, "model")] = i.ModelAddress
+		expected[AddressOf(i.ID, "model")] = i.ModelAddress
 	}
 	if i.ModelHqAddress != "" {
-		expected[addressOf(i.ID, "model_hq")] = i.ModelHqAddress
+		expected[AddressOf(i.ID, "model_hq")] = i.ModelHqAddress
 	}
 	if i.Clips != nil {
-		expected[addressOf(i.ID, "clip/idle")] = i.Clips.Idle
-		expected[addressOf(i.ID, "clip/win")] = i.Clips.Win
-		expected[addressOf(i.ID, "clip/lose")] = i.Clips.Lose
-		expected[addressOf(i.ID, "clip/reaction")] = i.Clips.Reaction
+		expected[AddressOf(i.ID, "clip/idle")] = i.Clips.Idle
+		expected[AddressOf(i.ID, "clip/win")] = i.Clips.Win
+		expected[AddressOf(i.ID, "clip/lose")] = i.Clips.Lose
+		expected[AddressOf(i.ID, "clip/reaction")] = i.Clips.Reaction
 	}
 	for _, layer := range i.Layers {
-		expected[addressOf(i.ID, "layer/"+layer.Name)] = layer.Address
+		expected[AddressOf(i.ID, "layer/"+layer.Name)] = layer.Address
 	}
 	for want, got := range expected {
 		if want != got {
@@ -194,7 +194,7 @@ func nameKeyOf(id string) string {
 	return "cosmetic." + id + ".name"
 }
 
-func addressOf(id, slot string) string {
+func AddressOf(id, slot string) string {
 	return "cosmetic/" + strings.Replace(id, ".", "/", 1) + "/" + slot
 }
 
@@ -248,15 +248,15 @@ func stampItem(raw json.RawMessage, before map[string]publishedItem) (json.RawMe
 
 func deriveFields(fields map[string]any, id string) {
 	fields["nameKey"] = nameKeyOf(id)
-	fields["staticAddress"] = addressOf(id, "static")
+	fields["staticAddress"] = AddressOf(id, "static")
 	animated, _ := fields["animated"].(bool)
 	switch TypeOf(id) {
 	case TypeAvatar, TypeFrame, TypeEmoji:
 		if animated {
-			fields["animationAddress"] = addressOf(id, "anim")
+			fields["animationAddress"] = AddressOf(id, "anim")
 		}
 	case TypeAction:
-		fields["animationAddress"] = addressOf(id, "anim")
+		fields["animationAddress"] = AddressOf(id, "anim")
 	case TypeCharacter:
 		deriveCharacter(fields, id, animated)
 	case TypeTable:
@@ -268,15 +268,15 @@ func deriveCharacter(fields map[string]any, id string, animated bool) {
 	if !animated {
 		return
 	}
-	fields["modelAddress"] = addressOf(id, "model")
+	fields["modelAddress"] = AddressOf(id, "model")
 	fields["clips"] = map[string]any{
-		"idle":     addressOf(id, "clip/idle"),
-		"win":      addressOf(id, "clip/win"),
-		"lose":     addressOf(id, "clip/lose"),
-		"reaction": addressOf(id, "clip/reaction"),
+		"idle":     AddressOf(id, "clip/idle"),
+		"win":      AddressOf(id, "clip/win"),
+		"lose":     AddressOf(id, "clip/lose"),
+		"reaction": AddressOf(id, "clip/reaction"),
 	}
 	if _, hasHq := fields["modelHqAddress"]; hasHq {
-		fields["modelHqAddress"] = addressOf(id, "model_hq")
+		fields["modelHqAddress"] = AddressOf(id, "model_hq")
 	}
 }
 
@@ -285,7 +285,7 @@ func deriveLayers(fields map[string]any, id string) {
 	for _, entry := range layers {
 		if layer, ok := entry.(map[string]any); ok {
 			name, _ := layer["name"].(string)
-			layer["address"] = addressOf(id, "layer/"+name)
+			layer["address"] = AddressOf(id, "layer/"+name)
 		}
 	}
 }

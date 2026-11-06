@@ -4,14 +4,23 @@ export function newNonce(): string {
   return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64");
 }
 
-export function contentSecurityPolicy(nonce: string, development: boolean): string {
+export function assetStoreOrigin(configured: string | undefined): string {
+  try {
+    return new URL(configured ?? "").origin;
+  } catch {
+    return "";
+  }
+}
+
+export function contentSecurityPolicy(nonce: string, development: boolean, assetOrigin = ""): string {
+  const asset = assetOrigin === "" ? "" : ` ${assetOrigin}`;
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}' ${googleSignIn}style`,
-    "img-src 'self' data:",
+    `img-src 'self' data:${asset}`,
     "font-src 'self'",
-    `connect-src 'self' ${googleSignIn}`,
+    `connect-src 'self' ${googleSignIn}${asset}`,
     `frame-src ${googleSignIn}`,
     "object-src 'none'",
     "base-uri 'none'",

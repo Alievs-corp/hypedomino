@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { contentSecurityPolicy, newNonce, staticSecurityHeaders } from "./headers.ts";
+import { assetStoreOrigin, contentSecurityPolicy, newNonce, staticSecurityHeaders } from "./headers.ts";
 
 function directives(policy: string): Map<string, string> {
   return new Map(policy.split("; ").map((directive) => {
@@ -34,6 +34,20 @@ test("Google sign-in may load its button frame, style and calls and nothing broa
   assert.equal(policy.get("frame-src"), "https://accounts.google.com/gsi/");
   assert.equal(policy.get("connect-src"), "'self' https://accounts.google.com/gsi/");
   assert.equal(policy.get("style-src"), "'self' 'nonce-n' https://accounts.google.com/gsi/style");
+});
+
+test("the asset store may receive uploads and show images and nothing broader", () => {
+  const policy = directives(contentSecurityPolicy("n", false, assetStoreOrigin("https://store.example/bucket/ignored")));
+  assert.equal(policy.get("connect-src"), "'self' https://accounts.google.com/gsi/ https://store.example");
+  assert.equal(policy.get("img-src"), "'self' data: https://store.example");
+  assert.equal(policy.get("script-src"), "'self' 'nonce-n' 'strict-dynamic'");
+  assert.equal(policy.get("default-src"), "'self'");
+});
+
+test("a missing or malformed asset origin adds nothing to the policy", () => {
+  for (const configured of [undefined, "", "store.example", "https://"]) {
+    assert.equal(contentSecurityPolicy("n", false, assetStoreOrigin(configured)), contentSecurityPolicy("n", false), String(configured));
+  }
 });
 
 test("every nonce is new and carries 128 bits", () => {
