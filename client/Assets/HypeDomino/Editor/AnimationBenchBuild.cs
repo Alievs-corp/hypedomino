@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using HypeDomino.Bench;
 using UnityEditor;
@@ -12,7 +13,8 @@ namespace HypeDomino.Editor
     {
         const string ArtFolder = "Assets/HypeDomino/Bench/Generated";
         const string ScenePath = ArtFolder + "/AnimationBench.unity";
-        const string OutputPath = "Builds/animation-bench.apk";
+        const string DefaultOutputPath = "Builds/animation-bench.apk";
+        const string OutputPathArgument = "-customBuildPath";
         const string BenchIdentifier = "com.hypedomino.animationbench";
         const int AvatarCount = 10;
         const int AtlasSize = 768;
@@ -22,7 +24,8 @@ namespace HypeDomino.Editor
         public static void BuildAndroid()
         {
             Directory.CreateDirectory(ArtFolder);
-            Directory.CreateDirectory(Path.GetDirectoryName(OutputPath));
+            var output = OutputPath();
+            Directory.CreateDirectory(Path.GetDirectoryName(output));
             var atlases = new Texture2D[AvatarCount];
             for (var avatar = 0; avatar < AvatarCount; avatar++) atlases[avatar] = ImportedAtlas(avatar);
 
@@ -36,12 +39,19 @@ namespace HypeDomino.Editor
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
-                locationPathName = OutputPath,
+                locationPathName = output,
                 target = BuildTarget.Android,
                 options = BuildOptions.Development,
             });
             Debug.Log($"AnimationBenchBuild result={report.summary.result} bytes={report.summary.totalSize}");
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+        }
+
+        static string OutputPath()
+        {
+            var arguments = Environment.GetCommandLineArgs();
+            var at = Array.IndexOf(arguments, OutputPathArgument);
+            return at >= 0 && at + 1 < arguments.Length ? arguments[at + 1] : DefaultOutputPath;
         }
 
         static Texture2D ImportedAtlas(int avatar)

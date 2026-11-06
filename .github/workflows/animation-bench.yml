@@ -38,6 +38,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: animation-bench-apk
-          path: client/Builds/animation-bench.apk
+          path: build/Android/Android.apk
           if-no-files-found: error
           retention-days: 7
