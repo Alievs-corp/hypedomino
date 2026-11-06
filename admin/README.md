@@ -50,6 +50,17 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Publish** takes a reason and a confirmation step that lists the added or changed seasons with their totals, dropped seasons and changed settings (`PUT /admin/config/pass`). It is shown only to roles with publish on pass seasons.
 - **History and rollback:** as for shop offers, on `/admin/config/pass/history` and `/admin/config/pass/rollback`; each version lists the seasons and settings it changed.
 
+## Ranked seasons
+
+`/ranked` (A-19, #143, `docs/admin.md` 5.12) schedules seasons and edits the ranking config without a code change.
+- **Seasons:** every season with its state (scheduled, live, ending, closed), window, reward flag and the progress of its season end per mode, all from `GET /admin/ranked/seasons`. A new season takes an id `season.<slug>` and starts at the end of the last one; its end defaults to `seasonLengthMonths` of the 1v1 config. A scheduled season may change its end, its reward flag and, if no season ends at its start, its start. The live season may only end later. Moving an end names the seasons that move with it. Only the last season can be removed, before it starts. Each change needs a reason and is audited by the API.
+- **Leaderboards and coins:** the board size, the regions with their countries and `rankRewardCoins` apply to both modes.
+- **Per mode:** structural values and the reset table are read-only while a season is open (`rules.open_season`). MMR, LP and placement values may change at any time.
+- **Reset table:** generated from the tier drop, floor and ceiling as the server computes it. A row can be edited on its own and is marked as edited; a row set back to the generated rank stops being an override.
+- **Rank rewards:** per final tier, a bundle of cosmetics and medals, `bundle.rank_<tier>` by default. Editing a published bundle raises its revision once and an emptied row removes the bundle. Item sources are checked by the API.
+- **Publish** takes a reason and a confirmation step that lists the changed keys per mode (`PUT /admin/config/rating`) and warns about frozen keys. The first publish starts from the server defaults (`rules.defaults`). The abuse values and emblem brackets are kept as published; this screen does not edit them.
+- **History and rollback:** on `/admin/config/rating/history` and `/admin/config/rating/rollback`; each version lists the keys it changed.
+
 ## Missions
 
 `/missions` (#141, `docs/admin.md` 5.8) edits the mission catalog of `GET /admin/config/missions` without a code change. With no published catalog the editor starts with no missions. The API fills slot rewards, budgets and rerolls from its defaults, so the first publish needs a live daily and weekly mission for every default slot.
