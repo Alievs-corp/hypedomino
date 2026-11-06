@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { checkTokens, contrast, csharpPath, csharpTokens, loadSpec, loadTokens, stepForPoints } from "./design-tokens.mjs";
+import { checkTokens, contrast, csharpPath, csharpTokens, loadSpec, loadTokens, rarityDefaults, rarityDefaultsPath, stepForPoints } from "./design-tokens.mjs";
 
 const repoRoot = new URL("../../", import.meta.url);
 const tokens = loadTokens(fileURLToPath(new URL("docs/design-tokens.json", repoRoot)));
@@ -133,6 +133,20 @@ test("C# tokens carry each effect's duration and pool size", () => {
   assert.ok(source.includes("public const int EmojiDurationMs = 1800;"));
   assert.ok(source.includes("public const int EmojiPooled = 4;"));
   assert.ok(source.includes("public const int ScorePopupPooled = 6;"));
+});
+
+test("the built-in rarity defaults of the client match the tokens", () => {
+  const committed = readFileSync(fileURLToPath(new URL(rarityDefaultsPath, repoRoot)), "utf8");
+  assert.equal(committed, rarityDefaults(tokens), "run npm run tokens:gen and commit the result");
+});
+
+test("rarity defaults list tiers by ordinal with their glow values", () => {
+  const { tiers } = JSON.parse(rarityDefaults(tokens));
+  assert.deepEqual(tiers.map((tier) => tier.ordinal), tiers.map((_, at) => at + 1));
+  const mythic = tiers.find((tier) => tier.id === "mythic");
+  assert.equal(mythic.glowAlpha, tokens.glow[tokens.rarity.tiers.mythic.glow].alpha);
+  assert.equal(mythic.glowScale, tokens.glow[tokens.rarity.tiers.mythic.glow].scale);
+  assert.equal(mythic.flow, true);
 });
 
 test("a fractional integer token stops C# generation", () => {

@@ -1,6 +1,7 @@
 using System;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Motion;
+using HypeDomino.UI.Rarity;
 using HypeDomino.UI.Tokens;
 using Unity.Profiling;
 using UnityEngine;
@@ -21,12 +22,22 @@ namespace HypeDomino.Bench
         const float PanelAlpha = 0.5f;
         const int ColumnCount = 2;
         const float AvatarSize = 300f;
+        const float DiamondSize = 96f;
+        const int HaloCount = 4;
+        const int MarkColumns = 4;
+        const int HaloCell = 7;
+        const int FlowHaloCell = 8;
+        const int PipOverlayCount = 6;
+        const string HaloTier = "mythic";
 
-        static readonly string[] Phases = { "still", "nested", "shared" };
+        static readonly string[] Phases = { "still", "nested", "shared", "marks" };
+        static readonly string[] DiamondTiers = { "common", "rare", "epic", "legendary", "mythic" };
 
         [SerializeField] Texture2D[] atlases;
         [SerializeField] int cellSize;
         [SerializeField] int framesPerAvatar;
+        [SerializeField] Texture2D marksAtlas;
+        [SerializeField] TextAsset rarityDefaults;
 
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
         FrameWindow window;
@@ -39,6 +50,7 @@ namespace HypeDomino.Bench
         ProfilerRecorder usedMemory;
         Transform screenRoot;
         Transform nestedRoot;
+        GameObject marksRoot;
         AnimatedImage[] avatars;
         LoopArt[] art;
         AnimationBudget budget;
@@ -49,11 +61,13 @@ namespace HypeDomino.Bench
         bool skipReportFrame;
         bool finished;
 
-        public void Configure(Texture2D[] avatarAtlases, int cell, int frames)
+        public void Configure(Texture2D[] avatarAtlases, int cell, int frames, Texture2D marks, TextAsset rarities)
         {
             atlases = avatarAtlases;
             cellSize = cell;
             framesPerAvatar = frames;
+            marksAtlas = marks;
+            rarityDefaults = rarities;
         }
 
         void Awake()
@@ -147,7 +161,9 @@ namespace HypeDomino.Bench
         void BeginPhase()
         {
             var parent = Phases[phase] == "nested" ? nestedRoot : screenRoot;
-            var level = Phases[phase] == "still" ? EffectLevel.Low : EffectLevel.Medium;
+            var plays = Phases[phase] == "nested" || Phases[phase] == "shared";
+            var level = plays ? EffectLevel.Medium : EffectLevel.Low;
+            marksRoot.SetActive(Phases[phase] == "marks");
             for (var at = 0; at < avatars.Length; at++)
             {
                 avatars[at].transform.SetParent(parent, false);
@@ -170,6 +186,54 @@ namespace HypeDomino.Bench
             nestedRoot.SetParent(screenRoot, false);
             Stretch((RectTransform)nestedRoot);
             BuildAvatars();
+            BuildMarks();
+        }
+
+        void BuildMarks()
+        {
+            marksRoot = new GameObject("Marks", typeof(RectTransform));
+            marksRoot.transform.SetParent(screenRoot, false);
+            Stretch((RectTransform)marksRoot.transform);
+            var table = RarityTable.Parse(rarityDefaults.text);
+            var overlays = new Sprite[PipOverlayCount];
+            for (var pips = 0; pips < overlays.Length; pips++) overlays[pips] = MarkSprite(pips + 1);
+            for (var at = 0; at < atlases.Length; at++) AddDiamond(at, table, overlays);
+            for (var at = 0; at < HaloCount; at++) AddHalo(at, table);
+        }
+
+        void AddDiamond(int at, RarityTable table, Sprite[] overlays)
+        {
+            var fill = NewMarkImage("Diamond", marksRoot.transform, MarkSprite(0));
+            Place(fill.rectTransform, at % ColumnCount, at / ColumnCount, ColumnCount, atlases.Length / ColumnCount, DiamondSize);
+            var pips = NewMarkImage("Pips", fill.transform, overlays[0]);
+            Stretch(pips.rectTransform);
+            var diamond = fill.gameObject.AddComponent<RarityDiamond>();
+            diamond.Configure(fill, pips, overlays);
+            diamond.Show(table, DiamondTiers[at % DiamondTiers.Length]);
+        }
+
+        void AddHalo(int at, RarityTable table)
+        {
+            var image = NewMarkImage("Halo", marksRoot.transform, MarkSprite(HaloCell));
+            Place(image.rectTransform, at % ColumnCount, at / ColumnCount, ColumnCount, atlases.Length / ColumnCount, AvatarSize);
+            var halo = image.gameObject.AddComponent<RarityHalo>();
+            halo.Configure(MarkSprite(HaloCell), MarkSprite(FlowHaloCell));
+            halo.Show(table, HaloTier, EffectLevel.Medium, false, Time.unscaledTime);
+        }
+
+        static Image NewMarkImage(string name, Transform parent, Sprite sprite)
+        {
+            var image = new GameObject(name, typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            image.raycastTarget = false;
+            image.sprite = sprite;
+            image.transform.SetParent(parent, false);
+            return image;
+        }
+
+        Sprite MarkSprite(int cell)
+        {
+            var rect = new Rect(cell % MarkColumns * cellSize, cell / MarkColumns * cellSize, cellSize, cellSize);
+            return Sprite.Create(marksAtlas, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
         }
 
         void AddStaticPanels()

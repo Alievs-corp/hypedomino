@@ -360,6 +360,25 @@ export function csharpTokens(tokens) {
   ].join("\n");
 }
 
+export const rarityDefaultsPath = "client/Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+
+export function rarityDefaults(tokens) {
+  const { rarity, glow } = tokens;
+  const tiers = tiersByOrdinal(rarity).map(([id, tier]) => ({
+    id,
+    ordinal: tier.ordinal,
+    nameKey: tier.nameKey,
+    fill: tier.fill,
+    on: tier.on,
+    text: tier.text,
+    pips: tier.pips,
+    glowAlpha: glow[tier.glow].alpha,
+    glowScale: glow[tier.glow].scale,
+    flow: tier.flow,
+  }));
+  return `${JSON.stringify({ diamondMinSize: rarity.diamondMinSize, flowPeriodMs: rarity.flowPeriodMs, tiers }, null, 2)}\n`;
+}
+
 export const loadTokens = (path) => JSON.parse(readFileSync(path, "utf8"));
 export const loadSpec = (path) => readFileSync(path, "utf8");
 
@@ -372,6 +391,8 @@ function main(args) {
   if (args.includes("--csharp")) {
     writeFileSync(csharpPath, csharpTokens(tokens));
     console.log(`wrote ${csharpPath}`);
+    writeFileSync(rarityDefaultsPath, rarityDefaults(tokens));
+    console.log(`wrote ${rarityDefaultsPath}`);
     return;
   }
   if (args.includes("--rarity-table")) {
