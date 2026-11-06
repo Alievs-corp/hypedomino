@@ -229,14 +229,12 @@ func addRankBundles(index bundleIndex, snapshot *rating.Snapshot, config rating.
 
 func (h *Handler) dailyLoginBundles(ctx context.Context, index bundleIndex) error {
 	version, raw, err := latestSnapshot(ctx, h.pool, dailylogin.Domain)
-	if err != nil {
+	if err != nil || raw == nil {
 		return err
 	}
-	calendar := dailylogin.Default()
-	if raw != nil {
-		if calendar, err = dailylogin.Parse(raw); err != nil {
-			return err
-		}
+	calendar, err := dailylogin.Parse(raw)
+	if err != nil {
+		return err
 	}
 	for day := 1; day <= len(calendar.Days); day++ {
 		use := bundleUse{Domain: dailylogin.Domain, Object: fmt.Sprintf("day.%d", day)}
