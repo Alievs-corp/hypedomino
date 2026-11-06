@@ -1,0 +1,44 @@
+name: Animation bench APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - perf/animation-bench
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+      - uses: actions/cache@v4
+        with:
+          path: client/Library
+          key: unity-library-android-bench-${{ hashFiles('client/Packages/**', 'client/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: unity-library-android-bench-
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: client
+          targetPlatform: Android
+          buildMethod: HypeDomino.Editor.AnimationBenchBuild.BuildAndroid
+          versioning: None
+          allowDirtyBuild: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: animation-bench-apk
+          path: client/Builds/animation-bench.apk
+          if-no-files-found: error
+          retention-days: 7
