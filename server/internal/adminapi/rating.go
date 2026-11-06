@@ -89,6 +89,10 @@ func rankRewardSourcesListed(ctx context.Context, tx pgx.Tx, config *rating.Snap
 	if err != nil {
 		return err
 	}
+	return rankRewardSourcesIn(items, config, medals)
+}
+
+func rankRewardSourcesIn(items *cosmetics.Catalog, config *rating.Snapshot, medals *medal.Catalog) error {
 	medalLists := func(id string, source cosmetics.Source) bool {
 		found, ok := medals.Medal(id)
 		return ok && found.Lists(source)

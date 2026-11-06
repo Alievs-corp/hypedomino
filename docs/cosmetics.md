@@ -216,7 +216,8 @@ Implemented in `server/internal/cosmetics` (#136):
 - **Publish check.** A publish must follow the previous manifest. Its `manifestVersion` is exactly one higher (7.1). V-12 holds: every earlier item is still present and keeps its type. V-13 holds: no revision goes down, and an item whose content changed has a higher revision. Content means every field except `revision`.
 - **Rollback** (`docs/admin.md` 3.7). It builds the next manifest from the current one. An item whose content differs from the target version gets the target's content under the next revision. Unchanged items, and items added after the target, stay as they are. The result passes the publish check.
 - **Delivery to the game server.** The manifest is the `cosmetics` config domain. `config-publish -domain cosmetics` runs the single-manifest checks and then the publish check against the newest published manifest. Every node polls the domain (`HD_CONFIG_POLL`) and switches its inventory to the new catalog without a restart. A snapshot that fails the checks is logged, and the previous catalog stays.
-- **Not yet.** The checks that need other admin data (V-14 to V-18) follow in #136.
+- **Admin publish** (`docs/admin.md`, Cosmetics manifest note). `cosmetics.ValidateManifest` adds the strict schema, V-2 to V-6, V-9, V-10 and V-14 at the admin API; a game server still loads with the lenient `Parse` (7.2). V-15 holds from record to item: a publish that drops a source a published record grants from is refused.
+- **Not yet.** V-15 from `ref` to record: an item lists its source before the record exists, so this needs one change set. V-16 waits for the string editor (#214), V-17 for the asset pipeline (#135), and V-18 for the `TableMaxLayers` value (#97).
 
 ## 10. Server authority
 

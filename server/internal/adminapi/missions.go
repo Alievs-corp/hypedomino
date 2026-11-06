@@ -158,6 +158,10 @@ func missionSourcesListed(ctx context.Context, tx pgx.Tx, missions *mission.Cata
 	if err != nil {
 		return err
 	}
+	return missionSourcesIn(items, missions, medals)
+}
+
+func missionSourcesIn(items *cosmetics.Catalog, missions *mission.Catalog, medals *medal.Catalog) error {
 	medalLists := func(id string, source cosmetics.Source) bool {
 		found, ok := medals.Medal(id)
 		return ok && found.Lists(source)
