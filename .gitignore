@@ -23,6 +23,8 @@ client/[Oo]bj/
 client/[Bb]uild/
 client/[Bb]uilds/
 client/[Ll]ogs/
+client/Assets/HypeDomino/Bench/Generated/
+client/Assets/HypeDomino/Bench/Generated.meta
 client/[Uu]ser[Ss]ettings/
 client/[Mm]emory[Cc]aptures/
 client/[Rr]ecordings/
