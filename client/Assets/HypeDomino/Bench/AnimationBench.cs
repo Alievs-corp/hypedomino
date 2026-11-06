@@ -28,6 +28,9 @@ namespace HypeDomino.Bench
 
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
         FrameWindow window;
+        FrameWindow mainThread;
+        FrameWindow renderThread;
+        FrameWindow gpu;
         ProfilerRecorder gcAllocatedInFrame;
         ProfilerRecorder batchesCount;
         ProfilerRecorder setPassCount;
@@ -54,8 +57,12 @@ namespace HypeDomino.Bench
         void Awake()
         {
             Application.targetFrameRate = TargetFrameRate;
+            Screen.orientation = ScreenOrientation.Portrait;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             window = new FrameWindow(WindowFrames, MissedVsyncFactor / TargetFrameRate);
+            mainThread = new FrameWindow(WindowFrames, MissedVsyncFactor / TargetFrameRate);
+            renderThread = new FrameWindow(WindowFrames, MissedVsyncFactor / TargetFrameRate);
+            gpu = new FrameWindow(WindowFrames, MissedVsyncFactor / TargetFrameRate);
             budget = AnimationBudget.For(EffectLevel.Medium);
         }
 
@@ -89,8 +96,12 @@ namespace HypeDomino.Bench
 
             var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
             skipReportFrame = false;
-            var work = Math.Max(latestTiming[0].cpuFrameTime, latestTiming[0].gpuFrameTime);
+            var timing = latestTiming[0];
+            var work = Math.Max(Math.Max(timing.cpuMainThreadFrameTime, timing.cpuRenderThreadFrameTime), timing.gpuFrameTime);
             window.Add(work, Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
+            mainThread.Add(timing.cpuMainThreadFrameTime, 0, 0, 0);
+            renderThread.Add(timing.cpuRenderThreadFrameTime, 0, 0, 0);
+            gpu.Add(timing.gpuFrameTime, 0, 0, 0);
             if (!window.IsFull) return;
 
             Report(window.Close());
@@ -101,8 +112,13 @@ namespace HypeDomino.Bench
 
         void Report(FrameWindowReport report)
         {
+            var main = mainThread.Close();
+            var render = renderThread.Close();
+            var graphics = gpu.Close();
             Debug.Log($"AnimationBench cycle={cycle + 1} phase={Phases[phase]} window={windowsDone + 1} frames={report.Frames} " +
                       $"workP50={report.WorkP50Ms:F2} workP95={report.WorkP95Ms:F2} missed={report.MissedVsyncPercent:F2} " +
+                      $"mainP50={main.WorkP50Ms:F2} mainP95={main.WorkP95Ms:F2} renderP50={render.WorkP50Ms:F2} renderP95={render.WorkP95Ms:F2} " +
+                      $"gpuP50={graphics.WorkP50Ms:F2} gpuP95={graphics.WorkP95Ms:F2} " +
                       $"gcFrames={report.AllocatingFrames} gcMax={report.MaxGcBytes} batches={report.MaxBatches} " +
                       $"setPass={LastValue(setPassCount)} usedMemoryMb={LastValue(usedMemory) / (1024 * 1024)} active={budget.Active} " +
                       $"size={Screen.width}x{Screen.height} refresh={Screen.currentResolution.refreshRateRatio.value:F0}");
