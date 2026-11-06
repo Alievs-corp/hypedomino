@@ -10,6 +10,7 @@ export const screens: readonly Screen[] = [
   { href: "/pass", labelKey: "nav.pass", object: "pass_seasons" },
   { href: "/missions", labelKey: "nav.missions", object: "missions" },
   { href: "/medals", labelKey: "nav.medals", object: "medals" },
+  { href: "/ranked", labelKey: "nav.ranked", object: "ranked_seasons" },
   { href: "/players", labelKey: "nav.players", object: "players" },
   { href: "/reviews", labelKey: "nav.reviews", object: "queues" },
   { href: "/config/rules", labelKey: "nav.rules", object: "game_config" },
