@@ -16,7 +16,7 @@ This document stores references to these decisions and never their values.
 | Prices, currencies, discounts, offers | `docs/economy.md` (#7) | A `shop` or `promo` source holds an offer or campaign id, never a price |
 | Pass, mission and medal rewards | `docs/pass-missions-medals.md` (#9) | A `pass` or `mission` source holds a reward or mission id |
 | Ranked season rewards | #8 | A `rank_reward` source holds a season reward id |
-| Animated asset format and player, active animation budget per screen | #93 | An address; the asset behind it is in the format #93 picks |
+| Animated asset format and player, active animation budget per screen | #93, ADR 0012 | An address; the asset behind it is a sprite sheet loop, or a 3D model for a character (ADR 0009) |
 | Emoji groups and equipped emoji slot count | #150 | `group` id; slot count is admin config there |
 | Download and prefetch policy | #68 | Addresses and labels in section 8 |
 | Grant engine and duplicate grants | #102 | Every grant goes through the reward bundle engine |
@@ -173,7 +173,8 @@ The client plays an item's animation only when all of these hold; otherwise it s
 1. `animated` is true.
 2. The current effect level allows animated cosmetics (`animatedCosmetics` in `docs/design-tokens.json`; false on the low level).
 3. The animation assets are loaded. A missing or failed download is a static, not a wait.
-4. The screen's active animation budget from #93 is not exhausted.
+4. The screen's active animation budget is not exhausted (`maxAnimatedCosmetics` in `docs/design-tokens.json`, ADR 0012).
+5. Reduce motion is off.
 
 When a character plays animated, the high effect level loads `modelHqAddress` if the item has one and `modelAddress` otherwise; the medium level loads only `modelAddress`, so a medium device never downloads the high-detail bundle (ADR 0009). The effect level follows the graphics setting (`docs/ui-motion.md` section 7).
 

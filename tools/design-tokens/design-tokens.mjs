@@ -205,6 +205,7 @@ function levelErrors(name, level) {
   const errors = [];
   if (level.baseSceneCpuMs + level.effectCpuMs > level.workTimeP95Ms + epsilon) errors.push(`effects.levels.${name}: CPU base plus effects exceeds ${level.workTimeP95Ms} ms`);
   if (level.baseSceneGpuMs + level.effectGpuMs > level.workTimeP95Ms + epsilon) errors.push(`effects.levels.${name}: GPU base plus effects exceeds ${level.workTimeP95Ms} ms`);
+  if (level.animatedCosmetics !== level.maxAnimatedCosmetics > 0) errors.push(`effects.levels.${name}: animatedCosmetics and maxAnimatedCosmetics disagree`);
   if (level.baseSceneBatches + level.effectDrawCalls > level.maxBatches) errors.push(`effects.levels.${name}: batches exceed ${level.maxBatches}`);
   return errors;
 }
@@ -341,6 +342,7 @@ export function csharpTokens(tokens) {
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
     csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`]),
+    csharpClass("TokenEffectLevel", levels.map((name) => `public const int ${pascal(name)}MaxAnimatedCosmetics = ${intLiteral(["effects", "levels", name, "maxAnimatedCosmetics"], tokens.effects.levels[name].maxAnimatedCosmetics)};`)),
     csharpClass("TokenEffect", Object.entries(tokens.effects.budgets).flatMap(([name, effect]) => [
       `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
       `public const int ${pascal(name)}Pooled = ${Math.max(...levels.map((level) => effect[level].pooled))};`,

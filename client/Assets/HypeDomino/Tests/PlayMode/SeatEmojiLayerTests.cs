@@ -18,7 +18,7 @@ namespace HypeDomino.Tests.PlayMode
         RectTransform[] seats;
         Sprite still;
         Sprite frame;
-        EmojiArt art;
+        LoopArt art;
 
         [SetUp]
         public void BuildLayer()
@@ -38,7 +38,7 @@ namespace HypeDomino.Tests.PlayMode
             layer.Build(prefab, seats);
             still = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
             frame = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 2, 2), Vector2.zero);
-            art = new EmojiArt(still, new[] { frame }, 12f);
+            art = new LoopArt(still, new[] { frame }, 12f);
         }
 
         [TearDown]

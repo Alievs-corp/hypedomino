@@ -146,7 +146,8 @@
         "maxParticles": 150,
         "maxOverdrawLayers": 2,
         "maxTweens": 32,
-        "animatedCosmetics": false
+        "animatedCosmetics": false,
+        "maxAnimatedCosmetics": 0
       },
       "medium": {
         "tier": "Mid",
@@ -162,7 +163,8 @@
         "maxParticles": 400,
         "maxOverdrawLayers": 3,
         "maxTweens": 64,
-        "animatedCosmetics": true
+        "animatedCosmetics": true,
+        "maxAnimatedCosmetics": 10
       },
       "high": {
         "tier": "High",
@@ -178,7 +180,8 @@
         "maxParticles": 800,
         "maxOverdrawLayers": 4,
         "maxTweens": 96,
-        "animatedCosmetics": true
+        "animatedCosmetics": true,
+        "maxAnimatedCosmetics": 10
       }
     },
     "budgets": {
