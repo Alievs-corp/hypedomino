@@ -9,7 +9,7 @@ Status: proposal; the owner approves it by merging. How an asset goes from an AI
 | W-1 | Concept | ChatGPT in the browser, the author's own account (O-1) | Raw images in `concept/`, prompt log in `provenance.md` | Section 2 templates used; section 3 record started |
 | W-2 | Concept review | Reference board (`docs/art-direction.md` section 9) | One approved concept sheet per item | Silhouette, smallest-size and palette checks of art-direction sections 2, 3, 5; similarity check (section 3) |
 | W-3 | Clean-up | Illustrator, Photoshop; characters: image-to-3D and Blender | Layered master in `work/`; characters: game-ready mesh and textures | Section 5.1; characters 5.5 |
-| W-4 | Animation | Unity 2D rig, After Effects or Blender, as #93 decides; characters: humanoid rig and clips | Clips or loop in `work/` | Section 5.2; characters 5.5 |
+| W-4 | Animation | After Effects or Blender to a sprite sheet (ADR 0012); characters: humanoid rig and clips | Clips or loop in `work/` | Section 5.2; characters 5.5 |
 | W-5 | Export | Section 5.3 | `export/` mirrors the Addressables address (section 4.2) | `node tools/asset-naming/asset-naming.mjs` passes |
 | W-6 | Pack | Unity Addressables, Sprite Atlas, ASTC; characters: model prefabs with LOD Group | Item group and atlas (`docs/cosmetics.md` 8.2) | Section 5.4 |
 | W-7 | Upload and review | Admin assets (`docs/admin.md` 5.2) | Asset records, item draft | Self-check by the author, cultural review by another account (`docs/localization.md` 6.1) |
@@ -169,11 +169,10 @@ Item id `<type>.<slug>`, group `cosmetic-<type>-<slug>` (or `cosmetic-builtin` f
 
 ### 5.2 Animation (W-4)
 
-The runtime format and the per-screen animation budget are #93; this section only fixes what each path must deliver. Characters follow 5.5 instead.
+The runtime format and the per-screen animation budget are ADR 0012 (#93); this section only fixes what each path must deliver. Characters follow 5.5 instead.
 
 | Path | Steps | Delivers |
 |---|---|---|
-| Unity 2D skeletal rig | Import `work/<slug>.psb`, bone the parts, weight, animate each clip | One rig, clips sharing it |
 | After Effects | Animate the layered master, render each clip as a PNG sequence with alpha, no effects that add glow, blur or shadow | Frame sequences for a sprite sheet |
 | Blender | Orthographic camera at the class canvas, flat shading with three tones, outline matching 5.1 step 3, no post-processing, render PNG sequence with alpha | Frame sequences for a sprite sheet |
 

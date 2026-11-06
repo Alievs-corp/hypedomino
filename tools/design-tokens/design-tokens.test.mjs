@@ -23,6 +23,11 @@ test("the committed tokens and spec pass every check", () => {
   assert.deepEqual(checkTokens(tokens, specText, raritySpecText), []);
 });
 
+test("a level that shows animated cosmetics with no budget, or a budget without them, is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.effects.levels.medium.maxAnimatedCosmetics = 0; }), "maxAnimatedCosmetics disagree");
+  assertReported(errorsAfter((copy) => { copy.effects.levels.low.maxAnimatedCosmetics = 3; }), "maxAnimatedCosmetics disagree");
+});
+
 test("contrast matches the WCAG 2 reference values", () => {
   assert.equal(contrast("#FFFFFF", "#000000"), 21);
   assert.equal(contrast("#777777", "#FFFFFF").toFixed(2), "4.48");

@@ -118,13 +118,13 @@ namespace HypeDomino.Tests.EditMode
             var still = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
             var first = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 2, 2), Vector2.zero);
             var second = Sprite.Create(Texture2D.whiteTexture, new Rect(2, 2, 2, 2), Vector2.zero);
-            var art = new EmojiArt(still, new[] { first, second }, 10f);
+            var art = new LoopArt(still, new[] { first, second }, 10f);
 
             Assert.AreSame(still, art.Frame(EffectLevel.Low, 0.15f));
             Assert.AreSame(first, art.Frame(EffectLevel.Medium, 0.05f));
             Assert.AreSame(second, art.Frame(EffectLevel.High, 0.15f));
             Assert.AreSame(first, art.Frame(EffectLevel.High, 0.25f));
-            Assert.AreSame(still, new EmojiArt(still, null, 10f).Frame(EffectLevel.High, 0.15f), "a loop not loaded yet shows the static art");
+            Assert.AreSame(still, new LoopArt(still, null, 10f).Frame(EffectLevel.High, 0.15f), "a loop not loaded yet shows the static art");
         }
     }
 }

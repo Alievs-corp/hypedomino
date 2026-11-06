@@ -99,6 +99,13 @@ namespace HypeDomino.UI.Tokens
         public const float PanelEnterScale = 0.92f;
     }
 
+    public static class TokenEffectLevel
+    {
+        public const int LowMaxAnimatedCosmetics = 0;
+        public const int MediumMaxAnimatedCosmetics = 10;
+        public const int HighMaxAnimatedCosmetics = 10;
+    }
+
     public static class TokenEffect
     {
         public const int TilePlaceDurationMs = 300;

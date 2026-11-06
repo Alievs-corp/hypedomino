@@ -8,7 +8,7 @@ namespace HypeDomino.UI.Emoji
     public sealed class EmojiPopup : MonoBehaviour
     {
         Image image;
-        EmojiArt art;
+        LoopArt art;
         EffectLevel level;
         bool reduceMotion;
         float startedAt;
@@ -18,7 +18,7 @@ namespace HypeDomino.UI.Emoji
 
         void Awake() => image = GetComponent<Image>();
 
-        public void Begin(EmojiArt emoji, EffectLevel effectLevel, bool reduce, float now)
+        public void Begin(LoopArt emoji, EffectLevel effectLevel, bool reduce, float now)
         {
             if (image == null) image = GetComponent<Image>();
             art = emoji;

@@ -31,7 +31,7 @@ namespace HypeDomino.UI.Emoji
             reduceMotion = reduce;
         }
 
-        public void Show(int seat, EmojiArt art, float now)
+        public void Show(int seat, LoopArt art, float now)
         {
             var popup = live[seat];
             if (popup == null)

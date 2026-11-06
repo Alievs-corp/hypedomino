@@ -48,5 +48,6 @@ What gets easier, what gets harder, what must be verified.
 | [0009](0009-characters-real-time-3d.md) | Characters: real-time 3D in the Universal Renderer | Accepted |
 | [0010](0010-server-orchestration.md) | Server orchestration: k3s on Hetzner Cloud, drain-aware rolling deploys | Accepted |
 | [0011](0011-room-sharding-and-relay.md) | Room sharding: one process per node, routing in Redis, relay for resumes | Accepted |
+| [0012](0012-animated-2d-asset-format.md) | Animated 2D cosmetics: sprite sheet loops | Proposed; device measurement owed |
 
 Related specs: `docs/rules.md` (game rules), `docs/performance.md` (#11), `docs/anti-cheat.md` (#201). The last two are separate issues and may not exist yet.
