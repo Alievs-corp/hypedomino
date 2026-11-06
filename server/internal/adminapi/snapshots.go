@@ -53,31 +53,41 @@ func (h *Handler) replaceSnapshot(ctx context.Context, p principal, d configDoma
 				return nil, err
 			}
 		}
-		if err := lockDomain(ctx, tx, d.name); err != nil {
-			return nil, err
-		}
-		_, before, err := latestSnapshot(ctx, tx, d.name)
+		entry, published, err := publishIn(ctx, tx, d, action, raw, note)
 		if err != nil {
 			return nil, err
 		}
-		if d.prepare != nil {
-			if raw, err = d.prepare(ctx, tx, before, raw); err != nil {
-				return nil, err
-			}
-		}
-		if err := d.accept(before, raw); err != nil {
-			return nil, err
-		}
-		if version, err = snapshot.Publish(ctx, tx, d.name, raw); err != nil {
-			return nil, err
-		}
-		entry := audit.Entry{
-			Action: action, Object: audit.Object{Type: d.object, ID: d.name}, After: json.RawMessage(raw),
-			Before: before, ConfigVersion: version, Reason: note.Reason, Ref: note.Ref,
-		}
+		version, raw = entry.ConfigVersion, published
 		return []audit.Entry{entry}, nil
 	})
 	return version, raw, err
+}
+
+func publishIn(ctx context.Context, tx pgx.Tx, d configDomain, action string, raw []byte, note changeNote) (audit.Entry, []byte, error) {
+	if err := lockDomain(ctx, tx, d.name); err != nil {
+		return audit.Entry{}, nil, err
+	}
+	_, before, err := latestSnapshot(ctx, tx, d.name)
+	if err != nil {
+		return audit.Entry{}, nil, err
+	}
+	if d.prepare != nil {
+		if raw, err = d.prepare(ctx, tx, before, raw); err != nil {
+			return audit.Entry{}, nil, err
+		}
+	}
+	if err := d.accept(before, raw); err != nil {
+		return audit.Entry{}, nil, err
+	}
+	version, err := snapshot.Publish(ctx, tx, d.name, raw)
+	if err != nil {
+		return audit.Entry{}, nil, err
+	}
+	entry := audit.Entry{
+		Action: action, Object: audit.Object{Type: d.object, ID: d.name}, After: json.RawMessage(raw),
+		Before: before, ConfigVersion: version, Reason: note.Reason, Ref: note.Ref,
+	}
+	return entry, raw, nil
 }
 
 func (h *Handler) domainHistory(domain string) func(http.ResponseWriter, *http.Request, principal) {

@@ -137,6 +137,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/promo-templates/{id}", h.allowed(rbac.PromoCodes, rbac.Edit, h.editPromoTemplate))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
 	h.mux.HandleFunc("GET /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.View, h.listRewardBundles))
+	h.mux.HandleFunc("PUT /admin/reward-bundles/{id}", h.allowed(rbac.RewardBundles, rbac.Publish, h.editRewardBundle))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
@@ -435,6 +436,14 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "season_started"
 	case errors.Is(err, errSeasonNotLive):
 		return http.StatusConflict, "season_not_live"
+	case errors.Is(err, errBundleUnknown):
+		return http.StatusNotFound, "not_found"
+	case errors.Is(err, errBundleDiffers), errors.Is(err, errBundleHeld):
+		return http.StatusConflict, "bundle_not_editable"
+	case errors.Is(err, errBundleStale):
+		return http.StatusConflict, "stale_bundle"
+	case errors.Is(err, errBundleSame):
+		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):

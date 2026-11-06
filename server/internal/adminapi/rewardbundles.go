@@ -35,6 +35,7 @@ type bundleRow struct {
 	GuideValue int64       `json:"guideValue"`
 	UsedBy     []bundleUse `json:"usedBy"`
 	Differs    bool        `json:"differs"`
+	Editable   bool        `json:"editable"`
 }
 
 type rewardBundlesView struct {
@@ -73,6 +74,7 @@ func (i bundleIndex) rows(items *cosmetics.Catalog, prices reward.Config) []bund
 	for _, row := range i {
 		row.GuideValue = guideValue(row.Bundle, items, prices)
 		row.Differs = holders[row.ID] > 1
+		row.Editable = !row.Differs && !slices.ContainsFunc(row.UsedBy, func(use bundleUse) bool { return !bundleEditableIn(use.Domain) })
 		rows = append(rows, *row)
 	}
 	slices.SortFunc(rows, func(a, b bundleRow) int {

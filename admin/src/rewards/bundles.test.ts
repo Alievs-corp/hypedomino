@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { emptyBundleFilter, filteredBundles, useLabel, usedDomains, type RewardBundle } from "./bundles.ts";
+import { bundleEditChanged, bundleEditIssues, editOf, emptyBundleFilter, filteredBundles, parsedIds, useLabel, usedDomains, type RewardBundle } from "./bundles.ts";
 
 const daily: RewardBundle = {
   id: "bundle.daily_login_day_1",
@@ -12,6 +12,7 @@ const daily: RewardBundle = {
   guideValue: 30,
   usedBy: [{ domain: "daily_login", object: "day.1" }],
   differs: false,
+  editable: false,
 };
 
 const wins: RewardBundle = {
@@ -24,6 +25,7 @@ const wins: RewardBundle = {
   guideValue: 1600,
   usedBy: [{ domain: "missions", object: "mission.first" }, { domain: "pass", object: "season_1", detail: "free.3" }],
   differs: true,
+  editable: false,
 };
 
 const ids = (change: object) => filteredBundles([daily, wins], { ...emptyBundleFilter, ...change }).map((bundle) => bundle.id);
@@ -49,4 +51,29 @@ test("the domain filter offers each domain in use once", () => {
 test("a use shows its object and its place inside it", () => {
   assert.equal(useLabel(wins.usedBy[0]), "mission.first");
   assert.equal(useLabel(wins.usedBy[1]), "season_1 free.3");
+});
+
+test("an edit starts from the bundle and fills what the API left out", () => {
+  assert.deepEqual(editOf(daily), { coins: 30, crystals: 0, cosmetics: [], medals: [], passXp: 0 });
+});
+
+test("ids are split on commas, trimmed and kept once", () => {
+  assert.deepEqual(parsedIds(" avatar.fox, ,frame.gold,avatar.fox "), ["avatar.fox", "frame.gold"]);
+  assert.deepEqual(parsedIds("  "), []);
+});
+
+test("an edit counts as a change only when its content differs, in any order", () => {
+  const items: RewardBundle = { ...wins, cosmetics: ["a", "b"] };
+  assert.equal(bundleEditChanged(items, editOf(items)), false);
+  assert.equal(bundleEditChanged(items, { ...editOf(items), cosmetics: ["b", "a"] }), false);
+  assert.equal(bundleEditChanged(items, { ...editOf(items), coins: 1 }), true);
+  assert.equal(bundleEditChanged(items, { ...editOf(items), medals: [] }), true);
+});
+
+test("an edit needs whole numbers and something to grant", () => {
+  assert.deepEqual(bundleEditIssues(editOf(wins)), []);
+  assert.deepEqual(bundleEditIssues({ ...editOf(wins), coins: -1 }), ["rewards.issue.number"]);
+  assert.deepEqual(bundleEditIssues({ ...editOf(wins), coins: Number.NaN }), ["rewards.issue.number"]);
+  assert.deepEqual(bundleEditIssues({ ...editOf(wins), passXp: 1.5 }), ["rewards.issue.number"]);
+  assert.deepEqual(bundleEditIssues({ coins: 0, crystals: 0, cosmetics: [], medals: [], passXp: 0 }), ["rewards.issue.empty"]);
 });

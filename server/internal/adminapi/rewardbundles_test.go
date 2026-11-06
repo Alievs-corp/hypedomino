@@ -128,3 +128,115 @@ func grantsFrom(body map[string]any, domain, detail string) bool {
 	}
 	return false
 }
+
+func editedBundle(revision, coins, passXP int, cosmetics ...any) map[string]any {
+	return map[string]any{"revision": revision, "coins": coins, "crystals": 0, "cosmetics": cosmetics, "medals": []any{}, "passXp": passXP, "reason": "retune"}
+}
+
+func publishSharedBundle(t *testing.T, a *api, content, liveOps string) {
+	t.Helper()
+	status, body := a.call("GET", "/admin/config/cosmetics", liveOps, nil)
+	expect(t, status, body, http.StatusOK, "")
+	fox := foxAvatar()
+	fox["sources"] = []any{map[string]any{"type": "mission", "ref": "mission.first"}, map[string]any{"type": "mission", "ref": "mission.second"}, map[string]any{"type": "shop", "ref": "offer.weekend_pack"}}
+	owl := foxAvatar()
+	owl["id"], owl["sources"] = "avatar.owl", fox["sources"]
+	items := append(append([]any{}, body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)...), fox, owl)
+	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": map[string]any{"items": items}, "reason": "fox"})
+	expect(t, status, body, http.StatusOK, "")
+	publishMissions(t, a, liveOps, grantingMission("mission.first", 0, "avatar.fox"), grantingMission("mission.second", 0, "avatar.fox"))
+	pack := weekendPack(start, start.Add(time.Hour))
+	pack["bundle"] = map[string]any{"id": "bundle.wins", "revision": 1, "cosmetics": []string{"avatar.fox"}, "medals": []string{}}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(pack, cometFox()), "reason": "pack"})
+	expect(t, status, body, http.StatusOK, "")
+}
+
+func TestARewardBundleEditChangesEveryHolderOrNone(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	content, liveOps := a.signIn("ayla"), a.signIn("leyla")
+	publishSharedBundle(t, a, content, liveOps)
+
+	rows := bundleRows(t, a, liveOps, "bundle.wins")
+	if len(rows) != 1 || rows[0]["editable"] != true || len(rows[0]["usedBy"].([]any)) != 3 {
+		t.Fatalf("shared %v", rows)
+	}
+	revision := int(rows[0]["revision"].(float64))
+
+	status, body := a.call("PUT", "/admin/reward-bundles/bundle.wins", content, editedBundle(revision, 0, 50, "avatar.fox"))
+	expect(t, status, body, http.StatusForbidden, "forbidden")
+	stale := editedBundle(revision+5, 0, 50, "avatar.fox")
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.wins", liveOps, stale)
+	expect(t, status, body, http.StatusConflict, "stale_bundle")
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.wins", liveOps, editedBundle(revision, 0, 0, "avatar.fox"))
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.none", liveOps, editedBundle(1, 5, 0))
+	expect(t, status, body, http.StatusNotFound, "not_found")
+
+	status, missionsBefore := a.call("GET", "/admin/config/missions", liveOps, nil)
+	expect(t, status, missionsBefore, http.StatusOK, "")
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.wins", liveOps, editedBundle(revision, 5, 0, "avatar.fox"))
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, missionsAfter := a.call("GET", "/admin/config/missions", liveOps, nil)
+	expect(t, status, missionsAfter, http.StatusOK, "")
+	if missionsBefore["config_version"] != missionsAfter["config_version"] {
+		t.Fatalf("the shop refused coins, yet missions moved from %v to %v", missionsBefore["config_version"], missionsAfter["config_version"])
+	}
+
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.wins", liveOps, editedBundle(revision, 0, 0, "avatar.fox", "avatar.owl"))
+	expect(t, status, body, http.StatusOK, "")
+	rows = bundleRows(t, a, liveOps, "bundle.wins")
+	if len(rows) != 1 || len(rows[0]["cosmetics"].([]any)) != 2 || int(rows[0]["revision"].(float64)) != revision+1 || len(rows[0]["usedBy"].([]any)) != 3 {
+		t.Fatalf("edited %v", rows)
+	}
+}
+
+func TestARewardBundleWithAnotherHolderOrDifferingContentIsNotEditedHere(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+
+	daily := bundleRows(t, a, liveOps, "bundle.daily_login_day_1")
+	if daily[0]["editable"] != false {
+		t.Fatalf("daily %v", daily)
+	}
+	status, body := a.call("PUT", "/admin/reward-bundles/bundle.daily_login_day_1", liveOps, editedBundle(1, 40, 0))
+	expect(t, status, body, http.StatusConflict, "bundle_not_editable")
+
+	publishMissions(t, a, liveOps, grantingMission("mission.first", 100), grantingMission("mission.second", 200))
+	status, body = a.call("PUT", "/admin/reward-bundles/bundle.wins", liveOps, editedBundle(1, 300, 0))
+	expect(t, status, body, http.StatusConflict, "bundle_not_editable")
+}
+
+func passBundleWithCoins(t *testing.T, a *api, token string) map[string]any {
+	t.Helper()
+	status, body := a.call("GET", "/admin/reward-bundles", token, nil)
+	expect(t, status, body, http.StatusOK, "")
+	for _, row := range body["bundles"].([]any) {
+		entry := row.(map[string]any)
+		if entry["coins"].(float64) > 0 && entry["editable"] == true && entry["usedBy"].([]any)[0].(map[string]any)["domain"] == "pass" {
+			return entry
+		}
+	}
+	t.Fatalf("no editable pass bundle in %v", body)
+	return nil
+}
+
+func TestARewardBundleEditReachesThePassTracks(t *testing.T) {
+	a := newAPI(t)
+	a.publishExampleCatalog()
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	status, body := a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": passWithListedCosmetics(t), "reason": "season"})
+	expect(t, status, body, http.StatusOK, "")
+
+	row := passBundleWithCoins(t, a, liveOps)
+	id := row["id"].(string)
+	coins, revision := int(row["coins"].(float64)), int(row["revision"].(float64))
+	status, body = a.call("PUT", "/admin/reward-bundles/"+id, liveOps, editedBundle(revision, coins-1, 0))
+	expect(t, status, body, http.StatusOK, "")
+	rows := bundleRows(t, a, liveOps, id)
+	if len(rows) != 1 || int(rows[0]["coins"].(float64)) != coins-1 || int(rows[0]["revision"].(float64)) != revision+1 {
+		t.Fatalf("edited %v", rows)
+	}
+}
