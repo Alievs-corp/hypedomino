@@ -180,6 +180,15 @@ When a character plays animated, the high effect level loads `modelHqAddress` if
 
 Until `staticAddress` itself is loaded, the client shows the built-in static of the first `live` `default` item of the same type. Input never waits for a cosmetic to load.
 
+Client (`UI/Cosmetics`, #94):
+
+- `AvatarView` shows an avatar, its frame and the rarity marks a prefab gives it (`docs/rarity.md` 2.3). A prefab for a seat or profile has a halo and no diamond; the caller passes the frame's tier. An item card has both and passes the item's tier.
+- `CosmeticImage` runs the rules above for one layer. It loads the static when shown, and the loop only after the static, only if the effect level, reduce motion and the budget allow it. A row reused while a load is pending ignores that art and frees it.
+- A playing avatar and a playing frame each take one slot of the screen's `AnimationBudget`.
+- `CosmeticArtCache` shares one load between all views of an item on a screen and frees the art on the last release. It is memory only; the disk cache belongs to Addressables and #160.
+- `ICosmeticArtSource` is where art comes from. The Addressables source is #68.
+- `CosmeticStage` holds one screen's sources, budget and effect level. After the setting changes, the screen calls `SetEffects` and each view's `RefreshEffects`; the setting itself is #159.
+
 ## 9. Validation
 
 Single-manifest rules, checked by the admin at publish, by the server when it loads a snapshot, and by `tools/cosmetics-schema`:

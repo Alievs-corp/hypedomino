@@ -19,6 +19,16 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ItSaysWhetherASlotIsFreeWithoutTakingOne()
+        {
+            var budget = new AnimationBudget(1);
+            Assert.IsTrue(budget.HasRoom);
+            Assert.AreEqual(0, budget.Active);
+            budget.TryAcquire();
+            Assert.IsFalse(budget.HasRoom);
+        }
+
+        [Test]
         public void ReleasingAnEmptyBudgetAddsNoSlot()
         {
             var budget = new AnimationBudget(1);
