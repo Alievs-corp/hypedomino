@@ -33,6 +33,7 @@ namespace HypeDomino.Editor
             ApplySpriteTexturePreset();
             EditorSettings.spritePackerMode = SpritePackerMode.SpriteAtlasV2;
             CreateBootScene();
+            ContentSetup.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log("HypeDomino project setup applied");
         }

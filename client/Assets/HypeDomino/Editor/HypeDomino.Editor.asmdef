@@ -3,9 +3,13 @@
     "rootNamespace": "HypeDomino.Editor",
     "references": [
         "HypeDomino.Bench",
+        "HypeDomino.Content",
         "HypeDomino.Core",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [
         "Editor"
