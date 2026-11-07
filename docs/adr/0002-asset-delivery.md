@@ -27,3 +27,4 @@ Install must stay under 150 MB while the game ships many cosmetic assets, each w
 - Easier: install size stays flat as content grows; art ships without a store release; rollback is a catalog switch.
 - Harder: first use of a new asset needs a download state and a fallback path; offline start must work with the install-time set only. Group design affects load time and memory, so it is reviewed per asset spec.
 - Download size per group and the cold-start effect are measured per ADR 0008.
+- The client side of this decision is `docs/content-delivery.md`.

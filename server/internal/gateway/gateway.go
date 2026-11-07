@@ -25,6 +25,7 @@ var (
 type Config struct {
 	MinimumAppVersion    string
 	CatalogVersion       string
+	ContentBaseURL       string
 	MaxFrameBytes        int
 	MaxHelloBytes        int
 	WriteQueue           int

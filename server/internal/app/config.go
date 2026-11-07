@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -194,6 +195,10 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_DRAIN_TIMEOUT", &config.DrainTimeout)
 	r.text("HD_MIN_APP_VERSION", &config.Gateway.MinimumAppVersion)
 	r.text("HD_CATALOG_VERSION", &config.Gateway.CatalogVersion)
+	r.text("HD_CONTENT_BASE_URL", &config.Gateway.ContentBaseURL)
+	if err := checkContentBaseURL(config.Gateway.ContentBaseURL); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_CONTENT_BASE_URL: %w", err))
+	}
 	r.integer("HD_MAX_FRAME_BYTES", &config.Gateway.MaxFrameBytes)
 	r.integer("HD_MAX_HELLO_BYTES", &config.Gateway.MaxHelloBytes)
 	r.integer("HD_WRITE_QUEUE", &config.Gateway.WriteQueue)
@@ -372,6 +377,20 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 		r.errs = append(r.errs, fmt.Errorf("HD_LOG_LEVEL: %q is not debug, info, warn or error", config.LogLevel))
 	}
 	return config, errors.Join(r.errs...)
+}
+
+func checkContentBaseURL(raw string) error {
+	if raw == "" {
+		return nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return err
+	}
+	if parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" || strings.HasSuffix(raw, "/") || strings.Contains(raw, "#") {
+		return fmt.Errorf("%q is not an https URL without a trailing slash, query or fragment", raw)
+	}
+	return nil
 }
 
 func (r *envReader) integrity(config *Config) {

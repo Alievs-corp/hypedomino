@@ -40,6 +40,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_DRAIN_TIMEOUT":                     "2m",
 		"HD_MIN_APP_VERSION":                   "1.4.0",
 		"HD_CATALOG_VERSION":                   "2026.11.01-2",
+		"HD_CONTENT_BASE_URL":                  "https://content.example.com/production",
 		"HD_MAX_FRAME_BYTES":                   "2048",
 		"HD_WRITE_QUEUE":                       "64",
 		"HD_HELLO_TIMEOUT":                     "1s",
@@ -131,7 +132,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Session.ReconnectGrace != 45*time.Second || g.PingInterval != 7*time.Second || g.PongTimeout != 3*time.Second {
 		t.Fatalf("durations %+v %+v", config.Session, g)
 	}
-	if g.MinimumAppVersion != "1.4.0" || g.CatalogVersion != "2026.11.01-2" || g.MaxFrameBytes != 2048 || g.WriteQueue != 64 || g.HelloTimeout != time.Second || g.WriteTimeout != 2*time.Second || g.CloseTimeout != 500*time.Millisecond || g.CompressionThreshold != 512 || g.IntentsPerSecond != 20 || g.IntentBurst != 40 {
+	if g.MinimumAppVersion != "1.4.0" || g.CatalogVersion != "2026.11.01-2" || g.ContentBaseURL != "https://content.example.com/production" || g.MaxFrameBytes != 2048 || g.WriteQueue != 64 || g.HelloTimeout != time.Second || g.WriteTimeout != 2*time.Second || g.CloseTimeout != 500*time.Millisecond || g.CompressionThreshold != 512 || g.IntentsPerSecond != 20 || g.IntentBurst != 40 {
 		t.Fatalf("gateway config %+v", g)
 	}
 	c := config.Cluster
@@ -211,6 +212,29 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "HD_MAX_FRAME_BYTES") {
 		t.Errorf("a valid value was reported: %v", err)
+	}
+}
+
+func TestContentBaseURLMustBeAnHTTPSRootWithoutTrailingParts(t *testing.T) {
+	for raw, valid := range map[string]bool{
+		"":                                    true,
+		"https://content.example.com":         true,
+		"https://content.example.com/staging": true,
+		"http://content.example.com":          false,
+		"https://content.example.com/":        false,
+		"https://content.example.com/a?v=1":   false,
+		"https://content.example.com/a#top":   false,
+		"https://user@content.example.com":    false,
+		"content.example.com":                 false,
+		"https:///staging":                    false,
+	} {
+		_, err := ConfigFromEnv(lookup(map[string]string{"HD_CONTENT_BASE_URL": raw}))
+		if valid && err != nil {
+			t.Errorf("%q was refused: %v", raw, err)
+		}
+		if !valid && (err == nil || !strings.Contains(err.Error(), "HD_CONTENT_BASE_URL")) {
+			t.Errorf("%q was accepted: %v", raw, err)
+		}
 	}
 }
 

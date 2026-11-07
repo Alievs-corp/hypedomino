@@ -22,6 +22,7 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | `HD_DRAIN_TIMEOUT` | `15m` | Longest wait for live matches to finish; rooms still running after it are cancelled |
 | `HD_MIN_APP_VERSION` | `1.0.0` | Clients below it get `UPDATE_REQUIRED` until a `live_controls` snapshot is published (`docs/anti-cheat.md` 5.2) |
 | `HD_CATALOG_VERSION` | empty | Catalog version announced in `ServerHello` |
+| `HD_CONTENT_BASE_URL` | empty | CDN root announced in `ServerHello`: an `https` URL without a trailing slash, query or fragment (`docs/content-delivery.md` 2) |
 | `HD_MAX_FRAME_BYTES`, `HD_MAX_HELLO_BYTES`, `HD_WRITE_QUEUE`, `HD_HELLO_TIMEOUT`, `HD_WRITE_TIMEOUT`, `HD_CLOSE_TIMEOUT`, `HD_COMPRESSION_THRESHOLD`, `HD_INTENTS_PER_SECOND`, `HD_INTENT_BURST`, `HD_PING_INTERVAL`, `HD_PONG_TIMEOUT` | `gateway.DefaultConfig` | Gateway limits (`proto/README.md`, Gateway limits) |
 | `HD_RECONNECT_GRACE` | `60s` | `ReconnectGraceSeconds` of `docs/penalties.md` |
 | `HD_REDIS_URL` | empty | Redis URL; when set the node joins the cluster of ADR 0011 (membership, routes, relay, `/loadz` summary) |
