@@ -30,6 +30,13 @@ namespace HypeDomino.UI.Motion
             enabled = IsPlaying;
         }
 
+        public void ShowStill(Sprite sprite)
+        {
+            GiveBackSlot();
+            Target.sprite = sprite;
+            enabled = false;
+        }
+
         public void Advance(float now)
         {
             if (!IsPlaying) return;

@@ -94,6 +94,20 @@ namespace HypeDomino.Tests.PlayMode
         }
 
         [Test]
+        public void ShowingAStillGivesBackTheSlot()
+        {
+            var budget = new AnimationBudget(1);
+            var image = NewImage();
+
+            image.Show(loop, EffectLevel.Medium, false, budget, 10f);
+            image.ShowStill(still);
+
+            Assert.IsFalse(image.IsPlaying);
+            Assert.AreSame(still, image.Shown);
+            Assert.AreEqual(0, budget.Active);
+        }
+
+        [Test]
         public void ShowingNewArtKeepsOneSlot()
         {
             var budget = new AnimationBudget(1);

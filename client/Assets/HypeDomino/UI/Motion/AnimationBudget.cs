@@ -10,6 +10,8 @@ namespace HypeDomino.UI.Motion
 
         public int Active { get; private set; }
 
+        public bool HasRoom => Active < limit;
+
         public static AnimationBudget For(EffectLevel level) => new AnimationBudget(LimitOf(level));
 
         public bool TryAcquire()
