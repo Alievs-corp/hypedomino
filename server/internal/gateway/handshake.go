@@ -84,6 +84,7 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 		MinimumAppVersion: c.admission().MinimumAppVersion,
 		ServerTimeUnixMs:  uint64(c.options.Clock.Now().UnixMilli()),
 		CatalogVersion:    c.options.Config.CatalogVersion,
+		ContentBaseUrl:    c.options.Config.ContentBaseURL,
 		InMatch:           inMatch,
 	}
 	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED {

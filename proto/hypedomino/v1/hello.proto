@@ -48,6 +48,7 @@ message ServerHello {
   repeated StringBundle string_bundles = 6;
   repeated FallbackChain fallback_chains = 7;
   fixed64 session_nonce = 8;
+  string content_base_url = 9;
 }
 
 message StringBundle {

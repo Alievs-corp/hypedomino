@@ -379,6 +379,7 @@ type ServerHello struct {
 	StringBundles     []*StringBundle        `protobuf:"bytes,6,rep,name=string_bundles,json=stringBundles,proto3" json:"string_bundles,omitempty"`
 	FallbackChains    []*FallbackChain       `protobuf:"bytes,7,rep,name=fallback_chains,json=fallbackChains,proto3" json:"fallback_chains,omitempty"`
 	SessionNonce      uint64                 `protobuf:"fixed64,8,opt,name=session_nonce,json=sessionNonce,proto3" json:"session_nonce,omitempty"`
+	ContentBaseUrl    string                 `protobuf:"bytes,9,opt,name=content_base_url,json=contentBaseUrl,proto3" json:"content_base_url,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -467,6 +468,13 @@ func (x *ServerHello) GetSessionNonce() uint64 {
 		return x.SessionNonce
 	}
 	return 0
+}
+
+func (x *ServerHello) GetContentBaseUrl() string {
+	if x != nil {
+		return x.ContentBaseUrl
+	}
+	return ""
 }
 
 type StringBundle struct {
@@ -607,7 +615,7 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x12AppAttestAssertion\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\fR\x05keyId\x12\x14\n" +
 	"\x05nonce\x18\x02 \x01(\tR\x05nonce\x12\x1c\n" +
-	"\tassertion\x18\x03 \x01(\fR\tassertion\"\x94\x03\n" +
+	"\tassertion\x18\x03 \x01(\fR\tassertion\"\xbe\x03\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
@@ -616,7 +624,8 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\bin_match\x18\x05 \x01(\bR\ainMatch\x12B\n" +
 	"\x0estring_bundles\x18\x06 \x03(\v2\x1b.hypedomino.v1.StringBundleR\rstringBundles\x12E\n" +
 	"\x0ffallback_chains\x18\a \x03(\v2\x1c.hypedomino.v1.FallbackChainR\x0efallbackChains\x12#\n" +
-	"\rsession_nonce\x18\b \x01(\x06R\fsessionNonce\"X\n" +
+	"\rsession_nonce\x18\b \x01(\x06R\fsessionNonce\x12(\n" +
+	"\x10content_base_url\x18\t \x01(\tR\x0econtentBaseUrl\"X\n" +
 	"\fStringBundle\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +
