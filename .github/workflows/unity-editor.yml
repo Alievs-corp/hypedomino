@@ -29,8 +29,7 @@ jobs:
           path: client/Library
           key: unity-library-editor-${{ hashFiles('client/Packages/**', 'client/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: unity-library-editor-
-      - id: unity
-        uses: game-ci/unity-builder@v6
+      - uses: game-ci/unity-builder@v6
         continue-on-error: true
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -52,9 +51,7 @@ jobs:
           name: editor-changes
           path: editor-changes.patch
           retention-days: 7
-      - name: Fail when the method failed or changed nothing
-        env:
-          OUTCOME: ${{ steps.unity.outcome }}
+      - name: Fail when the method did not finish
         run: |
-          [ "$OUTCOME" = success ] || { echo "the editor method failed: $OUTCOME"; exit 1; }
-          [ -s editor-changes.patch ] || { echo "the editor method changed nothing"; exit 1; }
+          [ -f client/Logs/editor-method-succeeded ] || { echo "the editor method did not finish; read the Unity log above"; exit 1; }
+          [ -s editor-changes.patch ] || echo "the editor method changed nothing"
