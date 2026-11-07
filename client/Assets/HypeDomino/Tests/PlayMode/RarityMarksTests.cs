@@ -185,6 +185,7 @@ namespace HypeDomino.Tests.PlayMode
         {
             var halo = NewHalo();
             halo.Show(table, "top", EffectLevel.Medium, false, 0f);
+            halo.Advance(0.25f);
             Assert.That(() => halo.Advance(0.5f), Is.Not.AllocatingGCMemory());
         }
     }
