@@ -187,7 +187,7 @@ Client (`UI/Cosmetics`, #94):
 - A playing avatar and a playing frame each take one slot of the screen's `AnimationBudget`.
 - `CosmeticArtCache` shares one load between all views of an item on a screen and frees the art on the last release. It is memory only; the disk cache belongs to Addressables and #160.
 - `ICosmeticArtSource` is where art comes from. The Addressables source is #68.
-- `CosmeticStage` holds one screen's sources, budget and effect level. After the setting changes, the screen calls `SetEffects` and each view's `RefreshEffects`; the setting itself is #159.
+- `CosmeticStage` holds one screen's sources, budget and effect level. After the setting changes, the screen calls `SetEffects` and each view's `RefreshEffects`; the effect level comes from `GraphicsQuality.Effects` and its `Changed` event (`docs/performance.md` 1.1).
 
 ## 9. Validation
 

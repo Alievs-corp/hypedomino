@@ -1,7 +1,7 @@
 {
     "name": "HypeDomino.Game",
     "rootNamespace": "HypeDomino.Game",
-    "references": ["HypeDomino.Core", "HypeDomino.Net", "HypeDomino.UI", "HypeDomino.Cosmetics"],
+    "references": ["HypeDomino.Core", "HypeDomino.Net", "HypeDomino.UI", "HypeDomino.Cosmetics", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

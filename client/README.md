@@ -34,7 +34,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 | Android | ARM64 only; Vulkan, then OpenGL ES 3 | Install size; no 32-bit devices in the matrix (`docs/performance.md` 1) |
 | iOS | Metal | Only API on target devices |
 | Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | ADR 0009, `docs/ui-motion.md` 4 |
-| Quality levels | No per-level pipeline; every level uses the default URP asset | One renderer until #159 adds graphics levels |
+| Quality levels | No per-level pipeline; every level uses the default URP asset | One renderer; graphics levels set only its render scale (`docs/performance.md` 1.1) |
 | Profiling | Frame Timing Stats on | `FrameTimingManager` measurements, `docs/performance.md` 2 |
 | Color space | Linear | Lit 3D characters, ADR 0009 |
 
@@ -63,6 +63,10 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 `UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
 
 `UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
+
+## Graphics levels
+
+`UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. The `GraphicsQualityTests` EditMode tests cover the class rule on the matrix devices and the choice rules.
 
 ## Avatars
 
