@@ -267,7 +267,8 @@
         "highGpuPatterns": ["^Adreno \\(TM\\) (7[3-9]\\d|8\\d\\d)\\b", "^Mali-G7[1-2]\\d\\b", "^Immortalis", "^Samsung Xclipse", "^Apple (A1[5-9]|A[2-9]\\d|M\\d)\\b"]
       },
       "probe": { "warmupFrames": 300, "frames": 1800 },
-      "thermal": { "recoverAfterSeconds": 60 }
+      "thermal": { "recoverAfterSeconds": 60 },
+      "frameRate": { "options": [30, 60, 90, 120], "autoMax": 60, "menuMax": 60, "batterySaver": 30 }
     }
   },
   "scoreCascade": {

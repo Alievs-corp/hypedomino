@@ -67,6 +67,7 @@ namespace HypeDomino.Editor
             {
                 QualitySettings.SetQualityLevel(level, false);
                 QualitySettings.renderPipeline = null;
+                QualitySettings.vSyncCount = 0;
             }
         }
 

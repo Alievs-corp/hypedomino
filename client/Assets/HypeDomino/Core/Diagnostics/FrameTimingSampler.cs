@@ -18,9 +18,8 @@ namespace HypeDomino.Core.Diagnostics
 
         void Awake()
         {
-            var refreshRate = HighestRefreshRate();
-            Application.targetFrameRate = refreshRate;
-            window = new FrameWindow(WindowFrames, MissedVsyncFactor / refreshRate);
+            var frameRate = Application.targetFrameRate > 0 ? Application.targetFrameRate : HighestRefreshRate();
+            window = new FrameWindow(WindowFrames, MissedVsyncFactor / frameRate);
             collectionsAtWindowStart = GC.CollectionCount(0);
         }
 
