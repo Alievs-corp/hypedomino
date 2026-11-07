@@ -20,6 +20,14 @@ namespace HypeDomino.Editor
         const int AtlasSize = 768;
         const int CellSize = 192;
         const int FramesPerAvatar = 16;
+        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+        const int DiamondCell = 0;
+        const int HaloCell = 7;
+        const int FlowHaloCell = 8;
+        const float DiamondReach = 88f;
+        const float PipReach = 56f;
+        const float PipRadius = 12f;
+        const float FlowArcCosine = 0.85f;
 
         public static void BuildAndroid()
         {
@@ -27,10 +35,12 @@ namespace HypeDomino.Editor
             var output = OutputPath();
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             var atlases = new Texture2D[AvatarCount];
-            for (var avatar = 0; avatar < AvatarCount; avatar++) atlases[avatar] = ImportedAtlas(avatar);
+            for (var avatar = 0; avatar < AvatarCount; avatar++) atlases[avatar] = ImportedAtlas($"avatar_{avatar}", Atlas(avatar));
+            var marks = ImportedAtlas("marks", MarksAtlas());
+            var rarities = AssetDatabase.LoadAssetAtPath<TextAsset>(RarityDefaultsPath);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            new GameObject("Bench").AddComponent<AnimationBench>().Configure(atlases, CellSize, FramesPerAvatar);
+            new GameObject("Bench").AddComponent<AnimationBench>().Configure(atlases, CellSize, FramesPerAvatar, marks, rarities);
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BenchIdentifier);
@@ -54,10 +64,10 @@ namespace HypeDomino.Editor
             return at >= 0 && at + 1 < arguments.Length ? arguments[at + 1] : DefaultOutputPath;
         }
 
-        static Texture2D ImportedAtlas(int avatar)
+        static Texture2D ImportedAtlas(string name, Texture2D atlas)
         {
-            var path = $"{ArtFolder}/avatar_{avatar}.png";
-            File.WriteAllBytes(path, Atlas(avatar).EncodeToPNG());
+            var path = $"{ArtFolder}/{name}.png";
+            File.WriteAllBytes(path, atlas.EncodeToPNG());
             AssetDatabase.ImportAsset(path);
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Sprite;
@@ -85,6 +95,64 @@ namespace HypeDomino.Editor
             atlas.SetPixels32(pixels);
             atlas.Apply();
             return atlas;
+        }
+
+        static Texture2D MarksAtlas()
+        {
+            var atlas = new Texture2D(AtlasSize, AtlasSize, TextureFormat.RGBA32, false);
+            var pixels = new Color32[AtlasSize * AtlasSize];
+            var columns = AtlasSize / CellSize;
+            for (var cell = DiamondCell; cell <= FlowHaloCell; cell++)
+                DrawMark(pixels, cell % columns * CellSize, cell / columns * CellSize, cell);
+            atlas.SetPixels32(pixels);
+            atlas.Apply();
+            return atlas;
+        }
+
+        static void DrawMark(Color32[] pixels, int left, int bottom, int cell)
+        {
+            for (var y = 0; y < CellSize; y++)
+            for (var x = 0; x < CellSize; x++)
+            {
+                var alpha = MarkAlpha(cell, x - CellSize / 2f, y - CellSize / 2f);
+                pixels[(bottom + y) * AtlasSize + left + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+
+        static float MarkAlpha(int cell, float dx, float dy)
+        {
+            if (cell == DiamondCell) return Mathf.Abs(dx) + Mathf.Abs(dy) <= DiamondReach ? 1f : 0f;
+            if (cell < HaloCell) return OnAPip(cell, dx, dy) ? 1f : 0f;
+            var distance = Mathf.Sqrt(dx * dx + dy * dy);
+            var glow = Mathf.Clamp01(1f - distance / (CellSize / 2f));
+            var onArc = cell == FlowHaloCell && distance > 0f && dy / distance >= FlowArcCosine;
+            return onArc ? Mathf.Clamp01(glow * 2f) : glow * 0.5f;
+        }
+
+        static bool OnAPip(int pips, float dx, float dy)
+        {
+            var offsets = PipOffsets(pips);
+            for (var at = 0; at < offsets.Length; at++)
+                if ((new Vector2(dx, dy) - offsets[at] * PipReach).magnitude <= PipRadius) return true;
+            return false;
+        }
+
+        static Vector2[] PipOffsets(int pips)
+        {
+            var top = Vector2.up;
+            var bottom = Vector2.down;
+            var left = Vector2.left;
+            var right = Vector2.right;
+            var centre = Vector2.zero;
+            switch (pips)
+            {
+                case 1: return new[] { centre };
+                case 2: return new[] { top, bottom };
+                case 3: return new[] { top, centre, bottom };
+                case 4: return new[] { top, bottom, left, right };
+                case 5: return new[] { top, bottom, left, right, centre };
+                default: return new[] { top, bottom, left, right, (top + left) / 2f, (bottom + right) / 2f };
+            }
         }
 
         static void DrawFrame(Color32[] pixels, int left, int bottom, int avatar, int frame)
