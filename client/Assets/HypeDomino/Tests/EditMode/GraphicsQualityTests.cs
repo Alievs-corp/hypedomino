@@ -166,6 +166,63 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
         }
 
+        [TestCase(GraphicsLevel.Ultra, ThermalStatus.Moderate, GraphicsLevel.High)]
+        [TestCase(GraphicsLevel.Medium, ThermalStatus.Moderate, GraphicsLevel.Low)]
+        [TestCase(GraphicsLevel.Low, ThermalStatus.Moderate, GraphicsLevel.Low)]
+        [TestCase(GraphicsLevel.Ultra, ThermalStatus.Severe, GraphicsLevel.Low)]
+        public void HeatLowersTheLevelInUseAtOnceButKeepsTheChoice(GraphicsLevel chosen, ThermalStatus heat, GraphicsLevel inUse)
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, chosen, 0, false);
+            var changes = 0;
+            quality.Changed += () => changes++;
+
+            quality.UpdateHeat(heat, 10f);
+
+            Assert.AreEqual(inUse, quality.Level);
+            Assert.AreEqual(chosen, quality.Choice);
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void TheChosenLevelComesBackOnlyAfterTheDeviceStaysCool()
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false);
+            quality.UpdateHeat(ThermalStatus.Severe, 0f);
+
+            quality.UpdateHeat(ThermalStatus.Normal, 100f);
+            quality.UpdateHeat(ThermalStatus.Normal, 159f);
+            Assert.AreEqual(GraphicsLevel.Low, quality.Level);
+
+            quality.UpdateHeat(ThermalStatus.Normal, 160f);
+            Assert.AreEqual(GraphicsLevel.High, quality.Level);
+        }
+
+        [Test]
+        public void AFlareDuringCoolingRestartsTheWait()
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false);
+            quality.UpdateHeat(ThermalStatus.Moderate, 0f);
+            quality.UpdateHeat(ThermalStatus.Normal, 10f);
+            quality.UpdateHeat(ThermalStatus.Moderate, 50f);
+            quality.UpdateHeat(ThermalStatus.Normal, 60f);
+            quality.UpdateHeat(ThermalStatus.Normal, 100f);
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
+
+            quality.UpdateHeat(ThermalStatus.Normal, 120f);
+            Assert.AreEqual(GraphicsLevel.High, quality.Level);
+        }
+
+        [Test]
+        public void AHotDeviceIsNotProbed()
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, null, 0, false);
+            quality.UpdateHeat(ThermalStatus.Moderate, 0f);
+
+            Assert.IsFalse(quality.ProbeWanted);
+            Assert.AreEqual(ProbeResult.NoData, quality.SettleProbe(20.0));
+            Assert.AreEqual(0, quality.ProbeDrops);
+        }
+
         [TestCase(GraphicsLevel.Low, 28f)]
         [TestCase(GraphicsLevel.Medium, 14f)]
         [TestCase(GraphicsLevel.Ultra, 7f)]

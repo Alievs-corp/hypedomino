@@ -12,8 +12,18 @@ namespace HypeDomino.UI.Graphics
         SlowAtLowest
     }
 
+    public enum ThermalStatus
+    {
+        Normal,
+        Moderate,
+        Severe
+    }
+
     public sealed class GraphicsQuality
     {
+        ThermalStatus coolingTo;
+        float coolingSince;
+
         public GraphicsQuality(DeviceTier tier, GraphicsLevel? savedChoice, int probeDrops, bool probeSettled)
         {
             Tier = tier;
@@ -32,13 +42,15 @@ namespace HypeDomino.UI.Graphics
 
         public bool ProbeSettled { get; private set; }
 
-        public bool ProbeWanted => !Choice.HasValue && !ProbeSettled;
+        public ThermalStatus Heat { get; private set; }
+
+        public bool ProbeWanted => !Choice.HasValue && !ProbeSettled && Heat == ThermalStatus.Normal;
 
         public GraphicsLevel Auto => (GraphicsLevel)Math.Max((int)GraphicsLevel.Low, TokenGraphics.AutoLevelOfTier[(int)Tier] - ProbeDrops);
 
         public GraphicsLevel Highest => ProbeDrops > 0 ? Auto : (GraphicsLevel)TokenGraphics.HighestLevelOfTier[(int)Tier];
 
-        public GraphicsLevel Level => Choice ?? Auto;
+        public GraphicsLevel Level => Cooled(Choice ?? Auto);
 
         public EffectLevel Effects => (EffectLevel)TokenGraphics.EffectLevelOfLevel[(int)Level];
 
@@ -68,7 +80,7 @@ namespace HypeDomino.UI.Graphics
 
         public ProbeResult SettleProbe(double workTimeP95Ms)
         {
-            if (workTimeP95Ms <= 0) return ProbeResult.NoData;
+            if (workTimeP95Ms <= 0 || Heat != ThermalStatus.Normal) return ProbeResult.NoData;
             if (workTimeP95Ms <= WorkTimeGateMs)
             {
                 ProbeSettled = true;
@@ -82,6 +94,37 @@ namespace HypeDomino.UI.Graphics
             ProbeDrops++;
             Changed?.Invoke();
             return ProbeResult.Dropped;
+        }
+
+        public void UpdateHeat(ThermalStatus status, float nowSeconds)
+        {
+            if (status >= Heat)
+            {
+                coolingTo = status;
+                if (status == Heat) return;
+                Heat = status;
+                Changed?.Invoke();
+                return;
+            }
+            if (status != coolingTo)
+            {
+                coolingTo = status;
+                coolingSince = nowSeconds;
+                return;
+            }
+            if (nowSeconds - coolingSince < TokenGraphics.ThermalRecoverAfterSeconds) return;
+            Heat = status;
+            Changed?.Invoke();
+        }
+
+        GraphicsLevel Cooled(GraphicsLevel level)
+        {
+            switch (Heat)
+            {
+                case ThermalStatus.Severe: return GraphicsLevel.Low;
+                case ThermalStatus.Moderate: return level == GraphicsLevel.Low ? level : level - 1;
+                default: return level;
+            }
         }
 
         public float RenderScale(int nativeShortSide)

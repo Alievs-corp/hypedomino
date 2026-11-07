@@ -60,7 +60,7 @@ The player may pick any level from Low up to the highest; a higher one is shown 
 | Moderate | moderate | serious | One level lower, not below Low |
 | Severe | severe, critical, emergency, shutdown | critical | Low |
 
-A drop applies at once. The chosen level comes back after the status has stayed normal for 60 s (`thermal.recoverAfterSeconds`).
+A hotter status applies at once. A cooler one applies only after it has held for 60 s (`thermal.recoverAfterSeconds`), and any hotter reading in between restarts the wait, so the level does not flicker at a boundary. While the status is not normal, the probe does not run and a window that ends hot is ignored. The client watches the status on Android only for now; iOS is in section 9.
 
 ## 2. Test conditions (all device measurements)
 
@@ -198,3 +198,4 @@ Not affected and why:
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
 - Skinned 3D characters (ADR 0009) are part of the match scene: their skinning, draw calls and memory are inside the client budgets above and are first measured in #93.
 - The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` and pprof at `/debug/pprof/` on the debug listener (`HD_DEBUG_ADDR`, off when empty, `server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
+- Thermal status on iOS (1.1): reading `ProcessInfo.thermalState` needs a native plugin, added when the first iOS build exists (#159). Until then an iOS device never drops for heat.
