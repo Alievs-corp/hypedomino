@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "HypeDomino.Core",
         "HypeDomino.UI",
+        "HypeDomino.Content",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
