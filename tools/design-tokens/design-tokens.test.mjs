@@ -43,6 +43,8 @@ test("C# graphics tokens list levels low to ultra and tiers low to high", () => 
   assert.ok(source.includes("public static readonly int[] MaxRenderShortSideOfLevel = { 720, 1080, 1080, 2160 };"));
   assert.ok(source.includes("public static readonly int[] HighestLevelOfTier = { 0, 1, 3 };"));
   assert.ok(source.includes(String.raw`@"^Adreno \(TM\) (7[3-9]\d|8\d\d)\b"`));
+  assert.ok(source.includes("public const float LowWorkTimeP95Ms = 28f;"));
+  assert.ok(source.includes("public const float HighWorkTimeP95Ms = 7f;"));
 });
 
 test("a level that shows animated cosmetics with no budget, or a budget without them, is reported", () => {

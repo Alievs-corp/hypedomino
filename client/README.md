@@ -66,7 +66,7 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 
 ## Graphics levels
 
-`UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. The `GraphicsQualityTests` EditMode tests cover the class rule on the matrix devices and the choice rules.
+`UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. `Game/GraphicsProbe` is the first-match probe: the match scene adds it, and while the choice is Auto and the probe is not settled it measures work time and hands the p95 to `GraphicsBoot.SettleProbe`, which saves the drops with the app version and logs one `GraphicsProbe ...` line. The `GraphicsQualityTests` EditMode tests cover the class rule on the matrix devices and the choice rules.
 
 ## Avatars
 

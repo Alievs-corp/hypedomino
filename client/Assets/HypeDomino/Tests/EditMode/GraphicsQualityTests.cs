@@ -34,7 +34,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(DeviceTier.High, GraphicsLevel.High, GraphicsLevel.Ultra)]
         public void AutoPicksTheTierDefaultBelowTheHighest(DeviceTier tier, GraphicsLevel auto, GraphicsLevel highest)
         {
-            var quality = new GraphicsQuality(tier, null);
+            var quality = new GraphicsQuality(tier, null, 0, false);
             Assert.IsNull(quality.Choice);
             Assert.AreEqual(auto, quality.Level);
             Assert.AreEqual(highest, quality.Highest);
@@ -43,7 +43,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ALevelAboveTheHighestCannotBeChosen()
         {
-            var quality = new GraphicsQuality(DeviceTier.Mid, null);
+            var quality = new GraphicsQuality(DeviceTier.Mid, null, 0, false);
             var changes = 0;
             quality.Changed += () => changes++;
 
@@ -56,7 +56,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ALowerLevelAppliesOnceAndAutoComesBack()
         {
-            var quality = new GraphicsQuality(DeviceTier.High, null);
+            var quality = new GraphicsQuality(DeviceTier.High, null, 0, false);
             var changes = 0;
             quality.Changed += () => changes++;
 
@@ -73,7 +73,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ASavedChoiceAboveTheHighestCountsAsTheHighest()
         {
-            var quality = new GraphicsQuality(DeviceTier.Mid, GraphicsLevel.Ultra);
+            var quality = new GraphicsQuality(DeviceTier.Mid, GraphicsLevel.Ultra, 0, false);
             Assert.AreEqual(GraphicsLevel.Medium, quality.Choice);
             Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
         }
@@ -84,7 +84,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(GraphicsLevel.Ultra, EffectLevel.High)]
         public void EachLevelRunsItsEffectLevel(GraphicsLevel level, EffectLevel effects)
         {
-            Assert.AreEqual(effects, new GraphicsQuality(DeviceTier.High, level).Effects);
+            Assert.AreEqual(effects, new GraphicsQuality(DeviceTier.High, level, 0, false).Effects);
         }
 
         [TestCase(GraphicsLevel.Low, 1080, 0.6667f)]
@@ -95,7 +95,83 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(GraphicsLevel.Ultra, 0, 1f)]
         public void TheCameraRendersNoLargerThanTheLevelCap(GraphicsLevel level, int nativeShortSide, float renderScale)
         {
-            Assert.AreEqual(renderScale, new GraphicsQuality(DeviceTier.High, level).RenderScale(nativeShortSide), 0.0001f);
+            Assert.AreEqual(renderScale, new GraphicsQuality(DeviceTier.High, level, 0, false).RenderScale(nativeShortSide), 0.0001f);
+        }
+
+        [Test]
+        public void ASlowProbeDropsAutoOneLevelAndLocksTheLevelsAbove()
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, null, 0, false);
+            var changes = 0;
+            quality.Changed += () => changes++;
+
+            Assert.AreEqual(ProbeResult.Dropped, quality.SettleProbe(7.5));
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Highest);
+            Assert.IsFalse(quality.CanChoose(GraphicsLevel.High));
+            Assert.IsTrue(quality.ProbeWanted);
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void APassingProbeStopsWithoutAChange()
+        {
+            var quality = new GraphicsQuality(DeviceTier.Mid, null, 0, false);
+            var changes = 0;
+            quality.Changed += () => changes++;
+
+            Assert.AreEqual(ProbeResult.Passed, quality.SettleProbe(14.0));
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
+            Assert.IsFalse(quality.ProbeWanted);
+            Assert.AreEqual(0, changes);
+        }
+
+        [Test]
+        public void AProbeWithoutTimingDataChangesNothing()
+        {
+            var quality = new GraphicsQuality(DeviceTier.Mid, null, 0, false);
+            Assert.AreEqual(ProbeResult.NoData, quality.SettleProbe(0));
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
+            Assert.IsTrue(quality.ProbeWanted);
+        }
+
+        [Test]
+        public void ASlowProbeOnLowStopsThere()
+        {
+            var quality = new GraphicsQuality(DeviceTier.Low, null, 0, false);
+            Assert.AreEqual(ProbeResult.SlowAtLowest, quality.SettleProbe(40.0));
+            Assert.AreEqual(GraphicsLevel.Low, quality.Level);
+            Assert.IsFalse(quality.ProbeWanted);
+        }
+
+        [Test]
+        public void AChosenLevelIsNotProbed()
+        {
+            Assert.IsFalse(new GraphicsQuality(DeviceTier.High, GraphicsLevel.Medium, 0, false).ProbeWanted);
+        }
+
+        [TestCase(DeviceTier.High, 1, GraphicsLevel.Medium)]
+        [TestCase(DeviceTier.High, 2, GraphicsLevel.Low)]
+        [TestCase(DeviceTier.High, 5, GraphicsLevel.Low)]
+        [TestCase(DeviceTier.Mid, -3, GraphicsLevel.Medium)]
+        public void SavedDropsLowerAutoButNeverBelowLow(DeviceTier tier, int drops, GraphicsLevel level)
+        {
+            Assert.AreEqual(level, new GraphicsQuality(tier, null, drops, false).Level);
+        }
+
+        [Test]
+        public void ASavedChoiceAboveTheDroppedLevelCountsAsIt()
+        {
+            var quality = new GraphicsQuality(DeviceTier.High, GraphicsLevel.Ultra, 1, true);
+            Assert.AreEqual(GraphicsLevel.Medium, quality.Level);
+        }
+
+        [TestCase(GraphicsLevel.Low, 28f)]
+        [TestCase(GraphicsLevel.Medium, 14f)]
+        [TestCase(GraphicsLevel.Ultra, 7f)]
+        public void TheProbeGateIsTheWorkTimeOfTheEffectLevel(GraphicsLevel level, float gateMs)
+        {
+            Assert.AreEqual(gateMs, new GraphicsQuality(DeviceTier.High, level, 0, false).WorkTimeGateMs);
         }
     }
 }
