@@ -33,6 +33,20 @@ test("a device tier whose Auto level is above its highest is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.graphics.tiers.low.highest = "turbo"; }), "tiers.low: unknown graphics level");
 });
 
+test("frame rates that are not offered, fall, or let the saver run faster than menus are reported", () => {
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.frameRate.menuMax = 75; }), "frameRate.menuMax: 75 is not an offered rate");
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.frameRate.options = [30, 90, 60, 120]; }), "frameRate.options: must rise");
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.frameRate.batterySaver = 60; copy.effects.graphics.frameRate.menuMax = 30; }), "batterySaver: must not exceed menuMax");
+  assertReported(errorsAfter((copy) => { copy.effects.levels.medium.targetFps = 50; }), "effects.levels.medium.targetFps: 50 is not an offered rate");
+});
+
+test("C# frame rate tokens carry the offered rates and each effect level's target", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public static readonly int[] FrameRateOptions = { 30, 60, 90, 120 };"));
+  assert.ok(source.includes("public static readonly int[] TargetFpsOfEffectLevel = { 30, 60, 120 };"));
+  assert.ok(source.includes("public const int BatterySaverFrameRate = 30;"));
+});
+
 test("a GPU pattern that is not a regular expression is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.graphics.deviceClass.lowGpuPatterns.push("^Mali-(G52"); }), "^Mali-(G52 is not a regular expression");
 });

@@ -145,5 +145,10 @@ namespace HypeDomino.UI.Tokens
         public const int ProbeWarmupFrames = 300;
         public const int ProbeFrames = 1800;
         public const int ThermalRecoverAfterSeconds = 60;
+        public static readonly int[] FrameRateOptions = { 30, 60, 90, 120 };
+        public static readonly int[] TargetFpsOfEffectLevel = { 30, 60, 120 };
+        public const int AutoMaxFrameRate = 60;
+        public const int MenuMaxFrameRate = 60;
+        public const int BatterySaverFrameRate = 30;
     }
 }

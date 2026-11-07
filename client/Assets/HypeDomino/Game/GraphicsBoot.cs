@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HypeDomino.UI.Graphics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -12,17 +13,24 @@ namespace HypeDomino.Game
         const string ProbeDropsKey = "graphics.probeDrops";
         const string ProbeSettledKey = "graphics.probeSettled";
         const string ProbeVersionKey = "graphics.probeVersion";
+        const string FrameRateKey = "graphics.frameRate";
+        const string BatterySaverKey = "graphics.batterySaver";
         const int AutoChoice = -1;
 
         static GraphicsLevel? savedChoice;
         static int savedProbeDrops;
+        static int? savedFrameRate;
+        static bool savedBatterySaver;
 
         public static GraphicsQuality Quality { get; private set; }
+
+        public static FrameRatePolicy FrameRate { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
-            var device = new DeviceFacts(SystemInfo.systemMemorySize, SystemInfo.graphicsDeviceName, HighestRefreshHz());
+            var refreshRatesHz = RefreshRatesHz();
+            var device = new DeviceFacts(SystemInfo.systemMemorySize, SystemInfo.graphicsDeviceName, Highest(refreshRatesHz));
             var sameVersion = PlayerPrefs.GetString(ProbeVersionKey) == Application.version;
             Quality = new GraphicsQuality(
                 DeviceClass.TierOf(device),
@@ -32,10 +40,17 @@ namespace HypeDomino.Game
             savedChoice = Quality.Choice;
             savedProbeDrops = Quality.ProbeDrops;
             Quality.Changed += OnChanged;
+            savedFrameRate = LoadFrameRate();
+            savedBatterySaver = PlayerPrefs.GetInt(BatterySaverKey, 0) == 1;
+            FrameRate = new FrameRatePolicy(Quality, refreshRatesHz, savedFrameRate, savedBatterySaver);
+            FrameRate.Changed += OnFrameRateChanged;
             ThermalWatch.StartWatching();
+            PowerSaveWatch.StartWatching();
             var renderScale = ApplyRenderScale();
+            Application.targetFrameRate = FrameRate.Target;
             Debug.Log($"Graphics tier={Quality.Tier} level={Quality.Level} effects={Quality.Effects} renderScale={renderScale:F2} probeDrops={Quality.ProbeDrops} " +
-                      $"memoryMb={device.MemoryMb} gpu=\"{device.GpuName}\" refreshHz={device.MaxRefreshHz} shortSide={NativeShortSide()}");
+                      $"targetFps={FrameRate.Target} highestFps={FrameRate.Highest} memoryMb={device.MemoryMb} gpu=\"{device.GpuName}\" " +
+                      $"refreshHz={string.Join("/", refreshRatesHz)} shortSide={NativeShortSide()}");
         }
 
         public static void SettleProbe(double workTimeP95Ms)
@@ -64,6 +79,29 @@ namespace HypeDomino.Game
             PlayerPrefs.Save();
         }
 
+        static void OnFrameRateChanged()
+        {
+            if (FrameRate.Choice != savedFrameRate || FrameRate.BatterySaver != savedBatterySaver) SaveFrameRate();
+            if (Application.targetFrameRate == FrameRate.Target) return;
+            Application.targetFrameRate = FrameRate.Target;
+            Debug.Log($"Graphics targetFps={FrameRate.Target} inMatch={FrameRate.InMatch} batterySaver={FrameRate.BatterySaver} systemSaver={FrameRate.SystemSaver} level={Quality.Level}");
+        }
+
+        static void SaveFrameRate()
+        {
+            savedFrameRate = FrameRate.Choice;
+            savedBatterySaver = FrameRate.BatterySaver;
+            PlayerPrefs.SetInt(FrameRateKey, FrameRate.Choice ?? AutoChoice);
+            PlayerPrefs.SetInt(BatterySaverKey, FrameRate.BatterySaver ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        static int? LoadFrameRate()
+        {
+            var saved = PlayerPrefs.GetInt(FrameRateKey, AutoChoice);
+            return saved > 0 ? saved : null;
+        }
+
         static GraphicsLevel? LoadChoice()
         {
             var saved = PlayerPrefs.GetInt(ChoiceKey, AutoChoice);
@@ -81,12 +119,21 @@ namespace HypeDomino.Game
 
         static int NativeShortSide() => Math.Min(Display.main.systemWidth, Display.main.systemHeight);
 
-        static int HighestRefreshHz()
+        static int[] RefreshRatesHz()
         {
-            var highest = Screen.currentResolution.refreshRateRatio.value;
-            foreach (var resolution in Screen.resolutions)
-                highest = Math.Max(highest, resolution.refreshRateRatio.value);
-            return (int)Math.Round(highest);
+            var rates = new List<int>();
+            AddRate(rates, Screen.currentResolution);
+            foreach (var resolution in Screen.resolutions) AddRate(rates, resolution);
+            rates.Sort();
+            return rates.ToArray();
         }
+
+        static void AddRate(List<int> rates, Resolution resolution)
+        {
+            var rate = (int)Math.Round(resolution.refreshRateRatio.value);
+            if (rate > 0 && !rates.Contains(rate)) rates.Add(rate);
+        }
+
+        static int Highest(int[] rates) => rates.Length == 0 ? 0 : rates[rates.Length - 1];
     }
 }

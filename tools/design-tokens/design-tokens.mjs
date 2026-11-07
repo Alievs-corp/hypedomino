@@ -18,7 +18,7 @@ const scalingFields = ["particles", "drawCalls"];
 const requiredGroups = [
   "color", "opacity", "rarity", "typography", "radius", "spacing", "size", "elevation", "glow",
   "motion.duration", "motion.easing", "motion.shake", "effects.levels", "effects.budgets", "effects.concurrentSets", "scoreCascade",
-  "effects.graphics.levels", "effects.graphics.tiers", "effects.graphics.deviceClass", "effects.graphics.probe", "effects.graphics.thermal",
+  "effects.graphics.levels", "effects.graphics.tiers", "effects.graphics.deviceClass", "effects.graphics.probe", "effects.graphics.thermal", "effects.graphics.frameRate",
 ];
 const requiredGlyphs = "ƏəĞğIıİiŞşÇçÖöÜü";
 const hexPattern = /^#[0-9A-F]{6}$/;
@@ -265,7 +265,7 @@ function patternErrors(path, patterns) {
   return errors;
 }
 
-function graphicsErrors(graphics) {
+function graphicsErrors(graphics, effectLevels) {
   const errors = [];
   const rank = (name) => graphicsLevels.indexOf(name);
   graphicsLevels.forEach((name, index) => {
@@ -306,6 +306,22 @@ function graphicsErrors(graphics) {
   if (deviceClass.lowBelowMemoryMb >= deviceClass.highFromMemoryMb) errors.push("effects.graphics.deviceClass: lowBelowMemoryMb must be under highFromMemoryMb");
   errors.push(...patternErrors("effects.graphics.deviceClass.lowGpuPatterns", deviceClass.lowGpuPatterns));
   errors.push(...patternErrors("effects.graphics.deviceClass.highGpuPatterns", deviceClass.highGpuPatterns));
+  return [...errors, ...frameRateErrors(graphics.frameRate, effectLevels)];
+}
+
+function frameRateErrors(frameRate, effectLevels) {
+  const { options } = frameRate;
+  if (!Array.isArray(options) || options.length === 0 || !options.every(isPositiveInteger)) return ["effects.graphics.frameRate.options: must be a list of positive integers"];
+  const errors = [];
+  if (options.some((rate, index) => index > 0 && rate <= options[index - 1])) errors.push("effects.graphics.frameRate.options: must rise");
+  for (const field of ["autoMax", "menuMax", "batterySaver"]) {
+    if (!options.includes(frameRate[field])) errors.push(`effects.graphics.frameRate.${field}: ${frameRate[field]} is not an offered rate`);
+  }
+  if (frameRate.batterySaver > frameRate.menuMax) errors.push("effects.graphics.frameRate.batterySaver: must not exceed menuMax");
+  if (frameRate.batterySaver !== options[0]) errors.push("effects.graphics.frameRate.batterySaver: must be the lowest offered rate");
+  for (const name of levels) {
+    if (!options.includes(effectLevels[name].targetFps)) errors.push(`effects.levels.${name}.targetFps: ${effectLevels[name].targetFps} is not an offered rate`);
+  }
   return errors;
 }
 
@@ -362,7 +378,7 @@ export function checkTokens(tokens, specText, raritySpecText) {
     ...levels.flatMap((name) => (tokens.effects.levels[name] ? levelErrors(name, tokens.effects.levels[name]) : [`effects.levels.${name}: missing`])),
   ];
   if (errors.length > 0) return errors;
-  errors.push(...effectErrors(tokens.effects), ...cascadeErrors(tokens), ...graphicsErrors(tokens.effects.graphics));
+  errors.push(...effectErrors(tokens.effects), ...cascadeErrors(tokens), ...graphicsErrors(tokens.effects.graphics, tokens.effects.levels));
   for (const row of contrastTable(tokens)) if (!specText.includes(row)) errors.push(`spec contrast table is missing or stale: ${row}`);
   if (!specText.includes(requiredGlyphs)) errors.push("spec does not list the required Azerbaijani and Turkish glyphs");
   for (const hex of colorValues(tokens.color)) if (!specText.includes(`\`${hex}\``)) errors.push(`spec does not list colour ${hex}`);
@@ -395,8 +411,8 @@ const intArray = (name, values) => `public static readonly int[] ${name} = { ${v
 const verbatimString = (value) => `@"${value.replaceAll('"', '""')}"`;
 const stringArray = (name, values) => `public static readonly string[] ${name} = { ${values.map(verbatimString).join(", ")} };`;
 
-function graphicsMembers(graphics) {
-  const { deviceClass, probe, thermal } = graphics;
+function graphicsMembers(graphics, effectLevels) {
+  const { deviceClass, probe, thermal, frameRate } = graphics;
   const level = (name) => graphics.levels[name];
   const tier = (name) => graphics.tiers[name];
   return [
@@ -412,6 +428,11 @@ function graphicsMembers(graphics) {
     `public const int ProbeWarmupFrames = ${intLiteral(["probe", "warmupFrames"], probe.warmupFrames)};`,
     `public const int ProbeFrames = ${intLiteral(["probe", "frames"], probe.frames)};`,
     `public const int ThermalRecoverAfterSeconds = ${intLiteral(["thermal", "recoverAfterSeconds"], thermal.recoverAfterSeconds)};`,
+    intArray("FrameRateOptions", frameRate.options.map((rate) => intLiteral(["frameRate", "options"], rate))),
+    intArray("TargetFpsOfEffectLevel", levels.map((name) => intLiteral(["effects", "levels", name, "targetFps"], effectLevels[name].targetFps))),
+    `public const int AutoMaxFrameRate = ${intLiteral(["frameRate", "autoMax"], frameRate.autoMax)};`,
+    `public const int MenuMaxFrameRate = ${intLiteral(["frameRate", "menuMax"], frameRate.menuMax)};`,
+    `public const int BatterySaverFrameRate = ${intLiteral(["frameRate", "batterySaver"], frameRate.batterySaver)};`,
   ];
 }
 
@@ -434,7 +455,7 @@ export function csharpTokens(tokens) {
       `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
       `public const int ${pascal(name)}Pooled = ${Math.max(...levels.map((level) => effect[level].pooled))};`,
     ])),
-    csharpClass("TokenGraphics", graphicsMembers(tokens.effects.graphics)),
+    csharpClass("TokenGraphics", graphicsMembers(tokens.effects.graphics, tokens.effects.levels)),
   ];
   return [
     "// Code generated by tools/design-tokens/design-tokens.mjs --csharp from docs/design-tokens.json. DO NOT EDIT.",

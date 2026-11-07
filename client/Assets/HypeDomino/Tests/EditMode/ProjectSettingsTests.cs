@@ -1,4 +1,6 @@
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build;
@@ -64,6 +66,15 @@ namespace HypeDomino.Tests.EditMode
             for (var level = 0; level < QualitySettings.names.Length; level++)
                 Assert.IsNull(QualitySettings.GetRenderPipelineAssetAt(level), QualitySettings.names[level]);
             Assert.AreEqual(current, QualitySettings.GetQualityLevel());
+        }
+
+        [Test]
+        public void NoQualityLevelWaitsForVsyncSoTheTargetFrameRateDecides()
+        {
+            var settings = File.ReadAllText("ProjectSettings/QualitySettings.asset");
+            var counts = Regex.Matches(settings, @"vSyncCount: (\d+)");
+            Assert.AreEqual(QualitySettings.names.Length, counts.Count);
+            foreach (Match count in counts) Assert.AreEqual("0", count.Groups[1].Value);
         }
 
         [Test]

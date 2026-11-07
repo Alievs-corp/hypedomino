@@ -34,7 +34,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 | Android | ARM64 only; Vulkan, then OpenGL ES 3 | Install size; no 32-bit devices in the matrix (`docs/performance.md` 1) |
 | iOS | Metal | Only API on target devices |
 | Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | ADR 0009, `docs/ui-motion.md` 4 |
-| Quality levels | No per-level pipeline; every level uses the default URP asset | One renderer; graphics levels set only its render scale (`docs/performance.md` 1.1) |
+| Quality levels | No per-level pipeline; every level uses the default URP asset; `vSyncCount` 0 | One renderer; graphics levels set only its render scale (`docs/performance.md` 1.1); `Application.targetFrameRate` alone sets the rate (1.2) |
 | Profiling | Frame Timing Stats on | `FrameTimingManager` measurements, `docs/performance.md` 2 |
 | Color space | Linear | Lit 3D characters, ADR 0009 |
 
@@ -46,7 +46,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 
 ## Measuring the empty build
 
-`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The sampler sets `Application.targetFrameRate` to the highest refresh rate the display reports and logs every 1200 frames:
+`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The sampler measures at the frame rate `GraphicsBoot` set (`docs/performance.md` 1.2; the highest refresh rate when none is set) and logs every 1200 frames:
 
 ```
 FrameTiming target=<Hz> frames=1200 workP50=<ms>ms workP95=<ms>ms missedVsync=<percent>% gcFrames=<n> gcMax=<bytes>B gcCollections=<n> batchesMax=<n>
@@ -66,7 +66,7 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 
 ## Graphics levels
 
-`UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. `Game/GraphicsProbe` is the first-match probe: the match scene adds it, and while the choice is Auto and the probe is not settled it measures work time and hands the p95 to `GraphicsBoot.SettleProbe`, which saves the drops with the app version and logs one `GraphicsProbe ...` line. `Game/ThermalWatch` starts with it on Android 10 and later: a `PowerManager` thermal status listener feeds `GraphicsQuality.UpdateHeat` every frame, and each level change logs one `Graphics level=... heat=...` line. The `GraphicsQualityTests` EditMode tests cover the class rule on the matrix devices and the choice rules.
+`UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. `Game/GraphicsProbe` is the first-match probe: the match scene adds it, and while the choice is Auto and the probe is not settled it measures work time and hands the p95 to `GraphicsBoot.SettleProbe`, which saves the drops with the app version and logs one `GraphicsProbe ...` line. `Game/ThermalWatch` starts with it on Android 10 and later: a `PowerManager` thermal status listener feeds `GraphicsQuality.UpdateHeat` every frame, and each level change logs one `Graphics level=... heat=...` line. `FrameRatePolicy` holds the frame rate (`docs/performance.md` 1.2): the rates offered for the level in use and the display, Auto or the chosen rate, the menu cap and the battery saver. `GraphicsBoot` sets `Application.targetFrameRate` to its `Target` and logs one `Graphics targetFps=...` line per change; the match scene calls `FrameRate.SetInMatch`, and `Game/PowerSaveWatch` reads the Android system saver at start and on focus. The `GraphicsQualityTests` and `FrameRatePolicyTests` EditMode tests cover the class rule on the matrix devices, the choice rules and the frame rate rules.
 
 ## Avatars
 

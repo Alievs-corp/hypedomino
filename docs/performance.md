@@ -62,6 +62,22 @@ The player may pick any level from Low up to the highest; a higher one is shown 
 
 A hotter status applies at once. A cooler one applies only after it has held for 60 s (`thermal.recoverAfterSeconds`), and any hotter reading in between restarts the wait, so the level does not flicker at a boundary. While the status is not normal, the probe does not run and a window that ends hot is ignored. The client watches the status on Android only for now; iOS is in section 9.
 
+### 1.2 Frame rate
+
+The player picks Auto (the default) or a frame rate in settings (#157). Values are admin config (`effects.graphics.frameRate` in `docs/design-tokens.json`, and `targetFps` of each effect level), with the defaults below.
+
+| Rule | Default |
+|---|---|
+| Rates offered | 30, 60, 90, 120 |
+| A rate is offered when | It is at most the `targetFps` of the effect level in use (low 30, medium 60, high 120), and a refresh rate the display reports in `Screen.resolutions` is a whole multiple of it, so frames are paced evenly |
+| Auto | The highest offered rate up to 60. A 120 option is opt-in |
+| Menus (lobby, shop, profile, settings) | At most 60. The chosen rate applies in a match only |
+| Battery saver | 30 everywhere, while the in-game toggle or the system saver (Android `PowerManager.isPowerSaveMode`) is on. The graphics level does not change |
+
+A saved rate above the highest one offered counts as the highest. The level in use decides the cap, so a thermal drop (1.1) lowers the rate too, and it comes back with the level.
+
+The client sets `QualitySettings.vSyncCount` to 0 and `Application.targetFrameRate` to the rate in use, on every platform. On Android, Optimized Frame Pacing (Swappy, on in Player Settings) paces frames and asks the display for a matching refresh rate. The match scene tells the client when a match starts and ends. The system saver is read at start and each time the app regains focus, because the quick settings shade takes focus; it is not polled during a match, so a JNI call never allocates in a match frame. iOS Low Power Mode needs a native plugin (section 9).
+
 ## 2. Test conditions (all device measurements)
 
 - Development build with the Unity Profiler attached, deep profiling off, for Profiler-based gates. Release build (IL2CPP, ARM64, no Profiler) for cold start, fps and battery gates.
@@ -198,4 +214,4 @@ Not affected and why:
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
 - Skinned 3D characters (ADR 0009) are part of the match scene: their skinning, draw calls and memory are inside the client budgets above and are first measured in #93.
 - The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` and pprof at `/debug/pprof/` on the debug listener (`HD_DEBUG_ADDR`, off when empty, `server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
-- Thermal status on iOS (1.1): reading `ProcessInfo.thermalState` needs a native plugin, added when the first iOS build exists (#159). Until then an iOS device never drops for heat.
+- Thermal status on iOS (1.1): reading `ProcessInfo.thermalState` needs a native plugin, added when the first iOS build exists (#159). Until then an iOS device never drops for heat. iOS Low Power Mode (1.2, `ProcessInfo.isLowPowerModeEnabled`) needs the same plugin; until then only the in-game battery saver toggle applies on iOS.
