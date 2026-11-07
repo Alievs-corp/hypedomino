@@ -4,11 +4,21 @@ using HypeDomino.UI.Tokens;
 
 namespace HypeDomino.UI.Graphics
 {
+    public enum ProbeResult
+    {
+        NoData,
+        Passed,
+        Dropped,
+        SlowAtLowest
+    }
+
     public sealed class GraphicsQuality
     {
-        public GraphicsQuality(DeviceTier tier, GraphicsLevel? savedChoice)
+        public GraphicsQuality(DeviceTier tier, GraphicsLevel? savedChoice, int probeDrops, bool probeSettled)
         {
             Tier = tier;
+            ProbeDrops = Math.Max(0, probeDrops);
+            ProbeSettled = probeSettled;
             Choice = savedChoice > Highest ? Highest : savedChoice;
         }
 
@@ -18,13 +28,32 @@ namespace HypeDomino.UI.Graphics
 
         public GraphicsLevel? Choice { get; private set; }
 
-        public GraphicsLevel Auto => (GraphicsLevel)TokenGraphics.AutoLevelOfTier[(int)Tier];
+        public int ProbeDrops { get; private set; }
 
-        public GraphicsLevel Highest => (GraphicsLevel)TokenGraphics.HighestLevelOfTier[(int)Tier];
+        public bool ProbeSettled { get; private set; }
+
+        public bool ProbeWanted => !Choice.HasValue && !ProbeSettled;
+
+        public GraphicsLevel Auto => (GraphicsLevel)Math.Max((int)GraphicsLevel.Low, TokenGraphics.AutoLevelOfTier[(int)Tier] - ProbeDrops);
+
+        public GraphicsLevel Highest => ProbeDrops > 0 ? Auto : (GraphicsLevel)TokenGraphics.HighestLevelOfTier[(int)Tier];
 
         public GraphicsLevel Level => Choice ?? Auto;
 
         public EffectLevel Effects => (EffectLevel)TokenGraphics.EffectLevelOfLevel[(int)Level];
+
+        public float WorkTimeGateMs
+        {
+            get
+            {
+                switch (Effects)
+                {
+                    case EffectLevel.High: return TokenEffectLevel.HighWorkTimeP95Ms;
+                    case EffectLevel.Medium: return TokenEffectLevel.MediumWorkTimeP95Ms;
+                    default: return TokenEffectLevel.LowWorkTimeP95Ms;
+                }
+            }
+        }
 
         public bool CanChoose(GraphicsLevel level) => level <= Highest;
 
@@ -35,6 +64,24 @@ namespace HypeDomino.UI.Graphics
             Choice = level;
             Changed?.Invoke();
             return true;
+        }
+
+        public ProbeResult SettleProbe(double workTimeP95Ms)
+        {
+            if (workTimeP95Ms <= 0) return ProbeResult.NoData;
+            if (workTimeP95Ms <= WorkTimeGateMs)
+            {
+                ProbeSettled = true;
+                return ProbeResult.Passed;
+            }
+            if (Auto == GraphicsLevel.Low)
+            {
+                ProbeSettled = true;
+                return ProbeResult.SlowAtLowest;
+            }
+            ProbeDrops++;
+            Changed?.Invoke();
+            return ProbeResult.Dropped;
         }
 
         public float RenderScale(int nativeShortSide)

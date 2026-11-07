@@ -102,8 +102,11 @@ namespace HypeDomino.UI.Tokens
     public static class TokenEffectLevel
     {
         public const int LowMaxAnimatedCosmetics = 0;
+        public const float LowWorkTimeP95Ms = 28f;
         public const int MediumMaxAnimatedCosmetics = 10;
+        public const float MediumWorkTimeP95Ms = 14f;
         public const int HighMaxAnimatedCosmetics = 10;
+        public const float HighWorkTimeP95Ms = 7f;
     }
 
     public static class TokenEffect
