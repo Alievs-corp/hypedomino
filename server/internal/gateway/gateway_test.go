@@ -299,6 +299,7 @@ func activeStrings() Strings {
 func testConfig() Config {
 	config := DefaultConfig()
 	config.CatalogVersion = "2026.10.26-1"
+	config.ContentBaseURL = "https://content.example.com/staging"
 	config.HelloTimeout = 200 * time.Millisecond
 	config.CloseTimeout = 500 * time.Millisecond
 	return config
@@ -319,14 +320,14 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	if reply.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED || frame.GetAckedSequence() != 41 {
 		t.Fatalf("accepted hello: %v", frame)
 	}
-	if reply.GetServerTimeUnixMs() != 1761480000000 || reply.GetCatalogVersion() != "2026.10.26-1" || reply.GetMinimumAppVersion() != "1.0.0" {
+	if reply.GetServerTimeUnixMs() != 1761480000000 || reply.GetCatalogVersion() != "2026.10.26-1" || reply.GetContentBaseUrl() != "https://content.example.com/staging" || reply.GetMinimumAppVersion() != "1.0.0" {
 		t.Fatalf("server hello carries %v", reply)
 	}
 	if frame.GetProtocolVersion() != ProtocolVersion {
 		t.Fatalf("protocol version %d", frame.GetProtocolVersion())
 	}
 	if want := activeStrings(); !proto.Equal(reply, &pb.ServerHello{
-		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1",
+		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1", ContentBaseUrl: "https://content.example.com/staging",
 		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(),
 	}) || reply.GetSessionNonce() == 0 {
 		t.Fatalf("server hello carries the active string bundles: %v", reply)

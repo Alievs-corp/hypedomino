@@ -222,8 +222,8 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) shutdown(server *http.Server) error {
-	a.ready.Store(false)
 	a.rooms.Close()
+	a.ready.Store(false)
 	a.logger.Info("draining", "rooms", a.rooms.Len(), "connections", a.gateway.Connections())
 	drainCtx, cancelDrain := context.WithTimeout(context.Background(), a.config.DrainTimeout)
 	defer cancelDrain()
