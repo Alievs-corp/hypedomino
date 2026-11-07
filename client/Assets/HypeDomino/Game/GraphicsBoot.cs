@@ -14,6 +14,9 @@ namespace HypeDomino.Game
         const string ProbeVersionKey = "graphics.probeVersion";
         const int AutoChoice = -1;
 
+        static GraphicsLevel? savedChoice;
+        static int savedProbeDrops;
+
         public static GraphicsQuality Quality { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -26,7 +29,10 @@ namespace HypeDomino.Game
                 LoadChoice(),
                 sameVersion ? PlayerPrefs.GetInt(ProbeDropsKey, 0) : 0,
                 sameVersion && PlayerPrefs.GetInt(ProbeSettledKey, 0) == 1);
+            savedChoice = Quality.Choice;
+            savedProbeDrops = Quality.ProbeDrops;
             Quality.Changed += OnChanged;
+            ThermalWatch.StartWatching();
             var renderScale = ApplyRenderScale();
             Debug.Log($"Graphics tier={Quality.Tier} level={Quality.Level} effects={Quality.Effects} renderScale={renderScale:F2} probeDrops={Quality.ProbeDrops} " +
                       $"memoryMb={device.MemoryMb} gpu=\"{device.GpuName}\" refreshHz={device.MaxRefreshHz} shortSide={NativeShortSide()}");
@@ -42,12 +48,15 @@ namespace HypeDomino.Game
 
         static void OnChanged()
         {
-            SaveState();
-            ApplyRenderScale();
+            if (Quality.Choice != savedChoice || Quality.ProbeDrops != savedProbeDrops) SaveState();
+            var renderScale = ApplyRenderScale();
+            Debug.Log($"Graphics level={Quality.Level} effects={Quality.Effects} renderScale={renderScale:F2} heat={Quality.Heat} probeDrops={Quality.ProbeDrops}");
         }
 
         static void SaveState()
         {
+            savedChoice = Quality.Choice;
+            savedProbeDrops = Quality.ProbeDrops;
             PlayerPrefs.SetInt(ChoiceKey, Quality.Choice.HasValue ? (int)Quality.Choice.Value : AutoChoice);
             PlayerPrefs.SetInt(ProbeDropsKey, Quality.ProbeDrops);
             PlayerPrefs.SetInt(ProbeSettledKey, Quality.ProbeSettled ? 1 : 0);
