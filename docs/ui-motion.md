@@ -144,6 +144,23 @@ Rules:
 - Close and back work during enter and exit animations; an exit interrupted by a new enter reverses from its current value.
 - Clipping uses rectangle masks only; stencil masks break batching.
 
+### Screens
+
+Screens sit on a stack. The top screen takes input; back (the Android back key, Escape in the editor) pops it, and does nothing on the root screen. A modal is a screen drawn over the one below it with the scrim; the screen below stays visible and the scrim takes its taps.
+
+| Screen motion | Animation |
+|---|---|
+| Push | The new screen: scale `motion.panelEnterScale` 0.92 to 1 and opacity 0 to 1, `slow`, `enter`. The screen below stays as it is under it and is hidden when the enter ends |
+| Pop | The top screen: opacity 1 to 0 and scale 1 to 0.92, `base`, `exit`. The screen below shows at once under it |
+| Modal open, close | Panel enter and exit above, with the scrim fading to `opacity.scrim` and back in `base` |
+| Reduce motion | Opacity only, no scale; durations unchanged |
+| Interrupted | Runs from its current value to the new end, for the duration scaled by the distance left, so a pop during a push reverses it |
+
+- Input follows the stack, never the animation (section 6 rule 4): a pushed screen takes taps from its first frame and a popped one stops at once.
+- Each screen is its own `Canvas`, screen space overlay, sorted by stack depth, so a change on one screen re-batches only that screen. Animated parts inside a screen sit on their own sub-canvas (section 6 rule 2).
+- A hidden screen keeps its GameObject active and only its `Canvas` component is disabled. Its mesh stays built, so showing it again costs no rebuild.
+- Every screen canvas scales its 1080-unit short side to the display's short side (section 1), and its content sits inside the safe area; the background may run under the insets.
+
 ## 6. Motion
 
 | Duration | ms | Use |
