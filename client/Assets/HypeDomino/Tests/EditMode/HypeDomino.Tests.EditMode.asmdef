@@ -7,6 +7,9 @@
         "HypeDomino.Core",
         "HypeDomino.UI",
         "HypeDomino.Content",
+        "HypeDomino.Editor",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

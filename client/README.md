@@ -92,7 +92,7 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 
 ## Editor methods in CI
 
-Without a local Unity license, an editor method that creates or changes assets runs in CI: `gh workflow run unity-editor.yml --ref <branch> -f method=HypeDomino.Editor.<Class>.<Method>`. The workflow runs the method in batch mode and uploads everything it changed under `client/` as `editor-changes.patch` (artifact `editor-changes`); `gh run download <run id> -n editor-changes` and `git apply editor-changes.patch` bring it into the branch. The method must exit the editor itself (`EditorApplication.Exit`), as `ContentSetup.ApplyAndExit` does. The run fails when the method fails or changes nothing.
+Without a local Unity license, an editor method that creates or changes assets runs in CI: `gh workflow run unity-editor.yml --ref <branch> -f method=HypeDomino.Editor.<Class>.<Method>`. The workflow runs the method in batch mode and uploads everything it changed under `client/` as `editor-changes.patch` (artifact `editor-changes`); `gh run download <run id> -n editor-changes` and `git apply editor-changes.patch` bring it into the branch. The method runs its work through `EditorMethod.Run`, as `ContentSetup.ApplyAndExit` does: it exits the editor and writes `Logs/editor-method-succeeded` on success. The builder step always reports a failed build, because no player is built, so the run fails only when that file is missing.
 
 ## Safe area
 
