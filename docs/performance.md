@@ -12,7 +12,55 @@ Initial reference matrix. #191 certifies on it; changing a model needs a PR to t
 | Mid | Samsung Galaxy A34 5G | Dimensity 1080, Mali-G68, 6 GB, Android 14 | iPhone 12 (A14, 4 GB, iOS 17) | Gating tier: 60 fps and all start, draw call, GC, size, battery gates |
 | High | Samsung Galaxy S24 | Snapdragon 8 Gen 3, Adreno 750, 8 GB, Android 14 | iPhone 15 Pro (A17 Pro, 8 GB, 120 Hz ProMotion) | 120 fps option |
 
-Class rule for devices outside the matrix: Low = under 4 GB RAM or GPU older than Mali-G57 / Adreno 610 class; Mid = 4 to 8 GB with Mali-G68 / Adreno 619 class or better; High = 8 GB or more, flagship SoC, 120 Hz panel. The effects quality level (admin-tunable) is chosen per tier; Low runs the reduced-effects level.
+Class rule for devices outside the matrix: Low = under 4 GB RAM or GPU older than Mali-G57 / Adreno 610 class; Mid = 4 to 8 GB with Mali-G68 / Adreno 619 class or better; High = 8 GB or more, flagship SoC, 120 Hz panel. The tier decides the graphics level (1.1); Low runs the reduced-effects level.
+
+### 1.1 Graphics levels
+
+The player picks Auto (the default) or one of four graphics levels in settings (#157). A level sets the effect level (`docs/ui-motion.md` section 7) and the resolution the camera renders at. Values are admin config (`effects.graphics` in `docs/design-tokens.json`), with the defaults below.
+
+| Graphics level | Effect level | Camera render short side, at most |
+|---|---|---|
+| Low | low | 720 px |
+| Medium | medium | 1080 px |
+| High | high | 1080 px |
+| Ultra | high | 2160 px |
+
+The render scale is `min(1, cap / native short side)` and is set on the one URP asset (`renderScale`); there is one URP asset for every level. UI on screen-space overlay canvases always renders at the native resolution, so text stays sharp. Ultra differs from High only on a panel whose short side is over 1080 px. The frame rate is #158 and does not change the level.
+
+| Device tier | Auto picks | Highest the player may pick |
+|---|---|---|
+| Low | Low | Low |
+| Mid | Medium | Medium |
+| High | High | Ultra |
+
+The player may pick any level from Low up to the highest; a higher one is shown locked (`docs/ui-motion.md` section 7). A saved choice above the highest, for example after the class rule changes, counts as the highest.
+
+**Device tier.** The client applies the class rule above at every start, from `SystemInfo.systemMemorySize`, `SystemInfo.graphicsDeviceName` and the highest refresh rate in `Screen.resolutions` (`effects.graphics.deviceClass`):
+
+| Tier | Rule |
+|---|---|
+| Low | Memory under 3200 MB (a 4 GB device reports less than 4096 MB), or the GPU name matches a low pattern |
+| High | Memory 7000 MB or more, the GPU name matches a high pattern, and a refresh rate of 120 Hz or more |
+| Mid | Every other device, including a GPU between the Low and Mid classes; the probe below lowers it if it cannot carry Medium |
+
+| Patterns | Default (regular expressions on the GPU name) |
+|---|---|
+| Low | `^Mali-(T\d+\|G31\|G51\|G52\|G71\|G72)\b`, `^Adreno \(TM\) ([1-5]\d\d\|60\d)\b`, `^PowerVR Rogue` |
+| High | `^Adreno \(TM\) (7[3-9]\d\|8\d\d)\b`, `^Mali-G7[1-2]\d\b`, `^Immortalis`, `^Samsung Xclipse`, `^Apple (A1[5-9]\|A[2-9]\d\|M\d)\b` |
+
+#191 checks the rule on every certified device; a device in the wrong tier is fixed by a PR to the patterns or thresholds.
+
+**Probe.** The class rule is a guess; the first matches check it. While the choice is Auto, a match measures work time (section 2) with `FrameTimingManager` over 1800 frames after 300 warm-up frames (`probe`). If work time p95 is over the `workTimeP95Ms` of the level's effect level, Auto drops one level for the next match, the dropped level becomes the highest the player may pick, and the probe runs again at the new level. Once a window passes, the probe stops. A new app version clears the drops and runs the probe again. The probe never raises a level, never drops below Low, and makes no change on a device without frame timing data.
+
+**Thermal.** When the device reports heat, the level in use drops without changing the saved choice. Android 10 and later report it through the `PowerManager` thermal status listener; Android 7.1 to 9 give no signal and never drop. iOS reports `ProcessInfo.thermalState`.
+
+| Status | Android | iOS | Level in use |
+|---|---|---|---|
+| Normal | none, light | nominal, fair | The chosen level |
+| Moderate | moderate | serious | One level lower, not below Low |
+| Severe | severe, critical, emergency, shutdown | critical | Low |
+
+A drop applies at once. The chosen level comes back after the status has stayed normal for 60 s (`thermal.recoverAfterSeconds`).
 
 ## 2. Test conditions (all device measurements)
 

@@ -194,7 +194,7 @@ A settings toggle, defaulting to the OS setting (Android animator duration scale
 
 ## 7. Effect levels
 
-The effect level follows the graphics quality setting. The default level per device tier (`docs/performance.md` section 1) is admin config, with the defaults below. The player may choose a lower level, not a higher one. Reduce motion is independent of the level.
+The effect level follows the graphics level (`docs/performance.md` 1.1): Low uses low, Medium uses medium, High and Ultra use high. The default level per device tier (`docs/performance.md` section 1) is admin config, with the defaults below. The player may choose a lower level, not a higher one. Reduce motion is independent of the level.
 
 | | low | medium | high |
 |---|---|---|---|

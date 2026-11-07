@@ -246,6 +246,28 @@
       "blockEnd": ["tilePlace", "scorePopup", "scoreCascade", "block", "emoji"],
       "matchEnd": ["scorePopup", "scoreCascade", "matchWin", "emoji"],
       "results": ["scorePopup", "rankUp"]
+    },
+    "graphics": {
+      "levels": {
+        "low": { "effectLevel": "low", "maxRenderShortSide": 720 },
+        "medium": { "effectLevel": "medium", "maxRenderShortSide": 1080 },
+        "high": { "effectLevel": "high", "maxRenderShortSide": 1080 },
+        "ultra": { "effectLevel": "high", "maxRenderShortSide": 2160 }
+      },
+      "tiers": {
+        "low": { "auto": "low", "highest": "low" },
+        "mid": { "auto": "medium", "highest": "medium" },
+        "high": { "auto": "high", "highest": "ultra" }
+      },
+      "deviceClass": {
+        "lowBelowMemoryMb": 3200,
+        "highFromMemoryMb": 7000,
+        "highFromRefreshHz": 120,
+        "lowGpuPatterns": ["^Mali-(T\\d+|G31|G51|G52|G71|G72)\\b", "^Adreno \\(TM\\) ([1-5]\\d\\d|60\\d)\\b", "^PowerVR Rogue"],
+        "highGpuPatterns": ["^Adreno \\(TM\\) (7[3-9]\\d|8\\d\\d)\\b", "^Mali-G7[1-2]\\d\\b", "^Immortalis", "^Samsung Xclipse", "^Apple (A1[5-9]|A[2-9]\\d|M\\d)\\b"]
+      },
+      "probe": { "warmupFrames": 300, "frames": 1800 },
+      "thermal": { "recoverAfterSeconds": 60 }
     }
   },
   "scoreCascade": {

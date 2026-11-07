@@ -127,4 +127,20 @@ namespace HypeDomino.UI.Tokens
         public const int EmojiDurationMs = 1800;
         public const int EmojiPooled = 4;
     }
+
+    public static class TokenGraphics
+    {
+        public static readonly int[] EffectLevelOfLevel = { 0, 1, 2, 2 };
+        public static readonly int[] MaxRenderShortSideOfLevel = { 720, 1080, 1080, 2160 };
+        public static readonly int[] AutoLevelOfTier = { 0, 1, 2 };
+        public static readonly int[] HighestLevelOfTier = { 0, 1, 3 };
+        public const int LowBelowMemoryMb = 3200;
+        public const int HighFromMemoryMb = 7000;
+        public const int HighFromRefreshHz = 120;
+        public static readonly string[] LowGpuPatterns = { @"^Mali-(T\d+|G31|G51|G52|G71|G72)\b", @"^Adreno \(TM\) ([1-5]\d\d|60\d)\b", @"^PowerVR Rogue" };
+        public static readonly string[] HighGpuPatterns = { @"^Adreno \(TM\) (7[3-9]\d|8\d\d)\b", @"^Mali-G7[1-2]\d\b", @"^Immortalis", @"^Samsung Xclipse", @"^Apple (A1[5-9]|A[2-9]\d|M\d)\b" };
+        public const int ProbeWarmupFrames = 300;
+        public const int ProbeFrames = 1800;
+        public const int ThermalRecoverAfterSeconds = 60;
+    }
 }

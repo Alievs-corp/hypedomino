@@ -4,6 +4,8 @@ import { pathToFileURL } from "node:url";
 const textMinimumContrast = 4.5;
 const nonTextMinimumContrast = 3;
 const levels = ["low", "medium", "high"];
+const graphicsLevels = ["low", "medium", "high", "ultra"];
+const deviceTiers = ["low", "mid", "high"];
 const effectNames = ["tilePlace", "scorePopup", "scoreCascade", "spinnerFormation", "domino", "block", "matchWin", "rankUp", "emoji"];
 const budgetFields = ["particles", "drawCalls", "overdrawLayers", "pooled", "cpuMs", "gpuMs"];
 const summedFields = [
@@ -16,6 +18,7 @@ const scalingFields = ["particles", "drawCalls"];
 const requiredGroups = [
   "color", "opacity", "rarity", "typography", "radius", "spacing", "size", "elevation", "glow",
   "motion.duration", "motion.easing", "motion.shake", "effects.levels", "effects.budgets", "effects.concurrentSets", "scoreCascade",
+  "effects.graphics.levels", "effects.graphics.tiers", "effects.graphics.deviceClass", "effects.graphics.probe", "effects.graphics.thermal",
 ];
 const requiredGlyphs = "ƏəĞğIıİiŞşÇçÖöÜü";
 const hexPattern = /^#[0-9A-F]{6}$/;
@@ -249,6 +252,63 @@ function effectErrors(effects) {
   return errors;
 }
 
+function patternErrors(path, patterns) {
+  if (!Array.isArray(patterns)) return [`${path}: must be a list`];
+  const errors = [];
+  for (const pattern of patterns) {
+    try {
+      new RegExp(pattern);
+    } catch {
+      errors.push(`${path}: ${pattern} is not a regular expression`);
+    }
+  }
+  return errors;
+}
+
+function graphicsErrors(graphics) {
+  const errors = [];
+  const rank = (name) => graphicsLevels.indexOf(name);
+  graphicsLevels.forEach((name, index) => {
+    const level = graphics.levels[name];
+    if (!level) {
+      errors.push(`effects.graphics.levels.${name}: missing`);
+      return;
+    }
+    if (!levels.includes(level.effectLevel)) errors.push(`effects.graphics.levels.${name}: unknown effect level ${level.effectLevel}`);
+    if (!isPositiveInteger(level.maxRenderShortSide)) errors.push(`effects.graphics.levels.${name}.maxRenderShortSide: must be a positive integer`);
+    const previous = graphics.levels[graphicsLevels[index - 1]];
+    if (!previous) return;
+    if (levels.indexOf(level.effectLevel) < levels.indexOf(previous.effectLevel)) errors.push(`effects.graphics.levels.${name}: effect level must not fall below ${graphicsLevels[index - 1]}`);
+    if (level.maxRenderShortSide < previous.maxRenderShortSide) errors.push(`effects.graphics.levels.${name}: maxRenderShortSide must not fall below ${graphicsLevels[index - 1]}`);
+  });
+  deviceTiers.forEach((name, index) => {
+    const tier = graphics.tiers[name];
+    if (!tier) {
+      errors.push(`effects.graphics.tiers.${name}: missing`);
+      return;
+    }
+    if (rank(tier.auto) < 0 || rank(tier.highest) < 0) errors.push(`effects.graphics.tiers.${name}: unknown graphics level`);
+    else if (rank(tier.auto) > rank(tier.highest)) errors.push(`effects.graphics.tiers.${name}: auto is above highest`);
+    const previous = graphics.tiers[deviceTiers[index - 1]];
+    if (previous && rank(tier.highest) < rank(previous.highest)) errors.push(`effects.graphics.tiers.${name}: highest must not fall below ${deviceTiers[index - 1]}`);
+  });
+  const { deviceClass, probe, thermal } = graphics;
+  for (const [path, value] of [
+    ["deviceClass.lowBelowMemoryMb", deviceClass.lowBelowMemoryMb],
+    ["deviceClass.highFromMemoryMb", deviceClass.highFromMemoryMb],
+    ["deviceClass.highFromRefreshHz", deviceClass.highFromRefreshHz],
+    ["probe.warmupFrames", probe.warmupFrames],
+    ["probe.frames", probe.frames],
+    ["thermal.recoverAfterSeconds", thermal.recoverAfterSeconds],
+  ]) {
+    if (!isPositiveInteger(value)) errors.push(`effects.graphics.${path}: must be a positive integer`);
+  }
+  if (deviceClass.lowBelowMemoryMb >= deviceClass.highFromMemoryMb) errors.push("effects.graphics.deviceClass: lowBelowMemoryMb must be under highFromMemoryMb");
+  errors.push(...patternErrors("effects.graphics.deviceClass.lowGpuPatterns", deviceClass.lowGpuPatterns));
+  errors.push(...patternErrors("effects.graphics.deviceClass.highGpuPatterns", deviceClass.highGpuPatterns));
+  return errors;
+}
+
 function cascadeErrors(tokens) {
   const { steps, chainBoost, popIn, popOut } = tokens.scoreCascade;
   const errors = [];
@@ -302,7 +362,7 @@ export function checkTokens(tokens, specText, raritySpecText) {
     ...levels.flatMap((name) => (tokens.effects.levels[name] ? levelErrors(name, tokens.effects.levels[name]) : [`effects.levels.${name}: missing`])),
   ];
   if (errors.length > 0) return errors;
-  errors.push(...effectErrors(tokens.effects), ...cascadeErrors(tokens));
+  errors.push(...effectErrors(tokens.effects), ...cascadeErrors(tokens), ...graphicsErrors(tokens.effects.graphics));
   for (const row of contrastTable(tokens)) if (!specText.includes(row)) errors.push(`spec contrast table is missing or stale: ${row}`);
   if (!specText.includes(requiredGlyphs)) errors.push("spec does not list the required Azerbaijani and Turkish glyphs");
   for (const hex of colorValues(tokens.color)) if (!specText.includes(`\`${hex}\``)) errors.push(`spec does not list colour ${hex}`);
@@ -331,6 +391,30 @@ function csharpClass(name, members) {
 const constants = (node, type, literal) =>
   flatten(node).map(([path, value]) => `public const ${type} ${memberName(path)} = ${literal(path, value)};`);
 
+const intArray = (name, values) => `public static readonly int[] ${name} = { ${values.join(", ")} };`;
+const verbatimString = (value) => `@"${value.replaceAll('"', '""')}"`;
+const stringArray = (name, values) => `public static readonly string[] ${name} = { ${values.map(verbatimString).join(", ")} };`;
+
+function graphicsMembers(graphics) {
+  const { deviceClass, probe, thermal } = graphics;
+  const level = (name) => graphics.levels[name];
+  const tier = (name) => graphics.tiers[name];
+  return [
+    intArray("EffectLevelOfLevel", graphicsLevels.map((name) => levels.indexOf(level(name).effectLevel))),
+    intArray("MaxRenderShortSideOfLevel", graphicsLevels.map((name) => intLiteral(["effects", "graphics", "levels", name, "maxRenderShortSide"], level(name).maxRenderShortSide))),
+    intArray("AutoLevelOfTier", deviceTiers.map((name) => graphicsLevels.indexOf(tier(name).auto))),
+    intArray("HighestLevelOfTier", deviceTiers.map((name) => graphicsLevels.indexOf(tier(name).highest))),
+    `public const int LowBelowMemoryMb = ${intLiteral(["deviceClass", "lowBelowMemoryMb"], deviceClass.lowBelowMemoryMb)};`,
+    `public const int HighFromMemoryMb = ${intLiteral(["deviceClass", "highFromMemoryMb"], deviceClass.highFromMemoryMb)};`,
+    `public const int HighFromRefreshHz = ${intLiteral(["deviceClass", "highFromRefreshHz"], deviceClass.highFromRefreshHz)};`,
+    stringArray("LowGpuPatterns", deviceClass.lowGpuPatterns),
+    stringArray("HighGpuPatterns", deviceClass.highGpuPatterns),
+    `public const int ProbeWarmupFrames = ${intLiteral(["probe", "warmupFrames"], probe.warmupFrames)};`,
+    `public const int ProbeFrames = ${intLiteral(["probe", "frames"], probe.frames)};`,
+    `public const int ThermalRecoverAfterSeconds = ${intLiteral(["thermal", "recoverAfterSeconds"], thermal.recoverAfterSeconds)};`,
+  ];
+}
+
 export function csharpTokens(tokens) {
   const { motion } = tokens;
   const classes = [
@@ -347,6 +431,7 @@ export function csharpTokens(tokens) {
       `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
       `public const int ${pascal(name)}Pooled = ${Math.max(...levels.map((level) => effect[level].pooled))};`,
     ])),
+    csharpClass("TokenGraphics", graphicsMembers(tokens.effects.graphics)),
   ];
   return [
     "// Code generated by tools/design-tokens/design-tokens.mjs --csharp from docs/design-tokens.json. DO NOT EDIT.",

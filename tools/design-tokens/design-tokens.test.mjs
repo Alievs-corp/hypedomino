@@ -23,6 +23,28 @@ test("the committed tokens and spec pass every check", () => {
   assert.deepEqual(checkTokens(tokens, specText, raritySpecText), []);
 });
 
+test("a graphics level that lowers effects or resolution below the level under it is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.levels.ultra.effectLevel = "medium"; }), "levels.ultra: effect level must not fall below high");
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.levels.high.maxRenderShortSide = 900; }), "levels.high: maxRenderShortSide must not fall below medium");
+});
+
+test("a device tier whose Auto level is above its highest is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.tiers.mid.auto = "high"; }), "tiers.mid: auto is above highest");
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.tiers.low.highest = "turbo"; }), "tiers.low: unknown graphics level");
+});
+
+test("a GPU pattern that is not a regular expression is reported", () => {
+  assertReported(errorsAfter((copy) => { copy.effects.graphics.deviceClass.lowGpuPatterns.push("^Mali-(G52"); }), "^Mali-(G52 is not a regular expression");
+});
+
+test("C# graphics tokens list levels low to ultra and tiers low to high", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public static readonly int[] EffectLevelOfLevel = { 0, 1, 2, 2 };"));
+  assert.ok(source.includes("public static readonly int[] MaxRenderShortSideOfLevel = { 720, 1080, 1080, 2160 };"));
+  assert.ok(source.includes("public static readonly int[] HighestLevelOfTier = { 0, 1, 3 };"));
+  assert.ok(source.includes(String.raw`@"^Adreno \(TM\) (7[3-9]\d|8\d\d)\b"`));
+});
+
 test("a level that shows animated cosmetics with no budget, or a budget without them, is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.levels.medium.maxAnimatedCosmetics = 0; }), "maxAnimatedCosmetics disagree");
   assertReported(errorsAfter((copy) => { copy.effects.levels.low.maxAnimatedCosmetics = 3; }), "maxAnimatedCosmetics disagree");
