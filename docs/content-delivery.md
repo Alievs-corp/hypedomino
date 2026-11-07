@@ -38,7 +38,7 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 |---|---|
 | CD-10 | A remote asset downloads when a view first needs it. Nothing is prefetched in bulk; a screen that must show content before it opens (the match loading screen, #85) asks for its addresses and shows their progress. |
 | CD-11 | Progress is downloaded bytes over the total download size of the requested addresses. Addresses already on disk count as done. |
-| CD-12 | A failed catalog download is retried after 2 s, 8 s and 30 s, then fails (CD-14). A failed bundle download is retried twice at once by Addressables, then fails (CD-13). A catalog or bundle request with no progress for 20 s counts as failed. These are engineering limits, not design values, so they are constants in the client. |
+| CD-12 | A failed catalog download is retried after 2 s, 8 s and 30 s, then fails (CD-14). A failed bundle download is retried twice at once by Addressables, then fails (CD-13). A catalog request that has not finished in 20 s, or a bundle request with no progress for 20 s, counts as failed. These are engineering limits, not design values, so they are constants in the client. |
 | CD-13 | A failed cosmetic shows its static fallback, or the built-in static of its type when the static itself failed (`docs/cosmetics.md` 8.3). It is asked for again the next time a screen opens, never in a loop. Input never waits for a download. |
 | CD-14 | A failed catalog download keeps the stored catalog and is tried again at the next accepted `ServerHello`. |
 
