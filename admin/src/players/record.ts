@@ -4,6 +4,7 @@ export type PlayerAccount = PlayerSummary & {
   emails: string[];
   identities?: { provider: string; subject: string }[];
   banned_until: string | null;
+  shadowbanned_at: string | null;
   deletion_requested_at: string | null;
   deleted_at: string | null;
 };

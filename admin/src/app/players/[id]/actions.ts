@@ -30,6 +30,14 @@ export async function liftTemporaryBan(id: string, reason: string): Promise<Play
   return act("DELETE", `${playerApiPath(id)}/temporary-ban`, { reason });
 }
 
+export async function shadowban(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/shadowban`, { reason });
+}
+
+export async function liftShadowban(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("DELETE", `${playerApiPath(id)}/shadowban`, { reason });
+}
+
 export async function forceRename(id: string, reason: string): Promise<PlayerActionResult> {
   return act("POST", `${playerApiPath(id)}/force-rename`, { reason });
 }

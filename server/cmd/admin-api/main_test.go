@@ -41,7 +41,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := config{
-		listenAddr: ":8090", logLevel: "info", database: "postgres://admin", audiences: []string{"web.apps.example", "other"}, readLimit: 30 * time.Second, idleLimit: time.Minute,
+		listenAddr: ":8090", logLevel: "info", database: "postgres://admin", audiences: []string{"web.apps.example", "other"}, readLimit: 30 * time.Second, idleLimit: time.Minute, configPoll: 10 * time.Second,
 		api: adminapi.Config{
 			Environment: "staging", GoogleDomain: "example.com",
 			Session:            adminsession.Config{Idle: 20 * time.Minute, Max: 12 * time.Hour, StepUp: 5 * time.Minute},
