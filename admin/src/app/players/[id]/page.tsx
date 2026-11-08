@@ -95,7 +95,14 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         { label: "player.at", cell: (row) => when(row.started_at) },
         { label: "player.mode", cell: (row) => `${row.mode} ${row.kind}` },
         { label: "player.result", cell: (row) => (row.cancelled ? t("player.cancelled") : `${row.result} ${row.score_a}:${row.score_b}`) },
+        { label: "player.suspicious", cell: (row) => <span className="font-mono">{row.suspicious.join(", ")}</span> },
         { label: "match.open_replay", cell: (row) => <Link href={matchHref(row.match_id)} prefetch={false} className="text-primary underline">{t("match.open_replay")}</Link> },
+      ]} />
+      <Rows title="player.pair_signals" t={t} rows={record.pair_signals} columns={[
+        { label: "player.at", cell: (row) => when(row.updated_at) },
+        { label: "reviews.signal", cell: (row) => <span className="font-mono">{row.kind}</span> },
+        { label: "player.counterpart", cell: (row) => <Link href={`/players/${encodeURIComponent(row.counterpart)}`} prefetch={false} className="text-primary underline">{row.counterpart}</Link> },
+        { label: "player.pair_matches", cell: (row) => `${row.mode} ${row.wins}/${row.matches} (${row.offenses}), ${row.window_hours} h` },
       ]} />
     </main>
   );
