@@ -1,4 +1,3 @@
-using System;
 using HypeDomino.Content;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -36,19 +35,7 @@ namespace HypeDomino.Editor
             Debug.Log("HypeDomino content setup applied");
         }
 
-        public static void ApplyAndExit()
-        {
-            try
-            {
-                Apply();
-                EditorApplication.Exit(0);
-            }
-            catch (Exception failure)
-            {
-                Debug.LogException(failure);
-                EditorApplication.Exit(1);
-            }
-        }
+        public static void ApplyAndExit() => EditorMethod.Run(Apply);
 
         public static void ApplyRemoteItem(AddressableAssetSettings settings, BundledAssetGroupSchema bundles)
         {
