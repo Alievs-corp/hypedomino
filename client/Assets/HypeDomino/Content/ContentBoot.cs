@@ -11,11 +11,16 @@ namespace HypeDomino.Content
 
         public static CatalogUpdater Catalog { get; private set; }
 
+        public static ContentCache Cache { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
             if (Application.isEditor) return;
-            Catalog = new CatalogUpdater(new AddressablesCatalogSource(Path.Combine(Application.persistentDataPath, Folder)), Platform());
+            var folder = Path.Combine(Application.persistentDataPath, Folder);
+            Catalog = new CatalogUpdater(new AddressablesCatalogSource(folder), Platform());
+            Cache = new ContentCache(new UnityCacheStore(folder), () => Catalog.InMatch);
+            Cache.Start();
             Addressables.InternalIdTransformFunc = location => ContentUrls.Resolve(location.InternalId, Catalog.BaseUrl);
             Addressables.InitializeAsync().Completed += _ => Catalog.Start();
             var driver = new GameObject(nameof(ContentBoot)) { hideFlags = HideFlags.HideInHierarchy };
