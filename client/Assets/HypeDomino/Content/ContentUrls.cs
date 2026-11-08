@@ -8,7 +8,9 @@ namespace HypeDomino.Content
         const string AddressablesFolder = "/addressables/";
 
         public static string Catalog(string baseUrl, string platform, string version) =>
-            baseUrl + AddressablesFolder + platform + "/catalog_" + version + ".bin";
+            baseUrl + AddressablesFolder + platform + "/" + CatalogFile(version);
+
+        public static string CatalogFile(string version) => "catalog_" + version + ".bin";
 
         public static string Resolve(string internalId, string baseUrl)
         {

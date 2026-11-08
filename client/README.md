@@ -56,7 +56,7 @@ Work time is `max(cpuFrameTime, gpuFrameTime)`; a missed vsync is a presented in
 
 `gcFrames` counts frames whose `ProfilerRecorder` "GC Allocated In Frame" was above 0, `gcMax` is the largest of them, `gcCollections` is the `GC.CollectionCount(0)` delta and `batchesMax` the largest "Batches Count" (`docs/performance.md` 3). A counter the player does not expose prints `n/a`; the Profiler counters need a development build. The frame that writes the log line allocates that line, so its GC value is not counted. `FrameWindow` holds the window and the `FrameWindowTests` EditMode tests cover it.
 
-Size: build a release Android player (File > Build Profiles > Android, Development Build off) and read the APK size and the Build Report.
+Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.buildreport`) of a local release build gives the content breakdown.
 
 ## Shop and wallet
 
@@ -93,6 +93,10 @@ Size: build a release Android player (File > Build Profiles > Android, Developme
 ## Editor methods in CI
 
 Without a local Unity license, an editor method that creates or changes assets runs in CI: `gh workflow run unity-editor.yml --ref <branch> -f method=HypeDomino.Editor.<Class>.<Method>`. The workflow runs the method in batch mode and uploads everything it changed under `client/` as `editor-changes.patch` (artifact `editor-changes`); `gh run download <run id> -n editor-changes` and `git apply editor-changes.patch` bring it into the branch. The method runs its work through `EditorMethod.Run`, as `ContentSetup.ApplyAndExit` does: it exits the editor and writes `Logs/editor-method-succeeded` on success. The builder step always reports a failed build, because no player is built, so the run fails only when that file is missing.
+
+## Release build
+
+`Editor/ReleaseBuild.BuildAndroid` builds the release AAB for one catalog version (`docs/content-delivery.md` 6): it sets the Addressables player version to `-catalogVersion <version>`, builds the scenes in Build Settings into `-customBuildPath` (default `Builds/hypedomino.aab`) together with the content, and fails when `ServerData/Android/catalog_<version>.bin` is missing. It restores the player version and the AAB switch afterwards. In CI: `gh workflow run release-build.yml -f catalog_version=<version>`. The workflow measures the download size with `bundletool` on the low, mid and high device specs in `tools/install-size/specs`, fails at 150 MB or more (`docs/performance.md` 3) and keeps the AAB, the size report and the remote folder as artifacts. `ReleaseBuildTests` cover the version rule and the remote folder.
 
 ## Safe area
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -195,6 +196,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_DRAIN_TIMEOUT", &config.DrainTimeout)
 	r.text("HD_MIN_APP_VERSION", &config.Gateway.MinimumAppVersion)
 	r.text("HD_CATALOG_VERSION", &config.Gateway.CatalogVersion)
+	if config.Gateway.CatalogVersion != "" && !catalogVersionPattern.MatchString(config.Gateway.CatalogVersion) {
+		r.errs = append(r.errs, fmt.Errorf("HD_CATALOG_VERSION: %q is not 1 to 64 letters, digits, '.', '_' or '-' starting with a letter or digit", config.Gateway.CatalogVersion))
+	}
 	r.text("HD_CONTENT_BASE_URL", &config.Gateway.ContentBaseURL)
 	if err := checkContentBaseURL(config.Gateway.ContentBaseURL); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_CONTENT_BASE_URL: %w", err))
@@ -378,6 +382,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	return config, errors.Join(r.errs...)
 }
+
+var catalogVersionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
 func checkContentBaseURL(raw string) error {
 	if raw == "" {

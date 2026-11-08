@@ -19,7 +19,7 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 | `addressables/<platform>/catalog_<catalog_version>.bin` | The catalog of one version |
 | `addressables/<platform>/<bundle file>` | Every remote bundle of every version, by its content-hashed name (CD-3) |
 
-`<platform>` is `Android` or `iOS`. `content_base_url` is an `https` URL without a trailing slash, query or fragment. Language bundles share the same root (`docs/localization.md` 2.2); their path is #214's.
+`<platform>` is `Android` or `iOS`. `content_base_url` is an `https` URL without a trailing slash, query or fragment. `catalog_version` is 1 to 64 letters, digits, `.`, `_` or `-`, starting with a letter or digit, because it is part of a file name and a URL; the server refuses any other value at start. Language bundles share the same root (`docs/localization.md` 2.2); their path is #214's.
 
 ## 3. Catalog version
 
@@ -51,8 +51,18 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 | CD-17 | A screen releases everything it acquired when it closes. A match releases its seats' art when the match scene unloads. |
 | CD-18 | Install-time content follows the same rules; only its download step is missing. |
 
-## 6. Not here
+## 6. Release build
+
+| Id | Rule |
+|---|---|
+| CD-19 | A release build is made for one catalog version. It names the catalog `catalog_<catalog_version>.bin` and fails when the version does not match 2 or the catalog file is missing after the build. |
+| CD-20 | One build makes both the install package and the remote folder `client/ServerData/<platform>`. They are one release candidate: the package's install-time catalog and the remote folder come from the same content. |
+| CD-21 | Every release candidate's install size is measured and gated as `docs/performance.md` 3 says. The remote folder is listed beside it, not counted. |
+
+On Android the `Release build` workflow (`.github/workflows/release-build.yml`) runs `HypeDomino.Editor.ReleaseBuild.BuildAndroid` for a given catalog version. It keeps the AAB, the remote folder and the size report as artifacts.
+
+## 7. Not here
 
 - The disk cache, its size, the clear button and the removal of old versions: #160.
 - Uploading a built catalog and its bundles to the CDN and activating a version: #135.
-- Install size measurement: `docs/performance.md` 3, in #68's last pull request.
+- The iOS release build and its App Thinning Size Report: with the iOS pipeline.
