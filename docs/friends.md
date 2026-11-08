@@ -1,6 +1,6 @@
 # Friends and blocking
 
-Scope: friend requests, the friends list, removing a friend and blocking (#153). Online presence follows in a later change of #153, in-game lobby invites in #278 (`docs/friend-lobby.md` FL-1). Owner decisions of 2026-11-08.
+Scope: friend requests, the friends list, removing a friend and blocking (#153). In-game lobby invites follow in #278 (`docs/friend-lobby.md` FL-1). Owner decisions of 2026-11-08.
 
 ## 1. Requests
 
@@ -19,6 +19,11 @@ Scope: friend requests, the friends list, removing a friend and blocking (#153).
 - **FR-9** Either friend can remove the friendship at any time. The other side is not notified.
 - **FR-10** The list shows friends, incoming and outgoing requests and blocked players with account id and nickname. Accounts that are not active (pending deletion, deleted, permanently banned) do not appear in friends or requests (`docs/privacy.md` 8.2).
 
+## 2a. Presence
+
+- **FR-15** Only friends see a player's presence (`docs/privacy.md` 5): `online` while the app holds a game connection, `in_match` while that connection has a seat in a match, `offline` otherwise. The mode, room and opponents are not shown.
+- **FR-16** Each game node writes the presence of its connected accounts to Redis every `HD_PING_INTERVAL` with a lifetime of three intervals, so a closed app reads `offline` within three intervals. Nothing about presence is stored in PostgreSQL. Without Redis every friend reads `offline`.
+
 ## 3. Blocking
 
 - **FR-11** Blocking removes any friendship and every open request between the two players in both directions.
@@ -33,7 +38,7 @@ Player HTTP API with the access token (`server/internal/friends`):
 | Request | Effect |
 |---|---|
 | `GET /friends/code` | The player's own friend code `{code: "XXXX-XXXX"}` |
-| `GET /friends` | `friends`, `incoming`, `outgoing`, `blocked`, each a list of `{account_id, nickname, since}` |
+| `GET /friends` | `friends`, `incoming`, `outgoing`, `blocked`, each a list of `{account_id, nickname, since}`; friends also carry `presence` (FR-15) |
 | `POST /friends/requests` `{nickname}` or `{code}` | Sends a request; returns `{status: "requested"}` or `{status: "friends"}` (FR-4) |
 | `POST /friends/requests/{account_id}/accept` | Accepts the request of that account |
 | `POST /friends/requests/{account_id}/decline` | Declines it |

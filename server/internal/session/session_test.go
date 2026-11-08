@@ -389,6 +389,9 @@ func TestIntentsBeforeASeatAreIllegalAndRevokeCloses(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1)
 	token := tab.manager.Create("lobby")
 	p := tab.connect(token, true)
+	if inMatch, online := tab.manager.Presence()["late"]; !online || inMatch {
+		t.Fatalf("presence before seating %v %v", online, inMatch)
+	}
 	p.intent(&pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}})
 	frame := p.read()
 	if frame.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT || frame.GetError().GetRejectedSequence() != p.sequence {
@@ -416,6 +419,9 @@ func TestSeatingAConnectedSessionJoinsAtOnce(t *testing.T) {
 	}
 	if view := p.view(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING || view.GetSeat() != pb.Seat_SEAT_Y || view.GetMode() != pb.Mode_MODE_1V1 {
 		t.Fatalf("view after seating %v", view)
+	}
+	if !tab.manager.Presence()["late"] {
+		t.Fatal("a seated session is not in a match")
 	}
 }
 
