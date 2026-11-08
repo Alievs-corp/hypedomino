@@ -12,7 +12,7 @@ import (
 )
 
 func TestTheMissionsRelayAppliesAFinishedMatchToEveryPlayerOnce(t *testing.T) {
-	f := newFixture(t, periodic("daily_play_1", mission.Daily, 1, mission.MatchCompleted, 1))
+	f := newFixture(t, periodic("daily_play_1", mission.Daily, 1, mission.MatchCompleted, 1), periodic("weekly_win_9", mission.Weekly, 1, mission.MatchWon, 9))
 	ctx := context.Background()
 	winner, loser := f.account(t), f.account(t)
 	payload, _ := json.Marshal(matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: winner, Won: true}, {Account: loser}}})
