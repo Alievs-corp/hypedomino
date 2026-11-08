@@ -4,6 +4,7 @@ export type LiveControls = {
   build_allowlist: string[];
   purchases_disabled: boolean;
   ranked_disabled: boolean;
+  maintenance_ends_at: string | null;
 };
 
 export type LiveControlsView = { config_version: number; controls: LiveControls | null };
@@ -14,6 +15,7 @@ export const unpublishedControls: LiveControls = {
   build_allowlist: [],
   purchases_disabled: false,
   ranked_disabled: false,
+  maintenance_ends_at: null,
 };
 
 export function buildsFromText(text: string): string[] {
@@ -35,6 +37,15 @@ export function sameControls(left: LiveControls, right: LiveControls): boolean {
     left.build_allowlist_enforced === right.build_allowlist_enforced &&
     left.purchases_disabled === right.purchases_disabled &&
     left.ranked_disabled === right.ranked_disabled &&
+    (left.maintenance_ends_at ?? null) === (right.maintenance_ends_at ?? null) &&
     left.build_allowlist.join("\n") === right.build_allowlist.join("\n")
   );
+}
+
+export function maintenanceInput(endsAt: string | null | undefined): string {
+  return endsAt ? endsAt.slice(0, 16) : "";
+}
+
+export function maintenanceEnd(input: string): string | null {
+  return input === "" ? null : `${input}:00Z`;
 }

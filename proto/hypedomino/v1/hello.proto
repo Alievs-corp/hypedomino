@@ -12,6 +12,7 @@ enum HelloStatus {
   HELLO_STATUS_UNSPECIFIED = 0;
   HELLO_STATUS_ACCEPTED = 1;
   HELLO_STATUS_UPDATE_REQUIRED = 2;
+  HELLO_STATUS_MAINTENANCE = 3;
 }
 
 message ClientHello {
@@ -49,6 +50,7 @@ message ServerHello {
   repeated FallbackChain fallback_chains = 7;
   fixed64 session_nonce = 8;
   string content_base_url = 9;
+  uint64 maintenance_ends_unix_ms = 10;
 }
 
 message StringBundle {

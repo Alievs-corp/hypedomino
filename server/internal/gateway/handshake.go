@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/coder/websocket"
 
@@ -48,6 +49,11 @@ type Admission struct {
 	MinimumAppVersion string
 	EnforceBuilds     bool
 	Builds            []string
+	MaintenanceEndsAt time.Time
+}
+
+func (a Admission) Maintenance() bool {
+	return !a.MaintenanceEndsAt.IsZero()
 }
 
 func (a Admission) Admits(version, build string) bool {
@@ -71,7 +77,14 @@ func (c *Conn) admission() Admission {
 
 func (c *Conn) enforce() {
 	build := c.build.Load()
-	if build == nil || c.admission().Admits(build.version, build.hash) {
+	if build == nil {
+		return
+	}
+	if c.admission().Maintenance() && !c.session.InMatch() {
+		c.refuseForMaintenance()
+		return
+	}
+	if c.admission().Admits(build.version, build.hash) {
 		return
 	}
 	c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED, 0, false))
@@ -86,6 +99,9 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 		CatalogVersion:    c.options.Config.CatalogVersion,
 		ContentBaseUrl:    c.options.Config.ContentBaseURL,
 		InMatch:           inMatch,
+	}
+	if status == pb.HelloStatus_HELLO_STATUS_MAINTENANCE {
+		hello.MaintenanceEndsUnixMs = uint64(c.admission().MaintenanceEndsAt.UnixMilli())
 	}
 	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED {
 		hello.SessionNonce = c.nonce
@@ -119,4 +135,9 @@ func ErrorFrame(code pb.ErrorCode, rejected, acked uint64) *pb.Envelope {
 		AckedSequence:   acked,
 		Payload:         &pb.Envelope_Error{Error: &pb.Error{Code: code, RejectedSequence: rejected}},
 	}
+}
+
+func (c *Conn) refuseForMaintenance() {
+	c.Send(c.serverHello(pb.HelloStatus_HELLO_STATUS_MAINTENANCE, 0, false))
+	c.Close(websocket.StatusNormalClosure, "maintenance")
 }
