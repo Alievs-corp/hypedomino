@@ -19,6 +19,7 @@ export const screens: readonly Screen[] = [
   { href: "/reviews", labelKey: "nav.reviews", object: "queues" },
   { href: "/config/rules", labelKey: "nav.rules", object: "game_config" },
   { href: "/calendar", labelKey: "nav.calendar", object: "live_events" },
+  { href: "/quick-messages", labelKey: "nav.quick_messages", object: "game_strings" },
   { href: "/live-controls", labelKey: "nav.live", object: "live_controls" },
   { href: "/approvals", labelKey: "nav.approvals", object: null },
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
