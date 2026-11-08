@@ -1,6 +1,6 @@
 # Content delivery
 
-How the client gets art that is not in the install package: where it lives on the CDN, how the client learns which content is live, what it does offline, how it downloads and retries, and when it frees memory. The decision behind it is ADR 0002 (Addressables, CDN, ASTC). Addresses, groups and labels of cosmetics are `docs/cosmetics.md` 8. The disk cache and its limits are #160. This document is #68.
+How the client gets art that is not in the install package: where it lives on the CDN, how the client learns which content is live, what it does offline, how it downloads and retries, and when it frees memory. The decision behind it is ADR 0002 (Addressables, CDN, ASTC). Addresses, groups and labels of cosmetics are `docs/cosmetics.md` 8. This document is #68; its section 7, the disk cache, is #160.
 
 ## 1. Install-time and remote content
 
@@ -61,8 +61,22 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 
 On Android the `Release build` workflow (`.github/workflows/release-build.yml`) runs `HypeDomino.Editor.ReleaseBuild.BuildAndroid` for a given catalog version. It keeps the AAB, the remote folder and the size report as artifacts.
 
-## 7. Not here
+## 7. Disk cache
 
-- The disk cache, its size, the clear button and the removal of old versions: #160.
+Remote bundles are kept in Unity's AssetBundle cache under the app's data folder; install-time bundles are part of the install and never in it. This section is #160.
+
+| Id | Rule |
+|---|---|
+| CD-22 | The cache holds at most 1,000,000,000 bytes. When a new bundle does not fit, Unity first removes the bundles unused the longest. |
+| CD-23 | A bundle unused for 30 days is removed. |
+| CD-24 | After a remote catalog loads, at start or after a new version (CD-5), every cached bundle that no loaded catalog references is removed, so old versions of an item do not stay on disk. Nothing is removed when the stored catalog failed to load. |
+| CD-25 | The cache size shown to the player is the cached bundles plus the stored catalog files. |
+| CD-26 | The player may clear the cache outside a match only. A clear removes every cached bundle and keeps the stored catalog. A bundle in use blocks it, so the clear runs at the next start instead, before any content loads, and the player is told so. Art needed afterwards downloads again the first time a view asks for it (CD-10). |
+
+The limit and the 30 days were set by the owner on 2026-11-08. They protect the device's storage and are not design values, so they are constants in the client.
+
+## 8. Not here
+
 - Uploading a built catalog and its bundles to the CDN and activating a version: #135.
 - The iOS release build and its App Thinning Size Report: with the iOS pipeline.
+- The settings row that shows the cache size and the clear button: #157 (`ContentBoot.Cache`).
