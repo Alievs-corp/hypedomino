@@ -105,6 +105,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SHOP_RESET_HOUR_UTC` | No | server, admin-api | `0` | `0` | No | from #104; admin-api from #139 |
 | `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
 | `HD_SEASON_POLL` | No | server | `1m` | `1m` | No | from #115 |
+| `HD_OUTBOX_POLL` | No | server | `2s` (at least 100ms) | `2s` | No | from #440 |
 | `HD_CLOCK_SKEW_TOLERANCE` | No | server | `5m` | `5m` | No | from #208 |
 | `HD_CLOCK_SKEW_WEIGHT` | No | server | `1` | `1` | No | from #208 |
 | `HD_REPLAY_REJECT_THRESHOLD` | No | server | `5` | `5` | No | from #207 |
