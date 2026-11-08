@@ -92,7 +92,8 @@ func TestARequestBecomesAFriendshipWhenAccepted(t *testing.T) {
 	w := newWorld(t, friends.DefaultConfig())
 	ayla, kamal := w.player("Ayla"), w.player("Kamal")
 
-	w.expect("POST", "/friends/requests", ayla, map[string]any{}, http.StatusBadRequest, "friend.nickname_required")
+	w.expect("POST", "/friends/requests", ayla, map[string]any{"nickname": "Kamal", "code": "7K3M-9QPZ"}, http.StatusBadRequest, "friend.target_required")
+	w.expect("POST", "/friends/requests", ayla, map[string]any{}, http.StatusBadRequest, "friend.target_required")
 	w.expect("POST", "/friends/requests", ayla, map[string]any{"nickname": "ayla"}, http.StatusBadRequest, "friend.self")
 	w.expect("POST", "/friends/requests", ayla, map[string]any{"nickname": "nobody"}, http.StatusNotFound, "friend.unknown_player")
 	if status, body := w.call("POST", "/friends/requests", ayla, map[string]any{"nickname": "KAMAL"}); status != http.StatusOK || body["status"] != "requested" {
@@ -186,4 +187,23 @@ func TestLimitsRefuseRequestsAndFriendships(t *testing.T) {
 	}
 	w.expect("POST", "/friends/requests/"+orxan+"/accept", nigar, nil, http.StatusNotFound, "friend.no_request")
 	w.expect("GET", "/friends", "", nil, http.StatusUnauthorized, "access_rejected")
+}
+
+func TestAFriendCodeIsStableAndFindsItsPlayer(t *testing.T) {
+	w := newWorld(t, friends.DefaultConfig())
+	ayla, kamal := w.player("Ayla"), w.player("Kamal")
+	_, first := w.call("GET", "/friends/code", kamal, nil)
+	_, again := w.call("GET", "/friends/code", kamal, nil)
+	code, _ := first["code"].(string)
+	if len(code) != 9 || code[4] != '-' || again["code"] != code {
+		t.Fatalf("codes %v %v", first, again)
+	}
+	w.expect("POST", "/friends/requests", kamal, map[string]any{"code": code}, http.StatusBadRequest, "friend.self")
+	w.expect("POST", "/friends/requests", ayla, map[string]any{"code": "0000-000"}, http.StatusNotFound, "friend.unknown_player")
+	if status, body := w.call("POST", "/friends/requests", ayla, map[string]any{"code": strings.ToLower(strings.ReplaceAll(code, "-", " "))}); status != http.StatusOK || body["status"] != "requested" {
+		t.Fatalf("request by code %d %v", status, body)
+	}
+	if _, list := w.call("GET", "/friends", kamal, nil); names(list, "incoming") != "Ayla" {
+		t.Fatalf("kamal %v", list)
+	}
 }

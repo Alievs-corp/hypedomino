@@ -21,7 +21,7 @@ var (
 	ErrRequestsFull   = errors.New("friend.requests_full")
 	ErrNoRequest      = errors.New("friend.no_request")
 	ErrNotFriends     = errors.New("friend.not_friends")
-	ErrNoNickname     = errors.New("friend.nickname_required")
+	ErrNoTarget       = errors.New("friend.target_required")
 	ErrInvalidConfig  = errors.New("friends: invalid config")
 )
 
@@ -65,12 +65,36 @@ func NewStore(pool *pgxpool.Pool, config Config) *Store {
 	return &Store{pool: pool, config: config}
 }
 
-func (s *Store) Request(ctx context.Context, sender, nickname string, now time.Time) (bool, error) {
+type Target struct {
+	Nickname string `json:"nickname"`
+	Code     string `json:"code"`
+}
+
+func (t Target) lookup() (string, string, error) {
+	switch {
+	case t.Nickname != "" && t.Code == "":
+		return `select p.account_id::text from profiles p join accounts a on a.id = p.account_id
+			where p.nickname_key = $1 and a.state = 'active'`, profile.Key(t.Nickname), nil
+	case t.Code != "" && t.Nickname == "":
+		code, ok := normalizeCode(t.Code)
+		if !ok {
+			return "", "", ErrUnknownPlayer
+		}
+		return `select c.account_id::text from friend_codes c join accounts a on a.id = c.account_id
+			where c.code = $1 and a.state = 'active'`, code, nil
+	}
+	return "", "", ErrNoTarget
+}
+
+func (s *Store) Request(ctx context.Context, sender string, target Target, now time.Time) (bool, error) {
+	query, key, err := target.lookup()
+	if err != nil {
+		return false, err
+	}
 	befriended := false
-	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		var recipient string
-		err := tx.QueryRow(ctx, `select p.account_id::text from profiles p join accounts a on a.id = p.account_id
-			where p.nickname_key = $1 and a.state = 'active'`, profile.Key(nickname)).Scan(&recipient)
+		err := tx.QueryRow(ctx, query, key).Scan(&recipient)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			return ErrUnknownPlayer
