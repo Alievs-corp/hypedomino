@@ -139,7 +139,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	items := critical(inventoryHandler)
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)
-	friendsHandler := friends.NewHandler(tokens, friends.NewStore(pool, config.Friends), logger, time.Now)
+	friendStore := friends.NewStore(pool, config.Friends)
+	if client != nil {
+		presence := friends.NewPresence(client, config.Cluster.KeyPrefix, 3*config.Gateway.PingInterval)
+		go presence.Run(ctx, config.Gateway.PingInterval, sessions.Presence, logger)
+		friendStore.ShowPresence(presence)
+	}
+	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
 	walletStore := wallet.NewStore(pool)

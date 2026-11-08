@@ -47,6 +47,7 @@ type Player struct {
 	AccountID string    `json:"account_id"`
 	Nickname  string    `json:"nickname"`
 	Since     time.Time `json:"since"`
+	Presence  string    `json:"presence,omitempty"`
 }
 
 type List struct {
@@ -57,8 +58,13 @@ type List struct {
 }
 
 type Store struct {
-	pool   *pgxpool.Pool
-	config Config
+	pool     *pgxpool.Pool
+	config   Config
+	presence *Presence
+}
+
+func (s *Store) ShowPresence(presence *Presence) {
+	s.presence = presence
 }
 
 func NewStore(pool *pgxpool.Pool, config Config) *Store {
@@ -273,7 +279,25 @@ func (s *Store) List(ctx context.Context, account string) (List, error) {
 		}
 		*part.into = append([]Player{}, players...)
 	}
-	return list, nil
+	return list, s.markPresence(ctx, list.Friends)
+}
+
+func (s *Store) markPresence(ctx context.Context, friends []Player) error {
+	if s.presence == nil {
+		return nil
+	}
+	accounts := make([]string, len(friends))
+	for i, friend := range friends {
+		accounts[i] = friend.AccountID
+	}
+	states, err := s.presence.States(ctx, accounts)
+	if err != nil {
+		return err
+	}
+	for i := range friends {
+		friends[i].Presence = states[i]
+	}
+	return nil
 }
 
 type querier interface {

@@ -238,6 +238,18 @@ func (m *Manager) Revoke(token string) {
 	}
 }
 
+func (m *Manager) Presence() map[string]bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	connected := make(map[string]bool, len(m.sessions))
+	for _, s := range m.sessions {
+		if s.active != nil {
+			connected[s.account] = connected[s.account] || s.room != nil
+		}
+	}
+	return connected
+}
+
 func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.ClientHello) (gateway.Session, error) {
 	if !m.startAllowed(ctx, hello) {
 		return nil, gateway.ErrIntegrityFailed
