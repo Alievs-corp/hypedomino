@@ -12,6 +12,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
@@ -47,6 +48,7 @@ type Config struct {
 	Cosmetics       string
 	Rarities        cosmetics.Rarities
 	Inventory       inventory.Config
+	Friends         friends.Config
 	Emoji           room.EmojiLimit
 	Shop            shop.Config
 	ShopCatalog     string
@@ -85,6 +87,7 @@ func DefaultConfig() Config {
 		Token:           token.DefaultConfig(),
 		Profile:         profile.DefaultConfig(),
 		Inventory:       inventory.DefaultConfig(),
+		Friends:         friends.DefaultConfig(),
 		Emoji:           room.DefaultEmojiLimit(),
 		Shop:            shop.DefaultConfig(),
 		ConfigPoll:      10 * time.Second,
@@ -248,6 +251,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
 	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
+	r.integer("HD_FRIENDS_MAX", &config.Friends.MaxFriends)
+	r.integer("HD_FRIEND_REQUESTS_MAX", &config.Friends.MaxRequests)
 	r.integer("HD_EMOJI_BURST", &config.Emoji.Burst)
 	r.duration("HD_EMOJI_REFILL", &config.Emoji.Refill)
 	r.text("HD_SHOP_CATALOG", &config.ShopCatalog)
@@ -352,6 +357,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if err := config.Promo.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_PROMO_*: %w", err))
+	}
+	if err := config.Friends.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_FRIENDS_MAX and HD_FRIEND_REQUESTS_MAX: %w", err))
 	}
 	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
 		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))

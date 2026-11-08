@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
@@ -138,6 +139,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	items := critical(inventoryHandler)
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)
+	friendsHandler := friends.NewHandler(tokens, friends.NewStore(pool, config.Friends), logger, time.Now)
+	a.Handle("/friends", friendsHandler)
+	a.Handle("/friends/", friendsHandler)
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
