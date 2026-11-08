@@ -85,11 +85,12 @@ type Boards interface {
 }
 
 type Store struct {
-	pool    *pgxpool.Pool
-	configs *snapshot.Watcher[*Snapshot]
-	boards  Boards
-	rewards Rewarder
-	logger  *slog.Logger
+	pool            *pgxpool.Pool
+	configs         *snapshot.Watcher[*Snapshot]
+	boards          Boards
+	rewards         Rewarder
+	collusionWeight int
+	logger          *slog.Logger
 }
 
 func (s *Store) SetBoards(boards Boards, logger *slog.Logger) {

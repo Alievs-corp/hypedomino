@@ -316,6 +316,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_UNOWNED_EQUIP_THRESHOLD", &config.Risk.UnownedEquipThreshold)
 	r.duration("HD_UNOWNED_EQUIP_WINDOW", &config.Risk.UnownedEquipWindow)
 	r.integer("HD_UNOWNED_EQUIP_WEIGHT", &config.Risk.UnownedEquipWeight)
+	r.integer("HD_COLLUSION_WEIGHT", &config.Risk.CollusionWeight)
 	if err := config.Risk.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT, HD_REFUND_WEIGHT, HD_REPLAY_REJECT_* and HD_MAC_FAILURE_*: %w", err))
 	}
