@@ -9,6 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 )
 
 var (
@@ -68,7 +70,7 @@ func (s *Store) Request(ctx context.Context, sender, nickname string, now time.T
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		var recipient string
 		err := tx.QueryRow(ctx, `select p.account_id::text from profiles p join accounts a on a.id = p.account_id
-			where lower(p.nickname) = lower($1) and a.state = 'active'`, nickname).Scan(&recipient)
+			where p.nickname_key = $1 and a.state = 'active'`, profile.Key(nickname)).Scan(&recipient)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			return ErrUnknownPlayer

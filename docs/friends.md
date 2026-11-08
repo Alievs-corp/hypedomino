@@ -5,7 +5,7 @@ Scope: friend requests, the friends list, removing a friend and blocking (#153).
 ## 1. Requests
 
 - **FR-1** A friendship is mutual. One player sends a request; the other accepts or declines it. Until then nothing is shared.
-- **FR-2** A request names the other player by nickname, case-insensitive. A friend code follows in a later change of #153.
+- **FR-2** A request names the other player by nickname, matched by the same normalised key that keeps nicknames unique (`server/internal/profile`). A friend code follows in a later change of #153.
 - **FR-3** A request to oneself is refused. A request to a player who is already a friend is refused.
 - **FR-4** A request to a player who already sent one to the sender makes both friends at once.
 - **FR-5** Repeating an open request changes nothing.

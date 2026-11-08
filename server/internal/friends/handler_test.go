@@ -15,6 +15,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
@@ -48,7 +49,7 @@ func (w *world) player(nickname string) string {
 	if err := w.pool.QueryRow(context.Background(), `insert into accounts default values returning id::text`).Scan(&id); err != nil {
 		w.t.Fatal(err)
 	}
-	if _, err := w.pool.Exec(context.Background(), `insert into profiles (account_id, nickname) values ($1, $2)`, id, nickname); err != nil {
+	if _, err := w.pool.Exec(context.Background(), `insert into profiles (account_id, nickname, nickname_key) values ($1, $2, $3)`, id, nickname, profile.Key(nickname)); err != nil {
 		w.t.Fatal(err)
 	}
 	return id
