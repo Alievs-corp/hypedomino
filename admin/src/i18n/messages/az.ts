@@ -219,6 +219,8 @@ export const az: Messages = {
   "reviews.reason": "Qərarın səbəbi",
   "reviews.clear": "Təmizlə",
   "reviews.confirm": "Təsdiqlə",
+  "reviews.permanent_ban": "Daimi ban təklif et",
+  "reviews.ban_proposed": "Daimi ban təklif edildi. İkinci admin onu Təsdiqlər bölməsində təsdiqləyir.",
   "reviews.refused": "Rədd edildi",
   "nav.approvals": "Təsdiqlər",
   "approvals.title": "Təsdiqlər",

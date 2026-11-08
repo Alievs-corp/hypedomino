@@ -217,6 +217,8 @@ export const en = {
   "reviews.reason": "Reason for the decision",
   "reviews.clear": "Clear",
   "reviews.confirm": "Confirm",
+  "reviews.permanent_ban": "Propose permanent ban",
+  "reviews.ban_proposed": "Permanent ban proposed. A second admin approves it under Approvals.",
   "reviews.refused": "Refused",
   "nav.approvals": "Approvals",
   "approvals.title": "Approvals",
