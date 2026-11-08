@@ -389,9 +389,6 @@ func TestIntentsBeforeASeatAreIllegalAndRevokeCloses(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1)
 	token := tab.manager.Create("lobby")
 	p := tab.connect(token, true)
-	if inMatch, online := tab.manager.Presence()["late"]; !online || inMatch {
-		t.Fatalf("presence before seating %v %v", online, inMatch)
-	}
 	p.intent(&pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}})
 	frame := p.read()
 	if frame.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT || frame.GetError().GetRejectedSequence() != p.sequence {
@@ -410,6 +407,9 @@ func TestSeatingAConnectedSessionJoinsAtOnce(t *testing.T) {
 	tab := newTable(t, rules.Mode2v2)
 	token := tab.manager.Create("late")
 	p := tab.connect(token, true)
+	if inMatch, online := tab.manager.Presence()["late"]; !online || inMatch {
+		t.Fatalf("presence before seating %v %v", online, inMatch)
+	}
 	other := room.New(room.Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Seed: 2, Clock: tab.clock})
 	ctx, cancel := context.WithCancel(context.Background())
 	go other.Run(ctx)
