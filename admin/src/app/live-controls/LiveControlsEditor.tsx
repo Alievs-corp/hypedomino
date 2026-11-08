@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { needsStepUp } from "@/admin/refusals";
 import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
-import { buildsFromText, emptyEnforcedAllowlist, sameControls, validVersion, type LiveControls } from "@/config/liveControls";
+import { buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, validVersion, type LiveControls } from "@/config/liveControls";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { switchLiveControls, type SwitchResult } from "./actions";
@@ -63,6 +63,17 @@ export function LiveControlsEditor({ published, clientId }: { published: LiveCon
         />
       </label>
       <p className="text-sm text-text-secondary">{t("live.minimum_warning")}</p>
+      <label className="flex flex-col gap-1 text-sm text-text-secondary">
+        {t("live.maintenance_ends_at")}
+        <input
+          type="datetime-local"
+          readOnly={!canSwitch}
+          value={maintenanceInput(controls.maintenance_ends_at)}
+          onChange={(event) => setControls({ ...controls, maintenance_ends_at: maintenanceEnd(event.target.value) })}
+          className={`w-56 font-mono ${fieldClass}`}
+        />
+      </label>
+      <p className="text-sm text-text-secondary">{t("live.maintenance_warning")}</p>
       <label className="flex flex-col gap-1 text-sm text-text-secondary">
         {t("live.build_allowlist")}
         <textarea readOnly={!canSwitch} rows={5} value={builds} onChange={(event) => setBuilds(event.target.value)} className={`font-mono ${fieldClass}`} />

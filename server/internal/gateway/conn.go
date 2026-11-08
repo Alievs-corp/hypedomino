@@ -215,6 +215,11 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Close(websocket.StatusInternalError, "connect")
 		return false
 	}
+	if c.admission().Maintenance() && !session.InMatch() {
+		session.Close()
+		c.refuseForMaintenance()
+		return false
+	}
 	c.socket.SetReadLimit(int64(c.options.Config.MaxFrameBytes))
 	c.session = session
 	c.nonce = sessionNonce()
