@@ -39,7 +39,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SHUTDOWN_TIMEOUT` | No | server | `10s` | `10s` | No | from #264 |
 | `HD_DRAIN_TIMEOUT` | No | server | `15m` | `15m` | No | from #264 |
 | `HD_MIN_APP_VERSION` | No | server | `1.0.0` | `1.0.0` | No | from #264 |
-| `HD_CATALOG_VERSION` | No | server | empty | `<catalog-version>` | No | from #264 |
+| `HD_CATALOG_VERSION` | No | server | empty | `2026.11.08-1` | No | from #264; format: `docs/content-delivery.md` 2 |
 | `HD_CONTENT_BASE_URL` | No | server | empty | `https://content.example.com/production` | No | #68, `docs/content-delivery.md` 2 |
 | `HD_MAX_FRAME_BYTES` | No | server | `1024` | `1024` | No | from #264 |
 | `HD_MAX_HELLO_BYTES` | No | server | `8192` | `8192` | No | from #205 |

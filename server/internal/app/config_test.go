@@ -238,6 +238,30 @@ func TestContentBaseURLMustBeAnHTTPSRootWithoutTrailingParts(t *testing.T) {
 	}
 }
 
+func TestCatalogVersionMustBeSafeInAFileNameAndAURL(t *testing.T) {
+	for raw, valid := range map[string]bool{
+		"":                      true,
+		"2026.11.08-1":          true,
+		"v7_hotfix":             true,
+		strings.Repeat("a", 64): true,
+		strings.Repeat("a", 65): false,
+		".hidden":               false,
+		"-1":                    false,
+		"a/b":                   false,
+		"a b":                   false,
+		"a?b":                   false,
+		"a%2Fb":                 false,
+	} {
+		_, err := ConfigFromEnv(lookup(map[string]string{"HD_CATALOG_VERSION": raw}))
+		if valid && err != nil {
+			t.Errorf("%q was refused: %v", raw, err)
+		}
+		if !valid && (err == nil || !strings.Contains(err.Error(), "HD_CATALOG_VERSION")) {
+			t.Errorf("%q was accepted: %v", raw, err)
+		}
+	}
+}
+
 func TestClusterConfigIsOnlyValidatedWithRedis(t *testing.T) {
 	config, err := ConfigFromEnv(lookup(map[string]string{"HD_NODE_CAPACITY": "0"}))
 	if err != nil {
