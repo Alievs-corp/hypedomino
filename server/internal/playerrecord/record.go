@@ -46,6 +46,7 @@ type Account struct {
 	Emails              []string   `json:"emails"`
 	Identities          []Identity `json:"identities,omitempty"`
 	BannedUntil         *time.Time `json:"banned_until"`
+	ShadowbannedAt      *time.Time `json:"shadowbanned_at"`
 	DeletionRequestedAt *time.Time `json:"deletion_requested_at"`
 	DeletedAt           *time.Time `json:"deleted_at"`
 }
@@ -206,12 +207,12 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	}
 	var r Record
 	err := db.QueryRow(ctx, `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at,
-		a.banned_until, a.deletion_requested_at, a.deleted_at, coalesce(c.balance, 0), coalesce(k.balance, 0)
+		a.banned_until, a.shadowbanned_at, a.deletion_requested_at, a.deleted_at, coalesce(c.balance, 0), coalesce(k.balance, 0)
 		from accounts a left join profiles p on p.account_id = a.id
 		left join wallets c on c.account_id = a.id and c.currency = 'coin'
 		left join wallets k on k.account_id = a.id and k.currency = 'crystal'
 		where a.id = $1::uuid`, accountID).Scan(&r.Account.ID, &r.Account.Nickname, &r.Account.State, &r.Account.Country,
-		&r.Account.CreatedAt, &r.Account.BannedUntil, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Coins, &r.Crystals)
+		&r.Account.CreatedAt, &r.Account.BannedUntil, &r.Account.ShadowbannedAt, &r.Account.DeletionRequestedAt, &r.Account.DeletedAt, &r.Coins, &r.Crystals)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Record{}, ErrNotFound
 	}

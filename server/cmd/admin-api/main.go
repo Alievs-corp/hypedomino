@@ -26,9 +26,11 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
+	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
 
@@ -42,6 +44,7 @@ type config struct {
 	audiences  []string
 	readLimit  time.Duration
 	idleLimit  time.Duration
+	configPoll time.Duration
 	api        adminapi.Config
 }
 
@@ -50,7 +53,7 @@ const defaultAssetURLTTL = 15 * time.Minute
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, Limits: adminapi.DefaultLimits()}}
+	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, configPoll: app.DefaultConfig().ConfigPoll, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, Limits: adminapi.DefaultLimits()}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -96,6 +99,7 @@ func configFromEnv(env lookup) (config, error) {
 	}
 	duration("HD_READ_TIMEOUT", &c.readLimit)
 	duration("HD_IDLE_TIMEOUT", &c.idleLimit)
+	duration("HD_CONFIG_POLL", &c.configPoll)
 	duration("HD_ADMIN_SESSION_IDLE", &c.api.Session.Idle)
 	duration("HD_ADMIN_SESSION_MAX", &c.api.Session.Max)
 	duration("HD_ADMIN_STEP_UP", &c.api.Session.StepUp)
@@ -230,7 +234,15 @@ func run(ctx context.Context, c config, logger *slog.Logger) error {
 	tokens := idtoken.DefaultConfig()
 	tokens.Google.Audiences = c.audiences
 	verifier := idtoken.New(idtoken.Options{Config: tokens, Nonces: nonces})
-	server := &http.Server{Addr: c.listenAddr, Handler: adminapi.New(c.api, verifier, buckets, pool, time.Now, logger), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: c.readLimit, IdleTimeout: c.idleLimit}
+	handler := adminapi.New(c.api, verifier, buckets, pool, time.Now, logger)
+	if client != nil {
+		ratingConfigs := rating.NewWatcher(pool, logger)
+		go ratingConfigs.Run(ctx, c.configPoll)
+		ratings := rating.NewStore(pool, ratingConfigs)
+		ratings.SetBoards(leaderboard.New(client, ratings, ratings, leaderboard.DefaultConfig()), logger)
+		handler.OnShadowban(ratings.HideFromBoards)
+	}
+	server := &http.Server{Addr: c.listenAddr, Handler: handler, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: c.readLimit, IdleTimeout: c.idleLimit}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	logger.Info("admin api listening", "addr", c.listenAddr, "environment", c.api.Environment)
