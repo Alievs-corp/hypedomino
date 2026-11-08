@@ -54,6 +54,7 @@ type Config struct {
 
 	GrantApprovalCoins int64
 	TempBan            time.Duration
+	Mute               time.Duration
 	Limits             Limits
 
 	PromoKey  string
@@ -131,6 +132,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.shadowban))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftShadowban))
+	h.mux.HandleFunc("POST /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.mute))
+	h.mux.HandleFunc("DELETE /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.unmute))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
 	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
@@ -444,6 +447,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "shadowbanned"
 	case errors.Is(err, errNotShadowbanned):
 		return http.StatusConflict, "not_shadowbanned"
+	case errors.Is(err, errNotMuted):
+		return http.StatusConflict, "not_muted"
 	case errors.Is(err, errNoProfile):
 		return http.StatusConflict, "no_profile"
 	case errors.Is(err, rating.ErrSeason), errors.Is(err, rating.ErrSeasonGap), errors.Is(err, rating.ErrSeasonOverlap), errors.Is(err, rating.ErrSeasonEarlier):

@@ -95,6 +95,7 @@ type Player struct {
 	Emblems   []string
 	Emoji     []string
 	Bot       bool
+	Muted     bool
 }
 
 type Options struct {
@@ -388,7 +389,7 @@ func (r *Room) emoji(seat rules.Seat, item string, received time.Time) {
 func (r *Room) equipped(seat rules.Seat, item string) bool {
 	for _, player := range r.options.Roster {
 		if player.Seat == seat {
-			return !player.Bot && slices.Contains(player.Emoji, item)
+			return !player.Bot && !player.Muted && slices.Contains(player.Emoji, item)
 		}
 	}
 	return false

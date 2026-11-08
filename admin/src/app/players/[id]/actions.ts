@@ -41,3 +41,11 @@ export async function liftShadowban(id: string, reason: string): Promise<PlayerA
 export async function forceRename(id: string, reason: string): Promise<PlayerActionResult> {
   return act("POST", `${playerApiPath(id)}/force-rename`, { reason });
 }
+
+export async function mute(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/mute`, { reason });
+}
+
+export async function unmute(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("DELETE", `${playerApiPath(id)}/mute`, { reason });
+}
