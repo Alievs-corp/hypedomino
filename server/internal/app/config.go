@@ -56,6 +56,7 @@ type Config struct {
 	ShopCatalog     string
 	ConfigPoll      time.Duration
 	SeasonPoll      time.Duration
+	OutboxPoll      time.Duration
 	CountryHeader   string
 	CountryCooldown time.Duration
 	Reward          reward.Config
@@ -95,6 +96,7 @@ func DefaultConfig() Config {
 		Shop:            shop.DefaultConfig(),
 		ConfigPoll:      10 * time.Second,
 		SeasonPoll:      time.Minute,
+		OutboxPoll:      2 * time.Second,
 		CountryCooldown: 180 * 24 * time.Hour,
 		Reward:          reward.DefaultConfig(),
 		Purchase:        purchase.DefaultConfig(),
@@ -270,6 +272,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_SHOP_RESET_HOUR_UTC", &config.Shop.ResetHourUTC)
 	r.duration("HD_CONFIG_POLL", &config.ConfigPoll)
 	r.duration("HD_SEASON_POLL", &config.SeasonPoll)
+	r.duration("HD_OUTBOX_POLL", &config.OutboxPoll)
 	r.text("HD_COUNTRY_HEADER", &config.CountryHeader)
 	r.integer("HD_RATE_IP_PER_MINUTE", &config.RateLimit.IP.PerMinute)
 	r.integer("HD_RATE_IP_BURST", &config.RateLimit.IP.Burst)
@@ -292,6 +295,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.SeasonPoll < time.Second {
 		r.errs = append(r.errs, errors.New("HD_SEASON_POLL: at least 1s"))
+	}
+	if config.OutboxPoll < 100*time.Millisecond {
+		r.errs = append(r.errs, errors.New("HD_OUTBOX_POLL: at least 100ms"))
 	}
 	if config.CountryCooldown < 0 {
 		r.errs = append(r.errs, errors.New("HD_COUNTRY_CHANGE_COOLDOWN: not negative"))
