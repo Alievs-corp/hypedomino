@@ -387,3 +387,26 @@ func TestAnEmojiReachesTheOtherSeatOverWebSocket(t *testing.T) {
 		}
 	}
 }
+
+func TestAQuickMessageReachesTheOtherSeatOverWebSocket(t *testing.T) {
+	server, _ := serveRoom(t, room.Options{
+		Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: bot.Hard, Seed: 7, Clock: realClock{},
+		Roster: []room.Player{{Seat: rules.SeatX}, {Seat: rules.SeatY}},
+		Emoji:  room.DefaultEmojiLimit(), QuickMessages: func(key string) bool { return key == "quick.hello" },
+	})
+	x := join(t, server, rules.SeatX, false)
+	y := join(t, server, rules.SeatY, false)
+	for _, seat := range []*player{x, y} {
+		for seat.read().GetMatchView() == nil {
+		}
+	}
+	x.write(&pb.Envelope{ProtocolVersion: ProtocolVersion, Payload: &pb.Envelope_QuickMessageIntent{QuickMessageIntent: &pb.QuickMessageIntent{Key: "quick.hello"}}})
+	for {
+		if shown := y.read().GetQuickMessageShown(); shown != nil {
+			if shown.GetSeat() != pb.Seat_SEAT_X || shown.GetKey() != "quick.hello" || shown.GetTeamOnly() {
+				t.Fatalf("shown %v", shown)
+			}
+			return
+		}
+	}
+}

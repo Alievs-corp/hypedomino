@@ -50,6 +50,10 @@ func (s *RoomSession) Emoji(item string) {
 	s.room.Emoji(s.seat, item)
 }
 
+func (s *RoomSession) QuickMessage(key string, teamOnly bool) {
+	s.room.QuickMessage(s.seat, key, teamOnly)
+}
+
 func (s *RoomSession) Attach() {
 	if s.resume {
 		s.room.Reconnect(s.seat, s)
@@ -71,6 +75,13 @@ func (s *RoomSession) Deliver(message room.Message) {
 		s.conn.Send(&pb.Envelope{
 			AckedSequence: s.acked.Load(),
 			Payload:       &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{Seat: seatMessage(message.Emoji.Seat), ItemId: message.Emoji.Item}},
+		})
+		return
+	}
+	if message.Quick != nil {
+		s.conn.Send(&pb.Envelope{
+			AckedSequence: s.acked.Load(),
+			Payload:       &pb.Envelope_QuickMessageShown{QuickMessageShown: &pb.QuickMessageShown{Seat: seatMessage(message.Quick.Seat), Key: message.Quick.Key, TeamOnly: message.Quick.TeamOnly}},
 		})
 		return
 	}

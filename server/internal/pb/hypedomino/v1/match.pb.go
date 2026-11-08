@@ -702,6 +702,118 @@ func (x *EmojiShown) GetItemId() string {
 	return ""
 }
 
+type QuickMessageIntent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	TeamOnly      bool                   `protobuf:"varint,2,opt,name=team_only,json=teamOnly,proto3" json:"team_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuickMessageIntent) Reset() {
+	*x = QuickMessageIntent{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuickMessageIntent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuickMessageIntent) ProtoMessage() {}
+
+func (x *QuickMessageIntent) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuickMessageIntent.ProtoReflect.Descriptor instead.
+func (*QuickMessageIntent) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *QuickMessageIntent) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *QuickMessageIntent) GetTeamOnly() bool {
+	if x != nil {
+		return x.TeamOnly
+	}
+	return false
+}
+
+type QuickMessageShown struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	TeamOnly      bool                   `protobuf:"varint,3,opt,name=team_only,json=teamOnly,proto3" json:"team_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuickMessageShown) Reset() {
+	*x = QuickMessageShown{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuickMessageShown) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuickMessageShown) ProtoMessage() {}
+
+func (x *QuickMessageShown) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuickMessageShown.ProtoReflect.Descriptor instead.
+func (*QuickMessageShown) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *QuickMessageShown) GetSeat() Seat {
+	if x != nil {
+		return x.Seat
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *QuickMessageShown) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *QuickMessageShown) GetTeamOnly() bool {
+	if x != nil {
+		return x.TeamOnly
+	}
+	return false
+}
+
 type OrientedTile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	First         uint32                 `protobuf:"varint,1,opt,name=first,proto3" json:"first,omitempty"`
@@ -712,7 +824,7 @@ type OrientedTile struct {
 
 func (x *OrientedTile) Reset() {
 	*x = OrientedTile{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -724,7 +836,7 @@ func (x *OrientedTile) String() string {
 func (*OrientedTile) ProtoMessage() {}
 
 func (x *OrientedTile) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[8]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -737,7 +849,7 @@ func (x *OrientedTile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrientedTile.ProtoReflect.Descriptor instead.
 func (*OrientedTile) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{8}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *OrientedTile) GetFirst() uint32 {
@@ -764,7 +876,7 @@ type OpenEnd struct {
 
 func (x *OpenEnd) Reset() {
 	*x = OpenEnd{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +888,7 @@ func (x *OpenEnd) String() string {
 func (*OpenEnd) ProtoMessage() {}
 
 func (x *OpenEnd) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[9]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +901,7 @@ func (x *OpenEnd) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenEnd.ProtoReflect.Descriptor instead.
 func (*OpenEnd) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{9}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *OpenEnd) GetEnd() BoardEnd {
@@ -819,7 +931,7 @@ type BoardView struct {
 
 func (x *BoardView) Reset() {
 	*x = BoardView{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -831,7 +943,7 @@ func (x *BoardView) String() string {
 func (*BoardView) ProtoMessage() {}
 
 func (x *BoardView) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[10]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -844,7 +956,7 @@ func (x *BoardView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardView.ProtoReflect.Descriptor instead.
 func (*BoardView) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{10}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BoardView) GetLine() []*OrientedTile {
@@ -895,7 +1007,7 @@ type SeatView struct {
 
 func (x *SeatView) Reset() {
 	*x = SeatView{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +1019,7 @@ func (x *SeatView) String() string {
 func (*SeatView) ProtoMessage() {}
 
 func (x *SeatView) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[11]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +1032,7 @@ func (x *SeatView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SeatView.ProtoReflect.Descriptor instead.
 func (*SeatView) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{11}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SeatView) GetSeat() Seat {
@@ -968,7 +1080,7 @@ type LegalMove struct {
 
 func (x *LegalMove) Reset() {
 	*x = LegalMove{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -980,7 +1092,7 @@ func (x *LegalMove) String() string {
 func (*LegalMove) ProtoMessage() {}
 
 func (x *LegalMove) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[12]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -993,7 +1105,7 @@ func (x *LegalMove) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LegalMove.ProtoReflect.Descriptor instead.
 func (*LegalMove) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{12}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *LegalMove) GetTile() *Tile {
@@ -1020,7 +1132,7 @@ type Opening struct {
 
 func (x *Opening) Reset() {
 	*x = Opening{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1032,7 +1144,7 @@ func (x *Opening) String() string {
 func (*Opening) ProtoMessage() {}
 
 func (x *Opening) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[13]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1045,7 +1157,7 @@ func (x *Opening) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Opening.ProtoReflect.Descriptor instead.
 func (*Opening) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{13}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Opening) GetSeat() Seat {
@@ -1072,7 +1184,7 @@ type TeamPoints struct {
 
 func (x *TeamPoints) Reset() {
 	*x = TeamPoints{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[14]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1084,7 +1196,7 @@ func (x *TeamPoints) String() string {
 func (*TeamPoints) ProtoMessage() {}
 
 func (x *TeamPoints) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[14]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1097,7 +1209,7 @@ func (x *TeamPoints) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamPoints.ProtoReflect.Descriptor instead.
 func (*TeamPoints) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{14}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TeamPoints) GetTeamA() uint32 {
@@ -1128,7 +1240,7 @@ type HandResult struct {
 
 func (x *HandResult) Reset() {
 	*x = HandResult{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[15]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1140,7 +1252,7 @@ func (x *HandResult) String() string {
 func (*HandResult) ProtoMessage() {}
 
 func (x *HandResult) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[15]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1153,7 +1265,7 @@ func (x *HandResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandResult.ProtoReflect.Descriptor instead.
 func (*HandResult) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{15}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *HandResult) GetPips() *TeamPoints {
@@ -1215,7 +1327,7 @@ type RosterEntry struct {
 
 func (x *RosterEntry) Reset() {
 	*x = RosterEntry{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[16]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1227,7 +1339,7 @@ func (x *RosterEntry) String() string {
 func (*RosterEntry) ProtoMessage() {}
 
 func (x *RosterEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[16]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1240,7 +1352,7 @@ func (x *RosterEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RosterEntry.ProtoReflect.Descriptor instead.
 func (*RosterEntry) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{16}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RosterEntry) GetSeat() Seat {
@@ -1335,7 +1447,7 @@ type MatchView struct {
 
 func (x *MatchView) Reset() {
 	*x = MatchView{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1347,7 +1459,7 @@ func (x *MatchView) String() string {
 func (*MatchView) ProtoMessage() {}
 
 func (x *MatchView) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1360,7 +1472,7 @@ func (x *MatchView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MatchView.ProtoReflect.Descriptor instead.
 func (*MatchView) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{17}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MatchView) GetState() MatchState {
@@ -1534,7 +1646,14 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"EmojiShown\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x17\n" +
-	"\aitem_id\x18\x02 \x01(\tR\x06itemId\"<\n" +
+	"\aitem_id\x18\x02 \x01(\tR\x06itemId\"C\n" +
+	"\x12QuickMessageIntent\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1b\n" +
+	"\tteam_only\x18\x02 \x01(\bR\bteamOnly\"k\n" +
+	"\x11QuickMessageShown\x12'\n" +
+	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x10\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\x12\x1b\n" +
+	"\tteam_only\x18\x03 \x01(\bR\bteamOnly\"<\n" +
 	"\fOrientedTile\x12\x14\n" +
 	"\x05first\x18\x01 \x01(\rR\x05first\x12\x16\n" +
 	"\x06second\x18\x02 \x01(\rR\x06second\"J\n" +
@@ -1669,75 +1788,78 @@ func file_hypedomino_v1_match_proto_rawDescGZIP() []byte {
 }
 
 var file_hypedomino_v1_match_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_hypedomino_v1_match_proto_goTypes = []any{
-	(BoardEnd)(0),           // 0: hypedomino.v1.BoardEnd
-	(Seat)(0),               // 1: hypedomino.v1.Seat
-	(Team)(0),               // 2: hypedomino.v1.Team
-	(Mode)(0),               // 3: hypedomino.v1.Mode
-	(Controller)(0),         // 4: hypedomino.v1.Controller
-	(MatchState)(0),         // 5: hypedomino.v1.MatchState
-	(*Tile)(nil),            // 6: hypedomino.v1.Tile
-	(*PlaceTileIntent)(nil), // 7: hypedomino.v1.PlaceTileIntent
-	(*PassIntent)(nil),      // 8: hypedomino.v1.PassIntent
-	(*DrawIntent)(nil),      // 9: hypedomino.v1.DrawIntent
-	(*EndTurnIntent)(nil),   // 10: hypedomino.v1.EndTurnIntent
-	(*LoadingIntent)(nil),   // 11: hypedomino.v1.LoadingIntent
-	(*EmojiIntent)(nil),     // 12: hypedomino.v1.EmojiIntent
-	(*EmojiShown)(nil),      // 13: hypedomino.v1.EmojiShown
-	(*OrientedTile)(nil),    // 14: hypedomino.v1.OrientedTile
-	(*OpenEnd)(nil),         // 15: hypedomino.v1.OpenEnd
-	(*BoardView)(nil),       // 16: hypedomino.v1.BoardView
-	(*SeatView)(nil),        // 17: hypedomino.v1.SeatView
-	(*LegalMove)(nil),       // 18: hypedomino.v1.LegalMove
-	(*Opening)(nil),         // 19: hypedomino.v1.Opening
-	(*TeamPoints)(nil),      // 20: hypedomino.v1.TeamPoints
-	(*HandResult)(nil),      // 21: hypedomino.v1.HandResult
-	(*RosterEntry)(nil),     // 22: hypedomino.v1.RosterEntry
-	(*MatchView)(nil),       // 23: hypedomino.v1.MatchView
+	(BoardEnd)(0),              // 0: hypedomino.v1.BoardEnd
+	(Seat)(0),                  // 1: hypedomino.v1.Seat
+	(Team)(0),                  // 2: hypedomino.v1.Team
+	(Mode)(0),                  // 3: hypedomino.v1.Mode
+	(Controller)(0),            // 4: hypedomino.v1.Controller
+	(MatchState)(0),            // 5: hypedomino.v1.MatchState
+	(*Tile)(nil),               // 6: hypedomino.v1.Tile
+	(*PlaceTileIntent)(nil),    // 7: hypedomino.v1.PlaceTileIntent
+	(*PassIntent)(nil),         // 8: hypedomino.v1.PassIntent
+	(*DrawIntent)(nil),         // 9: hypedomino.v1.DrawIntent
+	(*EndTurnIntent)(nil),      // 10: hypedomino.v1.EndTurnIntent
+	(*LoadingIntent)(nil),      // 11: hypedomino.v1.LoadingIntent
+	(*EmojiIntent)(nil),        // 12: hypedomino.v1.EmojiIntent
+	(*EmojiShown)(nil),         // 13: hypedomino.v1.EmojiShown
+	(*QuickMessageIntent)(nil), // 14: hypedomino.v1.QuickMessageIntent
+	(*QuickMessageShown)(nil),  // 15: hypedomino.v1.QuickMessageShown
+	(*OrientedTile)(nil),       // 16: hypedomino.v1.OrientedTile
+	(*OpenEnd)(nil),            // 17: hypedomino.v1.OpenEnd
+	(*BoardView)(nil),          // 18: hypedomino.v1.BoardView
+	(*SeatView)(nil),           // 19: hypedomino.v1.SeatView
+	(*LegalMove)(nil),          // 20: hypedomino.v1.LegalMove
+	(*Opening)(nil),            // 21: hypedomino.v1.Opening
+	(*TeamPoints)(nil),         // 22: hypedomino.v1.TeamPoints
+	(*HandResult)(nil),         // 23: hypedomino.v1.HandResult
+	(*RosterEntry)(nil),        // 24: hypedomino.v1.RosterEntry
+	(*MatchView)(nil),          // 25: hypedomino.v1.MatchView
 }
 var file_hypedomino_v1_match_proto_depIdxs = []int32{
 	6,  // 0: hypedomino.v1.PlaceTileIntent.tile:type_name -> hypedomino.v1.Tile
 	0,  // 1: hypedomino.v1.PlaceTileIntent.end:type_name -> hypedomino.v1.BoardEnd
 	1,  // 2: hypedomino.v1.EmojiShown.seat:type_name -> hypedomino.v1.Seat
-	0,  // 3: hypedomino.v1.OpenEnd.end:type_name -> hypedomino.v1.BoardEnd
-	14, // 4: hypedomino.v1.BoardView.line:type_name -> hypedomino.v1.OrientedTile
-	6,  // 5: hypedomino.v1.BoardView.spinner:type_name -> hypedomino.v1.Tile
-	14, // 6: hypedomino.v1.BoardView.top:type_name -> hypedomino.v1.OrientedTile
-	14, // 7: hypedomino.v1.BoardView.bottom:type_name -> hypedomino.v1.OrientedTile
-	15, // 8: hypedomino.v1.BoardView.open_ends:type_name -> hypedomino.v1.OpenEnd
-	1,  // 9: hypedomino.v1.SeatView.seat:type_name -> hypedomino.v1.Seat
-	4,  // 10: hypedomino.v1.SeatView.controller:type_name -> hypedomino.v1.Controller
-	6,  // 11: hypedomino.v1.LegalMove.tile:type_name -> hypedomino.v1.Tile
-	0,  // 12: hypedomino.v1.LegalMove.end:type_name -> hypedomino.v1.BoardEnd
-	1,  // 13: hypedomino.v1.Opening.seat:type_name -> hypedomino.v1.Seat
-	6,  // 14: hypedomino.v1.Opening.tile:type_name -> hypedomino.v1.Tile
-	20, // 15: hypedomino.v1.HandResult.pips:type_name -> hypedomino.v1.TeamPoints
-	2,  // 16: hypedomino.v1.HandResult.winner:type_name -> hypedomino.v1.Team
-	20, // 17: hypedomino.v1.HandResult.awarded:type_name -> hypedomino.v1.TeamPoints
-	20, // 18: hypedomino.v1.HandResult.scores:type_name -> hypedomino.v1.TeamPoints
-	2,  // 19: hypedomino.v1.HandResult.next_opener:type_name -> hypedomino.v1.Team
-	1,  // 20: hypedomino.v1.RosterEntry.seat:type_name -> hypedomino.v1.Seat
-	2,  // 21: hypedomino.v1.RosterEntry.team:type_name -> hypedomino.v1.Team
-	5,  // 22: hypedomino.v1.MatchView.state:type_name -> hypedomino.v1.MatchState
-	1,  // 23: hypedomino.v1.MatchView.seat:type_name -> hypedomino.v1.Seat
-	3,  // 24: hypedomino.v1.MatchView.mode:type_name -> hypedomino.v1.Mode
-	20, // 25: hypedomino.v1.MatchView.scores:type_name -> hypedomino.v1.TeamPoints
-	6,  // 26: hypedomino.v1.MatchView.hand:type_name -> hypedomino.v1.Tile
-	17, // 27: hypedomino.v1.MatchView.seats:type_name -> hypedomino.v1.SeatView
-	16, // 28: hypedomino.v1.MatchView.board:type_name -> hypedomino.v1.BoardView
-	1,  // 29: hypedomino.v1.MatchView.current:type_name -> hypedomino.v1.Seat
-	2,  // 30: hypedomino.v1.MatchView.opening_team:type_name -> hypedomino.v1.Team
-	19, // 31: hypedomino.v1.MatchView.forced_opening:type_name -> hypedomino.v1.Opening
-	18, // 32: hypedomino.v1.MatchView.legal_moves:type_name -> hypedomino.v1.LegalMove
-	21, // 33: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
-	2,  // 34: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
-	22, // 35: hypedomino.v1.MatchView.roster:type_name -> hypedomino.v1.RosterEntry
-	36, // [36:36] is the sub-list for method output_type
-	36, // [36:36] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	1,  // 3: hypedomino.v1.QuickMessageShown.seat:type_name -> hypedomino.v1.Seat
+	0,  // 4: hypedomino.v1.OpenEnd.end:type_name -> hypedomino.v1.BoardEnd
+	16, // 5: hypedomino.v1.BoardView.line:type_name -> hypedomino.v1.OrientedTile
+	6,  // 6: hypedomino.v1.BoardView.spinner:type_name -> hypedomino.v1.Tile
+	16, // 7: hypedomino.v1.BoardView.top:type_name -> hypedomino.v1.OrientedTile
+	16, // 8: hypedomino.v1.BoardView.bottom:type_name -> hypedomino.v1.OrientedTile
+	17, // 9: hypedomino.v1.BoardView.open_ends:type_name -> hypedomino.v1.OpenEnd
+	1,  // 10: hypedomino.v1.SeatView.seat:type_name -> hypedomino.v1.Seat
+	4,  // 11: hypedomino.v1.SeatView.controller:type_name -> hypedomino.v1.Controller
+	6,  // 12: hypedomino.v1.LegalMove.tile:type_name -> hypedomino.v1.Tile
+	0,  // 13: hypedomino.v1.LegalMove.end:type_name -> hypedomino.v1.BoardEnd
+	1,  // 14: hypedomino.v1.Opening.seat:type_name -> hypedomino.v1.Seat
+	6,  // 15: hypedomino.v1.Opening.tile:type_name -> hypedomino.v1.Tile
+	22, // 16: hypedomino.v1.HandResult.pips:type_name -> hypedomino.v1.TeamPoints
+	2,  // 17: hypedomino.v1.HandResult.winner:type_name -> hypedomino.v1.Team
+	22, // 18: hypedomino.v1.HandResult.awarded:type_name -> hypedomino.v1.TeamPoints
+	22, // 19: hypedomino.v1.HandResult.scores:type_name -> hypedomino.v1.TeamPoints
+	2,  // 20: hypedomino.v1.HandResult.next_opener:type_name -> hypedomino.v1.Team
+	1,  // 21: hypedomino.v1.RosterEntry.seat:type_name -> hypedomino.v1.Seat
+	2,  // 22: hypedomino.v1.RosterEntry.team:type_name -> hypedomino.v1.Team
+	5,  // 23: hypedomino.v1.MatchView.state:type_name -> hypedomino.v1.MatchState
+	1,  // 24: hypedomino.v1.MatchView.seat:type_name -> hypedomino.v1.Seat
+	3,  // 25: hypedomino.v1.MatchView.mode:type_name -> hypedomino.v1.Mode
+	22, // 26: hypedomino.v1.MatchView.scores:type_name -> hypedomino.v1.TeamPoints
+	6,  // 27: hypedomino.v1.MatchView.hand:type_name -> hypedomino.v1.Tile
+	19, // 28: hypedomino.v1.MatchView.seats:type_name -> hypedomino.v1.SeatView
+	18, // 29: hypedomino.v1.MatchView.board:type_name -> hypedomino.v1.BoardView
+	1,  // 30: hypedomino.v1.MatchView.current:type_name -> hypedomino.v1.Seat
+	2,  // 31: hypedomino.v1.MatchView.opening_team:type_name -> hypedomino.v1.Team
+	21, // 32: hypedomino.v1.MatchView.forced_opening:type_name -> hypedomino.v1.Opening
+	20, // 33: hypedomino.v1.MatchView.legal_moves:type_name -> hypedomino.v1.LegalMove
+	23, // 34: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
+	2,  // 35: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
+	24, // 36: hypedomino.v1.MatchView.roster:type_name -> hypedomino.v1.RosterEntry
+	37, // [37:37] is the sub-list for method output_type
+	37, // [37:37] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_match_proto_init() }
@@ -1751,7 +1873,7 @@ func file_hypedomino_v1_match_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_match_proto_rawDesc), len(file_hypedomino_v1_match_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

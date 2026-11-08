@@ -325,6 +325,15 @@ func (c *connection) Emoji(item string) {
 	}
 }
 
+func (c *connection) QuickMessage(key string, teamOnly bool) {
+	c.mu.Lock()
+	seat := c.seat
+	c.mu.Unlock()
+	if seat != nil {
+		seat.QuickMessage(key, teamOnly)
+	}
+}
+
 func (c *connection) Attach() {
 	c.manager.mu.Lock()
 	defer c.manager.mu.Unlock()

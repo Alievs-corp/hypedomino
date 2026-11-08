@@ -280,8 +280,9 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	sequence := frame.GetSequence()
 	loading := frame.GetLoadingIntent()
 	emoji := frame.GetEmojiIntent()
+	quick := frame.GetQuickMessageIntent()
 	intent, ok := DecodeIntent(frame)
-	if !ok && loading == nil && emoji == nil {
+	if !ok && loading == nil && emoji == nil && quick == nil {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
@@ -299,6 +300,10 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	}
 	if emoji != nil {
 		c.session.Emoji(emoji.GetItemId())
+		return true
+	}
+	if quick != nil {
+		c.session.QuickMessage(quick.GetKey(), quick.GetTeamOnly())
 		return true
 	}
 	c.session.Intent(sequence, intent)

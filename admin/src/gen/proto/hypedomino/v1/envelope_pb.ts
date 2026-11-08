@@ -8,7 +8,7 @@ import type { Error } from "./error_pb";
 import { file_hypedomino_v1_error } from "./error_pb";
 import type { ClientHello, ServerHello } from "./hello_pb";
 import { file_hypedomino_v1_hello } from "./hello_pb";
-import type { DrawIntent, EmojiIntent, EmojiShown, EndTurnIntent, LoadingIntent, MatchView, PassIntent, PlaceTileIntent } from "./match_pb";
+import type { DrawIntent, EmojiIntent, EmojiShown, EndTurnIntent, LoadingIntent, MatchView, PassIntent, PlaceTileIntent, QuickMessageIntent, QuickMessageShown } from "./match_pb";
 import { file_hypedomino_v1_match } from "./match_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/envelope.proto.
  */
 export const file_hypedomino_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIqcFCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABIwCgtlbW9qaV9zaG93bhgOIAEoCzIZLmh5cGVkb21pbm8udjEuRW1vamlTaG93bkgAEjsKEXBsYWNlX3RpbGVfaW50ZW50GBQgASgLMh4uaHlwZWRvbWluby52MS5QbGFjZVRpbGVJbnRlbnRIABIwCgtwYXNzX2ludGVudBgVIAEoCzIZLmh5cGVkb21pbm8udjEuUGFzc0ludGVudEgAEjAKC2RyYXdfaW50ZW50GBYgASgLMhkuaHlwZWRvbWluby52MS5EcmF3SW50ZW50SAASNwoPZW5kX3R1cm5faW50ZW50GBcgASgLMhwuaHlwZWRvbWluby52MS5FbmRUdXJuSW50ZW50SAASNgoObG9hZGluZ19pbnRlbnQYGCABKAsyHC5oeXBlZG9taW5vLnYxLkxvYWRpbmdJbnRlbnRIABIyCgxlbW9qaV9pbnRlbnQYGSABKAsyGi5oeXBlZG9taW5vLnYxLkVtb2ppSW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
+  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIqsGCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABIwCgtlbW9qaV9zaG93bhgOIAEoCzIZLmh5cGVkb21pbm8udjEuRW1vamlTaG93bkgAEj8KE3F1aWNrX21lc3NhZ2Vfc2hvd24YDyABKAsyIC5oeXBlZG9taW5vLnYxLlF1aWNrTWVzc2FnZVNob3duSAASOwoRcGxhY2VfdGlsZV9pbnRlbnQYFCABKAsyHi5oeXBlZG9taW5vLnYxLlBsYWNlVGlsZUludGVudEgAEjAKC3Bhc3NfaW50ZW50GBUgASgLMhkuaHlwZWRvbWluby52MS5QYXNzSW50ZW50SAASMAoLZHJhd19pbnRlbnQYFiABKAsyGS5oeXBlZG9taW5vLnYxLkRyYXdJbnRlbnRIABI3Cg9lbmRfdHVybl9pbnRlbnQYFyABKAsyHC5oeXBlZG9taW5vLnYxLkVuZFR1cm5JbnRlbnRIABI2Cg5sb2FkaW5nX2ludGVudBgYIAEoCzIcLmh5cGVkb21pbm8udjEuTG9hZGluZ0ludGVudEgAEjIKDGVtb2ppX2ludGVudBgZIAEoCzIaLmh5cGVkb21pbm8udjEuRW1vamlJbnRlbnRIABJBChRxdWlja19tZXNzYWdlX2ludGVudBgaIAEoCzIhLmh5cGVkb21pbm8udjEuUXVpY2tNZXNzYWdlSW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match]);
 
 /**
  * @generated from message hypedomino.v1.Envelope
@@ -77,6 +77,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
     case: "emojiShown";
   } | {
     /**
+     * @generated from field: hypedomino.v1.QuickMessageShown quick_message_shown = 15;
+     */
+    value: QuickMessageShown;
+    case: "quickMessageShown";
+  } | {
+    /**
      * @generated from field: hypedomino.v1.PlaceTileIntent place_tile_intent = 20;
      */
     value: PlaceTileIntent;
@@ -111,6 +117,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
      */
     value: EmojiIntent;
     case: "emojiIntent";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.QuickMessageIntent quick_message_intent = 26;
+     */
+    value: QuickMessageIntent;
+    case: "quickMessageIntent";
   } | { case: undefined; value?: undefined };
 };
 
