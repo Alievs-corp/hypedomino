@@ -17,7 +17,11 @@ type Outcome struct {
 }
 
 type PlayerOutcome struct {
-	Account  string `json:"account"`
-	Won      bool   `json:"won"`
-	Offender bool   `json:"offender"`
+	Account      string `json:"account"`
+	Won          bool   `json:"won"`
+	Offender     bool   `json:"offender"`
+	HandsWon     int64  `json:"hands_won"`
+	Dominoes     int64  `json:"dominoes"`
+	BoardPoints  int64  `json:"board_points"`
+	DoubleChains int64  `json:"double_chains"`
 }

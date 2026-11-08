@@ -175,6 +175,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go matchRewards.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("match reward relay failed", "error", err) })
 	passXp := matchstore.NewRelay(matchstore.New(pool), passes, matchstore.TopicXp, 0, time.Now)
 	go passXp.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("pass xp relay failed", "error", err) })
+	missionProgress := matchstore.NewRelay(matchstore.New(pool), missions, matchstore.TopicMissions, 0, time.Now)
+	go missionProgress.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("mission progress relay failed", "error", err) })
 	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
