@@ -20,6 +20,7 @@ const (
 	KindReplay       = "replay_reject"
 	KindMacFailure   = "mac_failure"
 	KindUnownedEquip = "unowned_equip"
+	KindCollusion    = "collusion"
 )
 
 var ErrInvalidConfig = errors.New("risk: invalid config")
@@ -38,6 +39,7 @@ type Config struct {
 	UnownedEquipThreshold int
 	UnownedEquipWindow    time.Duration
 	UnownedEquipWeight    int
+	CollusionWeight       int
 	Decay                 time.Duration
 	ReviewScore           int
 	ShadowbanScore        int
@@ -45,7 +47,7 @@ type Config struct {
 }
 
 func DefaultConfig() Config {
-	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5, UnownedEquipThreshold: 5, UnownedEquipWindow: 10 * time.Minute, UnownedEquipWeight: 5, Decay: 30 * 24 * time.Hour, ReviewScore: 20, ShadowbanScore: 40, BanWaveInterval: 24 * time.Hour}
+	return Config{ClockSkewTolerance: 5 * time.Minute, ClockSkewWeight: 1, FakeReceiptWeight: 20, RefundWeight: 3, ReplayThreshold: 5, ReplayWindow: 10 * time.Minute, ReplayWeight: 5, MacFailureThreshold: 5, MacFailureWindow: 10 * time.Minute, MacFailureWeight: 5, UnownedEquipThreshold: 5, UnownedEquipWindow: 10 * time.Minute, UnownedEquipWeight: 5, CollusionWeight: 10, Decay: 30 * 24 * time.Hour, ReviewScore: 20, ShadowbanScore: 40, BanWaveInterval: 24 * time.Hour}
 }
 
 func (c Config) Validate() error {
@@ -67,8 +69,8 @@ func (c Config) Validate() error {
 	if c.ReviewScore < 1 || c.ShadowbanScore < c.ReviewScore {
 		return fmt.Errorf("%w: review score must be at least 1 and the shadowban score not below it", ErrInvalidConfig)
 	}
-	if c.FakeReceiptWeight < 0 || c.RefundWeight < 0 {
-		return fmt.Errorf("%w: fake receipt and refund weights must not be negative", ErrInvalidConfig)
+	if c.FakeReceiptWeight < 0 || c.RefundWeight < 0 || c.CollusionWeight < 0 {
+		return fmt.Errorf("%w: fake receipt, refund and collusion weights must not be negative", ErrInvalidConfig)
 	}
 	return nil
 }

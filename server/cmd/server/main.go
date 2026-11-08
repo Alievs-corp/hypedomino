@@ -197,6 +197,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	wave.OnShadowban(ratings.HideFromBoards)
 	go wave.Run(ctx, config.SeasonPoll, time.Now)
 	ratings.SetRewards(engine)
+	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	var reader leaderboard.Reader
