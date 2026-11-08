@@ -247,7 +247,7 @@ Quick messages (#152, owner decisions 2026-11-08):
 - The catalog is the `quick_messages` config snapshot `{"keys"}`: game string keys `quick.<slug>`, each listed once. Every player may send every listed key; there is no ownership. A key not in the published catalog is dropped, and before the first publish every key is.
 - A `QuickMessageIntent` carries `key` and `team_only`. Without `team_only` every seat sees it; with it only the sender's team does, so in 1v1 only the sender. Every seat that sees it gets `QuickMessageShown` with the sender's seat, the key and `team_only`. The client shows the key's text in the viewer's language.
 - It spends from the same per-seat bucket as emoji (`HD_EMOJI_BURST`, default 3, refilled one every `HD_EMOJI_REFILL`, default 2 s), so emoji and quick messages share one limit. A bot seat, a muted player (`docs/admin.md` 6.2) and a seat with no connection send nothing.
-- Nodes read the snapshot at start and refresh it every `HD_CONFIG_POLL`. The admin editor that publishes it, and its check that every key has an approved value in every launch language, follow in #152.
+- Nodes read the snapshot at start and refresh it every `HD_CONFIG_POLL`. The panel edits it at `/quick-messages` (A-27 rights: view with view on game strings, publish and rollback with publish on game strings). A publish is refused with `invalid` and the failing keys in `detail` unless every key has an approved, non-deprecated value in every game language (section 2.1).
 
 Any future feature that accepts free text must update this section and add moderation before it ships.
 
