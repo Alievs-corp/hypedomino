@@ -160,6 +160,7 @@ Screens sit on a stack. The top screen takes input; back (the Android back key, 
 - Each screen is its own `Canvas`, screen space overlay, sorted by stack depth, so a change on one screen re-batches only that screen. Animated parts inside a screen sit on their own sub-canvas (section 6 rule 2).
 - A hidden screen keeps its GameObject active and only its `Canvas` component is disabled. Its mesh stays built, so showing it again costs no rebuild.
 - Every screen canvas scales its 1080-unit short side to the display's short side (section 1), and its content sits inside the safe area; the background may run under the insets.
+- This holds from 16:9 to 21:9 phones, on 4:3 tablets and on nearly square folding displays, in either orientation. `AspectRatioTests` checks it on each device of the matrix (`docs/performance.md` 1) and on those shapes.
 
 ### Lists
 
