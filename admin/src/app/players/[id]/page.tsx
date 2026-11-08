@@ -50,6 +50,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <Fact label={t("player.emails")} value={account.emails.join(", ")} />
         {account.identities && <Fact label={t("player.identities")} value={account.identities.map((identity) => `${identity.provider}:${identity.subject}`).join(", ")} />}
         <Fact label={t("player.banned_until")} value={banActive(account, new Date()) ? when(account.banned_until) : t("player.not_banned")} />
+        <Fact label={t("player.shadowbanned_at")} value={account.shadowbanned_at ? when(account.shadowbanned_at) : t("player.not_banned")} />
         {account.deletion_requested_at && <Fact label={t("player.deletion_requested_at")} value={when(account.deletion_requested_at)} />}
         {account.deleted_at && <Fact label={t("player.deleted_at")} value={when(account.deleted_at)} />}
         <Fact label={t("player.coins")} value={record.coins} />
@@ -58,7 +59,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
       {can(admin.permissions, "players", "act_on_player") && account.state !== "deleted" && (
-        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} renameRequired={profile?.rename_required ?? false} />
+        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} renameRequired={profile?.rename_required ?? false} />
       )}
       <Rows title="player.nickname_history" t={t} rows={record.nickname_history} columns={[
         { label: "players.nickname", cell: (row) => row.nickname },

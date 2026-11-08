@@ -15,7 +15,7 @@ test("query and id are encoded into the admin API paths", () => {
   assert.equal(playerApiPath("../admin/me"), "/admin/players/..%2Fadmin%2Fme");
 });
 
-const account: PlayerAccount = { id: "p", nickname: "n", state: "active", country: "AZ", created_at: "2026-11-01T00:00:00Z", emails: [], banned_until: null, deletion_requested_at: null, deleted_at: null };
+const account: PlayerAccount = { id: "p", nickname: "n", state: "active", country: "AZ", created_at: "2026-11-01T00:00:00Z", emails: [], banned_until: null, shadowbanned_at: null, deletion_requested_at: null, deleted_at: null };
 
 test("a ban counts only until its end", () => {
   const now = new Date("2026-11-04T10:00:00Z");

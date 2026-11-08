@@ -8,7 +8,7 @@ import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { emptyGrant, grantReady, grantRequest, grantSourceTypes, type GrantDraft } from "@/players/grant";
 import { validAdjustment } from "@/players/record";
-import { adjustCoins, banTemporarily, forceRename, grantReward, liftTemporaryBan, type PlayerActionResult } from "./actions";
+import { adjustCoins, banTemporarily, forceRename, grantReward, liftShadowban, liftTemporaryBan, shadowban, type PlayerActionResult } from "./actions";
 
 type Pending = { action: () => Promise<PlayerActionResult>; onApplied?: () => void };
 
@@ -26,7 +26,7 @@ function outcomeKey(result: PlayerActionResult): MessageKey {
   return result.repeated ? "actions.repeated" : "actions.done";
 }
 
-export function PlayerActions({ id, clientId, banned, renameRequired }: { id: string; clientId: string; banned: boolean; renameRequired: boolean }) {
+export function PlayerActions({ id, clientId, banned, shadowbanned, renameRequired }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; renameRequired: boolean }) {
   const t = useTranslator();
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -150,6 +150,9 @@ export function PlayerActions({ id, clientId, banned, renameRequired }: { id: st
             {t("actions.ban")}
           </button>
         )}
+        <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => (shadowbanned ? liftShadowban(id, reason) : shadowban(id, reason)) })} className={buttonClass}>
+          {t(shadowbanned ? "actions.lift_shadowban" : "actions.shadowban")}
+        </button>
         {!renameRequired && (
           <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => forceRename(id, reason) })} className={buttonClass}>
             {t("actions.force_rename")}
