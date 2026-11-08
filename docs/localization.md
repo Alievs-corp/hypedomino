@@ -268,7 +268,7 @@ Implemented in `server/internal/report` (#155, owner decisions 2026-11-08):
 - `ReportAutoRenameThreshold` (`HD_REPORT_AUTO_RENAME_THRESHOLD`, default 5, 0 turns it off): when that many different reporters have an open `offensive_nickname` report on one target updated within `HD_REPORT_AUTO_RENAME_WINDOW` (default 7 days), the target must pick a new nickname (`rename_required`, as a forced rename). The reports stay open for a moderator.
 - Abuse: a reporter whose reports were touched `HD_REPORT_DAILY_LIMIT` times (default 10) in the last 24 hours, or who has `HD_REPORT_REJECTED_LIMIT` (default 5) reports rejected within `HD_REPORT_REJECTED_WINDOW` (default 30 days) with the latest rejection less than `HD_REPORT_REJECTED_SILENCE` (default 7 days) ago, is answered as usual but nothing is stored.
 - Muting another player's emoji and quick messages during a match is a choice on the device only; the server is not involved.
-- The admin queue and its decisions follow in #155.
+- Admin queue (A-32, `queues` object): `GET /admin/reports` lists open reports grouped by target, oldest target first, up to 100 targets. `POST /admin/players/{id}/reports/uphold` and `/reject` take a reason and a recent sign-in, close every open report on the player and are audited on the player as `uphold_reports` or `reject_reports`; 409 `no_open_reports` when none is open. Upholding changes nothing on the account; the moderator forces a rename or mutes from the player page. Rejected reports feed the reporter silence above.
 
 ## 6. Cultural content checklist
 

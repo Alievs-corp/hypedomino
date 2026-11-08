@@ -17,6 +17,7 @@ export const screens: readonly Screen[] = [
   { href: "/ranked", labelKey: "nav.ranked", object: "ranked_seasons" },
   { href: "/players", labelKey: "nav.players", object: "players" },
   { href: "/reviews", labelKey: "nav.reviews", object: "queues" },
+  { href: "/reports", labelKey: "nav.reports", object: "queues" },
   { href: "/config/rules", labelKey: "nav.rules", object: "game_config" },
   { href: "/calendar", labelKey: "nav.calendar", object: "live_events" },
   { href: "/live-controls", labelKey: "nav.live", object: "live_controls" },
