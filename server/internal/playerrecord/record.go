@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
+	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 )
 
 const (
@@ -109,17 +110,30 @@ type Purchase struct {
 }
 
 type Match struct {
-	MatchID   string     `json:"match_id"`
-	StartedAt time.Time  `json:"started_at"`
-	EndedAt   *time.Time `json:"ended_at"`
-	Mode      string     `json:"mode"`
-	Kind      string     `json:"kind"`
-	Seat      int        `json:"seat"`
-	Team      int        `json:"team"`
-	Result    string     `json:"result"`
-	ScoreA    int        `json:"score_a"`
-	ScoreB    int        `json:"score_b"`
-	Cancelled bool       `json:"cancelled"`
+	MatchID    string     `json:"match_id"`
+	StartedAt  time.Time  `json:"started_at"`
+	EndedAt    *time.Time `json:"ended_at"`
+	Mode       string     `json:"mode"`
+	Kind       string     `json:"kind"`
+	Seat       int        `json:"seat"`
+	Team       int        `json:"team"`
+	Result     string     `json:"result"`
+	ScoreA     int        `json:"score_a"`
+	ScoreB     int        `json:"score_b"`
+	Cancelled  bool       `json:"cancelled"`
+	Suspicious []string   `json:"suspicious"`
+}
+
+type PairSignal struct {
+	Kind        string    `json:"kind"`
+	Counterpart string    `json:"counterpart"`
+	Mode        string    `json:"mode"`
+	Matches     int       `json:"matches"`
+	Wins        int       `json:"wins"`
+	Offenses    int       `json:"offenses"`
+	WindowHours int       `json:"window_hours"`
+	FirstSeen   time.Time `json:"first_seen"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Record struct {
@@ -133,6 +147,7 @@ type Record struct {
 	Grants          []Grant          `json:"grants"`
 	Purchases       []Purchase       `json:"purchases"`
 	Matches         []Match          `json:"matches"`
+	PairSignals     []PairSignal     `json:"pair_signals"`
 }
 
 const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
@@ -222,7 +237,7 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	if err := loadIdentities(ctx, db, &r, withIdentities); err != nil {
 		return Record{}, err
 	}
-	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches} {
+	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals} {
 		if err := load(ctx, db, &r); err != nil {
 			return Record{}, err
 		}
@@ -320,10 +335,20 @@ func loadPurchases(ctx context.Context, db Querier, r *Record) error {
 }
 
 func loadMatches(ctx context.Context, db Querier, r *Record) error {
-	return collect(ctx, db, &r.Matches, `select m.id::text, m.started_at, m.ended_at, m.mode, m.kind, mp.seat, mp.team, coalesce(mp.result, ''), m.score_a, m.score_b, m.cancelled
+	return collect(ctx, db, &r.Matches, `select m.id::text, m.started_at, m.ended_at, m.mode, m.kind, mp.seat, mp.team, coalesce(mp.result, ''), m.score_a, m.score_b, m.cancelled,
+		array(select distinct s.kind from rating_signals s join match_participants o on o.match_id = m.id and o.started_at = m.started_at and o.account_id = s.counterpart
+			where s.account_id = mp.account_id and s.mode = m.mode and s.kind = any($3) and m.started_at > s.updated_at - make_interval(hours => s.window_hours) order by s.kind)
 		from match_participants mp join matches m on m.id = mp.match_id and m.started_at = mp.started_at
 		where mp.account_id = $1::uuid order by mp.started_at desc limit $2`,
 		func(row pgx.CollectableRow, m *Match) error {
-			return row.Scan(&m.MatchID, &m.StartedAt, &m.EndedAt, &m.Mode, &m.Kind, &m.Seat, &m.Team, &m.Result, &m.ScoreA, &m.ScoreB, &m.Cancelled)
+			return row.Scan(&m.MatchID, &m.StartedAt, &m.EndedAt, &m.Mode, &m.Kind, &m.Seat, &m.Team, &m.Result, &m.ScoreA, &m.ScoreB, &m.Cancelled, &m.Suspicious)
+		}, r.Account.ID, ListLimit, rating.CollusionSignals)
+}
+
+func loadPairSignals(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.PairSignals, `select kind, counterpart::text, mode, matches, wins, offenses, window_hours, first_seen, updated_at
+		from rating_signals where account_id = $1::uuid order by updated_at desc, kind, counterpart limit $2`,
+		func(row pgx.CollectableRow, s *PairSignal) error {
+			return row.Scan(&s.Kind, &s.Counterpart, &s.Mode, &s.Matches, &s.Wins, &s.Offenses, &s.WindowHours, &s.FirstSeen, &s.UpdatedAt)
 		}, r.Account.ID, ListLimit)
 }
