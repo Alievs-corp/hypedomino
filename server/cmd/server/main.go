@@ -31,6 +31,8 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
@@ -167,6 +169,10 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	missions := mission.NewStore(pool, missionCatalog, engine)
 	calendar := dailylogin.NewWatcher(pool, logger)
 	go calendar.Run(ctx, config.ConfigPoll)
+	matchRewardConfigs := matchreward.NewWatcher(pool, logger)
+	go matchRewardConfigs.Run(ctx, config.ConfigPoll)
+	matchRewards := matchstore.NewRelay(matchstore.New(pool), matchreward.NewStore(pool, matchRewardConfigs, walletStore), matchstore.TopicEconomy, 0, time.Now)
+	go matchRewards.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("match reward relay failed", "error", err) })
 	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
