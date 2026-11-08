@@ -31,6 +31,7 @@ type accountView struct {
 	CreatedAt   time.Time   `json:"created_at"`
 	LastLoginAt *time.Time  `json:"last_login_at,omitempty"`
 	DisabledAt  *time.Time  `json:"disabled_at,omitempty"`
+	Locale      string      `json:"locale,omitempty"`
 }
 
 type sessionView struct {
@@ -56,7 +57,7 @@ type meResponse struct {
 func viewAccount(a adminaccount.Account) accountView {
 	return accountView{
 		ID: a.ID, Email: a.Email, DisplayName: a.DisplayName, Roles: a.Roles, State: string(a.State),
-		CreatedAt: a.CreatedAt, LastLoginAt: optionalTime(a.LastLoginAt), DisabledAt: optionalTime(a.DisabledAt),
+		CreatedAt: a.CreatedAt, LastLoginAt: optionalTime(a.LastLoginAt), DisabledAt: optionalTime(a.DisabledAt), Locale: a.Locale,
 	}
 }
 
@@ -173,4 +174,21 @@ func (h *Handler) signOut(w http.ResponseWriter, r *http.Request, p principal) {
 
 func (h *Handler) me(w http.ResponseWriter, r *http.Request, p principal) {
 	reply(w, http.StatusOK, meResponse{Session: h.viewSession(p.session), Account: viewAccount(p.account), Permissions: permissions(p.account.Roles)})
+}
+
+type localeRequest struct {
+	Locale string `json:"locale"`
+}
+
+func (h *Handler) chooseLocale(w http.ResponseWriter, r *http.Request, p principal) {
+	var request localeRequest
+	if !decode(w, r, &request) {
+		return
+	}
+	account, err := h.accounts.SetLocale(r.Context(), p.account.ID, request.Locale)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, viewAccount(account))
 }

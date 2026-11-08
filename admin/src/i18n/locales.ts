@@ -14,3 +14,10 @@ export const localeNames: Record<Locale, string> = {
 export function isLocale(value: string | undefined): value is Locale {
   return locales.some((locale) => locale === value);
 }
+
+export function preferredLocale(account: string | undefined, cookie: string | undefined): Locale {
+  if (isLocale(account)) {
+    return account;
+  }
+  return isLocale(cookie) ? cookie : defaultLocale;
+}

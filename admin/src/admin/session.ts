@@ -8,6 +8,7 @@ export type AdminAccount = {
   display_name: string;
   roles: string[];
   state: string;
+  locale?: string;
 };
 
 export type AdminSession = {

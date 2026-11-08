@@ -110,6 +110,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/session/step-up", h.signedIn(h.stepUp))
 	h.mux.HandleFunc("DELETE /admin/session", h.signedIn(h.signOut))
 	h.mux.HandleFunc("GET /admin/me", h.signedIn(h.me))
+	h.mux.HandleFunc("PUT /admin/me/locale", h.signedIn(h.chooseLocale))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
 	h.mux.HandleFunc("POST /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.Create, h.createAccount))
@@ -417,6 +418,8 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errOwnAccount):
 		return http.StatusConflict, "own_account"
+	case errors.Is(err, adminaccount.ErrLocale):
+		return http.StatusBadRequest, "unknown_locale"
 	case errors.Is(err, adminaccount.ErrInvalid), errors.Is(err, audit.ErrInvalid), errors.Is(err, errMalformed),
 		errors.Is(err, playerrecord.ErrEmptyQuery):
 		return http.StatusBadRequest, "invalid"
