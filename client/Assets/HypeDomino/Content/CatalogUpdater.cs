@@ -26,6 +26,8 @@ namespace HypeDomino.Content
 
         public float RetryInMs => retryInMs;
 
+        public bool InMatch => inMatch;
+
         public void Start()
         {
             var stored = source.StoredVersion;
