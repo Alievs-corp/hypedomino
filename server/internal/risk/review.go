@@ -83,6 +83,21 @@ func reviewSignals(ctx context.Context, db Querier, account string, limit int) (
 	})
 }
 
+func OpenReviewAccount(ctx context.Context, tx pgx.Tx, id int64) (string, error) {
+	var account string
+	var closedAt *time.Time
+	err := tx.QueryRow(ctx, `select account_id::text, closed_at from risk_reviews where id = $1 for update`, id).Scan(&account, &closedAt)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return "", ErrNoReview
+	case err != nil:
+		return "", err
+	case closedAt != nil:
+		return "", ErrReviewClosed
+	}
+	return account, nil
+}
+
 func DecideReview(ctx context.Context, tx pgx.Tx, id int64, decision, decider string, now time.Time) (Decided, error) {
 	var decided Decided
 	var closedAt *time.Time

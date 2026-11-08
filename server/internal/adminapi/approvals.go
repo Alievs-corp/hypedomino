@@ -100,6 +100,8 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request, p principal) {
 			return h.activatePromo(r.Context(), tx, p, approved, note, now)
 		case approval.LiveControl:
 			return h.applyLiveControls(r.Context(), tx, p, approved, note, now)
+		case approval.PermanentBan:
+			return h.banPermanently(r.Context(), tx, p, approved, note, now)
 		}
 		return errUnsupportedKind
 	})

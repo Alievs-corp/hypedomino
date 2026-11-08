@@ -181,6 +181,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/live-controls", h.allowed(rbac.LiveControls, rbac.SwitchLiveControl, h.switchLiveControls))
 	h.mux.HandleFunc("GET /admin/reviews", h.allowed(rbac.Queues, rbac.View, h.listReviews))
 	h.mux.HandleFunc("POST /admin/reviews/{id}/clear", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionClear, ClearReviewAction)))
+	h.mux.HandleFunc("POST /admin/reviews/{id}/permanent-ban", h.allowed(rbac.Queues, rbac.ActOnQueue, h.proposePermanentBan))
 	h.mux.HandleFunc("POST /admin/reviews/{id}/confirm", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionConfirm, ConfirmReviewAction)))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
