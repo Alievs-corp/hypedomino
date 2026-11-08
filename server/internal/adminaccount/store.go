@@ -20,6 +20,7 @@ var (
 	ErrTaken    = errors.New("adminaccount: email already has an account")
 	ErrNotFound = errors.New("adminaccount: no such account")
 	ErrDisabled = errors.New("adminaccount: account is disabled")
+	ErrLocale   = errors.New("adminaccount: unknown panel language")
 )
 
 type State string
@@ -28,6 +29,8 @@ const (
 	Active   State = "active"
 	Disabled State = "disabled"
 )
+
+var Locales = []string{"az", "en"}
 
 type Account struct {
 	ID          string
@@ -38,6 +41,7 @@ type Account struct {
 	CreatedAt   time.Time
 	LastLoginAt time.Time
 	DisabledAt  time.Time
+	Locale      string
 }
 
 type querier interface {
@@ -79,12 +83,12 @@ func uniqueRoles(roles []rbac.Role) []rbac.Role {
 
 const invalidTextRepresentation = "22P02"
 
-const columns = `id, email, display_name, roles, state, created_at, last_login_at, disabled_at`
+const columns = `id, email, display_name, roles, state, created_at, last_login_at, disabled_at, coalesce(locale, '')`
 
 func scan(row pgx.Row) (Account, error) {
 	var a Account
 	var lastLogin, disabled *time.Time
-	if err := row.Scan(&a.ID, &a.Email, &a.DisplayName, &a.Roles, &a.State, &a.CreatedAt, &lastLogin, &disabled); err != nil {
+	if err := row.Scan(&a.ID, &a.Email, &a.DisplayName, &a.Roles, &a.State, &a.CreatedAt, &lastLogin, &disabled, &a.Locale); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.Is(err, pgx.ErrNoRows) || errors.As(err, &pgErr) && pgErr.Code == invalidTextRepresentation {
 			return Account{}, ErrNotFound
@@ -179,4 +183,11 @@ func (s *Store) DisableInactive(ctx context.Context, now time.Time, inactiveFor 
 		return nil, err
 	}
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Account, error) { return scan(row) })
+}
+
+func (s *Store) SetLocale(ctx context.Context, id, locale string) (Account, error) {
+	if !slices.Contains(Locales, locale) {
+		return Account{}, ErrLocale
+	}
+	return scan(s.db.QueryRow(ctx, `update admin_accounts set locale = $2 where id = $1 returning `+columns, id, locale))
 }
