@@ -161,6 +161,15 @@ Screens sit on a stack. The top screen takes input; back (the Android back key, 
 - A hidden screen keeps its GameObject active and only its `Canvas` component is disabled. Its mesh stays built, so showing it again costs no rebuild.
 - Every screen canvas scales its 1080-unit short side to the display's short side (section 1), and its content sits inside the safe area; the background may run under the insets.
 
+### Lists
+
+A list that can hold more rows than fit on screen (shop, inventory, friends, leaderboard, history) recycles its rows.
+
+- It keeps only the rows that cover the viewport, one more above and one more below, all created when the screen builds. Scrolling moves and rebinds them; it never instantiates or destroys a row and allocates 0 B.
+- All rows of one list have the same height and gap, both tokens (`size.*`, `space.*`) the screen passes in. A list of mixed row heights is a design change.
+- The scrolling content is its own sub-canvas without a layout group or content size fitter. Rows are placed directly, so scrolling re-batches only the list and never rebuilds layout (section 6 rule 2).
+- A row is rebound only when it starts to show another item, or when its item changed. Rows past the last item are hidden.
+
 ## 6. Motion
 
 | Duration | ms | Use |
