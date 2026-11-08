@@ -407,6 +407,8 @@ Calendar (A-21). The calendar holds no data of its own: an entry exists because 
 | Promo code window | 5.11 | A-15 |
 | Scheduled change set activation | 5.17 | A-2, A-3 |
 
+Built so far (#146): the calendar reads ranked seasons, pass seasons from the published `pass` snapshot, featured and event offers from the published `shop` snapshot and promo campaigns, and lists the ones not yet ended; the panel is `/calendar`, each row linking to its screen. Rotation periods, live events, banners, push send times and scheduled change sets join it when they are built. Every role with view rights on live events sees it; an `analyst` also does, as it views every listed source, but sees promo campaigns only with view rights on promo codes.
+
 The plan for the first 90 days after launch, entered this way, is `docs/live-ops-90-days.md`.
 
 ### 5.14 Config values and feature flags
@@ -630,6 +632,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/config/rating/history` | V on ranked seasons | The last 50 `rating` snapshots, newest first |
 | `POST /admin/config/rating/rollback` `{"version"}` | P on ranked seasons and S: rollback on snapshots | Publishes the content of an earlier `rating` snapshot as the next version, under the same checks |
 | `GET /admin/ranked/seasons` | V on ranked seasons | `server_time`, `next_start` (the end of the last season, or null) and every season in start order with its `state` (`scheduled`, `live`, `ending`, `closed`) |
+| `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
 | `POST /admin/ranked/seasons` `{"id", "start", "end", "no_rewards", "reason"}` | C on ranked seasons | Schedules a season (Ranked seasons note); 201 with the season |
 | `PATCH /admin/ranked/seasons/{id}` `{"start", "end", "no_rewards", "reason"}` | E on ranked seasons | Reschedules a season that has not started |
 | `POST /admin/ranked/seasons/{id}/extend` `{"end", "reason"}` | E on ranked seasons | Moves the end of the live season later |
@@ -737,7 +740,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-15 Promo codes and campaigns | `super_admin`, `live_ops`; `support` targeted lists | 5.11 |
 | Progression | A-16 Pass seasons; A-17 Missions; A-18 Daily login | `super_admin`, `live_ops`; others view | 5.7, 5.8 |
 | Ranked | A-19 Seasons and reset table; A-20 Leaderboards (public data) | `super_admin`, `live_ops`; others view | 5.12 |
-| Live ops | A-21 Calendar | All but `analyst` | 5.13 |
+| Live ops | A-21 Calendar | All; promo campaigns only with view on promo codes | 5.13 |
 | | A-22 Events; A-23 Banners; A-24 Push campaigns | `super_admin`, `live_ops`; `content` texts | 5.13 |
 | | A-25 Live controls | `super_admin`, `live_ops`; others view | 4 |
 | | A-26 Config values and flags | Per domain, 2.3 | 5.14 |
