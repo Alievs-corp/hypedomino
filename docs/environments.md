@@ -92,6 +92,12 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
 | `HD_EMOJI_BURST` | No | server | `3` | `3` | No | from #151 |
 | `HD_EMOJI_REFILL` | No | server | `2s` | `2s` | No | from #151 |
+| `HD_REPORT_AUTO_RENAME_THRESHOLD` | No | server | `5` (0 turns it off) | `5` | No | from #155 |
+| `HD_REPORT_AUTO_RENAME_WINDOW` | No | server | `168h` | `168h` | No | from #155 |
+| `HD_REPORT_DAILY_LIMIT` | No | server | `10` | `10` | No | from #155 |
+| `HD_REPORT_REJECTED_LIMIT` | No | server | `5` | `5` | No | from #155 |
+| `HD_REPORT_REJECTED_WINDOW` | No | server | `720h` | `720h` | No | from #155 |
+| `HD_REPORT_REJECTED_SILENCE` | No | server | `168h` | `168h` | No | from #155 |
 | `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
 | `HD_SHOP_CATALOG` | No | server | empty (shop closed until a publish) | `/etc/hypedomino/shop.json` | No | from #104 |
 | `HD_SHOP_DAILY_SLOTS` | No | server, admin-api | `4` | `4` | No | from #104; admin-api from #139 |
