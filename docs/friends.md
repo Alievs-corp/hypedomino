@@ -5,7 +5,8 @@ Scope: friend requests, the friends list, removing a friend and blocking (#153).
 ## 1. Requests
 
 - **FR-1** A friendship is mutual. One player sends a request; the other accepts or declines it. Until then nothing is shared.
-- **FR-2** A request names the other player by nickname, matched by the same normalised key that keeps nicknames unique (`server/internal/profile`). A friend code follows in a later change of #153.
+- **FR-2** A request names the other player either by nickname, matched by the same normalised key that keeps nicknames unique (`server/internal/profile`), or by friend code, never both.
+- **FR-2a** Every account has one friend code, created on first request and never changed: 8 characters of Crockford base32 (digits and capitals without I, L, O, U), shown as `XXXX-XXXX`. Input ignores case, spaces and the dash, and reads O as 0 and I or L as 1.
 - **FR-3** A request to oneself is refused. A request to a player who is already a friend is refused.
 - **FR-4** A request to a player who already sent one to the sender makes both friends at once.
 - **FR-5** Repeating an open request changes nothing.
@@ -31,8 +32,9 @@ Player HTTP API with the access token (`server/internal/friends`):
 
 | Request | Effect |
 |---|---|
+| `GET /friends/code` | The player's own friend code `{code: "XXXX-XXXX"}` |
 | `GET /friends` | `friends`, `incoming`, `outgoing`, `blocked`, each a list of `{account_id, nickname, since}` |
-| `POST /friends/requests` `{nickname}` | Sends a request; returns `{status: "requested"}` or `{status: "friends"}` (FR-4) |
+| `POST /friends/requests` `{nickname}` or `{code}` | Sends a request; returns `{status: "requested"}` or `{status: "friends"}` (FR-4) |
 | `POST /friends/requests/{account_id}/accept` | Accepts the request of that account |
 | `POST /friends/requests/{account_id}/decline` | Declines it |
 | `DELETE /friends/requests/{account_id}` | Cancels the sender's own request to that account |
@@ -40,7 +42,7 @@ Player HTTP API with the access token (`server/internal/friends`):
 | `PUT /friends/blocks/{account_id}` | Blocks that account |
 | `DELETE /friends/blocks/{account_id}` | Unblocks it |
 
-Refusals: `friend.unknown_player` (404), `friend.self`, `friend.nickname_required` (400), `friend.already_friends`, `friend.friends_full`, `friend.requests_full` (409), `friend.no_request`, `friend.not_friends` (404).
+Refusals: `friend.unknown_player` (404), `friend.self`, `friend.target_required` (400), `friend.already_friends`, `friend.friends_full`, `friend.requests_full` (409), `friend.no_request`, `friend.not_friends` (404).
 
 ## 5. Config
 

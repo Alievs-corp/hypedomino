@@ -24,10 +24,6 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-type requestBody struct {
-	Nickname string `json:"nickname"`
-}
-
 type requestReply struct {
 	Status string `json:"status"`
 }
@@ -35,6 +31,13 @@ type requestReply struct {
 func NewHandler(verifier token.Verifier, store *Store, logger *slog.Logger, now func() time.Time) *Handler {
 	h := &Handler{verifier: verifier, store: store, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("GET /friends", h.authed(h.list))
+	h.mux.HandleFunc("GET /friends/code", h.authed(func(r *http.Request, account string) (any, error) {
+		code, err := h.store.Code(r.Context(), account)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]string{"code": DisplayCode(code)}, nil
+	}))
 	h.mux.HandleFunc("POST /friends/requests", h.authed(h.request))
 	h.mux.HandleFunc("POST /friends/requests/{id}/accept", h.authed(func(r *http.Request, account string) (any, error) {
 		return nil, h.store.Accept(r.Context(), account, r.PathValue("id"), h.now())
@@ -66,11 +69,11 @@ func (h *Handler) list(r *http.Request, account string) (any, error) {
 }
 
 func (h *Handler) request(r *http.Request, account string) (any, error) {
-	var body requestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Nickname == "" {
-		return nil, ErrNoNickname
+	var target Target
+	if err := json.NewDecoder(r.Body).Decode(&target); err != nil {
+		return nil, ErrNoTarget
 	}
-	befriended, err := h.store.Request(r.Context(), account, body.Nickname, h.now())
+	befriended, err := h.store.Request(r.Context(), account, target, h.now())
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +115,7 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 	}{
 		{ErrUnknownPlayer, http.StatusNotFound},
 		{ErrSelf, http.StatusBadRequest},
-		{ErrNoNickname, http.StatusBadRequest},
+		{ErrNoTarget, http.StatusBadRequest},
 		{ErrAlreadyFriends, http.StatusConflict},
 		{ErrFriendsFull, http.StatusConflict},
 		{ErrRequestsFull, http.StatusConflict},
