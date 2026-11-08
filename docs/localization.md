@@ -261,6 +261,15 @@ Any future feature that accepts free text must update this section and add moder
 | Abuse | Reporters with many rejected reports are rate-limited. |
 | Feedback | The reporter gets a generic localized acknowledgement, not the outcome. The reported player gets a localized notice (reason key plus the rename requirement). |
 
+Implemented in `server/internal/report` (#155, owner decisions 2026-11-08):
+
+- `POST /reports` `{"target","reason","match_id"}` with the player's access token. `target` is an account id; `reason` is `offensive_nickname`, `offensive_room_name`, `impersonation` or `other`; `match_id` is optional. Errors: 400 `report.reason`, `report.self`, `report.match`; 404 `report.unknown_player`. Every other outcome, also a dropped report, answers 202 `{"status":"received"}`, the generic acknowledgement.
+- A report stores the target's nickname at report time (`player_reports.name_text`). Custom room names are not stored yet, so a room name report keeps the nickname until they are. While a report of one reporter on one target is open, a new one replaces its reason, name and match.
+- `ReportAutoRenameThreshold` (`HD_REPORT_AUTO_RENAME_THRESHOLD`, default 5, 0 turns it off): when that many different reporters have an open `offensive_nickname` report on one target updated within `HD_REPORT_AUTO_RENAME_WINDOW` (default 7 days), the target must pick a new nickname (`rename_required`, as a forced rename). The reports stay open for a moderator.
+- Abuse: a reporter whose reports were touched `HD_REPORT_DAILY_LIMIT` times (default 10) in the last 24 hours, or who has `HD_REPORT_REJECTED_LIMIT` (default 5) reports rejected within `HD_REPORT_REJECTED_WINDOW` (default 30 days) with the latest rejection less than `HD_REPORT_REJECTED_SILENCE` (default 7 days) ago, is answered as usual but nothing is stored.
+- Muting another player's emoji and quick messages during a match is a choice on the device only; the server is not involved.
+- The admin queue and its decisions follow in #155.
+
 ## 6. Cultural content checklist
 
 Applies to every art asset, animation, sound, store screenshot and text before it ships. Launch markets are Azerbaijan, Turkey and Russian-speaking regions other than Russia, which is not a store country at launch (`docs/privacy.md` 9.3); content must also pass the global store review.

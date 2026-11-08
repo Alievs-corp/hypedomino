@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
+	"github.com/Alievs-corp/hypedomino/server/internal/report"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
@@ -49,6 +50,7 @@ type Config struct {
 	Rarities        cosmetics.Rarities
 	Inventory       inventory.Config
 	Friends         friends.Config
+	Reports         report.Config
 	Emoji           room.EmojiLimit
 	Shop            shop.Config
 	ShopCatalog     string
@@ -88,6 +90,7 @@ func DefaultConfig() Config {
 		Profile:         profile.DefaultConfig(),
 		Inventory:       inventory.DefaultConfig(),
 		Friends:         friends.DefaultConfig(),
+		Reports:         report.DefaultConfig(),
 		Emoji:           room.DefaultEmojiLimit(),
 		Shop:            shop.DefaultConfig(),
 		ConfigPoll:      10 * time.Second,
@@ -253,6 +256,12 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
 	r.integer("HD_FRIENDS_MAX", &config.Friends.MaxFriends)
 	r.integer("HD_FRIEND_REQUESTS_MAX", &config.Friends.MaxRequests)
+	r.integer("HD_REPORT_AUTO_RENAME_THRESHOLD", &config.Reports.AutoRenameThreshold)
+	r.duration("HD_REPORT_AUTO_RENAME_WINDOW", &config.Reports.AutoRenameWindow)
+	r.integer("HD_REPORT_DAILY_LIMIT", &config.Reports.DailyLimit)
+	r.integer("HD_REPORT_REJECTED_LIMIT", &config.Reports.RejectedLimit)
+	r.duration("HD_REPORT_REJECTED_WINDOW", &config.Reports.RejectedWindow)
+	r.duration("HD_REPORT_REJECTED_SILENCE", &config.Reports.RejectedSilence)
 	r.integer("HD_EMOJI_BURST", &config.Emoji.Burst)
 	r.duration("HD_EMOJI_REFILL", &config.Emoji.Refill)
 	r.text("HD_SHOP_CATALOG", &config.ShopCatalog)
@@ -357,6 +366,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if err := config.Promo.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_PROMO_*: %w", err))
+	}
+	if err := config.Reports.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_REPORT_*: %w", err))
 	}
 	if err := config.Friends.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_FRIENDS_MAX and HD_FRIEND_REQUESTS_MAX: %w", err))

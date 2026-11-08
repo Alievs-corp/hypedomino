@@ -40,6 +40,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
+	"github.com/Alievs-corp/hypedomino/server/internal/report"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -149,6 +150,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
+	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
