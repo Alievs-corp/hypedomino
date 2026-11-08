@@ -30,7 +30,7 @@ jobs:
           path: client/Library
           key: unity-library-android-bench-${{ hashFiles('client/Packages/**', 'client/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: unity-library-android-bench-
-      - uses: game-ci/unity-builder@v4
+      - uses: game-ci/unity-builder@v6
         continue-on-error: true
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
