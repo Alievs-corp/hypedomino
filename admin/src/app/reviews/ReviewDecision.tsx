@@ -38,8 +38,16 @@ export function ReviewDecision({ id, clientId }: { id: number; clientId: string 
         <button type="button" disabled={blocked} onClick={() => send("confirm")} className="rounded-md bg-surface px-3 py-1 text-text-secondary disabled:opacity-40">
           {t("reviews.confirm")}
         </button>
+        <button type="button" disabled={blocked} onClick={() => send("permanent-ban")} className="rounded-md bg-surface px-3 py-1 text-text-secondary disabled:opacity-40">
+          {t("reviews.permanent_ban")}
+        </button>
       </div>
       {stepUp && last && <StepUpPrompt clientId={clientId} onConfirmed={() => send(last)} />}
+      {result?.ok && last === "permanent-ban" && (
+        <p role="status" className="text-text-secondary">
+          {t("reviews.ban_proposed")}
+        </p>
+      )}
       {result && !result.ok && !stepUp && (
         <p role="status" className="text-text-secondary">
           {t("reviews.refused")}: {result.error} {result.detail}
