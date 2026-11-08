@@ -5,6 +5,7 @@ export type PlayerAccount = PlayerSummary & {
   identities?: { provider: string; subject: string }[];
   banned_until: string | null;
   shadowbanned_at: string | null;
+  muted_until: string | null;
   deletion_requested_at: string | null;
   deleted_at: string | null;
 };
@@ -62,6 +63,10 @@ export function playerApiPath(id: string): string {
 
 export function banActive(account: PlayerAccount, now: Date): boolean {
   return account.banned_until !== null && new Date(account.banned_until) > now;
+}
+
+export function muteActive(account: PlayerAccount, now: Date): boolean {
+  return account.muted_until !== null && new Date(account.muted_until) > now;
 }
 
 export function signedAmount(amount: number): string {

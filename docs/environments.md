@@ -172,6 +172,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
+| `HD_MUTE_HOURS` | No | admin-api | 24 (`ModerationMuteHours`) | `<mute-hours>` | No | from #144 |
 
 The admin web server (`admin/`) reads three variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
 
