@@ -201,6 +201,8 @@ export const az: Messages = {
   "live.build_allowlist_enforced": "Build allowlist-i tətbiq et: siyahıda olmayan build-lər yeniləmə ekranı görür",
   "live.minimum_app_version": "Minimum tətbiq versiyası",
   "live.minimum_warning": "Köhnə client-lər bu dəyişiklik tətbiq olunan kimi, gedən matçda da olsa, ayrılır.",
+  "live.maintenance_ends_at": "Texniki iş rejimi bitir (UTC); söndürmək üçün boş saxla",
+  "live.maintenance_warning": "Dəyər qoyulanda gedən matçda olmayan hər oyunçu bu vaxtla texniki iş ekranını görür və yeni matç başlamır. Sahə təmizlənənə qədər açıq qalır.",
   "live.build_allowlist": "Build allowlist-i, hər sətirdə bir hash",
   "live.bad_version": "Versiyanı major.minor.patch formatında yazın.",
   "live.empty_allowlist": "Tətbiq olunan allowlist-də ən azı bir build olmalıdır.",

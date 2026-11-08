@@ -183,7 +183,7 @@ Controls that must act within minutes and must not be undone by a config rollbac
 | Purchase kill switch | Store purchases disabled; validated receipts still granted | `docs/launch-runbook.md` 5.5, #210 |
 | Ranked kill switch | Ranked queues closed; matches in progress finish | #210 |
 | Minimum version, build allowlist | Older or unlisted builds get `UPDATE_REQUIRED` | #210, ADR 0004 |
-| Maintenance mode | Maintenance screen with its end time; no new matches | #146 |
+| Maintenance mode | Maintenance screen with its end time; no new matches; players in a match finish it (`docs/anti-cheat.md` 5.2) | #146 |
 | Promo code disable | One code stops redeeming; granted rewards stay | `docs/economy.md` section 8 |
 
 ## 5. Managed objects
@@ -563,7 +563,7 @@ Proposals are stored in the `admin_approvals` table (`server/internal/approval`,
 - **Deciding.** A proposal can be approved or rejected only by an admin who holds an approver role from the table above and is not the proposer. The database checks this as well.
 - **Expiry and finality.** A proposal can be decided only while it is pending and before it expires. A decision is final. Of several parallel decisions, exactly one wins.
 - **Pending list.** The pending list holds only proposals that are still undecided and not expired.
-- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` and for coin adjustments (9.1). The other kinds follow with their tools: bundle grants in #144; permanent bans from the review queue are carried out (`docs/anti-cheat.md` 5.3, #209), promo codes in #142. Live controls are carried out for the controls of `docs/anti-cheat.md` 5.2 (#210); maintenance mode follows in #146. A live control approval is refused with `stale_proposal` when the controls changed after it was proposed, so an old proposal cannot undo a newer switch; reject it and propose again. Break-glass is not built yet.
+- **Carrying out.** Running the approved action and writing its audit entries is up to each action's handler. The admin API does this for granting `super_admin` and for coin adjustments (9.1). The other kinds follow with their tools: bundle grants in #144; permanent bans from the review queue are carried out (`docs/anti-cheat.md` 5.3, #209), promo codes in #142. Live controls are carried out for the controls of `docs/anti-cheat.md` 5.2 (#210), maintenance mode included (#146). A live control approval is refused with `stale_proposal` when the controls changed after it was proposed, so an old proposal cannot undo a newer switch; reject it and propose again. Break-glass is not built yet.
 
 Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6.1) one `live_ops` or `super_admin` may switch a section 4 control alone, citing the incident id. A second admin confirms afterwards; unconfirmed break-glass actions stay listed on the dashboard. The 5-minute targets of `docs/launch-runbook.md` GN-17 and 5.4 include the approval.
 

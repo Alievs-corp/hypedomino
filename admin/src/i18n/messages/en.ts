@@ -199,6 +199,8 @@ export const en = {
   "live.build_allowlist_enforced": "Enforce the build allowlist: builds off the list get the update screen",
   "live.minimum_app_version": "Minimum app version",
   "live.minimum_warning": "Older clients are disconnected as soon as this applies, also in a running match.",
+  "live.maintenance_ends_at": "Maintenance mode until (UTC); leave empty to turn it off",
+  "live.maintenance_warning": "While set, every player outside a running match sees the maintenance screen with this time and no new match starts. It stays on until the field is cleared.",
   "live.build_allowlist": "Build allowlist, one hash per line",
   "live.bad_version": "Enter the version as major.minor.patch.",
   "live.empty_allowlist": "An enforced allowlist needs at least one build.",

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 )
@@ -15,11 +16,12 @@ const Domain = "live_controls"
 var ErrInvalid = errors.New("livecontrol: invalid controls")
 
 type Controls struct {
-	MinimumAppVersion      string   `json:"minimum_app_version"`
-	BuildAllowlistEnforced bool     `json:"build_allowlist_enforced"`
-	BuildAllowlist         []string `json:"build_allowlist"`
-	PurchasesDisabled      bool     `json:"purchases_disabled"`
-	RankedDisabled         bool     `json:"ranked_disabled"`
+	MinimumAppVersion      string     `json:"minimum_app_version"`
+	BuildAllowlistEnforced bool       `json:"build_allowlist_enforced"`
+	BuildAllowlist         []string   `json:"build_allowlist"`
+	PurchasesDisabled      bool       `json:"purchases_disabled"`
+	RankedDisabled         bool       `json:"ranked_disabled"`
+	MaintenanceEndsAt      *time.Time `json:"maintenance_ends_at"`
 }
 
 func Parse(raw []byte) (Controls, error) {
@@ -46,5 +48,9 @@ func (c Controls) validate() error {
 }
 
 func (c Controls) Admission() gateway.Admission {
-	return gateway.Admission{MinimumAppVersion: c.MinimumAppVersion, EnforceBuilds: c.BuildAllowlistEnforced, Builds: c.BuildAllowlist}
+	admission := gateway.Admission{MinimumAppVersion: c.MinimumAppVersion, EnforceBuilds: c.BuildAllowlistEnforced, Builds: c.BuildAllowlist}
+	if c.MaintenanceEndsAt != nil {
+		admission.MaintenanceEndsAt = *c.MaintenanceEndsAt
+	}
+	return admission
 }
