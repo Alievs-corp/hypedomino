@@ -37,6 +37,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
@@ -193,6 +194,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		active, _, _ := activeStrings.Current()
 		bundles, chains := active.Hello()
 		return gateway.Strings{Bundles: bundles, Chains: chains}
+	})
+	quickMessages := snapshot.New(pool, quickmessage.Domain, quickmessage.Parse, logger)
+	go quickMessages.Run(ctx, config.ConfigPoll)
+	a.Rooms().AllowQuickMessages(func(key string) bool {
+		catalog, _, _ := quickMessages.Current()
+		return catalog.Contains(key)
 	})
 	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
 	go tuning.Run(ctx, config.ConfigPoll)

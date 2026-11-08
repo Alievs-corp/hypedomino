@@ -70,6 +70,7 @@ type Session interface {
 	Attach()
 	Loading(progress int, ready bool)
 	Emoji(item string)
+	QuickMessage(key string, teamOnly bool)
 	Intent(sequence uint64, intent replay.Intent)
 	Close()
 }

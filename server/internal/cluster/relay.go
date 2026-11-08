@@ -166,7 +166,15 @@ func (s *relaySession) Loading(progress int, ready bool) {
 }
 
 func (s *relaySession) Emoji(item string) {
-	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, SessionNonce: s.nonce, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}}
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}})
+}
+
+func (s *relaySession) QuickMessage(key string, teamOnly bool) {
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_QuickMessageIntent{QuickMessageIntent: &pb.QuickMessageIntent{Key: key, TeamOnly: teamOnly}}})
+}
+
+func (s *relaySession) forward(frame *pb.Envelope) {
+	frame.ProtocolVersion, frame.SessionNonce = gateway.ProtocolVersion, s.nonce
 	if err := s.write(context.Background(), frame); err != nil {
 		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
 	}

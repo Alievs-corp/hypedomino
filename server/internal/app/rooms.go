@@ -20,6 +20,7 @@ type Rooms struct {
 	tune    func(rules.Config) rules.Config
 	moves   room.MoveObserver
 	emoji   room.EmojiLimit
+	quick   func(key string) bool
 }
 
 func NewRooms() *Rooms {
@@ -46,6 +47,9 @@ func (rs *Rooms) Open(options room.Options) (*room.Room, error) {
 	}
 	if options.Emoji == (room.EmojiLimit{}) {
 		options.Emoji = rs.emoji
+	}
+	if options.QuickMessages == nil {
+		options.QuickMessages = rs.quick
 	}
 	r := room.New(options)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -109,6 +113,12 @@ func (rs *Rooms) LimitEmoji(limit room.EmojiLimit) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	rs.emoji = limit
+}
+
+func (rs *Rooms) AllowQuickMessages(allowed func(key string) bool) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	rs.quick = allowed
 }
 
 func (rs *Rooms) ObserveMoves(moves room.MoveObserver) {
