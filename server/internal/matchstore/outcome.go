@@ -18,6 +18,7 @@ type Outcome struct {
 
 type PlayerOutcome struct {
 	Account      string `json:"account"`
+	Team         int    `json:"team"`
 	Won          bool   `json:"won"`
 	Offender     bool   `json:"offender"`
 	HandsWon     int64  `json:"hands_won"`
