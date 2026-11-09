@@ -297,7 +297,7 @@ func TestTheCountryRoutesReadAndChangeTheAccountCountry(t *testing.T) {
 	}
 }
 
-func TestThePublicProfileCarriesTheRankedViewWhenWired(t *testing.T) {
+func TestThePublicProfileCarriesTheRankedAndMedalViewsWhenWired(t *testing.T) {
 	f := newFixture(t)
 	if _, body := f.call("GET", "/profile/ben", "access:ayla", ""); body["ranked"] != nil {
 		t.Fatalf("unwired ranked view %v", body["ranked"])
@@ -312,5 +312,13 @@ func TestThePublicProfileCarriesTheRankedViewWhenWired(t *testing.T) {
 	ranked, _ := body["ranked"].(map[string]any)
 	if status != http.StatusOK || ranked["ranks"].(map[string]any)["1v1"] != "Silver I" {
 		t.Fatalf("ranked view answered %d %v", status, body)
+	}
+	f.handler.SetMedals(func(context.Context, string) (any, error) { return []string{"medal.wins_50"}, nil })
+	if _, body := f.call("GET", "/profile/ben", "access:ayla", ""); body["medals"].([]any)[0] != "medal.wins_50" {
+		t.Fatalf("medal showcase %v", body)
+	}
+	f.handler.SetMedals(func(context.Context, string) (any, error) { return nil, errors.New("down") })
+	if status, _ := f.call("GET", "/profile/ben", "access:ayla", ""); status != http.StatusInternalServerError {
+		t.Fatalf("failing medal showcase answered %d", status)
 	}
 }
