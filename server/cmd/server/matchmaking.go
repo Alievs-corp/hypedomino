@@ -12,6 +12,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstart"
@@ -34,6 +35,7 @@ type matchmakingDeps struct {
 	rooms      *app.Rooms
 	ratings    *rating.Store
 	profiles   *profile.Store
+	inventory  *inventory.Store
 	rankedOpen func() bool
 }
 
@@ -61,7 +63,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	})
 	deps.sessions.Queue(matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger))
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
-	host := matchstart.NewHost(deps.rooms, deps.sessions, dispatcher, store, matchstore.New(deps.pool), penaltyRecords, matchstart.ProfileRoster(deps.pool, deps.profiles, time.Now), current, systemClock{}, seeded(), logger)
+	host := matchstart.NewHost(deps.rooms, deps.sessions, dispatcher, store, matchstore.New(deps.pool), penaltyRecords, matchstart.ProfileRoster(deps.pool, deps.profiles, deps.inventory.Freeze, time.Now), current, systemClock{}, seeded(), logger)
 	go listen(ctx, dispatcher, host, deps.sessions, config.MatchmakingTick, logger)
 	place := func(ctx context.Context, placement matchqueue.Placement) error {
 		target, ok, err := deps.members.Least(ctx)
