@@ -158,6 +158,7 @@ type Snapshot struct {
 	LeaderboardRegions map[string][]string `json:"leaderboardRegions,omitempty"`
 	RankRewardCoins    map[string]int64    `json:"rankRewardCoins"`
 	EmblemBrackets     []int               `json:"emblemBrackets"`
+	ProfileEmblemSlots int                 `json:"profileEmblemSlots"`
 	Abuse              Abuse               `json:"abuse"`
 	Modes              Modes               `json:"modes"`
 }
@@ -186,6 +187,7 @@ func Default() *Snapshot {
 		LeaderboardTopSize: 200,
 		RankRewardCoins:    map[string]int64{"Iron": 100, "Bronze": 200, "Silver": 400, "Gold": 700, "Platinum": 1000, "Emerald": 1500, "Diamond": 2000, TierMaster: 3000, TierGrandmaster: 4000, TierChallenger: 5000},
 		EmblemBrackets:     []int{1, 50, 100, 200},
+		ProfileEmblemSlots: 3,
 		Abuse:              DefaultAbuse(),
 		Modes:              Modes{OneVsOne: DefaultConfig(), TwoVsTwo: DefaultConfig()},
 	}
@@ -207,6 +209,9 @@ func (s *Snapshot) Validate() error {
 	}
 	if s.LeaderboardTopSize < 1 {
 		return fmt.Errorf("%w: leaderboardTopSize must be at least 1", ErrInvalidConfig)
+	}
+	if s.ProfileEmblemSlots < 0 {
+		return fmt.Errorf("%w: profileEmblemSlots must not be negative", ErrInvalidConfig)
 	}
 	seen := map[string]string{}
 	for region, countries := range s.LeaderboardRegions {

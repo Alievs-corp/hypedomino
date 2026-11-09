@@ -284,6 +284,7 @@ Owner decision (2026-10-26). A season-end finish near the top of a board earns a
 - The client sends only the chosen emblem ids. The server accepts an id only if the account owns that emblem and stores the showcase; other players always see the server's copy (`docs/anti-cheat.md` NT-9).
 - A revoked emblem leaves the showcase at once.
 - The medal collection screen lists emblems in their own section; emblems are not medals (`docs/pass-missions-medals.md` 5.5).
+- Implemented in `server/internal/rating`: an emblem id is `<mode>:<seasonId>:<board>`. `PUT /ranked/emblems/showcase` with `{"emblems": [ids]}` stores the ordered choice in `emblem_showcases` (400 `ranked.showcase_invalid` for too many or repeated ids, 409 `ranked.emblem_not_owned`). `GET /ranked/emblems` returns the emblems and the showcase; a read drops revoked or unowned ids. The match roster carries the showcase as `emblems`.
 
 ## 9. No bot fill in ranked play
 

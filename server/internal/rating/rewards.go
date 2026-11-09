@@ -25,6 +25,7 @@ type Rewarder interface {
 }
 
 type Emblem struct {
+	ID        string    `json:"id"`
 	Season    string    `json:"season"`
 	Mode      string    `json:"mode"`
 	Board     string    `json:"board"`
@@ -283,6 +284,7 @@ func (s *Store) Emblems(ctx context.Context, account string) ([]Emblem, error) {
 			return nil, err
 		}
 		e.AwardedAt = e.AwardedAt.UTC()
+		e.ID = emblemID(e.Mode, e.Season, e.Board)
 		out = append(out, e)
 	}
 	return out, rows.Err()
