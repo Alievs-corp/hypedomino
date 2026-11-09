@@ -32,6 +32,10 @@ func TestSupportLiftsAPenaltyAndRemovesAnOffenseWithAReason(t *testing.T) {
 		}
 	}
 
+	status, body = a.call("GET", "/admin/players/"+id+"/penalties", support, nil)
+	if ranked := body["ranked"].(map[string]any); status != http.StatusOK || ranked["step"] != "ban" || len(ranked["offenses"].([]any)) != 2 {
+		t.Fatalf("view %d %v", status, body)
+	}
 	status, body = a.call("POST", base+"remove", support, map[string]any{"queue": "ranked", "match_id": "m9", "reason": "network outage"})
 	expect(t, status, body, http.StatusNotFound, "unknown_offense")
 	status, body = a.call("POST", base+"remove", support, map[string]any{"queue": "arena", "match_id": "m1", "reason": "network outage"})
