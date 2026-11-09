@@ -652,6 +652,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `DELETE /admin/players/{id}/temporary-ban` | S on players: lift a ban | Ends a running temporary ban |
 | `POST /admin/players/{id}/mute` | S on players: mute | Mutes the player for `ModerationMuteHours` (`HD_MUTE_HOURS`) from now (6.2) |
 | `DELETE /admin/players/{id}/mute` | S on players: lift a mute | Ends a running mute |
+| `POST /admin/players/{id}/penalties/lift` `{"reason","ref"}` | S on players | Lifts the running matchmaking ban, review flag and queue delays of the penalty record; offenses stay (`docs/penalties.md` section 7). 409 `nothing_to_lift` when none runs |
+| `POST /admin/players/{id}/penalties/remove` `{"queue","match_id","reason","ref"}` | S on players | Removes one offense of the `ranked` or `casual` ladder; 404 `unknown_offense` when the record has no such offense |
 | `POST /admin/players/{id}/force-rename` | S on players: force rename | Requires the player to pick a new nickname (`docs/localization.md` 5.6) |
 | `GET /admin/reward-bundles` | V on reward bundles | Every bundle in published config with `guideValue`, `usedBy` and `differs`; `promo_truncated` when only the newest `MaxPromoListed` codes were read (5.4) |
 | `PUT /admin/reward-bundles/{id}` `{"revision","coins","crystals","cosmetics","medals","passXp","reason"}` | P on reward bundles and on each domain holding it | Publishes the new content to every holder in one transaction; `editable` on the list says which bundles allow it. `stale_bundle` when `revision` is not the current one, `bundle_not_editable` for a differing id or another holder (5.4) |
