@@ -36,6 +36,7 @@ type matchmakingDeps struct {
 	ratings    *rating.Store
 	profiles   *profile.Store
 	inventory  *inventory.Store
+	penalties  *penalties.Store
 	rankedOpen func() bool
 }
 
@@ -54,13 +55,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	}
 	prefix, node := config.Cluster.KeyPrefix, deps.members.NodeID()
 	store := matchqueue.NewStore(deps.client, prefix)
-	penaltyConfigs := snapshot.New(deps.pool, penalties.Domain, penalties.Parse, logger)
-	penaltyConfigs.Seed(penalties.DefaultConfig(), 0)
-	go penaltyConfigs.Run(ctx, config.ConfigPoll)
-	penaltyRecords := penalties.NewStore(deps.pool, func() (penalties.Config, int) {
-		value, version, _ := penaltyConfigs.Current()
-		return value, int(version)
-	})
+	penaltyRecords := deps.penalties
 	deps.sessions.Queue(matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger))
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
 	host := matchstart.NewHost(deps.rooms, deps.sessions, dispatcher, store, matchstore.New(deps.pool), penaltyRecords, matchstart.ProfileRoster(deps.pool, deps.profiles, deps.inventory.Freeze, time.Now), current, systemClock{}, seeded(), logger)
@@ -90,4 +85,14 @@ func listen(ctx context.Context, dispatcher *matchqueue.Dispatcher, host *matchs
 		case <-ctx.Done():
 		}
 	}
+}
+
+func penaltyStore(ctx context.Context, config app.Config, pool *pgxpool.Pool, logger *slog.Logger) *penalties.Store {
+	configs := snapshot.New(pool, penalties.Domain, penalties.Parse, logger)
+	configs.Seed(penalties.DefaultConfig(), 0)
+	go configs.Run(ctx, config.ConfigPoll)
+	return penalties.NewStore(pool, func() (penalties.Config, int) {
+		value, version, _ := configs.Current()
+		return value, int(version)
+	})
 }
