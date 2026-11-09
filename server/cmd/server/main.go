@@ -224,6 +224,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingConfigs := rating.NewWatcher(pool, logger)
 	go ratingConfigs.Run(ctx, config.ConfigPoll)
 	ratings := rating.NewStore(pool, ratingConfigs)
+	profiles.SetRanked(func(ctx context.Context, account string) (any, error) { return ratings.Public(ctx, account) })
 	penaltyRecords := penaltyStore(ctx, config, pool, logger)
 	ratings.UseOffensePenalties(func() (int, int) {
 		current, _ := penaltyRecords.Config()

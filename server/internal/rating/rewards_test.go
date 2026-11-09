@@ -256,6 +256,9 @@ func TestTheRankedRoutesServeRewardsAndEmblems(t *testing.T) {
 	if status, body := call(http.MethodGet, "/ranked/emblems", "access:"+gold); status != http.StatusOK || len(body["showcase"].([]any)) != 1 || body["showcase"].([]any)[0] != id {
 		t.Fatalf("read showcase %d %v", status, body)
 	}
+	if public, err := f.store.Public(context.Background(), gold); err != nil || public.Ranks == nil || len(public.Emblems) != 1 || public.Emblems[0].ID != id || public.Emblems[0].Bracket == 0 {
+		t.Fatalf("public ranked view %+v %v", public, err)
+	}
 	if _, err := f.pool.Exec(context.Background(), `update leaderboard_emblems set revoked_at = now(), revoke_reason = 'cheated' where account_id = $1`, gold); err != nil {
 		t.Fatal(err)
 	}

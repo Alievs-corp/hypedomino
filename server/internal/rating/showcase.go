@@ -19,10 +19,19 @@ func emblemID(mode, season, board string) string {
 }
 
 func (s *Store) Showcase(ctx context.Context, account string) ([]string, error) {
+	emblems, err := s.showcaseEmblems(ctx, account)
+	ids := make([]string, len(emblems))
+	for i, e := range emblems {
+		ids[i] = e.ID
+	}
+	return ids, err
+}
+
+func (s *Store) showcaseEmblems(ctx context.Context, account string) ([]Emblem, error) {
 	var chosen []string
 	err := s.pool.QueryRow(ctx, `select emblems from emblem_showcases where account_id = $1`, account).Scan(&chosen)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return []string{}, nil
+		return []Emblem{}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -31,9 +40,13 @@ func (s *Store) Showcase(ctx context.Context, account string) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
-	return slices.DeleteFunc(chosen, func(id string) bool {
-		return !slices.ContainsFunc(owned, func(e Emblem) bool { return e.ID == id })
-	}), nil
+	shown := []Emblem{}
+	for _, id := range chosen {
+		if at := slices.IndexFunc(owned, func(e Emblem) bool { return e.ID == id }); at >= 0 {
+			shown = append(shown, owned[at])
+		}
+	}
+	return shown, nil
 }
 
 func (s *Store) SetShowcase(ctx context.Context, account string, chosen []string, now time.Time) ([]string, error) {
