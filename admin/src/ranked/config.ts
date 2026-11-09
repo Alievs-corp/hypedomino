@@ -44,8 +44,6 @@ export const liveNumberKeys = [
   "placementMaxDropDivisions",
   "placementMaxClimbDivisions",
   "seasonLengthMonths",
-  "offenseRatingPenalty",
-  "partnerLossReductionPercent",
 ] as const;
 
 export type NumberKey = (typeof structuralNumberKeys)[number] | (typeof liveNumberKeys)[number];
@@ -145,16 +143,14 @@ export function modeIssues(mode: ModeConfig, divisionRanks: readonly string[]): 
   const divisionLp = whole(mode, "divisionLp");
   const demotionLp = whole(mode, "demotionLp");
   const hour = whole(mode, "apexRecalcHourUtc");
-  const percent = whole(mode, "partnerLossReductionPercent");
   if (!(divisionLp >= 1) || !(demotionLp >= 0 && demotionLp < divisionLp)) found.push("ranked.issue.division_lp");
   if (!(hour >= 0 && hour <= 23)) found.push("ranked.issue.hour");
   if (!atLeast(["challengerSlots", "challengerMinLp", "grandmasterSlots", "grandmasterMinLp"], 0)) found.push("ranked.issue.apex");
   if (!atLeast(["mmrScale", "mmrK", "mmrKProvisional", "rankMmrStep", "lpBase", "lpGapScale", "placementMatches", "seasonLengthMonths"], 1)) found.push("ranked.issue.at_least_one");
-  if (!atLeast(["initialMmr", "rankMmrBase", "mmrProvisionalMatches", "placementMaxDropDivisions", "placementMaxClimbDivisions", "offenseRatingPenalty"], 0)) found.push("ranked.issue.not_negative");
+  if (!atLeast(["initialMmr", "rankMmrBase", "mmrProvisionalMatches", "placementMaxDropDivisions", "placementMaxClimbDivisions"], 0)) found.push("ranked.issue.not_negative");
   if (!(amount(mode, "lpFactorMin") > 0 && amount(mode, "lpFactorMin") <= amount(mode, "lpFactorMax"))) found.push("ranked.issue.lp_factor");
   if (!(whole(mode, "lpChangeMin") >= 0 && whole(mode, "lpChangeMin") <= whole(mode, "lpChangeMax"))) found.push("ranked.issue.lp_change");
-  if (!(whole(mode, "lpChangeMax") + whole(mode, "offenseRatingPenalty") < divisionLp)) found.push("ranked.issue.lp_division");
-  if (!(percent >= 0 && percent <= 100)) found.push("ranked.issue.percent");
+  if (!(whole(mode, "lpChangeMax") < divisionLp)) found.push("ranked.issue.lp_division");
   if (!divisionRanks.includes(mode.newPlayerPlacementCap)) found.push("ranked.issue.placement_cap");
   if (!(Number.isInteger(mode.resetTierDrop) && mode.resetTierDrop >= 0)) found.push("ranked.issue.tier_drop");
   return [...found, ...resetIssues(mode, divisionRanks)];

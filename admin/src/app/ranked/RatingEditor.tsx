@@ -60,8 +60,6 @@ const numberLabel: Record<NumberKey, MessageKey> = {
   placementMaxDropDivisions: "ranked.key.placementMaxDropDivisions",
   placementMaxClimbDivisions: "ranked.key.placementMaxClimbDivisions",
   seasonLengthMonths: "ranked.key.seasonLengthMonths",
-  offenseRatingPenalty: "ranked.key.offenseRatingPenalty",
-  partnerLossReductionPercent: "ranked.key.partnerLossReductionPercent",
 };
 
 type Props = { published: RatingConfig; version: number; openSeason: string; structuralKeys: string[]; tiers: string[]; divisionRanks: string[]; canPublish: boolean };

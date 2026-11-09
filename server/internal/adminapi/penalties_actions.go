@@ -124,13 +124,9 @@ func (h *Handler) playerPenalties(w http.ResponseWriter, r *http.Request, p prin
 		if err != nil {
 			return nil, err
 		}
-		config := penalties.DefaultConfig()
-		if _, raw, err := latestSnapshot(r.Context(), tx, penalties.Domain); err != nil {
+		config, err := publishedPenalties(r.Context(), tx)
+		if err != nil {
 			return nil, err
-		} else if raw != nil {
-			if config, err = penalties.Parse(raw); err != nil {
-				return nil, err
-			}
 		}
 		view = record.View(config, now)
 		return []audit.Entry{{Action: "view", Object: audit.Object{Type: rbac.Players, ID: accountID}}}, nil

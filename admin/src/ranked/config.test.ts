@@ -54,8 +54,6 @@ const mode: ModeConfig = {
   resetTierDrop: 1,
   resetFloor: "Bronze IV",
   resetCeiling: "Diamond IV",
-  offenseRatingPenalty: 10,
-  partnerLossReductionPercent: 50,
 };
 
 const defaults: RatingConfig = {
@@ -114,8 +112,7 @@ test("mode values are checked against the server rules", () => {
     [{ mmrProvisionalMatches: -1 }, "ranked.issue.not_negative"],
     [{ lpFactorMin: 2 }, "ranked.issue.lp_factor"],
     [{ lpChangeMin: 50 }, "ranked.issue.lp_change"],
-    [{ lpChangeMax: 95 }, "ranked.issue.lp_division"],
-    [{ partnerLossReductionPercent: 101 }, "ranked.issue.percent"],
+    [{ lpChangeMax: 100 }, "ranked.issue.lp_division"],
     [{ newPlayerPlacementCap: "Master" }, "ranked.issue.placement_cap"],
     [{ resetTierDrop: -1 }, "ranked.issue.tier_drop"],
     [{ mmrK: undefined }, "ranked.issue.at_least_one"],

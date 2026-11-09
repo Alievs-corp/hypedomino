@@ -52,7 +52,7 @@ The tier list and the division count are fixed by this document; changing them i
 - Promotion: when LP reaches `DivisionLp` or more, the player moves up one division (Diamond I moves to Master) and keeps the excess: new LP = LP - `DivisionLp`.
 - Demotion: when LP would go below 0, the player moves down one division with LP = `DemotionLp` (default 75).
 - Iron IV is the floor: LP stops at 0.
-- A match moves a player at most one division. Publish validation rejects `LpChangeMax` + `OffenseRatingPenalty` >= `DivisionLp`.
+- A match moves a player at most one division. Publish validation rejects `LpChangeMax` + `OffenseRatingPenalty` >= `DivisionLp`, whether the `rating` or the `penalties` domain changes; `OffenseRatingPenalty` and `PartnerLossReductionPercent` live only in the `penalties` domain (owner decision 2026-11-09).
 
 ### 3.2 Apex tiers (Master and above)
 
