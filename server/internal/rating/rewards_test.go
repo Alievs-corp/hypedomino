@@ -233,6 +233,35 @@ func TestTheRankedRoutesServeRewardsAndEmblems(t *testing.T) {
 	if status != http.StatusOK || len(emblems) != 1 || emblems[0].(map[string]any)["board"] != "global" || emblems[0].(map[string]any)["bracket"] != float64(1) {
 		t.Fatalf("emblems %d %v", status, body)
 	}
+	id := emblems[0].(map[string]any)["id"].(string)
+	put := func(payload string) (int, map[string]any) {
+		t.Helper()
+		request := httptest.NewRequest(http.MethodPut, "/ranked/emblems/showcase", strings.NewReader(payload))
+		request.Header.Set("Authorization", "Bearer access:"+gold)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		var body map[string]any
+		json.Unmarshal(recorder.Body.Bytes(), &body)
+		return recorder.Code, body
+	}
+	if status, body := put(`{"emblems":["` + id + `","2v2:season.test:global"]}`); status != http.StatusConflict {
+		t.Fatalf("unowned showcase %d %v", status, body)
+	}
+	if status, body := put(`{"emblems":["a","b","c","d"]}`); status != http.StatusBadRequest {
+		t.Fatalf("too many %d %v", status, body)
+	}
+	if status, body := put(`{"emblems":["` + id + `"]}`); status != http.StatusOK {
+		t.Fatalf("showcase %d %v", status, body)
+	}
+	if status, body := call(http.MethodGet, "/ranked/emblems", "access:"+gold); status != http.StatusOK || len(body["showcase"].([]any)) != 1 || body["showcase"].([]any)[0] != id {
+		t.Fatalf("read showcase %d %v", status, body)
+	}
+	if _, err := f.pool.Exec(context.Background(), `update leaderboard_emblems set revoked_at = now(), revoke_reason = 'cheated' where account_id = $1`, gold); err != nil {
+		t.Fatal(err)
+	}
+	if showcase, err := f.store.Showcase(context.Background(), gold); err != nil || len(showcase) != 0 {
+		t.Fatalf("a revoked emblem stays in the showcase %v %v", showcase, err)
+	}
 	if status, body := call(http.MethodGet, "/ranked/rewards", "access:"+f.account(t)); status != http.StatusOK || body["unseen"] != float64(0) || len(body["rewards"].([]any)) != 0 {
 		t.Fatalf("empty mailbox %d %v", status, body)
 	}
