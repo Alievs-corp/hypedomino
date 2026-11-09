@@ -12,6 +12,8 @@ func TestThePenaltiesConfigIsCheckedBeforeItIsPublished(t *testing.T) {
 
 	status, body := a.call("PUT", path, root, map[string]any{"catalog": map[string]any{"banLevel": 1}, "reason": "tune"})
 	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, body = a.call("PUT", path, root, map[string]any{"catalog": map[string]any{"offenseRatingPenalty": 60}, "reason": "tune"})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
 	status, body = a.call("PUT", path, root, map[string]any{"catalog": map[string]any{"banHours": 48}, "reason": "tune"})
 	if status != http.StatusOK || body["config_version"] != float64(1) {
 		t.Fatalf("publish %d %v", status, body)

@@ -51,8 +51,8 @@ type Config struct {
 	ResetFloor                  string                   `json:"resetFloor"`
 	ResetCeiling                string                   `json:"resetCeiling"`
 	SeasonResetTable            map[string]string        `json:"seasonResetTable,omitempty"`
-	OffenseRatingPenalty        int                      `json:"offenseRatingPenalty"`
-	PartnerLossReductionPercent int                      `json:"partnerLossReductionPercent"`
+	OffenseRatingPenalty        int                      `json:"-"`
+	PartnerLossReductionPercent int                      `json:"-"`
 }
 
 func DefaultConfig() Config {
@@ -121,10 +121,6 @@ func (c Config) Validate() error {
 		return fail("lpFactorMin must be positive and at most lpFactorMax")
 	case c.LpChangeMin < 0 || c.LpChangeMin > c.LpChangeMax:
 		return fail("lpChangeMin must be between 0 and lpChangeMax")
-	case c.OffenseRatingPenalty < 0 || c.PartnerLossReductionPercent < 0 || c.PartnerLossReductionPercent > 100:
-		return fail("offenseRatingPenalty must not be negative and partnerLossReductionPercent must be a percentage")
-	case c.LpChangeMax+c.OffenseRatingPenalty >= c.DivisionLp:
-		return fail("lpChangeMax + offenseRatingPenalty must stay below divisionLp")
 	case c.PlacementMatches < 1:
 		return fail("placementMatches must be at least 1")
 	case c.PlacementMaxDropDivisions < 0 || c.PlacementMaxClimbDivisions < 0:
@@ -258,4 +254,13 @@ func Parse(raw []byte) (*Snapshot, error) {
 		return nil, err
 	}
 	return snapshot, nil
+}
+
+func (s *Snapshot) CheckOffensePenalty(offenseRatingPenalty int) error {
+	for _, c := range []Config{s.Modes.OneVsOne, s.Modes.TwoVsTwo} {
+		if c.LpChangeMax+offenseRatingPenalty >= c.DivisionLp {
+			return fmt.Errorf("%w: lpChangeMax + the penalties offenseRatingPenalty must stay below divisionLp", ErrInvalidConfig)
+		}
+	}
+	return nil
 }

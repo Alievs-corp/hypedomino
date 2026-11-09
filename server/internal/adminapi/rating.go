@@ -56,6 +56,13 @@ func (h *Handler) ratingDomain() configDomain {
 			if err != nil {
 				return nil, err
 			}
+			offenses, err := publishedPenalties(ctx, tx)
+			if err != nil {
+				return nil, err
+			}
+			if err := next.CheckOffensePenalty(offenses.OffenseRatingPenalty); err != nil {
+				return nil, err
+			}
 			published := rating.Default()
 			if before != nil {
 				if published, err = rating.Parse(before); err != nil {

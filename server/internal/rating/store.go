@@ -91,6 +91,11 @@ type Store struct {
 	rewards         Rewarder
 	collusionWeight int
 	logger          *slog.Logger
+	offenses        func() (penalty, partnerLossReductionPercent int)
+}
+
+func (s *Store) UseOffensePenalties(source func() (penalty, partnerLossReductionPercent int)) {
+	s.offenses = source
 }
 
 func (s *Store) SetBoards(boards Boards, logger *slog.Logger) {
@@ -156,6 +161,9 @@ func (s *Store) Config(mode rules.Mode) (Config, int64, error) {
 	config, ok := current.Mode(mode)
 	if !ok {
 		return Config{}, 0, fmt.Errorf("%w: %s", ErrNoConfig, mode)
+	}
+	if s.offenses != nil {
+		config.OffenseRatingPenalty, config.PartnerLossReductionPercent = s.offenses()
 	}
 	return config, version, nil
 }
