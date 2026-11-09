@@ -233,7 +233,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
 	if members != nil {
-		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, rankedOpen: func() bool {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})

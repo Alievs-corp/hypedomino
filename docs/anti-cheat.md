@@ -192,6 +192,8 @@ Implemented in `server/internal/gateway` and `server/internal/risk` (#207). An a
 
 Unowned equips are flagged in `server/internal/risk`, `server/internal/inventory` and `server/internal/medal` (#211). An equip (`PUT /inventory/equip`) or a medal showcase (`PUT /medals/showcase`) refused because the account does not own the item counts for the account; `UnownedEquipThreshold` (5) refusals within `UnownedEquipWindowMinutes` (10) record an `unowned_equip` signal of weight `UnownedEquipWeight` (5) with the count and window as evidence, at most once per window. Counts live in node memory. The refusal itself does not change.
 
+The matchmade room roster takes each player's loadout from `inventory.Store.Freeze` when the room opens (`server/internal/matchstart`, #211): an item the account no longer owns falls back to its default, so other players see and the match record keeps only owned cosmetics.
+
 Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/economy.md` 8): a lock records a `promo_lock` signal of weight `PromoLockSignalWeight` (5), and a `multi_use` code whose redemptions within `PromoSpikeWindowMinutes` (60) reach `PromoSpikePercent` (50) of its cap is marked `spike_at` once and logged, so an admin can disable it.
 
 ## 5. Signals and risk score
