@@ -115,3 +115,29 @@ func lockedPenalties(ctx context.Context, tx pgx.Tx, accountID string) (penaltie
 	var record penalties.Record
 	return record, json.Unmarshal(raw, &record)
 }
+
+func (h *Handler) playerPenalties(w http.ResponseWriter, r *http.Request, p principal) {
+	accountID := r.PathValue("id")
+	var view penalties.View
+	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
+		record, err := lockedPenalties(r.Context(), tx, accountID)
+		if err != nil {
+			return nil, err
+		}
+		config := penalties.DefaultConfig()
+		if _, raw, err := latestSnapshot(r.Context(), tx, penalties.Domain); err != nil {
+			return nil, err
+		} else if raw != nil {
+			if config, err = penalties.Parse(raw); err != nil {
+				return nil, err
+			}
+		}
+		view = record.View(config, now)
+		return []audit.Entry{{Action: "view", Object: audit.Object{Type: rbac.Players, ID: accountID}}}, nil
+	})
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, view)
+}

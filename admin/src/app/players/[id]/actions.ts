@@ -49,3 +49,11 @@ export async function mute(id: string, reason: string): Promise<PlayerActionResu
 export async function unmute(id: string, reason: string): Promise<PlayerActionResult> {
   return act("DELETE", `${playerApiPath(id)}/mute`, { reason });
 }
+
+export async function liftPenalty(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/penalties/lift`, { reason });
+}
+
+export async function removeOffense(id: string, queue: string, matchId: string, reason: string): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/penalties/remove`, { queue, match_id: matchId, reason });
+}

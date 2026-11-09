@@ -9,6 +9,7 @@ import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
 import { banActive, muteActive, playerApiPath, signedAmount, type PlayerRecord } from "@/players/record";
+import { ladders, type PenaltyView } from "@/players/penalties";
 import { Notice } from "../Notice";
 import { PlayerActions } from "./PlayerActions";
 
@@ -35,6 +36,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     return <Notice text={t("player.load_failed")} />;
   }
   const record = reply.body;
+  const penaltyReply = await adminApi<PenaltyView>("GET", `${playerApiPath(record.account.id)}/penalties`);
+  const penalties = penaltyReply.status === 200 ? penaltyReply.body : null;
   const { account, profile } = record;
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
@@ -60,8 +63,23 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
       {can(admin.permissions, "players", "act_on_player") && account.state !== "deleted" && (
-        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} />
+        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} penalties={penalties} />
       )}
+      {penalties && (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+          {ladders.map((queue) => (
+            <Fact key={queue} label={`${t("player.penalty_ladder")} ${queue}`} value={`${penalties[queue].step}, ${t("player.penalty_level")} ${penalties[queue].level}${penalties[queue].ban_until ? `, ${t("player.banned_until")} ${when(penalties[queue].ban_until)}` : ""}${penalties[queue].under_review ? `, ${t("player.penalty_review")}` : ""}`} />
+          ))}
+        </dl>
+      )}
+      <Rows title="player.penalty_offenses" t={t} rows={penalties ? ladders.flatMap((queue) => penalties[queue].offenses.map((offense) => ({ ...offense, queue }))) : []} columns={[
+        { label: "player.penalty_ladder", cell: (row) => row.queue },
+        { label: "player.match", cell: (row) => <span className="font-mono">{row.match_id}</span> },
+        { label: "player.penalty_kind", cell: (row) => row.kind },
+        { label: "player.penalty_weight", cell: (row) => row.weight },
+        { label: "player.at", cell: (row) => when(row.at) },
+        { label: "player.penalty_expires", cell: (row) => when(row.expires_at) },
+      ]} />
       <Rows title="player.nickname_history" t={t} rows={record.nickname_history} columns={[
         { label: "players.nickname", cell: (row) => row.nickname },
         { label: "player.replaced_at", cell: (row) => when(row.replaced_at) },

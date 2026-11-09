@@ -652,6 +652,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `DELETE /admin/players/{id}/temporary-ban` | S on players: lift a ban | Ends a running temporary ban |
 | `POST /admin/players/{id}/mute` | S on players: mute | Mutes the player for `ModerationMuteHours` (`HD_MUTE_HOURS`) from now (6.2) |
 | `DELETE /admin/players/{id}/mute` | S on players: lift a mute | Ends a running mute |
+| `GET /admin/players/{id}/penalties` | V on players | The penalty view of both ladders (`docs/penalties.md` section 7) under the published `penalties` config; the player page lists it with lift and remove buttons |
 | `POST /admin/players/{id}/penalties/lift` `{"reason","ref"}` | S on players | Lifts the running matchmaking ban, review flag and queue delays of the penalty record; offenses stay (`docs/penalties.md` section 7). 409 `nothing_to_lift` when none runs |
 | `POST /admin/players/{id}/penalties/remove` `{"queue","match_id","reason","ref"}` | S on players | Removes one offense of the `ranked` or `casual` ladder; 404 `unknown_offense` when the record has no such offense |
 | `POST /admin/players/{id}/force-rename` | S on players: force rename | Requires the player to pick a new nickname (`docs/localization.md` 5.6) |

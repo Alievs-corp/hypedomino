@@ -147,6 +147,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("DELETE /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftShadowban))
 	h.mux.HandleFunc("POST /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.mute))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.unmute))
+	h.mux.HandleFunc("GET /admin/players/{id}/penalties", h.allowed(rbac.Players, rbac.View, h.playerPenalties))
 	h.mux.HandleFunc("POST /admin/players/{id}/penalties/lift", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftPenalty))
 	h.mux.HandleFunc("POST /admin/players/{id}/penalties/remove", h.allowed(rbac.Players, rbac.ActOnPlayer, h.removeOffense))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
