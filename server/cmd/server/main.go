@@ -224,6 +224,11 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingConfigs := rating.NewWatcher(pool, logger)
 	go ratingConfigs.Run(ctx, config.ConfigPoll)
 	ratings := rating.NewStore(pool, ratingConfigs)
+	penaltyRecords := penaltyStore(ctx, config, pool, logger)
+	ratings.UseOffensePenalties(func() (int, int) {
+		current, _ := penaltyRecords.Config()
+		return current.OffenseRatingPenalty, current.PartnerLossReductionPercent
+	})
 	wave := risk.NewWave(pool, config.Risk, logger)
 	wave.OnShadowban(ratings.HideFromBoards)
 	go wave.Run(ctx, config.SeasonPoll, time.Now)
@@ -233,7 +238,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
-	penaltyRecords := penaltyStore(ctx, config, pool, logger)
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
 	if members != nil {
 		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, rankedOpen: func() bool {

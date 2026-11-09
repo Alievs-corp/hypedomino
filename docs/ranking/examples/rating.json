@@ -37,9 +37,7 @@
       "resetTierDrop": 1,
       "resetFloor": "Bronze IV",
       "resetCeiling": "Diamond IV",
-      "newPlayerPlacementCap": "Gold IV",
-      "offenseRatingPenalty": 10,
-      "partnerLossReductionPercent": 50
+      "newPlayerPlacementCap": "Gold IV"
     },
     "2v2": {
       "divisionLp": 100,
@@ -69,9 +67,7 @@
       "resetTierDrop": 1,
       "resetFloor": "Bronze IV",
       "resetCeiling": "Diamond IV",
-      "newPlayerPlacementCap": "Gold IV",
-      "offenseRatingPenalty": 10,
-      "partnerLossReductionPercent": 50
+      "newPlayerPlacementCap": "Gold IV"
     }
   }
 }
