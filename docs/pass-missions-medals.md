@@ -258,7 +258,7 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 - Locked medal: the locked look from #178, its name, its description, and for a mission source the current progress and target from the server.
 - Earned medal: its art, rarity marks and the server date earned.
 - The collection header shows earned / shown medals. Emblems follow in their own section (5.5).
-- Profile showcase: a player chooses up to `ProfileMedalSlots` (3) owned medals and their order, as an intent with medal ids. The server accepts only owned medals, stores the showcase, and other players see the server's copy (NT-9). A revoked medal leaves the showcase at once. The medal showcase sits next to the emblem showcase on the public profile (`docs/privacy.md` section 5).
+- Profile showcase: a player chooses up to `ProfileMedalSlots` (3) owned medals and their order, as an intent with medal ids. The server accepts only owned medals, stores the showcase, and other players see the server's copy (NT-9). A revoked medal leaves the showcase at once. The medal showcase sits next to the emblem showcase on the public profile (`docs/privacy.md` section 5). Implemented: `GET /profile/{account}` carries `medals`, the showcase medals in order as catalog entries.
 - Medals have no effect in a match and are not shown at the table.
 
 ### 5.5 Emblems

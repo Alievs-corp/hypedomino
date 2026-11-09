@@ -163,6 +163,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	medalCatalog := medal.NewWatcher(pool, logger)
 	go medalCatalog.Run(ctx, config.ConfigPoll)
 	medals := medal.NewStore(pool, medalCatalog)
+	profiles.SetMedals(func(ctx context.Context, account string) (any, error) { return medals.Public(ctx, account) })
 	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
