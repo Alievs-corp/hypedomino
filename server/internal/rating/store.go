@@ -509,3 +509,21 @@ func (s *Store) RunApexRecalc(ctx context.Context, logger *slog.Logger, now func
 		}
 	}
 }
+
+func (r Rating) Label() string {
+	if !r.Placed {
+		return ""
+	}
+	if r.Rank.Apex() {
+		return r.Tier
+	}
+	return r.Rank.String()
+}
+
+func (s *Store) Label(ctx context.Context, account string, mode rules.Mode) (string, error) {
+	r, ok, err := s.Get(ctx, account, mode)
+	if !ok || err != nil {
+		return "", err
+	}
+	return r.Label(), nil
+}
