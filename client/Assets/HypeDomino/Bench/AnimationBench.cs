@@ -1,4 +1,3 @@
-using System;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Rarity;
@@ -113,7 +112,7 @@ namespace HypeDomino.Bench
             var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
             skipReportFrame = false;
             var timing = latestTiming[0];
-            var work = Math.Max(Math.Max(timing.cpuMainThreadFrameTime, timing.cpuRenderThreadFrameTime), timing.gpuFrameTime);
+            var work = FrameWindow.WorkMs(timing);
             window.Add(work, Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
             mainThread.Add(timing.cpuMainThreadFrameTime, 0, 0, 0);
             renderThread.Add(timing.cpuRenderThreadFrameTime, 0, 0, 0);
