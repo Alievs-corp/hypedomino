@@ -91,7 +91,7 @@ namespace HypeDomino.Net.Auth
             var nonce = reply.Status == 200 ? AuthJson.Read<NonceReply>(reply.Body)?.nonce : null;
             if (string.IsNullOrEmpty(nonce))
             {
-                End(done, Failure(reply, false));
+                End(done, reply.Status == 200 ? new AuthResult(AuthOutcome.Unavailable) : Failure(reply, false));
                 return;
             }
             identity.RequestIdToken(provider, ProviderNonce(provider, nonce), token => IdToken(provider, nonce, token, done));
