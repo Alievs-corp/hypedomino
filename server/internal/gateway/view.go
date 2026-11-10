@@ -98,24 +98,10 @@ func resultMessage(result rules.HandResult) *pb.HandResult {
 	return out
 }
 
-func ViewMessage(view room.View) *pb.MatchView {
-	out := &pb.MatchView{
-		State: stateMessage(view.State),
-		Seat:  seatMessage(view.Seat),
-		Mode:  pb.Mode(view.Mode),
-		Table: view.Table,
-	}
-	for _, seat := range view.Mode.Seats() {
-		out.Seats = append(out.Seats, &pb.SeatView{
-			Seat:            seatMessage(seat),
-			HandSize:        uint32(view.HandSizes[seat]),
-			Controller:      controllerMessage(view.Controllers[seat]),
-			LoadingProgress: uint32(view.Loading[seat]),
-			Ready:           view.Ready[seat],
-		})
-	}
-	for _, player := range view.Roster {
-		out.Roster = append(out.Roster, &pb.RosterEntry{
+func rosterMessage(roster []room.Player) []*pb.RosterEntry {
+	var out []*pb.RosterEntry
+	for _, player := range roster {
+		out = append(out, &pb.RosterEntry{
 			Seat:      seatMessage(player.Seat),
 			Team:      teamMessage(player.Seat.Team()),
 			Nickname:  player.Nickname,
@@ -126,6 +112,28 @@ func ViewMessage(view room.View) *pb.MatchView {
 			Emblems:   player.Emblems,
 			Bot:       player.Bot,
 		})
+	}
+	return out
+}
+
+func ViewMessage(view room.View, withStatic bool) *pb.MatchView {
+	out := &pb.MatchView{
+		State: stateMessage(view.State),
+		Seat:  seatMessage(view.Seat),
+		Mode:  pb.Mode(view.Mode),
+	}
+	for _, seat := range view.Mode.Seats() {
+		out.Seats = append(out.Seats, &pb.SeatView{
+			Seat:            seatMessage(seat),
+			HandSize:        uint32(view.HandSizes[seat]),
+			Controller:      controllerMessage(view.Controllers[seat]),
+			LoadingProgress: uint32(view.Loading[seat]),
+			Ready:           view.Ready[seat],
+		})
+	}
+	if withStatic {
+		out.Table = view.Table
+		out.Roster = rosterMessage(view.Roster)
 	}
 	if view.State == room.StateLoading {
 		out.LoadingDeadlineUnixMs = uint64(view.LoadingDeadline.UnixMilli())

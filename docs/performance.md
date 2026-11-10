@@ -153,6 +153,7 @@ Database and Redis run: a move touches neither PostgreSQL nor Redis, and a conne
 |---|---|---|---|---|---|
 | Move round-trip | p99 < 100 ms | Load bot in the same cloud region as the node, on a different host; production-like TLS and WebSocket | Load bot (`server/cmd/loadbot`, #192) timestamps each move intent send and the resulting broadcast receive. The server also exports a Prometheus histogram `move_roundtrip_seconds` (with the node gauges `go_heap_live_bytes`, `go_goroutines`, `hd_rooms` and `hd_connections` beside it) for its in-process share: an accepted move intent from its receive by the gateway to the resulting broadcast queued for every seat, so the socket writes are left to the bot measurement | 30 min steady state at the 10k-room load, at least 100,000 moves, first 2 min discarded as warm-up | Bot-measured p99 < 100 ms overall and in every 1-minute window; server histogram p99 reported alongside |
 | Concurrent rooms | 10,000 per node | Reference node | Load bot ramps to 10,000 active rooms (1v1 and 2v2 mix, moves at human cadence inside the admin-config turn time), then holds. Observe with pprof, `runtime/metrics` and node CPU / RAM | Ramp, then 30 min hold | Holds 10,000 rooms within the move budget; error and disconnect rate under 0.1%; average CPU under 80%; heap flat within 5% between minute 10 and minute 30 |
+| Match traffic | < 200 KB per seat per match (#163) | In process, CI | E2E S-1 and S-2 (`server/internal/e2e`, E-7) count every frame payload a seat sends and receives over its WebSocket for a whole match, with a full roster (16-character nicknames, 3 emblems). Payloads are counted before WebSocket compression, so the wire is at most this | 3 seeds per mode | Every seat under 200,000 bytes; fails the test otherwise |
 | Hot-path cost | No regression | Developer machine and CI | `go test -run='^$' -bench=. -benchmem -count=10 ./internal/rules/... > new.txt`, then `benchstat old.txt new.txt` | 10 runs per side | No benchmark slower than 5% at `p < 0.05`; allocs/op not higher |
 
 Profiling:
@@ -209,6 +210,12 @@ Paste-ready block for the PR body under Verification:
 
 Not affected and why:
 ```
+
+### 6.3 Network
+
+- One WebSocket per session carries the queue and the match; a reconnect resumes the same seat (`proto/README.md`). Frames above `HD_COMPRESSION_THRESHOLD` (256 bytes) are compressed. Client frames are capped by `MaxFrameBytes` (1 KiB) and the hello by `MaxHelloBytes` (8 KiB).
+- `MatchView` is the whole visible state of a seat. The roster and table never change in a match and go only in the first view of a connection: with a full roster they were about 75% of the bytes (2v2 seed 1: 201,785 bytes per seat before, 37,797 after). Measured after the change, before compression: 1v1 30,824 to 45,050 bytes per seat, 2v2 28,788 to 37,797. A finer delta of the play state is not needed for the budget.
+- Weak network (3G) behavior is a device run with the client and is not covered here.
 
 ## 9. Open items
 
