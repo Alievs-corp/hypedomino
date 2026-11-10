@@ -71,6 +71,10 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the network wiring that feeds it are not built yet.
 
+## Network frames
+
+`Net` reads and writes the `Envelope` frames of `proto/README.md` without the generated `Envelope` parser, which allocates a new payload message on every parse. `FrameReader.TryRead` walks the frame by hand and returns a `Frame` (a `ref struct`): the header (`protocol_version`, `sequence`, `acked_sequence`, `session_nonce`), the payload case and the payload bytes as a span over the frame. The caller merges those bytes into a message it keeps (`message.MergeFrom(frame.PayloadBytes)`). A field it does not know, including a payload number newer than this client, is skipped, so the payload reads as `None`; a truncated or malformed frame returns `false`. `FrameWriter` writes a header and one intent into its own buffer and returns a span over it, valid until the next write; an intent kept and changed in place is sent without allocating. The `FrameCodecTests` EditMode tests read every golden frame in `proto/testdata/frames` like the generated parser does, write every client golden frame byte for byte, refuse malformed frames, and check that reading a `MatchView` frame and writing a reused intent allocate nothing.
+
 ## Shop and wallet
 
 `UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
