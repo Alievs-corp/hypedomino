@@ -178,6 +178,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
+	h.mux.HandleFunc("POST /admin/config/shop/preview", h.allowed(rbac.ShopOffers, rbac.View, h.previewShop))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
 	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, h.publishDomain(func() configDomain { return h.cosmeticsDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
