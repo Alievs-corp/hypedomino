@@ -2,7 +2,6 @@ import { adminApi } from "@/admin/api";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { failedCheckLabels, sizeLabel, statusLabel, type Asset } from "@/assets/assets";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { AssetUpload, RecheckAsset } from "./AssetUpload";
@@ -95,7 +94,7 @@ function AssetRow({ asset, canCheck, t }: { asset: Asset; canCheck: boolean; t: 
       <td className="py-2 pr-4 font-mono" title={asset.content_hash ?? undefined}>
         {asset.content_hash ? asset.content_hash.slice(0, 12) : "—"}
       </td>
-      <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(asset.created_at)}</td>
+      <td className="py-2 pr-4 whitespace-nowrap">{t.when(asset.created_at)}</td>
     </tr>
   );
 }

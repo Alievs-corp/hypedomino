@@ -2,7 +2,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { addedItems, changedItems, type CosmeticManifest, type CosmeticRules } from "@/cosmetics/catalog";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
@@ -75,7 +74,7 @@ function History({ versions, builtin, rollback, t }: { versions: ConfigVersion[]
                 <tr key={version.config_version} className="border-t border-surface align-top">
                   <td className="py-2 pr-4">{version.config_version}</td>
                   <td className="py-2 pr-4">{version.catalog.manifestVersion}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                   <td className="py-2 pr-4">{items.length}</td>
                   <td className="py-2 pr-4 font-mono break-all">{[...addedItems(previous, items), ...changedItems(previous, items)].join(", ")}</td>
                   {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackCosmetics} />}</td>}

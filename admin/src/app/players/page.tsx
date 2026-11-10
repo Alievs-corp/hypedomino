@@ -2,7 +2,6 @@ import Link from "next/link";
 import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { identityProviders, playerSearch, playersApiPath, type PlayerSummary, type SearchParams } from "@/players/record";
 import { Notice } from "./Notice";
@@ -82,7 +81,7 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
                 </td>
                 <td className="py-2 pr-4">{player.state}</td>
                 <td className="py-2 pr-4">{player.country}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(player.created_at)}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(player.created_at)}</td>
               </tr>
             ))}
           </tbody>

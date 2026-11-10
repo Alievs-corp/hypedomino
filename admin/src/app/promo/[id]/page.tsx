@@ -3,7 +3,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { bundleSummary, detailPath, shownState, type PromoDetail } from "@/promo/codes";
 import { Notice } from "../../players/Notice";
@@ -34,7 +33,7 @@ export default async function PromoCodePage({ params }: { params: Promise<{ id: 
     [t("promo.kind"), code.kind],
     [t("promo.state"), shownState(code, new Date())],
     [t("promo.grants"), bundleSummary(code.bundle)],
-    [t("promo.window"), `${utcLabel(code.start)} → ${utcLabel(code.end)}`],
+    [t("promo.window"), `${t.when(code.start)} → ${t.when(code.end)}`],
     [t("promo.redemptions"), `${code.redemptions} / ${code.cap}`],
     [t("promo.creator"), code.approver ? `${code.creator} / ${code.approver}` : code.creator],
   ];
@@ -81,7 +80,7 @@ export default async function PromoCodePage({ params }: { params: Promise<{ id: 
                           {entry.account_id}
                         </Link>
                       </td>
-                      <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(entry.redeemed_at)}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap">{t.when(entry.redeemed_at)}</td>
                     </tr>
                   ))}
                 </tbody>

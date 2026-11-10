@@ -3,7 +3,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { batchLeads, bundleSummary, promoApiPath, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoTemplate } from "@/promo/codes";
 import { Notice } from "../players/Notice";
@@ -73,7 +72,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                   <td className="py-2 pr-4">{template.kind}</td>
                   <td className="py-2 pr-4">{template.bundle ? bundleSummary(template.bundle) : t("promo.template_no_bundle")}</td>
                   <td className="py-2 pr-4 break-all">{template.creator}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(template.updated)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(template.updated)}</td>
                 </tr>
               ))}
             </tbody>
@@ -113,7 +112,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                     {usage.redemptions} / {usage.cap}
                   </td>
                   <td className="py-2 pr-4 whitespace-nowrap">
-                    {utcLabel(usage.start)} → {utcLabel(usage.end)}
+                    {t.when(usage.start)} → {t.when(usage.end)}
                   </td>
                 </tr>
               ))}
@@ -156,7 +155,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                   <td className="py-2 pr-4">{shownState(code, now)}</td>
                   <td className="py-2 pr-4">{bundleSummary(code.bundle)}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">
-                    {utcLabel(code.start)} → {utcLabel(code.end)}
+                    {t.when(code.start)} → {t.when(code.end)}
                   </td>
                   <td className="py-2 pr-4">
                     {code.redemptions} / {code.cap}

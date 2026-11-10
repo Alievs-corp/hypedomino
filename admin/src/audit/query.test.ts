@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { auditApiPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, utcLabel, type AuditEntry } from "./query.ts";
+import { auditApiPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, type AuditEntry } from "./query.ts";
 
 function entries(count: number, lastId: number): AuditEntry[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -41,9 +41,4 @@ test("the page cursor accepts only a positive id", () => {
   assert.equal(beforeIdOf({ before_id: "0" }), "");
   assert.equal(beforeIdOf({ before_id: "-1" }), "");
   assert.equal(beforeIdOf({ before_id: "4x" }), "");
-});
-
-test("times show in UTC to the second", () => {
-  assert.equal(utcLabel("2026-11-03T21:50:29+04:00"), "2026-11-03 17:50:29 UTC");
-  assert.equal(utcLabel("not a time"), "not a time");
 });
