@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ import (
 
 const (
 	BoardGlobal   = "global"
+	BoardFriends  = "friends"
 	countryPrefix = "country:"
 	regionPrefix  = "region:"
 
@@ -341,6 +343,50 @@ func (b *Boards) Around(ctx context.Context, season string, mode rules.Mode, boa
 	}
 	rows, err := b.rows(ctx, set, max(position-int64(radius), 0), position+int64(radius))
 	return rows, err == nil, err
+}
+
+func (b *Boards) Among(ctx context.Context, season string, mode rules.Mode, accounts []string) ([]Row, error) {
+	set, members, err := b.ensure(ctx, season, mode, BoardGlobal)
+	if err != nil {
+		return nil, err
+	}
+	found, err := b.client.HMGet(ctx, members, accounts...).Result()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
+	}
+	listed := make([]string, 0, len(found))
+	for _, m := range found {
+		if m != nil {
+			listed = append(listed, fmt.Sprint(m))
+		}
+	}
+	if len(listed) == 0 {
+		return []Row{}, nil
+	}
+	scores, err := b.client.ZMScore(ctx, set, listed...).Result()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
+	}
+	order := make([]int, len(listed))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(i, j int) bool {
+		a, b := order[i], order[j]
+		if scores[a] != scores[b] {
+			return scores[a] < scores[b]
+		}
+		return listed[a] < listed[b]
+	})
+	rows := make([]Row, 0, len(order))
+	for position, i := range order {
+		row, err := decode(listed[i], scores[i], position+1)
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
 }
 
 func (b *Boards) Size(ctx context.Context, season string, mode rules.Mode, board string) (int64, error) {

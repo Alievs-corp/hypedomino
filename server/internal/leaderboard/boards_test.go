@@ -236,6 +236,28 @@ func national(account, country string, index, lp int, at time.Time) rating.Entry
 	return e
 }
 
+func TestTheFriendsBoardFollowsTheGlobalOrder(t *testing.T) {
+	source := &fakeSource{entries: map[string][]rating.Entry{"season.s1/1v1": {
+		entry("ch", 28, 300, rating.TierChallenger, 50, now),
+		entry("gold-late", 14, 50, "", 10, now.Add(time.Hour)),
+		entry("gold-early", 14, 50, "", 5, now),
+		entry("stranger", 20, 0, "", 5, now),
+		entry("iron", 0, 0, "", 0, now),
+	}}}
+	prefix := fmt.Sprintf("lbtest%d", time.Now().UnixNano())
+	boards := leaderboard.New(client(t), source, regions, leaderboard.Config{Prefix: prefix, TTL: time.Hour})
+	rows, err := boards.Among(context.Background(), "season.s1", rules.Mode1v1, []string{"iron", "gold-late", "unplaced", "ch", "gold-early"})
+	if err != nil || !equal(accounts(rows), []string{"1:ch", "2:gold-early", "3:gold-late", "4:iron"}) {
+		t.Fatalf("friends %v %v", accounts(rows), err)
+	}
+	if rows[0].Tier != rating.TierChallenger || rows[1].Wins != 5 {
+		t.Fatalf("decoded rows %+v", rows)
+	}
+	if rows, err := boards.Among(context.Background(), "season.s1", rules.Mode1v1, []string{"unplaced"}); err != nil || len(rows) != 0 {
+		t.Fatalf("nobody placed %v %v", rows, err)
+	}
+}
+
 func TestCountryAndRegionBoardsListOnlyTheirPlayers(t *testing.T) {
 	source := &fakeSource{entries: map[string][]rating.Entry{"season.s1/1v1": {
 		national("az-1", "AZ", 20, 10, now),

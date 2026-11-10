@@ -19,6 +19,8 @@ Scope: friend requests, the friends list, removing a friend and blocking (#153).
 - **FR-9** Either friend can remove the friendship at any time. The other side is not notified.
 - **FR-10** The list shows friends, incoming and outgoing requests and blocked players with account id and nickname. Accounts that are not active (pending deletion, deleted, permanently banned) do not appear in friends or requests (`docs/privacy.md` 8.2).
 
+- **FR-17** The friends leaderboard is the global ranked order of a mode and season filtered to the player and their active friends (`docs/ranking.md` 8.2): `GET /leaderboard/{mode}?board=friends`. Friends who are not placed in that season and mode are not on it. It awards no emblems.
+
 ## 2a. Presence
 
 - **FR-15** Only friends see a player's presence (`docs/privacy.md` 5): `online` while the app holds a game connection, `in_match` while that connection has a seat in a match, `offline` otherwise. The mode, room and opponents are not shown.
