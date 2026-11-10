@@ -67,6 +67,21 @@ func TestAShadowbannedAccountLeavesTheBoards(t *testing.T) {
 	}
 }
 
+func TestAShadowbannedAccountQueuesIntoTheCheaterPool(t *testing.T) {
+	f := newFixture(t)
+	honest, cheater, fresh := f.account(t), f.account(t), f.account(t)
+	f.set(t, honest, rules.Mode1v1, 1400, 50, rank(t, "Gold II", 50))
+	f.set(t, cheater, rules.Mode1v1, 1400, 50, rank(t, "Gold II", 50))
+	f.shadowban(t, cheater)
+	f.shadowban(t, fresh)
+	for account, want := range map[string]bool{honest: false, cheater: true, fresh: true} {
+		q, err := f.store.Queue(context.Background(), account, rules.Mode1v1, now)
+		if err != nil || q.Shadowbanned != want {
+			t.Fatalf("queue entry of %s %+v %v, want shadowbanned %v", account, q, err, want)
+		}
+	}
+}
+
 func TestAShadowbannedAccountEarnsNoEmblemAndMovesNobodyDown(t *testing.T) {
 	f := newRewardFixture(t)
 	end := now.Add(60 * 24 * time.Hour)
