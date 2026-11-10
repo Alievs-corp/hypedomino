@@ -29,7 +29,7 @@ Real-time online multiplayer mobile domino game. Hyperactive, colorful, effect-h
 - Secrets only from environment. Never commit keys, tokens or service accounts.
 
 ## Performance budgets
-- Client: stable 60 fps on mid-range Android, 120 fps option on capable devices; cold start under 3 s; match scene draw calls under 150; GC alloc 0 B/frame during a match.
+- Client: stable 60 fps on mid-range Android, 120 fps option on capable devices; cold start under 3 s; match scene draw calls under 150; GC alloc 0 B/frame during a match. UI canvas update (`PostLateUpdate.PlayerUpdateCanvases`) p95 at most 1.5 ms per frame, 0.3 ms on a static screen.
 - Install size under 150 MB; extra content via Addressables/CDN on demand.
 - Server: p99 move round-trip under 100 ms in region; 10k concurrent rooms per node target.
 - Any change touching these paths must include a measurement in the PR.
