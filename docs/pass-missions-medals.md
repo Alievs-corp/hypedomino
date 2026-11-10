@@ -27,6 +27,7 @@ Related: `docs/economy.md` (coins, reward bundle, ledger, pass products), `docs/
 - Pass seasons never overlap. A gap is allowed; during a gap pass XP is dropped and the grant records that (`docs/economy.md` section 4).
 - Frozen while the season runs: `PassLevels`, the XP curve (2.2) and which bundle sits at which level of each track (2.4). The only change allowed to a running track is replacing a `disabled` cosmetic (`docs/cosmetics.md` section 6) with another item of the same type and rarity, with an audited reason. XP source values (2.3) may change mid-season and apply to matches that end after the publish.
 - Every account is in the active season from its first session in it, at level 1 with 0 XP. Level and XP never carry over to the next season.
+- Profile level and XP, owner decision 2026-11-10: profile level and XP are the current pass season's level and XP. There is no separate account level. `GET /profile/me` (`level`, `xp`), the public profile `GET /profile/{account}` (`level`) and the admin player record read them from the active season's progress. With no active season, or no progress in it yet, they are level 1 with 0 XP.
 
 ### 2.2 Levels and XP curve
 
