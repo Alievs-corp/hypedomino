@@ -71,6 +71,9 @@ namespace HypeDomino.UI.Tokens
     public static class TokenSize
     {
         public const int TouchTargetMin = 120;
+        public const int SeatPanelWidth = 264;
+        public const int SeatPanelHeight = 216;
+        public const int HandHeight = 224;
     }
 
     public static class TokenTextSize
