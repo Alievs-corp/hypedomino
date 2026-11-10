@@ -51,6 +51,16 @@ func TestTheFirstNicknameCreatesTheProfileAndIsUniqueOnItsFoldedForm(t *testing.
 	if _, err := store.SetNickname(ctx, other, "Ayla!", start); !errors.Is(err, profile.ErrInvalidCharacters) {
 		t.Fatalf("invalid nickname: %v", err)
 	}
+	moderation, err := profile.ParseModeration([]byte(`{"words": {"en": [{"entry": "badword", "match": "substring"}]}, "reserved": ["admin"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.Moderate(func() profile.Moderation { return moderation })
+	for _, name := range []string{"B4d_W0rd", "Admin_Ayla"} {
+		if _, err := store.SetNickname(ctx, other, name, start); !errors.Is(err, profile.ErrNotAllowed) {
+			t.Fatalf("filtered nickname %q: %v", name, err)
+		}
+	}
 	if _, found, err := store.Get(ctx, other); err != nil || found {
 		t.Fatalf("a refused setup created a profile: %v %v", found, err)
 	}

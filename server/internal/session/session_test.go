@@ -629,3 +629,73 @@ func TestOnlyANewSessionIsCheckedForDeviceIntegrity(t *testing.T) {
 		t.Fatalf("integrity checked for %v", checks.started)
 	}
 }
+
+func (l *integrityLog) MatchStart(_ context.Context, account, session string, queue pb.QueueKind, _ *pb.IntegrityProof) pb.QueueRefusal {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.started = append(l.started, account+"/"+session+"/"+queue.String())
+	if l.allow {
+		return pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED
+	}
+	return pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED
+}
+
+func (l *integrityLog) setAllow(allow bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.allow = allow
+}
+
+type queueLog struct {
+	mu     sync.Mutex
+	joined []string
+}
+
+func (q *queueLog) Join(_ context.Context, account, _ string, intent *pb.JoinQueueIntent) *pb.QueueState {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.joined = append(q.joined, account)
+	return &pb.QueueState{Status: pb.QueueStatus_QUEUE_STATUS_SEARCHING, Queue: intent.GetQueue()}
+}
+
+func (q *queueLog) Leave(context.Context, string) *pb.QueueState {
+	return &pb.QueueState{Status: pb.QueueStatus_QUEUE_STATUS_LEFT}
+}
+
+func TestMatchmakingEntryIsCheckedForDeviceIntegrityBeforeTheQueue(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	tab.manager.Authenticate(fakeAuthenticator{"jwt-1": {"ayla", "sid-1"}})
+	checks := &integrityLog{allow: true}
+	queue := &queueLog{}
+	tab.manager.CheckIntegrity(checks)
+	tab.manager.Queue(queue)
+	p := tab.connect("jwt-1", true)
+	checks.setAllow(false)
+	join := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_JoinQueueIntent{JoinQueueIntent: &pb.JoinQueueIntent{Mode: pb.Mode_MODE_1V1, Queue: pb.QueueKind_QUEUE_KIND_RANKED}}}
+	p.write(join)
+	if state := p.queueState(); state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_REFUSED || state.GetRefusal() != pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED {
+		t.Fatalf("refused entry answered %v", state)
+	}
+	checks.setAllow(true)
+	p.write(join)
+	if state := p.queueState(); state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_SEARCHING {
+		t.Fatalf("allowed entry answered %v", state)
+	}
+	checks.mu.Lock()
+	defer checks.mu.Unlock()
+	queue.mu.Lock()
+	defer queue.mu.Unlock()
+	want := []string{"ayla/sid-1", "ayla/sid-1/QUEUE_KIND_RANKED", "ayla/sid-1/QUEUE_KIND_RANKED"}
+	if !slices.Equal(checks.started, want) || !slices.Equal(queue.joined, []string{"ayla"}) {
+		t.Fatalf("checked %v joined %v", checks.started, queue.joined)
+	}
+}
+
+func (p *player) queueState() *pb.QueueState {
+	p.t.Helper()
+	for {
+		if state := p.read().GetQueueState(); state != nil {
+			return state
+		}
+	}
+}
