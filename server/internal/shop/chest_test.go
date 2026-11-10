@@ -150,8 +150,8 @@ func TestChestPoolsMustHoldCommonOrRareItemsListingTheChest(t *testing.T) {
 		t.Fatal(err)
 	}
 	catalog := example(t)
-	if err := catalog.CheckChestPools(items); err != nil {
-		t.Fatalf("example chest pools: %v", err)
+	if err := catalog.CheckSources(items); err != nil {
+		t.Fatalf("example sources: %v", err)
 	}
 	cases := map[string]string{
 		"avatar.comet_fox":   "lack the chest",
@@ -166,7 +166,7 @@ func TestChestPoolsMustHoldCommonOrRareItemsListingTheChest(t *testing.T) {
 				changed.Offers[i].Bundle.Cosmetics = append(append([]string{}, offer.Bundle.Cosmetics...), id)
 			}
 		}
-		if err := changed.CheckChestPools(items); err == nil || !strings.Contains(err.Error(), reason) {
+		if err := changed.CheckSources(items); err == nil || !strings.Contains(err.Error(), reason) {
 			t.Fatalf("%s: %v", id, err)
 		}
 	}

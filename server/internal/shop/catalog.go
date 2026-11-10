@@ -18,6 +18,8 @@ const (
 	SourceType  = "shop"
 	SourceChest = "chest"
 
+	SourceFirstPurchase = "first_purchase"
+
 	RarityCommon = "common"
 	RarityRare   = "rare"
 
