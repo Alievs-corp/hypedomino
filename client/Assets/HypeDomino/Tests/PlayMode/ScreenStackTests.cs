@@ -5,7 +5,9 @@ using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
+using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -230,6 +232,85 @@ namespace HypeDomino.Tests.PlayMode
 
             var expected = Mathf.Min(Screen.width, Screen.height) / 1080f;
             Assert.AreEqual(expected, root.GetComponent<Canvas>().scaleFactor, 0.001f);
+        }
+
+        static void Fill(ScreenView screen, int graphics)
+        {
+            for (var at = 0; at < graphics; at++)
+            {
+                var image = new GameObject("Panel", typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
+                image.SetParent(ContentOf(screen), false);
+                image.anchorMin = Vector2.zero;
+                image.anchorMax = Vector2.one;
+                image.sizeDelta = Vector2.zero;
+            }
+        }
+
+        void PopAndPushBack(ScreenView screen)
+        {
+            stack.Pop();
+            stack.Advance(TokenDurationMs.Slow);
+            Canvas.ForceUpdateCanvases();
+            stack.Push(screen);
+            stack.Advance(TokenDurationMs.Slow);
+            Canvas.ForceUpdateCanvases();
+        }
+
+        [Test]
+        public void PushAndPopAllocateNothingOnceWarm()
+        {
+            Fill(SettledRoot(), 40);
+            var next = NewScreen("Next");
+            Fill(next, 40);
+            stack.Push(next);
+            stack.Advance(TokenDurationMs.Slow);
+            PopAndPushBack(next);
+
+            Assert.That(() => PopAndPushBack(next), Is.Not.AllocatingGCMemory());
+        }
+
+        [UnityTest]
+        public IEnumerator ACoveredScreenDrawsNothing()
+        {
+            var target = new RenderTexture(64, 64, 0);
+            var view = Track(new GameObject("Display", typeof(Camera))).GetComponent<Camera>();
+            view.targetTexture = target;
+            view.clearFlags = CameraClearFlags.SolidColor;
+            view.backgroundColor = Color.black;
+            var root = NewScreen("Root");
+            var rootCanvas = root.GetComponent<Canvas>();
+            rootCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            rootCanvas.worldCamera = view;
+            Fill(root, 1);
+            stack.Push(root);
+            stack.Advance(TokenDurationMs.Slow);
+            yield return null;
+            var shown = CenterOf(view, target);
+
+            stack.Push(NewScreen("Next"));
+            stack.Advance(TokenDurationMs.Slow);
+            yield return null;
+            var covered = CenterOf(view, target);
+            target.Release();
+            Object.Destroy(target);
+
+            Assert.Greater(shown.r, 0.5f);
+            Assert.Less(covered.r, 0.5f);
+        }
+
+        static Color CenterOf(Camera view, RenderTexture target)
+        {
+            Canvas.ForceUpdateCanvases();
+            view.Render();
+            var previous = RenderTexture.active;
+            RenderTexture.active = target;
+            var pixel = new Texture2D(1, 1);
+            pixel.ReadPixels(new Rect(target.width / 2, target.height / 2, 1, 1), 0, 0);
+            pixel.Apply();
+            RenderTexture.active = previous;
+            var color = pixel.GetPixel(0, 0);
+            Object.Destroy(pixel);
+            return color;
         }
     }
 }
