@@ -235,6 +235,42 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	}
 }
 
+func TestAShopPreviewShowsTheSectionsOfADraftAtAGivenTime(t *testing.T) {
+	a := newAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	opens, closes := start.Add(time.Hour), start.Add(3*time.Hour)
+	draft := catalog(cometFox(), weekendPack(opens, closes))
+	shown := func(body map[string]any, section string) []any {
+		for _, entry := range body["sections"].([]any) {
+			if entry.(map[string]any)["section"] == section {
+				return entry.(map[string]any)["offers"].([]any)
+			}
+		}
+		t.Fatalf("no %s in %v", section, body)
+		return nil
+	}
+	status, body := a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": opens})
+	expect(t, status, body, http.StatusOK, "")
+	if featured, daily := shown(body, "featured"), shown(body, "daily_rotation"); len(featured) != 1 || featured[0] != "offer.weekend_pack" || len(daily) != 1 || daily[0] != "offer.avatar_comet_fox" {
+		t.Fatalf("at opening %v", body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": closes})
+	expect(t, status, body, http.StatusOK, "")
+	if featured := shown(body, "featured"); len(featured) != 0 {
+		t.Fatalf("at closing %v", body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft})
+	if status != http.StatusOK || body["at"] != start.Format(time.RFC3339) {
+		t.Fatalf("server time %d %v", status, body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": catalog(cometFox(), cometFox())})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	if entries := a.entries(a.signIn("root"), "object_type=shop_offers"); len(entries) != 0 {
+		t.Fatalf("a preview left entries: %v", entries)
+	}
+}
+
 func TestTheShopCatalogCarriesTheRotationRulesOfTheServer(t *testing.T) {
 	a := newAPIWith(t, func(c *adminapi.Config) { c.Shop = shop.Config{DailySlots: 6, WeeklySlots: 3, ResetHourUTC: 4} })
 	a.create("leyla@example.com", rbac.LiveOps)
