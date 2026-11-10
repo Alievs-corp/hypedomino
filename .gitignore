@@ -23,6 +23,7 @@ client/[Oo]bj/
 client/[Bb]uild/
 client/[Bb]uilds/
 client/[Ll]ogs/
+client/Signing/
 client/Assets/HypeDomino/Bench/Generated/
 client/Assets/HypeDomino/Bench/Generated.meta
 client/[Uu]ser[Ss]ettings/

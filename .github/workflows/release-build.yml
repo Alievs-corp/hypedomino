@@ -1,6 +1,9 @@
 name: Release build
 
 on:
+  push:
+    tags:
+      - 'client-v*'
   workflow_dispatch:
     inputs:
       catalog_version:
@@ -23,11 +26,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Check the catalog version
+      - name: Resolve the release
+        id: release
         env:
-          CATALOG_VERSION: ${{ inputs.catalog_version }}
+          INPUT_CATALOG_VERSION: ${{ inputs.catalog_version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
         run: |
-          [[ "$CATALOG_VERSION" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || { echo "catalog_version must be 1 to 64 letters, digits, '.', '_' or '-' starting with a letter or digit"; exit 1; }
+          parameters="-buildNumber $BUILD_NUMBER"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            version="${GITHUB_REF_NAME#client-v}"
+            [[ "$version" =~ ^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$ ]] || { echo "the tag must be client-v<major>.<minor>.<patch>, got $GITHUB_REF_NAME"; exit 1; }
+            [[ "$APPLICATION_ID" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || { echo "set the repository variable ANDROID_APPLICATION_ID to the Play package name"; exit 1; }
+            catalog="$version-$BUILD_NUMBER"
+            parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json"
+          else
+            catalog="$INPUT_CATALOG_VERSION"
+          fi
+          [[ "$catalog" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || { echo "catalog_version must be 1 to 64 letters, digits, '.', '_' or '-' starting with a letter or digit"; exit 1; }
+          echo "catalog=$catalog" >> "$GITHUB_OUTPUT"
+          echo "parameters=$parameters" >> "$GITHUB_OUTPUT"
+          echo "Release catalog=$catalog build=$BUILD_NUMBER ref=$GITHUB_REF_NAME" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
         with:
           lfs: true
@@ -39,6 +58,21 @@ jobs:
           path: client/Library
           key: unity-library-android-release-${{ hashFiles('client/Packages/**', 'client/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: unity-library-android-release-
+      - name: Write the Android signing file
+        if: github.ref_type == 'tag'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+        run: |
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASS ANDROID_KEYALIAS_NAME ANDROID_KEYALIAS_PASS; do
+            [ -n "${!name}" ] || { echo "the secret $name is missing"; exit 1; }
+          done
+          mkdir -p client/Signing
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > client/Signing/release.keystore
+          jq -n --arg keystore Signing/release.keystore --arg keystorePass "$ANDROID_KEYSTORE_PASS" --arg keyAlias "$ANDROID_KEYALIAS_NAME" --arg keyAliasPass "$ANDROID_KEYALIAS_PASS" \
+            '{keystore: $keystore, keystorePass: $keystorePass, keyAlias: $keyAlias, keyAliasPass: $keyAliasPass}' > client/Signing/signing.json
       - uses: game-ci/unity-builder@v6
         continue-on-error: true
         env:
@@ -49,12 +83,15 @@ jobs:
           targetPlatform: Android
           androidExportType: androidAppBundle
           buildMethod: HypeDomino.Editor.ReleaseBuild.BuildAndroid
-          customParameters: -catalogVersion ${{ inputs.catalog_version }}
+          customParameters: -catalogVersion ${{ steps.release.outputs.catalog }} ${{ steps.release.outputs.parameters }}
           versioning: None
           allowDirtyBuild: true
+      - name: Remove the Android signing file
+        if: always()
+        run: sudo rm -rf client/Signing
       - name: Fail when the build did not finish
         env:
-          CATALOG_VERSION: ${{ inputs.catalog_version }}
+          CATALOG_VERSION: ${{ steps.release.outputs.catalog }}
         run: |
           sudo chown -R "$(id -u):$(id -g)" client build
           [ -f client/Logs/editor-method-succeeded ] || { echo "the release build did not finish; read the Unity log above"; exit 1; }
@@ -84,7 +121,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success() || steps.size.outcome == 'failure'
         with:
-          name: android-release-${{ inputs.catalog_version }}
+          name: android-release-${{ steps.release.outputs.catalog }}
           path: |
             ${{ env.AAB }}
             install-size.md
@@ -93,7 +130,16 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success() || steps.size.outcome == 'failure'
         with:
-          name: content-android-${{ inputs.catalog_version }}
+          name: content-android-${{ steps.release.outputs.catalog }}
           path: ${{ env.REMOTE }}
           if-no-files-found: error
           retention-days: 14
+      - name: Upload to the Play internal testing track
+        if: github.ref_type == 'tag'
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ vars.ANDROID_APPLICATION_ID }}
+          releaseFiles: ${{ env.AAB }}
+          track: internal
+          status: completed
