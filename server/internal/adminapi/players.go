@@ -51,6 +51,19 @@ func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p princip
 	reply(w, http.StatusOK, record)
 }
 
+type suspiciousMatchesView struct {
+	Matches []playerrecord.SuspiciousMatch `json:"matches"`
+}
+
+func (h *Handler) suspiciousMatches(w http.ResponseWriter, r *http.Request, p principal) {
+	matches, err := playerrecord.LoadSuspiciousMatches(r.Context(), h.pool)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, suspiciousMatchesView{Matches: matches})
+}
+
 func (h *Handler) matchReplay(w http.ResponseWriter, r *http.Request, p principal) {
 	var match playerrecord.MatchReplay
 	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
