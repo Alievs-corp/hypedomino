@@ -2,7 +2,6 @@ import Link from "next/link";
 import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import { Notice } from "../players/Notice";
@@ -47,7 +46,7 @@ export default async function SuspiciousMatchesPage() {
           <tbody>
             {matches.map((match) => (
               <tr key={`${match.match_id}-${match.started_at}`} className="border-t border-surface align-top">
-                <td className="py-1 pr-4 whitespace-nowrap">{utcLabel(match.started_at)}</td>
+                <td className="py-1 pr-4 whitespace-nowrap">{t.when(match.started_at)}</td>
                 <td className="py-1 pr-4">{`${match.mode} ${match.kind}`}</td>
                 <td className="py-1 pr-4 font-mono">{match.signals.join(", ")}</td>
                 <td className="py-1 pr-4">
