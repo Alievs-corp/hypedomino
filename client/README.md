@@ -46,7 +46,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 
 ## Measuring the empty build
 
-`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The sampler measures at the frame rate `GraphicsBoot` set (`docs/performance.md` 1.2; the highest refresh rate when none is set) and logs every 1200 frames:
+`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The `BootSceneSmokeTests` PlayMode smoke test checks that it is the first build scene, loads it, runs 60 frames and fails on any error or exception logged meanwhile. The sampler measures at the frame rate `GraphicsBoot` set (`docs/performance.md` 1.2; the highest refresh rate when none is set) and logs every 1200 frames:
 
 ```
 FrameTiming target=<Hz> frames=1200 workP50=<ms>ms workP95=<ms>ms missedVsync=<percent>% gcFrames=<n> gcMax=<bytes>B gcCollections=<n> batchesMax=<n>
