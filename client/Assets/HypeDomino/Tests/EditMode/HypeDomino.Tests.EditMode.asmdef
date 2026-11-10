@@ -6,6 +6,8 @@
         "UnityEditor.TestRunner",
         "HypeDomino.Core",
         "HypeDomino.UI",
+        "HypeDomino.Game",
+        "HypeDomino.Proto",
         "HypeDomino.Content",
         "HypeDomino.Net",
         "HypeDomino.Editor",
@@ -21,7 +23,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "Google.Protobuf.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [
