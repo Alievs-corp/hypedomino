@@ -50,7 +50,7 @@ export function utcInstant(minute: string): string {
   return minuteInput.test(minute) ? `${minute}:00Z` : minute;
 }
 
-export function auditApiPath(filter: AuditFilter, beforeId: string): string {
+function filterQuery(filter: AuditFilter): URLSearchParams {
   const query = new URLSearchParams();
   for (const field of filterFields) {
     const value = filter[field];
@@ -58,6 +58,15 @@ export function auditApiPath(filter: AuditFilter, beforeId: string): string {
       query.set(field, field === "from" || field === "to" ? utcInstant(value) : value);
     }
   }
+  return query;
+}
+
+export function auditExportPath(filter: AuditFilter): string {
+  return `/admin/audit/export?${filterQuery(filter)}`;
+}
+
+export function auditApiPath(filter: AuditFilter, beforeId: string): string {
+  const query = filterQuery(filter);
   if (beforeId) {
     query.set("before_id", beforeId);
   }

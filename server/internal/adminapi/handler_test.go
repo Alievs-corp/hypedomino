@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
@@ -197,6 +199,7 @@ func TestEveryRouteRefusesAMissingSessionAndARoleWithoutTheAction(t *testing.T) 
 		{"GET", "/admin/me", nil, http.StatusOK},
 		{"PUT", "/admin/me/locale", map[string]any{"locale": "az"}, http.StatusOK},
 		{"GET", "/admin/audit", nil, http.StatusOK},
+		{"POST", "/admin/audit/export", map[string]any{"reason": "regulator request"}, http.StatusForbidden},
 		{"GET", "/admin/accounts", nil, http.StatusForbidden},
 		{"POST", "/admin/accounts", map[string]any{"email": "new@example.com", "display_name": "New", "roles": []string{"analyst"}}, http.StatusForbidden},
 		{"PUT", "/admin/accounts/" + target.ID + "/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusForbidden},
@@ -314,6 +317,42 @@ func TestGuardedAccountChangesAreRefusedWithoutAnEntry(t *testing.T) {
 	if status != http.StatusOK || len(body["entries"].([]any)) != 0 {
 		t.Fatalf("refused changes left entries: %d %v", status, body)
 	}
+}
+
+func TestSuperAdminExportsEveryMatchingEntryAndTheExportIsAudited(t *testing.T) {
+	a := newAPI(t)
+	store := audit.NewStore(a.pool)
+	for i := range audit.MaxLimit + 3 {
+		entry := audit.Entry{
+			Actor: audit.Actor{ID: "seed", Roles: []rbac.Role{rbac.Content}}, Environment: "staging", Action: "edit",
+			Object: audit.Object{Type: rbac.CosmeticItems, ID: fmt.Sprintf("avatar.fox%d", i)}, Source: audit.Source{SessionID: "seed"},
+		}
+		if _, err := store.Append(context.Background(), entry, start); err != nil {
+			t.Fatal(err)
+		}
+	}
+	root := a.signIn("root")
+	status, body := a.call("POST", "/admin/audit/export?object_type=cosmetic_items", root, map[string]any{})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("POST", "/admin/audit/export?from=yesterday", root, map[string]any{"reason": "regulator request"})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, body = a.call("POST", "/admin/audit/export?object_type=cosmetic_items", root, map[string]any{"reason": "regulator request", "ref": "#134"})
+	expect(t, status, body, http.StatusOK, "")
+	if entries := body["entries"].([]any); len(entries) != audit.MaxLimit+3 {
+		t.Fatalf("exported %d entries", len(entries))
+	}
+	status, body = a.call("GET", "/admin/audit?action=export", root, nil)
+	expect(t, status, body, http.StatusOK, "")
+	entries := body["entries"].([]any)
+	record := entries[0].(map[string]any)
+	after := record["after"].(map[string]any)
+	if len(entries) != 1 || record["object_type"] != "audit_log" || record["reason"] != "regulator request" || record["ref"] != "#134" ||
+		after["filter"] != "object_type=cosmetic_items" || after["entries"] != float64(audit.MaxLimit+3) {
+		t.Fatalf("export entry %v", entries)
+	}
+	a.now = start.Add(15 * time.Minute)
+	status, body = a.call("POST", "/admin/audit/export", root, map[string]any{"reason": "regulator request"})
+	expect(t, status, body, http.StatusForbidden, "step_up_required")
 }
 
 func TestAuditSearchRejectsMalformedFilters(t *testing.T) {
