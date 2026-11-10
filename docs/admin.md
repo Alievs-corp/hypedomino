@@ -78,7 +78,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Content gate reports (`docs/launch-content-gate.md` 4.4); C is running a report | VC | VC | VC | V | V |
 | Dashboards and aggregate exports (section 10, A-1) | V | V | V | V | V |
 | Analytics events with analytics id (D-24) | V | | | | V |
-| Audit log (section 7) | V | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
+| Audit log (section 7) | V, S: export | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
 | Admin accounts and roles (5.18) | VCER, S: grant `super_admin` | | | | |
 
 - A change set is published only by an account that holds P on every object in it.
@@ -535,7 +535,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `time` | Server UTC |
 | `actor` | Admin account and the roles it used |
 | `environment` | `staging` or `production` |
-| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, a section 4 control or a section 6.2 action |
+| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, a section 4 control or a section 6.2 action |
 | `object` | Type and id; for player actions the account id |
 | `before`, `after` | Field values of the affected record; secrets (promo plaintext, tokens) never |
 | `reason` | Text; mandatory for every `S` action of 2.3, every section 4 and 6.2 action and every rollback |
@@ -601,6 +601,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
 | `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
 | `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
@@ -639,6 +640,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/config/rating/rollback` `{"version"}` | P on ranked seasons and S: rollback on snapshots | Publishes the content of an earlier `rating` snapshot as the next version, under the same checks |
 | `GET /admin/ranked/seasons` | V on ranked seasons | `server_time`, `next_start` (the end of the last season, or null) and every season in start order with its `state` (`scheduled`, `live`, `ending`, `closed`) |
 | `GET /admin/config/quick-messages`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on game strings | The `quick_messages` catalog `{"keys"}`: published only when every key is `quick.<slug>`, listed once and approved in every game language (`docs/localization.md` 5.7, #152) |
+| `GET /admin/config/moderation`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on moderation config | The `moderation` snapshot `{"words","reserved"}`: word lists `any`, `az`, `en`, `tr`, `ru` of `{entry, match}` with match `substring` or `word`, and reserved names; the config version is the list version (`docs/localization.md` 5.3, #60) |
 | `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections), `shop_rotation` (id `daily` or `weekly`, end at the next period start) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
 | `POST /admin/ranked/seasons` `{"id", "start", "end", "no_rewards", "reason"}` | C on ranked seasons | Schedules a season (Ranked seasons note); 201 with the season |
 | `PATCH /admin/ranked/seasons/{id}` `{"start", "end", "no_rewards", "reason"}` | E on ranked seasons | Reschedules a season that has not started |
@@ -759,7 +761,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.
