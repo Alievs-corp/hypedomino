@@ -2,7 +2,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { MatchmakingConfig } from "@/matchmaking/config";
 import { Rollback } from "../Rollback";
@@ -47,7 +46,7 @@ export default async function MatchmakingPage() {
             {history.body.versions.map((version, index) => (
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
-                <td className="whitespace-nowrap py-2 pr-4">{utcLabel(version.published_at)}</td>
+                <td className="whitespace-nowrap py-2 pr-4">{t.when(version.published_at)}</td>
                 <td className="py-2 pr-4 font-mono">{JSON.stringify(version.catalog)}</td>
                 {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackMatchmaking} />}</td>}
               </tr>

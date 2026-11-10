@@ -12,6 +12,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
@@ -70,6 +71,7 @@ type Config struct {
 	Promo           promo.Config
 	PromoKey        string
 	Risk            risk.Config
+	Economy         economy.Config
 	Integrity       integrity.NonceConfig
 	AppAttest       integrity.AppAttestConfig
 	AppAttestRoot   string
@@ -109,6 +111,7 @@ func DefaultConfig() Config {
 		Promo:           promo.DefaultConfig(),
 		Rarities:        cosmetics.DefaultRarities(),
 		Risk:            risk.DefaultConfig(),
+		Economy:         economy.DefaultConfig(),
 		Integrity:       integrity.NonceConfig{TTL: 5 * time.Minute},
 		IntegrityPolicy: integrity.Policy{IntegrityFailureAction: integrity.ActionFlag, IntegrityFailureWeight: 20, DeviceRiskAction: integrity.DeviceRiskFlag, DeviceRiskWeight: 5, MinDeviceLevel: integrity.DeviceLevelDevice},
 		PlayIntegrity:   integrity.PlayIntegrityConfig{TokenMaxAge: 2 * time.Minute},
@@ -355,6 +358,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	if err := config.Risk.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT, HD_REFUND_WEIGHT, HD_REPLAY_REJECT_* and HD_MAC_FAILURE_*: %w", err))
 	}
+	config.Economy.FarmWeight = config.Risk.CollusionWeight
+	r.economy(&config.Economy)
 	if err := config.Purchase.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_REFUNDS_BEFORE_PURCHASE_BLOCK and HD_REFUND_WINDOW_DAYS: %w", err))
 	}
@@ -469,6 +474,16 @@ func (r *envReader) integrity(config *Config) {
 	r.duration("HD_PLAY_INTEGRITY_MAX_AGE", &config.PlayIntegrity.TokenMaxAge)
 	if len(config.PlayIntegrity.CertificateDigests) > 0 && config.Play.ServiceAccountFile == "" {
 		r.errs = append(r.errs, errors.New("HD_PLAY_CERT_DIGESTS: needs HD_PLAY_PACKAGE and HD_PLAY_SERVICE_ACCOUNT"))
+	}
+}
+
+func (r *envReader) economy(config *economy.Config) {
+	r.integer("HD_SINK_RATIO_ALERT_LOW_PERCENT", &config.SinkRatioLowPercent)
+	r.integer("HD_SINK_RATIO_ALERT_HIGH_PERCENT", &config.SinkRatioHighPercent)
+	r.integer("HD_ACCOUNT_DAILY_EARN_ALERT_COINS", &config.AccountDailyEarnAlertCoins)
+	r.integer("HD_BALANCE_MEDIAN_ALERT_COINS", &config.BalanceMedianAlertCoins)
+	if err := config.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_SINK_RATIO_ALERT_*, HD_ACCOUNT_DAILY_EARN_ALERT_COINS and HD_BALANCE_MEDIAN_ALERT_COINS: %w", err))
 	}
 }
 

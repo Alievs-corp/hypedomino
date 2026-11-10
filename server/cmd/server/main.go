@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
@@ -106,6 +107,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if err != nil {
 		return nil, nil, fmt.Errorf("HD_DATABASE_URL: %w", err)
 	}
+	a.Expose(db.Gauges(pool))
 	var nonces idtoken.NonceStore
 	if client != nil {
 		nonces = auth.NewRedisNonces(client, config.Cluster.KeyPrefix)
@@ -242,6 +244,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	wave := risk.NewWave(pool, config.Risk, logger)
 	wave.OnShadowban(ratings.HideFromBoards)
 	go wave.Run(ctx, config.SeasonPoll, time.Now)
+	go economy.NewMonitor(pool, config.Economy, logger).Run(ctx, config.SeasonPoll, time.Now)
 	ratings.SetRewards(engine)
 	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
