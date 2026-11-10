@@ -238,10 +238,13 @@ namespace HypeDomino.Tests.EditMode
             var snapshot = new MatchSnapshot();
             snapshot.TryRead(bytes);
 
-            Assert.That(() =>
+            TestDelegate step = () =>
             {
                 if (!snapshot.TryRead(bytes)) throw new System.InvalidOperationException();
-            }, Is.Not.AllocatingGCMemory());
+            };
+            step();
+
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
     }
 }
