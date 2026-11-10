@@ -22,14 +22,6 @@ namespace HypeDomino.UI.Localization
             public Entry[] entries;
         }
 
-        static readonly Dictionary<string, string[]> Chains = new()
-        {
-            ["az"] = new[] { "az", "tr", "en" },
-            ["tr"] = new[] { "tr", "en" },
-            ["ru"] = new[] { "ru", "en" },
-            ["en"] = new[] { "en" },
-        };
-
         readonly Dictionary<string, Entry> entries = new();
 
         BuiltinStrings(File file)
@@ -42,22 +34,11 @@ namespace HypeDomino.UI.Localization
 
         public static BuiltinStrings Parse(string json) => new(JsonUtility.FromJson<File>(json));
 
-        public bool TryGet(string key, string language, out string text)
+        public string Value(string key, string language)
         {
-            text = null;
-            if (!entries.TryGetValue(key, out var entry) || !Chains.TryGetValue(language, out var chain))
-            {
-                return false;
-            }
-            foreach (var step in chain)
-            {
-                text = ValueIn(entry, step);
-                if (!string.IsNullOrEmpty(text))
-                {
-                    return true;
-                }
-            }
-            return false;
+            if (!entries.TryGetValue(key, out var entry)) return null;
+            var text = ValueIn(entry, language);
+            return string.IsNullOrEmpty(text) ? null : text;
         }
 
         static string ValueIn(Entry entry, string language) => language switch
@@ -65,7 +46,8 @@ namespace HypeDomino.UI.Localization
             "az" => entry.az,
             "tr" => entry.tr,
             "ru" => entry.ru,
-            _ => entry.en,
+            "en" => entry.en,
+            _ => null,
         };
     }
 }
