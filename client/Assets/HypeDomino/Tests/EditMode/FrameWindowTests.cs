@@ -1,5 +1,6 @@
 using HypeDomino.Core.Diagnostics;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools.Constraints;
 using Is = UnityEngine.TestTools.Constraints.Is;
 
@@ -57,6 +58,19 @@ namespace HypeDomino.Tests.EditMode
             {
                 for (var i = 0; i < 1000; i++) window.Add(i, OnTime, 0, 1);
             }, Is.Not.AllocatingGCMemory());
+        }
+
+        [Test]
+        public void WorkTimeIgnoresTheWaitInsideCpuFrameTime()
+        {
+            var idleFrame = new FrameTiming { cpuFrameTime = 16.66, cpuMainThreadFrameTime = 4.2, cpuRenderThreadFrameTime = 5.05, gpuFrameTime = 3.1 };
+            Assert.AreEqual(5.05, FrameWindow.WorkMs(idleFrame));
+
+            var gpuBoundFrame = new FrameTiming { cpuFrameTime = 16.66, cpuMainThreadFrameTime = 4.2, cpuRenderThreadFrameTime = 5.05, gpuFrameTime = 12.5 };
+            Assert.AreEqual(12.5, FrameWindow.WorkMs(gpuBoundFrame));
+
+            var mainThreadBoundFrame = new FrameTiming { cpuFrameTime = 20.0, cpuMainThreadFrameTime = 13.0, cpuRenderThreadFrameTime = 5.05, gpuFrameTime = 3.1 };
+            Assert.AreEqual(13.0, FrameWindow.WorkMs(mainThreadBoundFrame));
         }
     }
 }

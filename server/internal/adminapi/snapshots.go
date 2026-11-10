@@ -117,6 +117,10 @@ func (h *Handler) domainCatalog(domain string) func(http.ResponseWriter, *http.R
 }
 
 func (h *Handler) publishDomain(domain func() configDomain) func(http.ResponseWriter, *http.Request, principal) {
+	return h.publishNoted(func(changeNote) configDomain { return domain() })
+}
+
+func (h *Handler) publishNoted(domain func(note changeNote) configDomain) func(http.ResponseWriter, *http.Request, principal) {
 	return func(w http.ResponseWriter, r *http.Request, p principal) {
 		var request publishCatalogRequest
 		if !decodeUpTo(w, r, &request, MaxCatalogBytes) {
@@ -126,7 +130,7 @@ func (h *Handler) publishDomain(domain func() configDomain) func(http.ResponseWr
 			h.refuse(w, fmt.Errorf("%w: catalog", errMalformed))
 			return
 		}
-		version, published, err := h.replaceSnapshot(r.Context(), p, domain(), "publish", request.Catalog, request.changeNote, nil)
+		version, published, err := h.replaceSnapshot(r.Context(), p, domain(request.changeNote), "publish", request.Catalog, request.changeNote, nil)
 		if err != nil {
 			h.refuse(w, err)
 			return

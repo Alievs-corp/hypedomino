@@ -149,3 +149,31 @@ func TestARollbackRestoresEarlierContentAsNewRevisionsAndKeepsLaterItems(t *test
 		t.Fatalf("the rollback is not a valid publish: %v", err)
 	}
 }
+
+func TestAddedListsOnlyTheItemsTheNextManifestIntroduces(t *testing.T) {
+	m := exampleManifest(t)
+	added, err := Added(BuiltinManifest(), m)
+	if err != nil || !slices.Contains(added, "avatar.comet_fox") || slices.Contains(added, "avatar.starter") {
+		t.Fatalf("added %v %v", added, err)
+	}
+	if added, err := Added(m, next(m)); err != nil || len(added) != 0 {
+		t.Fatalf("nothing new %v %v", added, err)
+	}
+}
+
+func TestDisableSwitchesOffOneItemAndLeavesTheRest(t *testing.T) {
+	m := exampleManifest(t)
+	disabled, err := m.Disable("avatar.comet_fox")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fox := itemFields(t, disabled, "avatar.comet_fox"); fox["availability"] != Disabled || revision(fox) != revision(itemFields(t, m, "avatar.comet_fox")) {
+		t.Fatalf("disabled %v", fox)
+	}
+	if itemFields(t, m, "avatar.comet_fox")["availability"] == Disabled || itemFields(t, disabled, "avatar.starter")["availability"] != Live {
+		t.Fatal("the switch-off reached the source manifest or another item")
+	}
+	if _, err := m.Disable("avatar.nobody"); !errors.Is(err, ErrUnknownItem) {
+		t.Fatalf("unknown item %v", err)
+	}
+}

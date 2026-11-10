@@ -2,7 +2,6 @@ package adminapi_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -47,25 +46,11 @@ func catalog(offers ...map[string]any) map[string]any {
 
 func (a *api) publishShopItems() {
 	a.t.Helper()
-	raw, err := os.ReadFile("../../../docs/cosmetics/examples/catalog.json")
-	if err != nil {
-		a.t.Fatal(err)
+	sources := []any{}
+	for _, offer := range []string{"offer.avatar_comet_fox", "offer.starter", "offer.weekend_pack"} {
+		sources = append(sources, map[string]any{"type": "shop", "ref": offer})
 	}
-	var manifest map[string]any
-	if err := json.Unmarshal(raw, &manifest); err != nil {
-		a.t.Fatal(err)
-	}
-	for _, item := range manifest["items"].([]any) {
-		if entry := item.(map[string]any); entry["id"] == "avatar.comet_fox" {
-			entry["sources"] = append(entry["sources"].([]any), map[string]any{"type": "shop", "ref": "offer.weekend_pack"})
-		}
-	}
-	if raw, err = json.Marshal(manifest); err != nil {
-		a.t.Fatal(err)
-	}
-	if _, err := snapshot.Publish(context.Background(), a.pool, cosmetics.Domain, raw); err != nil {
-		a.t.Fatal(err)
-	}
+	a.publishItems(map[string]map[string]any{"avatar.comet_fox": {"sources": sources}})
 }
 
 func (a *api) featuredAt(at time.Time) []string {

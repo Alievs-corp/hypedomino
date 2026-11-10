@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 const Domain = "cosmetics"
 
-var ErrSuccessor = errors.New("cosmetics: manifest cannot follow the previous one")
+var (
+	ErrSuccessor   = errors.New("cosmetics: manifest cannot follow the previous one")
+	ErrUnknownItem = errors.New("cosmetics: no such item in the manifest")
+)
 
 type Manifest struct {
 	SchemaVersion   int               `json:"schemaVersion"`
@@ -134,4 +138,39 @@ func Restore(current, target Manifest) (Manifest, error) {
 		restored.Items = append(restored.Items, raw)
 	}
 	return restored, nil
+}
+
+func Added(previous, next Manifest) ([]string, error) {
+	_, before, err := previous.published()
+	if err != nil {
+		return nil, err
+	}
+	items, _, err := next.published()
+	if err != nil {
+		return nil, err
+	}
+	var added []string
+	for _, item := range items {
+		if _, existed := before[item.id]; !existed {
+			added = append(added, item.id)
+		}
+	}
+	return added, nil
+}
+
+func (m Manifest) Disable(id string) (Manifest, error) {
+	items, _, err := m.published()
+	if err != nil {
+		return Manifest{}, err
+	}
+	disabled := Manifest{SchemaVersion: m.SchemaVersion, ManifestVersion: m.ManifestVersion, Items: slices.Clone(m.Items)}
+	for i, item := range items {
+		if item.id != id {
+			continue
+		}
+		item.fields["availability"] = Disabled
+		disabled.Items[i], err = json.Marshal(item.fields)
+		return disabled, err
+	}
+	return Manifest{}, fmt.Errorf("%w: %q", ErrUnknownItem, id)
 }

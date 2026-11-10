@@ -353,7 +353,7 @@ function SeasonFields({ config, season, published, state, onChange, onRemove }: 
         </div>
         <XpTable curve={season.curve} />
       </fieldset>
-      <Levels config={config} season={season} published={published} frozen={frozen} onChange={onChange} />
+      <Levels config={config} season={season} published={published} frozen={frozen} itemsFrozen={state === "ended"} onChange={onChange} />
       <Issues keys={seasonIssues(config, season)} />
     </section>
   );
@@ -388,7 +388,7 @@ function XpTable({ curve }: { curve: Curve }) {
   );
 }
 
-function Levels({ config, season, published, frozen, onChange }: { config: PassConfig; season: Season; published: Season | undefined; frozen: boolean; onChange: (season: Season) => void }) {
+function Levels({ config, season, published, frozen, itemsFrozen, onChange }: { config: PassConfig; season: Season; published: Season | undefined; frozen: boolean; itemsFrozen: boolean; onChange: (season: Season) => void }) {
   const t = useTranslator();
   const levels = Array.from({ length: Math.max(0, season.curve.levels) }, (_, index) => index + 1);
   const edit = (track: Track, level: number, change: { amount?: number; cosmetics?: string[] }) => onChange(withLevel(season, track, level, change, published));
@@ -420,13 +420,13 @@ function Levels({ config, season, published, frozen, onChange }: { config: PassC
                   <CellNumber value={season.free[level]?.coins} disabled={frozen} onChange={(amount) => edit("free", level, { amount })} label={`${t("pass.free_coins")} ${level}`} />
                 </td>
                 <td className="py-1 pr-3">
-                  <CellIds key={`free-${level}`} ids={season.free[level]?.cosmetics ?? []} disabled={frozen} onChange={(cosmetics) => edit("free", level, { cosmetics })} label={`${t("pass.free_cosmetics")} ${level}`} />
+                  <CellIds key={`free-${level}`} ids={season.free[level]?.cosmetics ?? []} disabled={itemsFrozen} onChange={(cosmetics) => edit("free", level, { cosmetics })} label={`${t("pass.free_cosmetics")} ${level}`} />
                 </td>
                 <td className="py-1 pr-3">
                   <CellNumber value={season.premium[level]?.crystals} disabled={frozen} onChange={(amount) => edit("premium", level, { amount })} label={`${t("pass.premium_crystals")} ${level}`} />
                 </td>
                 <td className="py-1 pr-3">
-                  <CellIds key={`premium-${level}`} ids={season.premium[level]?.cosmetics ?? []} disabled={frozen} onChange={(cosmetics) => edit("premium", level, { cosmetics })} label={`${t("pass.premium_cosmetics")} ${level}`} />
+                  <CellIds key={`premium-${level}`} ids={season.premium[level]?.cosmetics ?? []} disabled={itemsFrozen} onChange={(cosmetics) => edit("premium", level, { cosmetics })} label={`${t("pass.premium_cosmetics")} ${level}`} />
                 </td>
               </tr>
             ))}
