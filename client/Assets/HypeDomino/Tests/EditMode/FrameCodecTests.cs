@@ -120,11 +120,14 @@ namespace HypeDomino.Tests.EditMode
             var bytes = File.ReadAllBytes(Path.Combine(FramesFolder, "match_view.bin"));
             FrameReader.TryRead(bytes, out _);
 
-            Assert.That(() =>
+            TestDelegate step = () =>
             {
                 FrameReader.TryRead(bytes, out var frame);
                 if (frame.Payload != Envelope.PayloadOneofCase.MatchView) throw new InvalidOperationException();
-            }, Is.Not.AllocatingGCMemory());
+            };
+            step();
+
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
 
         [Test]
@@ -134,11 +137,14 @@ namespace HypeDomino.Tests.EditMode
             var intent = new PlaceTileIntent { Tile = new Tile { Low = 3, High = 5 }, End = BoardEnd.Left };
             writer.Write(new FrameHeader(1, 1, 0, 42), Envelope.PayloadOneofCase.PlaceTileIntent, intent);
 
-            Assert.That(() =>
+            TestDelegate step = () =>
             {
                 intent.Tile.High = 6;
                 writer.Write(new FrameHeader(1, 2, 0, 42), Envelope.PayloadOneofCase.PlaceTileIntent, intent);
-            }, Is.Not.AllocatingGCMemory());
+            };
+            step();
+
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
     }
 }

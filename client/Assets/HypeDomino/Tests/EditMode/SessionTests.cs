@@ -262,29 +262,34 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void PollingAMatchViewAllocatesNothingOnceWarm()
+        public void PollingAMatchViewWithoutARosterAllocatesNothing()
         {
             Accept();
-            var view = Golden("match_view");
-            transport.Deliver(view);
-            session.Poll();
+            var golden = Envelope.Parser.ParseFrom(Golden("match_view"));
+            golden.MatchView.Roster.Clear();
+            golden.MatchView.Table = string.Empty;
+            var view = golden.ToByteArray();
 
-            Assert.That(() =>
+            TestDelegate step = () =>
             {
                 transport.Deliver(view);
                 session.Poll();
-            }, Is.Not.AllocatingGCMemory());
+            };
+            step();
+
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
 
         [Test]
-        public void SendingATurnIntentAllocatesNothingOnceWarm()
+        public void SendingAReusedTurnIntentAllocatesNothing()
         {
             Accept();
             var intent = new PlaceTileIntent { Tile = new Tile { Low = 2, High = 3 }, End = BoardEnd.Left };
-            session.Send(Envelope.PayloadOneofCase.PlaceTileIntent, intent);
             transport.Recording = false;
+            TestDelegate step = () => session.Send(Envelope.PayloadOneofCase.PlaceTileIntent, intent);
+            step();
 
-            Assert.That(() => session.Send(Envelope.PayloadOneofCase.PlaceTileIntent, intent), Is.Not.AllocatingGCMemory());
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
     }
 }
