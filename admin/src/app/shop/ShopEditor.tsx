@@ -35,7 +35,6 @@ import {
   type RotationRules,
   type ShopCatalog,
 } from "@/shop/catalog";
-import { utcLabel } from "@/audit/query";
 import { publishCatalog, type PublishResult } from "./actions";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
@@ -174,7 +173,7 @@ function RotationRow({
   return (
     <fieldset className="flex flex-col gap-2 rounded-md border border-surface p-3">
       <legend className="text-sm text-text-secondary">
-        {t(rotation.period === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")} · {utcLabel(rotation.start)}
+        {t(rotation.period === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")} · {t.when(rotation.start)}
       </legend>
       <div className="flex flex-wrap gap-3">
         {candidates.map((id) => (

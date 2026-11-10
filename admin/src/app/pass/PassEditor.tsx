@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { utcLabel } from "@/audit/query";
 import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
@@ -77,7 +76,7 @@ export function PassEditor({ initialConfig, published, version, serverTime, canP
   return (
     <div className="flex flex-col gap-8">
       <p className="text-sm text-text-muted">
-        {t("pass.version")}: {version} · {t("pass.server_time")}: {utcLabel(serverTime)}
+        {t("pass.version")}: {version} · {t("pass.server_time")}: {t.when(serverTime)}
       </p>
       <Settings config={config} onChange={change} />
       <section className="flex flex-col gap-3">
@@ -86,7 +85,7 @@ export function PassEditor({ initialConfig, published, version, serverTime, canP
           <select aria-label={t("pass.seasons")} value={selected} onChange={(event) => setSelected(event.target.value)} className={fieldClass}>
             {config.seasons.map((candidate) => (
               <option key={candidate.id} value={candidate.id}>
-                {candidate.id} · {t(stateLabel[stateOf(candidate)])} · {utcLabel(candidate.start)} → {utcLabel(candidate.end)}
+                {candidate.id} · {t(stateLabel[stateOf(candidate)])} · {t.when(candidate.start)} → {t.when(candidate.end)}
               </option>
             ))}
           </select>

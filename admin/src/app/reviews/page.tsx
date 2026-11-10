@@ -3,7 +3,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { evidenceSummary, signalWeight, type Review } from "@/reviews/reviews";
@@ -48,13 +47,13 @@ function ReviewEntry({ review, clientId, t }: { review: Review; clientId: string
           {t("reviews.cause")}: <span className="font-mono">{review.cause}</span>
         </span>
         <span>
-          {t("reviews.opened_at")}: {utcLabel(review.opened_at)}
+          {t("reviews.opened_at")}: {t.when(review.opened_at)}
         </span>
         <span>
           {t("reviews.total_weight")}: {signalWeight(review.signals)}
         </span>
         <span>
-          {t("reviews.shadowban")}: {review.shadowbanned_at ? utcLabel(review.shadowbanned_at) : t("reviews.no_shadowban")}
+          {t("reviews.shadowban")}: {review.shadowbanned_at ? t.when(review.shadowbanned_at) : t("reviews.no_shadowban")}
         </span>
       </div>
       <table>
@@ -71,7 +70,7 @@ function ReviewEntry({ review, clientId, t }: { review: Review; clientId: string
             <tr key={`${signal.kind}-${signal.at}`} className="border-t border-surface align-top">
               <td className="py-1 pr-4 font-mono">{signal.kind}</td>
               <td className="py-1 pr-4">{signal.weight}</td>
-              <td className="py-1 pr-4 whitespace-nowrap">{utcLabel(signal.at)}</td>
+              <td className="py-1 pr-4 whitespace-nowrap">{t.when(signal.at)}</td>
               <td className="py-1 pr-4">{evidenceSummary(signal.evidence)}</td>
             </tr>
           ))}

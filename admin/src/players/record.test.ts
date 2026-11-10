@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { banActive, muteActive, playerApiPath, playerSearch, playersApiPath, searchQuery, signedAmount, validAdjustment, type PlayerAccount } from "./record.ts";
+import { banActive, muteActive, playerApiPath, playerSearch, playersApiPath, searchQuery, validAdjustment, type PlayerAccount } from "./record.ts";
 
 test("the search query is the first trimmed q value", () => {
   assert.equal(searchQuery({ q: "  ayla " }), "ayla");
@@ -29,12 +29,6 @@ test("a mute counts only until its end", () => {
   assert.equal(muteActive(account, now), false);
   assert.equal(muteActive({ ...account, muted_until: "2026-11-05T10:00:00Z" }, now), true);
   assert.equal(muteActive({ ...account, muted_until: "2026-11-04T09:00:00Z" }, now), false);
-});
-
-test("ledger amounts show their sign", () => {
-  assert.equal(signedAmount(50), "+50");
-  assert.equal(signedAmount(-20), "-20");
-  assert.equal(signedAmount(0), "0");
 });
 
 test("a coin adjustment is a whole, non-zero number of coins, credit or debit", () => {
