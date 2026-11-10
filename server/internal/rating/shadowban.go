@@ -32,6 +32,12 @@ func (s *Store) listable(ctx context.Context, entries []Entry) ([]Entry, error) 
 	return listed, nil
 }
 
+func (s *Store) shadowbanned(ctx context.Context, account string) (bool, error) {
+	var hidden bool
+	err := s.pool.QueryRow(ctx, `select exists (select 1 from accounts where id = $1 and shadowbanned_at is not null)`, account).Scan(&hidden)
+	return hidden, err
+}
+
 func contains(accounts []string, account string) bool {
 	for _, candidate := range accounts {
 		if candidate == account {

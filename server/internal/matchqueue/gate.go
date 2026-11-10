@@ -103,7 +103,7 @@ func RatedEntry(ratings *rating.Store) EntryFunc {
 		}
 		entry := matchmaking.Entry{Mmr: rated.Mmr, Rank: rated.Rank, Placed: rated.Placed}
 		if queue == matchmaking.QueueRanked {
-			entry.Avoid = rated.Avoid
+			entry.Avoid, entry.Shadowbanned = rated.Avoid, rated.Shadowbanned
 		}
 		return entry, nil
 	}
