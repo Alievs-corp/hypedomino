@@ -132,6 +132,10 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return missionSourcesArePublished(ctx, pool, raw)
 	case shop.Domain:
 		return chestPoolsArePublished(ctx, pool, raw)
+	case rating.Domain:
+		return ratingFitsPublishedPenalties(ctx, pool, raw)
+	case penalties.Domain:
+		return penaltiesFitPublishedRating(ctx, pool, raw)
 	case gamestrings.Domain:
 		localization, err := gamestrings.ParseLocalization(raw)
 		if err != nil {
@@ -219,4 +223,40 @@ func passFollowsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) e
 		return err
 	}
 	return pass.CheckFrozen(previous, next, time.Now())
+}
+
+func ratingFitsPublishedPenalties(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	next, err := rating.Parse(raw)
+	if err != nil {
+		return err
+	}
+	offenses := penalties.DefaultConfig()
+	_, published, err := snapshot.Latest(ctx, pool, penalties.Domain)
+	switch {
+	case err == nil:
+		if offenses, err = penalties.Parse(published); err != nil {
+			return err
+		}
+	case !errors.Is(err, snapshot.ErrNone):
+		return err
+	}
+	return next.CheckOffensePenalty(offenses.OffenseRatingPenalty)
+}
+
+func penaltiesFitPublishedRating(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	next, err := penalties.Parse(raw)
+	if err != nil {
+		return err
+	}
+	ranked := rating.Default()
+	_, published, err := snapshot.Latest(ctx, pool, rating.Domain)
+	switch {
+	case err == nil:
+		if ranked, err = rating.Parse(published); err != nil {
+			return err
+		}
+	case !errors.Is(err, snapshot.ErrNone):
+		return err
+	}
+	return ranked.CheckOffensePenalty(next.OffenseRatingPenalty)
 }
