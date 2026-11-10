@@ -74,11 +74,6 @@ export function olderPageHref(filter: AuditFilter, entries: readonly AuditEntry[
   return `/audit?${query}`;
 }
 
-export function utcLabel(instant: string): string {
-  const date = new Date(instant);
-  return Number.isNaN(date.getTime()) ? instant : `${date.toISOString().slice(0, 19).replace("T", " ")} UTC`;
-}
-
 export function beforeIdOf(params: SearchParams): string {
   const value = single(params.before_id);
   return /^[1-9]\d*$/.test(value) ? value : "";

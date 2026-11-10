@@ -3,7 +3,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { Notice } from "../players/Notice";
@@ -81,7 +80,7 @@ function TargetEntry({ target, clientId, t }: { target: ReportTarget; clientId: 
                   "-"
                 )}
               </td>
-              <td className="py-1 pr-4 whitespace-nowrap">{utcLabel(entry.updated_at)}</td>
+              <td className="py-1 pr-4 whitespace-nowrap">{t.when(entry.updated_at)}</td>
             </tr>
           ))}
         </tbody>
