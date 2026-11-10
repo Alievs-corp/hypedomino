@@ -150,5 +150,5 @@ func (h *Handler) grantsStayListed(ctx context.Context, tx pgx.Tx, items *cosmet
 	if err != nil {
 		return err
 	}
-	return catalog.CheckChestPools(items)
+	return catalog.CheckSources(items)
 }

@@ -21,7 +21,7 @@ import (
 
 const (
 	Topic             = "purchases"
-	SourceFirst       = "first_purchase"
+	SourceFirst       = shop.SourceFirstPurchase
 	RecordPending     = "pending"
 	RecordGranted     = "granted"
 	RecordRefunded    = "refunded"
