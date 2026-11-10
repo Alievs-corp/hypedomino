@@ -35,7 +35,7 @@ func (h *Handler) passConfig(w http.ResponseWriter, r *http.Request, p principal
 	reply(w, http.StatusOK, passConfigView{catalogView: viewCatalog(version, raw), Rules: passRulesView{ServerTime: h.now().UTC()}})
 }
 
-func (h *Handler) passDomain(rollback bool) configDomain {
+func (h *Handler) passDomain(rollback, noted bool) configDomain {
 	return configDomain{name: pass.Domain, object: rbac.PassSeasons,
 		prepare: func(ctx context.Context, tx pgx.Tx, before, after []byte) ([]byte, error) {
 			kept, err := keepStartedSeasons(before, after, h.now(), rollback)
@@ -46,21 +46,42 @@ func (h *Handler) passDomain(rollback bool) configDomain {
 			if err != nil {
 				return nil, err
 			}
-			if before != nil {
-				published, err := pass.Parse(before)
-				if err != nil {
-					return nil, err
-				}
-				if err := pass.CheckFrozen(published, next, h.now()); err != nil {
-					return nil, err
-				}
+			items, err := cosmetics.Published(ctx, tx)
+			if err != nil {
+				return nil, err
 			}
-			return kept, trackSourcesListed(ctx, tx, next)
+			if err := h.frozenSeasonsKept(before, next, items, noted); err != nil {
+				return nil, err
+			}
+			return kept, trackSourcesIn(items, next)
 		},
 		accept: func(_, after []byte) error {
 			_, err := pass.Parse(after)
 			return err
 		},
+	}
+}
+
+func (h *Handler) frozenSeasonsKept(before []byte, next *pass.Snapshot, items *cosmetics.Catalog, noted bool) error {
+	if before == nil {
+		return nil
+	}
+	published, err := pass.Parse(before)
+	if err != nil {
+		return err
+	}
+	replaced, err := pass.CheckFrozen(published, next, h.now(), disabledItemReplaces(items))
+	if err == nil && replaced && !noted {
+		return errReasonRequired
+	}
+	return err
+}
+
+func disabledItemReplaces(items *cosmetics.Catalog) pass.Replaces {
+	return func(disabled, replacement string) bool {
+		old, known := items.Item(disabled)
+		next, found := items.Item(replacement)
+		return known && found && old.Availability == cosmetics.Disabled && next.Availability == cosmetics.Live && next.Type == old.Type && next.Rarity == old.Rarity
 	}
 }
 
@@ -90,14 +111,6 @@ func keepStartedSeasons(before, after []byte, now time.Time, rollback bool) ([]b
 		return after, nil
 	}
 	return json.Marshal(next)
-}
-
-func trackSourcesListed(ctx context.Context, tx pgx.Tx, config *pass.Snapshot) error {
-	items, err := cosmetics.Published(ctx, tx)
-	if err != nil {
-		return err
-	}
-	return trackSourcesIn(items, config)
 }
 
 func trackSourcesIn(items *cosmetics.Catalog, config *pass.Snapshot) error {

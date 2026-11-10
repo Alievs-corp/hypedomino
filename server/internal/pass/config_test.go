@@ -135,9 +135,47 @@ func TestARunningSeasonKeepsItsLevelsCurveAndBundles(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			next := example(t)
 			c.change(next)
-			err := CheckFrozen(example(t), next, running)
+			_, err := CheckFrozen(example(t), next, running, nil)
 			if errors.Is(err, ErrFrozen) != c.frozen {
 				t.Fatalf("CheckFrozen() = %v", err)
+			}
+		})
+	}
+}
+
+func TestARunningSeasonOnlyReplacesAnItemTheRuleAllows(t *testing.T) {
+	running := example(t).Seasons[0].Start.Add(time.Hour)
+	replaces := func(disabled, replacement string) bool {
+		return disabled == "emoji.s1_wave" && replacement == "emoji.s1_cheer"
+	}
+	swap := func(revision int, coins int64, item string) func(*Snapshot) {
+		return func(s *Snapshot) {
+			bundle := s.Seasons[0].Free[10]
+			bundle.Revision, bundle.Coins, bundle.Cosmetics = bundle.Revision+revision, coins, []string{item}
+			s.Seasons[0].Free[10] = bundle
+		}
+	}
+	cases := []struct {
+		name     string
+		change   func(*Snapshot)
+		replaces Replaces
+		replaced bool
+		frozen   bool
+	}{
+		{"allowed replacement", swap(1, 0, "emoji.s1_cheer"), replaces, true, false},
+		{"no rule", swap(1, 0, "emoji.s1_cheer"), nil, false, true},
+		{"item the rule refuses", swap(1, 0, "emoji.other"), replaces, false, true},
+		{"revision kept", swap(0, 0, "emoji.s1_cheer"), replaces, false, true},
+		{"coins added with the swap", swap(1, 10, "emoji.s1_cheer"), replaces, false, true},
+		{"unchanged", func(*Snapshot) {}, replaces, false, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			next := example(t)
+			c.change(next)
+			replaced, err := CheckFrozen(example(t), next, running, c.replaces)
+			if replaced != c.replaced || errors.Is(err, ErrFrozen) != c.frozen {
+				t.Fatalf("CheckFrozen() = %v, %v", replaced, err)
 			}
 		})
 	}
@@ -147,7 +185,7 @@ func TestASeasonThatHasNotStartedMayChange(t *testing.T) {
 	published := example(t)
 	next := example(t)
 	next.Seasons[0].Curve.XpMax = 900
-	if err := CheckFrozen(published, next, published.Seasons[0].Start.Add(-time.Hour)); err != nil {
+	if _, err := CheckFrozen(published, next, published.Seasons[0].Start.Add(-time.Hour), nil); err != nil {
 		t.Fatal(err)
 	}
 }

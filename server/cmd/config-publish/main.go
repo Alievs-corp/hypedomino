@@ -222,7 +222,8 @@ func passFollowsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) e
 	if err != nil {
 		return err
 	}
-	return pass.CheckFrozen(previous, next, time.Now())
+	_, err = pass.CheckFrozen(previous, next, time.Now(), nil)
+	return err
 }
 
 func ratingFitsPublishedPenalties(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {

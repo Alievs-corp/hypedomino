@@ -571,7 +571,7 @@ export const en = {
   "pass.add_empty": "Add empty season",
   "pass.clone_hint": "The clone takes the next id, the curve and every coin and crystal reward with new bundle ids. Cosmetics are left out: each item must list the new season's level as its source first.",
   "pass.empty_hint": "An empty season gets an empty premium bundle for every level to fill.",
-  "pass.frozen_hint": "This season has started: its curve and level rewards are frozen, and only the end may change while it runs.",
+  "pass.frozen_hint": "This season has started: its curve and level rewards are frozen. While it runs, only the end may change, and a disabled item may be replaced by a live item of the same type and rarity, with a reason.",
   "pass.remove_season": "Remove this new season",
   "pass.remove_planned": "Remove this planned season",
   "pass.curve": "XP curve",

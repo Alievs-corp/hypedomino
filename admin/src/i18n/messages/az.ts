@@ -566,7 +566,7 @@ export const az: Messages = {
   "pass.add_empty": "Boş mövsüm əlavə et",
   "pass.clone_hint": "Klon növbəti id-ni, əyrini və bütün coin və kristal mükafatlarını yeni bundle id-ləri ilə götürür. Kosmetiklər köçürülmür: hər item əvvəlcə yeni mövsümün səviyyəsini mənbə kimi göstərməlidir.",
   "pass.empty_hint": "Boş mövsümdə hər səviyyə üçün doldurulacaq boş premium bundle yaranır.",
-  "pass.frozen_hint": "Bu mövsüm başlayıb: əyrisi və səviyyə mükafatları dondurulub, gedərkən yalnız sonu dəyişə bilər.",
+  "pass.frozen_hint": "Bu mövsüm başlayıb: əyrisi və səviyyə mükafatları dondurulub. Gedərkən yalnız sonu dəyişə bilər, disabled item isə səbəb yazılmaqla eyni növ və nadirlikdə live item ilə əvəz oluna bilər.",
   "pass.remove_season": "Bu yeni mövsümü sil",
   "pass.remove_planned": "Bu planlanmış mövsümü sil",
   "pass.curve": "XP əyrisi",
