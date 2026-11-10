@@ -64,6 +64,24 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 `UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
 
+## Sign-in
+
+`Net/Auth/AuthSession` is the client side of `POST /auth/nonce`, `/auth/signin`, `/auth/refresh` and `/auth/logout` (`server/internal/auth`). It is plain C# behind three seams:
+- `IIdentityProvider` is the native Google or Apple sign-in. It gets the nonce to put in the ID token: the server nonce for Google, its lowercase SHA-256 hex for Apple. It answers a token, `Cancelled` or `Failed`.
+- `IAuthTransport` posts JSON and answers the status and body; status 0 means no response.
+- `ISecureStore` is the platform secure storage (Keystore, Keychain; `docs/privacy.md` P-1). It holds only the refresh token (`auth.refreshToken`) and a random device id made once (`auth.deviceId`), never a hardware identifier.
+
+`SignIn` gets a nonce, asks the provider for an ID token and sends it with the raw nonce and the device id. `Resume` is the silent sign-in at later starts: it refreshes the stored token with the same device id. The access token, the request key and the account id stay in memory only.
+
+Outcomes:
+- `SignedIn`, with `NewAccount` set on the first sign-in so the profile setup can follow.
+- `Cancelled` when the player closes the account picker, `ProviderFailed` when the SDK fails.
+- `Offline`, `Unavailable` (5xx or an unreadable reply) and `RateLimited` (429). A refresh that fails this way keeps the stored token.
+- `Rejected` for a refused sign-in, `Banned`, `Deleted` and `DeletionPending` with `DeleteAt`. A refresh refused this way forgets the stored token; a refused refresh token answers `SignInRequired`.
+- `Busy` while another call runs, `Unsupported` when the platform has no such provider.
+
+`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows. The native Google Sign-In and Sign in with Apple plugins, the Keystore and Keychain store and the HTTP transport are not built yet.
+
 ## Graphics levels
 
 `UI/Graphics` holds the device class rule and `GraphicsQuality`: Auto or a chosen level, the highest level the device tier allows, its effect level and render scale (`docs/performance.md` 1.1). Values come from `TokenGraphics`. `Game/GraphicsBoot` runs before the first scene: it classes the device, reads the saved choice, sets the render scale on the URP asset outside the editor and logs one `Graphics tier=... level=...` line. `Game/GraphicsProbe` is the first-match probe: the match scene adds it, and while the choice is Auto and the probe is not settled it measures work time and hands the p95 to `GraphicsBoot.SettleProbe`, which saves the drops with the app version and logs one `GraphicsProbe ...` line. `Game/ThermalWatch` starts with it on Android 10 and later: a `PowerManager` thermal status listener feeds `GraphicsQuality.UpdateHeat` every frame, and each level change logs one `Graphics level=... heat=...` line. `FrameRatePolicy` holds the frame rate (`docs/performance.md` 1.2): the rates offered for the level in use and the display, Auto or the chosen rate, the menu cap and the battery saver. `GraphicsBoot` sets `Application.targetFrameRate` to its `Target` and logs one `Graphics targetFps=...` line per change; the match scene calls `FrameRate.SetInMatch`, and `Game/PowerSaveWatch` reads the Android system saver at start and on focus. The `GraphicsQualityTests` and `FrameRatePolicyTests` EditMode tests cover the class rule on the matrix devices, the choice rules and the frame rate rules.
