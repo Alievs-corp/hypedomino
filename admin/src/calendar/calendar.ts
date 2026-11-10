@@ -1,6 +1,6 @@
 import type { MessageKey } from "@/i18n/translate";
 
-export type CalendarKind = "ranked_season" | "pass_season" | "shop_offer" | "promo_campaign";
+export type CalendarKind = "ranked_season" | "pass_season" | "shop_offer" | "shop_rotation" | "promo_campaign";
 
 export type CalendarEntry = { kind: CalendarKind; id: string; start: string; end: string | null };
 
@@ -10,6 +10,7 @@ export const calendarKinds: Readonly<Record<CalendarKind, { labelKey: MessageKey
   ranked_season: { labelKey: "calendar.ranked_season", href: "/ranked" },
   pass_season: { labelKey: "calendar.pass_season", href: "/pass" },
   shop_offer: { labelKey: "calendar.shop_offer", href: "/shop" },
+  shop_rotation: { labelKey: "calendar.shop_rotation", href: "/shop" },
   promo_campaign: { labelKey: "calendar.promo_campaign", href: "/promo" },
 };
 
