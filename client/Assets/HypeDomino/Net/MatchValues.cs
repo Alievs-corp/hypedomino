@@ -45,14 +45,18 @@ namespace HypeDomino.Net
         public readonly Controller Controller;
         public readonly uint LoadingProgress;
         public readonly bool Ready;
+        public readonly bool Disconnected;
+        public readonly uint ConsecutiveTimeouts;
 
-        public SeatState(Seat seat, uint handSize, Controller controller, uint loadingProgress, bool ready)
+        public SeatState(Seat seat, uint handSize, Controller controller, uint loadingProgress, bool ready, bool disconnected, uint consecutiveTimeouts)
         {
             Seat = seat;
             HandSize = handSize;
             Controller = controller;
             LoadingProgress = loadingProgress;
             Ready = ready;
+            Disconnected = disconnected;
+            ConsecutiveTimeouts = consecutiveTimeouts;
         }
     }
 

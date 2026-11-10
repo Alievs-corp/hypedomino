@@ -313,6 +313,55 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ReconnectingShowsOnlyAfterTheSessionWasOnline()
+        {
+            connection.Start(ServerUri);
+            Assert.AreEqual(NetworkNotice.None, ConnectionNotices.Network(connection, now));
+            Socket.State = TransportState.Open;
+            Socket.Deliver(AcceptedHello());
+            connection.Tick();
+            Assert.AreEqual(NetworkNotice.None, ConnectionNotices.Network(connection, now));
+
+            DropAndTick();
+            Assert.AreEqual(NetworkNotice.Reconnecting, ConnectionNotices.Network(connection, now));
+            connection.Tick();
+            Assert.AreEqual(ConnectionState.Connecting, connection.State);
+            Assert.AreEqual(NetworkNotice.Reconnecting, ConnectionNotices.Network(connection, now));
+
+            connection.Stop();
+            connection.Start(ServerUri);
+            Assert.AreEqual(NetworkNotice.None, ConnectionNotices.Network(connection, now));
+        }
+
+        [TestCase(0.25, NetworkNotice.None)]
+        [TestCase(0.35, NetworkNotice.Weak)]
+        public void ASlowRoundTripIsWeak(double ackAfterSeconds, NetworkNotice expected)
+        {
+            GoOnline();
+            now = 20;
+            connection.Send(Envelope.PayloadOneofCase.PassIntent, new PassIntent());
+            now += ackAfterSeconds;
+            Socket.Deliver(PlayingView(1));
+            connection.Tick();
+
+            Assert.AreEqual(expected, ConnectionNotices.Network(connection, now));
+        }
+
+        [TestCase(1.9, NetworkNotice.None)]
+        [TestCase(2.1, NetworkNotice.Weak)]
+        public void AnIntentWaitingTooLongIsWeak(double waitedSeconds, NetworkNotice expected)
+        {
+            GoOnline();
+            now = 20;
+            connection.Send(Envelope.PayloadOneofCase.PassIntent, new PassIntent());
+
+            now += waitedSeconds;
+            connection.Tick();
+
+            Assert.AreEqual(expected, ConnectionNotices.Network(connection, now));
+        }
+
+        [Test]
         public void TickingAQuietConnectionAllocatesNothing()
         {
             GoOnline();
