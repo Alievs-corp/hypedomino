@@ -105,7 +105,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	}
 	a.publishShopItems()
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), weekendPack(opens, closes)), "reason": "weekend sale"})
-	if status != http.StatusOK || body["config_version"] != float64(1) || len(body["catalog"].(map[string]any)["offers"].([]any)) != 2 {
+	if status != http.StatusOK || body["config_version"] != float64(2) || len(body["catalog"].(map[string]any)["offers"].([]any)) != 2 {
 		t.Fatalf("publish %d %v", status, body)
 	}
 	for at, want := range map[time.Time]int{start: 0, opens: 1, closes.Add(-time.Second): 1, closes: 0} {
@@ -119,7 +119,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 		t.Fatalf("removed offer %d %v", status, body)
 	}
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), weekendPack(opens, opens.Add(time.Hour)))})
-	if status != http.StatusOK || body["config_version"] != float64(2) {
+	if status != http.StatusOK || body["config_version"] != float64(3) {
 		t.Fatalf("shortened %d %v", status, body)
 	}
 	if got := a.featuredAt(opens.Add(90 * time.Minute)); len(got) != 0 {
@@ -127,13 +127,13 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	}
 
 	a.now = start.Add(11 * time.Minute)
-	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 1, "reason": "sale extended"})
+	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "sale extended"})
 	expect(t, status, body, http.StatusForbidden, "step_up_required")
 	a.call("POST", "/admin/session/step-up", liveOps, map[string]string{"id_token": "leyla", "nonce": "nonce"})
 	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 7, "reason": "sale extended"})
 	expect(t, status, body, http.StatusNotFound, "not_found")
-	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 1, "reason": "sale extended"})
-	if status != http.StatusOK || body["config_version"] != float64(3) {
+	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "sale extended"})
+	if status != http.StatusOK || body["config_version"] != float64(4) {
 		t.Fatalf("rollback %d %v", status, body)
 	}
 	if got := a.featuredAt(opens.Add(90 * time.Minute)); len(got) != 1 {
@@ -142,7 +142,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 
 	status, body = a.call("GET", "/admin/config/shop/history", liveOps, nil)
 	versions := body["versions"].([]any)
-	if status != http.StatusOK || len(versions) != 3 || versions[0].(map[string]any)["config_version"] != float64(3) {
+	if status != http.StatusOK || len(versions) != 3 || versions[0].(map[string]any)["config_version"] != float64(4) {
 		t.Fatalf("history %d %v", status, body)
 	}
 	entries := a.entries(liveOps, "object_type=shop_offers&object_id=shop")
@@ -150,7 +150,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 		t.Fatalf("entries %v", entries)
 	}
 	rollback, shortened, first := entries[0], entries[1], entries[2]
-	if rollback["action"] != "rollback" || rollback["reason"] != "sale extended" || rollback["config_version"] != float64(3) || rollback["before"] == nil {
+	if rollback["action"] != "rollback" || rollback["reason"] != "sale extended" || rollback["config_version"] != float64(4) || rollback["before"] == nil {
 		t.Fatalf("rollback entry %v", rollback)
 	}
 	if shortened["action"] != "publish" || first["before"] != nil || first["reason"] != "weekend sale" {
