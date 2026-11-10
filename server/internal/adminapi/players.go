@@ -56,6 +56,19 @@ func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p princip
 	reply(w, http.StatusOK, record)
 }
 
+type suspiciousMatchesView struct {
+	Matches []playerrecord.SuspiciousMatch `json:"matches"`
+}
+
+func (h *Handler) suspiciousMatches(w http.ResponseWriter, r *http.Request, p principal) {
+	matches, err := playerrecord.LoadSuspiciousMatches(r.Context(), h.pool)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, suspiciousMatchesView{Matches: matches})
+}
+
 func passStanding(ctx context.Context, tx pgx.Tx, record *playerrecord.Record, now time.Time) error {
 	if record.Profile == nil {
 		return nil
