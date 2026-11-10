@@ -12,7 +12,7 @@ namespace HypeDomino.Net
         Closed,
     }
 
-    public sealed class WebSocketTransport : IFrameTransport, IDisposable
+    public sealed class WebSocketTransport : ISocketTransport
     {
         public const int MaxReceivedFrameBytes = 16 * 1024;
         public const int ReceiveSlots = 8;

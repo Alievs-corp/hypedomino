@@ -51,7 +51,7 @@ namespace HypeDomino.Tests.EditMode
         public void CreateSession()
         {
             transport = new FakeTransport();
-            session = new Session(transport);
+            session = new Session();
         }
 
         static byte[] Golden(string name) =>
@@ -68,7 +68,7 @@ namespace HypeDomino.Tests.EditMode
 
         void Accept(ulong acked = 0)
         {
-            session.Hello(new ClientHello());
+            session.Hello(transport, new ClientHello());
             transport.Deliver(AcceptedHello(acked, Nonce));
             session.Poll();
             Assert.IsTrue(session.Accepted);
@@ -79,7 +79,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var golden = Golden("client_hello");
 
-            session.Hello(Envelope.Parser.ParseFrom(golden).ClientHello);
+            session.Hello(transport, Envelope.Parser.ParseFrom(golden).ClientHello);
 
             CollectionAssert.AreEqual(golden, transport.Sent[0]);
         }
@@ -90,7 +90,7 @@ namespace HypeDomino.Tests.EditMode
             Accept(41);
             var golden = Golden("client_hello_resume");
 
-            session.Hello(Envelope.Parser.ParseFrom(golden).ClientHello);
+            session.Hello(transport, Envelope.Parser.ParseFrom(golden).ClientHello);
 
             CollectionAssert.AreEqual(golden, transport.Sent[1]);
             Assert.IsFalse(session.Accepted);
@@ -131,6 +131,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AResumedSessionNumbersAfterTheServersAckedSequence()
         {
+            session.Hello(transport, new ClientHello());
             transport.Deliver(Golden("server_hello_in_match"));
             session.Poll();
 
@@ -145,6 +146,7 @@ namespace HypeDomino.Tests.EditMode
         {
             ServerHello received = null;
             session.HelloReceived += hello => received = hello;
+            session.Hello(transport, new ClientHello());
             transport.Deliver(Golden("server_hello_update_required"));
 
             session.Poll();

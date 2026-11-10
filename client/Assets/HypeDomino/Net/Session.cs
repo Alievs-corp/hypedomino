@@ -9,11 +9,9 @@ namespace HypeDomino.Net
         public const uint ProtocolVersion = 1;
         public const int MaxSentFrameBytes = 8192;
 
-        readonly IFrameTransport transport;
         readonly FrameWriter writer = new(MaxSentFrameBytes);
+        IFrameTransport transport;
         ulong lastSentSequence;
-
-        public Session(IFrameTransport transport) => this.transport = transport;
 
         public MatchSnapshot View { get; } = new();
         public bool Accepted { get; private set; }
@@ -28,8 +26,9 @@ namespace HypeDomino.Net
         public event Action<EmojiShown> EmojiReceived;
         public event Action<QuickMessageShown> QuickMessageReceived;
 
-        public void Hello(ClientHello hello)
+        public void Hello(IFrameTransport transport, ClientHello hello)
         {
+            this.transport = transport;
             Accepted = false;
             Broken = false;
             SessionNonce = 0;
@@ -48,7 +47,7 @@ namespace HypeDomino.Net
 
         public void Poll()
         {
-            while (!Broken && transport.TryReceive(out var bytes))
+            while (!Broken && transport != null && transport.TryReceive(out var bytes))
             {
                 if (!FrameReader.TryRead(bytes, out var frame) || frame.Header.ProtocolVersion > ProtocolVersion)
                 {
