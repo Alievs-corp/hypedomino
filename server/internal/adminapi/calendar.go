@@ -19,6 +19,7 @@ const (
 	CalendarPassSeason   = "pass_season"
 	CalendarShopOffer    = "shop_offer"
 	CalendarPromo        = "promo_campaign"
+	CalendarRotation     = "shop_rotation"
 )
 
 type calendarEntry struct {
@@ -103,6 +104,7 @@ func (h *Handler) shopEntries(ctx context.Context) ([]calendarEntry, error) {
 			Section string      `json:"section"`
 			Window  shop.Window `json:"window"`
 		} `json:"offers"`
+		Rotations []shop.Rotation `json:"rotations"`
 	}
 	if err := h.publishedInto(ctx, shop.Domain, &published); err != nil {
 		return nil, err
@@ -112,6 +114,10 @@ func (h *Handler) shopEntries(ctx context.Context) ([]calendarEntry, error) {
 		if offer.Section == shop.SectionFeatured || offer.Section == shop.SectionEvent {
 			entries = append(entries, window(CalendarShopOffer, offer.ID, offer.Window.Start, offer.Window.End))
 		}
+	}
+	for _, rotation := range published.Rotations {
+		start, end := h.config.Shop.Period(rotation.Period, rotation.Start)
+		entries = append(entries, window(CalendarRotation, rotation.Period, start, end))
 	}
 	return entries, nil
 }

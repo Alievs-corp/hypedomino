@@ -42,7 +42,7 @@ export default async function CalendarPage() {
           </thead>
           <tbody>
             {calendar.body.entries.map((entry) => (
-              <tr key={`${entry.kind}:${entry.id}`} className={running(entry, now) ? "font-semibold" : "text-text-secondary"}>
+              <tr key={`${entry.kind}:${entry.id}:${entry.start}`} className={running(entry, now) ? "font-semibold" : "text-text-secondary"}>
                 <td className="py-1">{utcLabel(entry.start)}</td>
                 <td className="py-1">{entry.end ? utcLabel(entry.end) : t("calendar.open_ended")}</td>
                 <td className="py-1">{t(calendarKinds[entry.kind].labelKey)}</td>
