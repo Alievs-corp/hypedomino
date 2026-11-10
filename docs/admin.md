@@ -78,7 +78,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Content gate reports (`docs/launch-content-gate.md` 4.4); C is running a report | VC | VC | VC | V | V |
 | Dashboards and aggregate exports (section 10, A-1) | V | V | V | V | V |
 | Analytics events with analytics id (D-24) | V | | | | V |
-| Audit log (section 7) | V | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
+| Audit log (section 7) | V, S: export | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
 | Admin accounts and roles (5.18) | VCER, S: grant `super_admin` | | | | |
 
 - A change set is published only by an account that holds P on every object in it.
@@ -535,7 +535,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `time` | Server UTC |
 | `actor` | Admin account and the roles it used |
 | `environment` | `staging` or `production` |
-| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, a section 4 control or a section 6.2 action |
+| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, a section 4 control or a section 6.2 action |
 | `object` | Type and id; for player actions the account id |
 | `before`, `after` | Field values of the affected record; secrets (promo plaintext, tokens) never |
 | `reason` | Text; mandatory for every `S` action of 2.3, every section 4 and 6.2 action and every rollback |
@@ -601,6 +601,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
 | `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
 | `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
