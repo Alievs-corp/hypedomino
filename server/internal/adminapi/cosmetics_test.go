@@ -1,10 +1,12 @@
 package adminapi_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
@@ -116,4 +118,70 @@ func TestCosmeticsPublishKeepsTheSourcesOtherDomainsGrantFrom(t *testing.T) {
 	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "bundle.rank_season_1_gold") {
 		t.Fatalf("dropped source %d %v", status, body)
 	}
+}
+
+func (a *api) uploadedBy(email, itemID string) {
+	a.t.Helper()
+	account, err := a.accounts.ByEmail(context.Background(), email)
+	if err != nil {
+		a.t.Fatal(err)
+	}
+	_, err = a.pool.Exec(context.Background(), `insert into cosmetic_assets (id, item_id, slot, address, object_key, status, uploaded_by, created_at)
+		values (gen_random_uuid(), $1, 'static', $2, $2 || '/x.png', 'awaiting_file', $3, $4)`, itemID, "cosmetic/"+itemID+"/static", account.ID, start)
+	if err != nil {
+		a.t.Fatal(err)
+	}
+}
+
+func TestTheUploaderOfANewItemsArtCannotPublishItsReview(t *testing.T) {
+	a := newAPI(t)
+	content, root := a.signIn("ayla"), a.signIn("root")
+	a.uploadedBy("ayla@example.com", "avatar.fox")
+	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
+	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
+	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+
+	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "my own fox"})
+	expect(t, status, body, http.StatusForbidden, "own_upload")
+	status, body = a.call("PUT", "/admin/config/cosmetics", root, map[string]any{"catalog": catalog, "reason": "reviewed fox"})
+	expect(t, status, body, http.StatusOK, "")
+	published := body["catalog"].(map[string]any)
+	cosmeticItem(published, "avatar.fox")["rarityId"] = "epic"
+	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": published, "reason": "rarer fox"})
+	expect(t, status, body, http.StatusOK, "")
+}
+
+func TestLiveOpsSwitchesOffAnItemForAnIncident(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	content, liveOps := a.signIn("ayla"), a.signIn("leyla")
+	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
+	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
+	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox avatar"})
+	expect(t, status, body, http.StatusOK, "")
+
+	path := "/admin/cosmetics/items/avatar.fox/switch-off"
+	incident := map[string]any{"reason": "offensive art reported", "ref": "SEV2-17"}
+	status, body = a.call("POST", path, content, incident)
+	expect(t, status, body, http.StatusForbidden, "forbidden")
+	status, body = a.call("POST", path, liveOps, map[string]any{"reason": "offensive art reported"})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	status, body = a.call("POST", path, liveOps, map[string]any{"ref": "SEV2-17"})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("POST", "/admin/cosmetics/items/avatar.nobody/switch-off", liveOps, incident)
+	expect(t, status, body, http.StatusNotFound, "not_found")
+
+	status, body = a.call("POST", path, liveOps, incident)
+	expect(t, status, body, http.StatusOK, "")
+	if fox := cosmeticItem(body["catalog"].(map[string]any), "avatar.fox"); fox["availability"] != "disabled" || fox["revision"] != 2.0 {
+		t.Fatalf("switched off %v", fox)
+	}
+	entries := a.entries(a.signIn("root"), "object_type=cosmetic_items&action=retire")
+	if len(entries) != 1 || entries[0]["ref"] != "SEV2-17" || entries[0]["reason"] != "offensive art reported" {
+		t.Fatalf("audit %v", entries)
+	}
+	a.now = start.Add(15 * time.Minute)
+	status, body = a.call("POST", path, liveOps, incident)
+	expect(t, status, body, http.StatusForbidden, "step_up_required")
 }
