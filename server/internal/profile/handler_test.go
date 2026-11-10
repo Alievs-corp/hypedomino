@@ -64,7 +64,7 @@ func (f *fakeProfiles) SetNickname(_ context.Context, account, raw string, now t
 	if found {
 		p.RenamedAt = now
 	} else {
-		p = profile.Profile{Account: account, Level: 1}
+		p = profile.Profile{Account: account}
 	}
 	p.Nickname = display
 	f.profiles[account] = p
@@ -93,11 +93,12 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	profiles := &fakeProfiles{config: profile.DefaultConfig(), profiles: map[string]profile.Profile{}, taken: map[string]bool{}, now: start}
 	profiles.profiles["ben"] = profile.Profile{
-		Account: "ben", Nickname: "Ben", Level: 7, XP: 1200,
+		Account: "ben", Nickname: "Ben",
 		Loadout: profile.Loadout{Avatar: "avatar.comet_fox", Frame: "frame.gold", Character: "character.nar", Table: "table.classic", Emojis: []string{"emoji.wave"}},
 		Stats:   profile.Stats{Games: 10, Wins: 7, Losses: 3, Streak: 2, BestStreak: 4, Modes: map[string]profile.ModeStats{"1v1": {Games: 10, Wins: 7, Losses: 3}}},
 	}
 	handler := profile.NewHandler(fakeVerifier{}, profiles, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return profiles.now })
+	handler.SetStanding(fakeStanding)
 	mux := http.NewServeMux()
 	mux.Handle("/profile/", handler)
 	f := &fixture{t: t, server: httptest.NewServer(mux), profiles: profiles, handler: handler}
@@ -320,5 +321,44 @@ func TestThePublicProfileCarriesTheRankedAndMedalViewsWhenWired(t *testing.T) {
 	f.handler.SetMedals(func(context.Context, string) (any, error) { return nil, errors.New("down") })
 	if status, _ := f.call("GET", "/profile/ben", "access:ayla", ""); status != http.StatusInternalServerError {
 		t.Fatalf("failing medal showcase answered %d", status)
+	}
+}
+
+func fakeStanding(_ context.Context, account string, now time.Time) (int, int64, error) {
+	switch {
+	case now.IsZero():
+		return 0, 0, errors.New("no server time")
+	case account == "ben":
+		return 7, 1200, nil
+	case account == "stalled":
+		return 0, 0, errors.New("pass store down")
+	}
+	return 1, 0, nil
+}
+
+func TestLevelAndXpAreThePassStandingOfTheActiveSeason(t *testing.T) {
+	f := newFixture(t)
+	if status, body := f.call("GET", "/profile/me", "access:ben", ""); status != http.StatusOK || body["level"] != float64(7) || body["xp"] != float64(1200) {
+		t.Fatalf("own profile answered %d %v", status, body)
+	}
+	if status, body := f.call("PUT", "/profile/nickname", "access:ben", `{"nickname":"Benny"}`); status != http.StatusOK || body["level"] != float64(7) || body["xp"] != float64(1200) {
+		t.Fatalf("rename answered %d %v", status, body)
+	}
+	if status, body := f.call("GET", "/profile/ben", "access:ayla", ""); status != http.StatusOK || body["level"] != float64(7) || body["xp"] != nil {
+		t.Fatalf("public profile answered %d %v", status, body)
+	}
+	f.profiles.profiles["stalled"] = profile.Profile{Account: "stalled", Nickname: "Stalled"}
+	for _, path := range []string{"/profile/stalled", "/profile/me"} {
+		if status, body := f.call("GET", path, "access:stalled", ""); status != http.StatusInternalServerError || body["error"] != "internal" {
+			t.Fatalf("%s with a failing pass store answered %d %v", path, status, body)
+		}
+	}
+}
+
+func TestWithoutAPassStoreLevelIsOneWithZeroXp(t *testing.T) {
+	f := newFixture(t)
+	f.handler.SetStanding(nil)
+	if status, body := f.call("GET", "/profile/me", "access:ben", ""); status != http.StatusOK || body["level"] != float64(1) || body["xp"] != float64(0) {
+		t.Fatalf("own profile answered %d %v", status, body)
 	}
 }

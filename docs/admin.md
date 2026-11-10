@@ -408,7 +408,7 @@ Calendar (A-21). The calendar holds no data of its own: an entry exists because 
 | Promo code window | 5.11 | A-15 |
 | Scheduled change set activation | 5.17 | A-2, A-3 |
 
-Built so far (#146): the calendar reads ranked seasons, pass seasons from the published `pass` snapshot, featured and event offers from the published `shop` snapshot and promo campaigns, and lists the ones not yet ended; the panel is `/calendar`, each row linking to its screen. Rotation periods, live events, banners, push send times and scheduled change sets join it when they are built. Every role with view rights on live events sees it; an `analyst` also does, as it views every listed source, but sees promo campaigns only with view rights on promo codes.
+Built so far (#146): the calendar reads ranked seasons, pass seasons from the published `pass` snapshot, featured and event offers and daily and weekly rotation periods from the published `shop` snapshot, and promo campaigns, and lists the ones not yet ended; the panel is `/calendar`, each row linking to its screen. A rotation period runs from its start to the next period start (5.5); an unscheduled period that repeats the previous rotation has no entry of its own. Live events, banners, push send times and scheduled change sets join it when they are built. Every role with view rights on live events sees it; an `analyst` also does, as it views every listed source, but sees promo campaigns only with view rights on promo codes.
 
 The plan for the first 90 days after launch, entered this way, is `docs/live-ops-90-days.md`.
 
@@ -598,6 +598,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
 | `DELETE /admin/session` | signed in | Sign-out: revokes the session |
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
+| `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
@@ -636,7 +638,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/config/rating/rollback` `{"version"}` | P on ranked seasons and S: rollback on snapshots | Publishes the content of an earlier `rating` snapshot as the next version, under the same checks |
 | `GET /admin/ranked/seasons` | V on ranked seasons | `server_time`, `next_start` (the end of the last season, or null) and every season in start order with its `state` (`scheduled`, `live`, `ending`, `closed`) |
 | `GET /admin/config/quick-messages`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on game strings | The `quick_messages` catalog `{"keys"}`: published only when every key is `quick.<slug>`, listed once and approved in every game language (`docs/localization.md` 5.7, #152) |
-| `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
+| `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections), `shop_rotation` (id `daily` or `weekly`, end at the next period start) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
 | `POST /admin/ranked/seasons` `{"id", "start", "end", "no_rewards", "reason"}` | C on ranked seasons | Schedules a season (Ranked seasons note); 201 with the season |
 | `PATCH /admin/ranked/seasons/{id}` `{"start", "end", "no_rewards", "reason"}` | E on ranked seasons | Reschedules a season that has not started |
 | `POST /admin/ranked/seasons/{id}/extend` `{"end", "reason"}` | E on ranked seasons | Moves the end of the live season later |
@@ -729,7 +731,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ## 10. Screens and navigation
 
-The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow.
+The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price.
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|

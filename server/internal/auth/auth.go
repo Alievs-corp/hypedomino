@@ -40,6 +40,7 @@ type Connections interface {
 
 type Handler struct {
 	countryHeader string
+	deletion      Deletion
 	verifier      Verifier
 	accounts      Accounts
 	tokens        Tokens
@@ -125,6 +126,10 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a, created, err := h.accounts.SignIn(r.Context(), identity)
+	if errors.Is(err, account.ErrDeletionPending) {
+		reply(w, http.StatusConflict, deletionResponse{Error: "deletion_pending", DeleteAt: h.deleteAt(a)})
+		return
+	}
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -243,6 +248,10 @@ func classify(err error) (int, string) {
 		return http.StatusForbidden, "banned"
 	case errors.Is(err, account.ErrDeleted):
 		return http.StatusGone, "deleted"
+	case errors.Is(err, account.ErrUnknown):
+		return http.StatusNotFound, "account_unknown"
+	case errors.Is(err, account.ErrNoDeletionPending):
+		return http.StatusConflict, "no_deletion_pending"
 	}
 	return http.StatusInternalServerError, "internal"
 }

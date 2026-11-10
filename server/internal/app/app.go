@@ -51,6 +51,7 @@ type App struct {
 	localization atomic.Pointer[func() gateway.Strings]
 	admission    atomic.Pointer[func() gateway.Admission]
 	moves        *metrics.Histogram
+	responses    responseCounts
 	exposed      []io.WriterTo
 }
 
@@ -128,16 +129,16 @@ func (a *App) Rooms() *Rooms {
 
 func (a *App) Handler() http.Handler {
 	if a.limiter == nil {
-		return a.mux
+		return a.observed(a.mux)
 	}
 	limited := a.limiter.Wrap(a.mux)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return a.observed(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if a.relayed(r) {
 			a.mux.ServeHTTP(w, r)
 			return
 		}
 		limited.ServeHTTP(w, r)
-	})
+	}))
 }
 
 func (a *App) relayed(r *http.Request) bool {

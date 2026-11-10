@@ -1,6 +1,7 @@
 package adminapi
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
@@ -42,6 +44,9 @@ func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p princip
 		if record, err = playerrecord.Load(r.Context(), tx, r.PathValue("id"), slices.Contains(p.account.Roles, rbac.SuperAdmin)); err != nil {
 			return nil, err
 		}
+		if err = passStanding(r.Context(), tx, &record, now); err != nil {
+			return nil, err
+		}
 		return []audit.Entry{{Action: "view", Object: audit.Object{Type: rbac.Players, ID: record.Account.ID}}}, nil
 	})
 	if err != nil {
@@ -62,6 +67,24 @@ func (h *Handler) suspiciousMatches(w http.ResponseWriter, r *http.Request, p pr
 		return
 	}
 	reply(w, http.StatusOK, suspiciousMatchesView{Matches: matches})
+}
+
+func passStanding(ctx context.Context, tx pgx.Tx, record *playerrecord.Record, now time.Time) error {
+	if record.Profile == nil {
+		return nil
+	}
+	_, raw, err := latestSnapshot(ctx, tx, pass.Domain)
+	if err != nil {
+		return err
+	}
+	config := pass.Default()
+	if raw != nil {
+		if config, err = pass.Parse(raw); err != nil {
+			return err
+		}
+	}
+	record.Profile.Level, record.Profile.XP, err = config.Standing(ctx, tx, record.Account.ID, now)
+	return err
 }
 
 func (h *Handler) matchReplay(w http.ResponseWriter, r *http.Request, p principal) {

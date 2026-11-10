@@ -25,36 +25,39 @@ namespace Hypedomino.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChloeXBlZG9taW5vL3YxL3F1ZXVlLnByb3RvEg1oeXBlZG9taW5vLnYxGhlo",
-            "eXBlZG9taW5vL3YxL21hdGNoLnByb3RvImoKD0pvaW5RdWV1ZUludGVudBIn",
-            "CgRtb2RlGAEgASgOMhMuaHlwZWRvbWluby52MS5Nb2RlUgRtb2RlEi4KBXF1",
-            "ZXVlGAIgASgOMhguaHlwZWRvbWluby52MS5RdWV1ZUtpbmRSBXF1ZXVlIhIK",
-            "EExlYXZlUXVldWVJbnRlbnQi3AIKClF1ZXVlU3RhdGUSMgoGc3RhdHVzGAEg",
-            "ASgOMhouaHlwZWRvbWluby52MS5RdWV1ZVN0YXR1c1IGc3RhdHVzEicKBG1v",
-            "ZGUYAiABKA4yEy5oeXBlZG9taW5vLnYxLk1vZGVSBG1vZGUSLgoFcXVldWUY",
-            "AyABKA4yGC5oeXBlZG9taW5vLnYxLlF1ZXVlS2luZFIFcXVldWUSJAoOam9p",
-            "bmVkX3VuaXhfbXMYBCABKARSDGpvaW5lZFVuaXhNcxIxChVzZWFyY2hfc3Rh",
-            "cnRzX3VuaXhfbXMYBSABKARSEnNlYXJjaFN0YXJ0c1VuaXhNcxI1CgdyZWZ1",
-            "c2FsGAYgASgOMhsuaHlwZWRvbWluby52MS5RdWV1ZVJlZnVzYWxSB3JlZnVz",
-            "YWwSMQoVcmVmdXNlZF91bnRpbF91bml4X21zGAcgASgEUhJyZWZ1c2VkVW50",
-            "aWxVbml4TXMqVQoJUXVldWVLaW5kEhoKFlFVRVVFX0tJTkRfVU5TUEVDSUZJ",
-            "RUQQABIVChFRVUVVRV9LSU5EX1JBTktFRBABEhUKEVFVRVVFX0tJTkRfQ0FT",
-            "VUFMEAIqlgEKC1F1ZXVlU3RhdHVzEhwKGFFVRVVFX1NUQVRVU19VTlNQRUNJ",
-            "RklFRBAAEhoKFlFVRVVFX1NUQVRVU19TRUFSQ0hJTkcQARIVChFRVUVVRV9T",
-            "VEFUVVNfTEVGVBACEhwKGFFVRVVFX1NUQVRVU19NQVRDSF9GT1VORBADEhgK",
-            "FFFVRVVFX1NUQVRVU19SRUZVU0VEEAQqrAEKDFF1ZXVlUmVmdXNhbBIdChlR",
-            "VUVVRV9SRUZVU0FMX1VOU1BFQ0lGSUVEEAASGgoWUVVFVUVfUkVGVVNBTF9J",
-            "Tl9NQVRDSBABEiEKHVFVRVVFX1JFRlVTQUxfTUFUQ0hNQUtJTkdfQkFOEAIS",
-            "HwobUVVFVUVfUkVGVVNBTF9SQU5LRURfQ0xPU0VEEAMSHQoZUVVFVUVfUkVG",
-            "VVNBTF9VTkFWQUlMQUJMRRAEQsUBChFjb20uaHlwZWRvbWluby52MUIKUXVl",
-            "dWVQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8v",
-            "c2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3Yx",
-            "ogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBl",
-            "ZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3Rv",
-            "Mw=="));
+            "eXBlZG9taW5vL3YxL2hlbGxvLnByb3RvGhloeXBlZG9taW5vL3YxL21hdGNo",
+            "LnByb3RvIqcBCg9Kb2luUXVldWVJbnRlbnQSJwoEbW9kZRgBIAEoDjITLmh5",
+            "cGVkb21pbm8udjEuTW9kZVIEbW9kZRIuCgVxdWV1ZRgCIAEoDjIYLmh5cGVk",
+            "b21pbm8udjEuUXVldWVLaW5kUgVxdWV1ZRI7CglpbnRlZ3JpdHkYAyABKAsy",
+            "HS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mUglpbnRlZ3JpdHkiEgoQ",
+            "TGVhdmVRdWV1ZUludGVudCLcAgoKUXVldWVTdGF0ZRIyCgZzdGF0dXMYASAB",
+            "KA4yGi5oeXBlZG9taW5vLnYxLlF1ZXVlU3RhdHVzUgZzdGF0dXMSJwoEbW9k",
+            "ZRgCIAEoDjITLmh5cGVkb21pbm8udjEuTW9kZVIEbW9kZRIuCgVxdWV1ZRgD",
+            "IAEoDjIYLmh5cGVkb21pbm8udjEuUXVldWVLaW5kUgVxdWV1ZRIkCg5qb2lu",
+            "ZWRfdW5peF9tcxgEIAEoBFIMam9pbmVkVW5peE1zEjEKFXNlYXJjaF9zdGFy",
+            "dHNfdW5peF9tcxgFIAEoBFISc2VhcmNoU3RhcnRzVW5peE1zEjUKB3JlZnVz",
+            "YWwYBiABKA4yGy5oeXBlZG9taW5vLnYxLlF1ZXVlUmVmdXNhbFIHcmVmdXNh",
+            "bBIxChVyZWZ1c2VkX3VudGlsX3VuaXhfbXMYByABKARSEnJlZnVzZWRVbnRp",
+            "bFVuaXhNcypVCglRdWV1ZUtpbmQSGgoWUVVFVUVfS0lORF9VTlNQRUNJRklF",
+            "RBAAEhUKEVFVRVVFX0tJTkRfUkFOS0VEEAESFQoRUVVFVUVfS0lORF9DQVNV",
+            "QUwQAiqWAQoLUXVldWVTdGF0dXMSHAoYUVVFVUVfU1RBVFVTX1VOU1BFQ0lG",
+            "SUVEEAASGgoWUVVFVUVfU1RBVFVTX1NFQVJDSElORxABEhUKEVFVRVVFX1NU",
+            "QVRVU19MRUZUEAISHAoYUVVFVUVfU1RBVFVTX01BVENIX0ZPVU5EEAMSGAoU",
+            "UVVFVUVfU1RBVFVTX1JFRlVTRUQQBCr5AQoMUXVldWVSZWZ1c2FsEh0KGVFV",
+            "RVVFX1JFRlVTQUxfVU5TUEVDSUZJRUQQABIaChZRVUVVRV9SRUZVU0FMX0lO",
+            "X01BVENIEAESIQodUVVFVUVfUkVGVVNBTF9NQVRDSE1BS0lOR19CQU4QAhIf",
+            "ChtRVUVVRV9SRUZVU0FMX1JBTktFRF9DTE9TRUQQAxIdChlRVUVVRV9SRUZV",
+            "U0FMX1VOQVZBSUxBQkxFEAQSIgoeUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlf",
+            "RkFJTEVEEAUSJwojUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlfVU5BVkFJTEFC",
+            "TEUQBkLFAQoRY29tLmh5cGVkb21pbm8udjFCClF1ZXVlUHJvdG9QAVpPZ2l0",
+            "aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5h",
+            "bC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVk",
+            "b21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJN",
+            "ZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Hypedomino.V1.MatchReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Hypedomino.V1.HelloReflection.Descriptor, global::Hypedomino.V1.MatchReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.QueueKind), typeof(global::Hypedomino.V1.QueueStatus), typeof(global::Hypedomino.V1.QueueRefusal), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.JoinQueueIntent), global::Hypedomino.V1.JoinQueueIntent.Parser, new[]{ "Mode", "Queue" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.JoinQueueIntent), global::Hypedomino.V1.JoinQueueIntent.Parser, new[]{ "Mode", "Queue", "Integrity" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LeaveQueueIntent), global::Hypedomino.V1.LeaveQueueIntent.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.QueueState), global::Hypedomino.V1.QueueState.Parser, new[]{ "Status", "Mode", "Queue", "JoinedUnixMs", "SearchStartsUnixMs", "Refusal", "RefusedUntilUnixMs" }, null, null, null, null)
           }));
@@ -83,6 +86,8 @@ namespace Hypedomino.V1 {
     [pbr::OriginalName("QUEUE_REFUSAL_MATCHMAKING_BAN")] MatchmakingBan = 2,
     [pbr::OriginalName("QUEUE_REFUSAL_RANKED_CLOSED")] RankedClosed = 3,
     [pbr::OriginalName("QUEUE_REFUSAL_UNAVAILABLE")] Unavailable = 4,
+    [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_FAILED")] IntegrityFailed = 5,
+    [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE")] IntegrityUnavailable = 6,
   }
 
   #endregion
@@ -125,6 +130,7 @@ namespace Hypedomino.V1 {
     public JoinQueueIntent(JoinQueueIntent other) : this() {
       mode_ = other.mode_;
       queue_ = other.queue_;
+      integrity_ = other.integrity_ != null ? other.integrity_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -158,6 +164,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "integrity" field.</summary>
+    public const int IntegrityFieldNumber = 3;
+    private global::Hypedomino.V1.IntegrityProof integrity_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.IntegrityProof Integrity {
+      get { return integrity_; }
+      set {
+        integrity_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -175,6 +193,7 @@ namespace Hypedomino.V1 {
       }
       if (Mode != other.Mode) return false;
       if (Queue != other.Queue) return false;
+      if (!object.Equals(Integrity, other.Integrity)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -184,6 +203,7 @@ namespace Hypedomino.V1 {
       int hash = 1;
       if (Mode != global::Hypedomino.V1.Mode.Unspecified) hash ^= Mode.GetHashCode();
       if (Queue != global::Hypedomino.V1.QueueKind.Unspecified) hash ^= Queue.GetHashCode();
+      if (integrity_ != null) hash ^= Integrity.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -210,6 +230,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(16);
         output.WriteEnum((int) Queue);
       }
+      if (integrity_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(Integrity);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -228,6 +252,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(16);
         output.WriteEnum((int) Queue);
       }
+      if (integrity_ != null) {
+        output.WriteRawTag(26);
+        output.WriteMessage(Integrity);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -243,6 +271,9 @@ namespace Hypedomino.V1 {
       }
       if (Queue != global::Hypedomino.V1.QueueKind.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Queue);
+      }
+      if (integrity_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Integrity);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -261,6 +292,12 @@ namespace Hypedomino.V1 {
       }
       if (other.Queue != global::Hypedomino.V1.QueueKind.Unspecified) {
         Queue = other.Queue;
+      }
+      if (other.integrity_ != null) {
+        if (integrity_ == null) {
+          Integrity = new global::Hypedomino.V1.IntegrityProof();
+        }
+        Integrity.MergeFrom(other.Integrity);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -289,6 +326,13 @@ namespace Hypedomino.V1 {
             Queue = (global::Hypedomino.V1.QueueKind) input.ReadEnum();
             break;
           }
+          case 26: {
+            if (integrity_ == null) {
+              Integrity = new global::Hypedomino.V1.IntegrityProof();
+            }
+            input.ReadMessage(Integrity);
+            break;
+          }
         }
       }
     #endif
@@ -314,6 +358,13 @@ namespace Hypedomino.V1 {
           }
           case 16: {
             Queue = (global::Hypedomino.V1.QueueKind) input.ReadEnum();
+            break;
+          }
+          case 26: {
+            if (integrity_ == null) {
+              Integrity = new global::Hypedomino.V1.IntegrityProof();
+            }
+            input.ReadMessage(Integrity);
             break;
           }
         }

@@ -2,11 +2,9 @@ import Link from "next/link";
 import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { dealtOrder, handTiles, replayApiPath, seatNames, teamScore, type MatchReplay, type ReplayHand } from "@/matches/replay";
-import { signedAmount } from "@/players/record";
 import { Notice } from "../../players/Notice";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +41,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </dd>
         <dt className="text-text-muted">{t("match.window")}</dt>
         <dd>
-          {utcLabel(match.started_at)} → {match.ended_at ? utcLabel(match.ended_at) : t("match.running")}
+          {t.when(match.started_at)} → {match.ended_at ? t.when(match.ended_at) : t("match.running")}
         </dd>
         <dt className="text-text-muted">{t("player.result")}</dt>
         <dd>{match.cancelled ? t("player.cancelled") : `${teamScore([match.score_a, match.score_b])}, ${t("match.winner")} ${match.winner_team ?? "-"}, ${match.hands_played} ${t("match.hands")}`}</dd>
@@ -132,7 +130,7 @@ function HandSection({ hand, names, seats, t }: { hand: ReplayHand; names: Map<s
               <td className="py-1 pr-4">{step.kind}</td>
               <td className="py-1 pr-4 font-mono">{step.tile ?? ""}</td>
               <td className="py-1 pr-4">{step.end ?? ""}</td>
-              <td className="py-1 pr-4">{step.points ? signedAmount(step.points) : ""}</td>
+              <td className="py-1 pr-4">{step.points ? t.signed(step.points) : ""}</td>
             </tr>
           ))}
         </tbody>
