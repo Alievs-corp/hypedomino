@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "HypeDomino.Core",
         "HypeDomino.UI",
+        "HypeDomino.Net",
         "HypeDomino.Game",
         "HypeDomino.Proto",
         "HypeDomino.Content",

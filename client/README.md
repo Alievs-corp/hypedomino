@@ -16,7 +16,7 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics |
 | `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | `Google.Protobuf.dll` only; output of `npm run proto:gen`, never edited |
-| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core, UI, Game, Proto and Content |
+| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core, Net, UI, Game, Proto and Content |
 | `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | References Core, UI and `UnityEngine.UI` |
 | `Assets/HypeDomino/Settings` | | URP asset, Universal Renderer, texture preset |
 | `Assets/HypeDomino/Scenes` | | `Boot.unity`, the first build scene |
@@ -68,6 +68,16 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 - `LeaveMatch` returns to the lobby only after the match is finished.
 
 The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the network wiring that feeds it are not built yet.
+
+## Network protocol
+
+`Net/ProtocolSession` is the client side of the `proto/README.md` protocol, without the socket. It is plain C#; the caller passes a monotonic clock in milliseconds.
+
+- **Sending.** `Hello` wraps the caller's `ClientHello` with `last_acked_sequence` and the same envelope sequence. `PlaceTile`, `Pass`, `Draw` and `EndTurn` take the next sequence. `Loading`, `Emoji`, `QuickMessage`, `JoinQueue` and `LeaveQueue` carry none. Every frame after the hello carries the `session_nonce` of the last accepted `ServerHello`. One `Envelope` is kept per intent and written into one reused buffer, so a warm intent allocates nothing. The returned segment is valid until the next call.
+- **Receiving.** `Receive` reads the envelope header with `FrameDecoder` and parses only the payload, then raises one event per payload type: the single entry point for server messages. An accepted `ServerHello` replaces the nonce and restarts the sequence from its `acked_sequence`; a `MatchView` moves the acknowledged sequence. A malformed frame returns false.
+- **Time.** The accepted hello sets `RoundTripMs` and the server clock offset from the midpoint of the round trip; `ServerNowMs` turns the local clock into server time for deadlines. After that, `RoundTripMs` is the time from a sequenced intent to the `MatchView` that acknowledges it.
+
+`ProtocolSessionTests` decode every golden frame of `proto/testdata/frames` and compare it with the generated parser, encode the intents byte for byte against the golden frames, and cover resume, the nonce, the clock and allocation-free encoding. The WebSocket, reconnect timing and the offline screens are not built yet.
 
 ## Shop and wallet
 
