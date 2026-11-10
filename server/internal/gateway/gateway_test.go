@@ -718,8 +718,15 @@ func TestTheHelloMayCarryAnIntegrityTokenLargerThanAnIntent(t *testing.T) {
 	}
 	c := h.dial()
 	c.send(withToken("ok", 3000))
-	if reply := c.recv().GetServerHello(); reply.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
+	reply := c.recv().GetServerHello()
+	if reply.GetStatus() != pb.HelloStatus_HELLO_STATUS_ACCEPTED {
 		t.Fatalf("hello with a token answered %v", reply)
+	}
+	c.nonce = reply.GetSessionNonce()
+	join := &pb.JoinQueueIntent{Mode: pb.Mode_MODE_1V1, Queue: pb.QueueKind_QUEUE_KIND_RANKED, Integrity: &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: strings.Repeat("t", 3000)}}}
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_JoinQueueIntent{JoinQueueIntent: join}}))
+	if state := c.recv().GetQueueState(); state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_REFUSED {
+		t.Fatalf("queue entry with a token answered %v", state)
 	}
 	c.sendBytes(make([]byte, 257))
 	c.expectClose(websocket.StatusMessageTooBig)
