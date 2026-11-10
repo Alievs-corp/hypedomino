@@ -7,7 +7,7 @@ namespace HypeDomino.UI.Screens
     [RequireComponent(typeof(Canvas), typeof(CanvasScaler))]
     public sealed class ScreenView : MonoBehaviour
     {
-        const float ReferenceShortSide = 1080f;
+        public const float ReferenceShortSide = 1080f;
 
         [SerializeField] CanvasGroup content;
         [SerializeField] Image scrim;

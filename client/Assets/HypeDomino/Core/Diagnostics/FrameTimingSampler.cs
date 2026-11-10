@@ -7,19 +7,26 @@ namespace HypeDomino.Core.Diagnostics
     public sealed class FrameTimingSampler : MonoBehaviour
     {
         const int WindowFrames = 1200;
+        const int LiveFrames = 60;
         const double MissedVsyncFactor = 1.5;
 
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
         FrameWindow window;
+        FrameWindow live;
         ProfilerRecorder gcAllocatedInFrame;
         ProfilerRecorder batchesCount;
         int collectionsAtWindowStart;
         bool skipReportFrame;
 
+        public FrameWindowReport Live { get; private set; }
+
+        public int LiveVersion { get; private set; }
+
         void Awake()
         {
             var frameRate = Application.targetFrameRate > 0 ? Application.targetFrameRate : HighestRefreshRate();
             window = new FrameWindow(WindowFrames, MissedVsyncFactor / frameRate);
+            live = new FrameWindow(LiveFrames, MissedVsyncFactor / frameRate);
             collectionsAtWindowStart = GC.CollectionCount(0);
         }
 
@@ -42,7 +49,15 @@ namespace HypeDomino.Core.Diagnostics
 
             var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
             skipReportFrame = false;
-            window.Add(FrameWindow.WorkMs(latestTiming[0]),Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
+            var workMs = FrameWindow.WorkMs(latestTiming[0]);
+            var batches = LastValue(batchesCount);
+            window.Add(workMs, Time.unscaledDeltaTime, gcBytes, batches);
+            live.Add(workMs, Time.unscaledDeltaTime, gcBytes, batches);
+            if (live.IsFull)
+            {
+                Live = live.Close();
+                LiveVersion++;
+            }
             if (!window.IsFull) return;
 
             Report(window.Close());
