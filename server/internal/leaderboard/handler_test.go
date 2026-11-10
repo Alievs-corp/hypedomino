@@ -56,6 +56,29 @@ func (f *fakeBoards) Around(_ context.Context, season string, mode rules.Mode, b
 	return []leaderboard.Row{{Position: 1, Account: "top"}, {Position: 2, Account: "second", Rank: rating.Rank{Index: 14, LP: 50}, Tier: "Gold"}, {Position: 3, Account: "third"}}, true, nil
 }
 
+func (f *fakeBoards) Among(_ context.Context, season string, mode rules.Mode, accounts []string) ([]leaderboard.Row, error) {
+	f.calls = append(f.calls, "among "+strings.Join(accounts, ","))
+	rows := []leaderboard.Row{}
+	for i, account := range []string{"top", "pal1", "pal2", "second", "pal3", "pal4"} {
+		if strings.Contains(","+strings.Join(accounts, ",")+",", ","+account+",") {
+			rows = append(rows, leaderboard.Row{Position: len(rows) + 1, Account: account, Wins: i})
+		}
+	}
+	return rows, nil
+}
+
+type fakeFriends struct{}
+
+func (fakeFriends) FriendIDs(_ context.Context, account string) ([]string, error) {
+	switch account {
+	case "second":
+		return []string{"pal1", "pal2", "pal3", "pal4", "unplaced"}, nil
+	case "broken":
+		return nil, errors.New("database down")
+	}
+	return []string{}, nil
+}
+
 type fakeSeasons struct{}
 
 func (fakeSeasons) SeasonAt(_ context.Context, at time.Time) (rating.Season, error) {
@@ -67,10 +90,40 @@ func (fakeSeasons) SeasonAt(_ context.Context, at time.Time) (rating.Season, err
 
 func (fakeSeasons) TopSize() int { return 1 }
 
+func TestTheFriendsBoardRanksTheViewerAmongTheirFriends(t *testing.T) {
+	boards := &fakeBoards{}
+	clock := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
+	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	call := func(access string) (int, map[string]any) {
+		t.Helper()
+		request := httptest.NewRequest(http.MethodGet, "/leaderboard/1v1?board=friends", nil)
+		request.Header.Set("Authorization", "Bearer "+access)
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		var body map[string]any
+		json.Unmarshal(recorder.Body.Bytes(), &body)
+		return recorder.Code, body
+	}
+	status, body := call("access:second")
+	if status != http.StatusOK || body["board"] != "friends" || len(body["top"].([]any)) != 1 || body["me"].(map[string]any)["position"] != float64(3) || len(body["around"].([]any)) != 5 {
+		t.Fatalf("friends view: %d %v", status, body)
+	}
+	if boards.calls[0] != "among pal1,pal2,pal3,pal4,unplaced,second" {
+		t.Fatalf("calls %v", boards.calls)
+	}
+	status, body = call("access:loner")
+	if status != http.StatusOK || body["me"] != nil || len(body["top"].([]any)) != 0 || len(body["around"].([]any)) != 0 {
+		t.Fatalf("unplaced viewer without friends: %d %v", status, body)
+	}
+	if status, body := call("access:broken"); status != http.StatusInternalServerError || body["error"] != "internal" {
+		t.Fatalf("friends store down: %d %v", status, body)
+	}
+}
+
 func TestTheHandlerServesTopAndTheViewersPlace(t *testing.T) {
 	boards := &fakeBoards{}
 	clock := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
-	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
 	call := func(access, path string) (int, map[string]any) {
 		t.Helper()
 		request := httptest.NewRequest(http.MethodGet, path, nil)
@@ -114,7 +167,7 @@ func TestTheHandlerServesTopAndTheViewersPlace(t *testing.T) {
 	if status, body := call("access:second", "/leaderboard/1v1"); status != http.StatusNotFound || body["error"] != "rating.season_unknown" {
 		t.Errorf("no season: %d %v", status, body)
 	}
-	disabled := leaderboard.NewHandler(fakeVerifier{}, nil, fakeSeasons{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	disabled := leaderboard.NewHandler(fakeVerifier{}, nil, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
 	request := httptest.NewRequest(http.MethodGet, "/leaderboard/1v1", nil)
 	request.Header.Set("Authorization", "Bearer access:second")
 	recorder := httptest.NewRecorder()
