@@ -192,6 +192,7 @@ func TestTwoQueuedClientsPlayARankedMatchThatIsArchivedOnceWithItsOutbox(t *test
 	if tickets, _, err := store.Tickets(ctx); err != nil || len(tickets) != 0 {
 		t.Fatalf("tickets left %+v, %v", tickets, err)
 	}
+	assertConsumersApplyTheMatchOnce(t, ctx, pool, id, clock.now)
 }
 
 func assertResults(t *testing.T, ctx context.Context, pool *pgxpool.Pool, id string) {
