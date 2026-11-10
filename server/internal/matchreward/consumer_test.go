@@ -12,8 +12,53 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
+
+func TestAPublishedConfigPaysTheNextMatchesUpToItsDailyCap(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	config := matchreward.Default()
+	config.Ranked1v1 = matchreward.Coins{Win: 50, Loss: 20}
+	config.DailyMatchCoinCap = 60
+	config.FirstWinBonusCoins = 7
+	raw, _ := json.Marshal(config)
+	version, err := snapshot.Publish(ctx, pool, matchreward.Domain, raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher := matchreward.NewWatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if _, err := watcher.Load(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var winner, loser string
+	for _, account := range []*string{&winner, &loser} {
+		if err := pool.QueryRow(ctx, `insert into accounts (created_at) values ($1) returning id`, start.Add(-time.Hour)).Scan(account); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i, id := range []string{"m1", "m2"} {
+		outcome := matchstore.Outcome{Match: id, Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: start.Add(time.Duration(i) * time.Minute), Players: []matchstore.PlayerOutcome{{Account: winner, Won: true}, {Account: loser}}}
+		payload, _ := json.Marshal(outcome)
+		if _, err := pool.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3)`, matchstore.TopicEconomy, "match:"+id, payload); err != nil {
+			t.Fatal(err)
+		}
+	}
+	relay := matchstore.NewRelay(matchstore.New(pool), matchreward.NewStore(pool, watcher, wallet.NewStore(pool)), matchstore.TopicEconomy, 0, nil)
+	if published, err := relay.Once(ctx); err != nil || published != 2 {
+		t.Fatalf("published %d, %v", published, err)
+	}
+	for account, want := range map[string]string{winner: "m1:match_reward:50 m1:first_win:7 m2:match_reward:10", loser: "m1:match_reward:20 m2:match_reward:20"} {
+		var got string
+		if err := pool.QueryRow(ctx, `select coalesce(string_agg(source_ref || ':' || reason || ':' || amount, ' ' order by id), '') from ledger_entries where account_id = $1 and config_version = $2`, account, version).Scan(&got); err != nil {
+			t.Fatal(err)
+		}
+		if got != want {
+			t.Fatalf("ledger %q, want %q", got, want)
+		}
+	}
+}
 
 func TestTheEconomyRelayPaysEveryPlayerOfAFinishedMatchOnce(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
