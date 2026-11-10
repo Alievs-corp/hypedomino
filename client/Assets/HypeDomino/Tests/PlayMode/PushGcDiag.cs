@@ -83,7 +83,41 @@ namespace HypeDomino.Tests.PlayMode
                 b = Bytes(); raw.gameObject.SetActive(false); raw.gameObject.SetActive(true); Note($"raw {at} goToggle={Bytes() - b}");
                 yield return null;
             }
+            yield return Toggle("noRaycast", false, false);
+            yield return Toggle("raycast", true, false);
+            yield return Toggle("nested", true, true);
             Assert.Fail(report.ToString());
+        }
+
+        IEnumerator Toggle(string label, bool raycast, bool nested)
+        {
+            var root = new GameObject(label, typeof(Canvas), typeof(GraphicRaycaster)).GetComponent<Canvas>();
+            root.renderMode = RenderMode.ScreenSpaceOverlay;
+            var holder = root.transform;
+            Canvas inner = null;
+            if (nested)
+            {
+                inner = new GameObject("Inner", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster)).GetComponent<Canvas>();
+                inner.transform.SetParent(root.transform, false);
+                holder = inner.transform;
+            }
+            for (var at = 0; at < 60; at++)
+            {
+                var image = new GameObject("I", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+                image.transform.SetParent(holder, false);
+                image.raycastTarget = raycast;
+            }
+            Canvas.ForceUpdateCanvases();
+            yield return null;
+            for (var at = 0; at < 3; at++)
+            {
+                var b = Bytes(); root.enabled = false; Canvas.ForceUpdateCanvases(); var off = Bytes() - b;
+                if (nested) Note($"{label} innerRoot={inner.isRootCanvas} innerEnabled={inner.isActiveAndEnabled} innerRootCanvas={inner.rootCanvas.name}");
+                yield return null;
+                b = Bytes(); root.enabled = true; Canvas.ForceUpdateCanvases(); var on = Bytes() - b;
+                Note($"{label} {at} off={off} on={on}");
+                yield return null;
+            }
         }
     }
 }
