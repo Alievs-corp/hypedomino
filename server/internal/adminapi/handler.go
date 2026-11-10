@@ -31,6 +31,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
@@ -213,6 +214,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/quick-messages", h.allowed(rbac.GameStrings, rbac.Publish, h.publishDomain(quickMessagesDomain)))
 	h.mux.HandleFunc("GET /admin/config/quick-messages/history", h.allowed(rbac.GameStrings, rbac.View, h.domainHistory(quickmessage.Domain)))
 	h.mux.HandleFunc("POST /admin/config/quick-messages/rollback", h.allowed(rbac.GameStrings, rbac.Publish, h.rollbackDomain(quickMessagesDomain)))
+	h.mux.HandleFunc("GET /admin/config/moderation", h.allowed(rbac.ModerationConfig, rbac.View, h.domainCatalog(profile.ModerationDomain)))
+	h.mux.HandleFunc("PUT /admin/config/moderation", h.allowed(rbac.ModerationConfig, rbac.Publish, h.publishDomain(moderationDomain)))
+	h.mux.HandleFunc("GET /admin/config/moderation/history", h.allowed(rbac.ModerationConfig, rbac.View, h.domainHistory(profile.ModerationDomain)))
+	h.mux.HandleFunc("POST /admin/config/moderation/rollback", h.allowed(rbac.ModerationConfig, rbac.Publish, h.rollbackDomain(moderationDomain)))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -525,7 +530,7 @@ func classify(err error) (int, string) {
 		errors.Is(err, dailylogin.ErrInvalidCalendar),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
 		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
-		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid), errors.Is(err, quickmessage.ErrInvalid), errors.Is(err, matchmaking.ErrInvalidConfig), errors.Is(err, penalties.ErrInvalidConfig),
+		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid), errors.Is(err, quickmessage.ErrInvalid), errors.Is(err, profile.ErrInvalidModeration), errors.Is(err, matchmaking.ErrInvalidConfig), errors.Is(err, penalties.ErrInvalidConfig),
 		errors.Is(err, cosmetics.ErrInvalid), errors.Is(err, cosmetics.ErrSchema), errors.Is(err, cosmetics.ErrSuccessor):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):

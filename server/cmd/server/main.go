@@ -128,6 +128,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signIn.SetCountryHeader(config.CountryHeader)
 	a.Handle("POST /auth/", signIn)
 	profileStore := profile.NewStore(pool, config.Profile)
+	moderation := snapshot.New(pool, profile.ModerationDomain, profile.ParseModeration, logger)
+	go moderation.Run(ctx, config.ConfigPoll)
+	profileStore.Moderate(func() profile.Moderation {
+		current, _, _ := moderation.Current()
+		return current
+	})
 	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
 	a.Handle("/profile/", profiles)

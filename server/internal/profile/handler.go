@@ -236,7 +236,7 @@ func (h *Handler) refuseNickname(w http.ResponseWriter, err error) {
 		_, retry, _ := strings.Cut(err.Error(), " until ")
 		reply(w, http.StatusTooManyRequests, errorResponse{Error: ErrCooldown.Error(), RetryAt: retry})
 	case errors.Is(err, ErrInvalidLength), errors.Is(err, ErrInvalidCharacters), errors.Is(err, ErrInvalidSeparators), errors.Is(err, ErrMixedScripts), errors.Is(err, ErrDigitsOnly),
-		errors.Is(err, ErrUnchanged):
+		errors.Is(err, ErrUnchanged), errors.Is(err, ErrNotAllowed):
 		reply(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 	default:
 		h.fail(w, err)

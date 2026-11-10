@@ -57,6 +57,9 @@ func (f *fakeProfiles) SetNickname(_ context.Context, account, raw string, now t
 	if f.taken[profile.Key(display)] {
 		return profile.Profile{}, profile.ErrTaken
 	}
+	if display == "Banned" {
+		return profile.Profile{}, profile.ErrNotAllowed
+	}
 	p, found := f.profiles[account]
 	if found && !p.RenamedAt.IsZero() && now.Before(p.RenamedAt.Add(f.config.NicknameRenameCooldown)) {
 		return profile.Profile{}, fmt.Errorf("%w until %s", profile.ErrCooldown, p.RenamedAt.Add(f.config.NicknameRenameCooldown).UTC().Format(time.RFC3339))
@@ -172,6 +175,7 @@ func TestNicknameRefusalsCarryTheirReason(t *testing.T) {
 		{`{"nickname":"Иvan"}`, http.StatusBadRequest, "nickname.mixed_scripts"},
 		{`{"nickname":"12345"}`, http.StatusBadRequest, "nickname.digits_only"},
 		{`{"nickname":"TAKEN"}`, http.StatusConflict, "nickname.taken"},
+		{`{"nickname":"Banned"}`, http.StatusBadRequest, "nickname.not_allowed"},
 	}
 	for _, c := range cases {
 		if status, body := f.call("PUT", "/profile/nickname", "access:ayla", c.body); status != c.status || body["error"] != c.reason {
