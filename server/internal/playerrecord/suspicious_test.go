@@ -2,6 +2,7 @@ package playerrecord_test
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -56,5 +57,13 @@ func TestMatchesWithAColludingCounterpartAreMarked(t *testing.T) {
 	}
 	if len(record.PairSignals) != 2 || record.PairSignals[0].UpdatedAt.IsZero() {
 		t.Fatalf("pair signals %+v", record.PairSignals)
+	}
+
+	suspicious, err := playerrecord.LoadSuspiciousMatches(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(suspicious) != 1 || suspicious[0].MatchID != matches[0].id || strings.Join(suspicious[0].Signals, ",") != "feeding" || !slices.Equal(suspicious[0].Accounts, slices.Sorted(slices.Values([]string{player, feeder}))) {
+		t.Fatalf("suspicious matches %+v", suspicious)
 	}
 }

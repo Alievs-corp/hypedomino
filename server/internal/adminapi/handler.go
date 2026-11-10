@@ -160,6 +160,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/penalties/remove", h.allowed(rbac.Players, rbac.ActOnPlayer, h.removeOffense))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
+	h.mux.HandleFunc("GET /admin/matches/suspicious", h.allowed(rbac.Players, rbac.View, h.suspiciousMatches))
 	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
 	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
