@@ -2,6 +2,7 @@ package adminapi_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -44,6 +45,29 @@ func catalog(offers ...map[string]any) map[string]any {
 	}
 }
 
+func (a *api) publishShopItems() {
+	a.t.Helper()
+	raw, err := os.ReadFile("../../../docs/cosmetics/examples/catalog.json")
+	if err != nil {
+		a.t.Fatal(err)
+	}
+	var manifest map[string]any
+	if err := json.Unmarshal(raw, &manifest); err != nil {
+		a.t.Fatal(err)
+	}
+	for _, item := range manifest["items"].([]any) {
+		if entry := item.(map[string]any); entry["id"] == "avatar.comet_fox" {
+			entry["sources"] = append(entry["sources"].([]any), map[string]any{"type": "shop", "ref": "offer.weekend_pack"})
+		}
+	}
+	if raw, err = json.Marshal(manifest); err != nil {
+		a.t.Fatal(err)
+	}
+	if _, err := snapshot.Publish(context.Background(), a.pool, cosmetics.Domain, raw); err != nil {
+		a.t.Fatal(err)
+	}
+}
+
 func (a *api) featuredAt(at time.Time) []string {
 	a.t.Helper()
 	watcher := snapshot.New(a.pool, shop.Domain, shop.Parser(shop.DefaultConfig()), slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -75,6 +99,11 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	if status != http.StatusOK || body["config_version"] != float64(0) || body["catalog"] != nil {
 		t.Fatalf("empty %d %v", status, body)
 	}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox()), "reason": "too early"})
+	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "offer.avatar_comet_fox grants avatar.comet_fox, whose sources do not list it") {
+		t.Fatalf("offer before its item %d %v", status, body)
+	}
+	a.publishShopItems()
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), weekendPack(opens, closes)), "reason": "weekend sale"})
 	if status != http.StatusOK || body["config_version"] != float64(1) || len(body["catalog"].(map[string]any)["offers"].([]any)) != 2 {
 		t.Fatalf("publish %d %v", status, body)

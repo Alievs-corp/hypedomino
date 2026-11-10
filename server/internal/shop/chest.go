@@ -101,7 +101,7 @@ func chestPool(offer Offer, items *cosmetics.Catalog, owns func(id string) (bool
 	return unowned, nil
 }
 
-func (c *Catalog) CheckChestPools(items *cosmetics.Catalog) error {
+func (c *Catalog) checkChestPools(items *cosmetics.Catalog) error {
 	for _, offer := range c.Offers {
 		if offer.Kind != KindChest {
 			continue
