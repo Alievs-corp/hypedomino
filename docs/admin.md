@@ -299,7 +299,7 @@ Rules: `docs/pass-missions-medals.md` section 2.
 | `products` | `pass_premium`, `pass_premium_plus` bound to the season (`docs/economy.md` 7.2) |
 | `budget` | Server: free track coins against `PassFreeTrackCoins`, premium track crystals against `PassPremiumTrackCrystals` |
 
-Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with an item of the same type and rarity, with an audited reason. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
+Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with a `live` item of the same type and rarity, with an audited reason. The admin API accepts it when the rest of the level's bundle is unchanged and its revision goes up by one, and answers `reason_required` without a reason; `cmd/config-publish` accepts no replacement. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
 
 ### 5.8 Missions and daily login
 

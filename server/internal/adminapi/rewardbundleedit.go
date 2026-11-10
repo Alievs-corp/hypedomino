@@ -51,7 +51,7 @@ type bundleHolder struct {
 func (h *Handler) bundleHolders() []bundleHolder {
 	return []bundleHolder{
 		{domain: func() configDomain { return h.missionDomain(false) }, replace: bundleInMissions},
-		{domain: func() configDomain { return h.passDomain(false) }, replace: bundleInPass},
+		{domain: func() configDomain { return h.passDomain(false, true) }, replace: bundleInPass},
 		{domain: func() configDomain { return h.catalogDomain(true) }, replace: h.bundleInShop},
 	}
 }

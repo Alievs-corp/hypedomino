@@ -207,7 +207,10 @@ func validateTrack(track map[int]reward.Bundle, levels int, currency wallet.Curr
 	return nil
 }
 
-func CheckFrozen(published, next *Snapshot, now time.Time) error {
+type Replaces func(disabled, replacement string) bool
+
+func CheckFrozen(published, next *Snapshot, now time.Time, replaces Replaces) (bool, error) {
+	replaced := false
 	for _, running := range published.Seasons {
 		if !running.Running(now) {
 			continue
@@ -215,14 +218,53 @@ func CheckFrozen(published, next *Snapshot, now time.Time) error {
 		changed, ok := next.Season(running.ID)
 		switch {
 		case !ok:
-			return fmt.Errorf("%w: season %s removed", ErrFrozen, running.ID)
+			return false, fmt.Errorf("%w: season %s removed", ErrFrozen, running.ID)
 		case changed.Curve != running.Curve:
-			return fmt.Errorf("%w: season %s levels or curve", ErrFrozen, running.ID)
-		case !reflect.DeepEqual(changed.Free, running.Free) || !reflect.DeepEqual(changed.Premium, running.Premium):
-			return fmt.Errorf("%w: season %s track bundles", ErrFrozen, running.ID)
+			return false, fmt.Errorf("%w: season %s levels or curve", ErrFrozen, running.ID)
+		}
+		for _, track := range []string{Free, Premium} {
+			swapped, ok := onlyReplaced(running.Track(track), changed.Track(track), replaces)
+			if !ok {
+				return false, fmt.Errorf("%w: season %s track bundles", ErrFrozen, running.ID)
+			}
+			replaced = replaced || swapped
 		}
 	}
-	return nil
+	return replaced, nil
+}
+
+func onlyReplaced(before, after map[int]reward.Bundle, replaces Replaces) (bool, bool) {
+	if len(before) != len(after) {
+		return false, false
+	}
+	replaced := false
+	for level, old := range before {
+		next, ok := after[level]
+		if !ok {
+			return false, false
+		}
+		if reflect.DeepEqual(old, next) {
+			continue
+		}
+		if !bundleReplaces(old, next, replaces) {
+			return false, false
+		}
+		replaced = true
+	}
+	return replaced, true
+}
+
+func bundleReplaces(old, next reward.Bundle, replaces Replaces) bool {
+	if replaces == nil || next.Revision != old.Revision+1 || len(next.Cosmetics) != len(old.Cosmetics) {
+		return false
+	}
+	for i, id := range old.Cosmetics {
+		if next.Cosmetics[i] != id && !replaces(id, next.Cosmetics[i]) {
+			return false
+		}
+	}
+	old.Revision, old.Cosmetics, next.Revision, next.Cosmetics = 0, nil, 0, nil
+	return reflect.DeepEqual(old, next)
 }
 
 func TrackSource(season, track string, level int) cosmetics.Source {
