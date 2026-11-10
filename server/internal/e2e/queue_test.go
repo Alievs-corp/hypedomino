@@ -156,6 +156,7 @@ func TestTwoQueuedClientsPlayARankedMatchThatIsArchivedOnceWithItsOutbox(t *test
 	store, records := startMatchmaking(t, ctx, pool, client, srv, clock)
 
 	ayla, first := queuedPlayer(t, ctx, pool, srv, "Ayla")
+	equipUnowned(t, ctx, pool, ayla, "character.tile_wizard")
 	kamal, second := queuedPlayer(t, ctx, pool, srv, "Kamal")
 	finals, failures := make(chan *pb.MatchView, 2), make(chan error, 2)
 	go playFoundMatch(first, finals, failures)
@@ -166,6 +167,9 @@ func TestTwoQueuedClientsPlayARankedMatchThatIsArchivedOnceWithItsOutbox(t *test
 			var nicknames []string
 			for _, entry := range final.GetRoster() {
 				nicknames = append(nicknames, entry.GetNickname())
+				if entry.GetNickname() == "Ayla" && entry.GetCharacter() != "character.starter" {
+					t.Fatalf("Ayla shows the unowned character %q", entry.GetCharacter())
+				}
 			}
 			if slices.Sort(nicknames); !slices.Equal(nicknames, []string{"Ayla", "Kamal"}) {
 				t.Fatalf("roster %v", nicknames)
@@ -182,6 +186,7 @@ func TestTwoQueuedClientsPlayARankedMatchThatIsArchivedOnceWithItsOutbox(t *test
 		t.Fatalf("match %s archived ranked %v with winner %v", id, ranked, won)
 	}
 	assertResults(t, ctx, pool, id)
+	assertRecordedCharacter(t, ctx, pool, id, ayla, "character.starter")
 	assertOutbox(t, ctx, pool, id, ayla, kamal)
 	for _, account := range []string{ayla, kamal} {
 		record, err := records.Record(ctx, account)
@@ -193,6 +198,21 @@ func TestTwoQueuedClientsPlayARankedMatchThatIsArchivedOnceWithItsOutbox(t *test
 		t.Fatalf("tickets left %+v, %v", tickets, err)
 	}
 	assertConsumersApplyTheMatchOnce(t, ctx, pool, id, clock.now)
+}
+
+func equipUnowned(t *testing.T, ctx context.Context, pool *pgxpool.Pool, account, character string) {
+	t.Helper()
+	if _, err := pool.Exec(ctx, `update profiles set loadout = jsonb_set(loadout, '{character}', to_jsonb($2::text)) where account_id = $1`, account, character); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertRecordedCharacter(t *testing.T, ctx context.Context, pool *pgxpool.Pool, id, account, want string) {
+	t.Helper()
+	var got string
+	if err := pool.QueryRow(ctx, `select loadout->>'character' from match_participants where match_id = $1 and account_id = $2`, id, account).Scan(&got); err != nil || got != want {
+		t.Fatalf("recorded character of %s = %q, %v", account, got, err)
+	}
 }
 
 func assertResults(t *testing.T, ctx context.Context, pool *pgxpool.Pool, id string) {
