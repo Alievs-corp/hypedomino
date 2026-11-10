@@ -207,13 +207,13 @@ One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields p
 | `availability` | All | `live`, `retired`, `disabled` (`docs/cosmetics.md` section 6) |
 | `sources` | All | Picker of `default` and existing offers, pass rewards, missions, campaigns, season rewards, events. A form that grants an item offers to add its source to the item in the same change set |
 | `artSource` | All | `handmade` or `ai_assisted` |
-| `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3) |
+| `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3). The publish that adds an item is the review: it is refused (`own_upload`) when the publishing account uploaded one of the item's assets |
 | `animationAddress` | `avatar`, `frame`, `emoji`, `action` | Server: derived; upload required when animated, always for an action |
 | `clips` | `character` | `idle`, `win`, `lose`, `reaction` uploads, all four when animated |
 | `layers` | `table` | Ordered list of name and upload with an animated flag, at most `TableMaxLayers` |
 | `group` | `emoji` | Emoji group id (#150) |
 
-Lifecycle: create and edit as drafts; publish adds the item to the next manifest; retire or disable instead of delete. Bulk edit of availability and rarity over a filtered list (#136). Disabling an item for a content violation may be done by `live_ops` during an incident.
+Lifecycle: create and edit as drafts; publish adds the item to the next manifest; retire or disable instead of delete. Bulk edit of availability and rarity over a filtered list (#136). Disabling an item for a content violation may be done by `live_ops` during an incident: the switch-off publishes the next manifest with only that item set to `disabled`, needs a reason, the incident id as `ref` and a recent sign-in, and is audited as `retire`.
 
 ### 5.2 Assets
 
@@ -624,6 +624,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
 | `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
 | `GET /admin/config/cosmetics/history` | V on cosmetic items | The last 50 manifests, newest first |
+| `POST /admin/cosmetics/items/{id}/switch-off` `{"reason","ref"}` | S: R and P for an incident switch-off on cosmetic items | Publishes the next manifest with the item `disabled` (5.1); `ref` is the incident id |
 | `POST /admin/config/cosmetics/rollback` `{"version"}` | P on cosmetic items and S: rollback on snapshots | Republishes the content of an earlier manifest under new revisions (`docs/cosmetics.md` 9) |
 | `GET /admin/config/missions` | V on missions | The published mission catalog (5.8), its `config_version`, and `rules`: the mission `types`, progress `events`, `queues` and `modes` the condition builder offers; `catalog` is null before the first publish |
 | `PUT /admin/config/missions` `{"catalog"}` | P on missions | Publishes the catalog as the next `missions` snapshot, with the server's `nameKey` and `revision` (Missions and medals note) |

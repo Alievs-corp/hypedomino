@@ -180,9 +180,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
-	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, h.publishDomain(func() configDomain { return h.cosmeticsDomain(false) })))
+	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, publisher) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
-	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, h.rollbackDomain(func() configDomain { return h.cosmeticsDomain(true) })))
+	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.rollbackDomain, func(publisher string) configDomain { return h.cosmeticsDomain(true, publisher) })))
+	h.mux.HandleFunc("POST /admin/cosmetics/items/{id}/switch-off", h.allowed(rbac.CosmeticItems, rbac.SwitchOffForIncident, h.switchOffCosmetic))
 	h.mux.HandleFunc("GET /admin/config/missions", h.allowed(rbac.Missions, rbac.View, h.missionCatalog))
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
@@ -379,6 +380,7 @@ var (
 	errForbidden        = errors.New("adminapi: the roles do not grant the action")
 	errReasonRequired   = errors.New("adminapi: a reason is required")
 	errStepUpRequired   = errors.New("adminapi: the action needs a recent sign-in")
+	errOwnUpload        = errors.New("adminapi: the uploader of an item's asset cannot approve its cultural review")
 )
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
@@ -530,6 +532,10 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):
 		return http.StatusForbidden, "step_up_required"
+	case errors.Is(err, errOwnUpload):
+		return http.StatusForbidden, "own_upload"
+	case errors.Is(err, cosmetics.ErrUnknownItem):
+		return http.StatusNotFound, "not_found"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
 	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
