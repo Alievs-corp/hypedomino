@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
@@ -26,11 +27,12 @@ type Participant struct {
 }
 
 type Result struct {
-	MatchID string
-	Mode    rules.Mode
-	Teams   [2][]Participant
-	Winner  int
-	At      time.Time
+	MatchID   string
+	Mode      rules.Mode
+	Teams     [2][]Participant
+	Winner    int
+	At        time.Time
+	Penalties *matchstore.OffensePenalties
 }
 
 type Applied struct {
@@ -201,6 +203,9 @@ func (s *Store) Apply(ctx context.Context, r Result) (Applied, error) {
 	config, version, err := s.Config(r.Mode)
 	if err != nil {
 		return Applied{}, err
+	}
+	if r.Penalties != nil {
+		config.OffenseRatingPenalty, config.PartnerLossReductionPercent = r.Penalties.RatingPenalty, r.Penalties.PartnerLossReductionPercent
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
