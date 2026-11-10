@@ -27,6 +27,19 @@ npm install
 
 `npm install` installs nothing; it only points Git at the repository hooks in `.githooks/`.
 
+### Local stack
+
+Requirements: Docker with Compose 2.22 or newer, `make` and `openssl`.
+
+| Command | What |
+|---|---|
+| `make dev` | Starts PostgreSQL, Redis, the migrations, the game server (`:8080`), `admin-api` (`:8090`) and the admin panel (`:3000`), then watches the code: a change under `server/` rebuilds the server and restarts `admin-api`; the admin panel reloads through `next dev`. On the first run it writes `.env` from `.env.example` with a fresh `HD_TOKEN_KEYS` and seeds an empty database |
+| `make seed` | Publishes the example configs of `docs/*/examples` through `cmd/config-publish` and adds the synthetic players `DevPlayer1` to `DevPlayer8` (`tools/dev/players.sql`, `docs/test-strategy.md` 7.2) |
+| `make bots` | Runs `cmd/loadbot local`: bot players fill rooms on an in-process server; pass flags with `BOTS="-rooms 10 -hold 30s"` |
+| `make logs`, `make down`, `make reset` | Follow the logs, stop the stack, stop it and delete its volumes |
+
+Signing in from a client or the admin panel needs real Google client ids in `.env` (`HD_GOOGLE_AUDIENCES`, `HD_ADMIN_GOOGLE_*`); the defaults only let the services start. `.env` stays local (`docs/environments.md` section 3).
+
 ## Agent setup
 
 The skills named in [CLAUDE.md](CLAUDE.md) come from pinned sources. The plugins are listed in the repository's marketplace `hypedomino-agents` (`.claude-plugin/marketplace.json`), each pinned to a release tag and its commit; `.claude/settings.json` declares the marketplace and enables the plugins. After you trust the folder in Claude Code, register the marketplace for yourself and install the plugins once. Registering with `--scope local` keeps the shared `.claude/settings.json` unchanged; `--scope project` would rewrite it.
