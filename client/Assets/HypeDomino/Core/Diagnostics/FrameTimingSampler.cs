@@ -42,8 +42,7 @@ namespace HypeDomino.Core.Diagnostics
 
             var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
             skipReportFrame = false;
-            var work = Math.Max(latestTiming[0].cpuFrameTime, latestTiming[0].gpuFrameTime);
-            window.Add(work, Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
+            window.Add(FrameWindow.WorkMs(latestTiming[0]),Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
             if (!window.IsFull) return;
 
             Report(window.Close());

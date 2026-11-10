@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace HypeDomino.Core.Diagnostics
 {
@@ -41,6 +42,9 @@ namespace HypeDomino.Core.Diagnostics
         }
 
         public bool IsFull => sampledFrames == workTimesMs.Length;
+
+        public static double WorkMs(in FrameTiming timing) =>
+            Math.Max(Math.Max(timing.cpuMainThreadFrameTime, timing.cpuRenderThreadFrameTime), timing.gpuFrameTime);
 
         public void Add(double workMs, double intervalSeconds, long gcBytes, long batches)
         {

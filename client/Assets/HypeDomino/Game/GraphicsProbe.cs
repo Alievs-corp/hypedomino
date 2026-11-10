@@ -1,4 +1,3 @@
-using System;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
@@ -29,7 +28,7 @@ namespace HypeDomino.Game
             if (FrameTimingManager.GetLatestTimings(1, latestTiming) == 0) return;
             if (++timedFrames <= TokenGraphics.ProbeWarmupFrames) return;
 
-            window.Add(Math.Max(latestTiming[0].cpuFrameTime, latestTiming[0].gpuFrameTime), 0, 0, 0);
+            window.Add(FrameWindow.WorkMs(latestTiming[0]), 0, 0, 0);
             if (!window.IsFull) return;
 
             GraphicsBoot.SettleProbe(window.Close().WorkP95Ms);
