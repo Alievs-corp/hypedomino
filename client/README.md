@@ -82,7 +82,7 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 ## Screens
 
-`UI/Screens` holds the screen stack of `docs/ui-motion.md` 5 "Screens". A `ScreenView` is one screen: its own overlay `Canvas` scaled so the short side is 1080 units, a `CanvasGroup` content root that fades and scales, and for a modal a full-screen scrim `Image` set by `Configure`. `ScreenStack` pushes and pops them, hands input to the top screen at once (the `GraphicRaycaster` of every other screen is off), hides a covered screen by disabling its `Canvas` only, and pops on the Android back key. Transitions are `ScreenFade` values driven by unscaled time, so an interrupted one reverses from where it is. `ScreenStack.ReduceMotion` drops the scale. The `ScreenStackTests` PlayMode tests cover push, pop, reversal both ways, modals, the root screen, reduce motion and the canvas scale.
+`UI/Screens` holds the screen stack of `docs/ui-motion.md` 5 "Screens". A `ScreenView` is one screen: its own overlay `Canvas` scaled so the short side is 1080 units, a `CanvasGroup` content root that fades and scales, and for a modal a full-screen scrim `Image` set by `Configure`. `Configure` moves the content and the scrim into a nested `Body` canvas, which also holds the screen's `GraphicRaycaster`. Hiding disables the outer `Canvas` only, so the graphics stay registered with the body and a push or pop allocates nothing; a graphic placed straight under the outer canvas would be registered again on every show (#505). `ScreenStack` pushes and pops them, hands input to the top screen at once (the `GraphicRaycaster` of every other screen is off), hides a covered screen by disabling its `Canvas` only, and pops on the Android back key. Transitions are `ScreenFade` values driven by unscaled time, so an interrupted one reverses from where it is. `ScreenStack.ReduceMotion` drops the scale. The `ScreenStackTests` PlayMode tests cover push, pop, reversal both ways, modals, the root screen, reduce motion and the canvas scale.
 
 ## Lists
 
@@ -129,6 +129,10 @@ Without a local Unity license, an editor method that creates or changes assets r
 ## Error reports
 
 `Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The crash SDK behind `IErrorSender`, its DSN and its symbol upload are owner setup: the DSN comes from build config, never from code. The `ErrorReportsTests` EditMode tests cover the gate.
+
+## Analytics
+
+`Core/Analytics` is the client side of `docs/analytics.md` (#181). `AnalyticsQueue` takes events only while the `analytics` consent purpose is on (`docs/privacy.md` 6.4): before `Consent(analyticsId)` and after `Withdraw()` nothing is queued, and `Withdraw` drops what was queued. `Track` accepts only the client event names of `AnalyticsEvents`, with one label and one value. `Flush` hands one batch of at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time; a failed send keeps the batch, and a full queue (`AnalyticsQueueLimit`) drops its oldest event. Both sizes come from admin config. The sender and the flush timer arrive with the network layer. The `AnalyticsQueueTests` EditMode tests cover these rules.
 
 ## Pooling and allocations
 
