@@ -14,9 +14,9 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto |
 | `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core, `UnityEngine.UI` |
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core |
-| `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, UI, Cosmetics |
+| `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics |
 | `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | `Google.Protobuf.dll` only; output of `npm run proto:gen`, never edited |
-| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core and UI |
+| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core, UI, Game, Proto and Content |
 | `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | References Core, UI and `UnityEngine.UI` |
 | `Assets/HypeDomino/Settings` | | URP asset, Universal Renderer, texture preset |
 | `Assets/HypeDomino/Scenes` | | `Boot.unity`, the first build scene |
@@ -59,6 +59,17 @@ Work time is `max(cpuMainThreadFrameTime, cpuRenderThreadFrameTime, gpuFrameTime
 In a development build `FrameStatsOverlay`, on the same object as the sampler in `Scenes/Boot.unity`, shows the sampler's live window of the last 60 frames in the top-left of the safe area: work time p95 in ms, missed vsyncs in percent, frames that allocated (in the danger colour when above 0) and the most batches. It refreshes once per window, takes its numbers from string tables filled at start, so showing them allocates nothing (`FrameStatsOverlayTests`), and removes itself in a release build, so store screenshots never show it.
 
 Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.buildreport`) of a local release build gives the content breakdown.
+
+## App flow
+
+`Game/AppFlow` holds which part of the app is shown: `Boot`, `Login`, `Lobby`, `Match`, `UpdateRequired` or `Maintenance`. It is plain C#, fed by server messages, and raises `Changed` once per new state.
+
+- `SignInNeeded` (no session or `UNAUTHENTICATED`) goes to `Login`, except while an update is required.
+- An accepted `ServerHello` goes to `Match` when `in_match` is set (R-58), otherwise to `Lobby`. `UPDATE_REQUIRED` and `MAINTENANCE` go to their screens (ADR 0004). An unknown status changes nothing.
+- A `MatchView` that is not finished takes the lobby into the match, so a match found by the queue or a friend room starts the same way.
+- `LeaveMatch` returns to the lobby only after the match is finished.
+
+The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the network wiring that feeds it are not built yet.
 
 ## Shop and wallet
 
