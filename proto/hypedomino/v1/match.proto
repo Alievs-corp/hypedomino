@@ -77,6 +77,17 @@ message EmojiShown {
   string item_id = 2;
 }
 
+message QuickMessageIntent {
+  string key = 1;
+  bool team_only = 2;
+}
+
+message QuickMessageShown {
+  Seat seat = 1;
+  string key = 2;
+  bool team_only = 3;
+}
+
 message OrientedTile {
   uint32 first = 1;
   uint32 second = 2;

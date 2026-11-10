@@ -3,6 +3,7 @@ package livecontrol_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 )
@@ -34,6 +35,19 @@ func TestParseChecksTheControls(t *testing.T) {
 				t.Fatalf("got %v, want ErrInvalid", err)
 			}
 		})
+	}
+}
+
+func TestMaintenanceCarriesItsEndToTheAdmission(t *testing.T) {
+	controls, err := livecontrol.Parse([]byte(`{"minimum_app_version":"1.0.0","maintenance_ends_at":"2026-11-09T06:00:00Z"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if admission := controls.Admission(); !admission.Maintenance() || !admission.MaintenanceEndsAt.Equal(time.Date(2026, 11, 9, 6, 0, 0, 0, time.UTC)) {
+		t.Fatalf("admission %+v", admission)
+	}
+	if off, _ := livecontrol.Parse([]byte(`{"minimum_app_version":"1.0.0","maintenance_ends_at":null}`)); off.Admission().Maintenance() {
+		t.Fatal("a cleared end still means maintenance")
 	}
 }
 

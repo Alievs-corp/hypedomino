@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
@@ -16,6 +17,8 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
+	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -213,5 +216,38 @@ func TestTheUsageNamesEveryDomainThePublisherValidates(t *testing.T) {
 		if err := validate(domain, []byte(`{`)); errors.Is(err, errDomain) {
 			t.Errorf("%s is listed but not validated", domain)
 		}
+	}
+}
+
+func TestTheOffenseRatingPenaltyMustFitTheDivisionInBothDomains(t *testing.T) {
+	url, _ := dbtest.Fresh(t)
+	ctx := context.Background()
+	var out bytes.Buffer
+	example, err := os.ReadFile("../../../docs/ranking/examples/rating.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wide := filepath.Join(t.TempDir(), "rating.json")
+	if err := os.WriteFile(wide, bytes.ReplaceAll(example, []byte(`"lpChangeMax": 40`), []byte(`"lpChangeMax": 95`)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(ctx, url, rating.Domain, wide, &out); !errors.Is(err, rating.ErrInvalidConfig) || !strings.Contains(err.Error(), "offenseRatingPenalty") {
+		t.Fatalf("rating that leaves no room for the default penalty = %v", err)
+	}
+	if err := run(ctx, url, rating.Domain, "../../../docs/ranking/examples/rating.json", &out); err != nil {
+		t.Fatal(err)
+	}
+	strict := penalties.DefaultConfig()
+	strict.OffenseRatingPenalty = 60
+	raw, err := json.Marshal(strict)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(t.TempDir(), "penalties.json")
+	if err := os.WriteFile(file, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(ctx, url, penalties.Domain, file, &out); !errors.Is(err, rating.ErrInvalidConfig) || !strings.Contains(err.Error(), "offenseRatingPenalty") {
+		t.Fatalf("penalty past the published division = %v", err)
 	}
 }

@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
-import { defaultLocale, isLocale, localeCookie, type Locale } from "./locales";
+import { currentAdmin } from "@/admin/session";
+import { localeCookie, preferredLocale, type Locale } from "./locales";
 import { translator } from "./translate";
 
 export async function currentLocale(): Promise<Locale> {
-  const stored = (await cookies()).get(localeCookie)?.value;
-  return isLocale(stored) ? stored : defaultLocale;
+  const admin = await currentAdmin();
+  return preferredLocale(admin?.account.locale, (await cookies()).get(localeCookie)?.value);
 }
 
 export async function serverTranslator() {

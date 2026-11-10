@@ -68,6 +68,7 @@ type Manager struct {
 	clocks   ClockObserver
 	replays  ReplayObserver
 	checker  IntegrityChecker
+	queue    Queue
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -238,7 +239,22 @@ func (m *Manager) Revoke(token string) {
 	}
 }
 
+func (m *Manager) Presence() map[string]bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	connected := make(map[string]bool, len(m.sessions))
+	for _, s := range m.sessions {
+		if s.active != nil {
+			connected[s.account] = connected[s.account] || s.room != nil
+		}
+	}
+	return connected
+}
+
 func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.ClientHello) (gateway.Session, error) {
+	if key, elsewhere := m.routedElsewhere(ctx, hello.GetSessionToken()); elsewhere {
+		return nil, &gateway.RoutedElsewhere{Key: key}
+	}
 	if !m.startAllowed(ctx, hello) {
 		return nil, gateway.ErrIntegrityFailed
 	}
@@ -313,6 +329,15 @@ func (c *connection) Emoji(item string) {
 	}
 }
 
+func (c *connection) QuickMessage(key string, teamOnly bool) {
+	c.mu.Lock()
+	seat := c.seat
+	c.mu.Unlock()
+	if seat != nil {
+		seat.QuickMessage(key, teamOnly)
+	}
+}
+
 func (c *connection) Attach() {
 	c.manager.mu.Lock()
 	defer c.manager.mu.Unlock()
@@ -358,6 +383,7 @@ func (c *connection) Close() {
 		return
 	}
 	s.active = nil
+	go c.leaveOnClose()
 	if seat != nil {
 		s.acked = seat.Acked()
 	}

@@ -92,6 +92,12 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_ACTION_SLOTS` | No | server | `4` | `4` | No | from #61 |
 | `HD_EMOJI_BURST` | No | server | `3` | `3` | No | from #151 |
 | `HD_EMOJI_REFILL` | No | server | `2s` | `2s` | No | from #151 |
+| `HD_REPORT_AUTO_RENAME_THRESHOLD` | No | server | `5` (0 turns it off) | `5` | No | from #155 |
+| `HD_REPORT_AUTO_RENAME_WINDOW` | No | server | `168h` | `168h` | No | from #155 |
+| `HD_REPORT_DAILY_LIMIT` | No | server | `10` | `10` | No | from #155 |
+| `HD_REPORT_REJECTED_LIMIT` | No | server | `5` | `5` | No | from #155 |
+| `HD_REPORT_REJECTED_WINDOW` | No | server | `720h` | `720h` | No | from #155 |
+| `HD_REPORT_REJECTED_SILENCE` | No | server | `168h` | `168h` | No | from #155 |
 | `HD_RARITY_ORDINALS` | No | server | `common:1,rare:2,epic:3,legendary:4,mythic:5` | same | No | from #98 |
 | `HD_SHOP_CATALOG` | No | server | empty (shop closed until a publish) | `/etc/hypedomino/shop.json` | No | from #104 |
 | `HD_SHOP_DAILY_SLOTS` | No | server, admin-api | `4` | `4` | No | from #104; admin-api from #139 |
@@ -99,6 +105,9 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SHOP_RESET_HOUR_UTC` | No | server, admin-api | `0` | `0` | No | from #104; admin-api from #139 |
 | `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
 | `HD_SEASON_POLL` | No | server | `1m` | `1m` | No | from #115 |
+| `HD_OUTBOX_POLL` | No | server | `2s` (at least 100ms) | `2s` | No | from #440 |
+| `HD_MATCHMAKING_TICK` | No | server | `1s` (at least 100ms) | `1s` | No | from #478 |
+| `HD_MATCHMAKING_LEADER_TTL` | No | server | `5s` (at least two ticks) | `5s` | No | from #478 |
 | `HD_CLOCK_SKEW_TOLERANCE` | No | server | `5m` | `5m` | No | from #208 |
 | `HD_CLOCK_SKEW_WEIGHT` | No | server | `1` | `1` | No | from #208 |
 | `HD_REPLAY_REJECT_THRESHOLD` | No | server | `5` | `5` | No | from #207 |
@@ -172,6 +181,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
+| `HD_MUTE_HOURS` | No | admin-api | 24 (`ModerationMuteHours`) | `<mute-hours>` | No | from #144 |
 
 The admin web server (`admin/`) reads three variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
 

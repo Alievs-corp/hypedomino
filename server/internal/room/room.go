@@ -61,6 +61,13 @@ type Message struct {
 	Sequence uint64
 	Reason   error
 	Emoji    *Emoji
+	Quick    *QuickMessage
+}
+
+type QuickMessage struct {
+	Seat     rules.Seat
+	Key      string
+	TeamOnly bool
 }
 
 type Emoji struct {
@@ -95,6 +102,7 @@ type Player struct {
 	Emblems   []string
 	Emoji     []string
 	Bot       bool
+	Muted     bool
 }
 
 type Options struct {
@@ -111,6 +119,7 @@ type Options struct {
 	ReconnectGrace time.Duration
 	Moves          MoveObserver
 	Emoji          EmojiLimit
+	QuickMessages  func(key string) bool
 }
 
 type seatState struct {
@@ -269,6 +278,11 @@ func (r *Room) Emoji(seat rules.Seat, item string) {
 	r.enqueue(func(r *Room) { r.emoji(seat, item, received) })
 }
 
+func (r *Room) QuickMessage(seat rules.Seat, key string, teamOnly bool) {
+	received := r.options.Clock.Now()
+	r.enqueue(func(r *Room) { r.quickMessage(seat, key, teamOnly, received) })
+}
+
 func (r *Room) Snapshot(seat rules.Seat, reply chan<- View) {
 	r.enqueue(func(r *Room) { reply <- r.view(seat) })
 }
@@ -289,6 +303,11 @@ func (r *Room) FinalRecord() (replay.Record, bool) {
 		return replay.Record{}, false
 	}
 	return r.recorder.Record(), true
+}
+
+func (r *Room) FinalPresence(seat rules.Seat) rules.PresenceReport {
+	<-r.done
+	return r.presence.Report(seat)
 }
 
 func (r *Room) join(seat rules.Seat, sink Sink) {
@@ -386,12 +405,32 @@ func (r *Room) emoji(seat rules.Seat, item string, received time.Time) {
 }
 
 func (r *Room) equipped(seat rules.Seat, item string) bool {
+	player, ok := r.speaker(seat)
+	return ok && slices.Contains(player.Emoji, item)
+}
+
+func (r *Room) speaker(seat rules.Seat) (Player, bool) {
 	for _, player := range r.options.Roster {
 		if player.Seat == seat {
-			return !player.Bot && slices.Contains(player.Emoji, item)
+			return player, !player.Bot && !player.Muted
 		}
 	}
-	return false
+	return Player{}, false
+}
+
+func (r *Room) quickMessage(seat rules.Seat, key string, teamOnly bool, received time.Time) {
+	if !r.seated(seat) || r.seats[seat].sink == nil || r.options.QuickMessages == nil || !r.options.QuickMessages(key) {
+		return
+	}
+	if _, ok := r.speaker(seat); !ok || !r.seats[seat].spendEmoji(r.options.Emoji, received) {
+		return
+	}
+	shown := &QuickMessage{Seat: seat, Key: key, TeamOnly: teamOnly}
+	for _, other := range r.options.Mode.Seats() {
+		if sink := r.seats[other].sink; sink != nil && (!teamOnly || other.Team() == seat.Team()) {
+			sink.Deliver(Message{Quick: shown})
+		}
+	}
 }
 
 func (r *Room) admit(seat rules.Seat, sequence uint64) error {

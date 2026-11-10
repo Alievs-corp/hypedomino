@@ -79,7 +79,7 @@ func newAPIWith(t *testing.T, adjust func(*adminapi.Config)) *api {
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
 	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), now: start}
-	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour, Limits: unthrottled}
+	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour, Mute: adminapi.DefaultMuteHours * time.Hour, Limits: unthrottled}
 	adjust(&config)
 	a.handler = adminapi.New(config, verifier, ratelimit.NewMemory(), pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)
@@ -195,6 +195,7 @@ func TestEveryRouteRefusesAMissingSessionAndARoleWithoutTheAction(t *testing.T) 
 		content      int
 	}{
 		{"GET", "/admin/me", nil, http.StatusOK},
+		{"PUT", "/admin/me/locale", map[string]any{"locale": "az"}, http.StatusOK},
 		{"GET", "/admin/audit", nil, http.StatusOK},
 		{"GET", "/admin/accounts", nil, http.StatusForbidden},
 		{"POST", "/admin/accounts", map[string]any{"email": "new@example.com", "display_name": "New", "roles": []string{"analyst"}}, http.StatusForbidden},
@@ -347,4 +348,21 @@ func TestAnIdleSessionIsRefused(t *testing.T) {
 	a.now = start.Add(59 * time.Minute)
 	status, body = a.call("GET", "/admin/me", token, nil)
 	expect(t, status, body, http.StatusUnauthorized, "session_rejected")
+}
+
+func TestAnAdminKeepsThePanelLanguageOnTheAccount(t *testing.T) {
+	a := newAPI(t)
+	token := a.signIn("ayla")
+	if _, body := a.call("GET", "/admin/me", token, nil); body["account"].(map[string]any)["locale"] != nil {
+		t.Fatalf("a new account has a language: %v", body["account"])
+	}
+	status, body := a.call("PUT", "/admin/me/locale", token, map[string]any{"locale": "tr"})
+	expect(t, status, body, http.StatusBadRequest, "unknown_locale")
+	status, body = a.call("PUT", "/admin/me/locale", token, map[string]any{"locale": "en"})
+	if status != http.StatusOK || body["locale"] != "en" {
+		t.Fatalf("choose %d %v", status, body)
+	}
+	if _, body := a.call("GET", "/admin/me", a.signIn("ayla"), nil); body["account"].(map[string]any)["locale"] != "en" {
+		t.Fatalf("the language did not stay: %v", body["account"])
+	}
 }

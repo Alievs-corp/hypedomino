@@ -182,6 +182,9 @@ func (s *Store) flag(ctx context.Context, at time.Time, signals []Signal) error 
 			side.Account, side.Kind, side.Counterpart, side.Mode, side.Matches, side.Wins, side.Offenses, side.WindowHours, at); err != nil {
 			return err
 		}
+		if err := s.reportCollusion(ctx, tx, side, at); err != nil {
+			return err
+		}
 		payload, err := json.Marshal(side)
 		if err != nil {
 			return err

@@ -22,6 +22,18 @@ var (
 	ErrClosed          = errors.New("gateway: connection closed")
 )
 
+type RoutedElsewhere struct {
+	Key string
+}
+
+func (e *RoutedElsewhere) Error() string {
+	return "gateway: session hosted on another node"
+}
+
+func (e *RoutedElsewhere) Unwrap() error {
+	return ErrUnauthenticated
+}
+
 type Config struct {
 	MinimumAppVersion    string
 	CatalogVersion       string
@@ -70,6 +82,7 @@ type Session interface {
 	Attach()
 	Loading(progress int, ready bool)
 	Emoji(item string)
+	QuickMessage(key string, teamOnly bool)
 	Intent(sequence uint64, intent replay.Intent)
 	Close()
 }

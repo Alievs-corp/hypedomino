@@ -15,6 +15,8 @@ type Mailbox interface {
 	Rewards(ctx context.Context, account string) ([]Reward, error)
 	MarkRewardsSeen(ctx context.Context, account string, now time.Time) (int64, error)
 	Emblems(ctx context.Context, account string) ([]Emblem, error)
+	Showcase(ctx context.Context, account string) ([]string, error)
+	SetShowcase(ctx context.Context, account string, chosen []string, now time.Time) ([]string, error)
 }
 
 type Handler struct {
@@ -30,6 +32,7 @@ func NewHandler(verifier token.Verifier, mailbox Mailbox, logger *slog.Logger, n
 	h.mux.HandleFunc("GET /ranked/rewards", h.rewards)
 	h.mux.HandleFunc("POST /ranked/rewards/seen", h.seen)
 	h.mux.HandleFunc("GET /ranked/emblems", h.emblems)
+	h.mux.HandleFunc("PUT /ranked/emblems/showcase", h.setShowcase)
 	return h
 }
 
@@ -96,7 +99,12 @@ func (h *Handler) emblems(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	reply(w, http.StatusOK, map[string]any{"emblems": emblems})
+	showcase, err := h.mailbox.Showcase(r.Context(), claims.Account)
+	if err != nil {
+		h.fail(w, err)
+		return
+	}
+	reply(w, http.StatusOK, map[string]any{"emblems": emblems, "showcase": showcase})
 }
 
 func (h *Handler) fail(w http.ResponseWriter, err error) {
@@ -109,4 +117,29 @@ func reply(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(body)
+}
+
+func (h *Handler) setShowcase(w http.ResponseWriter, r *http.Request) {
+	claims, ok := h.authenticate(w, r)
+	if !ok {
+		return
+	}
+	var request struct {
+		Emblems []string `json:"emblems"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&request); err != nil {
+		reply(w, http.StatusBadRequest, errorResponse{Error: "malformed"})
+		return
+	}
+	showcase, err := h.mailbox.SetShowcase(r.Context(), claims.Account, request.Emblems, h.now())
+	switch {
+	case errors.Is(err, ErrShowcase):
+		reply(w, http.StatusBadRequest, errorResponse{Error: ErrShowcase.Error()})
+	case errors.Is(err, ErrEmblemNotOwned):
+		reply(w, http.StatusConflict, errorResponse{Error: ErrEmblemNotOwned.Error()})
+	case err != nil:
+		h.fail(w, err)
+	default:
+		reply(w, http.StatusOK, map[string]any{"showcase": showcase})
+	}
 }

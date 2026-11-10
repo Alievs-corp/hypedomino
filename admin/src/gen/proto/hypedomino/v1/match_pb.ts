@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/match.proto.
  */
 export const file_hypedomino_v1_match: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvEg1oeXBlZG9taW5vLnYxIiEKBFRpbGUSCwoDbG93GAEgASgNEgwKBGhpZ2gYAiABKA0iWgoPUGxhY2VUaWxlSW50ZW50EiEKBHRpbGUYASABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJAoDZW5kGAIgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZCIMCgpQYXNzSW50ZW50IgwKCkRyYXdJbnRlbnQiDwoNRW5kVHVybkludGVudCIwCg1Mb2FkaW5nSW50ZW50EhAKCHByb2dyZXNzGAEgASgNEg0KBXJlYWR5GAIgASgIIh4KC0Vtb2ppSW50ZW50Eg8KB2l0ZW1faWQYASABKAkiQAoKRW1vamlTaG93bhIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0Eg8KB2l0ZW1faWQYAiABKAkiLQoMT3JpZW50ZWRUaWxlEg0KBWZpcnN0GAEgASgNEg4KBnNlY29uZBgCIAEoDSI+CgdPcGVuRW5kEiQKA2VuZBgBIAEoDjIXLmh5cGVkb21pbm8udjEuQm9hcmRFbmQSDQoFdmFsdWUYAiABKA0i3gEKCUJvYXJkVmlldxIpCgRsaW5lGAEgAygLMhsuaHlwZWRvbWluby52MS5PcmllbnRlZFRpbGUSJAoHc3Bpbm5lchgCIAEoCzITLmh5cGVkb21pbm8udjEuVGlsZRIoCgN0b3AYAyADKAsyGy5oeXBlZG9taW5vLnYxLk9yaWVudGVkVGlsZRIrCgZib3R0b20YBCADKAsyGy5oeXBlZG9taW5vLnYxLk9yaWVudGVkVGlsZRIpCglvcGVuX2VuZHMYBSADKAsyFi5oeXBlZG9taW5vLnYxLk9wZW5FbmQimAEKCFNlYXRWaWV3EiEKBHNlYXQYASABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXQSEQoJaGFuZF9zaXplGAIgASgNEi0KCmNvbnRyb2xsZXIYAyABKA4yGS5oeXBlZG9taW5vLnYxLkNvbnRyb2xsZXISGAoQbG9hZGluZ19wcm9ncmVzcxgEIAEoDRINCgVyZWFkeRgFIAEoCCJUCglMZWdhbE1vdmUSIQoEdGlsZRgBIAEoCzITLmh5cGVkb21pbm8udjEuVGlsZRIkCgNlbmQYAiABKA4yFy5oeXBlZG9taW5vLnYxLkJvYXJkRW5kIk8KB09wZW5pbmcSIQoEc2VhdBgBIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdBIhCgR0aWxlGAIgASgLMhMuaHlwZWRvbWluby52MS5UaWxlIiwKClRlYW1Qb2ludHMSDgoGdGVhbV9hGAEgASgNEg4KBnRlYW1fYhgCIAEoDSLvAQoKSGFuZFJlc3VsdBInCgRwaXBzGAEgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9pbnRzEiMKBndpbm5lchgCIAEoDjITLmh5cGVkb21pbm8udjEuVGVhbRIqCgdhd2FyZGVkGAMgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9pbnRzEhIKCmNhcnJ5X292ZXIYBCABKA0SKQoGc2NvcmVzGAUgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9pbnRzEigKC25leHRfb3BlbmVyGAYgASgOMhMuaHlwZWRvbWluby52MS5UZWFtIskBCgtSb3N0ZXJFbnRyeRIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EiEKBHRlYW0YAiABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW0SEAoIbmlja25hbWUYAyABKAkSEQoJY2hhcmFjdGVyGAQgASgJEg0KBWZyYW1lGAUgASgJEg4KBmF2YXRhchgGIAEoCRISCgpyYW5rX2xhYmVsGAcgASgJEg8KB2VtYmxlbXMYCCADKAkSCwoDYm90GAkgASgIIvUFCglNYXRjaFZpZXcSKAoFc3RhdGUYASABKA4yGS5oeXBlZG9taW5vLnYxLk1hdGNoU3RhdGUSIQoEc2VhdBgCIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdBIhCgRtb2RlGAMgASgOMhMuaHlwZWRvbWluby52MS5Nb2RlEhQKDGhhbmRzX3BsYXllZBgEIAEoDRIpCgZzY29yZXMYBSABKAsyGS5oeXBlZG9taW5vLnYxLlRlYW1Qb2ludHMSEgoKY2Fycnlfb3ZlchgGIAEoDRIhCgRoYW5kGAcgAygLMhMuaHlwZWRvbWluby52MS5UaWxlEiYKBXNlYXRzGAggAygLMhcuaHlwZWRvbWluby52MS5TZWF0VmlldxIVCg1ib25leWFyZF9zaXplGAkgASgNEicKBWJvYXJkGAogASgLMhguaHlwZWRvbWluby52MS5Cb2FyZFZpZXcSJAoHY3VycmVudBgLIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdBIpCgxvcGVuaW5nX3RlYW0YDCABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW0SLgoOZm9yY2VkX29wZW5pbmcYDSABKAsyFi5oeXBlZG9taW5vLnYxLk9wZW5pbmcSFwoPdHVybl9wbGFjZW1lbnRzGA4gASgNEh0KFXR1cm5fZGVhZGxpbmVfdW5peF9tcxgPIAEoBBItCgtsZWdhbF9tb3ZlcxgQIAMoCzIYLmh5cGVkb21pbm8udjEuTGVnYWxNb3ZlEi4KC2xhc3RfcmVzdWx0GBEgASgLMhkuaHlwZWRvbWluby52MS5IYW5kUmVzdWx0EiMKBndpbm5lchgSIAEoDjITLmh5cGVkb21pbm8udjEuVGVhbRIqCgZyb3N0ZXIYEyADKAsyGi5oeXBlZG9taW5vLnYxLlJvc3RlckVudHJ5EiAKGGxvYWRpbmdfZGVhZGxpbmVfdW5peF9tcxgUIAEoBBINCgV0YWJsZRgVIAEoCSp3CghCb2FyZEVuZBIZChVCT0FSRF9FTkRfVU5TUEVDSUZJRUQQABISCg5CT0FSRF9FTkRfTEVGVBABEhMKD0JPQVJEX0VORF9SSUdIVBACEhEKDUJPQVJEX0VORF9UT1AQAxIUChBCT0FSRF9FTkRfQk9UVE9NEAQqcgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDgoKU0VBVF9OT1JUSBABEg0KCVNFQVRfRUFTVBACEg4KClNFQVRfU09VVEgQAxINCglTRUFUX1dFU1QQBBIKCgZTRUFUX1gQBRIKCgZTRUFUX1kQBio0CgRUZWFtEhQKEFRFQU1fVU5TUEVDSUZJRUQQABIKCgZURUFNX0EQARIKCgZURUFNX0IQAio4CgRNb2RlEhQKEE1PREVfVU5TUEVDSUZJRUQQABIMCghNT0RFXzFWMRABEgwKCE1PREVfMlYyEAIqUwoKQ29udHJvbGxlchIaChZDT05UUk9MTEVSX1VOU1BFQ0lGSUVEEAASFQoRQ09OVFJPTExFUl9QTEFZRVIQARISCg5DT05UUk9MTEVSX0JPVBACKqcBCgpNYXRjaFN0YXRlEhsKF01BVENIX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTTUFUQ0hfU1RBVEVfV0FJVElORxABEhcKE01BVENIX1NUQVRFX09QRU5JTkcQAhIXChNNQVRDSF9TVEFURV9QTEFZSU5HEAMSGAoUTUFUQ0hfU1RBVEVfRklOSVNIRUQQBBIXChNNQVRDSF9TVEFURV9MT0FESU5HEAVCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpNYXRjaFByb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z");
+  fileDesc("ChloeXBlZG9taW5vL3YxL21hdGNoLnByb3RvEg1oeXBlZG9taW5vLnYxIiEKBFRpbGUSCwoDbG93GAEgASgNEgwKBGhpZ2gYAiABKA0iWgoPUGxhY2VUaWxlSW50ZW50EiEKBHRpbGUYASABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJAoDZW5kGAIgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZCIMCgpQYXNzSW50ZW50IgwKCkRyYXdJbnRlbnQiDwoNRW5kVHVybkludGVudCIwCg1Mb2FkaW5nSW50ZW50EhAKCHByb2dyZXNzGAEgASgNEg0KBXJlYWR5GAIgASgIIh4KC0Vtb2ppSW50ZW50Eg8KB2l0ZW1faWQYASABKAkiQAoKRW1vamlTaG93bhIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0Eg8KB2l0ZW1faWQYAiABKAkiNAoSUXVpY2tNZXNzYWdlSW50ZW50EgsKA2tleRgBIAEoCRIRCgl0ZWFtX29ubHkYAiABKAgiVgoRUXVpY2tNZXNzYWdlU2hvd24SIQoEc2VhdBgBIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdBILCgNrZXkYAiABKAkSEQoJdGVhbV9vbmx5GAMgASgIIi0KDE9yaWVudGVkVGlsZRINCgVmaXJzdBgBIAEoDRIOCgZzZWNvbmQYAiABKA0iPgoHT3BlbkVuZBIkCgNlbmQYASABKA4yFy5oeXBlZG9taW5vLnYxLkJvYXJkRW5kEg0KBXZhbHVlGAIgASgNIt4BCglCb2FyZFZpZXcSKQoEbGluZRgBIAMoCzIbLmh5cGVkb21pbm8udjEuT3JpZW50ZWRUaWxlEiQKB3NwaW5uZXIYAiABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSKAoDdG9wGAMgAygLMhsuaHlwZWRvbWluby52MS5PcmllbnRlZFRpbGUSKwoGYm90dG9tGAQgAygLMhsuaHlwZWRvbWluby52MS5PcmllbnRlZFRpbGUSKQoJb3Blbl9lbmRzGAUgAygLMhYuaHlwZWRvbWluby52MS5PcGVuRW5kIpgBCghTZWF0VmlldxIhCgRzZWF0GAEgASgOMhMuaHlwZWRvbWluby52MS5TZWF0EhEKCWhhbmRfc2l6ZRgCIAEoDRItCgpjb250cm9sbGVyGAMgASgOMhkuaHlwZWRvbWluby52MS5Db250cm9sbGVyEhgKEGxvYWRpbmdfcHJvZ3Jlc3MYBCABKA0SDQoFcmVhZHkYBSABKAgiVAoJTGVnYWxNb3ZlEiEKBHRpbGUYASABKAsyEy5oeXBlZG9taW5vLnYxLlRpbGUSJAoDZW5kGAIgASgOMhcuaHlwZWRvbWluby52MS5Cb2FyZEVuZCJPCgdPcGVuaW5nEiEKBHNlYXQYASABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXQSIQoEdGlsZRgCIAEoCzITLmh5cGVkb21pbm8udjEuVGlsZSIsCgpUZWFtUG9pbnRzEg4KBnRlYW1fYRgBIAEoDRIOCgZ0ZWFtX2IYAiABKA0i7wEKCkhhbmRSZXN1bHQSJwoEcGlwcxgBIAEoCzIZLmh5cGVkb21pbm8udjEuVGVhbVBvaW50cxIjCgZ3aW5uZXIYAiABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW0SKgoHYXdhcmRlZBgDIAEoCzIZLmh5cGVkb21pbm8udjEuVGVhbVBvaW50cxISCgpjYXJyeV9vdmVyGAQgASgNEikKBnNjb3JlcxgFIAEoCzIZLmh5cGVkb21pbm8udjEuVGVhbVBvaW50cxIoCgtuZXh0X29wZW5lchgGIAEoDjITLmh5cGVkb21pbm8udjEuVGVhbSLJAQoLUm9zdGVyRW50cnkSIQoEc2VhdBgBIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdBIhCgR0ZWFtGAIgASgOMhMuaHlwZWRvbWluby52MS5UZWFtEhAKCG5pY2tuYW1lGAMgASgJEhEKCWNoYXJhY3RlchgEIAEoCRINCgVmcmFtZRgFIAEoCRIOCgZhdmF0YXIYBiABKAkSEgoKcmFua19sYWJlbBgHIAEoCRIPCgdlbWJsZW1zGAggAygJEgsKA2JvdBgJIAEoCCL1BQoJTWF0Y2hWaWV3EigKBXN0YXRlGAEgASgOMhkuaHlwZWRvbWluby52MS5NYXRjaFN0YXRlEiEKBHNlYXQYAiABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXQSIQoEbW9kZRgDIAEoDjITLmh5cGVkb21pbm8udjEuTW9kZRIUCgxoYW5kc19wbGF5ZWQYBCABKA0SKQoGc2NvcmVzGAUgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9pbnRzEhIKCmNhcnJ5X292ZXIYBiABKA0SIQoEaGFuZBgHIAMoCzITLmh5cGVkb21pbm8udjEuVGlsZRImCgVzZWF0cxgIIAMoCzIXLmh5cGVkb21pbm8udjEuU2VhdFZpZXcSFQoNYm9uZXlhcmRfc2l6ZRgJIAEoDRInCgVib2FyZBgKIAEoCzIYLmh5cGVkb21pbm8udjEuQm9hcmRWaWV3EiQKB2N1cnJlbnQYCyABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXQSKQoMb3BlbmluZ190ZWFtGAwgASgOMhMuaHlwZWRvbWluby52MS5UZWFtEi4KDmZvcmNlZF9vcGVuaW5nGA0gASgLMhYuaHlwZWRvbWluby52MS5PcGVuaW5nEhcKD3R1cm5fcGxhY2VtZW50cxgOIAEoDRIdChV0dXJuX2RlYWRsaW5lX3VuaXhfbXMYDyABKAQSLQoLbGVnYWxfbW92ZXMYECADKAsyGC5oeXBlZG9taW5vLnYxLkxlZ2FsTW92ZRIuCgtsYXN0X3Jlc3VsdBgRIAEoCzIZLmh5cGVkb21pbm8udjEuSGFuZFJlc3VsdBIjCgZ3aW5uZXIYEiABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW0SKgoGcm9zdGVyGBMgAygLMhouaHlwZWRvbWluby52MS5Sb3N0ZXJFbnRyeRIgChhsb2FkaW5nX2RlYWRsaW5lX3VuaXhfbXMYFCABKAQSDQoFdGFibGUYFSABKAkqdwoIQm9hcmRFbmQSGQoVQk9BUkRfRU5EX1VOU1BFQ0lGSUVEEAASEgoOQk9BUkRfRU5EX0xFRlQQARITCg9CT0FSRF9FTkRfUklHSFQQAhIRCg1CT0FSRF9FTkRfVE9QEAMSFAoQQk9BUkRfRU5EX0JPVFRPTRAEKnIKBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg4KClNFQVRfTk9SVEgQARINCglTRUFUX0VBU1QQAhIOCgpTRUFUX1NPVVRIEAMSDQoJU0VBVF9XRVNUEAQSCgoGU0VBVF9YEAUSCgoGU0VBVF9ZEAYqNAoEVGVhbRIUChBURUFNX1VOU1BFQ0lGSUVEEAASCgoGVEVBTV9BEAESCgoGVEVBTV9CEAIqOAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDAoITU9ERV8xVjEQARIMCghNT0RFXzJWMhACKlMKCkNvbnRyb2xsZXISGgoWQ09OVFJPTExFUl9VTlNQRUNJRklFRBAAEhUKEUNPTlRST0xMRVJfUExBWUVSEAESEgoOQ09OVFJPTExFUl9CT1QQAiqnAQoKTWF0Y2hTdGF0ZRIbChdNQVRDSF9TVEFURV9VTlNQRUNJRklFRBAAEhcKE01BVENIX1NUQVRFX1dBSVRJTkcQARIXChNNQVRDSF9TVEFURV9PUEVOSU5HEAISFwoTTUFUQ0hfU1RBVEVfUExBWUlORxADEhgKFE1BVENIX1NUQVRFX0ZJTklTSEVEEAQSFwoTTUFUQ0hfU1RBVEVfTE9BRElORxAFQsUBChFjb20uaHlwZWRvbWluby52MUIKTWF0Y2hQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw");
 
 /**
  * @generated from message hypedomino.v1.Tile
@@ -157,6 +157,55 @@ export const EmojiShownSchema: GenMessage<EmojiShown> = /*@__PURE__*/
   messageDesc(file_hypedomino_v1_match, 7);
 
 /**
+ * @generated from message hypedomino.v1.QuickMessageIntent
+ */
+export type QuickMessageIntent = Message<"hypedomino.v1.QuickMessageIntent"> & {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: bool team_only = 2;
+   */
+  teamOnly: boolean;
+};
+
+/**
+ * Describes the message hypedomino.v1.QuickMessageIntent.
+ * Use `create(QuickMessageIntentSchema)` to create a new message.
+ */
+export const QuickMessageIntentSchema: GenMessage<QuickMessageIntent> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 8);
+
+/**
+ * @generated from message hypedomino.v1.QuickMessageShown
+ */
+export type QuickMessageShown = Message<"hypedomino.v1.QuickMessageShown"> & {
+  /**
+   * @generated from field: hypedomino.v1.Seat seat = 1;
+   */
+  seat: Seat;
+
+  /**
+   * @generated from field: string key = 2;
+   */
+  key: string;
+
+  /**
+   * @generated from field: bool team_only = 3;
+   */
+  teamOnly: boolean;
+};
+
+/**
+ * Describes the message hypedomino.v1.QuickMessageShown.
+ * Use `create(QuickMessageShownSchema)` to create a new message.
+ */
+export const QuickMessageShownSchema: GenMessage<QuickMessageShown> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_match, 9);
+
+/**
  * @generated from message hypedomino.v1.OrientedTile
  */
 export type OrientedTile = Message<"hypedomino.v1.OrientedTile"> & {
@@ -176,7 +225,7 @@ export type OrientedTile = Message<"hypedomino.v1.OrientedTile"> & {
  * Use `create(OrientedTileSchema)` to create a new message.
  */
 export const OrientedTileSchema: GenMessage<OrientedTile> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 8);
+  messageDesc(file_hypedomino_v1_match, 10);
 
 /**
  * @generated from message hypedomino.v1.OpenEnd
@@ -198,7 +247,7 @@ export type OpenEnd = Message<"hypedomino.v1.OpenEnd"> & {
  * Use `create(OpenEndSchema)` to create a new message.
  */
 export const OpenEndSchema: GenMessage<OpenEnd> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 9);
+  messageDesc(file_hypedomino_v1_match, 11);
 
 /**
  * @generated from message hypedomino.v1.BoardView
@@ -235,7 +284,7 @@ export type BoardView = Message<"hypedomino.v1.BoardView"> & {
  * Use `create(BoardViewSchema)` to create a new message.
  */
 export const BoardViewSchema: GenMessage<BoardView> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 10);
+  messageDesc(file_hypedomino_v1_match, 12);
 
 /**
  * @generated from message hypedomino.v1.SeatView
@@ -272,7 +321,7 @@ export type SeatView = Message<"hypedomino.v1.SeatView"> & {
  * Use `create(SeatViewSchema)` to create a new message.
  */
 export const SeatViewSchema: GenMessage<SeatView> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 11);
+  messageDesc(file_hypedomino_v1_match, 13);
 
 /**
  * @generated from message hypedomino.v1.LegalMove
@@ -294,7 +343,7 @@ export type LegalMove = Message<"hypedomino.v1.LegalMove"> & {
  * Use `create(LegalMoveSchema)` to create a new message.
  */
 export const LegalMoveSchema: GenMessage<LegalMove> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 12);
+  messageDesc(file_hypedomino_v1_match, 14);
 
 /**
  * @generated from message hypedomino.v1.Opening
@@ -316,7 +365,7 @@ export type Opening = Message<"hypedomino.v1.Opening"> & {
  * Use `create(OpeningSchema)` to create a new message.
  */
 export const OpeningSchema: GenMessage<Opening> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 13);
+  messageDesc(file_hypedomino_v1_match, 15);
 
 /**
  * @generated from message hypedomino.v1.TeamPoints
@@ -338,7 +387,7 @@ export type TeamPoints = Message<"hypedomino.v1.TeamPoints"> & {
  * Use `create(TeamPointsSchema)` to create a new message.
  */
 export const TeamPointsSchema: GenMessage<TeamPoints> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 14);
+  messageDesc(file_hypedomino_v1_match, 16);
 
 /**
  * @generated from message hypedomino.v1.HandResult
@@ -380,7 +429,7 @@ export type HandResult = Message<"hypedomino.v1.HandResult"> & {
  * Use `create(HandResultSchema)` to create a new message.
  */
 export const HandResultSchema: GenMessage<HandResult> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 15);
+  messageDesc(file_hypedomino_v1_match, 17);
 
 /**
  * @generated from message hypedomino.v1.RosterEntry
@@ -437,7 +486,7 @@ export type RosterEntry = Message<"hypedomino.v1.RosterEntry"> & {
  * Use `create(RosterEntrySchema)` to create a new message.
  */
 export const RosterEntrySchema: GenMessage<RosterEntry> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 16);
+  messageDesc(file_hypedomino_v1_match, 18);
 
 /**
  * @generated from message hypedomino.v1.MatchView
@@ -554,7 +603,7 @@ export type MatchView = Message<"hypedomino.v1.MatchView"> & {
  * Use `create(MatchViewSchema)` to create a new message.
  */
 export const MatchViewSchema: GenMessage<MatchView> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_match, 17);
+  messageDesc(file_hypedomino_v1_match, 19);
 
 /**
  * @generated from enum hypedomino.v1.BoardEnd

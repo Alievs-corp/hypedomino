@@ -12,6 +12,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
@@ -20,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
+	"github.com/Alievs-corp/hypedomino/server/internal/report"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
@@ -47,11 +49,16 @@ type Config struct {
 	Cosmetics       string
 	Rarities        cosmetics.Rarities
 	Inventory       inventory.Config
+	Friends         friends.Config
+	Reports         report.Config
 	Emoji           room.EmojiLimit
 	Shop            shop.Config
 	ShopCatalog     string
 	ConfigPoll      time.Duration
 	SeasonPoll      time.Duration
+	OutboxPoll      time.Duration
+	MatchmakingTick time.Duration
+	MatchmakingTTL  time.Duration
 	CountryHeader   string
 	CountryCooldown time.Duration
 	Reward          reward.Config
@@ -85,10 +92,15 @@ func DefaultConfig() Config {
 		Token:           token.DefaultConfig(),
 		Profile:         profile.DefaultConfig(),
 		Inventory:       inventory.DefaultConfig(),
+		Friends:         friends.DefaultConfig(),
+		Reports:         report.DefaultConfig(),
 		Emoji:           room.DefaultEmojiLimit(),
 		Shop:            shop.DefaultConfig(),
 		ConfigPoll:      10 * time.Second,
 		SeasonPoll:      time.Minute,
+		OutboxPoll:      2 * time.Second,
+		MatchmakingTick: time.Second,
+		MatchmakingTTL:  5 * time.Second,
 		CountryCooldown: 180 * 24 * time.Hour,
 		Reward:          reward.DefaultConfig(),
 		Purchase:        purchase.DefaultConfig(),
@@ -248,6 +260,14 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
 	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
+	r.integer("HD_FRIENDS_MAX", &config.Friends.MaxFriends)
+	r.integer("HD_FRIEND_REQUESTS_MAX", &config.Friends.MaxRequests)
+	r.integer("HD_REPORT_AUTO_RENAME_THRESHOLD", &config.Reports.AutoRenameThreshold)
+	r.duration("HD_REPORT_AUTO_RENAME_WINDOW", &config.Reports.AutoRenameWindow)
+	r.integer("HD_REPORT_DAILY_LIMIT", &config.Reports.DailyLimit)
+	r.integer("HD_REPORT_REJECTED_LIMIT", &config.Reports.RejectedLimit)
+	r.duration("HD_REPORT_REJECTED_WINDOW", &config.Reports.RejectedWindow)
+	r.duration("HD_REPORT_REJECTED_SILENCE", &config.Reports.RejectedSilence)
 	r.integer("HD_EMOJI_BURST", &config.Emoji.Burst)
 	r.duration("HD_EMOJI_REFILL", &config.Emoji.Refill)
 	r.text("HD_SHOP_CATALOG", &config.ShopCatalog)
@@ -256,6 +276,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_SHOP_RESET_HOUR_UTC", &config.Shop.ResetHourUTC)
 	r.duration("HD_CONFIG_POLL", &config.ConfigPoll)
 	r.duration("HD_SEASON_POLL", &config.SeasonPoll)
+	r.duration("HD_OUTBOX_POLL", &config.OutboxPoll)
+	r.duration("HD_MATCHMAKING_TICK", &config.MatchmakingTick)
+	r.duration("HD_MATCHMAKING_LEADER_TTL", &config.MatchmakingTTL)
 	r.text("HD_COUNTRY_HEADER", &config.CountryHeader)
 	r.integer("HD_RATE_IP_PER_MINUTE", &config.RateLimit.IP.PerMinute)
 	r.integer("HD_RATE_IP_BURST", &config.RateLimit.IP.Burst)
@@ -278,6 +301,12 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.SeasonPoll < time.Second {
 		r.errs = append(r.errs, errors.New("HD_SEASON_POLL: at least 1s"))
+	}
+	if config.OutboxPoll < 100*time.Millisecond {
+		r.errs = append(r.errs, errors.New("HD_OUTBOX_POLL: at least 100ms"))
+	}
+	if config.MatchmakingTick < 100*time.Millisecond || config.MatchmakingTTL < 2*config.MatchmakingTick {
+		r.errs = append(r.errs, errors.New("HD_MATCHMAKING_TICK and HD_MATCHMAKING_LEADER_TTL: a tick of at least 100ms and a TTL of at least two ticks"))
 	}
 	if config.CountryCooldown < 0 {
 		r.errs = append(r.errs, errors.New("HD_COUNTRY_CHANGE_COOLDOWN: not negative"))
@@ -316,6 +345,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.integer("HD_UNOWNED_EQUIP_THRESHOLD", &config.Risk.UnownedEquipThreshold)
 	r.duration("HD_UNOWNED_EQUIP_WINDOW", &config.Risk.UnownedEquipWindow)
 	r.integer("HD_UNOWNED_EQUIP_WEIGHT", &config.Risk.UnownedEquipWeight)
+	r.integer("HD_COLLUSION_WEIGHT", &config.Risk.CollusionWeight)
 	if err := config.Risk.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_CLOCK_SKEW_TOLERANCE, HD_CLOCK_SKEW_WEIGHT, HD_FAKE_RECEIPT_WEIGHT, HD_REFUND_WEIGHT, HD_REPLAY_REJECT_* and HD_MAC_FAILURE_*: %w", err))
 	}
@@ -351,6 +381,12 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if err := config.Promo.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_PROMO_*: %w", err))
+	}
+	if err := config.Reports.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_REPORT_*: %w", err))
+	}
+	if err := config.Friends.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_FRIENDS_MAX and HD_FRIEND_REQUESTS_MAX: %w", err))
 	}
 	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
 		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))

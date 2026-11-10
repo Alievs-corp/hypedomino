@@ -258,7 +258,7 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 - Locked medal: the locked look from #178, its name, its description, and for a mission source the current progress and target from the server.
 - Earned medal: its art, rarity marks and the server date earned.
 - The collection header shows earned / shown medals. Emblems follow in their own section (5.5).
-- Profile showcase: a player chooses up to `ProfileMedalSlots` (3) owned medals and their order, as an intent with medal ids. The server accepts only owned medals, stores the showcase, and other players see the server's copy (NT-9). A revoked medal leaves the showcase at once. The medal showcase sits next to the emblem showcase on the public profile (`docs/privacy.md` section 5).
+- Profile showcase: a player chooses up to `ProfileMedalSlots` (3) owned medals and their order, as an intent with medal ids. The server accepts only owned medals, stores the showcase, and other players see the server's copy (NT-9). A revoked medal leaves the showcase at once. The medal showcase sits next to the emblem showcase on the public profile (`docs/privacy.md` section 5). Implemented: `GET /profile/{account}` carries `medals`, the showcase medals in order as catalog entries.
 - Medals have no effect in a match and are not shown at the table.
 
 ### 5.5 Emblems
@@ -271,6 +271,7 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 
 - **No claim step.** Pass levels, mission completions and medals are granted by the server in the transaction that records the earning event (match end, purchase, level purchase, season end). A reward is never lost to a missed claim, a period end or a season end; the season-end job (2.7) is the safety net for defects.
 - Ordering at match end: match XP, then mission progress, then each completed mission's bundle, then each level crossed. Each step is idempotent on its own key.
+- Match XP is applied by the game server's relay on the `xp` outbox topic (`HD_OUTBOX_POLL`, #440): `pass.Store.Publish` runs `AwardMatch` for every player of the `matchstore.Outcome`. Mission progress comes the same way from the `missions` topic: `mission.Store.Publish` runs `ApplyMatch` per player with the hands won, dominoes, board points and double chains the outcome carries. The two topics are relayed independently, so mission progress may land before the match XP; each step stays idempotent and the end state is the same. Matchmade rooms write the outcome when they end (`docs/matchmaking.md` section 4); hands won, dominoes, board points and double chains are counted from the replay timeline (`replay.Timeline.Stats`).
 - The server keeps a list of grants the client has not presented yet and sends it with the state. The client presents them as reveals and sends an acknowledge intent with the last grant id shown. Acknowledging changes only what is still to be presented, never ownership.
 - Notices are `key` plus typed parameters (`docs/localization.md` section 3); items, medals and missions are sent as ids.
 

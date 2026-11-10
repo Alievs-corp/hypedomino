@@ -112,3 +112,13 @@ func TestBotsAbsentSeatsAndEmptySeatsSendNoEmoji(t *testing.T) {
 		t.Fatalf("a disconnected seat sent %v", got)
 	}
 }
+
+func TestAMutedSeatSendsNoEmojiWhileOthersStillDo(t *testing.T) {
+	tab := emojiTable(t, []Player{
+		{Seat: rules.SeatX, Muted: true, Emoji: []string{"emoji.laugh"}},
+		{Seat: rules.SeatY, Emoji: []string{"emoji.wave"}},
+	})
+	tab.room.Emoji(rules.SeatX, "emoji.laugh")
+	tab.room.Emoji(rules.SeatY, "emoji.wave")
+	tab.expectEmojis(2, Emoji{Seat: rules.SeatY, Item: "emoji.wave"})
+}

@@ -33,6 +33,8 @@ type Handler struct {
 	profiles  Profiles
 	countries Countries
 	cooldown  time.Duration
+	ranked    func(ctx context.Context, account string) (any, error)
+	medals    func(ctx context.Context, account string) (any, error)
 	logger    *slog.Logger
 	now       func() time.Time
 	mux       *http.ServeMux
@@ -50,6 +52,14 @@ func NewHandler(verifier token.Verifier, profiles Profiles, logger *slog.Logger,
 
 func (h *Handler) SetCountries(countries Countries, cooldown time.Duration) {
 	h.countries, h.cooldown = countries, cooldown
+}
+
+func (h *Handler) SetRanked(ranked func(ctx context.Context, account string) (any, error)) {
+	h.ranked = ranked
+}
+
+func (h *Handler) SetMedals(medals func(ctx context.Context, account string) (any, error)) {
+	h.medals = medals
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +95,8 @@ type publicView struct {
 	Level     int         `json:"level"`
 	Loadout   Loadout     `json:"loadout"`
 	Stats     publicStats `json:"stats"`
+	Ranked    any         `json:"ranked,omitempty"`
+	Medals    any         `json:"medals,omitempty"`
 }
 
 type publicStats struct {
@@ -156,13 +168,29 @@ func (h *Handler) public(w http.ResponseWriter, r *http.Request) {
 		reply(w, http.StatusNotFound, errorResponse{Error: "profile.unknown"})
 		return
 	}
-	reply(w, http.StatusOK, publicView{
+	view := publicView{
 		AccountID: p.Account,
 		Nickname:  p.Nickname,
 		Level:     p.Level,
 		Loadout:   p.Loadout,
 		Stats:     publicStats{Games: p.Stats.Games, WinRatePercent: p.Stats.WinRatePercent(), BestStreak: p.Stats.BestStreak},
-	})
+	}
+	if view.Ranked, err = section(r.Context(), h.ranked, p.Account); err != nil {
+		h.fail(w, err)
+		return
+	}
+	if view.Medals, err = section(r.Context(), h.medals, p.Account); err != nil {
+		h.fail(w, err)
+		return
+	}
+	reply(w, http.StatusOK, view)
+}
+
+func section(ctx context.Context, read func(ctx context.Context, account string) (any, error), account string) (any, error) {
+	if read == nil {
+		return nil, nil
+	}
+	return read(ctx, account)
 }
 
 func (h *Handler) own(p Profile) ownView {

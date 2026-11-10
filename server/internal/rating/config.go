@@ -51,8 +51,8 @@ type Config struct {
 	ResetFloor                  string                   `json:"resetFloor"`
 	ResetCeiling                string                   `json:"resetCeiling"`
 	SeasonResetTable            map[string]string        `json:"seasonResetTable,omitempty"`
-	OffenseRatingPenalty        int                      `json:"offenseRatingPenalty"`
-	PartnerLossReductionPercent int                      `json:"partnerLossReductionPercent"`
+	OffenseRatingPenalty        int                      `json:"-"`
+	PartnerLossReductionPercent int                      `json:"-"`
 }
 
 func DefaultConfig() Config {
@@ -121,10 +121,6 @@ func (c Config) Validate() error {
 		return fail("lpFactorMin must be positive and at most lpFactorMax")
 	case c.LpChangeMin < 0 || c.LpChangeMin > c.LpChangeMax:
 		return fail("lpChangeMin must be between 0 and lpChangeMax")
-	case c.OffenseRatingPenalty < 0 || c.PartnerLossReductionPercent < 0 || c.PartnerLossReductionPercent > 100:
-		return fail("offenseRatingPenalty must not be negative and partnerLossReductionPercent must be a percentage")
-	case c.LpChangeMax+c.OffenseRatingPenalty >= c.DivisionLp:
-		return fail("lpChangeMax + offenseRatingPenalty must stay below divisionLp")
 	case c.PlacementMatches < 1:
 		return fail("placementMatches must be at least 1")
 	case c.PlacementMaxDropDivisions < 0 || c.PlacementMaxClimbDivisions < 0:
@@ -162,6 +158,7 @@ type Snapshot struct {
 	LeaderboardRegions map[string][]string `json:"leaderboardRegions,omitempty"`
 	RankRewardCoins    map[string]int64    `json:"rankRewardCoins"`
 	EmblemBrackets     []int               `json:"emblemBrackets"`
+	ProfileEmblemSlots int                 `json:"profileEmblemSlots"`
 	Abuse              Abuse               `json:"abuse"`
 	Modes              Modes               `json:"modes"`
 }
@@ -190,6 +187,7 @@ func Default() *Snapshot {
 		LeaderboardTopSize: 200,
 		RankRewardCoins:    map[string]int64{"Iron": 100, "Bronze": 200, "Silver": 400, "Gold": 700, "Platinum": 1000, "Emerald": 1500, "Diamond": 2000, TierMaster: 3000, TierGrandmaster: 4000, TierChallenger: 5000},
 		EmblemBrackets:     []int{1, 50, 100, 200},
+		ProfileEmblemSlots: 3,
 		Abuse:              DefaultAbuse(),
 		Modes:              Modes{OneVsOne: DefaultConfig(), TwoVsTwo: DefaultConfig()},
 	}
@@ -211,6 +209,9 @@ func (s *Snapshot) Validate() error {
 	}
 	if s.LeaderboardTopSize < 1 {
 		return fmt.Errorf("%w: leaderboardTopSize must be at least 1", ErrInvalidConfig)
+	}
+	if s.ProfileEmblemSlots < 0 {
+		return fmt.Errorf("%w: profileEmblemSlots must not be negative", ErrInvalidConfig)
 	}
 	seen := map[string]string{}
 	for region, countries := range s.LeaderboardRegions {
@@ -258,4 +259,13 @@ func Parse(raw []byte) (*Snapshot, error) {
 		return nil, err
 	}
 	return snapshot, nil
+}
+
+func (s *Snapshot) CheckOffensePenalty(offenseRatingPenalty int) error {
+	for _, c := range []Config{s.Modes.OneVsOne, s.Modes.TwoVsTwo} {
+		if c.LpChangeMax+offenseRatingPenalty >= c.DivisionLp {
+			return fmt.Errorf("%w: lpChangeMax + the penalties offenseRatingPenalty must stay below divisionLp", ErrInvalidConfig)
+		}
+	}
+	return nil
 }

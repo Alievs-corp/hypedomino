@@ -18,10 +18,12 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
+	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -50,7 +52,7 @@ func main() {
 	}
 }
 
-var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, rating.Domain, rulesconfig.Domain, shop.Domain}
+var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, rating.Domain, rulesconfig.Domain, shop.Domain}
 
 var errDomain = errors.New("unknown config domain")
 
@@ -82,6 +84,12 @@ func validate(domain string, raw []byte) error {
 	switch domain {
 	case dailylogin.Domain:
 		_, err := dailylogin.Parse(raw)
+		return err
+	case penalties.Domain:
+		_, err := penalties.Parse(raw)
+		return err
+	case matchmaking.Domain:
+		_, err := matchmaking.Parse(raw)
 		return err
 	case matchreward.Domain:
 		_, err := matchreward.Parse(raw)
@@ -124,6 +132,10 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 		return missionSourcesArePublished(ctx, pool, raw)
 	case shop.Domain:
 		return chestPoolsArePublished(ctx, pool, raw)
+	case rating.Domain:
+		return ratingFitsPublishedPenalties(ctx, pool, raw)
+	case penalties.Domain:
+		return penaltiesFitPublishedRating(ctx, pool, raw)
 	case gamestrings.Domain:
 		localization, err := gamestrings.ParseLocalization(raw)
 		if err != nil {
@@ -211,4 +223,40 @@ func passFollowsPublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) e
 		return err
 	}
 	return pass.CheckFrozen(previous, next, time.Now())
+}
+
+func ratingFitsPublishedPenalties(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	next, err := rating.Parse(raw)
+	if err != nil {
+		return err
+	}
+	offenses := penalties.DefaultConfig()
+	_, published, err := snapshot.Latest(ctx, pool, penalties.Domain)
+	switch {
+	case err == nil:
+		if offenses, err = penalties.Parse(published); err != nil {
+			return err
+		}
+	case !errors.Is(err, snapshot.ErrNone):
+		return err
+	}
+	return next.CheckOffensePenalty(offenses.OffenseRatingPenalty)
+}
+
+func penaltiesFitPublishedRating(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+	next, err := penalties.Parse(raw)
+	if err != nil {
+		return err
+	}
+	ranked := rating.Default()
+	_, published, err := snapshot.Latest(ctx, pool, rating.Domain)
+	switch {
+	case err == nil:
+		if ranked, err = rating.Parse(published); err != nil {
+			return err
+		}
+	case !errors.Is(err, snapshot.ErrNone):
+		return err
+	}
+	return ranked.CheckOffensePenalty(next.OffenseRatingPenalty)
 }

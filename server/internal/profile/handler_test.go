@@ -86,6 +86,7 @@ type fixture struct {
 	t        *testing.T
 	server   *httptest.Server
 	profiles *fakeProfiles
+	handler  *profile.Handler
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -99,7 +100,7 @@ func newFixture(t *testing.T) *fixture {
 	handler := profile.NewHandler(fakeVerifier{}, profiles, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return profiles.now })
 	mux := http.NewServeMux()
 	mux.Handle("/profile/", handler)
-	f := &fixture{t: t, server: httptest.NewServer(mux), profiles: profiles}
+	f := &fixture{t: t, server: httptest.NewServer(mux), profiles: profiles, handler: handler}
 	t.Cleanup(f.server.Close)
 	return f
 }
@@ -293,5 +294,31 @@ func TestTheCountryRoutesReadAndChangeTheAccountCountry(t *testing.T) {
 	bare.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("without countries: %d", recorder.Code)
+	}
+}
+
+func TestThePublicProfileCarriesTheRankedAndMedalViewsWhenWired(t *testing.T) {
+	f := newFixture(t)
+	if _, body := f.call("GET", "/profile/ben", "access:ayla", ""); body["ranked"] != nil {
+		t.Fatalf("unwired ranked view %v", body["ranked"])
+	}
+	f.handler.SetRanked(func(_ context.Context, account string) (any, error) {
+		if account == "ben" {
+			return map[string]any{"ranks": map[string]string{"1v1": "Silver I"}}, nil
+		}
+		return nil, errors.New("down")
+	})
+	status, body := f.call("GET", "/profile/ben", "access:ayla", "")
+	ranked, _ := body["ranked"].(map[string]any)
+	if status != http.StatusOK || ranked["ranks"].(map[string]any)["1v1"] != "Silver I" {
+		t.Fatalf("ranked view answered %d %v", status, body)
+	}
+	f.handler.SetMedals(func(context.Context, string) (any, error) { return []string{"medal.wins_50"}, nil })
+	if _, body := f.call("GET", "/profile/ben", "access:ayla", ""); body["medals"].([]any)[0] != "medal.wins_50" {
+		t.Fatalf("medal showcase %v", body)
+	}
+	f.handler.SetMedals(func(context.Context, string) (any, error) { return nil, errors.New("down") })
+	if status, _ := f.call("GET", "/profile/ben", "access:ayla", ""); status != http.StatusInternalServerError {
+		t.Fatalf("failing medal showcase answered %d", status)
 	}
 }

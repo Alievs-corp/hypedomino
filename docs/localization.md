@@ -242,6 +242,13 @@ In-game communication is emoji and quick messages only (Epic 13, #149). There is
 | Custom room name | Same normalisation (5.2) and word filter (5.3). Own limit `RoomNameMaxLength` (proposed default 24). No uniqueness. A rejected name is replaced by a generated default. |
 | Emoji and quick messages | A fixed catalog of keys (section 2). Only ids travel over the wire, never player text. |
 
+Quick messages (#152, owner decisions 2026-11-08):
+
+- The catalog is the `quick_messages` config snapshot `{"keys"}`: game string keys `quick.<slug>`, each listed once. Every player may send every listed key; there is no ownership. A key not in the published catalog is dropped, and before the first publish every key is.
+- A `QuickMessageIntent` carries `key` and `team_only`. Without `team_only` every seat sees it; with it only the sender's team does, so in 1v1 only the sender. Every seat that sees it gets `QuickMessageShown` with the sender's seat, the key and `team_only`. The client shows the key's text in the viewer's language.
+- It spends from the same per-seat bucket as emoji (`HD_EMOJI_BURST`, default 3, refilled one every `HD_EMOJI_REFILL`, default 2 s), so emoji and quick messages share one limit. A bot seat, a muted player (`docs/admin.md` 6.2) and a seat with no connection send nothing.
+- Nodes read the snapshot at start and refresh it every `HD_CONFIG_POLL`. The panel edits it at `/quick-messages` (A-27 rights: view with view on game strings, publish and rollback with publish on game strings). A publish is refused with `invalid` and the failing keys in `detail` unless every key has an approved, non-deprecated value in every game language (section 2.1).
+
 Any future feature that accepts free text must update this section and add moderation before it ships.
 
 ### 5.8 Reports
@@ -253,6 +260,15 @@ Any future feature that accepts free text must update this section and add moder
 | Review | Reports go to a queue in the admin panel. A moderator approves the name, forces a rename, or adds a pattern to the word filter. Automatic action thresholds are admin config (`ReportAutoRenameThreshold`). |
 | Abuse | Reporters with many rejected reports are rate-limited. |
 | Feedback | The reporter gets a generic localized acknowledgement, not the outcome. The reported player gets a localized notice (reason key plus the rename requirement). |
+
+Implemented in `server/internal/report` (#155, owner decisions 2026-11-08):
+
+- `POST /reports` `{"target","reason","match_id"}` with the player's access token. `target` is an account id; `reason` is `offensive_nickname`, `offensive_room_name`, `impersonation` or `other`; `match_id` is optional. Errors: 400 `report.reason`, `report.self`, `report.match`; 404 `report.unknown_player`. Every other outcome, also a dropped report, answers 202 `{"status":"received"}`, the generic acknowledgement.
+- A report stores the target's nickname at report time (`player_reports.name_text`). Custom room names are not stored yet, so a room name report keeps the nickname until they are. While a report of one reporter on one target is open, a new one replaces its reason, name and match.
+- `ReportAutoRenameThreshold` (`HD_REPORT_AUTO_RENAME_THRESHOLD`, default 5, 0 turns it off): when that many different reporters have an open `offensive_nickname` report on one target updated within `HD_REPORT_AUTO_RENAME_WINDOW` (default 7 days), the target must pick a new nickname (`rename_required`, as a forced rename). The reports stay open for a moderator.
+- Abuse: a reporter whose reports were touched `HD_REPORT_DAILY_LIMIT` times (default 10) in the last 24 hours, or who has `HD_REPORT_REJECTED_LIMIT` (default 5) reports rejected within `HD_REPORT_REJECTED_WINDOW` (default 30 days) with the latest rejection less than `HD_REPORT_REJECTED_SILENCE` (default 7 days) ago, is answered as usual but nothing is stored.
+- Muting another player's emoji and quick messages during a match is a choice on the device only; the server is not involved.
+- Admin queue (A-32, `queues` object): `GET /admin/reports` lists open reports grouped by target, oldest target first, up to 100 targets. `POST /admin/players/{id}/reports/uphold` and `/reject` take a reason and a recent sign-in, close every open report on the player and are audited on the player as `uphold_reports` or `reject_reports`; 409 `no_open_reports` when none is open. Upholding changes nothing on the account; the moderator forces a rename or mutes from the player page. Rejected reports feed the reporter silence above.
 
 ## 6. Cultural content checklist
 

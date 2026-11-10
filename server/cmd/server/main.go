@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
@@ -30,14 +31,19 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
+	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
+	"github.com/Alievs-corp/hypedomino/server/internal/report"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -86,7 +92,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		}
 		client = redis.NewClient(options)
 	}
-	a, err := node(config, logger, sessions, client)
+	a, members, err := node(config, logger, sessions, client)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,7 +126,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
 	signIn.SetCountryHeader(config.CountryHeader)
 	a.Handle("POST /auth/", signIn)
-	profiles := profile.NewHandler(tokens, profile.NewStore(pool, config.Profile), logger, time.Now)
+	profileStore := profile.NewStore(pool, config.Profile)
+	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
 	a.Handle("/profile/", profiles)
 	catalog, err := loadCatalog(config.Cosmetics)
@@ -138,6 +145,16 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	items := critical(inventoryHandler)
 	a.Handle("/inventory", items)
 	a.Handle("/inventory/", items)
+	friendStore := friends.NewStore(pool, config.Friends)
+	if client != nil {
+		presence := friends.NewPresence(client, config.Cluster.KeyPrefix, 3*config.Gateway.PingInterval)
+		go presence.Run(ctx, config.Gateway.PingInterval, sessions.Presence, logger)
+		friendStore.ShowPresence(presence)
+	}
+	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
+	a.Handle("/friends", friendsHandler)
+	a.Handle("/friends/", friendsHandler)
+	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
@@ -146,6 +163,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	medalCatalog := medal.NewWatcher(pool, logger)
 	go medalCatalog.Run(ctx, config.ConfigPoll)
 	medals := medal.NewStore(pool, medalCatalog)
+	profiles.SetMedals(func(ctx context.Context, account string) (any, error) { return medals.Public(ctx, account) })
 	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
@@ -154,6 +172,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	missions := mission.NewStore(pool, missionCatalog, engine)
 	calendar := dailylogin.NewWatcher(pool, logger)
 	go calendar.Run(ctx, config.ConfigPoll)
+	matchRewardConfigs := matchreward.NewWatcher(pool, logger)
+	go matchRewardConfigs.Run(ctx, config.ConfigPoll)
+	matchRewards := matchstore.NewRelay(matchstore.New(pool), matchreward.NewStore(pool, matchRewardConfigs, walletStore), matchstore.TopicEconomy, 0, time.Now)
+	go matchRewards.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("match reward relay failed", "error", err) })
+	passXp := matchstore.NewRelay(matchstore.New(pool), passes, matchstore.TopicXp, 0, time.Now)
+	go passXp.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("pass xp relay failed", "error", err) })
+	missionProgress := matchstore.NewRelay(matchstore.New(pool), missions, matchstore.TopicMissions, 0, time.Now)
+	go missionProgress.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("mission progress relay failed", "error", err) })
 	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
@@ -184,6 +210,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		bundles, chains := active.Hello()
 		return gateway.Strings{Bundles: bundles, Chains: chains}
 	})
+	quickMessages := snapshot.New(pool, quickmessage.Domain, quickmessage.Parse, logger)
+	go quickMessages.Run(ctx, config.ConfigPoll)
+	a.Rooms().AllowQuickMessages(func(key string) bool {
+		catalog, _, _ := quickMessages.Current()
+		return catalog.Contains(key)
+	})
 	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
 	go tuning.Run(ctx, config.ConfigPoll)
 	a.Rooms().Tune(func(base rules.Config) rules.Config {
@@ -193,12 +225,28 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratingConfigs := rating.NewWatcher(pool, logger)
 	go ratingConfigs.Run(ctx, config.ConfigPoll)
 	ratings := rating.NewStore(pool, ratingConfigs)
+	profiles.SetRanked(func(ctx context.Context, account string) (any, error) { return ratings.Public(ctx, account) })
+	penaltyRecords := penaltyStore(ctx, config, pool, logger)
+	ratings.UseOffensePenalties(func() (int, int) {
+		current, _ := penaltyRecords.Config()
+		return current.OffenseRatingPenalty, current.PartnerLossReductionPercent
+	})
 	wave := risk.NewWave(pool, config.Risk, logger)
 	wave.OnShadowban(ratings.HideFromBoards)
 	go wave.Run(ctx, config.SeasonPoll, time.Now)
 	ratings.SetRewards(engine)
+	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
+	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
+	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
+	if members != nil {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, rankedOpen: func() bool {
+			current, _, _ := controls.Current()
+			return !current.RankedDisabled
+		}})
+	}
 	var reader leaderboard.Reader
 	if client != nil {
 		boards := leaderboard.New(client, ratings, ratings, leaderboard.DefaultConfig())
@@ -354,17 +402,17 @@ func buckets(client *redis.Client, prefix string) ratelimit.Buckets {
 	return ratelimit.NewRedis(client, prefix)
 }
 
-func node(config app.Config, logger *slog.Logger, sessions *session.Manager, client *redis.Client) (*app.App, error) {
+func node(config app.Config, logger *slog.Logger, sessions *session.Manager, client *redis.Client) (*app.App, *cluster.Cluster, error) {
 	if client == nil {
-		return app.New(config, logger, sessions), nil
+		return app.New(config, logger, sessions), nil, nil
 	}
 	members, err := cluster.New(config.Cluster, client, logger)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	sessions.Route(members)
 	var handler gateway.Handler = cluster.NewRelay(members, sessions, config.Relay)
 	a := app.New(config, logger, handler)
 	a.Join(members)
-	return a, nil
+	return a, members, nil
 }

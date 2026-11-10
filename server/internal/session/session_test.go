@@ -407,6 +407,9 @@ func TestSeatingAConnectedSessionJoinsAtOnce(t *testing.T) {
 	tab := newTable(t, rules.Mode2v2)
 	token := tab.manager.Create("late")
 	p := tab.connect(token, true)
+	if inMatch, online := tab.manager.Presence()["late"]; !online || inMatch {
+		t.Fatalf("presence before seating %v %v", online, inMatch)
+	}
 	other := room.New(room.Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Seed: 2, Clock: tab.clock})
 	ctx, cancel := context.WithCancel(context.Background())
 	go other.Run(ctx)
@@ -416,6 +419,9 @@ func TestSeatingAConnectedSessionJoinsAtOnce(t *testing.T) {
 	}
 	if view := p.view(); view.GetState() != pb.MatchState_MATCH_STATE_LOADING || view.GetSeat() != pb.Seat_SEAT_Y || view.GetMode() != pb.Mode_MODE_1V1 {
 		t.Fatalf("view after seating %v", view)
+	}
+	if !tab.manager.Presence()["late"] {
+		t.Fatal("a seated session is not in a match")
 	}
 }
 

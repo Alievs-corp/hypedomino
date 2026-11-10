@@ -8,7 +8,8 @@ import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { emptyGrant, grantReady, grantRequest, grantSourceTypes, type GrantDraft } from "@/players/grant";
 import { validAdjustment } from "@/players/record";
-import { adjustCoins, banTemporarily, forceRename, grantReward, liftShadowban, liftTemporaryBan, shadowban, type PlayerActionResult } from "./actions";
+import { ladders, penaltyRunning, type PenaltyView } from "@/players/penalties";
+import { adjustCoins, banTemporarily, forceRename, grantReward, liftPenalty, liftShadowban, liftTemporaryBan, mute, removeOffense, shadowban, unmute, type PlayerActionResult } from "./actions";
 
 type Pending = { action: () => Promise<PlayerActionResult>; onApplied?: () => void };
 
@@ -26,7 +27,7 @@ function outcomeKey(result: PlayerActionResult): MessageKey {
   return result.repeated ? "actions.repeated" : "actions.done";
 }
 
-export function PlayerActions({ id, clientId, banned, shadowbanned, renameRequired }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; renameRequired: boolean }) {
+export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renameRequired, penalties }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; muted: boolean; renameRequired: boolean; penalties: PenaltyView | null }) {
   const t = useTranslator();
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -153,11 +154,27 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, renameRequir
         <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => (shadowbanned ? liftShadowban(id, reason) : shadowban(id, reason)) })} className={buttonClass}>
           {t(shadowbanned ? "actions.lift_shadowban" : "actions.shadowban")}
         </button>
+        <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => (muted ? unmute(id, reason) : mute(id, reason)) })} className={buttonClass}>
+          {t(muted ? "actions.unmute" : "actions.mute")}
+        </button>
         {!renameRequired && (
           <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => forceRename(id, reason) })} className={buttonClass}>
             {t("actions.force_rename")}
           </button>
         )}
+        {penalties && penaltyRunning(penalties) && (
+          <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => liftPenalty(id, reason) })} className={buttonClass}>
+            {t("actions.lift_penalty")}
+          </button>
+        )}
+        {penalties &&
+          ladders.flatMap((queue) =>
+            penalties[queue].offenses.map((offense) => (
+              <button key={`${queue}:${offense.match_id}`} type="button" disabled={pending || noReason} onClick={() => run({ action: () => removeOffense(id, queue, offense.match_id, reason) })} className={buttonClass}>
+                {t("actions.remove_offense")} {queue} {offense.kind}
+              </button>
+            )),
+          )}
       </div>
       {stepUp && last && <StepUpPrompt clientId={clientId} onConfirmed={() => run(last)} />}
       {result && !stepUp && (

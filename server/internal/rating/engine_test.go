@@ -154,8 +154,6 @@ func TestConfigValidationAndParsing(t *testing.T) {
 		"step":      func(c *rating.Config) { c.RankMmrStep = 0 },
 		"factors":   func(c *rating.Config) { c.LpFactorMin = 2 },
 		"changes":   func(c *rating.Config) { c.LpChangeMin = 50 },
-		"one move":  func(c *rating.Config) { c.LpChangeMax = 90 },
-		"percent":   func(c *rating.Config) { c.PartnerLossReductionPercent = 101 },
 		"placement": func(c *rating.Config) { c.PlacementMatches = 0 },
 		"drop":      func(c *rating.Config) { c.PlacementMaxDropDivisions = -1 },
 		"cap":       func(c *rating.Config) { c.NewPlayerPlacementCap = "Master" },
@@ -171,6 +169,12 @@ func TestConfigValidationAndParsing(t *testing.T) {
 	snapshot, err := rating.Parse([]byte(`{"schema":1,"modes":{"2v2":{"lpBase":25}}}`))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := snapshot.CheckOffensePenalty(10); err != nil {
+		t.Fatal(err)
+	}
+	if err := snapshot.CheckOffensePenalty(60); !errors.Is(err, rating.ErrInvalidConfig) {
+		t.Errorf("one move: lpChangeMax 40 + penalty 60 reaches divisionLp, %v", err)
 	}
 	if !reflect.DeepEqual(snapshot.Modes.OneVsOne, rating.DefaultConfig()) || snapshot.Modes.TwoVsTwo.LpBase != 25 || snapshot.Modes.TwoVsTwo.LpChangeMax != 40 {
 		t.Errorf("overlay %+v", snapshot.Modes)

@@ -61,7 +61,12 @@ func (r *Relay) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Clien
 	if !errors.Is(err, gateway.ErrUnauthenticated) || Relayed(ctx) {
 		return session, err
 	}
-	node, lookupErr := r.cluster.Lookup(ctx, hello.GetSessionToken())
+	key := hello.GetSessionToken()
+	var routed *gateway.RoutedElsewhere
+	if errors.As(err, &routed) {
+		key = routed.Key
+	}
+	node, lookupErr := r.cluster.Lookup(ctx, key)
 	if lookupErr != nil || node.ID == r.cluster.NodeID() || node.Addr == "" {
 		return nil, gateway.ErrUnauthenticated
 	}
@@ -166,7 +171,23 @@ func (s *relaySession) Loading(progress int, ready bool) {
 }
 
 func (s *relaySession) Emoji(item string) {
-	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, SessionNonce: s.nonce, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}}
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}})
+}
+
+func (s *relaySession) QuickMessage(key string, teamOnly bool) {
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_QuickMessageIntent{QuickMessageIntent: &pb.QuickMessageIntent{Key: key, TeamOnly: teamOnly}}})
+}
+
+func (s *relaySession) JoinQueue(intent *pb.JoinQueueIntent) {
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_JoinQueueIntent{JoinQueueIntent: intent}})
+}
+
+func (s *relaySession) LeaveQueue() {
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_LeaveQueueIntent{LeaveQueueIntent: &pb.LeaveQueueIntent{}}})
+}
+
+func (s *relaySession) forward(frame *pb.Envelope) {
+	frame.ProtocolVersion, frame.SessionNonce = gateway.ProtocolVersion, s.nonce
 	if err := s.write(context.Background(), frame); err != nil {
 		s.conn.Close(websocket.StatusGoingAway, "hosting node unreachable")
 	}

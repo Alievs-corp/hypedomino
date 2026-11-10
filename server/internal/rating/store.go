@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
@@ -26,11 +27,12 @@ type Participant struct {
 }
 
 type Result struct {
-	MatchID string
-	Mode    rules.Mode
-	Teams   [2][]Participant
-	Winner  int
-	At      time.Time
+	MatchID   string
+	Mode      rules.Mode
+	Teams     [2][]Participant
+	Winner    int
+	At        time.Time
+	Penalties *matchstore.OffensePenalties
 }
 
 type Applied struct {
@@ -85,11 +87,17 @@ type Boards interface {
 }
 
 type Store struct {
-	pool    *pgxpool.Pool
-	configs *snapshot.Watcher[*Snapshot]
-	boards  Boards
-	rewards Rewarder
-	logger  *slog.Logger
+	pool            *pgxpool.Pool
+	configs         *snapshot.Watcher[*Snapshot]
+	boards          Boards
+	rewards         Rewarder
+	collusionWeight int
+	logger          *slog.Logger
+	offenses        func() (penalty, partnerLossReductionPercent int)
+}
+
+func (s *Store) UseOffensePenalties(source func() (penalty, partnerLossReductionPercent int)) {
+	s.offenses = source
 }
 
 func (s *Store) SetBoards(boards Boards, logger *slog.Logger) {
@@ -156,6 +164,9 @@ func (s *Store) Config(mode rules.Mode) (Config, int64, error) {
 	if !ok {
 		return Config{}, 0, fmt.Errorf("%w: %s", ErrNoConfig, mode)
 	}
+	if s.offenses != nil {
+		config.OffenseRatingPenalty, config.PartnerLossReductionPercent = s.offenses()
+	}
 	return config, version, nil
 }
 
@@ -192,6 +203,9 @@ func (s *Store) Apply(ctx context.Context, r Result) (Applied, error) {
 	config, version, err := s.Config(r.Mode)
 	if err != nil {
 		return Applied{}, err
+	}
+	if r.Penalties != nil {
+		config.OffenseRatingPenalty, config.PartnerLossReductionPercent = r.Penalties.RatingPenalty, r.Penalties.PartnerLossReductionPercent
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -507,4 +521,22 @@ func (s *Store) RunApexRecalc(ctx context.Context, logger *slog.Logger, now func
 			logger.Info("apex tiers recalculated", "mode", mode.String(), "skipped", result.Skipped, "challenger", result.Challenger, "grandmaster", result.Grandmaster, "master", result.Master)
 		}
 	}
+}
+
+func (r Rating) Label() string {
+	if !r.Placed {
+		return ""
+	}
+	if r.Rank.Apex() {
+		return r.Tier
+	}
+	return r.Rank.String()
+}
+
+func (s *Store) Label(ctx context.Context, account string, mode rules.Mode) (string, error) {
+	r, ok, err := s.Get(ctx, account, mode)
+	if !ok || err != nil {
+		return "", err
+	}
+	return r.Label(), nil
 }

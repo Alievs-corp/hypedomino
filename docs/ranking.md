@@ -52,7 +52,7 @@ The tier list and the division count are fixed by this document; changing them i
 - Promotion: when LP reaches `DivisionLp` or more, the player moves up one division (Diamond I moves to Master) and keeps the excess: new LP = LP - `DivisionLp`.
 - Demotion: when LP would go below 0, the player moves down one division with LP = `DemotionLp` (default 75).
 - Iron IV is the floor: LP stops at 0.
-- A match moves a player at most one division. Publish validation rejects `LpChangeMax` + `OffenseRatingPenalty` >= `DivisionLp`.
+- A match moves a player at most one division. Publish validation rejects `LpChangeMax` + `OffenseRatingPenalty` >= `DivisionLp`, whether the `rating` or the `penalties` domain changes; `OffenseRatingPenalty` and `PartnerLossReductionPercent` live only in the `penalties` domain (owner decision 2026-11-09).
 
 ### 3.2 Apex tiers (Master and above)
 
@@ -144,7 +144,7 @@ The seat played by the bot after R-51 or R-52 keeps its human player's MMR in `R
 
 Division moves: Gold I 90 LP wins +21: Platinum IV 11 LP. Gold III 10 LP loses -18: Gold IV 75 LP. Iron IV 10 LP loses -18: Iron IV 0 LP.
 
-- Implemented in `server/internal/rating` (#112): sections 3.1, 3.2, 4 and the worked examples are table-driven tests; coefficients are the `rating` config snapshot domain with one `Config` per mode (`docs/ranking/examples/rating.json`), and every applied match records the version it used. Grandmaster and Challenger (#113) are recomputed per mode by `rating.Store.RecalculateApex` once a day at `ApexRecalcHourUtc` under an advisory lock, in the order of 8.1 without its apex part (LP, then the server time of the match that set the LP, ranked wins, account id); the season-end run is #115.
+- Implemented in `server/internal/rating` (#112): sections 3.1, 3.2, 4 and the worked examples are table-driven tests; coefficients are the `rating` config snapshot domain with one `Config` per mode (`docs/ranking/examples/rating.json`), and every applied match records the version it used. Results arrive through the game server's relay on the `rating` outbox topic (`HD_OUTBOX_POLL`, #440): `rating.Store.Publish` builds the result from the `matchstore.Outcome` (team, win and offender flag per player, and the `OffenseRatingPenalty` and `PartnerLossReductionPercent` in force when the room opened; an outcome written without them uses the current `penalties` config) and skips a cancelled match (section 1); a redelivered match is a duplicate. Matchmade rooms write the outcome when they end (`docs/matchmaking.md` section 4). Grandmaster and Challenger (#113) are recomputed per mode by `rating.Store.RecalculateApex` once a day at `ApexRecalcHourUtc` under an advisory lock, in the order of 8.1 without its apex part (LP, then the server time of the match that set the LP, ranked wins, account id); the season-end run is #115.
 
 ## 5. Placement
 
@@ -284,6 +284,7 @@ Owner decision (2026-10-26). A season-end finish near the top of a board earns a
 - The client sends only the chosen emblem ids. The server accepts an id only if the account owns that emblem and stores the showcase; other players always see the server's copy (`docs/anti-cheat.md` NT-9).
 - A revoked emblem leaves the showcase at once.
 - The medal collection screen lists emblems in their own section; emblems are not medals (`docs/pass-missions-medals.md` 5.5).
+- Implemented in `server/internal/rating`: an emblem id is `<mode>:<seasonId>:<board>`. `PUT /ranked/emblems/showcase` with `{"emblems": [ids]}` stores the ordered choice in `emblem_showcases` (400 `ranked.showcase_invalid` for too many or repeated ids, 409 `ranked.emblem_not_owned`). `GET /ranked/emblems` returns the emblems and the showcase; a read drops revoked or unowned ids. The match roster carries the showcase as `emblems`. The public profile `GET /profile/{account}` carries `ranked`: `ranks` with the rank label of each placed mode and `emblems` with the full showcase emblems in order.
 
 ## 9. No bot fill in ranked play
 

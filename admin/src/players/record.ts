@@ -5,6 +5,7 @@ export type PlayerAccount = PlayerSummary & {
   identities?: { provider: string; subject: string }[];
   banned_until: string | null;
   shadowbanned_at: string | null;
+  muted_until: string | null;
   deletion_requested_at: string | null;
   deleted_at: string | null;
 };
@@ -21,7 +22,8 @@ export type PlayerRecord = {
   ledger: { id: number; currency: string; amount: number; reason: string; source_type: string; source_ref: string; config_version: number; balance_after: number; at: string }[];
   grants: { id: number; bundle_id: string; revision: number; source_type: string; source_ref: string; config_version: number; at: string; revoked_at: string | null }[];
   purchases: { platform: string; transaction_id: string; offer_id: string; product_id: string; environment: string; state: string; purchased_at: string; refunded_at: string | null }[];
-  matches: { match_id: string; started_at: string; ended_at: string | null; mode: string; kind: string; team: number; result: string; score_a: number; score_b: number; cancelled: boolean }[];
+  matches: { match_id: string; started_at: string; ended_at: string | null; mode: string; kind: string; team: number; result: string; score_a: number; score_b: number; cancelled: boolean; suspicious: string[] }[];
+  pair_signals: { kind: string; counterpart: string; mode: string; matches: number; wins: number; offenses: number; window_hours: number; first_seen: string; updated_at: string }[];
 };
 
 export type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
@@ -61,6 +63,10 @@ export function playerApiPath(id: string): string {
 
 export function banActive(account: PlayerAccount, now: Date): boolean {
   return account.banned_until !== null && new Date(account.banned_until) > now;
+}
+
+export function muteActive(account: PlayerAccount, now: Date): boolean {
+  return account.muted_until !== null && new Date(account.muted_until) > now;
 }
 
 export function signedAmount(amount: number): string {

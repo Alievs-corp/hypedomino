@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -53,6 +54,7 @@ type recordingSession struct {
 	intents  []received
 	loading  []loadingReport
 	emojis   []string
+	quick    []string
 	inMatch  bool
 	attached bool
 	replays  int
@@ -73,6 +75,12 @@ func (s *recordingSession) Emoji(item string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.emojis = append(s.emojis, item)
+}
+
+func (s *recordingSession) QuickMessage(key string, teamOnly bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.quick = append(s.quick, fmt.Sprint(key, " ", teamOnly))
 }
 
 func (s *recordingSession) loadingReports() []loadingReport {
@@ -623,12 +631,13 @@ func TestHelloTellsAResumingClientWhetherItIsInAMatch(t *testing.T) {
 	}
 }
 
-func TestLoadingReportsAndEmojiReachTheSessionWithoutASequence(t *testing.T) {
+func TestLoadingReportsEmojiAndQuickMessagesReachTheSessionWithoutASequence(t *testing.T) {
 	h := newHarness(t, testConfig())
 	c := h.dial()
 	c.handshake("ok")
 	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 40}}}))
 	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}}))
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_QuickMessageIntent{QuickMessageIntent: &pb.QuickMessageIntent{Key: "quick.hello", TeamOnly: true}}}))
 	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_LoadingIntent{LoadingIntent: &pb.LoadingIntent{Progress: 100, Ready: true}}}))
 	c.send(place(1, 2, 3, pb.BoardEnd_BOARD_END_UNSPECIFIED))
 	h.session("ok").awaitIntents(t, 1)
@@ -638,9 +647,13 @@ func TestLoadingReportsAndEmojiReachTheSessionWithoutASequence(t *testing.T) {
 	}
 	h.session("ok").mu.Lock()
 	emojis := h.session("ok").emojis
+	quick := h.session("ok").quick
 	h.session("ok").mu.Unlock()
 	if !reflect.DeepEqual(emojis, []string{"emoji.laugh"}) {
 		t.Fatalf("session received emoji %v", emojis)
+	}
+	if !reflect.DeepEqual(quick, []string{"quick.hello true"}) {
+		t.Fatalf("session received quick messages %v", quick)
 	}
 	if got := h.session("ok").received(); len(got) != 1 || got[0].sequence != 1 {
 		t.Fatalf("session received intents %+v", got)
@@ -719,4 +732,15 @@ func TestTheHelloMayCarryAnIntegrityTokenLargerThanAnIntent(t *testing.T) {
 		t.Fatalf("tampered device answered %v", code)
 	}
 	tampered.expectClose(websocket.StatusPolicyViolation)
+}
+
+func TestAQueueIntentToASessionWithoutMatchmakingIsRefusedAsUnavailable(t *testing.T) {
+	h := newHarness(t, testConfig())
+	c := h.dial()
+	c.handshake("ok")
+	c.send(intentFrame(0, &pb.Envelope{Payload: &pb.Envelope_JoinQueueIntent{JoinQueueIntent: &pb.JoinQueueIntent{Mode: pb.Mode_MODE_1V1, Queue: pb.QueueKind_QUEUE_KIND_CASUAL}}}))
+	state := c.recv().GetQueueState()
+	if state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_REFUSED || state.GetRefusal() != pb.QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE {
+		t.Fatalf("queue state %v", state)
+	}
 }

@@ -71,3 +71,40 @@ func TestEnforceCutsOffAConnectedBuildAfterTheControlsChange(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 }
+
+func TestMaintenanceTurnsAwayEveryoneOutsideAMatch(t *testing.T) {
+	var admission atomic.Pointer[Admission]
+	admission.Store(&Admission{MinimumAppVersion: "1.0.0"})
+	h, g := admissionHarness(t, func() Admission { return *admission.Load() })
+	idle, playing := h.dial(), h.dial()
+	idle.handshake("ok")
+	playing.handshake("ok-playing")
+	ends := time.UnixMilli(1761490000000).UTC()
+	admission.Store(&Admission{MinimumAppVersion: "1.0.0", MaintenanceEndsAt: ends})
+	g.Enforce()
+	frame := idle.recv().GetServerHello()
+	if frame.GetStatus() != pb.HelloStatus_HELLO_STATUS_MAINTENANCE || frame.GetMaintenanceEndsUnixMs() != 1761490000000 {
+		t.Fatalf("connected idle player got %v", frame)
+	}
+	idle.expectClose(websocket.StatusNormalClosure)
+
+	late := h.dial()
+	late.send(hello("ok-late", "1.2.3", 1))
+	if status := late.recv().GetServerHello().GetStatus(); status != pb.HelloStatus_HELLO_STATUS_MAINTENANCE {
+		t.Fatalf("a new hello answered %v", status)
+	}
+	late.expectClose(websocket.StatusNormalClosure)
+	select {
+	case <-h.session("ok-late").closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the refused session stayed open")
+	}
+	h.dial().handshake("ok-playing")
+	deadline := time.Now().Add(5 * time.Second)
+	for g.Connections() != 2 {
+		if time.Now().After(deadline) {
+			t.Fatalf("connections %d, want the two in a match", g.Connections())
+		}
+		time.Sleep(time.Millisecond)
+	}
+}

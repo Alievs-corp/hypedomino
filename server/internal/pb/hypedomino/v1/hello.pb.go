@@ -76,6 +76,7 @@ const (
 	HelloStatus_HELLO_STATUS_UNSPECIFIED     HelloStatus = 0
 	HelloStatus_HELLO_STATUS_ACCEPTED        HelloStatus = 1
 	HelloStatus_HELLO_STATUS_UPDATE_REQUIRED HelloStatus = 2
+	HelloStatus_HELLO_STATUS_MAINTENANCE     HelloStatus = 3
 )
 
 // Enum value maps for HelloStatus.
@@ -84,11 +85,13 @@ var (
 		0: "HELLO_STATUS_UNSPECIFIED",
 		1: "HELLO_STATUS_ACCEPTED",
 		2: "HELLO_STATUS_UPDATE_REQUIRED",
+		3: "HELLO_STATUS_MAINTENANCE",
 	}
 	HelloStatus_value = map[string]int32{
 		"HELLO_STATUS_UNSPECIFIED":     0,
 		"HELLO_STATUS_ACCEPTED":        1,
 		"HELLO_STATUS_UPDATE_REQUIRED": 2,
+		"HELLO_STATUS_MAINTENANCE":     3,
 	}
 )
 
@@ -370,18 +373,19 @@ func (x *AppAttestAssertion) GetAssertion() []byte {
 }
 
 type ServerHello struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Status            HelloStatus            `protobuf:"varint,1,opt,name=status,proto3,enum=hypedomino.v1.HelloStatus" json:"status,omitempty"`
-	MinimumAppVersion string                 `protobuf:"bytes,2,opt,name=minimum_app_version,json=minimumAppVersion,proto3" json:"minimum_app_version,omitempty"`
-	ServerTimeUnixMs  uint64                 `protobuf:"varint,3,opt,name=server_time_unix_ms,json=serverTimeUnixMs,proto3" json:"server_time_unix_ms,omitempty"`
-	CatalogVersion    string                 `protobuf:"bytes,4,opt,name=catalog_version,json=catalogVersion,proto3" json:"catalog_version,omitempty"`
-	InMatch           bool                   `protobuf:"varint,5,opt,name=in_match,json=inMatch,proto3" json:"in_match,omitempty"`
-	StringBundles     []*StringBundle        `protobuf:"bytes,6,rep,name=string_bundles,json=stringBundles,proto3" json:"string_bundles,omitempty"`
-	FallbackChains    []*FallbackChain       `protobuf:"bytes,7,rep,name=fallback_chains,json=fallbackChains,proto3" json:"fallback_chains,omitempty"`
-	SessionNonce      uint64                 `protobuf:"fixed64,8,opt,name=session_nonce,json=sessionNonce,proto3" json:"session_nonce,omitempty"`
-	ContentBaseUrl    string                 `protobuf:"bytes,9,opt,name=content_base_url,json=contentBaseUrl,proto3" json:"content_base_url,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Status                HelloStatus            `protobuf:"varint,1,opt,name=status,proto3,enum=hypedomino.v1.HelloStatus" json:"status,omitempty"`
+	MinimumAppVersion     string                 `protobuf:"bytes,2,opt,name=minimum_app_version,json=minimumAppVersion,proto3" json:"minimum_app_version,omitempty"`
+	ServerTimeUnixMs      uint64                 `protobuf:"varint,3,opt,name=server_time_unix_ms,json=serverTimeUnixMs,proto3" json:"server_time_unix_ms,omitempty"`
+	CatalogVersion        string                 `protobuf:"bytes,4,opt,name=catalog_version,json=catalogVersion,proto3" json:"catalog_version,omitempty"`
+	InMatch               bool                   `protobuf:"varint,5,opt,name=in_match,json=inMatch,proto3" json:"in_match,omitempty"`
+	StringBundles         []*StringBundle        `protobuf:"bytes,6,rep,name=string_bundles,json=stringBundles,proto3" json:"string_bundles,omitempty"`
+	FallbackChains        []*FallbackChain       `protobuf:"bytes,7,rep,name=fallback_chains,json=fallbackChains,proto3" json:"fallback_chains,omitempty"`
+	SessionNonce          uint64                 `protobuf:"fixed64,8,opt,name=session_nonce,json=sessionNonce,proto3" json:"session_nonce,omitempty"`
+	ContentBaseUrl        string                 `protobuf:"bytes,9,opt,name=content_base_url,json=contentBaseUrl,proto3" json:"content_base_url,omitempty"`
+	MaintenanceEndsUnixMs uint64                 `protobuf:"varint,10,opt,name=maintenance_ends_unix_ms,json=maintenanceEndsUnixMs,proto3" json:"maintenance_ends_unix_ms,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ServerHello) Reset() {
@@ -475,6 +479,13 @@ func (x *ServerHello) GetContentBaseUrl() string {
 		return x.ContentBaseUrl
 	}
 	return ""
+}
+
+func (x *ServerHello) GetMaintenanceEndsUnixMs() uint64 {
+	if x != nil {
+		return x.MaintenanceEndsUnixMs
+	}
+	return 0
 }
 
 type StringBundle struct {
@@ -615,7 +626,7 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x12AppAttestAssertion\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\fR\x05keyId\x12\x14\n" +
 	"\x05nonce\x18\x02 \x01(\tR\x05nonce\x12\x1c\n" +
-	"\tassertion\x18\x03 \x01(\fR\tassertion\"\xbe\x03\n" +
+	"\tassertion\x18\x03 \x01(\fR\tassertion\"\xf7\x03\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
@@ -625,7 +636,9 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x0estring_bundles\x18\x06 \x03(\v2\x1b.hypedomino.v1.StringBundleR\rstringBundles\x12E\n" +
 	"\x0ffallback_chains\x18\a \x03(\v2\x1c.hypedomino.v1.FallbackChainR\x0efallbackChains\x12#\n" +
 	"\rsession_nonce\x18\b \x01(\x06R\fsessionNonce\x12(\n" +
-	"\x10content_base_url\x18\t \x01(\tR\x0econtentBaseUrl\"X\n" +
+	"\x10content_base_url\x18\t \x01(\tR\x0econtentBaseUrl\x127\n" +
+	"\x18maintenance_ends_unix_ms\x18\n" +
+	" \x01(\x04R\x15maintenanceEndsUnixMs\"X\n" +
 	"\fStringBundle\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +
@@ -636,11 +649,12 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\bPlatform\x12\x18\n" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_ANDROID\x10\x01\x12\x10\n" +
-	"\fPLATFORM_IOS\x10\x02*h\n" +
+	"\fPLATFORM_IOS\x10\x02*\x86\x01\n" +
 	"\vHelloStatus\x12\x1c\n" +
 	"\x18HELLO_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15HELLO_STATUS_ACCEPTED\x10\x01\x12 \n" +
-	"\x1cHELLO_STATUS_UPDATE_REQUIRED\x10\x02B\xc5\x01\n" +
+	"\x1cHELLO_STATUS_UPDATE_REQUIRED\x10\x02\x12\x1c\n" +
+	"\x18HELLO_STATUS_MAINTENANCE\x10\x03B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"HelloProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
