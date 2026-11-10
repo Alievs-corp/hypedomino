@@ -8,6 +8,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -36,6 +37,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		"HD_READ_TIMEOUT":                 "30s",
 		"HD_ADMIN_RATE_ACCOUNT_BURST":     "80",
 		"HD_ADMIN_RATE_SIGNIN_PER_MINUTE": "4",
+		"HD_BALANCE_MEDIAN_ALERT_COINS":   "40000",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -51,6 +53,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 			TempBan:            72 * time.Hour,
 			Mute:               adminapi.DefaultMuteHours * time.Hour,
 			Limits:             adminapi.Limits{Account: ratelimit.Rule{PerMinute: 120, Burst: 80}, SignIn: ratelimit.Rule{PerMinute: 4, Burst: 10}},
+			Economy:            economy.Config{SinkRatioLowPercent: 60, SinkRatioHighPercent: 120, AccountDailyEarnAlertCoins: 1500, BalanceMedianAlertCoins: 40000, FarmWeight: 10},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {

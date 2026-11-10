@@ -598,6 +598,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
 | `DELETE /admin/session` | signed in | Sign-out: revokes the session |
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
+| `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
