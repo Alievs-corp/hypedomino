@@ -92,6 +92,8 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 `Bench/CanvasBench` measures what UI costs per frame on a device (#69). It builds a lobby screen (40 panels with labels) and a shop screen with a `RecyclingList` of 1000 rows (background, icon, name, price) on the `ScreenStack`, then runs four phases of 1200 frames, three times. `static` changes nothing. `scroll` scrolls the list at 1500 units per second. `rebind` changes the price text of every visible row each frame. `pushpop` pushes or pops the shop every 0.6 s. After each phase it logs `CanvasBench ...` with work time p50 and p95, missed vsyncs, GC frames, batches, and p50, p95 and the maximum in ms of every canvas profiler marker the player exposes (`Canvas.*`, `CanvasUpdate.*`, `UGUI.*`, `PostLateUpdate.PlayerUpdateCanvases`). Build it with `gh workflow run animation-bench.yml --ref <branch> -f bench=canvas` (artifact `canvas-bench-apk`, a development build, package `com.hypedomino.canvasbench`) and read `adb logcat -s Unity`.
 
+The budget it checks is the "Canvas rebuild" row of `docs/performance.md` section 3: `PostLateUpdate.PlayerUpdateCanvases` p95 at most 1.5 ms in every phase, 0.3 ms in `static`.
+
 `RecyclingList.Build` reads the viewport height, so it runs once the screen's canvas is shown and scaled, a frame after the push.
 
 ## Content
