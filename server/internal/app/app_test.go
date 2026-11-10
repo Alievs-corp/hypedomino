@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,11 +38,28 @@ func (h *seatHandler) Connect(ctx context.Context, conn *gateway.Conn, hello *pb
 	return gateway.JoinRoom(h.room, seat, conn), nil
 }
 
+type syncBuffer struct {
+	mu     sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.String()
+}
+
 type running struct {
 	t       *testing.T
 	app     *App
 	handler *seatHandler
-	logs    *bytes.Buffer
+	logs    *syncBuffer
 	url     string
 	stop    context.CancelFunc
 	done    chan error
@@ -53,7 +71,7 @@ func start(t *testing.T, config Config, setups ...func(*App)) *running {
 	config.ListenAddr = "127.0.0.1:0"
 	config.Gateway.IntentsPerSecond = 1000
 	config.Gateway.IntentBurst = 1000
-	logs := &bytes.Buffer{}
+	logs := &syncBuffer{}
 	handler := &seatHandler{}
 	a := New(config, NewLogger(logs, "info"), handler)
 	for _, setup := range setups {
