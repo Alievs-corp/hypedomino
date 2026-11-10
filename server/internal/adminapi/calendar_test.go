@@ -49,20 +49,26 @@ func TestTheCalendarListsRunningAndPlannedWindowsInStartOrder(t *testing.T) {
 	if _, err := snapshot.Publish(ctx, a.pool, shop.Domain, []byte(`{"offers":[
 		{"id":"offer.feature","section":"featured","window":{"start":"2026-11-06T00:00:00Z"}},
 		{"id":"offer.daily","section":"daily","window":{"start":"2026-11-07T00:00:00Z","end":"2026-11-30T00:00:00Z"}},
-		{"id":"offer.event","section":"event","window":{"start":"2026-11-01T00:00:00Z","end":"2026-11-08T00:00:00Z"}}]}`)); err != nil {
+		{"id":"offer.event","section":"event","window":{"start":"2026-11-01T00:00:00Z","end":"2026-11-08T00:00:00Z"}}],
+		"rotations":[
+		{"period":"daily","start":"2026-11-07T00:00:00Z","offers":["offer.daily"]},
+		{"period":"daily","start":"2026-11-08T00:00:00Z","offers":["offer.daily"]},
+		{"period":"weekly","start":"2026-11-09T00:00:00Z","offers":["offer.weekly"]}]}`)); err != nil {
 		t.Fatal(err)
 	}
 
 	want := []string{
 		adminapi.CalendarRankedSeason + " season.now 2026-11-05T00:00:00Z 2026-11-20T00:00:00Z",
 		adminapi.CalendarShopOffer + " offer.feature 2026-11-06T00:00:00Z ",
+		adminapi.CalendarRotation + " daily 2026-11-08T00:00:00Z 2026-11-09T00:00:00Z",
 		adminapi.CalendarPromo + " camp.winter 2026-11-09T00:00:00Z 2026-11-15T00:00:00Z",
+		adminapi.CalendarRotation + " weekly 2026-11-09T00:00:00Z 2026-11-16T00:00:00Z",
 		adminapi.CalendarPassSeason + " season_1 2026-11-10T00:00:00Z 2026-12-10T00:00:00Z",
 	}
 	if got := a.calendar(a.signIn("root")); !slices.Equal(got, want) {
 		t.Fatalf("root calendar\n%v\nwant\n%v", got, want)
 	}
-	withoutPromo := []string{want[0], want[1], want[3]}
+	withoutPromo := []string{want[0], want[1], want[2], want[4], want[5]}
 	if got := a.calendar(a.signIn("ayla")); !slices.Equal(got, withoutPromo) {
 		t.Fatalf("content calendar\n%v\nwant\n%v", got, withoutPromo)
 	}
