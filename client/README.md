@@ -103,7 +103,7 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 ## Screens
 
-`UI/Screens` holds the screen stack of `docs/ui-motion.md` 5 "Screens". A `ScreenView` is one screen: its own overlay `Canvas` scaled so the short side is 1080 units, a `CanvasGroup` content root that fades and scales, and for a modal a full-screen scrim `Image` set by `Configure`. `ScreenStack` pushes and pops them, hands input to the top screen at once (the `GraphicRaycaster` of every other screen is off), hides a covered screen by disabling its `Canvas` only, and pops on the Android back key. Transitions are `ScreenFade` values driven by unscaled time, so an interrupted one reverses from where it is. `ScreenStack.ReduceMotion` drops the scale. The `ScreenStackTests` PlayMode tests cover push, pop, reversal both ways, modals, the root screen, reduce motion and the canvas scale.
+`UI/Screens` holds the screen stack of `docs/ui-motion.md` 5 "Screens". A `ScreenView` is one screen: its own overlay `Canvas` scaled so the short side is 1080 units, a `CanvasGroup` content root that fades and scales, and for a modal a full-screen scrim `Image` set by `Configure`. `Configure` moves the content and the scrim into a nested `Body` canvas, which also holds the screen's `GraphicRaycaster`. Hiding disables the outer `Canvas` only, so the graphics stay registered with the body and a push or pop allocates nothing; a graphic placed straight under the outer canvas would be registered again on every show (#505). `ScreenStack` pushes and pops them, hands input to the top screen at once (the `GraphicRaycaster` of every other screen is off), hides a covered screen by disabling its `Canvas` only, and pops on the Android back key. Transitions are `ScreenFade` values driven by unscaled time, so an interrupted one reverses from where it is. `ScreenStack.ReduceMotion` drops the scale. The `ScreenStackTests` PlayMode tests cover push, pop, reversal both ways, modals, the root screen, reduce motion and the canvas scale.
 
 ## Lists
 
@@ -146,6 +146,10 @@ Without a local Unity license, an editor method that creates or changes assets r
 - **`SeatEmojiLayer`:** prewarms `TokenEffect.EmojiPooled` `EmojiPopup` instances in `Build`, so build it when the match scene loads. It shows one emoji per seat anchor (a new one restarts the seat's popup) and returns a popup to the pool when its pop ends.
 
 `EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
+
+## Analytics
+
+`Core/Analytics` is the client side of `docs/analytics.md` (#181). `AnalyticsQueue` takes events only while the `analytics` consent purpose is on (`docs/privacy.md` 6.4): before `Consent(analyticsId)` and after `Withdraw()` nothing is queued, and `Withdraw` drops what was queued. `Track` accepts only the client event names of `AnalyticsEvents`, with one label and one value. `Flush` hands one batch of at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time; a failed send keeps the batch, and a full queue (`AnalyticsQueueLimit`) drops its oldest event. Both sizes come from admin config. The sender and the flush timer arrive with the network layer. The `AnalyticsQueueTests` EditMode tests cover these rules.
 
 ## Pooling and allocations
 
