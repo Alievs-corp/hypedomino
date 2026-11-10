@@ -63,6 +63,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(expected.TurnDeadlineUnixMs, actual.TurnDeadlineUnixMs, name);
             Assert.AreEqual(expected.Winner, actual.Winner, name);
             Assert.AreEqual(expected.LoadingDeadlineUnixMs, actual.LoadingDeadlineUnixMs, name);
+            Assert.AreEqual(expected.AfkConsecutiveTimeouts, actual.AfkConsecutiveTimeouts, name);
 
             Assert.AreEqual(expected.Hand.Count, actual.Hand.Length, name + " hand");
             for (var at = 0; at < expected.Hand.Count; at++) AssertTile(expected.Hand[at], actual.Hand[at], name + " hand");
@@ -77,6 +78,8 @@ namespace HypeDomino.Tests.EditMode
                 Assert.AreEqual(seat.Controller, read.Controller, name);
                 Assert.AreEqual(seat.LoadingProgress, read.LoadingProgress, name);
                 Assert.AreEqual(seat.Ready, read.Ready, name);
+                Assert.AreEqual(seat.Disconnected, read.Disconnected, name);
+                Assert.AreEqual(seat.ConsecutiveTimeouts, read.ConsecutiveTimeouts, name);
             }
 
             var board = expected.Board ?? new BoardView();
@@ -145,6 +148,9 @@ namespace HypeDomino.Tests.EditMode
                 NextOpener = Team.A,
             };
             view.Table = "table_neon";
+            view.AfkConsecutiveTimeouts = 3;
+            view.Seats[1].Disconnected = true;
+            view.Seats[1].ConsecutiveTimeouts = 2;
 
             AssertSame(view, Read(view), "rich");
         }

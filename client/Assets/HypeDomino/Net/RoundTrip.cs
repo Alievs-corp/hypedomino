@@ -13,6 +13,9 @@ namespace HypeDomino.Net
         public double LastMs { get; private set; }
         public double SmoothedMs { get; private set; }
 
+        public bool HasPending => pendingCount > 0;
+        public double OldestPendingSentSeconds => pendingSentSeconds[0];
+
         public void Sent(ulong sequence, double nowSeconds)
         {
             if (pendingCount == MaxPending) RemoveAt(0);
