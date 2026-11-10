@@ -309,7 +309,7 @@ func TestTimeoutsHandTheSeatToTheBotAndReconnectTakesItBack(t *testing.T) {
 		t.Fatalf("an AFK seat moved itself: %+v", m)
 	}
 	tab.room.Reconnect(opener, tab.sinks[opener])
-	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer || v.Presence[opener] != (rules.PresenceReport{Timeouts: 3, MarkedAfk: true}) {
+	if v := tab.view(opener); v.Controllers[opener] != rules.ControllerPlayer || v.Presence[opener] != (rules.PresenceReport{Timeouts: 3, MarkedAfk: true}) || v.Timeouts[opener] != 0 {
 		t.Fatalf("reconnect did not take the seat back: %+v", v)
 	}
 }
@@ -430,6 +430,9 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 	if v.Controllers[gone] != rules.ControllerPlayer || v.State != StatePlaying || v.Current != other {
 		t.Fatalf("after a disconnect and one timeout: %+v", v)
 	}
+	if !v.Disconnected[gone] || v.Disconnected[other] || v.Timeouts[gone] != 1 || v.Timeouts[other] != 0 || v.AfkTimeouts != rules.DefaultConfig().AfkConsecutiveTimeouts {
+		t.Fatalf("the view does not show the disconnect and its timeout: disconnected %v, timeouts %v, afk at %d", v.Disconnected, v.Timeouts, v.AfkTimeouts)
+	}
 	if messages := tab.inbox(gone); len(messages) != 0 {
 		t.Fatalf("a disconnected seat received %d messages", len(messages))
 	}
@@ -442,7 +445,7 @@ func TestADisconnectKeepsTheSeatUntilTheSameSinkIsReplaced(t *testing.T) {
 	fresh := make(chanSink, 64)
 	tab.sinks[gone] = fresh
 	tab.room.Join(gone, fresh)
-	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerPlayer || len(v.Hand) != 6 {
+	if v := tab.view(gone); v.Controllers[gone] != rules.ControllerPlayer || len(v.Hand) != 6 || v.Disconnected[gone] {
 		t.Fatalf("joining the seat again: %+v", v)
 	}
 	tab.room.Leave(gone)
@@ -504,6 +507,9 @@ func TestLoadingShowsTheRosterProgressAndDeadline(t *testing.T) {
 	sink := make(chanSink, 16)
 	room.Join(rules.SeatX, sink)
 	m := <-sink
+	if m.View.Disconnected[rules.SeatX] || m.View.Disconnected[rules.SeatY] {
+		t.Fatalf("a joined human or a bot seat shows as disconnected: %v", m.View.Disconnected)
+	}
 	if m.View.State != StateLoading || !m.View.LoadingDeadline.Equal(clock.Now().Add(rules.LoadingLimit(rules.DefaultConfig()))) || !reflect.DeepEqual(m.View.Roster, roster) {
 		t.Fatalf("loading view %+v", m.View)
 	}
