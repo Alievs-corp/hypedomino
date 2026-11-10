@@ -15,7 +15,19 @@ namespace HypeDomino.Tests.PlayMode
 
         void Note(string line) => report.AppendLine(line);
 
-        static long Bytes() => GC.GetAllocatedBytesForCurrentThread();
+        static string Cost(Action action)
+        {
+            var recorder = UnityEngine.Profiling.Recorder.Get("GC.Alloc");
+            recorder.enabled = false;
+            recorder.FilterToCurrentThread();
+            var before = GC.GetTotalMemory(false);
+            recorder.enabled = true;
+            action();
+            recorder.enabled = false;
+            var after = GC.GetTotalMemory(false);
+            recorder.CollectFromAllThreads();
+            return $"{recorder.sampleBlockCount}x/{after - before}B";
+        }
 
         static ScreenView Screen(string name, int images, int texts)
         {
@@ -55,16 +67,15 @@ namespace HypeDomino.Tests.PlayMode
                 Canvas.ForceUpdateCanvases();
                 yield return null;
                 yield return null;
-                long b;
-                b = Bytes(); stack.Pop(); Note($" {at} pop={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($" {at} popUpdate={Bytes() - b}");
-                b = Bytes(); stack.Advance(10000f); Note($" {at} popSettle(hide)={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($" {at} hideUpdate={Bytes() - b}");
+                Note($" {at} pop={Cost(() => { stack.Pop(); })}");
+                Note($" {at} popUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
+                Note($" {at} popSettle(hide)={Cost(() => { stack.Advance(10000f); })}");
+                Note($" {at} hideUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
                 yield return null;
-                b = Bytes(); stack.Push(shop); Note($" {at} push={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($" {at} pushUpdate={Bytes() - b}");
-                b = Bytes(); stack.Advance(10000f); Note($" {at} pushSettle={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($" {at} settleUpdate={Bytes() - b}");
+                Note($" {at} push={Cost(() => { stack.Push(shop); })}");
+                Note($" {at} pushUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
+                Note($" {at} pushSettle={Cost(() => { stack.Advance(10000f); })}");
+                Note($" {at} settleUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
             }
             var raw = new GameObject("Raw", typeof(Canvas)).GetComponent<Canvas>();
             raw.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -73,19 +84,19 @@ namespace HypeDomino.Tests.PlayMode
             yield return null;
             for (var at = 0; at < 3; at++)
             {
-                long b;
-                b = Bytes(); raw.enabled = false; Note($"raw {at} disable={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($"raw {at} disableUpdate={Bytes() - b}");
+                Note($"raw {at} disable={Cost(() => { raw.enabled = false; })}");
+                Note($"raw {at} disableUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
                 yield return null;
-                b = Bytes(); raw.enabled = true; Note($"raw {at} enable={Bytes() - b}");
-                b = Bytes(); Canvas.ForceUpdateCanvases(); Note($"raw {at} enableUpdate={Bytes() - b}");
+                Note($"raw {at} enable={Cost(() => { raw.enabled = true; })}");
+                Note($"raw {at} enableUpdate={Cost(() => { Canvas.ForceUpdateCanvases(); })}");
                 yield return null;
-                b = Bytes(); raw.gameObject.SetActive(false); raw.gameObject.SetActive(true); Note($"raw {at} goToggle={Bytes() - b}");
+                Note($"raw {at} goToggle={Cost(() => { raw.gameObject.SetActive(false); raw.gameObject.SetActive(true); })}");
                 yield return null;
             }
             yield return Toggle("noRaycast", false, false);
             yield return Toggle("raycast", true, false);
             yield return Toggle("nested", true, true);
+            Note($"control={Cost(() => { var junk = new int[256]; junk[0] = 1; })}");
             Assert.Fail(report.ToString());
         }
 
@@ -111,10 +122,10 @@ namespace HypeDomino.Tests.PlayMode
             yield return null;
             for (var at = 0; at < 3; at++)
             {
-                var b = Bytes(); root.enabled = false; Canvas.ForceUpdateCanvases(); var off = Bytes() - b;
+                var off = Cost(() => { root.enabled = false; Canvas.ForceUpdateCanvases(); });
                 if (nested) Note($"{label} innerRoot={inner.isRootCanvas} innerEnabled={inner.isActiveAndEnabled} innerRootCanvas={inner.rootCanvas.name}");
                 yield return null;
-                b = Bytes(); root.enabled = true; Canvas.ForceUpdateCanvases(); var on = Bytes() - b;
+                var on = Cost(() => { root.enabled = true; Canvas.ForceUpdateCanvases(); });
                 Note($"{label} {at} off={off} on={on}");
                 yield return null;
             }
