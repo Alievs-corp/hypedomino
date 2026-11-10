@@ -96,7 +96,7 @@ func TestDeletionErasesPersonalDataAndKeepsSharedHistoryUnderATombstone(t *testi
 	ayla := signedUp(t, store, pool, "g-ayla", "Ayla")
 	ben := signedUp(t, store, pool, "g-ben", "Ben")
 	for _, statement := range []string{
-		`insert into friendships (account_id, friend_id) values ($1, $2), ($2, $1)`,
+		`insert into friendships (account_id, friend_id, created_at) values ($1, $2, now()), ($2, $1, now())`,
 		`insert into nickname_history (account_id, nickname, nickname_key) values ($1, 'Old', 'old')`,
 		`insert into purchases (platform, transaction_id, account_id, offer_id, product_id, environment, state, purchased_at) values ('google', 'tx-1', $1, 'offer', 'product', 'production', 'granted', now())`,
 	} {
