@@ -220,7 +220,7 @@ namespace HypeDomino.Bench
                 var name = ProfilerRecorderHandle.GetDescription(handle).Name;
                 if (!IsCanvasMarker(name) || markerNames.Contains(name)) continue;
                 markerNames.Add(name);
-                markers.Add(ProfilerRecorder.StartNew(handle));
+                markers.Add(new ProfilerRecorder(handle, 1, ProfilerRecorderOptions.Default | ProfilerRecorderOptions.StartImmediately));
                 markerSamples.Add(new double[WindowFrames]);
             }
             Debug.Log($"CanvasBench markers={string.Join(",", markerNames)}");
