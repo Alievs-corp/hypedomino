@@ -132,6 +132,25 @@ func TestQueuesModesAndRegionsNeverMix(t *testing.T) {
 	}
 }
 
+func TestShadowbannedAccountsArePairedOnlyWithEachOther(t *testing.T) {
+	honest := entry("honest", rules.Mode1v1, QueueRanked, 1200, time.Minute)
+	cheater := entry("cheater", rules.Mode1v1, QueueRanked, 1200, time.Minute)
+	cheater.Shadowbanned = true
+	matches, remaining := Form(DefaultConfig(), []Entry{honest, cheater}, start, seeded(1))
+	if len(matches) != 0 || len(remaining) != 2 {
+		t.Fatalf("a shadowbanned account met an honest one: %+v", matches)
+	}
+	other := entry("other", rules.Mode1v1, QueueRanked, 1200, time.Minute)
+	other.Shadowbanned = true
+	matches, remaining = Form(DefaultConfig(), []Entry{honest, cheater, other}, start, seeded(1))
+	if len(matches) != 1 || len(remaining) != 1 || remaining[0].Account != "honest" {
+		t.Fatalf("the cheater pool did not pair: %+v left %+v", matches, remaining)
+	}
+	if seats := accounts(matches[0]); len(seats) != 2 {
+		t.Fatalf("cheater pool match %+v", matches[0])
+	}
+}
+
 func TestRankedQueueNeverSeatsABot(t *testing.T) {
 	for _, mode := range []rules.Mode{rules.Mode1v1, rules.Mode2v2} {
 		entries := []Entry{entry("alone", mode, QueueRanked, 1200, 24*time.Hour)}
