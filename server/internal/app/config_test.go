@@ -92,6 +92,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_MATCHMAKING_LEADER_TTL":            "10s",
 		"HD_COUNTRY_HEADER":                    "CF-IPCountry",
 		"HD_COUNTRY_CHANGE_COOLDOWN":           "720h",
+		"HD_ACCOUNT_DELETION_GRACE":            "240h",
 		"HD_DUPLICATE_COMPENSATION_PERCENT":    "25",
 		"HD_PLAY_PACKAGE":                      "com.example.hypedomino",
 		"HD_PLAY_SERVICE_ACCOUNT":              "/etc/hypedomino/play.json",
@@ -158,7 +159,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if config.Emoji != (room.EmojiLimit{Burst: 4, Refill: 3 * time.Second}) {
 		t.Fatalf("emoji limit %+v", config.Emoji)
 	}
-	if config.ShopCatalog != "/etc/hypedomino/shop.json" || config.Shop.DailySlots != 5 || config.Shop.WeeklySlots != 3 || config.Shop.ResetHourUTC != 6 || config.ConfigPoll != 30*time.Second || config.SeasonPoll != 45*time.Second || config.OutboxPoll != 500*time.Millisecond || config.MatchmakingTick != 2*time.Second || config.MatchmakingTTL != 10*time.Second || config.CountryHeader != "CF-IPCountry" || config.CountryCooldown != 720*time.Hour || config.Reward.DuplicateCompensationPercent != 25 {
+	if config.ShopCatalog != "/etc/hypedomino/shop.json" || config.Shop.DailySlots != 5 || config.Shop.WeeklySlots != 3 || config.Shop.ResetHourUTC != 6 || config.ConfigPoll != 30*time.Second || config.SeasonPoll != 45*time.Second || config.OutboxPoll != 500*time.Millisecond || config.MatchmakingTick != 2*time.Second || config.MatchmakingTTL != 10*time.Second || config.CountryHeader != "CF-IPCountry" || config.CountryCooldown != 720*time.Hour || config.DeletionGrace != 240*time.Hour || config.Reward.DuplicateCompensationPercent != 25 {
 		t.Fatalf("shop config %q %+v %s %+v", config.ShopCatalog, config.Shop, config.ConfigPoll, config.Reward)
 	}
 	if config.Play.PackageName != "com.example.hypedomino" || config.Play.ServiceAccountFile != "/etc/hypedomino/play.json" || !config.Play.AllowTest || config.PushSecret != "push-secret" || config.Apple.BundleID != "com.example.hypedomino" || !config.Apple.AllowSandbox || config.Purchase.RefundsBeforePurchaseBlock != 2 || config.Purchase.RefundWindowDays != 90 {
@@ -200,6 +201,7 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 		"HD_OUTBOX_POLL":                    "10ms",
 		"HD_MATCHMAKING_TICK":               "10ms",
 		"HD_COUNTRY_CHANGE_COOLDOWN":        "-1h",
+		"HD_ACCOUNT_DELETION_GRACE":         "0s",
 		"HD_DUPLICATE_COMPENSATION_PERCENT": "101",
 		"HD_PLAY_PACKAGE":                   "com.example.hypedomino",
 		"HD_REFUND_WINDOW_DAYS":             "0",
@@ -210,7 +212,7 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_EMOJI_REFILL", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_OUTBOX_POLL", "HD_MATCHMAKING_TICK and HD_MATCHMAKING_LEADER_TTL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_EMOJI_REFILL", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_OUTBOX_POLL", "HD_MATCHMAKING_TICK and HD_MATCHMAKING_LEADER_TTL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_ACCOUNT_DELETION_GRACE", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}
