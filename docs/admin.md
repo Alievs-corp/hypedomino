@@ -78,7 +78,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Content gate reports (`docs/launch-content-gate.md` 4.4); C is running a report | VC | VC | VC | V | V |
 | Dashboards and aggregate exports (section 10, A-1) | V | V | V | V | V |
 | Analytics events with analytics id (D-24) | V | | | | V |
-| Audit log (section 7) | V | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
+| Audit log (section 7) | V, S: export | V (entries on objects it can view) | V (same) | V (same, no player entries) | |
 | Admin accounts and roles (5.18) | VCER, S: grant `super_admin` | | | | |
 
 - A change set is published only by an account that holds P on every object in it.
@@ -207,13 +207,13 @@ One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields p
 | `availability` | All | `live`, `retired`, `disabled` (`docs/cosmetics.md` section 6) |
 | `sources` | All | Picker of `default` and existing offers, pass rewards, missions, campaigns, season rewards, events. A form that grants an item offers to add its source to the item in the same change set |
 | `artSource` | All | `handmade` or `ai_assisted` |
-| `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3) |
+| `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3). The publish that adds an item is the review: it is refused (`own_upload`) when the publishing account uploaded one of the item's assets |
 | `animationAddress` | `avatar`, `frame`, `emoji`, `action` | Server: derived; upload required when animated, always for an action |
 | `clips` | `character` | `idle`, `win`, `lose`, `reaction` uploads, all four when animated |
 | `layers` | `table` | Ordered list of name and upload with an animated flag, at most `TableMaxLayers` |
 | `group` | `emoji` | Emoji group id (#150) |
 
-Lifecycle: create and edit as drafts; publish adds the item to the next manifest; retire or disable instead of delete. Bulk edit of availability and rarity over a filtered list (#136). Disabling an item for a content violation may be done by `live_ops` during an incident.
+Lifecycle: create and edit as drafts; publish adds the item to the next manifest; retire or disable instead of delete. Bulk edit of availability and rarity over a filtered list (#136). Disabling an item for a content violation may be done by `live_ops` during an incident: the switch-off publishes the next manifest with only that item set to `disabled`, needs a reason, the incident id as `ref` and a recent sign-in, and is audited as `retire`.
 
 ### 5.2 Assets
 
@@ -299,7 +299,7 @@ Rules: `docs/pass-missions-medals.md` section 2.
 | `products` | `pass_premium`, `pass_premium_plus` bound to the season (`docs/economy.md` 7.2) |
 | `budget` | Server: free track coins against `PassFreeTrackCoins`, premium track crystals against `PassPremiumTrackCrystals` |
 
-Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with an item of the same type and rarity, with an audited reason. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
+Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with a `live` item of the same type and rarity, with an audited reason. The admin API accepts it when the rest of the level's bundle is unchanged and its revision goes up by one, and answers `reason_required` without a reason; `cmd/config-publish` accepts no replacement. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
 
 ### 5.8 Missions and daily login
 
@@ -408,7 +408,7 @@ Calendar (A-21). The calendar holds no data of its own: an entry exists because 
 | Promo code window | 5.11 | A-15 |
 | Scheduled change set activation | 5.17 | A-2, A-3 |
 
-Built so far (#146): the calendar reads ranked seasons, pass seasons from the published `pass` snapshot, featured and event offers from the published `shop` snapshot and promo campaigns, and lists the ones not yet ended; the panel is `/calendar`, each row linking to its screen. Rotation periods, live events, banners, push send times and scheduled change sets join it when they are built. Every role with view rights on live events sees it; an `analyst` also does, as it views every listed source, but sees promo campaigns only with view rights on promo codes.
+Built so far (#146): the calendar reads ranked seasons, pass seasons from the published `pass` snapshot, featured and event offers and daily and weekly rotation periods from the published `shop` snapshot, and promo campaigns, and lists the ones not yet ended; the panel is `/calendar`, each row linking to its screen. A rotation period runs from its start to the next period start (5.5); an unscheduled period that repeats the previous rotation has no entry of its own. Live events, banners, push send times and scheduled change sets join it when they are built. Every role with view rights on live events sees it; an `analyst` also does, as it views every listed source, but sees promo campaigns only with view rights on promo codes.
 
 The plan for the first 90 days after launch, entered this way, is `docs/live-ops-90-days.md`.
 
@@ -441,7 +441,7 @@ Fields and rules are `docs/localization.md` section 2.1 (#214).
 | `values` | Per language: text and status `missing`, `draft`, `approved` |
 | `deprecated` | Marked when retired; removed once no supported client uses it |
 
-- Editor with languages side by side, a missing-value report per language with percentage and key list, CSV and JSON import and export for external translators (#214).
+- Editor with languages side by side, a missing-value report per language with percentage and key list, CSV and JSON import and export for external translators (#214). The panel edits them, publishes bundles and activates or rolls back bundle versions at `/strings` (`admin/README.md`).
 - Setting a value to `approved` is the native-speaker review step (`docs/localization.md` 6.1 step 2) and is done by `content`. Publishing builds one bundle per language (5.17).
 
 ### 5.16 Word filter and reserved names
@@ -535,7 +535,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `time` | Server UTC |
 | `actor` | Admin account and the roles it used |
 | `environment` | `staging` or `production` |
-| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, a section 4 control or a section 6.2 action |
+| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, a section 4 control or a section 6.2 action |
 | `object` | Type and id; for player actions the account id |
 | `before`, `after` | Field values of the affected record; secrets (promo plaintext, tokens) never |
 | `reason` | Text; mandatory for every `S` action of 2.3, every section 4 and 6.2 action and every rollback |
@@ -598,7 +598,10 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/session/step-up` `{"id_token","nonce"}` | signed in | A new Google sign-in of the same account renews the step-up time |
 | `DELETE /admin/session` | signed in | Sign-out: revokes the session |
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
+| `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
+| `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
+| `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
 | `GET /admin/accounts` | V on admin accounts | Every account |
 | `POST /admin/accounts` `{"email","display_name","roles"}` | C on admin accounts | Creates an account |
 | `PUT /admin/accounts/{id}/roles` `{"roles"}` | E on admin accounts; adding `super_admin` also S: grant `super_admin` | Replaces its roles, or proposes the grant (202 with the proposal) |
@@ -614,13 +617,15 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET`, `PUT /admin/config/matchmaking`, `GET /admin/config/matchmaking/history`, `POST /admin/config/matchmaking/rollback` | V or P on config values; rollback also S | The `matchmaking` domain (`docs/matchmaking.md` section 3) as a whole JSON object; keys left out keep their default; an unknown key or a value out of range gets 400 `invalid`. Screen: `/config/matchmaking` (empty field = server default, bot levels `easy`, `medium`, `hard`) |
 | `GET`, `PUT /admin/config/penalties`, `GET /admin/config/penalties/history`, `POST /admin/config/penalties/rollback` | V or P on config values; rollback also S | The `penalties` domain (`docs/penalties.md` section 8) as a whole JSON object; keys left out keep their default; an unknown key or a broken ladder gets 400 `invalid`. Screen: `/config/penalties` (empty field = server default, lists comma separated) |
 | `GET /admin/config/shop` | V on shop offers | The published shop catalog (offers and rotations of 5.5), its `config_version`, and the server's `rotation` rules (`daily_slots`, `weekly_slots`, `reset_hour_utc`); `catalog` is null before the first publish |
-| `PUT /admin/config/shop` `{"catalog"}` | P on shop offers | Publishes the catalog as the next `shop` snapshot. A chest pool item must be a published `common` or `rare` item listing the chest as its `chest` source (V-15) |
+| `PUT /admin/config/shop` `{"catalog"}` | P on shop offers | Publishes the catalog as the next `shop` snapshot. A chest pool item must be a published `common` or `rare` item listing the chest as its `chest` source, an item of any other offer must list that offer as its `shop` source, and a first-purchase item must list the bonus as its `first_purchase` source (V-15) |
 | `GET /admin/cosmetics/items` | V on cosmetic items | The published cosmetic items (`id`, `type`, `rarity`, `availability`, `sources`), the built-in ones before the first publish; the chest pool editor picks from them |
 | `GET /admin/config/shop/history` | V on shop offers | The last 50 `shop` snapshots, newest first |
 | `POST /admin/config/shop/rollback` `{"version"}` | P on shop offers and S: rollback on snapshots | Publishes the content of an earlier `shop` snapshot as the next version |
+| `POST /admin/config/shop/preview` `{"catalog","at"}` | V on shop offers | Checks a draft catalog like the game servers and answers `{"at","sections":[{"section","ends_at","offers"}]}`: the offer ids each shop section shows at `at` (server time when omitted), computed by the game server's section logic. Writes nothing |
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
 | `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
 | `GET /admin/config/cosmetics/history` | V on cosmetic items | The last 50 manifests, newest first |
+| `POST /admin/cosmetics/items/{id}/switch-off` `{"reason","ref"}` | S: R and P for an incident switch-off on cosmetic items | Publishes the next manifest with the item `disabled` (5.1); `ref` is the incident id |
 | `POST /admin/config/cosmetics/rollback` `{"version"}` | P on cosmetic items and S: rollback on snapshots | Republishes the content of an earlier manifest under new revisions (`docs/cosmetics.md` 9) |
 | `GET /admin/config/missions` | V on missions | The published mission catalog (5.8), its `config_version`, and `rules`: the mission `types`, progress `events`, `queues` and `modes` the condition builder offers; `catalog` is null before the first publish |
 | `PUT /admin/config/missions` `{"catalog"}` | P on missions | Publishes the catalog as the next `missions` snapshot, with the server's `nameKey` and `revision` (Missions and medals note) |
@@ -636,7 +641,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/config/rating/rollback` `{"version"}` | P on ranked seasons and S: rollback on snapshots | Publishes the content of an earlier `rating` snapshot as the next version, under the same checks |
 | `GET /admin/ranked/seasons` | V on ranked seasons | `server_time`, `next_start` (the end of the last season, or null) and every season in start order with its `state` (`scheduled`, `live`, `ending`, `closed`) |
 | `GET /admin/config/quick-messages`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on game strings | The `quick_messages` catalog `{"keys"}`: published only when every key is `quick.<slug>`, listed once and approved in every game language (`docs/localization.md` 5.7, #152) |
-| `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
+| `GET /admin/config/moderation`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on moderation config | The `moderation` snapshot `{"words","reserved"}`: word lists `any`, `az`, `en`, `tr`, `ru` of `{entry, match}` with match `substring` or `word`, and reserved names; the config version is the list version (`docs/localization.md` 5.3, #60) |
+| `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections), `shop_rotation` (id `daily` or `weekly`, end at the next period start) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
 | `POST /admin/ranked/seasons` `{"id", "start", "end", "no_rewards", "reason"}` | C on ranked seasons | Schedules a season (Ranked seasons note); 201 with the season |
 | `PATCH /admin/ranked/seasons/{id}` `{"start", "end", "no_rewards", "reason"}` | E on ranked seasons | Reschedules a season that has not started |
 | `POST /admin/ranked/seasons/{id}/extend` `{"end", "reason"}` | E on ranked seasons | Moves the end of the live season later |
@@ -660,6 +666,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/reward-bundles/{id}` `{"revision","coins","crystals","cosmetics","medals","passXp","reason"}` | P on reward bundles and on each domain holding it | Publishes the new content to every holder in one transaction; `editable` on the list says which bundles allow it. `stale_bundle` when `revision` is not the current one, `bundle_not_editable` for a differing id or another holder (5.4) |
 | `POST /admin/players/{id}/grant` `{"bundle","source","request_id"}` | S on players: grant | Applies the bundle through the reward engine (6.2); above `AdminGrantApprovalCoins` coins or with a `mythic` item it answers 202 with a `player_grant` proposal instead (section 8) |
 | `GET /admin/matches/{id}/replay` | V on players | The match (mode, kind, window, scores, winner, config version), its seats with account, nickname, bot and result, and the replay record (D-13) played back hand by hand: the tiles dealt to each seat, every intent with its tile, end, points or drawn tile, and each hand's outcome; `timeline` is null when no record was stored |
+| `GET /admin/matches/suspicious` | V on players | The newest 50 matches played by a pair with a `win_trade`, `feeding` or `partner_fit` signal inside that signal's window (`docs/anti-cheat.md` V-9): match id, start, mode, kind, signal kinds and the accounts of the flagged pairs |
 | `GET /admin/promo-codes?campaign=` | V on promo codes | Usage per campaign (`campaigns`: codes, active, pending, disabled, cap, redemptions, earliest start, latest end) and the newest 200 codes (`codes`), of one campaign when `campaign` is given; never a code's plaintext |
 | `POST /admin/promo-codes` `{"id","campaign","kind","bundle","start","end","cap","code","accounts"}` | C on promo codes | Creates one code (5.11) and answers 201 with the code and its `plaintext`, shown this once; a code that needs a second admin also carries `approval_id` |
 | `POST /admin/promo-codes/batch` `{...,"count"}` | C on promo codes | Creates `count` (1 to 10,000) `single_use` codes `<id>_<n>` and answers 201 with a CSV of `promo_id,code`, never stored; headers `Hd-Promo-State` and, when a second admin must approve, `Hd-Approval-Id` |
@@ -728,7 +735,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ## 10. Screens and navigation
 
-The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow.
+The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price.
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
@@ -756,7 +763,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.

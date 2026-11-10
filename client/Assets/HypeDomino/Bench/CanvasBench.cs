@@ -133,7 +133,7 @@ namespace HypeDomino.Bench
             var gcBytes = skipReportFrame ? 0 : LastValue(gcAllocatedInFrame);
             skipReportFrame = false;
             var timing = latestTiming[0];
-            var work = Math.Max(Math.Max(timing.cpuMainThreadFrameTime, timing.cpuRenderThreadFrameTime), timing.gpuFrameTime);
+            var work = FrameWindow.WorkMs(timing);
             window.Add(work, Time.unscaledDeltaTime, gcBytes, LastValue(batchesCount));
             for (var at = 0; at < markers.Count; at++) markerSamples[at][sampled] = LastValue(markers[at]) / NanosecondsPerMillisecond;
             sampled++;

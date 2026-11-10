@@ -35,8 +35,7 @@ import {
   type RotationRules,
   type ShopCatalog,
 } from "@/shop/catalog";
-import { utcLabel } from "@/audit/query";
-import { publishCatalog, type PublishResult } from "./actions";
+import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult } from "./actions";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
   coins: "currency.coin",
@@ -74,6 +73,7 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
       <CrystalPacks catalog={catalog} onChange={update} />
       <Chests catalog={catalog} items={items} onChange={update} onRules={(chests) => setCatalog((current) => ({ ...current, chests }))} />
       <Rotations catalog={catalog} rules={rules} onChange={setCatalog} />
+      <Preview catalog={catalog} />
       <section className="flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
           {t("shop.reason")}
@@ -94,6 +94,52 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
         )}
       </section>
     </div>
+  );
+}
+
+function Preview({ catalog }: { catalog: ShopCatalog }) {
+  const t = useTranslator();
+  const [minute, setMinute] = useState("");
+  const [result, setResult] = useState<PreviewResult | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold">{t("shop.preview")}</h2>
+      <p className="text-sm text-text-muted">{t("shop.preview_hint")}</p>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("shop.preview_at")}
+          <input type="datetime-local" value={minute} onChange={(event) => setMinute(event.target.value)} className={fieldClass} />
+        </label>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => startTransition(async () => setResult(await previewCatalog(catalog, minute ? `${minute}:00Z` : undefined)))}
+          className="rounded-md bg-surface px-4 py-2 text-text-secondary disabled:opacity-40"
+        >
+          {t("shop.preview_show")}
+        </button>
+      </div>
+      {result && !result.ok && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.refused")}: {result.error} {result.detail}
+        </p>
+      )}
+      {result?.ok && (
+        <table className="text-sm">
+          <caption className="text-left text-text-muted">{t.when(result.at)}</caption>
+          <tbody>
+            {result.sections.map((section) => (
+              <tr key={section.section} className="border-t border-surface">
+                <td className="py-1 pr-4 font-mono">{section.section}</td>
+                <td className="py-1 pr-4 font-mono">{section.offers.join(", ") || "—"}</td>
+                <td className="py-1 pr-4 text-text-muted">{section.ends_at ? t.when(section.ends_at) : ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 
@@ -174,7 +220,7 @@ function RotationRow({
   return (
     <fieldset className="flex flex-col gap-2 rounded-md border border-surface p-3">
       <legend className="text-sm text-text-secondary">
-        {t(rotation.period === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")} · {utcLabel(rotation.start)}
+        {t(rotation.period === "daily" ? "shop.rotation_daily" : "shop.rotation_weekly")} · {t.when(rotation.start)}
       </legend>
       <div className="flex flex-wrap gap-3">
         {candidates.map((id) => (

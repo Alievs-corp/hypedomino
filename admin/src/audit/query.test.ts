@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { auditApiPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, utcLabel, type AuditEntry } from "./query.ts";
+import { auditApiPath, auditExportPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, type AuditEntry } from "./query.ts";
 
 function entries(count: number, lastId: number): AuditEntry[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -31,6 +31,11 @@ test("the API path carries the filter, the page cursor and the page size", () =>
   assert.equal(auditApiPath({}, ""), "/admin/audit?limit=50");
 });
 
+test("the export path carries the filter without a page cursor or size", () => {
+  assert.equal(auditExportPath({ action: "publish", to: "2026-11-02T00:00" }), "/admin/audit/export?action=publish&to=2026-11-02T00%3A00%3A00Z");
+  assert.equal(auditExportPath({}), "/admin/audit/export?");
+});
+
 test("an older page exists only after a full page and starts below its last id", () => {
   assert.equal(olderPageHref({ action: "publish" }, entries(pageSize - 1, 10)), null);
   assert.equal(olderPageHref({ action: "publish" }, entries(pageSize, 10)), "/audit?action=publish&before_id=10");
@@ -41,9 +46,4 @@ test("the page cursor accepts only a positive id", () => {
   assert.equal(beforeIdOf({ before_id: "0" }), "");
   assert.equal(beforeIdOf({ before_id: "-1" }), "");
   assert.equal(beforeIdOf({ before_id: "4x" }), "");
-});
-
-test("times show in UTC to the second", () => {
-  assert.equal(utcLabel("2026-11-03T21:50:29+04:00"), "2026-11-03 17:50:29 UTC");
-  assert.equal(utcLabel("not a time"), "not a time");
 });

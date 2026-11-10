@@ -1,11 +1,14 @@
 package adminapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
@@ -104,9 +107,74 @@ func (h *Handler) searchAudit(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
+	reply(w, http.StatusOK, auditResponse{Entries: viewEntries(entries)})
+}
+
+func viewEntries(entries []audit.Recorded) []auditEntryView {
 	views := make([]auditEntryView, 0, len(entries))
 	for _, entry := range entries {
 		views = append(views, viewEntry(entry))
 	}
+	return views
+}
+
+const ExportAuditAction = "export"
+
+type auditExportRecord struct {
+	Filter  string `json:"filter"`
+	Entries int    `json:"entries"`
+}
+
+func (h *Handler) exportAudit(w http.ResponseWriter, r *http.Request, p principal) {
+	var note changeNote
+	if !decode(w, r, &note) {
+		return
+	}
+	filter, err := auditFilter(r.URL.Query())
+	if err == nil {
+		err = h.sensitive(p, note, h.now())
+	}
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	views, err := h.everyAuditEntry(r.Context(), p.account.Roles, filter)
+	if err == nil {
+		err = h.recordAuditExport(r.Context(), p, note, r.URL.RawQuery, len(views))
+	}
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	w.Header().Set("Content-Disposition", `attachment; filename="audit.json"`)
 	reply(w, http.StatusOK, auditResponse{Entries: views})
+}
+
+func (h *Handler) everyAuditEntry(ctx context.Context, roles []rbac.Role, filter audit.Filter) ([]auditEntryView, error) {
+	filter.Limit = audit.MaxLimit
+	views := []auditEntryView{}
+	for {
+		page, err := h.audit.Search(ctx, roles, filter)
+		if err != nil {
+			return nil, err
+		}
+		views = append(views, viewEntries(page)...)
+		if len(page) < audit.MaxLimit {
+			return views, nil
+		}
+		filter.BeforeID = page[len(page)-1].ID
+	}
+}
+
+func (h *Handler) recordAuditExport(ctx context.Context, p principal, note changeNote, query string, count int) error {
+	after, err := json.Marshal(auditExportRecord{Filter: query, Entries: count})
+	if err != nil {
+		return err
+	}
+	return h.audited(ctx, p, func(pgx.Tx, time.Time) ([]audit.Entry, error) {
+		return []audit.Entry{{
+			Action: ExportAuditAction, Object: audit.Object{Type: rbac.AuditLog, ID: "export"},
+			After: after, Reason: note.Reason, Ref: note.Ref,
+		}}, nil
+	})
 }

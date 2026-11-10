@@ -36,7 +36,7 @@ func TestMovesOfALiveMatchReachTheMetrics(t *testing.T) {
 	if !strings.Contains(w.Body.String(), `move_roundtrip_seconds_bucket{le="0.1"}`) {
 		t.Fatal("no bucket at the 100 ms budget")
 	}
-	for _, gauge := range []string{`(?m)^go_heap_live_bytes [1-9]`, `(?m)^go_goroutines [1-9]`, `(?m)^hd_rooms \d+$`, `(?m)^hd_connections \d+$`} {
+	for _, gauge := range []string{`(?m)^go_heap_live_bytes [1-9]`, `(?m)^go_goroutines [1-9]`, `(?m)^hd_rooms \d+$`, `(?m)^hd_connections \d+$`, `(?m)^hd_http_responses_total\{class="1xx"\} [1-9]`} {
 		if !regexp.MustCompile(gauge).MatchString(w.Body.String()) {
 			t.Fatalf("missing %s in\n%s", gauge, w.Body.String())
 		}

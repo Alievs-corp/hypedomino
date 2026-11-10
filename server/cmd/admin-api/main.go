@@ -25,6 +25,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
@@ -53,7 +54,7 @@ const defaultAssetURLTTL = 15 * time.Minute
 type lookup func(name string) (string, bool)
 
 func configFromEnv(env lookup) (config, error) {
-	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, configPoll: app.DefaultConfig().ConfigPoll, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, Limits: adminapi.DefaultLimits()}}
+	c := config{listenAddr: ":8090", logLevel: "info", readLimit: ratelimit.DefaultConfig().ReadTimeout, idleLimit: ratelimit.DefaultConfig().IdleTimeout, configPoll: app.DefaultConfig().ConfigPoll, api: adminapi.Config{Session: adminsession.DefaultConfig(), ApprovalTTL: approval.DefaultConfig().TTL, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, Limits: adminapi.DefaultLimits(), Economy: economy.DefaultConfig()}}
 	text := func(name string, value *string) {
 		if raw, ok := env(name); ok {
 			*value = strings.TrimSpace(raw)
@@ -129,6 +130,13 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
 	}
 	errs = append(errs, promoFromEnv(&c.api, text, integer)...)
+	integer("HD_SINK_RATIO_ALERT_LOW_PERCENT", &c.api.Economy.SinkRatioLowPercent)
+	integer("HD_SINK_RATIO_ALERT_HIGH_PERCENT", &c.api.Economy.SinkRatioHighPercent)
+	integer("HD_ACCOUNT_DAILY_EARN_ALERT_COINS", &c.api.Economy.AccountDailyEarnAlertCoins)
+	integer("HD_BALANCE_MEDIAN_ALERT_COINS", &c.api.Economy.BalanceMedianAlertCoins)
+	if err := c.api.Economy.Validate(); err != nil {
+		errs = append(errs, fmt.Errorf("HD_SINK_RATIO_ALERT_*, HD_ACCOUNT_DAILY_EARN_ALERT_COINS and HD_BALANCE_MEDIAN_ALERT_COINS: %w", err))
+	}
 	errs = append(errs, assetStoreFromEnv(&c.api, text, duration)...)
 	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
 	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)

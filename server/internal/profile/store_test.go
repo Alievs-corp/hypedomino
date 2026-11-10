@@ -39,7 +39,7 @@ func TestTheFirstNicknameCreatesTheProfileAndIsUniqueOnItsFoldedForm(t *testing.
 		t.Fatalf("profile before setup: %v %v", found, err)
 	}
 	p, err := store.SetNickname(ctx, ayla, "  Ayşe​ Han ", start)
-	if err != nil || p.Account != ayla || p.Nickname != "Ayşe Han" || p.Level != 1 || p.XP != 0 || !p.RenamedAt.IsZero() || p.Stats.Games != 0 {
+	if err != nil || p.Account != ayla || p.Nickname != "Ayşe Han" || !p.RenamedAt.IsZero() || p.Stats.Games != 0 {
 		t.Fatalf("setup: %+v %v", p, err)
 	}
 	if _, err := store.SetNickname(ctx, other, "AYSE HAN", start); !errors.Is(err, profile.ErrTaken) {
@@ -50,6 +50,16 @@ func TestTheFirstNicknameCreatesTheProfileAndIsUniqueOnItsFoldedForm(t *testing.
 	}
 	if _, err := store.SetNickname(ctx, other, "Ayla!", start); !errors.Is(err, profile.ErrInvalidCharacters) {
 		t.Fatalf("invalid nickname: %v", err)
+	}
+	moderation, err := profile.ParseModeration([]byte(`{"words": {"en": [{"entry": "badword", "match": "substring"}]}, "reserved": ["admin"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store.Moderate(func() profile.Moderation { return moderation })
+	for _, name := range []string{"B4d_W0rd", "Admin_Ayla"} {
+		if _, err := store.SetNickname(ctx, other, name, start); !errors.Is(err, profile.ErrNotAllowed) {
+			t.Fatalf("filtered nickname %q: %v", name, err)
+		}
 	}
 	if _, found, err := store.Get(ctx, other); err != nil || found {
 		t.Fatalf("a refused setup created a profile: %v %v", found, err)

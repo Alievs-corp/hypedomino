@@ -55,16 +55,17 @@ func DefaultConfig() Config {
 }
 
 type Entry struct {
-	Account    string
-	Mode       rules.Mode
-	Queue      Queue
-	Region     string
-	Mmr        int
-	Rank       int
-	Placed     bool
-	Avoid      []string
-	EnqueuedAt time.Time
-	SearchFrom time.Time
+	Account      string
+	Mode         rules.Mode
+	Queue        Queue
+	Region       string
+	Mmr          int
+	Rank         int
+	Placed       bool
+	Avoid        []string
+	Shadowbanned bool
+	EnqueuedAt   time.Time
+	SearchFrom   time.Time
 }
 
 type Seat struct {
@@ -110,16 +111,17 @@ func Window(config Config, waited time.Duration) int {
 }
 
 type bucket struct {
-	mode   rules.Mode
-	queue  Queue
-	region string
+	mode         rules.Mode
+	queue        Queue
+	region       string
+	shadowbanned bool
 }
 
 func Form(config Config, entries []Entry, now time.Time, random *rand.Rand) ([]Match, []Entry) {
 	buckets := map[bucket][]Entry{}
 	var order []bucket
 	for _, entry := range entries {
-		key := bucket{entry.Mode, entry.Queue, entry.Region}
+		key := bucket{entry.Mode, entry.Queue, entry.Region, entry.Shadowbanned}
 		if _, seen := buckets[key]; !seen {
 			order = append(order, key)
 		}

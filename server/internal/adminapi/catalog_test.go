@@ -44,6 +44,15 @@ func catalog(offers ...map[string]any) map[string]any {
 	}
 }
 
+func (a *api) publishShopItems() {
+	a.t.Helper()
+	sources := []any{}
+	for _, offer := range []string{"offer.avatar_comet_fox", "offer.starter", "offer.weekend_pack"} {
+		sources = append(sources, map[string]any{"type": "shop", "ref": offer})
+	}
+	a.publishItems(map[string]map[string]any{"avatar.comet_fox": {"sources": sources}})
+}
+
 func (a *api) featuredAt(at time.Time) []string {
 	a.t.Helper()
 	watcher := snapshot.New(a.pool, shop.Domain, shop.Parser(shop.DefaultConfig()), slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -75,8 +84,13 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	if status != http.StatusOK || body["config_version"] != float64(0) || body["catalog"] != nil {
 		t.Fatalf("empty %d %v", status, body)
 	}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox()), "reason": "too early"})
+	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "offer.avatar_comet_fox grants avatar.comet_fox, whose sources do not list it") {
+		t.Fatalf("offer before its item %d %v", status, body)
+	}
+	a.publishShopItems()
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), weekendPack(opens, closes)), "reason": "weekend sale"})
-	if status != http.StatusOK || body["config_version"] != float64(1) || len(body["catalog"].(map[string]any)["offers"].([]any)) != 2 {
+	if status != http.StatusOK || body["config_version"] != float64(2) || len(body["catalog"].(map[string]any)["offers"].([]any)) != 2 {
 		t.Fatalf("publish %d %v", status, body)
 	}
 	for at, want := range map[time.Time]int{start: 0, opens: 1, closes.Add(-time.Second): 1, closes: 0} {
@@ -90,7 +104,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 		t.Fatalf("removed offer %d %v", status, body)
 	}
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), weekendPack(opens, opens.Add(time.Hour)))})
-	if status != http.StatusOK || body["config_version"] != float64(2) {
+	if status != http.StatusOK || body["config_version"] != float64(3) {
 		t.Fatalf("shortened %d %v", status, body)
 	}
 	if got := a.featuredAt(opens.Add(90 * time.Minute)); len(got) != 0 {
@@ -98,13 +112,13 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	}
 
 	a.now = start.Add(11 * time.Minute)
-	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 1, "reason": "sale extended"})
+	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "sale extended"})
 	expect(t, status, body, http.StatusForbidden, "step_up_required")
 	a.call("POST", "/admin/session/step-up", liveOps, map[string]string{"id_token": "leyla", "nonce": "nonce"})
 	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 7, "reason": "sale extended"})
 	expect(t, status, body, http.StatusNotFound, "not_found")
-	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 1, "reason": "sale extended"})
-	if status != http.StatusOK || body["config_version"] != float64(3) {
+	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "sale extended"})
+	if status != http.StatusOK || body["config_version"] != float64(4) {
 		t.Fatalf("rollback %d %v", status, body)
 	}
 	if got := a.featuredAt(opens.Add(90 * time.Minute)); len(got) != 1 {
@@ -113,7 +127,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 
 	status, body = a.call("GET", "/admin/config/shop/history", liveOps, nil)
 	versions := body["versions"].([]any)
-	if status != http.StatusOK || len(versions) != 3 || versions[0].(map[string]any)["config_version"] != float64(3) {
+	if status != http.StatusOK || len(versions) != 3 || versions[0].(map[string]any)["config_version"] != float64(4) {
 		t.Fatalf("history %d %v", status, body)
 	}
 	entries := a.entries(liveOps, "object_type=shop_offers&object_id=shop")
@@ -121,7 +135,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 		t.Fatalf("entries %v", entries)
 	}
 	rollback, shortened, first := entries[0], entries[1], entries[2]
-	if rollback["action"] != "rollback" || rollback["reason"] != "sale extended" || rollback["config_version"] != float64(3) || rollback["before"] == nil {
+	if rollback["action"] != "rollback" || rollback["reason"] != "sale extended" || rollback["config_version"] != float64(4) || rollback["before"] == nil {
 		t.Fatalf("rollback entry %v", rollback)
 	}
 	if shortened["action"] != "publish" || first["before"] != nil || first["reason"] != "weekend sale" {
@@ -218,6 +232,42 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
 	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "rarity epic") {
 		t.Fatalf("epic pool item %d %v", status, body)
+	}
+}
+
+func TestAShopPreviewShowsTheSectionsOfADraftAtAGivenTime(t *testing.T) {
+	a := newAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	opens, closes := start.Add(time.Hour), start.Add(3*time.Hour)
+	draft := catalog(cometFox(), weekendPack(opens, closes))
+	shown := func(body map[string]any, section string) []any {
+		for _, entry := range body["sections"].([]any) {
+			if entry.(map[string]any)["section"] == section {
+				return entry.(map[string]any)["offers"].([]any)
+			}
+		}
+		t.Fatalf("no %s in %v", section, body)
+		return nil
+	}
+	status, body := a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": opens})
+	expect(t, status, body, http.StatusOK, "")
+	if featured, daily := shown(body, "featured"), shown(body, "daily_rotation"); len(featured) != 1 || featured[0] != "offer.weekend_pack" || len(daily) != 1 || daily[0] != "offer.avatar_comet_fox" {
+		t.Fatalf("at opening %v", body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": closes})
+	expect(t, status, body, http.StatusOK, "")
+	if featured := shown(body, "featured"); len(featured) != 0 {
+		t.Fatalf("at closing %v", body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft})
+	if status != http.StatusOK || body["at"] != start.Format(time.RFC3339) {
+		t.Fatalf("server time %d %v", status, body)
+	}
+	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": catalog(cometFox(), cometFox())})
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+	if entries := a.entries(a.signIn("root"), "object_type=shop_offers"); len(entries) != 0 {
+		t.Fatalf("a preview left entries: %v", entries)
 	}
 }
 

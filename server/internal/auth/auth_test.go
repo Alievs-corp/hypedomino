@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
@@ -46,6 +47,7 @@ type fakeAccounts struct {
 	adopted []string
 	states  map[string]error
 	known   map[string]bool
+	pending map[string]time.Time
 	calls   int
 }
 
@@ -54,6 +56,9 @@ func (a *fakeAccounts) SignIn(_ context.Context, identity idtoken.Identity) (acc
 	id := identity.Provider.String() + "-" + identity.Subject
 	if err := a.states[id]; err != nil {
 		return account.Account{}, false, err
+	}
+	if at, pending := a.pending[id]; pending {
+		return account.Account{ID: id, State: account.StateDeleting, DeletionAt: &at}, false, account.ErrDeletionPending
 	}
 	created := !a.known[id]
 	a.known[id] = true

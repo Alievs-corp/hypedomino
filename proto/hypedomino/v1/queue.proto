@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package hypedomino.v1;
 
+import "hypedomino/v1/hello.proto";
 import "hypedomino/v1/match.proto";
 
 enum QueueKind {
@@ -24,11 +25,14 @@ enum QueueRefusal {
   QUEUE_REFUSAL_MATCHMAKING_BAN = 2;
   QUEUE_REFUSAL_RANKED_CLOSED = 3;
   QUEUE_REFUSAL_UNAVAILABLE = 4;
+  QUEUE_REFUSAL_INTEGRITY_FAILED = 5;
+  QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE = 6;
 }
 
 message JoinQueueIntent {
   Mode mode = 1;
   QueueKind queue = 2;
+  IntegrityProof integrity = 3;
 }
 
 message LeaveQueueIntent {}

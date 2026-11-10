@@ -51,6 +51,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish. A store product price also takes the regional override note (`docs/economy.md` 7.4): local prices come from the stores, and a market override made in the store console is noted here; switching to coins or crystals drops it.
 - **Catalog-wide:** crystal pack amounts, and chest pools and odds.
 - **Rotations:** plan the offers of a daily or weekly period ahead. The slot counts and reset hour come from the server (`rotation` in `GET /admin/config/shop`). A daily period starts at the reset hour, a weekly one on a Monday at the reset hour. Candidates are the offers of the period's rotation section; checked offers take the slots in the order they were checked. A rotation with no offers or more offers than slots blocks the publish.
+- **Preview:** shows the offer ids each section of the draft would show at a chosen UTC moment, or now (`POST /admin/config/shop/preview`). Nothing is published.
 - **Publish** (`PUT /admin/config/shop`) takes a reason. The API checks the catalog like the game servers, and they open and close offers on server time once they load the version.
 - **History:** the last 50 versions, each with its offer count and the offers it added or changed against the version before.
 - **Rollback:** roles with publish on shop offers and rollback on snapshots can roll back to an earlier version. It needs a reason and a fresh sign-in (`POST /admin/config/shop/rollback`), using the same `Rollback` component as match rules.
@@ -110,6 +111,15 @@ The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its orig
 - **Publish** (`PUT /admin/config/medals`) takes a reason and is shown only to roles with publish on medals. A published medal is never removed; retire or disable it.
 - **History and rollback:** as for shop offers, on `/admin/config/medals/history` and `/admin/config/medals/rollback`.
 
+## Game strings
+
+`/strings` (#214, `docs/admin.md` 5.15, A-27 and A-28) edits game strings over `/admin/strings`.
+- **Missing translations:** per language, approved values over live keys, the percentage and the list of missing keys.
+- **Keys:** search over keys, notes and texts, and a filter to the keys a language is missing. Languages sit side by side. A new key, a note, the max length and the placeholders (`name:type`, comma separated) are saved with `PUT /admin/strings/{key}`; ticking deprecated retires the key.
+- **Values:** each cell saves its text with status `draft`, or `approved` for roles with edit and publish on game strings.
+- **Import and export:** a language as `csv` or `json` for an external translator. The panel sends a file through a server action, so it takes files up to 1 MB; larger ones go straight to `POST /admin/strings/import`. A blocked import lists each failing key.
+- **Bundles:** publish builds the next bundle of a language; a blocked publish lists each failing key. Activating a newer bundle publishes the next `localization` snapshot with a reason. Activating an older one is a rollback and needs rollback on snapshots and a fresh sign-in.
+
 ## Players
 
 `/players` (A-30 lookup, `docs/admin.md` 6.1) searches `GET /admin/players?q=` by account id, exact email or nickname prefix, up to 20 results. A `super_admin` also gets a second form that finds the account of one sign-in identity, a provider (`google` or `apple`) and its subject, through `GET /admin/players?provider=&subject=` (D-2). A search writes no audit entry. `/players/{id}` shows the record from `GET /admin/players/{id}`: account state, country, emails (sign-in identities only for `super_admin`), the temporary ban while it runs, balances, level, the forced-rename flag, nickname history, and the newest 50 ledger entries, inventory items, reward grants, purchases and matches. The API writes a `view` entry for every opening (AP-6), so the links to a record do not prefetch it: a prefetch would log a view nobody made.
@@ -154,6 +164,10 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 ## Match rules
 
 `/config/rules` is the `rules` part of A-26 (`docs/admin.md` 5.14). It lists the keys of `GET /admin/config/rules` with their unit, allowed range, default and current value. Roles with publish on config values may edit them; a value outside the range or not a whole number blocks the publish before the API sees it, and the API checks the bounds again. A publish (`PUT /admin/config/rules`) sends only the values that differ from their defaults, with the reason, and the page then shows the new `config_version`. Below, the last 50 published versions show their non-default values. A value applies to matches that open after the game servers pick it up (`HD_CONFIG_POLL`). Each earlier version has a rollback for roles with publish on config values and rollback on snapshots. It needs a reason and a fresh sign-in, and it publishes that version's values as the next version (`POST /admin/config/rules/rollback`).
+
+## Economy monitors
+
+`/analytics` is the economy sink and source part of A-36 (#147, `docs/economy.md` section 10). Every role with view on dashboards sees it. It shows `GET /admin/economy/monitors` with the alerts raised on top: the 7-day window, coins created and spent, the sink ratio and the median balance, then the economy day with the accounts above the daily earn alert and the coins created per reason. A config version in the form adds the same monitors for the 7 days before and after its publish (`GET /admin/economy/monitors/compare`) as two more columns. Only aggregates are shown, never an account id.
 
 ## Security headers
 

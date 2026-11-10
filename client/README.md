@@ -52,7 +52,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 FrameTiming target=<Hz> frames=1200 workP50=<ms>ms workP95=<ms>ms missedVsync=<percent>% gcFrames=<n> gcMax=<bytes>B gcCollections=<n> batchesMax=<n>
 ```
 
-Work time is `max(cpuFrameTime, gpuFrameTime)`; a missed vsync is a presented interval longer than 1.5 refresh periods (`docs/performance.md` 2). Read it with `adb logcat -s Unity`.
+Work time is `max(cpuMainThreadFrameTime, cpuRenderThreadFrameTime, gpuFrameTime)` (`FrameWindow.WorkMs`), shared with `GraphicsProbe` and the benches; a missed vsync is a presented interval longer than 1.5 refresh periods (`docs/performance.md` 2). Read it with `adb logcat -s Unity`.
 
 `gcFrames` counts frames whose `ProfilerRecorder` "GC Allocated In Frame" was above 0, `gcMax` is the largest of them, `gcCollections` is the `GC.CollectionCount(0)` delta and `batchesMax` the largest "Batches Count" (`docs/performance.md` 3). A counter the player does not expose prints `n/a`; the Profiler counters need a development build. The frame that writes the log line allocates that line, so its GC value is not counted. `FrameWindow` holds the window and the `FrameWindowTests` EditMode tests cover it.
 

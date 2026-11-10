@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
@@ -40,6 +41,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/push"
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
@@ -105,6 +107,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if err != nil {
 		return nil, nil, fmt.Errorf("HD_DATABASE_URL: %w", err)
 	}
+	a.Expose(db.Gauges(pool))
 	var nonces idtoken.NonceStore
 	if client != nil {
 		nonces = auth.NewRedisNonces(client, config.Cluster.KeyPrefix)
@@ -127,6 +130,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signIn.SetCountryHeader(config.CountryHeader)
 	a.Handle("POST /auth/", signIn)
 	profileStore := profile.NewStore(pool, config.Profile)
+	moderation := snapshot.New(pool, profile.ModerationDomain, profile.ParseModeration, logger)
+	go moderation.Run(ctx, config.ConfigPoll)
+	profileStore.Moderate(func() profile.Moderation {
+		current, _, _ := moderation.Current()
+		return current
+	})
 	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
 	a.Handle("/profile/", profiles)
@@ -154,12 +163,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
+	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
 	go passConfigs.Run(ctx, config.ConfigPoll)
 	passes := pass.NewStore(pool, passConfigs)
+	profiles.SetStanding(passes.Standing)
 	medalCatalog := medal.NewWatcher(pool, logger)
 	go medalCatalog.Run(ctx, config.ConfigPoll)
 	medals := medal.NewStore(pool, medalCatalog)
@@ -234,10 +245,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	wave := risk.NewWave(pool, config.Risk, logger)
 	wave.OnShadowban(ratings.HideFromBoards)
 	go wave.Run(ctx, config.SeasonPoll, time.Now)
+	go economy.NewMonitor(pool, config.Economy, logger).Run(ctx, config.SeasonPoll, time.Now)
 	ratings.SetRewards(engine)
 	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
+	go accounts.RunDeletions(ctx, logger, config.SeasonPoll, config.DeletionGrace, time.Now)
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
@@ -253,7 +267,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.SetBoards(boards, logger)
 		reader = boards
 	}
-	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
+	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
 	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	passHandler := critical(pass.NewHandler(tokens, passes, logger, time.Now))

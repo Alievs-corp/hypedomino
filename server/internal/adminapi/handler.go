@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -31,6 +32,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
@@ -65,6 +67,7 @@ type Config struct {
 	Promo     promo.Config
 	Cosmetics *cosmetics.Catalog
 	Assets    AssetStore
+	Economy   economy.Config
 }
 
 type Verifier interface {
@@ -84,6 +87,7 @@ type Handler struct {
 	approvals *approval.Store
 	wallet    *wallet.Store
 	promos    *promo.Store
+	economy   *economy.Monitor
 	now       func() time.Time
 	logger    *slog.Logger
 	mux       *http.ServeMux
@@ -102,6 +106,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 		strings:   gamestrings.NewStore(pool),
 		approvals: approval.NewStore(pool, approval.Config{TTL: config.ApprovalTTL}),
 		wallet:    wallet.NewStore(pool),
+		economy:   economy.NewMonitor(pool, config.Economy, logger),
 		now:       now,
 		logger:    logger,
 		mux:       http.NewServeMux(),
@@ -115,7 +120,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("DELETE /admin/session", h.signedIn(h.signOut))
 	h.mux.HandleFunc("GET /admin/me", h.signedIn(h.me))
 	h.mux.HandleFunc("PUT /admin/me/locale", h.signedIn(h.chooseLocale))
+	h.mux.HandleFunc("GET /admin/economy/monitors", h.allowed(rbac.Dashboards, rbac.View, h.economyMonitors))
+	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
+	h.mux.HandleFunc("POST /admin/audit/export", h.allowed(rbac.AuditLog, rbac.ExportAudit, h.exportAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
 	h.mux.HandleFunc("POST /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.Create, h.createAccount))
 	h.mux.HandleFunc("PUT /admin/accounts/{id}/roles", h.allowed(rbac.AdminAccounts, rbac.Edit, h.setRoles))
@@ -152,6 +160,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/penalties/remove", h.allowed(rbac.Players, rbac.ActOnPlayer, h.removeOffense))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
+	h.mux.HandleFunc("GET /admin/matches/suspicious", h.allowed(rbac.Players, rbac.View, h.suspiciousMatches))
 	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
 	h.mux.HandleFunc("POST /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.Create, h.createPromo))
@@ -170,10 +179,12 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
+	h.mux.HandleFunc("POST /admin/config/shop/preview", h.allowed(rbac.ShopOffers, rbac.View, h.previewShop))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
-	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, h.publishDomain(func() configDomain { return h.cosmeticsDomain(false) })))
+	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, publisher) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
-	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, h.rollbackDomain(func() configDomain { return h.cosmeticsDomain(true) })))
+	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.rollbackDomain, func(publisher string) configDomain { return h.cosmeticsDomain(true, publisher) })))
+	h.mux.HandleFunc("POST /admin/cosmetics/items/{id}/switch-off", h.allowed(rbac.CosmeticItems, rbac.SwitchOffForIncident, h.switchOffCosmetic))
 	h.mux.HandleFunc("GET /admin/config/missions", h.allowed(rbac.Missions, rbac.View, h.missionCatalog))
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/missions/history", h.allowed(rbac.Missions, rbac.View, h.domainHistory(mission.Domain)))
@@ -192,9 +203,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/ranked/seasons/{id}/extend", h.allowed(rbac.RankedSeasons, rbac.Edit, h.extendSeason))
 	h.mux.HandleFunc("DELETE /admin/ranked/seasons/{id}", h.allowed(rbac.RankedSeasons, rbac.Delete, h.deleteSeason))
 	h.mux.HandleFunc("GET /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.View, h.passConfig))
-	h.mux.HandleFunc("PUT /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.Publish, h.publishDomain(func() configDomain { return h.passDomain(false) })))
+	h.mux.HandleFunc("PUT /admin/config/pass", h.allowed(rbac.PassSeasons, rbac.Publish, h.publishNoted(func(note changeNote) configDomain { return h.passDomain(false, h.noted(note) == nil) })))
 	h.mux.HandleFunc("GET /admin/config/pass/history", h.allowed(rbac.PassSeasons, rbac.View, h.domainHistory(pass.Domain)))
-	h.mux.HandleFunc("POST /admin/config/pass/rollback", h.allowed(rbac.PassSeasons, rbac.Publish, h.rollbackDomain(func() configDomain { return h.passDomain(true) })))
+	h.mux.HandleFunc("POST /admin/config/pass/rollback", h.allowed(rbac.PassSeasons, rbac.Publish, h.rollbackDomain(func() configDomain { return h.passDomain(true, true) })))
 	h.mux.HandleFunc("GET /admin/config/medals", h.allowed(rbac.Medals, rbac.View, h.medalCatalog))
 	h.mux.HandleFunc("PUT /admin/config/medals", h.allowed(rbac.Medals, rbac.Publish, h.publishDomain(func() configDomain { return h.medalDomain(false) })))
 	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
@@ -213,6 +224,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/quick-messages", h.allowed(rbac.GameStrings, rbac.Publish, h.publishDomain(quickMessagesDomain)))
 	h.mux.HandleFunc("GET /admin/config/quick-messages/history", h.allowed(rbac.GameStrings, rbac.View, h.domainHistory(quickmessage.Domain)))
 	h.mux.HandleFunc("POST /admin/config/quick-messages/rollback", h.allowed(rbac.GameStrings, rbac.Publish, h.rollbackDomain(quickMessagesDomain)))
+	h.mux.HandleFunc("GET /admin/config/moderation", h.allowed(rbac.ModerationConfig, rbac.View, h.domainCatalog(profile.ModerationDomain)))
+	h.mux.HandleFunc("PUT /admin/config/moderation", h.allowed(rbac.ModerationConfig, rbac.Publish, h.publishDomain(moderationDomain)))
+	h.mux.HandleFunc("GET /admin/config/moderation/history", h.allowed(rbac.ModerationConfig, rbac.View, h.domainHistory(profile.ModerationDomain)))
+	h.mux.HandleFunc("POST /admin/config/moderation/rollback", h.allowed(rbac.ModerationConfig, rbac.Publish, h.rollbackDomain(moderationDomain)))
 	h.mux.HandleFunc("GET /admin/strings", h.allowed(rbac.GameStrings, rbac.View, h.listStrings))
 	h.mux.HandleFunc("PUT /admin/strings/{key}", h.allowed(rbac.GameStrings, rbac.View, h.saveString))
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
@@ -366,6 +381,7 @@ var (
 	errForbidden        = errors.New("adminapi: the roles do not grant the action")
 	errReasonRequired   = errors.New("adminapi: a reason is required")
 	errStepUpRequired   = errors.New("adminapi: the action needs a recent sign-in")
+	errOwnUpload        = errors.New("adminapi: the uploader of an item's asset cannot approve its cultural review")
 )
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
@@ -517,6 +533,10 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):
 		return http.StatusForbidden, "step_up_required"
+	case errors.Is(err, errOwnUpload):
+		return http.StatusForbidden, "own_upload"
+	case errors.Is(err, cosmetics.ErrUnknownItem):
+		return http.StatusNotFound, "not_found"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
 	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
@@ -525,7 +545,7 @@ func classify(err error) (int, string) {
 		errors.Is(err, dailylogin.ErrInvalidCalendar),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
 		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
-		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid), errors.Is(err, quickmessage.ErrInvalid), errors.Is(err, matchmaking.ErrInvalidConfig), errors.Is(err, penalties.ErrInvalidConfig),
+		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid), errors.Is(err, quickmessage.ErrInvalid), errors.Is(err, profile.ErrInvalidModeration), errors.Is(err, matchmaking.ErrInvalidConfig), errors.Is(err, penalties.ErrInvalidConfig),
 		errors.Is(err, cosmetics.ErrInvalid), errors.Is(err, cosmetics.ErrSchema), errors.Is(err, cosmetics.ErrSuccessor):
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):

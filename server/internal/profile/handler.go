@@ -35,6 +35,7 @@ type Handler struct {
 	cooldown  time.Duration
 	ranked    func(ctx context.Context, account string) (any, error)
 	medals    func(ctx context.Context, account string) (any, error)
+	standing  func(ctx context.Context, account string, now time.Time) (int, int64, error)
 	logger    *slog.Logger
 	now       func() time.Time
 	mux       *http.ServeMux
@@ -60,6 +61,10 @@ func (h *Handler) SetRanked(ranked func(ctx context.Context, account string) (an
 
 func (h *Handler) SetMedals(medals func(ctx context.Context, account string) (any, error)) {
 	h.medals = medals
+}
+
+func (h *Handler) SetStanding(standing func(ctx context.Context, account string, now time.Time) (int, int64, error)) {
+	h.standing = standing
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +130,7 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if found {
-		reply(w, http.StatusOK, h.own(p))
+		h.replyOwn(w, r, h.own(p))
 		return
 	}
 	suggestion, err := h.profiles.Suggest(r.Context(), h.now())
@@ -133,7 +138,7 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, err)
 		return
 	}
-	reply(w, http.StatusOK, ownView{AccountID: claims.Account, SetupRequired: true, SuggestedNickname: suggestion, Level: 1, Stats: ownStats{Modes: map[string]ModeStats{}}})
+	h.replyOwn(w, r, ownView{AccountID: claims.Account, SetupRequired: true, SuggestedNickname: suggestion, Stats: ownStats{Modes: map[string]ModeStats{}}})
 }
 
 func (h *Handler) nickname(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +156,7 @@ func (h *Handler) nickname(w http.ResponseWriter, r *http.Request) {
 		h.refuseNickname(w, err)
 		return
 	}
-	reply(w, http.StatusOK, h.own(p))
+	h.replyOwn(w, r, h.own(p))
 }
 
 func (h *Handler) public(w http.ResponseWriter, r *http.Request) {
@@ -171,15 +176,34 @@ func (h *Handler) public(w http.ResponseWriter, r *http.Request) {
 	view := publicView{
 		AccountID: p.Account,
 		Nickname:  p.Nickname,
-		Level:     p.Level,
 		Loadout:   p.Loadout,
 		Stats:     publicStats{Games: p.Stats.Games, WinRatePercent: p.Stats.WinRatePercent(), BestStreak: p.Stats.BestStreak},
+	}
+	if view.Level, _, err = h.progress(r.Context(), p.Account); err != nil {
+		h.fail(w, err)
+		return
 	}
 	if view.Ranked, err = section(r.Context(), h.ranked, p.Account); err != nil {
 		h.fail(w, err)
 		return
 	}
 	if view.Medals, err = section(r.Context(), h.medals, p.Account); err != nil {
+		h.fail(w, err)
+		return
+	}
+	reply(w, http.StatusOK, view)
+}
+
+func (h *Handler) progress(ctx context.Context, account string) (int, int64, error) {
+	if h.standing == nil {
+		return 1, 0, nil
+	}
+	return h.standing(ctx, account, h.now())
+}
+
+func (h *Handler) replyOwn(w http.ResponseWriter, r *http.Request, view ownView) {
+	var err error
+	if view.Level, view.XP, err = h.progress(r.Context(), view.AccountID); err != nil {
 		h.fail(w, err)
 		return
 	}
@@ -198,8 +222,6 @@ func (h *Handler) own(p Profile) ownView {
 		RenameRequired: p.RenameRequired,
 		AccountID:      p.Account,
 		Nickname:       p.Nickname,
-		Level:          p.Level,
-		XP:             p.XP,
 		Loadout:        p.Loadout,
 		Stats: ownStats{
 			Games: p.Stats.Games, Wins: p.Stats.Wins, Losses: p.Stats.Losses, WinRatePercent: p.Stats.WinRatePercent(),
@@ -236,7 +258,7 @@ func (h *Handler) refuseNickname(w http.ResponseWriter, err error) {
 		_, retry, _ := strings.Cut(err.Error(), " until ")
 		reply(w, http.StatusTooManyRequests, errorResponse{Error: ErrCooldown.Error(), RetryAt: retry})
 	case errors.Is(err, ErrInvalidLength), errors.Is(err, ErrInvalidCharacters), errors.Is(err, ErrInvalidSeparators), errors.Is(err, ErrMixedScripts), errors.Is(err, ErrDigitsOnly),
-		errors.Is(err, ErrUnchanged):
+		errors.Is(err, ErrUnchanged), errors.Is(err, ErrNotAllowed):
 		reply(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
 	default:
 		h.fail(w, err)

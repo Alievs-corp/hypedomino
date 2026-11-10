@@ -282,6 +282,17 @@ func (s *Store) List(ctx context.Context, account string) (List, error) {
 	return list, s.markPresence(ctx, list.Friends)
 }
 
+func (s *Store) FriendIDs(ctx context.Context, account string) ([]string, error) {
+	if !accountID.MatchString(account) {
+		return []string{}, nil
+	}
+	rows, err := s.pool.Query(ctx, `select f.friend_id::text from friendships f join accounts a on a.id = f.friend_id where f.account_id = $1 and a.state = 'active'`, account)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
+}
+
 func (s *Store) markPresence(ctx context.Context, friends []Player) error {
 	if s.presence == nil {
 		return nil

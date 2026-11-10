@@ -1,12 +1,16 @@
 package adminapi_test
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
 func passWithListedCosmetics(t *testing.T) map[string]any {
@@ -52,6 +56,63 @@ func seasonIDs(config map[string]any) []string {
 		ids = append(ids, season.(map[string]any)["id"].(string))
 	}
 	return ids
+}
+
+func (a *api) publishItems(edit map[string]map[string]any) {
+	a.t.Helper()
+	manifest := exampleAt(a.t, "cosmetics/examples/catalog")
+	for _, item := range manifest["items"].([]any) {
+		entry := item.(map[string]any)
+		for key, value := range edit[entry["id"].(string)] {
+			entry[key] = value
+		}
+	}
+	raw, err := json.Marshal(manifest)
+	if err != nil {
+		a.t.Fatal(err)
+	}
+	if _, err := snapshot.Publish(context.Background(), a.pool, cosmetics.Domain, raw); err != nil {
+		a.t.Fatal(err)
+	}
+}
+
+func TestARunningSeasonReplacesADisabledItemWithALiveOneOfTheSameTypeAndRarity(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	levelSource := []any{map[string]any{"type": "pass", "ref": "pass.season_1.premium.level_30"}}
+	a.publishItems(map[string]map[string]any{"avatar.comet_fox": {"sources": levelSource}})
+	config := passWithListedCosmetics(t)
+	premiumLevel(config, 0, "30")["cosmetics"] = []string{"avatar.comet_fox"}
+	status, body := a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": config, "reason": "season 1"})
+	expect(t, status, body, http.StatusOK, "")
+
+	a.now = time.Date(2026, 12, 15, 9, 0, 0, 0, time.UTC)
+	liveOps = a.signIn("leyla")
+	a.publishItems(map[string]map[string]any{
+		"avatar.comet_fox":  {"sources": levelSource, "availability": "disabled"},
+		"avatar.moon_owl":   {"sources": levelSource},
+		"avatar.paper_kite": {"sources": levelSource},
+	})
+	swapped := func(item string) map[string]any {
+		next := passWithListedCosmetics(t)
+		level := premiumLevel(next, 0, "30")
+		level["cosmetics"], level["revision"] = []string{item}, level["revision"].(float64)+1
+		return next
+	}
+	status, body = a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": swapped("avatar.paper_kite"), "reason": "withdrawn"})
+	expect(t, status, body, http.StatusConflict, "frozen")
+	status, body = a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": swapped("avatar.moon_owl")})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": swapped("avatar.moon_owl"), "reason": "comet fox withdrawn"})
+	expect(t, status, body, http.StatusOK, "")
+	if got := premiumLevel(body["catalog"].(map[string]any), 0, "30")["cosmetics"].([]any); len(got) != 1 || got[0] != "avatar.moon_owl" {
+		t.Fatalf("replaced level %v", got)
+	}
+	entries := a.entries(a.signIn("root"), "object_type=pass_seasons&object_id=pass")
+	if len(entries) != 2 || entries[0]["reason"] != "comet fox withdrawn" {
+		t.Fatalf("entries %v", entries)
+	}
 }
 
 func TestPassSeasonsArePublishedWithListedTrackItemsAndFrozenWhileRunning(t *testing.T) {

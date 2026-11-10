@@ -2,13 +2,13 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { addedItems, changedItems, type CosmeticManifest, type CosmeticRules } from "@/cosmetics/catalog";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { Rollback } from "../config/Rollback";
 import { rollbackCosmetics } from "./actions";
 import { CosmeticsEditor } from "./CosmeticsEditor";
+import { SwitchOff } from "./SwitchOff";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,9 @@ export default async function CosmeticsPage() {
         canPublish={can(admin.permissions, "cosmetic_items", "publish")}
         canReview={can(admin.permissions, "cosmetic_items", "cultural_review")}
       />
+      {catalog !== null && can(admin.permissions, "cosmetic_items", "switch_off_for_incident") && (
+        <SwitchOff itemIds={catalog.items.filter((item) => item.availability !== "disabled").map((item) => item.id)} clientId={googleClientId()} />
+      )}
       <History versions={history.body.versions} builtin={rules.builtin} rollback={canRollBack(admin.permissions, "cosmetic_items") ? googleClientId() : null} t={t} />
     </main>
   );
@@ -75,7 +78,7 @@ function History({ versions, builtin, rollback, t }: { versions: ConfigVersion[]
                 <tr key={version.config_version} className="border-t border-surface align-top">
                   <td className="py-2 pr-4">{version.config_version}</td>
                   <td className="py-2 pr-4">{version.catalog.manifestVersion}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                   <td className="py-2 pr-4">{items.length}</td>
                   <td className="py-2 pr-4 font-mono break-all">{[...addedItems(previous, items), ...changedItems(previous, items)].join(", ")}</td>
                   {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackCosmetics} />}</td>}

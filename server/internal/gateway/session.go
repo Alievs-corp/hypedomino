@@ -12,11 +12,12 @@ import (
 )
 
 type RoomSession struct {
-	room   *room.Room
-	seat   rules.Seat
-	conn   *Conn
-	resume bool
-	acked  atomic.Uint64
+	room       *room.Room
+	seat       rules.Seat
+	conn       *Conn
+	resume     bool
+	staticSent bool
+	acked      atomic.Uint64
 }
 
 func JoinRoom(r *room.Room, seat rules.Seat, conn *Conn) *RoomSession {
@@ -95,6 +96,7 @@ func (s *RoomSession) Deliver(message room.Message) {
 	}
 	s.conn.Send(&pb.Envelope{
 		AckedSequence: message.View.Acked,
-		Payload:       &pb.Envelope_MatchView{MatchView: ViewMessage(message.View)},
+		Payload:       &pb.Envelope_MatchView{MatchView: ViewMessage(message.View, !s.staticSent)},
 	})
+	s.staticSent = true
 }

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -38,7 +40,7 @@ type publishCatalogRequest struct {
 }
 
 func (h *Handler) catalogDomain(keepOffers bool) configDomain {
-	return configDomain{name: shop.Domain, object: rbac.ShopOffers, accept: func(before, after []byte) error {
+	return configDomain{name: shop.Domain, object: rbac.ShopOffers, prepare: h.offerSourcesListed, accept: func(before, after []byte) error {
 		next, err := shop.Parse(after, h.config.Shop)
 		if err != nil || !keepOffers || before == nil {
 			return err
@@ -93,10 +95,6 @@ func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, fmt.Errorf("%w: catalog", errMalformed))
 		return
 	}
-	if err := h.chestPoolsArePublished(r.Context(), request.Catalog); err != nil {
-		h.refuse(w, err)
-		return
-	}
 	version, _, err := h.replaceSnapshot(r.Context(), p, h.catalogDomain(true), "publish", request.Catalog, request.changeNote, nil)
 	if err != nil {
 		h.refuse(w, err)
@@ -123,16 +121,16 @@ func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p princip
 	reply(w, http.StatusOK, viewCatalog(version, raw))
 }
 
-func (h *Handler) chestPoolsArePublished(ctx context.Context, raw []byte) error {
-	catalog, err := shop.Parse(raw, h.config.Shop)
+func (h *Handler) offerSourcesListed(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
+	catalog, err := shop.Parse(after, h.config.Shop)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	items, err := cosmetics.Published(ctx, h.pool)
+	items, err := cosmetics.Published(ctx, tx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return catalog.CheckChestPools(items)
+	return after, catalog.CheckSources(items)
 }
 
 type cosmeticItemView struct {

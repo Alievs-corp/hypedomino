@@ -69,10 +69,6 @@ export function muteActive(account: PlayerAccount, now: Date): boolean {
   return account.muted_until !== null && new Date(account.muted_until) > now;
 }
 
-export function signedAmount(amount: number): string {
-  return amount > 0 ? `+${amount}` : String(amount);
-}
-
 export function validAdjustment(amount: number): boolean {
   return Number.isSafeInteger(amount) && amount !== 0;
 }

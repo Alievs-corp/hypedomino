@@ -127,7 +127,7 @@ var matrix = map[Object]map[Role][]Action{
 		Analyst:    grant("V"),
 	},
 	AuditLog: {
-		SuperAdmin: grant("V"),
+		SuperAdmin: grant("V", ExportAudit),
 		Content:    grant("V"),
 		LiveOps:    grant("V"),
 		Support:    grant("V"),

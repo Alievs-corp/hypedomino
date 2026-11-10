@@ -21,6 +21,7 @@ const (
 	KindMacFailure   = "mac_failure"
 	KindUnownedEquip = "unowned_equip"
 	KindCollusion    = "collusion"
+	KindFarm         = "farm"
 )
 
 var ErrInvalidConfig = errors.New("risk: invalid config")

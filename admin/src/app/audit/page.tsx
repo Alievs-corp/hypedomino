@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { adminApi } from "@/admin/api";
-import { canView } from "@/admin/navigation";
+import { googleClientId } from "@/admin/google";
+import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { auditApiPath, beforeIdOf, olderPageHref, readFilter, utcLabel, type AuditEntry, type AuditFilter, type SearchParams } from "@/audit/query";
+import { auditApiPath, beforeIdOf, olderPageHref, readFilter, type AuditEntry, type AuditFilter, type SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { MessageKey, Translate } from "@/i18n/translate";
+import { ExportAudit } from "./ExportAudit";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
       <h1 className="text-2xl font-semibold">{t("audit.title")}</h1>
       <FilterForm filter={filter} t={t} />
+      {can(admin.permissions, "audit_log", "export_audit") && <ExportAudit filter={filter} clientId={googleClientId()} />}
       {reply.status === 400 && <p role="alert" className="text-danger-text">{t("audit.invalid_filter")}</p>}
       {reply.status !== 200 && reply.status !== 400 && <p role="alert" className="text-danger-text">{t("audit.load_failed")}</p>}
       {reply.status === 200 && <Entries entries={reply.body.entries} t={t} />}
@@ -88,7 +91,7 @@ function Entries({ entries, t }: { entries: readonly AuditEntry[]; t: Translate 
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <span className="font-mono text-sm text-text-muted">#{entry.id}</span>
             <time dateTime={entry.at} className="text-sm text-text-secondary">
-              {utcLabel(entry.at)}
+              {t.when(entry.at)}
             </time>
             <span className="font-semibold">{entry.action}</span>
             <span className="break-all">

@@ -34,7 +34,17 @@ func (c *connection) join(intent *pb.JoinQueueIntent) *pb.QueueState {
 	case c.manager.queue == nil:
 		return refused(pb.QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE)
 	}
+	if refusal := c.matchIntegrity(intent); refusal != pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED {
+		return refused(refusal)
+	}
 	return c.manager.queue.Join(context.Background(), c.session.account, c.session.token, intent)
+}
+
+func (c *connection) matchIntegrity(intent *pb.JoinQueueIntent) pb.QueueRefusal {
+	if c.manager.checker == nil {
+		return pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED
+	}
+	return c.manager.checker.MatchStart(context.Background(), c.session.account, c.session.token, intent.GetQueue(), intent.GetIntegrity())
 }
 
 func (c *connection) LeaveQueue() {
