@@ -56,6 +56,8 @@ Work time is `max(cpuMainThreadFrameTime, cpuRenderThreadFrameTime, gpuFrameTime
 
 `gcFrames` counts frames whose `ProfilerRecorder` "GC Allocated In Frame" was above 0, `gcMax` is the largest of them, `gcCollections` is the `GC.CollectionCount(0)` delta and `batchesMax` the largest "Batches Count" (`docs/performance.md` 3). A counter the player does not expose prints `n/a`; the Profiler counters need a development build. The frame that writes the log line allocates that line, so its GC value is not counted. `FrameWindow` holds the window and the `FrameWindowTests` EditMode tests cover it.
 
+In a development build `FrameStatsOverlay`, on the same object as the sampler in `Scenes/Boot.unity`, shows the sampler's live window of the last 60 frames in the top-left of the safe area: work time p95 in ms, missed vsyncs in percent, frames that allocated (in the danger colour when above 0) and the most batches. It refreshes once per window, takes its numbers from string tables filled at start, so showing them allocates nothing (`FrameStatsOverlayTests`), and removes itself in a release build, so store screenshots never show it.
+
 Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.buildreport`) of a local release build gives the content breakdown.
 
 ## App flow
@@ -89,7 +91,7 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion` and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion` and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 

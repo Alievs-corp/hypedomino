@@ -73,6 +73,18 @@ namespace HypeDomino.UI.Tokens
         public const int TouchTargetMin = 120;
     }
 
+    public static class TokenTextSize
+    {
+        public const int Caption = 30;
+        public const int Body = 38;
+        public const int Label = 44;
+        public const int Counter = 56;
+        public const int Title = 54;
+        public const int Heading = 68;
+        public const int Display = 86;
+        public const int Score = 108;
+    }
+
     public static class TokenDurationMs
     {
         public const int Instant = 0;
