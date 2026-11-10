@@ -124,6 +124,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_REFUND_WEIGHT` | No | server | `3` | `3` | No | from #204 |
 | `HD_COUNTRY_HEADER` | No | server | empty (no IP country fallback) | `CF-IPCountry` | No | from #117; only a header the edge overwrites on every request |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | No | server | `4320h` | `4320h` | No | from #117 |
+| `HD_ACCOUNT_DELETION_GRACE` | No | server | `720h` | `720h` | No | from #63; `AccountDeletionGraceDays` of `docs/privacy.md` section 4 |
 | `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |
 | `HD_PLAY_PACKAGE` | No | server | empty (Google purchases off) | `com.example.hypedomino` | No | from #106 |
 | `HD_PLAY_SERVICE_ACCOUNT` | With `HD_PLAY_PACKAGE` | server | empty | `/run/secrets/play-service-account.json` | Yes, the file it names | from #106 |
