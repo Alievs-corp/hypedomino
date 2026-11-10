@@ -57,12 +57,17 @@ type Profile struct {
 }
 
 type Store struct {
-	pool   *pgxpool.Pool
-	config Config
+	pool       *pgxpool.Pool
+	config     Config
+	moderation func() Moderation
 }
 
 func NewStore(pool *pgxpool.Pool, config Config) *Store {
 	return &Store{pool: pool, config: config}
+}
+
+func (s *Store) Moderate(current func() Moderation) {
+	s.moderation = current
 }
 
 const profileColumns = `account_id, nickname, nickname_changed_at, rename_required, loadout, stats`
@@ -116,6 +121,9 @@ func (s *Store) SetNickname(ctx context.Context, account, raw string, now time.T
 	display := Display(raw)
 	if err := s.config.Validate(display); err != nil {
 		return Profile{}, err
+	}
+	if s.moderation != nil && !s.moderation().Allows(display) {
+		return Profile{}, ErrNotAllowed
 	}
 	key := Key(display)
 	tx, err := s.pool.Begin(ctx)
