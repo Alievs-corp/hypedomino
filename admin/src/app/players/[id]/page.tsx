@@ -4,11 +4,10 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
-import { banActive, muteActive, playerApiPath, signedAmount, type PlayerRecord } from "@/players/record";
+import { banActive, muteActive, playerApiPath, type PlayerRecord } from "@/players/record";
 import { ladders, type PenaltyView } from "@/players/penalties";
 import { Notice } from "../Notice";
 import { PlayerActions } from "./PlayerActions";
@@ -17,10 +16,9 @@ export const dynamic = "force-dynamic";
 
 type Column<Row> = { label: MessageKey; cell: (row: Row) => ReactNode };
 
-const when = (instant: string | null) => (instant ? utcLabel(instant) : "");
-
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const t = await serverTranslator();
+  const when = (instant: string | null) => (instant ? t.when(instant) : "");
   const admin = await currentAdmin();
   if (!admin) {
     return <Notice text={t("auth.required")} />;
@@ -49,7 +47,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <Fact label={t("player.id")} value={<span className="font-mono">{account.id}</span>} />
         <Fact label={t("players.state")} value={account.state} />
         <Fact label={t("players.country")} value={account.country} />
-        <Fact label={t("players.created_at")} value={utcLabel(account.created_at)} />
+        <Fact label={t("players.created_at")} value={t.when(account.created_at)} />
         <Fact label={t("player.emails")} value={account.emails.join(", ")} />
         {account.identities && <Fact label={t("player.identities")} value={account.identities.map((identity) => `${identity.provider}:${identity.subject}`).join(", ")} />}
         <Fact label={t("player.banned_until")} value={banActive(account, new Date()) ? when(account.banned_until) : t("player.not_banned")} />
@@ -57,8 +55,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <Fact label={t("player.muted_until")} value={muteActive(account, new Date()) ? when(account.muted_until) : t("player.not_banned")} />
         {account.deletion_requested_at && <Fact label={t("player.deletion_requested_at")} value={when(account.deletion_requested_at)} />}
         {account.deleted_at && <Fact label={t("player.deleted_at")} value={when(account.deleted_at)} />}
-        <Fact label={t("player.coins")} value={record.coins} />
-        <Fact label={t("player.crystals")} value={record.crystals} />
+        <Fact label={t("player.coins")} value={t.number(record.coins)} />
+        <Fact label={t("player.crystals")} value={t.number(record.crystals)} />
         {profile && <Fact label={t("player.level")} value={`${profile.level} (${profile.xp} XP)`} />}
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
@@ -87,8 +85,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       <Rows title="player.ledger" t={t} rows={record.ledger} columns={[
         { label: "player.at", cell: (row) => when(row.at) },
         { label: "player.currency", cell: (row) => row.currency },
-        { label: "player.amount", cell: (row) => signedAmount(row.amount) },
-        { label: "player.balance_after", cell: (row) => row.balance_after },
+        { label: "player.amount", cell: (row) => t.signed(row.amount) },
+        { label: "player.balance_after", cell: (row) => t.number(row.balance_after) },
         { label: "player.reason", cell: (row) => row.reason },
         { label: "player.source", cell: (row) => `${row.source_type} ${row.source_ref}` },
       ]} />
