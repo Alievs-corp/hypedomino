@@ -62,6 +62,7 @@ type Config struct {
 	MatchmakingTTL  time.Duration
 	CountryHeader   string
 	CountryCooldown time.Duration
+	DeletionGrace   time.Duration
 	Reward          reward.Config
 	Purchase        purchase.Config
 	Play            purchase.GoogleConfig
@@ -104,6 +105,7 @@ func DefaultConfig() Config {
 		MatchmakingTick: time.Second,
 		MatchmakingTTL:  5 * time.Second,
 		CountryCooldown: 180 * 24 * time.Hour,
+		DeletionGrace:   30 * 24 * time.Hour,
 		Reward:          reward.DefaultConfig(),
 		Purchase:        purchase.DefaultConfig(),
 		Promo:           promo.DefaultConfig(),
@@ -295,6 +297,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_READ_TIMEOUT", &config.RateLimit.ReadTimeout)
 	r.duration("HD_IDLE_TIMEOUT", &config.RateLimit.IdleTimeout)
 	r.duration("HD_COUNTRY_CHANGE_COOLDOWN", &config.CountryCooldown)
+	r.duration("HD_ACCOUNT_DELETION_GRACE", &config.DeletionGrace)
 	r.integer("HD_DUPLICATE_COMPENSATION_PERCENT", &config.Reward.DuplicateCompensationPercent)
 	if err := config.Shop.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
@@ -313,6 +316,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.CountryCooldown < 0 {
 		r.errs = append(r.errs, errors.New("HD_COUNTRY_CHANGE_COOLDOWN: not negative"))
+	}
+	if config.DeletionGrace <= 0 {
+		r.errs = append(r.errs, errors.New("HD_ACCOUNT_DELETION_GRACE: positive"))
 	}
 	if config.Reward.DuplicateCompensationPercent < 0 || config.Reward.DuplicateCompensationPercent > 100 {
 		r.errs = append(r.errs, errors.New("HD_DUPLICATE_COMPENSATION_PERCENT: between 0 and 100"))
