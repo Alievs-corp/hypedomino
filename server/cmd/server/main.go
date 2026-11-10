@@ -41,6 +41,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
+	"github.com/Alievs-corp/hypedomino/server/internal/push"
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
@@ -155,6 +156,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
+	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
@@ -255,7 +257,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.SetBoards(boards, logger)
 		reader = boards
 	}
-	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, logger, time.Now))
+	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
 	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
 	passHandler := critical(pass.NewHandler(tokens, passes, logger, time.Now))
