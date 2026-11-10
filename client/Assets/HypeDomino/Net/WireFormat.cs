@@ -35,6 +35,15 @@ namespace HypeDomino.Net
             return true;
         }
 
+        public static bool TryReadBytes(ReadOnlySpan<byte> source, ref int at, out ReadOnlySpan<byte> bytes)
+        {
+            bytes = default;
+            if (!TryReadVarint(source, ref at, out var length) || length > (ulong)(source.Length - at)) return false;
+            bytes = source.Slice(at, (int)length);
+            at += (int)length;
+            return true;
+        }
+
         public static bool TrySkip(ReadOnlySpan<byte> source, ref int at, int wireType)
         {
             switch (wireType)
