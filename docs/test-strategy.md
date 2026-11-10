@@ -141,6 +141,7 @@ Goal (#190 acceptance): bot clients play a full match on the real server automat
 | E-4 | Exactly one match result row; exactly one `match_reward` ledger entry per rewarded player with key `match:<matchId>`; ranked MMR and LP applied once | #50, `docs/economy.md` section 5, `docs/ranking.md` section 1 |
 | E-5 | Every refused intent leaves server state unchanged and increments the illegal intent counter | NT-2, V-1 |
 | E-6 | No server error log line and no goroutine left after the room closes | #46 |
+| E-7 | Every seat sends and receives under 200 KB of frame payload in a whole match (`docs/performance.md` 6.2) | #163 |
 
 ### 3.3 Scenarios
 
@@ -163,7 +164,7 @@ Seed counts are *proposals*.
 
 #190 is closed when S-1 and S-2 run green in the `server` job on `main`.
 
-S-1 and S-2 live in `server/internal/e2e/match_test.go` (`TestS1OneVersusOneFullMatch`, `TestS2TwoVersusTwoFullMatch`). Each seat is a `botclient.Brain`: the #40 bot at the hard level deciding on a `rules.Board` rebuilt from the seat's own view. The room clock never fires, so no turn times out and every intent in the record comes from a bot client. They assert E-1, E-2, E-3, E-6 and that no intent is refused (E-5). E-4 joins when match results are stored from the room (#50).
+S-1 and S-2 live in `server/internal/e2e/match_test.go` (`TestS1OneVersusOneFullMatch`, `TestS2TwoVersusTwoFullMatch`). Each seat is a `botclient.Brain`: the #40 bot at the hard level deciding on a `rules.Board` rebuilt from the seat's own view. The room clock never fires, so no turn times out and every intent in the record comes from a bot client. They assert E-1, E-2, E-3, E-6, E-7 and that no intent is refused (E-5). E-4 joins when match results are stored from the room (#50).
 
 ## 4. Device farm smoke
 

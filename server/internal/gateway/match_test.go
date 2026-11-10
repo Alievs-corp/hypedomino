@@ -301,7 +301,7 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 	}
 	view.Board = room.BoardView{Line: board.Line(), Top: board.Top(), Bottom: board.Bottom(), OpenEnds: board.OpenEnds()}
 	view.Board.Spinner, view.Board.HasSpinner = board.Spinner()
-	got := ViewMessage(view)
+	got := ViewMessage(view, true)
 	want := &pb.Envelope{}
 	if err := proto.Unmarshal(mustRead(t, "../../../proto/testdata/frames/match_view.bin"), want); err != nil {
 		t.Fatal(err)
@@ -309,7 +309,12 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 	if !proto.Equal(got, want.GetMatchView()) {
 		t.Fatalf("view message differs\n got %v\nwant %v", got, want.GetMatchView())
 	}
-	waiting := ViewMessage(room.View{State: room.StateWaiting, Seat: rules.SeatNorth, Mode: rules.Mode2v2})
+	view.Roster = []room.Player{{Seat: rules.SeatX, Nickname: "Ayla"}}
+	later := ViewMessage(view, false)
+	if later.GetTable() != "" || later.GetRoster() != nil || !proto.Equal(later.GetBoard(), got.GetBoard()) || len(later.GetHand()) != 3 {
+		t.Fatalf("a later view repeats the table or roster or drops play state: %v", later)
+	}
+	waiting := ViewMessage(room.View{State: room.StateWaiting, Seat: rules.SeatNorth, Mode: rules.Mode2v2}, true)
 	if err := proto.Unmarshal(mustRead(t, "../../../proto/testdata/frames/match_view_waiting.bin"), want); err != nil {
 		t.Fatal(err)
 	}
