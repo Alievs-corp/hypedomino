@@ -25,6 +25,8 @@ var erasures = map[string]erasure{
 	"auth_identities":     eraseRows,
 	"auth_sessions":       eraseRows,
 	"app_attest_keys":     eraseRows,
+	"push_devices":        eraseRows,
+	"push_settings":       eraseRows,
 	"profiles":            eraseRows,
 	"nickname_history":    eraseRows,
 	"inventory_items":     eraseRows,
@@ -80,8 +82,10 @@ func (s *Store) Lookup(ctx context.Context, identity idtoken.Identity) (Account,
 
 func (s *Store) RequestDeletion(ctx context.Context, id string, now time.Time) (time.Time, error) {
 	var requested time.Time
-	err := s.pool.QueryRow(ctx, `update accounts set state = $2, deletion_requested_at = $3
-		where id = $1 and state = $4 and (banned_until is null or banned_until <= $3) returning deletion_requested_at`,
+	err := s.pool.QueryRow(ctx, `with requested as (update accounts set state = $2, deletion_requested_at = $3
+		where id = $1 and state = $4 and (banned_until is null or banned_until <= $3) returning id, deletion_requested_at),
+		unregistered as (delete from push_devices where account_id in (select id from requested))
+		select deletion_requested_at from requested`,
 		id, StateDeleting, now.UTC(), StateActive).Scan(&requested)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, ErrBanned

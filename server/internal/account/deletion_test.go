@@ -42,8 +42,14 @@ func TestDeletionWaitsForTheGraceAndCanBeCancelled(t *testing.T) {
 	ayla := signedUp(t, store, pool, "g-ayla", "Ayla")
 	identity := idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-ayla"}
 	requestedAt := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	if _, err := pool.Exec(ctx, `insert into push_devices (token, account_id, platform, registered_at) values ('push-1', $1, 'android', now())`, ayla.ID); err != nil {
+		t.Fatal(err)
+	}
 	if at, err := store.RequestDeletion(ctx, ayla.ID, requestedAt); err != nil || !at.Equal(requestedAt) {
 		t.Fatalf("request: %v %v", at, err)
+	}
+	if n := count(t, pool, `select count(*) from push_devices where account_id = $1`, ayla.ID); n != 0 {
+		t.Fatalf("push devices after the request: %d", n)
 	}
 	pending, err := store.Lookup(ctx, identity)
 	if !errors.Is(err, account.ErrDeletionPending) || pending.ID != ayla.ID || pending.DeletionAt == nil || !pending.DeletionAt.Equal(requestedAt) {
