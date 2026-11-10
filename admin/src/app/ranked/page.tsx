@@ -2,7 +2,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { changedConfig, effectiveConfig, type RatingConfig } from "@/ranked/config";
@@ -40,7 +39,7 @@ export default async function RankedPage() {
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
       <h1 className="text-2xl font-semibold">{t("ranked.title")}</h1>
       <p className="text-sm text-text-muted">
-        {t("ranked.server_time")}: {utcLabel(rules.server_time)}
+        {t("ranked.server_time")}: {t.when(rules.server_time)}
       </p>
       <SeasonsPanel
         seasons={seasons.body.seasons}
@@ -89,7 +88,7 @@ function History({ versions, defaults, rollback, t }: { versions: ConfigVersion[
             {versions.map((version, index) => (
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                 <td className="py-2 pr-4 font-mono break-all">{changedConfig(effectiveConfig(versions[index + 1]?.catalog ?? null, defaults), effectiveConfig(version.catalog, defaults)).join(", ")}</td>
                 {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackRating} />}</td>}
               </tr>

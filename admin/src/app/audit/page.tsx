@@ -2,7 +2,7 @@ import Link from "next/link";
 import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { auditApiPath, beforeIdOf, olderPageHref, readFilter, utcLabel, type AuditEntry, type AuditFilter, type SearchParams } from "@/audit/query";
+import { auditApiPath, beforeIdOf, olderPageHref, readFilter, type AuditEntry, type AuditFilter, type SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { MessageKey, Translate } from "@/i18n/translate";
 
@@ -88,7 +88,7 @@ function Entries({ entries, t }: { entries: readonly AuditEntry[]; t: Translate 
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <span className="font-mono text-sm text-text-muted">#{entry.id}</span>
             <time dateTime={entry.at} className="text-sm text-text-secondary">
-              {utcLabel(entry.at)}
+              {t.when(entry.at)}
             </time>
             <span className="font-semibold">{entry.action}</span>
             <span className="break-all">

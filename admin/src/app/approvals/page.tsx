@@ -3,7 +3,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { currentAdmin } from "@/admin/session";
 import { changeSummary, objectHref, ownProposal, type Proposal } from "@/approvals/proposals";
-import { utcLabel } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import { Notice } from "../players/Notice";
 import { Decision } from "./Decision";
@@ -62,7 +61,7 @@ export default async function ApprovalsPage() {
                   <td className="py-2 pr-4 break-all">
                     {proposal.proposer_id} ({proposal.proposer_roles.join(", ")})
                   </td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(proposal.expires_at)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(proposal.expires_at)}</td>
                   <td className="py-2 pr-4">
                     {ownProposal(proposal, admin.account.id) ? (
                       <span className="text-text-muted">{t("approvals.own")}</span>
