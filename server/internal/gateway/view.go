@@ -118,17 +118,20 @@ func rosterMessage(roster []room.Player) []*pb.RosterEntry {
 
 func ViewMessage(view room.View, withStatic bool) *pb.MatchView {
 	out := &pb.MatchView{
-		State: stateMessage(view.State),
-		Seat:  seatMessage(view.Seat),
-		Mode:  pb.Mode(view.Mode),
+		State:                  stateMessage(view.State),
+		Seat:                   seatMessage(view.Seat),
+		Mode:                   pb.Mode(view.Mode),
+		AfkConsecutiveTimeouts: uint32(view.AfkTimeouts),
 	}
 	for _, seat := range view.Mode.Seats() {
 		out.Seats = append(out.Seats, &pb.SeatView{
-			Seat:            seatMessage(seat),
-			HandSize:        uint32(view.HandSizes[seat]),
-			Controller:      controllerMessage(view.Controllers[seat]),
-			LoadingProgress: uint32(view.Loading[seat]),
-			Ready:           view.Ready[seat],
+			Seat:                seatMessage(seat),
+			HandSize:            uint32(view.HandSizes[seat]),
+			Controller:          controllerMessage(view.Controllers[seat]),
+			LoadingProgress:     uint32(view.Loading[seat]),
+			Ready:               view.Ready[seat],
+			Disconnected:        view.Disconnected[seat],
+			ConsecutiveTimeouts: uint32(view.Timeouts[seat]),
 		})
 	}
 	if withStatic {
