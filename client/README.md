@@ -144,6 +144,10 @@ Without a local Unity license, an editor method that creates or changes assets r
 
 `EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
 
+## Analytics
+
+`Core/Analytics` is the client side of `docs/analytics.md` (#181). `AnalyticsQueue` takes events only while the `analytics` consent purpose is on (`docs/privacy.md` 6.4): before `Consent(analyticsId)` and after `Withdraw()` nothing is queued, and `Withdraw` drops what was queued. `Track` accepts only the client event names of `AnalyticsEvents`, with one label and one value. `Flush` hands one batch of at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time; a failed send keeps the batch, and a full queue (`AnalyticsQueueLimit`) drops its oldest event. Both sizes come from admin config. The sender and the flush timer arrive with the network layer. The `AnalyticsQueueTests` EditMode tests cover these rules.
+
 ## Pooling and allocations
 
 Anything that spawns more than once is pooled; a match frame allocates 0 B (`docs/performance.md` 3).
