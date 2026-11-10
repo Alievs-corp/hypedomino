@@ -21,7 +21,7 @@ type SuspiciousMatch struct {
 func LoadSuspiciousMatches(ctx context.Context, db Querier) ([]SuspiciousMatch, error) {
 	var matches []SuspiciousMatch
 	err := collect(ctx, db, &matches, `select m.id::text, m.started_at, m.mode, m.kind, array_agg(distinct s.kind order by s.kind),
-		array(select distinct a from unnest(array_agg(mp.account_id::text) || array_agg(o.account_id::text)) a order by a collate "C")
+		array(select a from unnest(array_agg(mp.account_id::text) || array_agg(o.account_id::text)) a group by a order by a collate "C")
 		from rating_signals s
 		join match_participants mp on mp.account_id = s.account_id
 		join match_participants o on o.match_id = mp.match_id and o.started_at = mp.started_at and o.account_id = s.counterpart
