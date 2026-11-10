@@ -156,6 +156,30 @@ func (g *Gate) SessionStart(ctx context.Context, account, session string, proof 
 	return decision.Allowed()
 }
 
+func (g *Gate) MatchStart(ctx context.Context, account, session string, queue pb.QueueKind, proof *pb.IntegrityProof) pb.QueueRefusal {
+	binding := Binding{Account: account, Session: session, Purpose: matchPurpose(queue)}
+	decision, err := g.Check(ctx, binding, proofFromHello(proof))
+	switch {
+	case err != nil && binding.Purpose == PurposeRankedMatch:
+		g.logger.Error("integrity not checked at ranked match start", "account", account, "error", err)
+		return pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE
+	case err != nil:
+		g.logger.Error("integrity not checked at casual match start", "account", account, "error", err)
+		return pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED
+	case !decision.Allowed():
+		g.logger.Warn("integrity refused", "account", account, "purpose", binding.Purpose.String(), "reasons", decision.ReasonNames())
+		return pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED
+	}
+	return pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED
+}
+
+func matchPurpose(queue pb.QueueKind) Purpose {
+	if queue == pb.QueueKind_QUEUE_KIND_RANKED {
+		return PurposeRankedMatch
+	}
+	return PurposeCasualMatch
+}
+
 func proofFromHello(proof *pb.IntegrityProof) Proof {
 	if attest := proof.GetAppAttest(); attest != nil {
 		return Proof{KeyID: attest.GetKeyId(), Nonce: attest.GetNonce(), Assertion: attest.GetAssertion()}

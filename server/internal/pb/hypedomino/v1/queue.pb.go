@@ -128,11 +128,13 @@ func (QueueStatus) EnumDescriptor() ([]byte, []int) {
 type QueueRefusal int32
 
 const (
-	QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED     QueueRefusal = 0
-	QueueRefusal_QUEUE_REFUSAL_IN_MATCH        QueueRefusal = 1
-	QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN QueueRefusal = 2
-	QueueRefusal_QUEUE_REFUSAL_RANKED_CLOSED   QueueRefusal = 3
-	QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE     QueueRefusal = 4
+	QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED           QueueRefusal = 0
+	QueueRefusal_QUEUE_REFUSAL_IN_MATCH              QueueRefusal = 1
+	QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN       QueueRefusal = 2
+	QueueRefusal_QUEUE_REFUSAL_RANKED_CLOSED         QueueRefusal = 3
+	QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE           QueueRefusal = 4
+	QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED      QueueRefusal = 5
+	QueueRefusal_QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE QueueRefusal = 6
 )
 
 // Enum value maps for QueueRefusal.
@@ -143,13 +145,17 @@ var (
 		2: "QUEUE_REFUSAL_MATCHMAKING_BAN",
 		3: "QUEUE_REFUSAL_RANKED_CLOSED",
 		4: "QUEUE_REFUSAL_UNAVAILABLE",
+		5: "QUEUE_REFUSAL_INTEGRITY_FAILED",
+		6: "QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE",
 	}
 	QueueRefusal_value = map[string]int32{
-		"QUEUE_REFUSAL_UNSPECIFIED":     0,
-		"QUEUE_REFUSAL_IN_MATCH":        1,
-		"QUEUE_REFUSAL_MATCHMAKING_BAN": 2,
-		"QUEUE_REFUSAL_RANKED_CLOSED":   3,
-		"QUEUE_REFUSAL_UNAVAILABLE":     4,
+		"QUEUE_REFUSAL_UNSPECIFIED":           0,
+		"QUEUE_REFUSAL_IN_MATCH":              1,
+		"QUEUE_REFUSAL_MATCHMAKING_BAN":       2,
+		"QUEUE_REFUSAL_RANKED_CLOSED":         3,
+		"QUEUE_REFUSAL_UNAVAILABLE":           4,
+		"QUEUE_REFUSAL_INTEGRITY_FAILED":      5,
+		"QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE": 6,
 	}
 )
 
@@ -184,6 +190,7 @@ type JoinQueueIntent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mode          Mode                   `protobuf:"varint,1,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
 	Queue         QueueKind              `protobuf:"varint,2,opt,name=queue,proto3,enum=hypedomino.v1.QueueKind" json:"queue,omitempty"`
+	Integrity     *IntegrityProof        `protobuf:"bytes,3,opt,name=integrity,proto3" json:"integrity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -230,6 +237,13 @@ func (x *JoinQueueIntent) GetQueue() QueueKind {
 		return x.Queue
 	}
 	return QueueKind_QUEUE_KIND_UNSPECIFIED
+}
+
+func (x *JoinQueueIntent) GetIntegrity() *IntegrityProof {
+	if x != nil {
+		return x.Integrity
+	}
+	return nil
 }
 
 type LeaveQueueIntent struct {
@@ -364,10 +378,11 @@ var File_hypedomino_v1_queue_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/queue.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/match.proto\"j\n" +
+	"\x19hypedomino/v1/queue.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xa7\x01\n" +
 	"\x0fJoinQueueIntent\x12'\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12.\n" +
-	"\x05queue\x18\x02 \x01(\x0e2\x18.hypedomino.v1.QueueKindR\x05queue\"\x12\n" +
+	"\x05queue\x18\x02 \x01(\x0e2\x18.hypedomino.v1.QueueKindR\x05queue\x12;\n" +
+	"\tintegrity\x18\x03 \x01(\v2\x1d.hypedomino.v1.IntegrityProofR\tintegrity\"\x12\n" +
 	"\x10LeaveQueueIntent\"\xdc\x02\n" +
 	"\n" +
 	"QueueState\x122\n" +
@@ -387,13 +402,15 @@ const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\x16QUEUE_STATUS_SEARCHING\x10\x01\x12\x15\n" +
 	"\x11QUEUE_STATUS_LEFT\x10\x02\x12\x1c\n" +
 	"\x18QUEUE_STATUS_MATCH_FOUND\x10\x03\x12\x18\n" +
-	"\x14QUEUE_STATUS_REFUSED\x10\x04*\xac\x01\n" +
+	"\x14QUEUE_STATUS_REFUSED\x10\x04*\xf9\x01\n" +
 	"\fQueueRefusal\x12\x1d\n" +
 	"\x19QUEUE_REFUSAL_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16QUEUE_REFUSAL_IN_MATCH\x10\x01\x12!\n" +
 	"\x1dQUEUE_REFUSAL_MATCHMAKING_BAN\x10\x02\x12\x1f\n" +
 	"\x1bQUEUE_REFUSAL_RANKED_CLOSED\x10\x03\x12\x1d\n" +
-	"\x19QUEUE_REFUSAL_UNAVAILABLE\x10\x04B\xc5\x01\n" +
+	"\x19QUEUE_REFUSAL_UNAVAILABLE\x10\x04\x12\"\n" +
+	"\x1eQUEUE_REFUSAL_INTEGRITY_FAILED\x10\x05\x12'\n" +
+	"#QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE\x10\x06B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"QueueProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -419,19 +436,21 @@ var file_hypedomino_v1_queue_proto_goTypes = []any{
 	(*LeaveQueueIntent)(nil), // 4: hypedomino.v1.LeaveQueueIntent
 	(*QueueState)(nil),       // 5: hypedomino.v1.QueueState
 	(Mode)(0),                // 6: hypedomino.v1.Mode
+	(*IntegrityProof)(nil),   // 7: hypedomino.v1.IntegrityProof
 }
 var file_hypedomino_v1_queue_proto_depIdxs = []int32{
 	6, // 0: hypedomino.v1.JoinQueueIntent.mode:type_name -> hypedomino.v1.Mode
 	0, // 1: hypedomino.v1.JoinQueueIntent.queue:type_name -> hypedomino.v1.QueueKind
-	1, // 2: hypedomino.v1.QueueState.status:type_name -> hypedomino.v1.QueueStatus
-	6, // 3: hypedomino.v1.QueueState.mode:type_name -> hypedomino.v1.Mode
-	0, // 4: hypedomino.v1.QueueState.queue:type_name -> hypedomino.v1.QueueKind
-	2, // 5: hypedomino.v1.QueueState.refusal:type_name -> hypedomino.v1.QueueRefusal
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	7, // 2: hypedomino.v1.JoinQueueIntent.integrity:type_name -> hypedomino.v1.IntegrityProof
+	1, // 3: hypedomino.v1.QueueState.status:type_name -> hypedomino.v1.QueueStatus
+	6, // 4: hypedomino.v1.QueueState.mode:type_name -> hypedomino.v1.Mode
+	0, // 5: hypedomino.v1.QueueState.queue:type_name -> hypedomino.v1.QueueKind
+	2, // 6: hypedomino.v1.QueueState.refusal:type_name -> hypedomino.v1.QueueRefusal
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_queue_proto_init() }
@@ -439,6 +458,7 @@ func file_hypedomino_v1_queue_proto_init() {
 	if File_hypedomino_v1_queue_proto != nil {
 		return
 	}
+	file_hypedomino_v1_hello_proto_init()
 	file_hypedomino_v1_match_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
