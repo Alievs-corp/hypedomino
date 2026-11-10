@@ -240,6 +240,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
 	go ratings.RunApexRecalc(ctx, logger, time.Now)
 	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
+	go accounts.RunDeletions(ctx, logger, config.SeasonPoll, config.DeletionGrace, time.Now)
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
