@@ -44,13 +44,13 @@ func started(match matchmaking.Match, roster []room.Player, seed uint64, now tim
 	return s
 }
 
-func finished(s matchstore.Started, record replay.Record, recorded bool, offenses map[rules.Seat]penalties.Kind, now time.Time) matchstore.Finished {
+func finished(s matchstore.Started, record replay.Record, recorded bool, offenses map[rules.Seat]penalties.Kind, config penalties.Config, now time.Time) matchstore.Finished {
 	f := matchstore.FinishedFrom(s, record, now)
 	stats := map[rules.Seat]replay.SeatStats{}
 	if recorded {
 		stats = replay.NewTimeline(record).Stats()
 	}
-	outcome := matchstore.Outcome{Match: s.ID, Mode: s.Mode, Kind: s.Kind, Cancelled: f.Cancelled, EndedAt: now}
+	outcome := matchstore.Outcome{Match: s.ID, Mode: s.Mode, Kind: s.Kind, Cancelled: f.Cancelled, EndedAt: now, Penalties: &matchstore.OffensePenalties{RatingPenalty: config.OffenseRatingPenalty, PartnerLossReductionPercent: config.PartnerLossReductionPercent}}
 	for _, p := range s.Participants {
 		if p.Bot {
 			outcome.BotSeat = true
@@ -80,7 +80,7 @@ func (h *Host) archived(r *room.Room, s matchstore.Started, config penalties.Con
 	if recorded && record.HasResult {
 		offenses = h.recordPenalties(r, s, config, version, now)
 	}
-	h.finish(finished(s, record, recorded, offenses, now))
+	h.finish(finished(s, record, recorded, offenses, config, now))
 }
 
 func (h *Host) recordPenalties(r *room.Room, s matchstore.Started, config penalties.Config, version int, now time.Time) map[rules.Seat]penalties.Kind {

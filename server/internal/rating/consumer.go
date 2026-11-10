@@ -16,7 +16,7 @@ func (s *Store) Publish(ctx context.Context, message matchstore.Pending) error {
 	if outcome.Cancelled {
 		return nil
 	}
-	result := Result{MatchID: outcome.Match, Mode: outcome.Mode, At: outcome.EndedAt}
+	result := Result{MatchID: outcome.Match, Mode: outcome.Mode, At: outcome.EndedAt, Penalties: outcome.Penalties}
 	for _, player := range outcome.Players {
 		if player.Team != 0 && player.Team != 1 {
 			return fmt.Errorf("%w: match %s team %d", ErrResult, outcome.Match, player.Team)
