@@ -441,7 +441,7 @@ Fields and rules are `docs/localization.md` section 2.1 (#214).
 | `values` | Per language: text and status `missing`, `draft`, `approved` |
 | `deprecated` | Marked when retired; removed once no supported client uses it |
 
-- Editor with languages side by side, a missing-value report per language with percentage and key list, CSV and JSON import and export for external translators (#214).
+- Editor with languages side by side, a missing-value report per language with percentage and key list, CSV and JSON import and export for external translators (#214). The panel edits them, publishes bundles and activates or rolls back bundle versions at `/strings` (`admin/README.md`).
 - Setting a value to `approved` is the native-speaker review step (`docs/localization.md` 6.1 step 2) and is done by `content`. Publishing builds one bundle per language (5.17).
 
 ### 5.16 Word filter and reserved names
