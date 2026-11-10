@@ -90,7 +90,7 @@ func TestRewardBundlesTrackUsesValueAndDifferingContent(t *testing.T) {
 
 func TestRewardBundlesCoverTheShopThePassAndPromoCampaigns(t *testing.T) {
 	a := newPromoAPI(t)
-	a.publishExampleCatalog()
+	a.publishShopItems()
 	liveOps := a.signIn("leyla")
 
 	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(weekendPack(start, start.Add(time.Hour)), cometFox()), "reason": "weekend"})
@@ -140,7 +140,9 @@ func publishSharedBundle(t *testing.T, a *api, content, liveOps string) {
 	fox["sources"] = []any{map[string]any{"type": "mission", "ref": "mission.first"}, map[string]any{"type": "mission", "ref": "mission.second"}, map[string]any{"type": "shop", "ref": "offer.weekend_pack"}}
 	owl := foxAvatar()
 	owl["id"], owl["sources"] = "avatar.owl", fox["sources"]
-	items := append(append([]any{}, body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)...), fox, owl)
+	comet := foxAvatar()
+	comet["id"], comet["sources"] = "avatar.comet_fox", []any{map[string]any{"type": "shop", "ref": "offer.avatar_comet_fox"}}
+	items := append(append([]any{}, body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)...), fox, owl, comet)
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": map[string]any{"items": items}, "reason": "fox"})
 	expect(t, status, body, http.StatusOK, "")
 	publishMissions(t, a, liveOps, grantingMission("mission.first", 0, "avatar.fox"), grantingMission("mission.second", 0, "avatar.fox"))
