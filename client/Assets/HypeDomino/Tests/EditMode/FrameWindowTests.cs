@@ -52,7 +52,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AddingAFrameDoesNotAllocate()
         {
-            var window = new FrameWindow(1001, SixtyHzThreshold);
+            var window = new FrameWindow(2001, SixtyHzThreshold);
             window.Add(0, OnTime, 0, 1);
             TestDelegate step = () =>
             {
