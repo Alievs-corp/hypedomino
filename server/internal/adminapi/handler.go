@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
+	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -65,6 +66,7 @@ type Config struct {
 	Promo     promo.Config
 	Cosmetics *cosmetics.Catalog
 	Assets    AssetStore
+	Economy   economy.Config
 }
 
 type Verifier interface {
@@ -84,6 +86,7 @@ type Handler struct {
 	approvals *approval.Store
 	wallet    *wallet.Store
 	promos    *promo.Store
+	economy   *economy.Monitor
 	now       func() time.Time
 	logger    *slog.Logger
 	mux       *http.ServeMux
@@ -102,6 +105,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 		strings:   gamestrings.NewStore(pool),
 		approvals: approval.NewStore(pool, approval.Config{TTL: config.ApprovalTTL}),
 		wallet:    wallet.NewStore(pool),
+		economy:   economy.NewMonitor(pool, config.Economy, logger),
 		now:       now,
 		logger:    logger,
 		mux:       http.NewServeMux(),
@@ -115,6 +119,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("DELETE /admin/session", h.signedIn(h.signOut))
 	h.mux.HandleFunc("GET /admin/me", h.signedIn(h.me))
 	h.mux.HandleFunc("PUT /admin/me/locale", h.signedIn(h.chooseLocale))
+	h.mux.HandleFunc("GET /admin/economy/monitors", h.allowed(rbac.Dashboards, rbac.View, h.economyMonitors))
+	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
 	h.mux.HandleFunc("POST /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.Create, h.createAccount))

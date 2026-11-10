@@ -341,6 +341,8 @@ Monitors (#110, shown in the admin analytics #147):
 - Target sink ratio: 70% to 100%. Below 60% coins pile up with nothing worth buying; above 120% players are drawing savings down faster than they earn.
 - The account daily earn alert sits above the legitimate maximum of its reasons with the proposed values (400 + 100 + 150 + 120 + 600 = 1370), so crossing it means a defect or an exploit.
 - #110 compares the monitors before and after every economy config publish.
+- Implemented in `server/internal/economy` (#110). Coins created are the section 2 reasons, coins spent the section 3 reasons; `admin_adjust`, refund and conversion entries are neither. An account is active when it has a coin ledger entry in the window; its balance is the `balance_after` of its last coin entry before the end of the window, so a past window can be measured again. Once per economy day the server measures the 7 days up to the start of the day and the day before it, records a `farm` risk signal of `CollusionWeight` (`docs/anti-cheat.md` V-9) for each account above `AccountDailyEarnAlertCoins`, with the day as its dedupe key and the coins as evidence, and logs each alert as `economy alert` with the monitor name for alerting (#28). The admin API shows the monitors now and around any config publish (`docs/admin.md` 9.1). The env keys are `HD_SINK_RATIO_ALERT_LOW_PERCENT`, `HD_SINK_RATIO_ALERT_HIGH_PERCENT`, `HD_ACCOUNT_DAILY_EARN_ALERT_COINS` and `HD_BALANCE_MEDIAN_ALERT_COINS`.
+- The sink and source balance is simulated by `tools/economy-balance` from `docs/economy/balance.csv` (section 11): earn per day by profile against the guide prices, as days of play per rarity.
 
 ## 11. Balance sheet
 
