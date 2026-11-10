@@ -126,6 +126,10 @@ Without a local Unity license, an editor method that creates or changes assets r
 
 `EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
 
+## Device risk signals
+
+`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device. The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path.
+
 ## Pooling and allocations
 
 Anything that spawns more than once is pooled; a match frame allocates 0 B (`docs/performance.md` 3).
