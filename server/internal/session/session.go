@@ -96,6 +96,7 @@ type ReplayObserver interface {
 
 type IntegrityChecker interface {
 	SessionStart(ctx context.Context, account, session string, proof *pb.IntegrityProof) bool
+	MatchStart(ctx context.Context, account, session string, queue pb.QueueKind, proof *pb.IntegrityProof) pb.QueueRefusal
 }
 
 func (m *Manager) CheckIntegrity(checker IntegrityChecker) {

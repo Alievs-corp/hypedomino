@@ -220,7 +220,6 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.refuseForMaintenance()
 		return false
 	}
-	c.socket.SetReadLimit(int64(c.options.Config.MaxFrameBytes))
 	c.session = session
 	c.nonce = sessionNonce()
 	c.build.Store(&clientBuild{version: hello.GetAppVersion(), hash: hello.GetBuildHash()})
@@ -269,11 +268,23 @@ func (c *Conn) readFrame(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 		c.Close(websocket.StatusMessageTooBig, "frame too big")
 		return false
 	}
-	if err := (proto.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(buffer.Bytes(), frame); err != nil {
+	err = (proto.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(buffer.Bytes(), frame)
+	switch {
+	case buffer.Len() > c.frameLimit(frame, err):
+		c.Close(websocket.StatusMessageTooBig, "frame too big")
+		return false
+	case err != nil:
 		c.Close(websocket.StatusPolicyViolation, "malformed frame")
 		return false
 	}
 	return true
+}
+
+func (c *Conn) frameLimit(frame *pb.Envelope, decodeErr error) int {
+	if c.session == nil || (decodeErr == nil && frame.GetJoinQueueIntent() != nil) {
+		return max(c.options.Config.MaxHelloBytes, c.options.Config.MaxFrameBytes)
+	}
+	return c.options.Config.MaxFrameBytes
 }
 
 func (c *Conn) dispatch(frame *pb.Envelope) bool {

@@ -248,3 +248,45 @@ func TestSessionStartFollowsThePolicyAndFailsOpen(t *testing.T) {
 		t.Fatal("an outage refused the session start")
 	}
 }
+
+func TestMatchStartBlocksRankedAndFailsClosedOnlyForRanked(t *testing.T) {
+	f := newGateFixture(t)
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	lenient := NewGate(lenientPolicy(), f.signals, quiet)
+	lenient.WithPlay(f.play.verify)
+	ranked := Binding{Account: "account-1", Session: "session-1", Purpose: PurposeRankedMatch}
+	playToken := func(binding Binding) *pb.IntegrityProof {
+		return &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: f.play.token(t, binding, nil)}}
+	}
+	cases := []struct {
+		name    string
+		queue   pb.QueueKind
+		proof   *pb.IntegrityProof
+		refusal pb.QueueRefusal
+		signals int
+	}{
+		{"genuine ranked", pb.QueueKind_QUEUE_KIND_RANKED, playToken(ranked), pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED, 0},
+		{"no proof ranked", pb.QueueKind_QUEUE_KIND_RANKED, nil, pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED, 1},
+		{"session token at ranked", pb.QueueKind_QUEUE_KIND_RANKED, playToken(sessionBinding()), pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED, 1},
+		{"no proof casual under a flag policy", pb.QueueKind_QUEUE_KIND_CASUAL, nil, pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED, 1},
+	}
+	for _, c := range cases {
+		f.signals.signals = nil
+		if refusal := lenient.MatchStart(t.Context(), "account-1", "session-1", c.queue, c.proof); refusal != c.refusal || len(f.signals.signals) != c.signals {
+			t.Fatalf("%s: refusal %v signals %+v", c.name, refusal, f.signals.signals)
+		}
+	}
+	down, err := NewPlayIntegrity(PlayIntegrityConfig{PackageName: testPackage, CertificateDigests: []string{releaseDigest}, TokenMaxAge: time.Minute}, stubDecoder{err: errors.New("google down")}, f.play.nonces, f.play.clock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outage := NewGate(lenientPolicy(), f.signals, quiet)
+	outage.WithPlay(down)
+	proof := &pb.IntegrityProof{Proof: &pb.IntegrityProof_PlayIntegrityToken{PlayIntegrityToken: "token"}}
+	if refusal := outage.MatchStart(t.Context(), "account-1", "session-1", pb.QueueKind_QUEUE_KIND_RANKED, proof); refusal != pb.QueueRefusal_QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE {
+		t.Fatalf("an outage at ranked entry answered %v", refusal)
+	}
+	if refusal := outage.MatchStart(t.Context(), "account-1", "session-1", pb.QueueKind_QUEUE_KIND_CASUAL, proof); refusal != pb.QueueRefusal_QUEUE_REFUSAL_UNSPECIFIED {
+		t.Fatalf("an outage at casual entry answered %v", refusal)
+	}
+}

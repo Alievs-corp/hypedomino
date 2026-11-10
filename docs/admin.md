@@ -639,6 +639,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/config/rating/rollback` `{"version"}` | P on ranked seasons and S: rollback on snapshots | Publishes the content of an earlier `rating` snapshot as the next version, under the same checks |
 | `GET /admin/ranked/seasons` | V on ranked seasons | `server_time`, `next_start` (the end of the last season, or null) and every season in start order with its `state` (`scheduled`, `live`, `ending`, `closed`) |
 | `GET /admin/config/quick-messages`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on game strings | The `quick_messages` catalog `{"keys"}`: published only when every key is `quick.<slug>`, listed once and approved in every game language (`docs/localization.md` 5.7, #152) |
+| `GET /admin/config/moderation`, `PUT` `{"catalog","reason"}`, `GET .../history`, `POST .../rollback` | V, P on moderation config | The `moderation` snapshot `{"words","reserved"}`: word lists `any`, `az`, `en`, `tr`, `ru` of `{entry, match}` with match `substring` or `word`, and reserved names; the config version is the list version (`docs/localization.md` 5.3, #60) |
 | `GET /admin/calendar` | V on live events | `server_time` and the running and planned entries (`kind`, `id`, `start`, `end` or null when open-ended) in start order: `ranked_season`, `pass_season`, `shop_offer` (featured and event sections), `shop_rotation` (id `daily` or `weekly`, end at the next period start) and `promo_campaign` (earliest start and latest end of its codes that are not disabled; only with V on promo codes) (5.13) |
 | `POST /admin/ranked/seasons` `{"id", "start", "end", "no_rewards", "reason"}` | C on ranked seasons | Schedules a season (Ranked seasons note); 201 with the season |
 | `PATCH /admin/ranked/seasons/{id}` `{"start", "end", "no_rewards", "reason"}` | E on ranked seasons | Reschedules a season that has not started |
@@ -759,7 +760,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.
