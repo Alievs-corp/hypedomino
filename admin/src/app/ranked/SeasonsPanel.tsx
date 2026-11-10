@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { utcLabel } from "@/audit/query";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import {
@@ -71,8 +70,8 @@ export function SeasonsPanel({ seasons, nextStart, serverTime, lengthMonths, can
               <tr key={candidate.id} className="border-t border-surface align-top">
                 <td className="py-2 pr-4 font-mono">{candidate.id}</td>
                 <td className="py-2 pr-4">{t(stateLabel[candidate.state])}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(candidate.start)}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(candidate.end)}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(candidate.start)}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(candidate.end)}</td>
                 <td className="py-2 pr-4">{t(candidate.no_rewards ? "ranked.rewards_off" : "ranked.rewards_on")}</td>
                 <td className="py-2 pr-4">
                   1v1: {t(progressLabel[seasonProgress(candidate, "1v1")])} · 2v2: {t(progressLabel[seasonProgress(candidate, "2v2")])}

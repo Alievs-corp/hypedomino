@@ -2,7 +2,6 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { utcLabel } from "@/audit/query";
 import type { RulesConfig, RulesVersion } from "@/config/rules";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
@@ -63,7 +62,7 @@ function History({ versions, rollback, t }: { versions: RulesVersion[]; rollback
             {versions.map((version, index) => (
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{utcLabel(version.published_at)}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                 <td className="py-2 pr-4 font-mono">
                   {Object.entries(version.values)
                     .map(([key, value]) => `${key}=${value}`)
