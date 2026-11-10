@@ -8,6 +8,7 @@ import type { Translate } from "@/i18n/translate";
 import { Rollback } from "../config/Rollback";
 import { rollbackCosmetics } from "./actions";
 import { CosmeticsEditor } from "./CosmeticsEditor";
+import { SwitchOff } from "./SwitchOff";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,9 @@ export default async function CosmeticsPage() {
         canPublish={can(admin.permissions, "cosmetic_items", "publish")}
         canReview={can(admin.permissions, "cosmetic_items", "cultural_review")}
       />
+      {catalog !== null && can(admin.permissions, "cosmetic_items", "switch_off_for_incident") && (
+        <SwitchOff itemIds={catalog.items.filter((item) => item.availability !== "disabled").map((item) => item.id)} clientId={googleClientId()} />
+      )}
       <History versions={history.body.versions} builtin={rules.builtin} rollback={canRollBack(admin.permissions, "cosmetic_items") ? googleClientId() : null} t={t} />
     </main>
   );
