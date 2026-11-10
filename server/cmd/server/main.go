@@ -107,6 +107,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if err != nil {
 		return nil, nil, fmt.Errorf("HD_DATABASE_URL: %w", err)
 	}
+	a.Expose(db.Gauges(pool))
 	var nonces idtoken.NonceStore
 	if client != nil {
 		nonces = auth.NewRedisNonces(client, config.Cluster.KeyPrefix)
