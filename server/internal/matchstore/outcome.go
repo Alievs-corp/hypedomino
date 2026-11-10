@@ -7,13 +7,19 @@ import (
 )
 
 type Outcome struct {
-	Match     string          `json:"match"`
-	Mode      rules.Mode      `json:"mode"`
-	Kind      string          `json:"kind"`
-	BotSeat   bool            `json:"bot_seat"`
-	Cancelled bool            `json:"cancelled"`
-	EndedAt   time.Time       `json:"ended_at"`
-	Players   []PlayerOutcome `json:"players"`
+	Match     string            `json:"match"`
+	Mode      rules.Mode        `json:"mode"`
+	Kind      string            `json:"kind"`
+	BotSeat   bool              `json:"bot_seat"`
+	Cancelled bool              `json:"cancelled"`
+	EndedAt   time.Time         `json:"ended_at"`
+	Players   []PlayerOutcome   `json:"players"`
+	Penalties *OffensePenalties `json:"penalties,omitempty"`
+}
+
+type OffensePenalties struct {
+	RatingPenalty               int `json:"rating_penalty"`
+	PartnerLossReductionPercent int `json:"partner_loss_reduction_percent"`
 }
 
 type PlayerOutcome struct {
