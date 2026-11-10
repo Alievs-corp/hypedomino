@@ -67,6 +67,7 @@ const (
 	ActOnPlayer          Action = "act_on_player"
 	ActOnQueue           Action = "act_on_queue"
 	GrantSuperAdmin      Action = "grant_super_admin"
+	ExportAudit          Action = "export_audit"
 )
 
 func IsRole(role Role) bool {

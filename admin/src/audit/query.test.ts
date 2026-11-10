@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { auditApiPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, type AuditEntry } from "./query.ts";
+import { auditApiPath, auditExportPath, beforeIdOf, olderPageHref, pageSize, readFilter, utcInstant, type AuditEntry } from "./query.ts";
 
 function entries(count: number, lastId: number): AuditEntry[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -29,6 +29,11 @@ test("the API path carries the filter, the page cursor and the page size", () =>
   const path = auditApiPath({ actor: "a1", from: "2026-11-01T00:00", reason: "fix price" }, "120");
   assert.equal(path, "/admin/audit?actor=a1&reason=fix+price&from=2026-11-01T00%3A00%3A00Z&before_id=120&limit=50");
   assert.equal(auditApiPath({}, ""), "/admin/audit?limit=50");
+});
+
+test("the export path carries the filter without a page cursor or size", () => {
+  assert.equal(auditExportPath({ action: "publish", to: "2026-11-02T00:00" }), "/admin/audit/export?action=publish&to=2026-11-02T00%3A00%3A00Z");
+  assert.equal(auditExportPath({}), "/admin/audit/export?");
 });
 
 test("an older page exists only after a full page and starts below its last id", () => {

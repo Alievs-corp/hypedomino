@@ -122,6 +122,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/economy/monitors", h.allowed(rbac.Dashboards, rbac.View, h.economyMonitors))
 	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
+	h.mux.HandleFunc("POST /admin/audit/export", h.allowed(rbac.AuditLog, rbac.ExportAudit, h.exportAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
 	h.mux.HandleFunc("POST /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.Create, h.createAccount))
 	h.mux.HandleFunc("PUT /admin/accounts/{id}/roles", h.allowed(rbac.AdminAccounts, rbac.Edit, h.setRoles))
