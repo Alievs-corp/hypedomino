@@ -115,7 +115,17 @@ func TestARequestBecomesAFriendshipWhenAccepted(t *testing.T) {
 		}
 	}
 	w.expect("POST", "/friends/requests", kamal, map[string]any{"nickname": "Ayla"}, http.StatusConflict, "friend.already_friends")
+	store := friends.NewStore(w.pool, friends.DefaultConfig())
+	if ids, err := store.FriendIDs(context.Background(), ayla); err != nil || len(ids) != 1 || ids[0] != kamal {
+		t.Fatalf("friend ids %v %v", ids, err)
+	}
+	if ids, err := store.FriendIDs(context.Background(), "not-an-account"); err != nil || len(ids) != 0 {
+		t.Fatalf("friend ids of a malformed account %v %v", ids, err)
+	}
 	w.expect("DELETE", "/friends/"+ayla, kamal, nil, http.StatusNoContent, "")
+	if ids, err := store.FriendIDs(context.Background(), ayla); err != nil || len(ids) != 0 {
+		t.Fatalf("friend ids after remove %v %v", ids, err)
+	}
 	w.expect("DELETE", "/friends/"+ayla, kamal, nil, http.StatusNotFound, "friend.not_friends")
 	if _, list := w.call("GET", "/friends", ayla, nil); names(list, "friends") != "" {
 		t.Fatalf("after remove %v", list)

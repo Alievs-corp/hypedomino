@@ -18,6 +18,11 @@ const Radius = 2
 type Reader interface {
 	Top(ctx context.Context, season string, mode rules.Mode, board string, size int) ([]Row, error)
 	Around(ctx context.Context, season string, mode rules.Mode, board, account string, radius int) ([]Row, bool, error)
+	Among(ctx context.Context, season string, mode rules.Mode, accounts []string) ([]Row, error)
+}
+
+type Friends interface {
+	FriendIDs(ctx context.Context, account string) ([]string, error)
 }
 
 type Seasons interface {
@@ -29,13 +34,14 @@ type Handler struct {
 	verifier token.Verifier
 	boards   Reader
 	seasons  Seasons
+	friends  Friends
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
 }
 
-func NewHandler(verifier token.Verifier, boards Reader, seasons Seasons, logger *slog.Logger, now func() time.Time) *Handler {
-	h := &Handler{verifier: verifier, boards: boards, seasons: seasons, logger: logger, now: now, mux: http.NewServeMux()}
+func NewHandler(verifier token.Verifier, boards Reader, seasons Seasons, friends Friends, logger *slog.Logger, now func() time.Time) *Handler {
+	h := &Handler{verifier: verifier, boards: boards, seasons: seasons, friends: friends, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("GET /leaderboard/{mode}", h.view)
 	return h
 }
@@ -89,6 +95,10 @@ func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
 		}
 		season = current.ID
 	}
+	if board == BoardFriends {
+		h.friendsView(w, r, season, mode, claims.Account)
+		return
+	}
 	top, err := h.boards.Top(r.Context(), season, mode, board, h.seasons.TopSize())
 	if err != nil {
 		h.refuse(w, err)
@@ -106,6 +116,27 @@ func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
 			if around[i].Account == claims.Account {
 				view.Me = &around[i]
 			}
+		}
+	}
+	reply(w, http.StatusOK, view)
+}
+
+func (h *Handler) friendsView(w http.ResponseWriter, r *http.Request, season string, mode rules.Mode, viewer string) {
+	friends, err := h.friends.FriendIDs(r.Context(), viewer)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	rows, err := h.boards.Among(r.Context(), season, mode, append(friends, viewer))
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	view := View{Season: season, Mode: mode.String(), Board: BoardFriends, Top: rows[:min(len(rows), h.seasons.TopSize())], Around: []Row{}}
+	for i := range rows {
+		if rows[i].Account == viewer {
+			view.Me = &rows[i]
+			view.Around = rows[max(i-Radius, 0):min(i+Radius+1, len(rows))]
 		}
 	}
 	reply(w, http.StatusOK, view)

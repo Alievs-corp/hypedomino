@@ -68,7 +68,7 @@ func TestBannedAndDeletedAccountsAreRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for state, want := range map[string]error{account.StateBanned: account.ErrBanned, account.StateDeleted: account.ErrDeleted, account.StateDeleting: nil, account.StateActive: nil} {
+	for state, want := range map[string]error{account.StateBanned: account.ErrBanned, account.StateDeleted: account.ErrDeleted, account.StateDeleting: account.ErrDeletionPending, account.StateActive: nil} {
 		if _, err := pool.Exec(ctx, `update accounts set state = $1 where id = $2`, state, a.ID); err != nil {
 			t.Fatal(err)
 		}
