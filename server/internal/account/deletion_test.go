@@ -95,12 +95,14 @@ func TestDeletionErasesPersonalDataAndKeepsSharedHistoryUnderATombstone(t *testi
 	ctx := context.Background()
 	ayla := signedUp(t, store, pool, "g-ayla", "Ayla")
 	ben := signedUp(t, store, pool, "g-ben", "Ben")
+	if _, err := pool.Exec(ctx, `insert into friendships (account_id, friend_id, created_at) values ($1, $2, now()), ($2, $1, now())`, ayla.ID, ben.ID); err != nil {
+		t.Fatal(err)
+	}
 	for _, statement := range []string{
-		`insert into friendships (account_id, friend_id, created_at) values ($1, $2, now()), ($2, $1, now())`,
 		`insert into nickname_history (account_id, nickname, nickname_key) values ($1, 'Old', 'old')`,
 		`insert into purchases (platform, transaction_id, account_id, offer_id, product_id, environment, state, purchased_at) values ('google', 'tx-1', $1, 'offer', 'product', 'production', 'granted', now())`,
 	} {
-		if _, err := pool.Exec(ctx, statement, ayla.ID, ben.ID); err != nil {
+		if _, err := pool.Exec(ctx, statement, ayla.ID); err != nil {
 			t.Fatalf("%s: %v", statement, err)
 		}
 	}
