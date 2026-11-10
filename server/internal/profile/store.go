@@ -52,8 +52,6 @@ type Profile struct {
 	Nickname       string
 	RenamedAt      time.Time
 	RenameRequired bool
-	Level          int
-	XP             int64
 	Loadout        Loadout
 	Stats          Stats
 }
@@ -72,7 +70,7 @@ func (s *Store) Moderate(current func() Moderation) {
 	s.moderation = current
 }
 
-const profileColumns = `account_id, nickname, nickname_changed_at, rename_required, level, xp, loadout, stats`
+const profileColumns = `account_id, nickname, nickname_changed_at, rename_required, loadout, stats`
 
 const noAccount = "00000000-0000-0000-0000-000000000000"
 
@@ -80,7 +78,7 @@ func scan(row pgx.Row) (Profile, error) {
 	var p Profile
 	var loadout, stats []byte
 	var renamed *time.Time
-	if err := row.Scan(&p.Account, &p.Nickname, &renamed, &p.RenameRequired, &p.Level, &p.XP, &loadout, &stats); err != nil {
+	if err := row.Scan(&p.Account, &p.Nickname, &renamed, &p.RenameRequired, &loadout, &stats); err != nil {
 		return Profile{}, err
 	}
 	if renamed != nil {

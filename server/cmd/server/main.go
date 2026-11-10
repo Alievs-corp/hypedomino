@@ -170,6 +170,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	passConfigs := pass.NewWatcher(pool, logger)
 	go passConfigs.Run(ctx, config.ConfigPoll)
 	passes := pass.NewStore(pool, passConfigs)
+	profiles.SetStanding(passes.Standing)
 	medalCatalog := medal.NewWatcher(pool, logger)
 	go medalCatalog.Run(ctx, config.ConfigPoll)
 	medals := medal.NewStore(pool, medalCatalog)

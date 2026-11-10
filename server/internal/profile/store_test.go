@@ -39,7 +39,7 @@ func TestTheFirstNicknameCreatesTheProfileAndIsUniqueOnItsFoldedForm(t *testing.
 		t.Fatalf("profile before setup: %v %v", found, err)
 	}
 	p, err := store.SetNickname(ctx, ayla, "  Ayşe​ Han ", start)
-	if err != nil || p.Account != ayla || p.Nickname != "Ayşe Han" || p.Level != 1 || p.XP != 0 || !p.RenamedAt.IsZero() || p.Stats.Games != 0 {
+	if err != nil || p.Account != ayla || p.Nickname != "Ayşe Han" || !p.RenamedAt.IsZero() || p.Stats.Games != 0 {
 		t.Fatalf("setup: %+v %v", p, err)
 	}
 	if _, err := store.SetNickname(ctx, other, "AYSE HAN", start); !errors.Is(err, profile.ErrTaken) {
