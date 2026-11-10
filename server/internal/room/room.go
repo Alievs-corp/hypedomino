@@ -128,22 +128,26 @@ type seatState struct {
 	loading     int
 	ready       bool
 	absentSince time.Time
-	emojiTokens float64
-	emojiAt     time.Time
+	emoji       EmojiBucket
 }
 
-func (s *seatState) spendEmoji(limit EmojiLimit, now time.Time) bool {
+type EmojiBucket struct {
+	tokens float64
+	at     time.Time
+}
+
+func (b *EmojiBucket) Spend(limit EmojiLimit, now time.Time) bool {
 	switch {
-	case s.emojiAt.IsZero():
-		s.emojiTokens = float64(limit.Burst)
+	case b.at.IsZero():
+		b.tokens = float64(limit.Burst)
 	case limit.Refill > 0:
-		s.emojiTokens = min(float64(limit.Burst), s.emojiTokens+float64(now.Sub(s.emojiAt))/float64(limit.Refill))
+		b.tokens = min(float64(limit.Burst), b.tokens+float64(now.Sub(b.at))/float64(limit.Refill))
 	}
-	s.emojiAt = now
-	if s.emojiTokens < 1 {
+	b.at = now
+	if b.tokens < 1 {
 		return false
 	}
-	s.emojiTokens--
+	b.tokens--
 	return true
 }
 
@@ -393,7 +397,7 @@ func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent, re
 }
 
 func (r *Room) emoji(seat rules.Seat, item string, received time.Time) {
-	if !r.seated(seat) || r.seats[seat].sink == nil || !r.equipped(seat, item) || !r.seats[seat].spendEmoji(r.options.Emoji, received) {
+	if !r.seated(seat) || r.seats[seat].sink == nil || !r.equipped(seat, item) || !r.seats[seat].emoji.Spend(r.options.Emoji, received) {
 		return
 	}
 	shown := &Emoji{Seat: seat, Item: item}
@@ -422,7 +426,7 @@ func (r *Room) quickMessage(seat rules.Seat, key string, teamOnly bool, received
 	if !r.seated(seat) || r.seats[seat].sink == nil || r.options.QuickMessages == nil || !r.options.QuickMessages(key) {
 		return
 	}
-	if _, ok := r.speaker(seat); !ok || !r.seats[seat].spendEmoji(r.options.Emoji, received) {
+	if _, ok := r.speaker(seat); !ok || !r.seats[seat].emoji.Spend(r.options.Emoji, received) {
 		return
 	}
 	shown := &QuickMessage{Seat: seat, Key: key, TeamOnly: teamOnly}
