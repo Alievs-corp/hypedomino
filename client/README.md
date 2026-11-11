@@ -197,6 +197,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
 
+## Error reports
+
+`Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The crash SDK behind `IErrorSender`, its DSN and its symbol upload are owner setup: the DSN comes from build config, never from code. The `ErrorReportsTests` EditMode tests cover the gate.
+
 ## Analytics
 
 `Core/Analytics` is the client side of `docs/analytics.md` (#181). `AnalyticsQueue` takes events only while the `analytics` consent purpose is on (`docs/privacy.md` 6.4): before `Consent(analyticsId)` and after `Withdraw()` nothing is queued, and `Withdraw` drops what was queued. `Track` accepts only the client event names of `AnalyticsEvents`, with one label and one value. `Flush` hands one batch of at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time; a failed send keeps the batch, and a full queue (`AnalyticsQueueLimit`) drops its oldest event. Both sizes come from admin config. The sender and the flush timer arrive with the network layer. The `AnalyticsQueueTests` EditMode tests cover these rules.
