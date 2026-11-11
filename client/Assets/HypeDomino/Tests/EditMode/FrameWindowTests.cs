@@ -52,12 +52,15 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AddingAFrameDoesNotAllocate()
         {
-            var window = new FrameWindow(1001, SixtyHzThreshold);
+            var window = new FrameWindow(2001, SixtyHzThreshold);
             window.Add(0, OnTime, 0, 1);
-            Assert.That(() =>
+            TestDelegate step = () =>
             {
                 for (var i = 0; i < 1000; i++) window.Add(i, OnTime, 0, 1);
-            }, Is.Not.AllocatingGCMemory());
+            };
+            step();
+
+            Assert.That(step, Is.Not.AllocatingGCMemory());
         }
 
         [Test]
