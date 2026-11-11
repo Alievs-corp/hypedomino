@@ -260,6 +260,19 @@ A settings toggle, defaulting to the OS setting (Android animator duration scale
 | Any transition longer than `slow` | Capped at `slow`; holds are unchanged |
 | Information (scores, banners, timer) | Unchanged; only the motion is reduced |
 
+### Haptics
+
+Haptics use the platform's own feedback patterns, so the game sets no duration or strength and the player's system haptics setting applies on top of the game's. A settings toggle turns them off (on by default); it is a device setting (`docs/anti-cheat.md`, Device storage). Haptics follow server views, never input, and at most one cue plays per view: the strongest of win, score and tile place.
+
+| Cue | When | Android `HapticFeedbackConstants` | iOS |
+|---|---|---|---|
+| Tile place | The board has more tiles than in the previous view and the turn was the local player's | `VIRTUAL_KEY` | `UIImpactFeedbackGenerator`, light |
+| Score | The local team's score rose (board points, hand points or carry-over) | `CONFIRM` on Android 11 and later, `VIRTUAL_KEY` before | `UIImpactFeedbackGenerator`, medium |
+| Win | The match finished with the local team as winner | `LONG_PRESS` | `UINotificationFeedbackGenerator`, success |
+
+- The first view of a connection plays nothing, so a reconnect does not replay a cue, and a viewer without a seat feels nothing.
+- Other players' placements and the other team's points play nothing.
+
 ## 7. Effect levels
 
 The effect level follows the graphics level (`docs/performance.md` 1.1): Low uses low, Medium uses medium, High and Ultra use high. The default level per device tier (`docs/performance.md` section 1) is admin config, with the defaults below. The player may choose a lower level, not a higher one. Reduce motion is independent of the level.
@@ -406,6 +419,6 @@ The panel and the summary only present values from the latest `MatchView` (`prot
 ## 9. Open items
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
-- Sound and haptics per step are not part of this spec.
+- Sound per step is not part of this spec.
 - The squash amount of the `tilePlace` settle has no token yet; tile travel ships without the settle until it is decided.
 - The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.

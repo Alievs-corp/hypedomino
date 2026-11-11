@@ -213,6 +213,8 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `Game/Match/ScoreBoard` reads the team meters from each `MatchSnapshot`: the local team first, each filled to its score over `target_score`, the mark at `hand_points_lock_threshold`, and the lock badge for the teams in `locked_teams` (`docs/ui-motion.md`, Score panel and hand summary). `Game/Match/HandSummary` opens once per hand end, on the view that carries `last_result.left`, and explains it from server values only: the ending, the tiles left per seat, the counted pips, the hand points (`awarded` minus `carried_in`), the carry-over taken or kept, and the lock. Both allocate nothing per view; `ScoreBoardTests` cover them and `MatchSnapshotTests` cover the new fields.
 
+`Game/Match/HapticCues` turns each `MatchSnapshot` into at most one cue: tile place for the local player's own placement, score when the local team's score rises, win when the local team wins the match, nothing on the first view of a connection or without a seat (`docs/ui-motion.md`, Haptics). `Game/Haptics.Play` plays a cue unless the `Enabled` setting is off: on Android through `View.performHapticFeedback` on the activity's decor view, with the method looked up once and called through JNI without allocating; on iOS through `Plugins/iOS/HypeDominoHaptics.mm`. `HapticCuesTests` cover the cue rules.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
