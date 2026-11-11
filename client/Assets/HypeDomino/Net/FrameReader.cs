@@ -73,7 +73,7 @@ namespace HypeDomino.Net
         }
 
         static bool IsPayload(int field) =>
-            (field >= (int)Envelope.PayloadOneofCase.ClientHello && field <= (int)Envelope.PayloadOneofCase.QueueState) ||
-            (field >= (int)Envelope.PayloadOneofCase.PlaceTileIntent && field <= (int)Envelope.PayloadOneofCase.LeaveQueueIntent);
+            (field >= (int)Envelope.PayloadOneofCase.ClientHello && field <= (int)Envelope.PayloadOneofCase.LobbyInvite) ||
+            (field >= (int)Envelope.PayloadOneofCase.PlaceTileIntent && field <= (int)Envelope.PayloadOneofCase.LobbyIntent);
     }
 }

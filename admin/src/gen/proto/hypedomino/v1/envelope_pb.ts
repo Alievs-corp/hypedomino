@@ -8,6 +8,8 @@ import type { Error } from "./error_pb";
 import { file_hypedomino_v1_error } from "./error_pb";
 import type { ClientHello, ServerHello } from "./hello_pb";
 import { file_hypedomino_v1_hello } from "./hello_pb";
+import type { LobbyIntent, LobbyInvite, LobbyRelay, LobbyState } from "./lobby_pb";
+import { file_hypedomino_v1_lobby } from "./lobby_pb";
 import type { DrawIntent, EmojiIntent, EmojiShown, EndTurnIntent, LoadingIntent, MatchView, PassIntent, PlaceTileIntent, QuickMessageIntent, QuickMessageShown } from "./match_pb";
 import { file_hypedomino_v1_match } from "./match_pb";
 import type { JoinQueueIntent, LeaveQueueIntent, QueueState } from "./queue_pb";
@@ -18,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/envelope.proto.
  */
 export const file_hypedomino_v1_envelope: GenFile = /*@__PURE__*/
-  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxItkHCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABIwCgtlbW9qaV9zaG93bhgOIAEoCzIZLmh5cGVkb21pbm8udjEuRW1vamlTaG93bkgAEj8KE3F1aWNrX21lc3NhZ2Vfc2hvd24YDyABKAsyIC5oeXBlZG9taW5vLnYxLlF1aWNrTWVzc2FnZVNob3duSAASMAoLcXVldWVfc3RhdGUYECABKAsyGS5oeXBlZG9taW5vLnYxLlF1ZXVlU3RhdGVIABI7ChFwbGFjZV90aWxlX2ludGVudBgUIAEoCzIeLmh5cGVkb21pbm8udjEuUGxhY2VUaWxlSW50ZW50SAASMAoLcGFzc19pbnRlbnQYFSABKAsyGS5oeXBlZG9taW5vLnYxLlBhc3NJbnRlbnRIABIwCgtkcmF3X2ludGVudBgWIAEoCzIZLmh5cGVkb21pbm8udjEuRHJhd0ludGVudEgAEjcKD2VuZF90dXJuX2ludGVudBgXIAEoCzIcLmh5cGVkb21pbm8udjEuRW5kVHVybkludGVudEgAEjYKDmxvYWRpbmdfaW50ZW50GBggASgLMhwuaHlwZWRvbWluby52MS5Mb2FkaW5nSW50ZW50SAASMgoMZW1vamlfaW50ZW50GBkgASgLMhouaHlwZWRvbWluby52MS5FbW9qaUludGVudEgAEkEKFHF1aWNrX21lc3NhZ2VfaW50ZW50GBogASgLMiEuaHlwZWRvbWluby52MS5RdWlja01lc3NhZ2VJbnRlbnRIABI7ChFqb2luX3F1ZXVlX2ludGVudBgbIAEoCzIeLmh5cGVkb21pbm8udjEuSm9pblF1ZXVlSW50ZW50SAASPQoSbGVhdmVfcXVldWVfaW50ZW50GBwgASgLMh8uaHlwZWRvbWluby52MS5MZWF2ZVF1ZXVlSW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_match, file_hypedomino_v1_queue]);
+  fileDesc("ChxoeXBlZG9taW5vL3YxL2VudmVsb3BlLnByb3RvEg1oeXBlZG9taW5vLnYxIqUJCghFbnZlbG9wZRIYChBwcm90b2NvbF92ZXJzaW9uGAEgASgNEhAKCHNlcXVlbmNlGAIgASgEEhYKDmFja2VkX3NlcXVlbmNlGAMgASgEEhUKDXNlc3Npb25fbm9uY2UYBCABKAYSMgoMY2xpZW50X2hlbGxvGAogASgLMhouaHlwZWRvbWluby52MS5DbGllbnRIZWxsb0gAEjIKDHNlcnZlcl9oZWxsbxgLIAEoCzIaLmh5cGVkb21pbm8udjEuU2VydmVySGVsbG9IABIlCgVlcnJvchgMIAEoCzIULmh5cGVkb21pbm8udjEuRXJyb3JIABIuCgptYXRjaF92aWV3GA0gASgLMhguaHlwZWRvbWluby52MS5NYXRjaFZpZXdIABIwCgtlbW9qaV9zaG93bhgOIAEoCzIZLmh5cGVkb21pbm8udjEuRW1vamlTaG93bkgAEj8KE3F1aWNrX21lc3NhZ2Vfc2hvd24YDyABKAsyIC5oeXBlZG9taW5vLnYxLlF1aWNrTWVzc2FnZVNob3duSAASMAoLcXVldWVfc3RhdGUYECABKAsyGS5oeXBlZG9taW5vLnYxLlF1ZXVlU3RhdGVIABIwCgtsb2JieV9zdGF0ZRgRIAEoCzIZLmh5cGVkb21pbm8udjEuTG9iYnlTdGF0ZUgAEjAKC2xvYmJ5X3JlbGF5GBIgASgLMhkuaHlwZWRvbWluby52MS5Mb2JieVJlbGF5SAASMgoMbG9iYnlfaW52aXRlGBMgASgLMhouaHlwZWRvbWluby52MS5Mb2JieUludml0ZUgAEjsKEXBsYWNlX3RpbGVfaW50ZW50GBQgASgLMh4uaHlwZWRvbWluby52MS5QbGFjZVRpbGVJbnRlbnRIABIwCgtwYXNzX2ludGVudBgVIAEoCzIZLmh5cGVkb21pbm8udjEuUGFzc0ludGVudEgAEjAKC2RyYXdfaW50ZW50GBYgASgLMhkuaHlwZWRvbWluby52MS5EcmF3SW50ZW50SAASNwoPZW5kX3R1cm5faW50ZW50GBcgASgLMhwuaHlwZWRvbWluby52MS5FbmRUdXJuSW50ZW50SAASNgoObG9hZGluZ19pbnRlbnQYGCABKAsyHC5oeXBlZG9taW5vLnYxLkxvYWRpbmdJbnRlbnRIABIyCgxlbW9qaV9pbnRlbnQYGSABKAsyGi5oeXBlZG9taW5vLnYxLkVtb2ppSW50ZW50SAASQQoUcXVpY2tfbWVzc2FnZV9pbnRlbnQYGiABKAsyIS5oeXBlZG9taW5vLnYxLlF1aWNrTWVzc2FnZUludGVudEgAEjsKEWpvaW5fcXVldWVfaW50ZW50GBsgASgLMh4uaHlwZWRvbWluby52MS5Kb2luUXVldWVJbnRlbnRIABI9ChJsZWF2ZV9xdWV1ZV9pbnRlbnQYHCABKAsyHy5oeXBlZG9taW5vLnYxLkxlYXZlUXVldWVJbnRlbnRIABIyCgxsb2JieV9pbnRlbnQYHSABKAsyGi5oeXBlZG9taW5vLnYxLkxvYmJ5SW50ZW50SABCCQoHcGF5bG9hZELIAQoRY29tLmh5cGVkb21pbm8udjFCDUVudmVsb3BlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM", [file_hypedomino_v1_error, file_hypedomino_v1_hello, file_hypedomino_v1_lobby, file_hypedomino_v1_match, file_hypedomino_v1_queue]);
 
 /**
  * @generated from message hypedomino.v1.Envelope
@@ -91,6 +93,24 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
     case: "queueState";
   } | {
     /**
+     * @generated from field: hypedomino.v1.LobbyState lobby_state = 17;
+     */
+    value: LobbyState;
+    case: "lobbyState";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.LobbyRelay lobby_relay = 18;
+     */
+    value: LobbyRelay;
+    case: "lobbyRelay";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.LobbyInvite lobby_invite = 19;
+     */
+    value: LobbyInvite;
+    case: "lobbyInvite";
+  } | {
+    /**
      * @generated from field: hypedomino.v1.PlaceTileIntent place_tile_intent = 20;
      */
     value: PlaceTileIntent;
@@ -143,6 +163,12 @@ export type Envelope = Message<"hypedomino.v1.Envelope"> & {
      */
     value: LeaveQueueIntent;
     case: "leaveQueueIntent";
+  } | {
+    /**
+     * @generated from field: hypedomino.v1.LobbyIntent lobby_intent = 29;
+     */
+    value: LobbyIntent;
+    case: "lobbyIntent";
   } | { case: undefined; value?: undefined };
 };
 

@@ -89,7 +89,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AnUnknownFieldIsSkippedAndAnUnknownPayloadReadsAsNone()
         {
-            var frame = new byte[] { 0x08, 0x01, 0x10, 0x05, 0x8A, 0x01, 0x02, 0x08, 0x01, 0x98, 0x07, 0x2A };
+            var frame = new byte[] { 0x08, 0x01, 0x10, 0x05, 0x9A, 0x06, 0x02, 0x08, 0x01, 0x98, 0x07, 0x2A };
 
             Assert.IsTrue(FrameReader.TryRead(frame, out var read));
             Assert.AreEqual(1U, read.Header.ProtocolVersion);
