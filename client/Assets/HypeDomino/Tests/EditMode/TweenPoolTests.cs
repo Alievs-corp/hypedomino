@@ -160,13 +160,72 @@ namespace HypeDomino.Tests.EditMode
         {
             var pool = new TweenPool(4);
 
+            sink.Values[1 * Channels + (int)TweenChannel.Scale] = Vector3.one;
             TileTravel.Start(pool, ref sink, 1, Vector3.zero, 350f, new Vector3(4f, 2f, 0f), 10f, 0f, false);
             pool.Step(TokenDurationMs.Base - 1f, ref sink);
-            Assert.AreEqual(2, pool.Count);
+            Assert.AreEqual(Vector3.one, sink.Of(1, TweenChannel.Scale));
             pool.Step(TokenDurationMs.Base, ref sink);
 
             Assert.AreEqual(new Vector3(4f, 2f, 0f), sink.Of(1, TweenChannel.Position));
             Assert.AreEqual(370f, sink.Of(1, TweenChannel.Rotation).z, 1e-3f);
+            Assert.AreEqual(1, pool.Count);
+        }
+
+        [Test]
+        public void ThePlacedTileSettlesFromASquashAfterItLands()
+        {
+            var pool = new TweenPool(4);
+            TileTravel.Start(pool, ref sink, 1, Vector3.zero, 0f, Vector3.one, 0f, 0f, false);
+
+            pool.Step(TokenDurationMs.Base, ref sink);
+            Assert.AreEqual(TokenMotion.PressScale, sink.Of(1, TweenChannel.Scale).x, 1e-5f);
+            pool.Step(TokenDurationMs.Base + TokenDurationMs.Micro, ref sink);
+
+            Assert.AreEqual(Vector3.one, sink.Of(1, TweenChannel.Scale));
+            Assert.AreEqual(0, pool.Count);
+            Assert.AreEqual(TokenEffect.TilePlaceDurationMs, TileTravel.PlaceMs(false));
+        }
+
+        [Test]
+        public void ATweenThatHasNotStartedLeavesItsTargetAlone()
+        {
+            var pool = new TweenPool(4);
+            pool.Start(Move(1, 100f, 100f), ref sink);
+
+            pool.Step(50f, ref sink);
+
+            Assert.AreEqual(0, sink.Applied);
+            Assert.AreEqual(1, pool.Count);
+        }
+
+        [Test]
+        public void DealtTilesArriveOneAfterAnother()
+        {
+            var pool = new TweenPool(8);
+            for (var order = 0; order < 3; order++) TileTravel.Arrive(pool, ref sink, order, order, Vector3.zero, Vector3.one * (order + 1), 0f, false);
+
+            pool.Step(2 * TokenDurationMs.Micro - 1f, ref sink);
+            Assert.AreNotEqual(Vector3.zero, sink.Of(1, TweenChannel.Position));
+            Assert.AreEqual(Vector3.zero, sink.Of(2, TweenChannel.Position));
+            pool.Step(TokenDurationMs.Base, ref sink);
+            Assert.AreEqual(Vector3.one, sink.Of(0, TweenChannel.Position));
+            Assert.AreNotEqual(Vector3.one * 2f, sink.Of(1, TweenChannel.Position));
+            pool.Step(TokenDurationMs.Base + 2 * TokenDurationMs.Micro, ref sink);
+
+            Assert.AreEqual(Vector3.one * 2f, sink.Of(1, TweenChannel.Position));
+            Assert.AreEqual(Vector3.one * 3f, sink.Of(2, TweenChannel.Position));
+            Assert.AreEqual(0, pool.Count);
+        }
+
+        [Test]
+        public void ADrawnTileArrivesAtOnceAndFastWithReduceMotion()
+        {
+            var pool = new TweenPool(4);
+            TileTravel.Arrive(pool, ref sink, 1, 0, Vector3.zero, Vector3.one, 0f, true);
+
+            pool.Step(TokenDurationMs.Fast, ref sink);
+
+            Assert.AreEqual(Vector3.one, sink.Of(1, TweenChannel.Position));
             Assert.AreEqual(0, pool.Count);
         }
 
@@ -177,6 +236,9 @@ namespace HypeDomino.Tests.EditMode
 
             TileTravel.Start(pool, ref sink, 1, Vector3.zero, 0f, Vector3.one, 90f, 0f, true);
             pool.Step(TokenDurationMs.Fast, ref sink);
+
+            Assert.AreEqual(TokenDurationMs.Fast, TileTravel.PlaceMs(true));
+            Assert.AreEqual(Vector3.zero, sink.Of(1, TweenChannel.Scale));
 
             Assert.AreEqual(TokenDurationMs.Fast, TileTravel.DurationMs(true));
             Assert.AreEqual(TokenDurationMs.Base, TileTravel.DurationMs(false));
@@ -192,7 +254,8 @@ namespace HypeDomino.Tests.EditMode
 
             TestDelegate frame = () =>
             {
-                for (var tile = 0; tile < 16; tile++) TileTravel.Start(pool, ref sink, tile, Vector3.zero, 0f, Vector3.one, 90f, now, false);
+                for (var tile = 0; tile < 8; tile++) TileTravel.Start(pool, ref sink, tile, Vector3.zero, 0f, Vector3.one, 90f, now, false);
+                for (var tile = 8; tile < 16; tile++) TileTravel.Arrive(pool, ref sink, tile, tile - 8, Vector3.zero, Vector3.one, now, false);
                 pool.Start(Move(0, now, 50f, cosmetic: true, channel: TweenChannel.Alpha), ref sink);
                 pool.Step(now + 100f, ref sink);
                 pool.FinishAll(ref sink);

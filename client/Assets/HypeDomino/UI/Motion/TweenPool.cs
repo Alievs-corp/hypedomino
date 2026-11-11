@@ -37,6 +37,11 @@ namespace HypeDomino.UI.Motion
             while (at < count)
             {
                 var tween = tweens[at];
+                if (nowMs < tween.StartMs)
+                {
+                    at++;
+                    continue;
+                }
                 sink.Apply(tween.Target, tween.Channel, tween.ValueAt(nowMs));
                 if (nowMs >= tween.EndMs) RemoveAt(at);
                 else at++;
