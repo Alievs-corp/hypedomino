@@ -37,6 +37,20 @@ HTTP requests of the game server pass a rate limiter before any handler (#184). 
 
 NT-1 is checked automatically (#202). `tools/proto-lint` refuses a value field (balance, coin, crystal, price, cost, amount, reward, score, points, rating, MMR, LP, XP, rank, tier, inventory, owned, result) in a client message of `proto/`. `server/internal/contract` scans every server handler that takes an `*http.Request` and fails the build when a JSON body it decodes has a field with one of those words, nested structs included. The admin API is left out: staff set prices there under RBAC and audit (`docs/admin.md`). A fuzz test sends tampered `POST /shop/buy` bodies (extra price, coin, balance and reward fields, wrong types, duplicate keys) and checks that no balance rises, that a fall is a catalog price and that the ledger audit stays clean.
 
+### Device storage (NT-3, #203)
+
+The client keeps only device settings and content bookkeeping on the device. Every PlayerPrefs key the client uses is listed here; `RuntimeCodeRulesTests` in the client fails when runtime code uses a key that is not in this table, when a key here is no longer used, when a key names a server value (the word list of `tools/proto-lint`), or when runtime code outside the files named here writes a file. Content bundles are written only by Addressables into its cache; `Content/AddressablesCatalogSource.cs` is the one runtime file that writes files itself, moving each downloaded content catalog into its version folder (`docs/content-delivery.md`). A catalog lists art and its addresses, never what an account owns.
+
+| Key | Holds | Why editing it gains nothing |
+|---|---|---|
+| `content.catalogVersion`, `content.baseUrl` | The last content catalog the server announced and where it is served | It picks which art to download; what an account owns and shows to others is server state (NT-9) |
+| `content.clearAtStart` | Clear the content cache at the next start | Cache housekeeping only |
+| `graphics.choice`, `graphics.frameRate`, `graphics.batterySaver` | Graphics level, frame rate and battery saver chosen in settings | Device settings |
+| `graphics.probeDrops`, `graphics.probeSettled`, `graphics.probeVersion` | The startup frame probe result for this app version | Device settings |
+
+- The client has no offline mode and grants nothing on its own: rewards, balances, inventory, scores and ratings come only from server messages and are never written to the device.
+- A new key, file or cache is added to this table in the same pull request, with why editing it gains nothing. A display cache of server values (for example the last balance shown) may only be shown until the server answers and is replaced by it; it never feeds an intent.
+
 ## 3. Responses
 
 | Response | What happens | Who triggers it |
@@ -266,7 +280,7 @@ Wave actions have no admin actor, so `risk_actions` is their record rather than 
 
 ### 5.4 Client device signals (#185)
 
-The client collects root, jailbreak and emulator signals and reports their names; it never acts on them (NT-7, NT-8). `client/Assets/HypeDomino/Core/DeviceRisk/DeviceRiskSignals` names them: `root` (a `su` or Magisk binary or a superuser app on a known path), `test_keys` (Android build tags `test-keys`), `emulator` (emulator markers in the Android build fingerprint, model, product, hardware or manufacturer) and `jailbreak` (a jailbreak app, package manager or substrate path on iOS). `Game/DeviceRiskProbe` reads the Android `Build` fields and the paths on the device. The signals are claims: the server weighs them with `DeviceRiskWeight` and `DeviceRiskAction` like the attestation device verdict of 5.1. The transport waits on the client network layer, and the false positive rate is measured on the device matrix (#191).
+The client collects root, jailbreak and emulator signals and reports their names; it never acts on them (NT-7, NT-8). `client/Assets/HypeDomino/Core/DeviceRisk/DeviceRiskSignals` names them: `root` (a `su` or Magisk binary or a superuser app on a known path), `test_keys` (Android build tags `test-keys`), `emulator` (emulator markers in the Android build fingerprint, model, product, hardware or manufacturer) and `jailbreak` (a jailbreak app, package manager or substrate path on iOS). `Game/DeviceRiskProbe` reads the Android `Build` fields and the paths on the device. The signals are claims: the server weighs them with `DeviceRiskWeight` and `DeviceRiskAction` like the attestation device verdict of 5.1. Sending them needs a `ClientHello` field and its server handling, not built yet; the false positive rate is measured on the device matrix (#191).
 
 Hook signals (#206, V-5) work the same way. `Core/DeviceRisk/HookSignals` reads the libraries mapped into the process (`/proc/self/maps` on Android, read by `DeviceRiskProbe.CollectHooks`) and names `instrumentation` (a Frida agent or gadget), `hook_framework` (Xposed, LSPosed, Riru, EdXposed, Substrate, SandHook or Pine) and `debugger` (a managed or Android debugger attached). The server weighs them with `HookSignalWeight`. Keys and secrets stay out of the client (NT-10); the `secret-scan` CI job runs gitleaks over every pull request.
 

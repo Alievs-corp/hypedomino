@@ -199,6 +199,12 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `UNITY_LICENSE` | Yes, for the `client` job | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
 | `UNITY_EMAIL` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
 | `UNITY_PASSWORD` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
+| `ANDROID_APPLICATION_ID` | Yes, for a `client-v*` tag | `Release build` workflow | `<play-package-name>` | No | Repository variable |
+| `ANDROID_KEYSTORE_BASE64` | Yes, for a `client-v*` tag | `Release build` workflow, upload key | `<base64-of-upload-keystore>` | Yes | Repository secret |
+| `ANDROID_KEYSTORE_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<keystore-password>` | Yes | Repository secret |
+| `ANDROID_KEYALIAS_NAME` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-alias>` | Yes | Repository secret |
+| `ANDROID_KEYALIAS_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-password>` | Yes | Repository secret |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Yes, for a `client-v*` tag | `Release build` workflow, Play internal testing upload | `<play-publisher-service-account-json>` | Yes | Repository secret |
 
 ### 2.4 Not read yet
 

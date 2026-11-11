@@ -323,6 +323,27 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 	}
 }
 
+func TestViewMessageShowsDisconnectsAndTimeouts(t *testing.T) {
+	view := room.View{
+		State:        room.StatePlaying,
+		Seat:         rules.SeatNorth,
+		Mode:         rules.Mode2v2,
+		Disconnected: [6]bool{rules.SeatEast: true},
+		Timeouts:     [6]int{rules.SeatEast: 2},
+		AfkTimeouts:  3,
+	}
+	got := ViewMessage(view, false)
+	if got.GetAfkConsecutiveTimeouts() != 3 {
+		t.Fatalf("afk mark %d", got.GetAfkConsecutiveTimeouts())
+	}
+	for _, seat := range got.GetSeats() {
+		east := seat.GetSeat() == pb.Seat_SEAT_EAST
+		if seat.GetDisconnected() != east || (seat.GetConsecutiveTimeouts() == 2) != east {
+			t.Fatalf("seat %v: disconnected %v, timeouts %d", seat.GetSeat(), seat.GetDisconnected(), seat.GetConsecutiveTimeouts())
+		}
+	}
+}
+
 func TestDecodeIntentRefusesBadTiles(t *testing.T) {
 	bad := []*pb.Envelope{
 		intentFrame(1, &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{}}}),
