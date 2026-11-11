@@ -62,6 +62,7 @@ var erasures = map[string]erasure{
 	"risk_reviews":        moveToTombstone,
 	"risk_actions":        moveToTombstone,
 	"player_reports":      moveToTombstone,
+	"consent_records":     moveToTombstone,
 }
 
 type reference struct {
