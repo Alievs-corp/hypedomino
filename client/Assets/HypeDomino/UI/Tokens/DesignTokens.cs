@@ -169,4 +169,20 @@ namespace HypeDomino.UI.Tokens
         public const int MenuMaxFrameRate = 60;
         public const int BatterySaverFrameRate = 30;
     }
+
+    public static class TokenScoreCascade
+    {
+        public static readonly int[] StepMinPoints = { 5, 10, 15, 20, 25, 30 };
+        public static readonly float[] StepTextScale = { 1f, 1.15f, 1.3f, 1.45f, 1.6f, 1.8f };
+        public static readonly int[] StepParticlePercent = { 15, 30, 45, 60, 80, 100 };
+        public static readonly int[] StepHoldMs = { 500, 550, 600, 650, 700, 800 };
+        public static readonly int[] StepShakeAmplitude = { 0, 0, 0, 6, 6, 12 };
+        public static readonly int[] StepShakeDurationMs = { 0, 0, 0, 180, 180, 240 };
+        public static readonly int[] ChainBoostSteps = { 0, 1, 2 };
+        public static readonly int[] ParticlesOfEffectLevel = { 30, 90, 180 };
+        public const int ChainStepGapMs = 120;
+        public const int RollMsPer5Points = 40;
+        public const int RollMaxMs = 1200;
+        public const int CarryOverGapMs = 200;
+    }
 }
