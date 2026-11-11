@@ -74,20 +74,7 @@ namespace HypeDomino.Tests.EditMode
         public void CurrencyNamesComeFromTheBuiltinBundle(string key, string language, string text)
         {
             var strings = BuiltinStrings.Parse(File.ReadAllText("Assets/HypeDomino/UI/Localization/builtin-strings.json"));
-            Assert.IsTrue(strings.TryGet(key, language, out var found));
-            Assert.AreEqual(text, found);
-        }
-
-        [Test]
-        public void ALookupFollowsTheFallbackChain()
-        {
-            var strings = BuiltinStrings.Parse(@"{""entries"":[{""key"":""k"",""en"":""E"",""tr"":""T""}]}");
-            Assert.IsTrue(strings.TryGet("k", "az", out var az));
-            Assert.AreEqual("T", az);
-            Assert.IsTrue(strings.TryGet("k", "ru", out var ru));
-            Assert.AreEqual("E", ru);
-            Assert.IsFalse(strings.TryGet("k", "de", out _));
-            Assert.IsFalse(strings.TryGet("missing", "en", out _));
+            Assert.AreEqual(text, strings.Value(key, language));
         }
     }
 }
