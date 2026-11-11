@@ -59,7 +59,7 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 | CD-20 | One build makes both the install package and the remote folder `client/ServerData/<platform>`. They are one release candidate: the package's install-time catalog and the remote folder come from the same content. |
 | CD-21 | Every release candidate's install size is measured and gated as `docs/performance.md` 3 says. The remote folder is listed beside it, not counted. |
 
-On Android the `Release build` workflow (`.github/workflows/release-build.yml`) runs `HypeDomino.Editor.ReleaseBuild.BuildAndroid` for a given catalog version. It keeps the AAB, the remote folder and the size report as artifacts.
+On Android the `Release build` workflow (`.github/workflows/release-build.yml`) runs `HypeDomino.Editor.ReleaseBuild.BuildAndroid` for a given catalog version. It keeps the AAB, the remote folder and the size report as artifacts. A `client-v<version>` tag runs it with the catalog version `<version>-<run number>` and uploads the signed AAB to Play internal testing (`client/README.md`, Release build).
 
 ## 7. Disk cache
 
