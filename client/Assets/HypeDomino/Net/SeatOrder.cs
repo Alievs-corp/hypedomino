@@ -23,6 +23,13 @@ namespace HypeDomino.Net
             _ => throw new ArgumentOutOfRangeException(nameof(seat), seat, null),
         };
 
+        public static Team TeamOf(Seat seat) => seat switch
+        {
+            Seat.North or Seat.South or Seat.X => Team.A,
+            Seat.East or Seat.West or Seat.Y => Team.B,
+            _ => throw new ArgumentOutOfRangeException(nameof(seat), seat, null),
+        };
+
         public static int Viewer(Seat local, Mode mode)
         {
             if (local != Seat.Unspecified) return Clockwise(local);
