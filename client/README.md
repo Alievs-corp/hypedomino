@@ -119,7 +119,14 @@ Outcomes:
 - `Rejected` for a refused sign-in, `Banned`, `Deleted` and `DeletionPending` with `DeleteAt`. A refresh refused this way forgets the stored token; a refused refresh token answers `SignInRequired`.
 - `Busy` while another call runs, `Unsupported` when the platform has no such provider.
 
-`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows. The native Google Sign-In and Sign in with Apple plugins, the Keystore and Keychain store and the HTTP transport are not built yet.
+`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet.
+
+`Net/Api/ApiClient` sends every other player HTTP request (leaderboard, profile, push settings, shop and the rest) with the session of `AuthSession`:
+- Each request carries `Authorization: Bearer <access token>`. Each POST, PUT, PATCH or DELETE also carries `X-HD-Mac`, the request MAC of `docs/anti-cheat.md` V-4 (`Net/Api/RequestMac`), so every write is signed whether or not its route checks it yet.
+- A 401 `access_expired` refreshes the session once through `Resume` and sends the request again with the new token and MAC. Requests made or expiring while the refresh runs wait for it and share it; a second expiry after the refresh, or a failed refresh, answers them all.
+- Outcomes: `Ok` (2xx), `Offline` (no response), `SignInRequired` (no session, `access_rejected`, a second `access_expired`, or a refresh that ended the session), `RateLimited` (429), `Unavailable` (5xx), `Rejected` (any other refusal). The server's error code is kept in `Error` and the body in `Body`.
+
+`Net/Api/UnityHttpTransport` is the `UnityWebRequest` transport for both `ApiClient` and `AuthSession`; the base URL and the timeout are passed in by whoever builds it. The `ApiClientTests` EditMode tests cover the flows, and two MAC vectors were checked against the server's `token.SignRequest`.
 
 ## Graphics levels
 
