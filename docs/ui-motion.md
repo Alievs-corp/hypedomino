@@ -248,7 +248,7 @@ Rules:
 
 ### Reduce motion
 
-A settings toggle, defaulting to the OS setting (Android animator duration scale 0, iOS Reduce Motion).
+A settings toggle, defaulting to the OS setting (Android animator duration scale 0, iOS Reduce Motion). Until the player flips the toggle the game follows the OS setting, read at start and again whenever the app regains focus, so a change there applies at once. Once flipped, the player's choice is kept on the device (`docs/anti-cheat.md`, Device storage) and the OS setting no longer changes it; choosing to follow the system again is possible. A change applies immediately, without restart.
 
 | Motion | Reduce motion on |
 |---|---|
