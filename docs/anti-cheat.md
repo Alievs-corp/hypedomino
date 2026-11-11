@@ -37,6 +37,20 @@ HTTP requests of the game server pass a rate limiter before any handler (#184). 
 
 NT-1 is checked automatically (#202). `tools/proto-lint` refuses a value field (balance, coin, crystal, price, cost, amount, reward, score, points, rating, MMR, LP, XP, rank, tier, inventory, owned, result) in a client message of `proto/`. `server/internal/contract` scans every server handler that takes an `*http.Request` and fails the build when a JSON body it decodes has a field with one of those words, nested structs included. The admin API is left out: staff set prices there under RBAC and audit (`docs/admin.md`). A fuzz test sends tampered `POST /shop/buy` bodies (extra price, coin, balance and reward fields, wrong types, duplicate keys) and checks that no balance rises, that a fall is a catalog price and that the ledger audit stays clean.
 
+### Device storage (NT-3, #203)
+
+The client keeps only device settings and content bookkeeping on the device. Every PlayerPrefs key the client uses is listed here; `RuntimeCodeRulesTests` in the client fails when runtime code uses a key that is not in this table, when a key here is no longer used, when a key names a server value (the word list of `tools/proto-lint`), or when runtime code outside the files named here writes a file. Content bundles are written only by Addressables into its cache; `Content/AddressablesCatalogSource.cs` is the one runtime file that writes files itself, moving each downloaded content catalog into its version folder (`docs/content-delivery.md`). A catalog lists art and its addresses, never what an account owns.
+
+| Key | Holds | Why editing it gains nothing |
+|---|---|---|
+| `content.catalogVersion`, `content.baseUrl` | The last content catalog the server announced and where it is served | It picks which art to download; what an account owns and shows to others is server state (NT-9) |
+| `content.clearAtStart` | Clear the content cache at the next start | Cache housekeeping only |
+| `graphics.choice`, `graphics.frameRate`, `graphics.batterySaver` | Graphics level, frame rate and battery saver chosen in settings | Device settings |
+| `graphics.probeDrops`, `graphics.probeSettled`, `graphics.probeVersion` | The startup frame probe result for this app version | Device settings |
+
+- The client has no offline mode and grants nothing on its own: rewards, balances, inventory, scores and ratings come only from server messages and are never written to the device.
+- A new key, file or cache is added to this table in the same pull request, with why editing it gains nothing. A display cache of server values (for example the last balance shown) may only be shown until the server answers and is replaced by it; it never feeds an intent.
+
 ## 3. Responses
 
 | Response | What happens | Who triggers it |
