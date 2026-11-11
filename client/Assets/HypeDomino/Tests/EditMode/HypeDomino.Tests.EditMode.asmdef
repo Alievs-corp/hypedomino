@@ -10,7 +10,6 @@
         "HypeDomino.Net",
         "HypeDomino.Proto",
         "HypeDomino.Content",
-        "HypeDomino.Net",
         "HypeDomino.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
