@@ -192,6 +192,13 @@ func simulateMatch(t *testing.T, mode Mode, seed uint64, seen *handEndsSeen) int
 		}
 		checkTileConservation(t, m, mode, seed)
 		played := m.HandsPlayed()
+		if m.Phase() == PhaseOpening {
+			for _, team := range []Team{TeamA, TeamB} {
+				if m.HandPointsLocked(team) != (m.Scores()[team] >= config.HandPointsLockThreshold) {
+					t.Fatalf("%s seed %d: team %s locked %v with %v at hand start", mode, seed, team, m.HandPointsLocked(team), m.Scores())
+				}
+			}
+		}
 		if err := simulateStep(m, random, buffer[:0]); err != nil {
 			t.Fatalf("%s seed %d step %d: %v", mode, seed, step, err)
 		}

@@ -55,6 +55,7 @@
       ]
     },
     "targetScore": 365,
-    "handPointsLockThreshold": 300
+    "handPointsLockThreshold": 300,
+    "lockedTeams": ["TEAM_B"]
   }
 }

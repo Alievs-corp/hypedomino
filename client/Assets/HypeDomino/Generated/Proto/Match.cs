@@ -77,7 +77,7 @@ namespace Hypedomino.V1 {
             "ZXIYBCABKAlSCWNoYXJhY3RlchIUCgVmcmFtZRgFIAEoCVIFZnJhbWUSFgoG",
             "YXZhdGFyGAYgASgJUgZhdmF0YXISHQoKcmFua19sYWJlbBgHIAEoCVIJcmFu",
             "a0xhYmVsEhgKB2VtYmxlbXMYCCADKAlSB2VtYmxlbXMSEAoDYm90GAkgASgI",
-            "UgNib3Qi8wgKCU1hdGNoVmlldxIvCgVzdGF0ZRgBIAEoDjIZLmh5cGVkb21p",
+            "UgNib3QiqwkKCU1hdGNoVmlldxIvCgVzdGF0ZRgBIAEoDjIZLmh5cGVkb21p",
             "bm8udjEuTWF0Y2hTdGF0ZVIFc3RhdGUSJwoEc2VhdBgCIAEoDjITLmh5cGVk",
             "b21pbm8udjEuU2VhdFIEc2VhdBInCgRtb2RlGAMgASgOMhMuaHlwZWRvbWlu",
             "by52MS5Nb2RlUgRtb2RlEiEKDGhhbmRzX3BsYXllZBgEIAEoDVILaGFuZHNQ",
@@ -102,27 +102,28 @@ namespace Hypedomino.V1 {
             "YmxlEjgKGGFma19jb25zZWN1dGl2ZV90aW1lb3V0cxgWIAEoDVIWYWZrQ29u",
             "c2VjdXRpdmVUaW1lb3V0cxIhCgx0YXJnZXRfc2NvcmUYFyABKA1SC3Rhcmdl",
             "dFNjb3JlEjsKGmhhbmRfcG9pbnRzX2xvY2tfdGhyZXNob2xkGBggASgNUhdo",
-            "YW5kUG9pbnRzTG9ja1RocmVzaG9sZCp3CghCb2FyZEVuZBIZChVCT0FSRF9F",
-            "TkRfVU5TUEVDSUZJRUQQABISCg5CT0FSRF9FTkRfTEVGVBABEhMKD0JPQVJE",
-            "X0VORF9SSUdIVBACEhEKDUJPQVJEX0VORF9UT1AQAxIUChBCT0FSRF9FTkRf",
-            "Qk9UVE9NEAQqcgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDgoKU0VB",
-            "VF9OT1JUSBABEg0KCVNFQVRfRUFTVBACEg4KClNFQVRfU09VVEgQAxINCglT",
-            "RUFUX1dFU1QQBBIKCgZTRUFUX1gQBRIKCgZTRUFUX1kQBio0CgRUZWFtEhQK",
-            "EFRFQU1fVU5TUEVDSUZJRUQQABIKCgZURUFNX0EQARIKCgZURUFNX0IQAio4",
-            "CgRNb2RlEhQKEE1PREVfVU5TUEVDSUZJRUQQABIMCghNT0RFXzFWMRABEgwK",
-            "CE1PREVfMlYyEAIqUwoKQ29udHJvbGxlchIaChZDT05UUk9MTEVSX1VOU1BF",
-            "Q0lGSUVEEAASFQoRQ09OVFJPTExFUl9QTEFZRVIQARISCg5DT05UUk9MTEVS",
-            "X0JPVBACKqcBCgpNYXRjaFN0YXRlEhsKF01BVENIX1NUQVRFX1VOU1BFQ0lG",
-            "SUVEEAASFwoTTUFUQ0hfU1RBVEVfV0FJVElORxABEhcKE01BVENIX1NUQVRF",
-            "X09QRU5JTkcQAhIXChNNQVRDSF9TVEFURV9QTEFZSU5HEAMSGAoUTUFUQ0hf",
-            "U1RBVEVfRklOSVNIRUQQBBIXChNNQVRDSF9TVEFURV9MT0FESU5HEAUqWAoK",
-            "SGFuZEVuZGluZxIbChdIQU5EX0VORElOR19VTlNQRUNJRklFRBAAEhYKEkhB",
-            "TkRfRU5ESU5HX0RPTUlOTxABEhUKEUhBTkRfRU5ESU5HX0JMT0NLEAJCxQEK",
-            "EWNvbS5oeXBlZG9taW5vLnYxQgpNYXRjaFByb3RvUAFaT2dpdGh1Yi5jb20v",
-            "QWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlw",
-            "ZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYx",
-            "ygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHq",
-            "Ag5IeXBlZG9taW5vOjpWMWIGcHJvdG8z"));
+            "YW5kUG9pbnRzTG9ja1RocmVzaG9sZBI2Cgxsb2NrZWRfdGVhbXMYGSADKA4y",
+            "Ey5oeXBlZG9taW5vLnYxLlRlYW1SC2xvY2tlZFRlYW1zKncKCEJvYXJkRW5k",
+            "EhkKFUJPQVJEX0VORF9VTlNQRUNJRklFRBAAEhIKDkJPQVJEX0VORF9MRUZU",
+            "EAESEwoPQk9BUkRfRU5EX1JJR0hUEAISEQoNQk9BUkRfRU5EX1RPUBADEhQK",
+            "EEJPQVJEX0VORF9CT1RUT00QBCpyCgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJ",
+            "RUQQABIOCgpTRUFUX05PUlRIEAESDQoJU0VBVF9FQVNUEAISDgoKU0VBVF9T",
+            "T1VUSBADEg0KCVNFQVRfV0VTVBAEEgoKBlNFQVRfWBAFEgoKBlNFQVRfWRAG",
+            "KjQKBFRlYW0SFAoQVEVBTV9VTlNQRUNJRklFRBAAEgoKBlRFQU1fQRABEgoK",
+            "BlRFQU1fQhACKjgKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEgwKCE1P",
+            "REVfMVYxEAESDAoITU9ERV8yVjIQAipTCgpDb250cm9sbGVyEhoKFkNPTlRS",
+            "T0xMRVJfVU5TUEVDSUZJRUQQABIVChFDT05UUk9MTEVSX1BMQVlFUhABEhIK",
+            "DkNPTlRST0xMRVJfQk9UEAIqpwEKCk1hdGNoU3RhdGUSGwoXTUFUQ0hfU1RB",
+            "VEVfVU5TUEVDSUZJRUQQABIXChNNQVRDSF9TVEFURV9XQUlUSU5HEAESFwoT",
+            "TUFUQ0hfU1RBVEVfT1BFTklORxACEhcKE01BVENIX1NUQVRFX1BMQVlJTkcQ",
+            "AxIYChRNQVRDSF9TVEFURV9GSU5JU0hFRBAEEhcKE01BVENIX1NUQVRFX0xP",
+            "QURJTkcQBSpYCgpIYW5kRW5kaW5nEhsKF0hBTkRfRU5ESU5HX1VOU1BFQ0lG",
+            "SUVEEAASFgoSSEFORF9FTkRJTkdfRE9NSU5PEAESFQoRSEFORF9FTkRJTkdf",
+            "QkxPQ0sQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCk1hdGNoUHJvdG9QAVpP",
+            "Z2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRl",
+            "cm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5",
+            "cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxH",
+            "UEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.BoardEnd), typeof(global::Hypedomino.V1.Seat), typeof(global::Hypedomino.V1.Team), typeof(global::Hypedomino.V1.Mode), typeof(global::Hypedomino.V1.Controller), typeof(global::Hypedomino.V1.MatchState), typeof(global::Hypedomino.V1.HandEnding), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -146,7 +147,7 @@ namespace Hypedomino.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.SeatTiles), global::Hypedomino.V1.SeatTiles.Parser, new[]{ "Seat", "Tiles" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.HandResult), global::Hypedomino.V1.HandResult.Parser, new[]{ "Pips", "Winner", "Awarded", "CarryOver", "Scores", "NextOpener", "Ending", "HandPointsLocked", "CarriedIn", "Left" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RosterEntry), global::Hypedomino.V1.RosterEntry.Parser, new[]{ "Seat", "Team", "Nickname", "Character", "Frame", "Avatar", "RankLabel", "Emblems", "Bot" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner", "Roster", "LoadingDeadlineUnixMs", "Table", "AfkConsecutiveTimeouts", "TargetScore", "HandPointsLockThreshold" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner", "Roster", "LoadingDeadlineUnixMs", "Table", "AfkConsecutiveTimeouts", "TargetScore", "HandPointsLockThreshold", "LockedTeams" }, null, null, null, null)
           }));
     }
     #endregion
@@ -5581,6 +5582,7 @@ namespace Hypedomino.V1 {
       afkConsecutiveTimeouts_ = other.afkConsecutiveTimeouts_;
       targetScore_ = other.targetScore_;
       handPointsLockThreshold_ = other.handPointsLockThreshold_;
+      lockedTeams_ = other.lockedTeams_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -5874,6 +5876,17 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "locked_teams" field.</summary>
+    public const int LockedTeamsFieldNumber = 25;
+    private static readonly pb::FieldCodec<global::Hypedomino.V1.Team> _repeated_lockedTeams_codec
+        = pb::FieldCodec.ForEnum(202, x => (int) x, x => (global::Hypedomino.V1.Team) x);
+    private readonly pbc::RepeatedField<global::Hypedomino.V1.Team> lockedTeams_ = new pbc::RepeatedField<global::Hypedomino.V1.Team>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Hypedomino.V1.Team> LockedTeams {
+      get { return lockedTeams_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -5913,6 +5926,7 @@ namespace Hypedomino.V1 {
       if (AfkConsecutiveTimeouts != other.AfkConsecutiveTimeouts) return false;
       if (TargetScore != other.TargetScore) return false;
       if (HandPointsLockThreshold != other.HandPointsLockThreshold) return false;
+      if(!lockedTeams_.Equals(other.lockedTeams_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -5944,6 +5958,7 @@ namespace Hypedomino.V1 {
       if (AfkConsecutiveTimeouts != 0) hash ^= AfkConsecutiveTimeouts.GetHashCode();
       if (TargetScore != 0) hash ^= TargetScore.GetHashCode();
       if (HandPointsLockThreshold != 0) hash ^= HandPointsLockThreshold.GetHashCode();
+      hash ^= lockedTeams_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -6046,6 +6061,7 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(192, 1);
         output.WriteUInt32(HandPointsLockThreshold);
       }
+      lockedTeams_.WriteTo(output, _repeated_lockedTeams_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -6140,6 +6156,7 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(192, 1);
         output.WriteUInt32(HandPointsLockThreshold);
       }
+      lockedTeams_.WriteTo(ref output, _repeated_lockedTeams_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -6214,6 +6231,7 @@ namespace Hypedomino.V1 {
       if (HandPointsLockThreshold != 0) {
         size += 2 + pb::CodedOutputStream.ComputeUInt32Size(HandPointsLockThreshold);
       }
+      size += lockedTeams_.CalculateSize(_repeated_lockedTeams_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -6302,6 +6320,7 @@ namespace Hypedomino.V1 {
       if (other.HandPointsLockThreshold != 0) {
         HandPointsLockThreshold = other.HandPointsLockThreshold;
       }
+      lockedTeams_.Add(other.lockedTeams_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -6429,6 +6448,11 @@ namespace Hypedomino.V1 {
             HandPointsLockThreshold = input.ReadUInt32();
             break;
           }
+          case 202:
+          case 200: {
+            lockedTeams_.AddEntriesFrom(input, _repeated_lockedTeams_codec);
+            break;
+          }
         }
       }
     #endif
@@ -6554,6 +6578,11 @@ namespace Hypedomino.V1 {
           }
           case 192: {
             HandPointsLockThreshold = input.ReadUInt32();
+            break;
+          }
+          case 202:
+          case 200: {
+            lockedTeams_.AddEntriesFrom(ref input, _repeated_lockedTeams_codec);
             break;
           }
         }

@@ -295,6 +295,7 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 		HasLastResult: true,
 		TargetScore:   365,
 		LockThreshold: 300,
+		Locked:        [2]bool{rules.TeamB: true},
 	}
 	board := rules.NewBoard(rules.MustTile(6, 6))
 	for _, move := range []rules.Move{{Tile: rules.MustTile(4, 6), End: rules.EndLeft}, {Tile: rules.MustTile(1, 6), End: rules.EndRight}, {Tile: rules.MustTile(3, 6), End: rules.EndTop}} {

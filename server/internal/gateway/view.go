@@ -170,6 +170,11 @@ func ViewMessage(view room.View, withStatic, withLeft bool) *pb.MatchView {
 		return out
 	}
 	out.HandsPlayed = uint32(view.HandsPlayed)
+	for _, team := range []rules.Team{rules.TeamA, rules.TeamB} {
+		if view.Locked[team] {
+			out.LockedTeams = append(out.LockedTeams, teamMessage(team))
+		}
+	}
 	out.Scores = pointsMessage(view.Scores)
 	out.CarryOver = uint32(view.CarryOver)
 	for _, tile := range view.Hand {

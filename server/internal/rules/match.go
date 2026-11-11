@@ -127,6 +127,10 @@ func (m *Match) LastResult() (HandResult, bool) {
 	return m.lastResult, m.hasLastResult
 }
 
+func (m *Match) HandPointsLocked(team Team) bool {
+	return m.scoresAtHandStart[team] >= m.config.HandPointsLockThreshold
+}
+
 func (m *Match) LastHandEnd() (HandEnd, bool) {
 	return m.lastEnd, m.hasLastResult
 }

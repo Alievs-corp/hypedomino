@@ -1593,6 +1593,7 @@ type MatchView struct {
 	AfkConsecutiveTimeouts  uint32                 `protobuf:"varint,22,opt,name=afk_consecutive_timeouts,json=afkConsecutiveTimeouts,proto3" json:"afk_consecutive_timeouts,omitempty"`
 	TargetScore             uint32                 `protobuf:"varint,23,opt,name=target_score,json=targetScore,proto3" json:"target_score,omitempty"`
 	HandPointsLockThreshold uint32                 `protobuf:"varint,24,opt,name=hand_points_lock_threshold,json=handPointsLockThreshold,proto3" json:"hand_points_lock_threshold,omitempty"`
+	LockedTeams             []Team                 `protobuf:"varint,25,rep,packed,name=locked_teams,json=lockedTeams,proto3,enum=hypedomino.v1.Team" json:"locked_teams,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -1795,6 +1796,13 @@ func (x *MatchView) GetHandPointsLockThreshold() uint32 {
 	return 0
 }
 
+func (x *MatchView) GetLockedTeams() []Team {
+	if x != nil {
+		return x.LockedTeams
+	}
+	return nil
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1888,7 +1896,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"rank_label\x18\a \x01(\tR\trankLabel\x12\x18\n" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
-	"\x03bot\x18\t \x01(\bR\x03bot\"\xf3\b\n" +
+	"\x03bot\x18\t \x01(\bR\x03bot\"\xab\t\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
@@ -1917,7 +1925,8 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x05table\x18\x15 \x01(\tR\x05table\x128\n" +
 	"\x18afk_consecutive_timeouts\x18\x16 \x01(\rR\x16afkConsecutiveTimeouts\x12!\n" +
 	"\ftarget_score\x18\x17 \x01(\rR\vtargetScore\x12;\n" +
-	"\x1ahand_points_lock_threshold\x18\x18 \x01(\rR\x17handPointsLockThreshold*w\n" +
+	"\x1ahand_points_lock_threshold\x18\x18 \x01(\rR\x17handPointsLockThreshold\x126\n" +
+	"\flocked_teams\x18\x19 \x03(\x0e2\x13.hypedomino.v1.TeamR\vlockedTeams*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +
@@ -2053,11 +2062,12 @@ var file_hypedomino_v1_match_proto_depIdxs = []int32{
 	25, // 38: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
 	2,  // 39: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
 	26, // 40: hypedomino.v1.MatchView.roster:type_name -> hypedomino.v1.RosterEntry
-	41, // [41:41] is the sub-list for method output_type
-	41, // [41:41] is the sub-list for method input_type
-	41, // [41:41] is the sub-list for extension type_name
-	41, // [41:41] is the sub-list for extension extendee
-	0,  // [0:41] is the sub-list for field type_name
+	2,  // 41: hypedomino.v1.MatchView.locked_teams:type_name -> hypedomino.v1.Team
+	42, // [42:42] is the sub-list for method output_type
+	42, // [42:42] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_match_proto_init() }

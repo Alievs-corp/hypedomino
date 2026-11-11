@@ -273,7 +273,7 @@ func TestHumansPlayAWholeMatchAndTheRecordVerifies(t *testing.T) {
 	}
 }
 
-func TestViewsShowTheTilesLeftOnlyBetweenHands(t *testing.T) {
+func TestViewsShowTheTilesLeftOnlyBetweenHandsAndTheLockedTeams(t *testing.T) {
 	config := rules.DefaultConfig()
 	tab := newTable(t, rules.Mode2v2, 3)
 	sequences := map[rules.Seat]uint64{}
@@ -286,6 +286,13 @@ func TestViewsShowTheTilesLeftOnlyBetweenHands(t *testing.T) {
 		v := tab.snapshot(seat)
 		if v.TargetScore != config.TargetScore || v.LockThreshold != config.HandPointsLockThreshold {
 			t.Fatalf("view marks %d and %d, config says %d and %d", v.TargetScore, v.LockThreshold, config.TargetScore, config.HandPointsLockThreshold)
+		}
+		if v.State == StateOpening {
+			for _, team := range []rules.Team{rules.TeamA, rules.TeamB} {
+				if v.Locked[team] != (v.Scores[team] >= config.HandPointsLockThreshold) {
+					t.Fatalf("team %s locked %v with %v at the start of the hand", team, v.Locked[team], v.Scores)
+				}
+			}
 		}
 		if !v.HasLastResult {
 			continue

@@ -43,6 +43,7 @@ type View struct {
 	LastEnd         rules.HandEnd
 	HasLastResult   bool
 	TargetScore     int
+	Locked          [2]bool
 	LockThreshold   int
 	Winner          rules.Team
 	HasWinner       bool
@@ -74,6 +75,9 @@ func (r *Room) view(seat rules.Seat) View {
 	}
 	m := r.match()
 	v.HandsPlayed = m.HandsPlayed()
+	for _, team := range []rules.Team{rules.TeamA, rules.TeamB} {
+		v.Locked[team] = m.HandPointsLocked(team)
+	}
 	v.Scores = m.Scores()
 	v.CarryOver = m.CarryOver()
 	v.Hand = append([]rules.Tile(nil), m.Hand(seat)...)
