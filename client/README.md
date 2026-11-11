@@ -46,7 +46,7 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 
 ## Measuring the empty build
 
-`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The sampler measures at the frame rate `GraphicsBoot` set (`docs/performance.md` 1.2; the highest refresh rate when none is set) and logs every 1200 frames:
+`Scenes/Boot.unity` holds an orthographic camera and `FrameTimingSampler`. The `BootSceneSmokeTests` PlayMode smoke test checks that it is the first build scene, loads it, runs 60 frames and fails on any error or exception logged meanwhile. The sampler measures at the frame rate `GraphicsBoot` set (`docs/performance.md` 1.2; the highest refresh rate when none is set) and logs every 1200 frames:
 
 ```
 FrameTiming target=<Hz> frames=1200 workP50=<ms>ms workP95=<ms>ms missedVsync=<percent>% gcFrames=<n> gcMax=<bytes>B gcCollections=<n> batchesMax=<n>
@@ -172,6 +172,12 @@ Without a local Unity license, an editor method that creates or changes assets r
 ## Release build
 
 `Editor/ReleaseBuild.BuildAndroid` builds the release AAB for one catalog version (`docs/content-delivery.md` 6): it sets the Addressables player version to `-catalogVersion <version>`, builds the scenes in Build Settings into `-customBuildPath` (default `Builds/hypedomino.aab`) together with the content, and fails when `ServerData/Android/catalog_<version>.bin` is missing. It restores the player version and the AAB switch afterwards. In CI: `gh workflow run release-build.yml -f catalog_version=<version>`. The workflow measures the download size with `bundletool` on the low, mid and high device specs in `tools/install-size/specs`, fails at 150 MB or more (`docs/performance.md` 3) and keeps the AAB, the size report and the remote folder as artifacts. `ReleaseBuildTests` cover the version rule and the remote folder.
+
+The workflow also runs on every pull request that changes `client/`, `tools/install-size/` or the workflow:
+- The catalog version is `pr-<number>`; the build is unsigned and nothing is uploaded.
+- The size report is in the run summary.
+- It is not in `CI complete`, so a build over the budget shows as a failed check on the pull request without blocking the merge.
+- A newer push cancels the running build of the same pull request.
 
 Optional arguments stamp the release, and the build restores the project settings afterwards:
 - `-appVersion <major.minor.patch>` sets the version name, the form the server compares with the minimum version (`proto/README.md`).
