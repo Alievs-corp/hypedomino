@@ -420,3 +420,43 @@ func TestAnAccountInARunningMatchCannotEnterALobby(t *testing.T) {
 	refused(t, r.Add("ana", player("playing"), rules.SeatEast), ErrInMatch)
 	must(t, r.Join(player("ben")))
 }
+
+type directory struct {
+	claimed map[string]bool
+	fail    error
+}
+
+func (d *directory) Claim(ctx context.Context, code string) error {
+	if d.fail != nil {
+		return d.fail
+	}
+	d.claimed[code] = true
+	return nil
+}
+
+func (d *directory) Release(ctx context.Context, code string) error {
+	delete(d.claimed, code)
+	return nil
+}
+
+func TestARoomCodeIsClaimedInTheDirectoryUntilTheRoomCloses(t *testing.T) {
+	open, _ := opener(t)
+	lobby := NewLobby(&counter{}, open)
+	codes := &directory{claimed: map[string]bool{}}
+	lobby.Route(codes)
+	r, err := lobby.Create(player("ana"))
+	must(t, err)
+	if !codes.claimed[r.Code()] {
+		t.Fatalf("code %s not claimed", r.Code())
+	}
+	must(t, r.Leave("ana"))
+	if len(codes.claimed) != 0 || lobby.Len() != 0 {
+		t.Fatalf("closed room left claims %v and %d rooms", codes.claimed, lobby.Len())
+	}
+	codes.fail = errors.New("directory down")
+	_, err = lobby.Create(player("ana"))
+	refused(t, err, codes.fail)
+	if lobby.Len() != 0 {
+		t.Fatal("a room whose code was not claimed was kept")
+	}
+}

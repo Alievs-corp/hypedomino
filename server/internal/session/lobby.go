@@ -5,6 +5,8 @@ import (
 	"errors"
 	"slices"
 
+	"github.com/coder/websocket"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
@@ -23,9 +25,24 @@ type Friends interface {
 	FriendIDs(ctx context.Context, account string) ([]string, error)
 }
 
+type RemoteLobby interface {
+	Join(ctx context.Context, code, account, session string) (pb.LobbyRefusal, error)
+	Invite(ctx context.Context, to string, invite *pb.LobbyInvite) error
+}
+
+type refusalError pb.LobbyRefusal
+
+func (e refusalError) Error() string {
+	return "session: lobby refused " + pb.LobbyRefusal(e).String()
+}
+
 func (m *Manager) Host(lobby *custom.Lobby, members LobbyMembers, friends Friends) {
 	lobby.Guard(m)
 	m.lobby, m.members, m.friends = lobby, members, friends
+}
+
+func (m *Manager) Reach(remote RemoteLobby) {
+	m.remote = remote
 }
 
 var refusals = []struct {
@@ -50,6 +67,10 @@ var refusals = []struct {
 }
 
 func refusalOf(err error) pb.LobbyRefusal {
+	var remote refusalError
+	if errors.As(err, &remote) {
+		return pb.LobbyRefusal(remote)
+	}
 	for _, r := range refusals {
 		if errors.Is(err, r.err) {
 			return r.refusal
@@ -123,6 +144,7 @@ func (m *Manager) exitLobby(account string, r *custom.Room) *connection {
 	for _, s := range m.accounts[account] {
 		if s.lobby == r {
 			s.lobby = nil
+			m.unroute(s)
 			return s.active
 		}
 	}
@@ -133,6 +155,7 @@ func (m *Manager) dropLobby(s *Session) {
 	if s.lobby != nil {
 		go s.lobby.Leave(s.account)
 		s.lobby = nil
+		m.unroute(s)
 	}
 }
 
@@ -147,7 +170,8 @@ func (m *Manager) lobbySession(account string, r *custom.Room) string {
 	return ""
 }
 
-func (m *Manager) invited(account string, frame *pb.Envelope) {
+func (m *Manager) Invited(account string, invite *pb.LobbyInvite) {
+	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LobbyInvite{LobbyInvite: invite}}
 	m.mu.Lock()
 	var active []*connection
 	for _, s := range m.accounts[account] {
@@ -187,7 +211,7 @@ func (c *connection) command(intent *pb.LobbyIntent) error {
 	case pb.LobbyCommand_LOBBY_COMMAND_CREATE:
 		return c.enter(c.create)
 	case pb.LobbyCommand_LOBBY_COMMAND_JOIN:
-		return c.enter(func(member custom.Member) (*custom.Room, error) { return c.joinLobby(intent.GetCode(), member) })
+		return c.joinCode(intent.GetCode())
 	}
 	r := c.manager.lobbyOf(c.session)
 	if r == nil {
@@ -217,25 +241,31 @@ func (c *connection) inLobby(r *custom.Room, intent *pb.LobbyIntent) error {
 		return c.invite(r, intent.GetAccountId())
 	case pb.LobbyCommand_LOBBY_COMMAND_REQUEST_SEAT:
 		return r.Request(account, seatOf(intent.GetSeat()))
+	case pb.LobbyCommand_LOBBY_COMMAND_ADD:
+		return c.add(r, intent.GetAccountId(), seatOf(intent.GetSeat()))
 	}
 	return errUnknownCommand
 }
 
-func (c *connection) enter(open func(custom.Member) (*custom.Room, error)) error {
-	if c.manager.lobbyOf(c.session) != nil {
+func (m *Manager) enter(s *Session, open func(custom.Member) (*custom.Room, error)) error {
+	if m.lobbyOf(s) != nil {
 		return custom.ErrAlreadyInRoom
 	}
-	member, err := c.manager.members(context.Background(), c.session.account)
+	member, err := m.members(context.Background(), s.account)
 	if err != nil {
 		return err
 	}
-	member.Account, member.Sink = c.session.account, lobbySink{manager: c.manager, session: c.session}
+	member.Account, member.Sink = s.account, lobbySink{manager: m, session: s}
 	r, err := open(member)
 	if err != nil {
 		return err
 	}
-	c.manager.enterLobby(c.session, r)
+	m.enterLobby(s, r)
 	return nil
+}
+
+func (c *connection) enter(open func(custom.Member) (*custom.Room, error)) error {
+	return c.manager.enter(c.session, open)
 }
 
 func (c *connection) create(member custom.Member) (*custom.Room, error) {
@@ -246,12 +276,59 @@ func (c *connection) create(member custom.Member) (*custom.Room, error) {
 	return r, err
 }
 
-func (c *connection) joinLobby(code string, member custom.Member) (*custom.Room, error) {
-	r, err := c.manager.lobby.Find(code)
-	if err != nil {
-		return nil, err
+func (m *Manager) joinLobby(code string) func(custom.Member) (*custom.Room, error) {
+	return func(member custom.Member) (*custom.Room, error) {
+		r, err := m.lobby.Find(code)
+		if err != nil {
+			return nil, err
+		}
+		return r, r.Join(member)
 	}
-	return r, r.Join(member)
+}
+
+func (c *connection) joinCode(code string) error {
+	if _, err := c.manager.lobby.Find(code); err == nil || c.manager.remote == nil {
+		return c.enter(c.manager.joinLobby(code))
+	}
+	switch {
+	case c.manager.lobbyOf(c.session) != nil:
+		return custom.ErrAlreadyInRoom
+	case c.InMatch():
+		return custom.ErrInMatch
+	}
+	refusal, err := c.manager.remote.Join(context.Background(), code, c.session.account, c.session.token)
+	switch {
+	case err != nil:
+		return err
+	case refusal != pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED:
+		return refusalError(refusal)
+	}
+	c.conn.Close(websocket.StatusGoingAway, "lobby hosted on another node")
+	return nil
+}
+
+func (m *Manager) Adopt(ctx context.Context, code, account, token string) pb.LobbyRefusal {
+	if m.lobby == nil {
+		return pb.LobbyRefusal_LOBBY_REFUSAL_UNAVAILABLE
+	}
+	if err := m.claim(token); err != nil {
+		return pb.LobbyRefusal_LOBBY_REFUSAL_UNAVAILABLE
+	}
+	m.mu.Lock()
+	s := m.ensure(token, account)
+	s.routed = true
+	m.mu.Unlock()
+	err := m.enter(s, m.joinLobby(code))
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if err != nil {
+		m.unroute(s)
+		return refusalOf(err)
+	}
+	if s.active == nil {
+		go m.expire(s, s.generation, m.clock.After(m.config.ReconnectGrace))
+	}
+	return pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED
 }
 
 func (c *connection) leaveLobby(r *custom.Room) error {
@@ -296,6 +373,24 @@ func (c *connection) invite(r *custom.Room, to string) error {
 	if err := r.Invite(ctx, account, to); err != nil {
 		return err
 	}
-	c.manager.invited(to, &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_LobbyInvite{LobbyInvite: &pb.LobbyInvite{Code: r.Code(), FromAccountId: account}}})
+	invite := &pb.LobbyInvite{Code: r.Code(), FromAccountId: account}
+	if c.manager.remote != nil {
+		return c.manager.remote.Invite(ctx, to, invite)
+	}
+	c.manager.Invited(to, invite)
+	return nil
+}
+
+func (c *connection) add(r *custom.Room, account string, seat rules.Seat) error {
+	token := c.manager.lobbySession(account, r)
+	if token == "" {
+		return custom.ErrNotInRoom
+	}
+	if err := r.Add(c.session.account, custom.Member{Account: account}, seat); err != nil {
+		return err
+	}
+	if table := r.Table(); table != nil {
+		return c.manager.Seat(token, table, seat)
+	}
 	return nil
 }
