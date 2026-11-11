@@ -40,7 +40,10 @@ type View struct {
 	Presence        [6]rules.PresenceReport
 	LegalMoves      []rules.Move
 	LastResult      rules.HandResult
+	LastEnd         rules.HandEnd
 	HasLastResult   bool
+	TargetScore     int
+	LockThreshold   int
 	Winner          rules.Team
 	HasWinner       bool
 	Loading         [6]int
@@ -51,7 +54,8 @@ type View struct {
 }
 
 func (r *Room) view(seat rules.Seat) View {
-	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked, AfkTimeouts: r.options.Config.AfkConsecutiveTimeouts}
+	config := r.options.Config
+	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked, AfkTimeouts: config.AfkConsecutiveTimeouts, TargetScore: config.TargetScore, LockThreshold: config.HandPointsLockThreshold}
 	for _, s := range r.options.Mode.Seats() {
 		v.Controllers[s] = r.presence.Controller(s)
 		v.Presence[s] = r.presence.Report(s)
@@ -85,6 +89,9 @@ func (r *Room) view(seat rules.Seat) View {
 	v.ForcedOpening, v.HasForced = m.ForcedOpening()
 	v.TurnDeadline = r.deadline
 	v.LastResult, v.HasLastResult = m.LastResult()
+	if v.HasLastResult {
+		v.LastEnd = r.lastEnd(m)
+	}
 	v.Winner, v.HasWinner = m.Winner()
 	if m.Phase() == rules.PhasePlaying {
 		board := m.Board()
@@ -101,6 +108,19 @@ func (r *Room) view(seat rules.Seat) View {
 		}
 	}
 	return v
+}
+
+func (r *Room) lastEnd(m *rules.Match) rules.HandEnd {
+	end, _ := m.LastHandEnd()
+	shown := rules.HandEnd{Status: end.Status, Locked: end.Locked, CarriedIn: end.CarriedIn}
+	if m.Phase() == rules.PhasePlaying {
+		return shown
+	}
+	shown.Left = make(map[rules.Seat]rules.Hand, len(r.options.Mode.Seats()))
+	for _, s := range r.options.Mode.Seats() {
+		shown.Left[s] = append(rules.Hand(nil), end.Left[s]...)
+	}
+	return shown
 }
 
 func (r *Room) botSeat(seat rules.Seat) bool {

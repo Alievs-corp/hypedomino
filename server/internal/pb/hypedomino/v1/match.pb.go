@@ -342,6 +342,55 @@ func (MatchState) EnumDescriptor() ([]byte, []int) {
 	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{5}
 }
 
+type HandEnding int32
+
+const (
+	HandEnding_HAND_ENDING_UNSPECIFIED HandEnding = 0
+	HandEnding_HAND_ENDING_DOMINO      HandEnding = 1
+	HandEnding_HAND_ENDING_BLOCK       HandEnding = 2
+)
+
+// Enum value maps for HandEnding.
+var (
+	HandEnding_name = map[int32]string{
+		0: "HAND_ENDING_UNSPECIFIED",
+		1: "HAND_ENDING_DOMINO",
+		2: "HAND_ENDING_BLOCK",
+	}
+	HandEnding_value = map[string]int32{
+		"HAND_ENDING_UNSPECIFIED": 0,
+		"HAND_ENDING_DOMINO":      1,
+		"HAND_ENDING_BLOCK":       2,
+	}
+)
+
+func (x HandEnding) Enum() *HandEnding {
+	p := new(HandEnding)
+	*p = x
+	return p
+}
+
+func (x HandEnding) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (HandEnding) Descriptor() protoreflect.EnumDescriptor {
+	return file_hypedomino_v1_match_proto_enumTypes[6].Descriptor()
+}
+
+func (HandEnding) Type() protoreflect.EnumType {
+	return &file_hypedomino_v1_match_proto_enumTypes[6]
+}
+
+func (x HandEnding) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use HandEnding.Descriptor instead.
+func (HandEnding) EnumDescriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{6}
+}
+
 type Tile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Low           uint32                 `protobuf:"varint,1,opt,name=low,proto3" json:"low,omitempty"`
@@ -1242,21 +1291,77 @@ func (x *TeamPoints) GetTeamB() uint32 {
 	return 0
 }
 
-type HandResult struct {
+type SeatTiles struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pips          *TeamPoints            `protobuf:"bytes,1,opt,name=pips,proto3" json:"pips,omitempty"`
-	Winner        Team                   `protobuf:"varint,2,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
-	Awarded       *TeamPoints            `protobuf:"bytes,3,opt,name=awarded,proto3" json:"awarded,omitempty"`
-	CarryOver     uint32                 `protobuf:"varint,4,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
-	Scores        *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
-	NextOpener    Team                   `protobuf:"varint,6,opt,name=next_opener,json=nextOpener,proto3,enum=hypedomino.v1.Team" json:"next_opener,omitempty"`
+	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Tiles         []*Tile                `protobuf:"bytes,2,rep,name=tiles,proto3" json:"tiles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *SeatTiles) Reset() {
+	*x = SeatTiles{}
+	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SeatTiles) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SeatTiles) ProtoMessage() {}
+
+func (x *SeatTiles) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SeatTiles.ProtoReflect.Descriptor instead.
+func (*SeatTiles) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SeatTiles) GetSeat() Seat {
+	if x != nil {
+		return x.Seat
+	}
+	return Seat_SEAT_UNSPECIFIED
+}
+
+func (x *SeatTiles) GetTiles() []*Tile {
+	if x != nil {
+		return x.Tiles
+	}
+	return nil
+}
+
+type HandResult struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Pips             *TeamPoints            `protobuf:"bytes,1,opt,name=pips,proto3" json:"pips,omitempty"`
+	Winner           Team                   `protobuf:"varint,2,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
+	Awarded          *TeamPoints            `protobuf:"bytes,3,opt,name=awarded,proto3" json:"awarded,omitempty"`
+	CarryOver        uint32                 `protobuf:"varint,4,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
+	Scores           *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
+	NextOpener       Team                   `protobuf:"varint,6,opt,name=next_opener,json=nextOpener,proto3,enum=hypedomino.v1.Team" json:"next_opener,omitempty"`
+	Ending           HandEnding             `protobuf:"varint,7,opt,name=ending,proto3,enum=hypedomino.v1.HandEnding" json:"ending,omitempty"`
+	HandPointsLocked bool                   `protobuf:"varint,8,opt,name=hand_points_locked,json=handPointsLocked,proto3" json:"hand_points_locked,omitempty"`
+	CarriedIn        uint32                 `protobuf:"varint,9,opt,name=carried_in,json=carriedIn,proto3" json:"carried_in,omitempty"`
+	Left             []*SeatTiles           `protobuf:"bytes,10,rep,name=left,proto3" json:"left,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
 func (x *HandResult) Reset() {
 	*x = HandResult{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1268,7 +1373,7 @@ func (x *HandResult) String() string {
 func (*HandResult) ProtoMessage() {}
 
 func (x *HandResult) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[17]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1281,7 +1386,7 @@ func (x *HandResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandResult.ProtoReflect.Descriptor instead.
 func (*HandResult) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{17}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *HandResult) GetPips() *TeamPoints {
@@ -1326,6 +1431,34 @@ func (x *HandResult) GetNextOpener() Team {
 	return Team_TEAM_UNSPECIFIED
 }
 
+func (x *HandResult) GetEnding() HandEnding {
+	if x != nil {
+		return x.Ending
+	}
+	return HandEnding_HAND_ENDING_UNSPECIFIED
+}
+
+func (x *HandResult) GetHandPointsLocked() bool {
+	if x != nil {
+		return x.HandPointsLocked
+	}
+	return false
+}
+
+func (x *HandResult) GetCarriedIn() uint32 {
+	if x != nil {
+		return x.CarriedIn
+	}
+	return 0
+}
+
+func (x *HandResult) GetLeft() []*SeatTiles {
+	if x != nil {
+		return x.Left
+	}
+	return nil
+}
+
 type RosterEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
@@ -1343,7 +1476,7 @@ type RosterEntry struct {
 
 func (x *RosterEntry) Reset() {
 	*x = RosterEntry{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1355,7 +1488,7 @@ func (x *RosterEntry) String() string {
 func (*RosterEntry) ProtoMessage() {}
 
 func (x *RosterEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[18]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1368,7 +1501,7 @@ func (x *RosterEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RosterEntry.ProtoReflect.Descriptor instead.
 func (*RosterEntry) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{18}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RosterEntry) GetSeat() Seat {
@@ -1435,36 +1568,38 @@ func (x *RosterEntry) GetBot() bool {
 }
 
 type MatchView struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	State                  MatchState             `protobuf:"varint,1,opt,name=state,proto3,enum=hypedomino.v1.MatchState" json:"state,omitempty"`
-	Seat                   Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
-	Mode                   Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
-	HandsPlayed            uint32                 `protobuf:"varint,4,opt,name=hands_played,json=handsPlayed,proto3" json:"hands_played,omitempty"`
-	Scores                 *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
-	CarryOver              uint32                 `protobuf:"varint,6,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
-	Hand                   []*Tile                `protobuf:"bytes,7,rep,name=hand,proto3" json:"hand,omitempty"`
-	Seats                  []*SeatView            `protobuf:"bytes,8,rep,name=seats,proto3" json:"seats,omitempty"`
-	BoneyardSize           uint32                 `protobuf:"varint,9,opt,name=boneyard_size,json=boneyardSize,proto3" json:"boneyard_size,omitempty"`
-	Board                  *BoardView             `protobuf:"bytes,10,opt,name=board,proto3" json:"board,omitempty"`
-	Current                Seat                   `protobuf:"varint,11,opt,name=current,proto3,enum=hypedomino.v1.Seat" json:"current,omitempty"`
-	OpeningTeam            Team                   `protobuf:"varint,12,opt,name=opening_team,json=openingTeam,proto3,enum=hypedomino.v1.Team" json:"opening_team,omitempty"`
-	ForcedOpening          *Opening               `protobuf:"bytes,13,opt,name=forced_opening,json=forcedOpening,proto3" json:"forced_opening,omitempty"`
-	TurnPlacements         uint32                 `protobuf:"varint,14,opt,name=turn_placements,json=turnPlacements,proto3" json:"turn_placements,omitempty"`
-	TurnDeadlineUnixMs     uint64                 `protobuf:"varint,15,opt,name=turn_deadline_unix_ms,json=turnDeadlineUnixMs,proto3" json:"turn_deadline_unix_ms,omitempty"`
-	LegalMoves             []*LegalMove           `protobuf:"bytes,16,rep,name=legal_moves,json=legalMoves,proto3" json:"legal_moves,omitempty"`
-	LastResult             *HandResult            `protobuf:"bytes,17,opt,name=last_result,json=lastResult,proto3" json:"last_result,omitempty"`
-	Winner                 Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
-	Roster                 []*RosterEntry         `protobuf:"bytes,19,rep,name=roster,proto3" json:"roster,omitempty"`
-	LoadingDeadlineUnixMs  uint64                 `protobuf:"varint,20,opt,name=loading_deadline_unix_ms,json=loadingDeadlineUnixMs,proto3" json:"loading_deadline_unix_ms,omitempty"`
-	Table                  string                 `protobuf:"bytes,21,opt,name=table,proto3" json:"table,omitempty"`
-	AfkConsecutiveTimeouts uint32                 `protobuf:"varint,22,opt,name=afk_consecutive_timeouts,json=afkConsecutiveTimeouts,proto3" json:"afk_consecutive_timeouts,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	State                   MatchState             `protobuf:"varint,1,opt,name=state,proto3,enum=hypedomino.v1.MatchState" json:"state,omitempty"`
+	Seat                    Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Mode                    Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
+	HandsPlayed             uint32                 `protobuf:"varint,4,opt,name=hands_played,json=handsPlayed,proto3" json:"hands_played,omitempty"`
+	Scores                  *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
+	CarryOver               uint32                 `protobuf:"varint,6,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
+	Hand                    []*Tile                `protobuf:"bytes,7,rep,name=hand,proto3" json:"hand,omitempty"`
+	Seats                   []*SeatView            `protobuf:"bytes,8,rep,name=seats,proto3" json:"seats,omitempty"`
+	BoneyardSize            uint32                 `protobuf:"varint,9,opt,name=boneyard_size,json=boneyardSize,proto3" json:"boneyard_size,omitempty"`
+	Board                   *BoardView             `protobuf:"bytes,10,opt,name=board,proto3" json:"board,omitempty"`
+	Current                 Seat                   `protobuf:"varint,11,opt,name=current,proto3,enum=hypedomino.v1.Seat" json:"current,omitempty"`
+	OpeningTeam             Team                   `protobuf:"varint,12,opt,name=opening_team,json=openingTeam,proto3,enum=hypedomino.v1.Team" json:"opening_team,omitempty"`
+	ForcedOpening           *Opening               `protobuf:"bytes,13,opt,name=forced_opening,json=forcedOpening,proto3" json:"forced_opening,omitempty"`
+	TurnPlacements          uint32                 `protobuf:"varint,14,opt,name=turn_placements,json=turnPlacements,proto3" json:"turn_placements,omitempty"`
+	TurnDeadlineUnixMs      uint64                 `protobuf:"varint,15,opt,name=turn_deadline_unix_ms,json=turnDeadlineUnixMs,proto3" json:"turn_deadline_unix_ms,omitempty"`
+	LegalMoves              []*LegalMove           `protobuf:"bytes,16,rep,name=legal_moves,json=legalMoves,proto3" json:"legal_moves,omitempty"`
+	LastResult              *HandResult            `protobuf:"bytes,17,opt,name=last_result,json=lastResult,proto3" json:"last_result,omitempty"`
+	Winner                  Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
+	Roster                  []*RosterEntry         `protobuf:"bytes,19,rep,name=roster,proto3" json:"roster,omitempty"`
+	LoadingDeadlineUnixMs   uint64                 `protobuf:"varint,20,opt,name=loading_deadline_unix_ms,json=loadingDeadlineUnixMs,proto3" json:"loading_deadline_unix_ms,omitempty"`
+	Table                   string                 `protobuf:"bytes,21,opt,name=table,proto3" json:"table,omitempty"`
+	AfkConsecutiveTimeouts  uint32                 `protobuf:"varint,22,opt,name=afk_consecutive_timeouts,json=afkConsecutiveTimeouts,proto3" json:"afk_consecutive_timeouts,omitempty"`
+	TargetScore             uint32                 `protobuf:"varint,23,opt,name=target_score,json=targetScore,proto3" json:"target_score,omitempty"`
+	HandPointsLockThreshold uint32                 `protobuf:"varint,24,opt,name=hand_points_lock_threshold,json=handPointsLockThreshold,proto3" json:"hand_points_lock_threshold,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *MatchView) Reset() {
 	*x = MatchView{}
-	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1476,7 +1611,7 @@ func (x *MatchView) String() string {
 func (*MatchView) ProtoMessage() {}
 
 func (x *MatchView) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_match_proto_msgTypes[19]
+	mi := &file_hypedomino_v1_match_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1489,7 +1624,7 @@ func (x *MatchView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MatchView.ProtoReflect.Descriptor instead.
 func (*MatchView) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{19}
+	return file_hypedomino_v1_match_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MatchView) GetState() MatchState {
@@ -1646,6 +1781,20 @@ func (x *MatchView) GetAfkConsecutiveTimeouts() uint32 {
 	return 0
 }
 
+func (x *MatchView) GetTargetScore() uint32 {
+	if x != nil {
+		return x.TargetScore
+	}
+	return 0
+}
+
+func (x *MatchView) GetHandPointsLockThreshold() uint32 {
+	if x != nil {
+		return x.HandPointsLockThreshold
+	}
+	return 0
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1709,7 +1858,10 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"TeamPoints\x12\x15\n" +
 	"\x06team_a\x18\x01 \x01(\rR\x05teamA\x12\x15\n" +
-	"\x06team_b\x18\x02 \x01(\rR\x05teamB\"\xa5\x02\n" +
+	"\x06team_b\x18\x02 \x01(\rR\x05teamB\"_\n" +
+	"\tSeatTiles\x12'\n" +
+	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12)\n" +
+	"\x05tiles\x18\x02 \x03(\v2\x13.hypedomino.v1.TileR\x05tiles\"\xd3\x03\n" +
 	"\n" +
 	"HandResult\x12-\n" +
 	"\x04pips\x18\x01 \x01(\v2\x19.hypedomino.v1.TeamPointsR\x04pips\x12+\n" +
@@ -1719,7 +1871,13 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"carry_over\x18\x04 \x01(\rR\tcarryOver\x121\n" +
 	"\x06scores\x18\x05 \x01(\v2\x19.hypedomino.v1.TeamPointsR\x06scores\x124\n" +
 	"\vnext_opener\x18\x06 \x01(\x0e2\x13.hypedomino.v1.TeamR\n" +
-	"nextOpener\"\x92\x02\n" +
+	"nextOpener\x121\n" +
+	"\x06ending\x18\a \x01(\x0e2\x19.hypedomino.v1.HandEndingR\x06ending\x12,\n" +
+	"\x12hand_points_locked\x18\b \x01(\bR\x10handPointsLocked\x12\x1d\n" +
+	"\n" +
+	"carried_in\x18\t \x01(\rR\tcarriedIn\x12,\n" +
+	"\x04left\x18\n" +
+	" \x03(\v2\x18.hypedomino.v1.SeatTilesR\x04left\"\x92\x02\n" +
 	"\vRosterEntry\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
 	"\x04team\x18\x02 \x01(\x0e2\x13.hypedomino.v1.TeamR\x04team\x12\x1a\n" +
@@ -1730,7 +1888,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"rank_label\x18\a \x01(\tR\trankLabel\x12\x18\n" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
-	"\x03bot\x18\t \x01(\bR\x03bot\"\x93\b\n" +
+	"\x03bot\x18\t \x01(\bR\x03bot\"\xf3\b\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
@@ -1757,7 +1915,9 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x06roster\x18\x13 \x03(\v2\x1a.hypedomino.v1.RosterEntryR\x06roster\x127\n" +
 	"\x18loading_deadline_unix_ms\x18\x14 \x01(\x04R\x15loadingDeadlineUnixMs\x12\x14\n" +
 	"\x05table\x18\x15 \x01(\tR\x05table\x128\n" +
-	"\x18afk_consecutive_timeouts\x18\x16 \x01(\rR\x16afkConsecutiveTimeouts*w\n" +
+	"\x18afk_consecutive_timeouts\x18\x16 \x01(\rR\x16afkConsecutiveTimeouts\x12!\n" +
+	"\ftarget_score\x18\x17 \x01(\rR\vtargetScore\x12;\n" +
+	"\x1ahand_points_lock_threshold\x18\x18 \x01(\rR\x17handPointsLockThreshold*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +
@@ -1798,7 +1958,12 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x13MATCH_STATE_OPENING\x10\x02\x12\x17\n" +
 	"\x13MATCH_STATE_PLAYING\x10\x03\x12\x18\n" +
 	"\x14MATCH_STATE_FINISHED\x10\x04\x12\x17\n" +
-	"\x13MATCH_STATE_LOADING\x10\x05B\xc5\x01\n" +
+	"\x13MATCH_STATE_LOADING\x10\x05*X\n" +
+	"\n" +
+	"HandEnding\x12\x1b\n" +
+	"\x17HAND_ENDING_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12HAND_ENDING_DOMINO\x10\x01\x12\x15\n" +
+	"\x11HAND_ENDING_BLOCK\x10\x02B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"MatchProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -1814,8 +1979,8 @@ func file_hypedomino_v1_match_proto_rawDescGZIP() []byte {
 	return file_hypedomino_v1_match_proto_rawDescData
 }
 
-var file_hypedomino_v1_match_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_hypedomino_v1_match_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
+var file_hypedomino_v1_match_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_hypedomino_v1_match_proto_goTypes = []any{
 	(BoardEnd)(0),              // 0: hypedomino.v1.BoardEnd
 	(Seat)(0),                  // 1: hypedomino.v1.Seat
@@ -1823,70 +1988,76 @@ var file_hypedomino_v1_match_proto_goTypes = []any{
 	(Mode)(0),                  // 3: hypedomino.v1.Mode
 	(Controller)(0),            // 4: hypedomino.v1.Controller
 	(MatchState)(0),            // 5: hypedomino.v1.MatchState
-	(*Tile)(nil),               // 6: hypedomino.v1.Tile
-	(*PlaceTileIntent)(nil),    // 7: hypedomino.v1.PlaceTileIntent
-	(*PassIntent)(nil),         // 8: hypedomino.v1.PassIntent
-	(*DrawIntent)(nil),         // 9: hypedomino.v1.DrawIntent
-	(*EndTurnIntent)(nil),      // 10: hypedomino.v1.EndTurnIntent
-	(*LoadingIntent)(nil),      // 11: hypedomino.v1.LoadingIntent
-	(*EmojiIntent)(nil),        // 12: hypedomino.v1.EmojiIntent
-	(*EmojiShown)(nil),         // 13: hypedomino.v1.EmojiShown
-	(*QuickMessageIntent)(nil), // 14: hypedomino.v1.QuickMessageIntent
-	(*QuickMessageShown)(nil),  // 15: hypedomino.v1.QuickMessageShown
-	(*OrientedTile)(nil),       // 16: hypedomino.v1.OrientedTile
-	(*OpenEnd)(nil),            // 17: hypedomino.v1.OpenEnd
-	(*BoardView)(nil),          // 18: hypedomino.v1.BoardView
-	(*SeatView)(nil),           // 19: hypedomino.v1.SeatView
-	(*LegalMove)(nil),          // 20: hypedomino.v1.LegalMove
-	(*Opening)(nil),            // 21: hypedomino.v1.Opening
-	(*TeamPoints)(nil),         // 22: hypedomino.v1.TeamPoints
-	(*HandResult)(nil),         // 23: hypedomino.v1.HandResult
-	(*RosterEntry)(nil),        // 24: hypedomino.v1.RosterEntry
-	(*MatchView)(nil),          // 25: hypedomino.v1.MatchView
+	(HandEnding)(0),            // 6: hypedomino.v1.HandEnding
+	(*Tile)(nil),               // 7: hypedomino.v1.Tile
+	(*PlaceTileIntent)(nil),    // 8: hypedomino.v1.PlaceTileIntent
+	(*PassIntent)(nil),         // 9: hypedomino.v1.PassIntent
+	(*DrawIntent)(nil),         // 10: hypedomino.v1.DrawIntent
+	(*EndTurnIntent)(nil),      // 11: hypedomino.v1.EndTurnIntent
+	(*LoadingIntent)(nil),      // 12: hypedomino.v1.LoadingIntent
+	(*EmojiIntent)(nil),        // 13: hypedomino.v1.EmojiIntent
+	(*EmojiShown)(nil),         // 14: hypedomino.v1.EmojiShown
+	(*QuickMessageIntent)(nil), // 15: hypedomino.v1.QuickMessageIntent
+	(*QuickMessageShown)(nil),  // 16: hypedomino.v1.QuickMessageShown
+	(*OrientedTile)(nil),       // 17: hypedomino.v1.OrientedTile
+	(*OpenEnd)(nil),            // 18: hypedomino.v1.OpenEnd
+	(*BoardView)(nil),          // 19: hypedomino.v1.BoardView
+	(*SeatView)(nil),           // 20: hypedomino.v1.SeatView
+	(*LegalMove)(nil),          // 21: hypedomino.v1.LegalMove
+	(*Opening)(nil),            // 22: hypedomino.v1.Opening
+	(*TeamPoints)(nil),         // 23: hypedomino.v1.TeamPoints
+	(*SeatTiles)(nil),          // 24: hypedomino.v1.SeatTiles
+	(*HandResult)(nil),         // 25: hypedomino.v1.HandResult
+	(*RosterEntry)(nil),        // 26: hypedomino.v1.RosterEntry
+	(*MatchView)(nil),          // 27: hypedomino.v1.MatchView
 }
 var file_hypedomino_v1_match_proto_depIdxs = []int32{
-	6,  // 0: hypedomino.v1.PlaceTileIntent.tile:type_name -> hypedomino.v1.Tile
+	7,  // 0: hypedomino.v1.PlaceTileIntent.tile:type_name -> hypedomino.v1.Tile
 	0,  // 1: hypedomino.v1.PlaceTileIntent.end:type_name -> hypedomino.v1.BoardEnd
 	1,  // 2: hypedomino.v1.EmojiShown.seat:type_name -> hypedomino.v1.Seat
 	1,  // 3: hypedomino.v1.QuickMessageShown.seat:type_name -> hypedomino.v1.Seat
 	0,  // 4: hypedomino.v1.OpenEnd.end:type_name -> hypedomino.v1.BoardEnd
-	16, // 5: hypedomino.v1.BoardView.line:type_name -> hypedomino.v1.OrientedTile
-	6,  // 6: hypedomino.v1.BoardView.spinner:type_name -> hypedomino.v1.Tile
-	16, // 7: hypedomino.v1.BoardView.top:type_name -> hypedomino.v1.OrientedTile
-	16, // 8: hypedomino.v1.BoardView.bottom:type_name -> hypedomino.v1.OrientedTile
-	17, // 9: hypedomino.v1.BoardView.open_ends:type_name -> hypedomino.v1.OpenEnd
+	17, // 5: hypedomino.v1.BoardView.line:type_name -> hypedomino.v1.OrientedTile
+	7,  // 6: hypedomino.v1.BoardView.spinner:type_name -> hypedomino.v1.Tile
+	17, // 7: hypedomino.v1.BoardView.top:type_name -> hypedomino.v1.OrientedTile
+	17, // 8: hypedomino.v1.BoardView.bottom:type_name -> hypedomino.v1.OrientedTile
+	18, // 9: hypedomino.v1.BoardView.open_ends:type_name -> hypedomino.v1.OpenEnd
 	1,  // 10: hypedomino.v1.SeatView.seat:type_name -> hypedomino.v1.Seat
 	4,  // 11: hypedomino.v1.SeatView.controller:type_name -> hypedomino.v1.Controller
-	6,  // 12: hypedomino.v1.LegalMove.tile:type_name -> hypedomino.v1.Tile
+	7,  // 12: hypedomino.v1.LegalMove.tile:type_name -> hypedomino.v1.Tile
 	0,  // 13: hypedomino.v1.LegalMove.end:type_name -> hypedomino.v1.BoardEnd
 	1,  // 14: hypedomino.v1.Opening.seat:type_name -> hypedomino.v1.Seat
-	6,  // 15: hypedomino.v1.Opening.tile:type_name -> hypedomino.v1.Tile
-	22, // 16: hypedomino.v1.HandResult.pips:type_name -> hypedomino.v1.TeamPoints
-	2,  // 17: hypedomino.v1.HandResult.winner:type_name -> hypedomino.v1.Team
-	22, // 18: hypedomino.v1.HandResult.awarded:type_name -> hypedomino.v1.TeamPoints
-	22, // 19: hypedomino.v1.HandResult.scores:type_name -> hypedomino.v1.TeamPoints
-	2,  // 20: hypedomino.v1.HandResult.next_opener:type_name -> hypedomino.v1.Team
-	1,  // 21: hypedomino.v1.RosterEntry.seat:type_name -> hypedomino.v1.Seat
-	2,  // 22: hypedomino.v1.RosterEntry.team:type_name -> hypedomino.v1.Team
-	5,  // 23: hypedomino.v1.MatchView.state:type_name -> hypedomino.v1.MatchState
-	1,  // 24: hypedomino.v1.MatchView.seat:type_name -> hypedomino.v1.Seat
-	3,  // 25: hypedomino.v1.MatchView.mode:type_name -> hypedomino.v1.Mode
-	22, // 26: hypedomino.v1.MatchView.scores:type_name -> hypedomino.v1.TeamPoints
-	6,  // 27: hypedomino.v1.MatchView.hand:type_name -> hypedomino.v1.Tile
-	19, // 28: hypedomino.v1.MatchView.seats:type_name -> hypedomino.v1.SeatView
-	18, // 29: hypedomino.v1.MatchView.board:type_name -> hypedomino.v1.BoardView
-	1,  // 30: hypedomino.v1.MatchView.current:type_name -> hypedomino.v1.Seat
-	2,  // 31: hypedomino.v1.MatchView.opening_team:type_name -> hypedomino.v1.Team
-	21, // 32: hypedomino.v1.MatchView.forced_opening:type_name -> hypedomino.v1.Opening
-	20, // 33: hypedomino.v1.MatchView.legal_moves:type_name -> hypedomino.v1.LegalMove
-	23, // 34: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
-	2,  // 35: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
-	24, // 36: hypedomino.v1.MatchView.roster:type_name -> hypedomino.v1.RosterEntry
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	7,  // 15: hypedomino.v1.Opening.tile:type_name -> hypedomino.v1.Tile
+	1,  // 16: hypedomino.v1.SeatTiles.seat:type_name -> hypedomino.v1.Seat
+	7,  // 17: hypedomino.v1.SeatTiles.tiles:type_name -> hypedomino.v1.Tile
+	23, // 18: hypedomino.v1.HandResult.pips:type_name -> hypedomino.v1.TeamPoints
+	2,  // 19: hypedomino.v1.HandResult.winner:type_name -> hypedomino.v1.Team
+	23, // 20: hypedomino.v1.HandResult.awarded:type_name -> hypedomino.v1.TeamPoints
+	23, // 21: hypedomino.v1.HandResult.scores:type_name -> hypedomino.v1.TeamPoints
+	2,  // 22: hypedomino.v1.HandResult.next_opener:type_name -> hypedomino.v1.Team
+	6,  // 23: hypedomino.v1.HandResult.ending:type_name -> hypedomino.v1.HandEnding
+	24, // 24: hypedomino.v1.HandResult.left:type_name -> hypedomino.v1.SeatTiles
+	1,  // 25: hypedomino.v1.RosterEntry.seat:type_name -> hypedomino.v1.Seat
+	2,  // 26: hypedomino.v1.RosterEntry.team:type_name -> hypedomino.v1.Team
+	5,  // 27: hypedomino.v1.MatchView.state:type_name -> hypedomino.v1.MatchState
+	1,  // 28: hypedomino.v1.MatchView.seat:type_name -> hypedomino.v1.Seat
+	3,  // 29: hypedomino.v1.MatchView.mode:type_name -> hypedomino.v1.Mode
+	23, // 30: hypedomino.v1.MatchView.scores:type_name -> hypedomino.v1.TeamPoints
+	7,  // 31: hypedomino.v1.MatchView.hand:type_name -> hypedomino.v1.Tile
+	20, // 32: hypedomino.v1.MatchView.seats:type_name -> hypedomino.v1.SeatView
+	19, // 33: hypedomino.v1.MatchView.board:type_name -> hypedomino.v1.BoardView
+	1,  // 34: hypedomino.v1.MatchView.current:type_name -> hypedomino.v1.Seat
+	2,  // 35: hypedomino.v1.MatchView.opening_team:type_name -> hypedomino.v1.Team
+	22, // 36: hypedomino.v1.MatchView.forced_opening:type_name -> hypedomino.v1.Opening
+	21, // 37: hypedomino.v1.MatchView.legal_moves:type_name -> hypedomino.v1.LegalMove
+	25, // 38: hypedomino.v1.MatchView.last_result:type_name -> hypedomino.v1.HandResult
+	2,  // 39: hypedomino.v1.MatchView.winner:type_name -> hypedomino.v1.Team
+	26, // 40: hypedomino.v1.MatchView.roster:type_name -> hypedomino.v1.RosterEntry
+	41, // [41:41] is the sub-list for method output_type
+	41, // [41:41] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_match_proto_init() }
@@ -1899,8 +2070,8 @@ func file_hypedomino_v1_match_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_match_proto_rawDesc), len(file_hypedomino_v1_match_proto_rawDesc)),
-			NumEnums:      6,
-			NumMessages:   20,
+			NumEnums:      7,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

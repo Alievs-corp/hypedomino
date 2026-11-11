@@ -291,7 +291,10 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 		Controllers:   [6]rules.Controller{5: rules.ControllerBot},
 		LegalMoves:    []rules.Move{{Tile: rules.MustTile(0, 4), End: rules.EndLeft}},
 		LastResult:    rules.HandResult{Pips: rules.TeamPoints{0, 23}, Winner: rules.TeamA, HasWinner: true, Awarded: rules.TeamPoints{25, 0}, CarryOver: 3, Scores: rules.TeamPoints{45, 20}, NextOpener: rules.TeamA},
+		LastEnd:       rules.HandEnd{Status: rules.HandDomino, Left: map[rules.Seat]rules.Hand{rules.SeatX: {}, rules.SeatY: {rules.MustTile(6, 6), rules.MustTile(5, 6)}}},
 		HasLastResult: true,
+		TargetScore:   365,
+		LockThreshold: 300,
 	}
 	board := rules.NewBoard(rules.MustTile(6, 6))
 	for _, move := range []rules.Move{{Tile: rules.MustTile(4, 6), End: rules.EndLeft}, {Tile: rules.MustTile(1, 6), End: rules.EndRight}, {Tile: rules.MustTile(3, 6), End: rules.EndTop}} {
@@ -301,7 +304,7 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 	}
 	view.Board = room.BoardView{Line: board.Line(), Top: board.Top(), Bottom: board.Bottom(), OpenEnds: board.OpenEnds()}
 	view.Board.Spinner, view.Board.HasSpinner = board.Spinner()
-	got := ViewMessage(view, true)
+	got := ViewMessage(view, true, true)
 	want := &pb.Envelope{}
 	if err := proto.Unmarshal(mustRead(t, "../../../proto/testdata/frames/match_view.bin"), want); err != nil {
 		t.Fatal(err)
@@ -310,11 +313,14 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 		t.Fatalf("view message differs\n got %v\nwant %v", got, want.GetMatchView())
 	}
 	view.Roster = []room.Player{{Seat: rules.SeatX, Nickname: "Ayla"}}
-	later := ViewMessage(view, false)
-	if later.GetTable() != "" || later.GetRoster() != nil || !proto.Equal(later.GetBoard(), got.GetBoard()) || len(later.GetHand()) != 3 {
-		t.Fatalf("a later view repeats the table or roster or drops play state: %v", later)
+	later := ViewMessage(view, false, false)
+	if later.GetTable() != "" || later.GetRoster() != nil || later.GetLastResult().GetLeft() != nil || !proto.Equal(later.GetBoard(), got.GetBoard()) || len(later.GetHand()) != 3 {
+		t.Fatalf("a later view repeats the table, roster or tiles left, or drops play state: %v", later)
 	}
-	waiting := ViewMessage(room.View{State: room.StateWaiting, Seat: rules.SeatNorth, Mode: rules.Mode2v2}, true)
+	if later.GetLastResult().GetEnding() != pb.HandEnding_HAND_ENDING_DOMINO || later.GetTargetScore() != 365 {
+		t.Fatalf("a later view drops the hand ending or target score: %v", later)
+	}
+	waiting := ViewMessage(room.View{State: room.StateWaiting, Seat: rules.SeatNorth, Mode: rules.Mode2v2}, true, true)
 	if err := proto.Unmarshal(mustRead(t, "../../../proto/testdata/frames/match_view_waiting.bin"), want); err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +338,7 @@ func TestViewMessageShowsDisconnectsAndTimeouts(t *testing.T) {
 		Timeouts:     [6]int{rules.SeatEast: 2},
 		AfkTimeouts:  3,
 	}
-	got := ViewMessage(view, false)
+	got := ViewMessage(view, false, false)
 	if got.GetAfkConsecutiveTimeouts() != 3 {
 		t.Fatalf("afk mark %d", got.GetAfkConsecutiveTimeouts())
 	}
@@ -376,6 +382,33 @@ func TestRoomSessionDeliversRejectionsAsErrors(t *testing.T) {
 	case <-conn.Done():
 	default:
 		t.Fatal("a join rejection must close the connection")
+	}
+}
+
+func TestRoomSessionSendsTheTilesLeftOncePerHandEnd(t *testing.T) {
+	_, r := roomServer(t, rules.Mode1v1, 1)
+	conn := &Conn{queue: make(chan *pb.Envelope, 8), closed: make(chan struct{})}
+	session := JoinRoom(r, rules.SeatX, conn)
+	ended := func(hands int) room.View {
+		return room.View{
+			State:         room.StateOpening,
+			Mode:          rules.Mode1v1,
+			HandsPlayed:   hands,
+			HasLastResult: true,
+			LastEnd:       rules.HandEnd{Status: rules.HandBlocked, Left: map[rules.Seat]rules.Hand{rules.SeatX: {rules.MustTile(1, 2)}, rules.SeatY: {rules.MustTile(3, 4)}}},
+		}
+	}
+	left := func() int { return len((<-conn.queue).GetMatchView().GetLastResult().GetLeft()) }
+	session.Deliver(room.Message{View: ended(1)})
+	session.Deliver(room.Message{View: ended(1)})
+	session.Deliver(room.Message{View: ended(2)})
+	if first, again, next := left(), left(), left(); first != 2 || again != 0 || next != 2 {
+		t.Fatalf("tiles left sent for %d, %d and %d seats; want 2, 0 and 2", first, again, next)
+	}
+	fresh := JoinRoom(r, rules.SeatX, conn)
+	fresh.Deliver(room.Message{View: ended(2)})
+	if got := left(); got != 2 {
+		t.Fatalf("a new connection got the tiles left of %d seats, want 2", got)
 	}
 }
 

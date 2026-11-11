@@ -84,18 +84,40 @@ func boardMessage(board room.BoardView) *pb.BoardView {
 	return out
 }
 
-func resultMessage(result rules.HandResult) *pb.HandResult {
+func resultMessage(result rules.HandResult, end rules.HandEnd, mode rules.Mode, withLeft bool) *pb.HandResult {
 	out := &pb.HandResult{
-		Pips:       pointsMessage(result.Pips),
-		Awarded:    pointsMessage(result.Awarded),
-		CarryOver:  uint32(result.CarryOver),
-		Scores:     pointsMessage(result.Scores),
-		NextOpener: teamMessage(result.NextOpener),
+		Pips:             pointsMessage(result.Pips),
+		Awarded:          pointsMessage(result.Awarded),
+		CarryOver:        uint32(result.CarryOver),
+		Scores:           pointsMessage(result.Scores),
+		NextOpener:       teamMessage(result.NextOpener),
+		Ending:           endingMessage(end.Status),
+		HandPointsLocked: end.Locked,
+		CarriedIn:        uint32(end.CarriedIn),
 	}
 	if result.HasWinner {
 		out.Winner = teamMessage(result.Winner)
 	}
+	if withLeft && end.Left != nil {
+		for _, seat := range mode.Seats() {
+			left := &pb.SeatTiles{Seat: seatMessage(seat)}
+			for _, tile := range end.Left[seat] {
+				left.Tiles = append(left.Tiles, tileMessage(tile))
+			}
+			out.Left = append(out.Left, left)
+		}
+	}
 	return out
+}
+
+func endingMessage(status rules.HandStatus) pb.HandEnding {
+	switch status {
+	case rules.HandDomino:
+		return pb.HandEnding_HAND_ENDING_DOMINO
+	case rules.HandBlocked:
+		return pb.HandEnding_HAND_ENDING_BLOCK
+	}
+	return pb.HandEnding_HAND_ENDING_UNSPECIFIED
 }
 
 func rosterMessage(roster []room.Player) []*pb.RosterEntry {
@@ -116,12 +138,14 @@ func rosterMessage(roster []room.Player) []*pb.RosterEntry {
 	return out
 }
 
-func ViewMessage(view room.View, withStatic bool) *pb.MatchView {
+func ViewMessage(view room.View, withStatic, withLeft bool) *pb.MatchView {
 	out := &pb.MatchView{
-		State:                  stateMessage(view.State),
-		Seat:                   seatMessage(view.Seat),
-		Mode:                   pb.Mode(view.Mode),
-		AfkConsecutiveTimeouts: uint32(view.AfkTimeouts),
+		State:                   stateMessage(view.State),
+		Seat:                    seatMessage(view.Seat),
+		Mode:                    pb.Mode(view.Mode),
+		AfkConsecutiveTimeouts:  uint32(view.AfkTimeouts),
+		TargetScore:             uint32(view.TargetScore),
+		HandPointsLockThreshold: uint32(view.LockThreshold),
 	}
 	for _, seat := range view.Mode.Seats() {
 		out.Seats = append(out.Seats, &pb.SeatView{
@@ -158,7 +182,7 @@ func ViewMessage(view room.View, withStatic bool) *pb.MatchView {
 		out.ForcedOpening = &pb.Opening{Seat: seatMessage(view.ForcedOpening.Seat), Tile: tileMessage(view.ForcedOpening.Tile)}
 	}
 	if view.HasLastResult {
-		out.LastResult = resultMessage(view.LastResult)
+		out.LastResult = resultMessage(view.LastResult, view.LastEnd, view.Mode, withLeft)
 	}
 	if view.HasWinner {
 		out.Winner = teamMessage(view.Winner)

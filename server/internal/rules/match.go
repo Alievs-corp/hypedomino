@@ -91,6 +91,7 @@ type Match struct {
 	forcedOpening     Opening
 	hasForcedOpening  bool
 	lastResult        HandResult
+	lastEnd           HandEnd
 	hasLastResult     bool
 	moves             []Move
 }
@@ -124,6 +125,10 @@ func (m *Match) ForcedOpening() (Opening, bool) {
 
 func (m *Match) LastResult() (HandResult, bool) {
 	return m.lastResult, m.hasLastResult
+}
+
+func (m *Match) LastHandEnd() (HandEnd, bool) {
+	return m.lastEnd, m.hasLastResult
 }
 
 func (m *Match) LegalMoves(seat Seat, moves []Move) []Move {
@@ -270,6 +275,23 @@ func (m *Match) advance() {
 	m.turn = BeginTurn(&m.board, m.config)
 }
 
+func (m *Match) recordEnd(status HandStatus, result HandResult, scores HandScores) {
+	locked := result.HasWinner && scores.AtHandStart[result.Winner] >= m.config.HandPointsLockThreshold
+	carriedIn := 0
+	if result.HasWinner && !locked {
+		carriedIn = scores.CarryOver
+	}
+	if m.lastEnd.Left == nil {
+		m.lastEnd.Left = make(map[Seat]Hand, len(m.mode.Seats()))
+	}
+	for _, seat := range m.mode.Seats() {
+		m.lastEnd.Left[seat] = append(m.lastEnd.Left[seat][:0], m.hands[seat]...)
+	}
+	m.lastEnd.Status = status
+	m.lastEnd.Locked = locked
+	m.lastEnd.CarriedIn = carriedIn
+}
+
 func (m *Match) endHand(status HandStatus) {
 	settle := DominoResult
 	if status == HandBlocked {
@@ -277,6 +299,7 @@ func (m *Match) endHand(status HandStatus) {
 	}
 	scores := HandScores{AtHandStart: m.scoresAtHandStart, Current: m.scores, CarryOver: m.carryOver}
 	result := settle(m.mode, m.config, m.lastPlacedBy, m.hands, scores)
+	m.recordEnd(status, result, scores)
 	m.scores = result.Scores
 	m.carryOver = result.CarryOver
 	m.lastResult = result

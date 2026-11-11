@@ -17,6 +17,7 @@ type RoomSession struct {
 	conn       *Conn
 	resume     bool
 	staticSent bool
+	leftShown  int
 	acked      atomic.Uint64
 }
 
@@ -94,9 +95,13 @@ func (s *RoomSession) Deliver(message room.Message) {
 	if message.Rejected {
 		s.conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
 	}
+	view := ViewMessage(message.View, !s.staticSent, message.View.HandsPlayed != s.leftShown)
 	s.conn.Send(&pb.Envelope{
 		AckedSequence: message.View.Acked,
-		Payload:       &pb.Envelope_MatchView{MatchView: ViewMessage(message.View, !s.staticSent)},
+		Payload:       &pb.Envelope_MatchView{MatchView: view},
 	})
 	s.staticSent = true
+	if len(view.GetLastResult().GetLeft()) > 0 {
+		s.leftShown = message.View.HandsPlayed
+	}
 }
