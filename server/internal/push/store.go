@@ -57,9 +57,35 @@ func (s *Store) Settings(ctx context.Context, account string) (Settings, error) 
 	return settings, err
 }
 
-func (s *Store) SaveSettings(ctx context.Context, account string, settings Settings, now time.Time) error {
-	_, err := s.pool.Exec(ctx, `insert into push_settings (account_id, gameplay, promotional, updated_at) values ($1, $2, $3, $4)
+func (s *Store) SaveSettings(ctx context.Context, account string, change SettingsChange, now time.Time) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	previous := DefaultSettings
+	err = tx.QueryRow(ctx, `select promotional from push_settings where account_id = $1 for update`, account).Scan(&previous.Promotional)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+	if change.Promotional != previous.Promotional {
+		if err := recordPromotionalConsent(ctx, tx, account, change, now); err != nil {
+			return err
+		}
+	}
+	if _, err := tx.Exec(ctx, `insert into push_settings (account_id, gameplay, promotional, updated_at) values ($1, $2, $3, $4)
 		on conflict (account_id) do update set gameplay = excluded.gameplay, promotional = excluded.promotional, updated_at = excluded.updated_at`,
-		account, settings.Gameplay, settings.Promotional, now)
+		account, change.Gameplay, change.Promotional, now); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func recordPromotionalConsent(ctx context.Context, tx pgx.Tx, account string, change SettingsChange, now time.Time) error {
+	if change.PolicyVersion == "" || change.AppVersion == "" {
+		return ErrConsentContext
+	}
+	_, err := tx.Exec(ctx, `insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at)
+		values ($1, 'promotional_push', $2, $3, 'settings', $4, $5)`, account, change.Promotional, change.PolicyVersion, change.AppVersion, now)
 	return err
 }

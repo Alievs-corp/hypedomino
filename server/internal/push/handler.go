@@ -60,10 +60,11 @@ func (h *Handler) saveSettings(r *http.Request, account string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+	change := SettingsChange{Settings: settings}
+	if err := json.NewDecoder(r.Body).Decode(&change); err != nil {
 		return nil, ErrMalformed
 	}
-	return settings, h.store.SaveSettings(r.Context(), account, settings, h.now())
+	return change.Settings, h.store.SaveSettings(r.Context(), account, change, h.now())
 }
 
 func (h *Handler) authed(serve func(r *http.Request, account string) (any, error)) http.HandlerFunc {
@@ -92,7 +93,7 @@ func (h *Handler) authed(serve func(r *http.Request, account string) (any, error
 }
 
 func (h *Handler) refuse(w http.ResponseWriter, err error) {
-	for _, known := range []error{ErrNoToken, ErrUnknownPlatform, ErrMalformed} {
+	for _, known := range []error{ErrNoToken, ErrUnknownPlatform, ErrMalformed, ErrConsentContext} {
 		if errors.Is(err, known) {
 			reply(w, http.StatusBadRequest, errorResponse{Error: known.Error()})
 			return

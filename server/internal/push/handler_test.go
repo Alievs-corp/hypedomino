@@ -3,6 +3,7 @@ package push_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -147,7 +148,7 @@ func TestSettingsDefaultAndChangeOneCategoryAtATime(t *testing.T) {
 	if body := w.expect("GET", "/push/settings", ayla, "", http.StatusOK, ""); body["gameplay"] != true || body["promotional"] != false {
 		t.Fatalf("defaults %v", body)
 	}
-	if body := w.expect("PUT", "/push/settings", ayla, `{"promotional":true}`, http.StatusOK, ""); body["gameplay"] != true || body["promotional"] != true {
+	if body := w.expect("PUT", "/push/settings", ayla, `{"promotional":true,"policyVersion":"1","appVersion":"1.0.0"}`, http.StatusOK, ""); body["gameplay"] != true || body["promotional"] != true {
 		t.Fatalf("promotional on %v", body)
 	}
 	if body := w.expect("PUT", "/push/settings", ayla, `{"gameplay":false}`, http.StatusOK, ""); body["gameplay"] != false || body["promotional"] != true {
@@ -156,6 +157,44 @@ func TestSettingsDefaultAndChangeOneCategoryAtATime(t *testing.T) {
 	w.expect("PUT", "/push/settings", ayla, `[`, http.StatusBadRequest, "push.malformed")
 	if body := w.expect("GET", "/push/settings", ayla, "", http.StatusOK, ""); body["gameplay"] != false || body["promotional"] != true {
 		t.Fatalf("stored %v", body)
+	}
+}
+
+func TestPromotionalChangesWriteAppendOnlyConsentRecords(t *testing.T) {
+	w := newWorld(t)
+	ayla := w.player()
+
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":true}`, http.StatusBadRequest, "push.consent_context_required")
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":true,"policyVersion":"3"}`, http.StatusBadRequest, "push.consent_context_required")
+	if body := w.expect("GET", "/push/settings", ayla, "", http.StatusOK, ""); body["promotional"] != false {
+		t.Fatalf("a refused consent change was saved %v", body)
+	}
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":false,"gameplay":false}`, http.StatusOK, "")
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":true,"policyVersion":"3","appVersion":"1.2.0"}`, http.StatusOK, "")
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":true,"gameplay":true}`, http.StatusOK, "")
+	w.expect("PUT", "/push/settings", ayla, `{"promotional":false,"policyVersion":"4","appVersion":"1.3.0"}`, http.StatusOK, "")
+
+	rows, err := w.pool.Query(context.Background(), `select purpose, granted, policy_version, source, app_version, recorded_at from consent_records where account_id = $1 order by id`, ayla)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var purpose, version, source, app string
+		var granted bool
+		var at time.Time
+		if err := rows.Scan(&purpose, &granted, &version, &source, &app, &at); err != nil {
+			t.Fatal(err)
+		}
+		if !at.Equal(now) {
+			t.Fatalf("recorded at %v, want server time %v", at, now)
+		}
+		got = append(got, fmt.Sprintf("%s:%t:%s:%s:%s", purpose, granted, version, source, app))
+	}
+	want := "promotional_push:true:3:settings:1.2.0,promotional_push:false:4:settings:1.3.0"
+	if strings.Join(got, ",") != want {
+		t.Fatalf("consent records %v, want %s", got, want)
 	}
 }
 
