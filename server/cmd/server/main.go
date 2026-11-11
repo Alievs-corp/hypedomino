@@ -22,6 +22,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
+	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
@@ -36,6 +37,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
@@ -268,6 +270,18 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "account deletions", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		accounts.RunDeletions(ctx, logger, every, config.DeletionGrace, time.Now)
 	})
+	if config.ExportStore.BaseURL != "" {
+		exportFiles, err := objectstore.New(config.ExportStore)
+		if err != nil {
+			pool.Close()
+			return nil, nil, fmt.Errorf("HD_EXPORT_STORE_*: %w", err)
+		}
+		exports := dataexport.NewStore(pool)
+		a.Handle("POST /account/export", dataexport.NewHandler(tokens, exports, accounts, exportFiles, config.Export, logger, time.Now))
+		go panics.Supervise(ctx, "data export purge", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+			exports.RunPurge(ctx, exportFiles, logger, every, time.Now)
+		})
+	}
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go panics.Supervise(ctx, "outbox rating", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
 		ratingResults.Run(ctx, every, func(err error) { logger.Error("rating relay failed", "error", err) })

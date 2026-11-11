@@ -1,6 +1,7 @@
 package objectstore
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -83,6 +84,35 @@ func (s *Store) Open(ctx context.Context, key string, now time.Time) (io.ReadClo
 	}
 	response.Body.Close()
 	return nil, fmt.Errorf("%w: status %d", ErrUnavailable, response.StatusCode)
+}
+
+func (s *Store) Put(ctx context.Context, key, contentType string, body []byte, now time.Time) error {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, s.SignedPut(key, now), bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", contentType)
+	return s.send(request)
+}
+
+func (s *Store) Delete(ctx context.Context, key string, now time.Time) error {
+	request, err := http.NewRequestWithContext(ctx, http.MethodDelete, s.signed(http.MethodDelete, key, now), nil)
+	if err != nil {
+		return err
+	}
+	return s.send(request)
+}
+
+func (s *Store) send(request *http.Request) error {
+	response, err := s.client.Do(request)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrUnavailable, err)
+	}
+	response.Body.Close()
+	if response.StatusCode/100 != 2 {
+		return fmt.Errorf("%w: status %d", ErrUnavailable, response.StatusCode)
+	}
+	return nil
 }
 
 func (s *Store) signed(method, key string, now time.Time) string {
