@@ -36,6 +36,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
@@ -70,6 +71,7 @@ func main() {
 		os.Exit(2)
 	}
 	logger := app.NewLogger(os.Stdout, config.LogLevel)
+	slog.SetDefault(logger)
 	sessions := session.New(config.Session, systemClock{}, secrand.Source{})
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -131,7 +133,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("POST /auth/", signIn)
 	profileStore := profile.NewStore(pool, config.Profile)
 	moderation := snapshot.New(pool, profile.ModerationDomain, profile.ParseModeration, logger)
-	go moderation.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config moderation", config.ConfigPoll, moderation.Run)
 	profileStore.Moderate(func() profile.Moderation {
 		current, _, _ := moderation.Current()
 		return current
@@ -146,7 +148,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	inventoryStore := inventory.NewStore(pool, catalog, config.Inventory)
 	manifests := snapshot.New(pool, cosmetics.Domain, cosmetics.Parse, logger)
-	go manifests.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config cosmetics", config.ConfigPoll, manifests.Run)
 	inventoryStore.Follow(manifests.Current)
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
@@ -157,7 +159,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	friendStore := friends.NewStore(pool, config.Friends)
 	if client != nil {
 		presence := friends.NewPresence(client, config.Cluster.KeyPrefix, 3*config.Gateway.PingInterval)
-		go presence.Run(ctx, config.Gateway.PingInterval, sessions.Presence, logger)
+		go panics.Supervise(ctx, "friend presence", config.Gateway.PingInterval, func(ctx context.Context, interval time.Duration) {
+			presence.Run(ctx, interval, sessions.Presence, logger)
+		})
 		friendStore.ShowPresence(presence)
 	}
 	friendsHandler := friends.NewHandler(tokens, friendStore, logger, time.Now)
@@ -168,29 +172,35 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
-	go passConfigs.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config pass", config.ConfigPoll, passConfigs.Run)
 	passes := pass.NewStore(pool, passConfigs)
 	profiles.SetStanding(passes.Standing)
 	medalCatalog := medal.NewWatcher(pool, logger)
-	go medalCatalog.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config medals", config.ConfigPoll, medalCatalog.Run)
 	medals := medal.NewStore(pool, medalCatalog)
 	profiles.SetMedals(func(ctx context.Context, account string) (any, error) { return medals.Public(ctx, account) })
 	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
 	missionCatalog := mission.NewWatcher(pool, logger)
-	go missionCatalog.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config missions", config.ConfigPoll, missionCatalog.Run)
 	missions := mission.NewStore(pool, missionCatalog, engine)
 	calendar := dailylogin.NewWatcher(pool, logger)
-	go calendar.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config daily login", config.ConfigPoll, calendar.Run)
 	matchRewardConfigs := matchreward.NewWatcher(pool, logger)
-	go matchRewardConfigs.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config match rewards", config.ConfigPoll, matchRewardConfigs.Run)
 	matchRewards := matchstore.NewRelay(matchstore.New(pool), matchreward.NewStore(pool, matchRewardConfigs, walletStore), matchstore.TopicEconomy, 0, time.Now)
-	go matchRewards.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("match reward relay failed", "error", err) })
+	go panics.Supervise(ctx, "outbox economy", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
+		matchRewards.Run(ctx, every, func(err error) { logger.Error("match reward relay failed", "error", err) })
+	})
 	passXp := matchstore.NewRelay(matchstore.New(pool), passes, matchstore.TopicXp, 0, time.Now)
-	go passXp.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("pass xp relay failed", "error", err) })
+	go panics.Supervise(ctx, "outbox xp", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
+		passXp.Run(ctx, every, func(err error) { logger.Error("pass xp relay failed", "error", err) })
+	})
 	missionProgress := matchstore.NewRelay(matchstore.New(pool), missions, matchstore.TopicMissions, 0, time.Now)
-	go missionProgress.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("mission progress relay failed", "error", err) })
+	go panics.Supervise(ctx, "outbox missions", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
+		missionProgress.Run(ctx, every, func(err error) { logger.Error("mission progress relay failed", "error", err) })
+	})
 	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
@@ -201,7 +211,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 			return nil, nil, fmt.Errorf("HD_SHOP_CATALOG: %w", err)
 		}
 	}
-	go offers.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config shop", config.ConfigPoll, offers.Run)
 	controls := snapshot.New(pool, livecontrol.Domain, livecontrol.Parse, logger)
 	controls.Seed(livecontrol.Controls{MinimumAppVersion: config.Gateway.MinimumAppVersion}, 0)
 	if _, err := controls.Load(ctx); err != nil && !errors.Is(err, snapshot.ErrNone) {
@@ -209,32 +219,32 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("live controls: %w", err)
 	}
 	controls.OnApplied(a.EnforceAdmission)
-	go controls.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config live controls", config.ConfigPoll, controls.Run)
 	a.Admit(func() gateway.Admission {
 		current, _, _ := controls.Current()
 		return current.Admission()
 	})
 	activeStrings := snapshot.New(pool, gamestrings.Domain, gamestrings.NewStore(pool).ActiveParser(ctx), logger)
-	go activeStrings.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config game strings", config.ConfigPoll, activeStrings.Run)
 	a.Localize(func() gateway.Strings {
 		active, _, _ := activeStrings.Current()
 		bundles, chains := active.Hello()
 		return gateway.Strings{Bundles: bundles, Chains: chains}
 	})
 	quickMessages := snapshot.New(pool, quickmessage.Domain, quickmessage.Parse, logger)
-	go quickMessages.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config quick messages", config.ConfigPoll, quickMessages.Run)
 	a.Rooms().AllowQuickMessages(func(key string) bool {
 		catalog, _, _ := quickMessages.Current()
 		return catalog.Contains(key)
 	})
 	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
-	go tuning.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config rules", config.ConfigPoll, tuning.Run)
 	a.Rooms().Tune(func(base rules.Config) rules.Config {
 		current, _, _ := tuning.Current()
 		return current.Apply(base)
 	})
 	ratingConfigs := rating.NewWatcher(pool, logger)
-	go ratingConfigs.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config rating", config.ConfigPoll, ratingConfigs.Run)
 	ratings := rating.NewStore(pool, ratingConfigs)
 	profiles.SetRanked(func(ctx context.Context, account string) (any, error) { return ratings.Public(ctx, account) })
 	penaltyRecords := penaltyStore(ctx, config, pool, logger)
@@ -244,16 +254,23 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	wave := risk.NewWave(pool, config.Risk, logger)
 	wave.OnShadowban(ratings.HideFromBoards)
-	go wave.Run(ctx, config.SeasonPoll, time.Now)
-	go economy.NewMonitor(pool, config.Economy, logger).Run(ctx, config.SeasonPoll, time.Now)
+	go panics.Supervise(ctx, "ban wave", config.SeasonPoll, func(ctx context.Context, every time.Duration) { wave.Run(ctx, every, time.Now) })
+	monitor := economy.NewMonitor(pool, config.Economy, logger)
+	go panics.Supervise(ctx, "economy monitor", config.SeasonPoll, func(ctx context.Context, every time.Duration) { monitor.Run(ctx, every, time.Now) })
 	ratings.SetRewards(engine)
 	ratings.SetCollusionWeight(config.Risk.CollusionWeight)
-	go ratings.RunApexRecalc(ctx, logger, time.Now)
-	go ratings.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	go panics.Supervise(ctx, "apex recalc", config.SeasonPoll, func(ctx context.Context, _ time.Duration) { ratings.RunApexRecalc(ctx, logger, time.Now) })
+	go panics.Supervise(ctx, "rating season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+		ratings.RunSeasonEnd(ctx, logger, every, time.Now)
+	})
 	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
-	go accounts.RunDeletions(ctx, logger, config.SeasonPoll, config.DeletionGrace, time.Now)
+	go panics.Supervise(ctx, "account deletions", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+		accounts.RunDeletions(ctx, logger, every, config.DeletionGrace, time.Now)
+	})
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
-	go ratingResults.Run(ctx, config.OutboxPoll, func(err error) { logger.Error("rating relay failed", "error", err) })
+	go panics.Supervise(ctx, "outbox rating", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
+		ratingResults.Run(ctx, every, func(err error) { logger.Error("rating relay failed", "error", err) })
+	})
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
 	if members != nil {
 		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
@@ -269,7 +286,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
-	go passes.RunSeasonEnd(ctx, logger, config.SeasonPoll, time.Now)
+	go panics.Supervise(ctx, "pass season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+		passes.RunSeasonEnd(ctx, logger, every, time.Now)
+	})
 	passHandler := critical(pass.NewHandler(tokens, passes, logger, time.Now))
 	a.Handle("/pass", passHandler)
 	a.Handle("/pass/", passHandler)

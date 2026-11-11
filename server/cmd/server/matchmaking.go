@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstart"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
@@ -54,7 +55,7 @@ func seeded() *rand.Rand {
 func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logger, deps matchmakingDeps) {
 	configs := snapshot.New(deps.pool, matchmaking.Domain, matchmaking.Parse, logger)
 	configs.Seed(matchmaking.DefaultConfig(), 0)
-	go configs.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config matchmaking", config.ConfigPoll, configs.Run)
 	current := func() matchmaking.Config {
 		value, _, _ := configs.Current()
 		return value
@@ -72,7 +73,9 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	lobby.LimitEmoji(deps.emoji)
 	item := func(id string) (cosmetics.Item, bool) { return deps.inventory.Catalog().Item(id) }
 	deps.sessions.Host(lobby, matchstart.LobbyMember(deps.inventory.Freeze, item, muted), deps.friends)
-	go listen(ctx, dispatcher, host, deps.sessions, config.MatchmakingTick, logger)
+	go panics.Supervise(ctx, "matchmaking listener", config.MatchmakingTick, func(ctx context.Context, retry time.Duration) {
+		listen(ctx, dispatcher, host, deps.sessions, retry, logger)
+	})
 	place := func(ctx context.Context, placement matchqueue.Placement) error {
 		target, ok, err := deps.members.Least(ctx)
 		switch {
@@ -85,7 +88,9 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	}
 	leader := matchqueue.NewLeader(deps.client, prefix, "", node, config.MatchmakingTTL)
 	matcher := matchqueue.NewMatcher(store, current, seeded())
-	go matchqueue.Run(ctx, leader, matcher, config.MatchmakingTick, time.Now, place, func(err error) { logger.Error("matchmaking tick failed", "error", err) })
+	go panics.Supervise(ctx, "matchmaking tick", config.MatchmakingTick, func(ctx context.Context, tick time.Duration) {
+		matchqueue.Run(ctx, leader, matcher, tick, time.Now, place, func(err error) { logger.Error("matchmaking tick failed", "error", err) })
+	})
 }
 
 func listen(ctx context.Context, dispatcher *matchqueue.Dispatcher, host *matchstart.Host, sessions *session.Manager, retry time.Duration, logger *slog.Logger) {
@@ -103,7 +108,7 @@ func listen(ctx context.Context, dispatcher *matchqueue.Dispatcher, host *matchs
 func penaltyStore(ctx context.Context, config app.Config, pool *pgxpool.Pool, logger *slog.Logger) *penalties.Store {
 	configs := snapshot.New(pool, penalties.Domain, penalties.Parse, logger)
 	configs.Seed(penalties.DefaultConfig(), 0)
-	go configs.Run(ctx, config.ConfigPoll)
+	go panics.Supervise(ctx, "config penalties", config.ConfigPoll, configs.Run)
 	return penalties.NewStore(pool, func() (penalties.Config, int) {
 		value, version, _ := configs.Current()
 		return value, int(version)
