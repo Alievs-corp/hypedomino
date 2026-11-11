@@ -74,14 +74,20 @@ type Random interface {
 
 type Opener func(options room.Options, seats []SeatState) (*room.Room, error)
 
+type Directory interface {
+	Claim(ctx context.Context, code string) error
+	Release(ctx context.Context, code string) error
+}
+
 type Lobby struct {
-	random Random
-	opener Opener
-	gate   Gate
-	blocks Blocks
-	emoji  room.EmojiLimit
-	mu     sync.Mutex
-	rooms  map[string]*Room
+	random    Random
+	opener    Opener
+	gate      Gate
+	blocks    Blocks
+	emoji     room.EmojiLimit
+	directory Directory
+	mu        sync.Mutex
+	rooms     map[string]*Room
 }
 
 func NewLobby(random Random, opener Opener) *Lobby {
@@ -100,6 +106,10 @@ func (l *Lobby) LimitEmoji(limit room.EmojiLimit) {
 	l.emoji = limit
 }
 
+func (l *Lobby) Route(directory Directory) {
+	l.directory = directory
+}
+
 func (l *Lobby) busy(account string) bool {
 	return l.gate != nil && l.gate.InMatch(account)
 }
@@ -113,6 +123,11 @@ func (l *Lobby) Create(creator Member) (*Room, error) {
 	code := l.code()
 	for l.rooms[code] != nil {
 		code = l.code()
+	}
+	if l.directory != nil {
+		if err := l.directory.Claim(context.Background(), code); err != nil {
+			return nil, err
+		}
 	}
 	r := &Room{lobby: l, code: code, phase: PhaseLobby, members: []*member{{Member: creator}}}
 	l.rooms[code] = r
@@ -147,8 +162,11 @@ func (l *Lobby) Len() int {
 
 func (l *Lobby) close(code string) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	delete(l.rooms, code)
+	l.mu.Unlock()
+	if l.directory != nil {
+		l.directory.Release(context.Background(), code)
+	}
 }
 
 type Member struct {

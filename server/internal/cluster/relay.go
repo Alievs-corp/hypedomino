@@ -187,6 +187,10 @@ func (s *relaySession) LeaveQueue() {
 	s.forward(&pb.Envelope{Payload: &pb.Envelope_LeaveQueueIntent{LeaveQueueIntent: &pb.LeaveQueueIntent{}}})
 }
 
+func (s *relaySession) Lobby(intent *pb.LobbyIntent) {
+	s.forward(&pb.Envelope{Payload: &pb.Envelope_LobbyIntent{LobbyIntent: intent}})
+}
+
 func (s *relaySession) forward(frame *pb.Envelope) {
 	frame.ProtocolVersion, frame.SessionNonce = gateway.ProtocolVersion, s.nonce
 	if err := s.write(context.Background(), frame); err != nil {
