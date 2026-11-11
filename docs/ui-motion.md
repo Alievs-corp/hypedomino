@@ -405,6 +405,14 @@ Worked from `docs/rules.md`:
 
 The step table, chain boost and roll timings are admin config with these defaults, so they can be tuned without a release.
 
+### Score panel and hand summary
+
+The panel and the summary only present values from the latest `MatchView` (`proto/README.md`); the client computes no score. `Game/Match/ScoreBoard` and `Game/Match/HandSummary` hold them.
+
+- **Team meters.** One meter per team, the local player's team first (team A for a viewer without a seat), filled to the team score over `target_score`, never past full, with a mark at `hand_points_lock_threshold`. A team in `locked_teams` shows the lock badge for the whole hand (R-41).
+- **Hand summary.** When a new `last_result` arrives it shows how the hand ended (`ending`), the tiles each seat had left (`left`), each team's pips, and how the award was made: the counted pips of the other team, the hand points they rounded up to (`awarded` minus `carried_in`), and the carry-over added (`carried_in`, R-39). A locked winner (`hand_points_locked`) shows the lock instead of hand points. A block with equal totals (no winner) shows the pips kept as `carry_over` for the next hand (R-38).
+- `left` comes only in the first view of a connection after a hand ends, so the summary opens on a view that carries `left` for a hand it has not shown yet, keeps those tiles until the next hand end, and stays closed after a reconnect during play.
+
 ## 9. Open items
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
