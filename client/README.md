@@ -159,6 +159,20 @@ Without a local Unity license, an editor method that creates or changes assets r
 
 `Editor/ReleaseBuild.BuildAndroid` builds the release AAB for one catalog version (`docs/content-delivery.md` 6): it sets the Addressables player version to `-catalogVersion <version>`, builds the scenes in Build Settings into `-customBuildPath` (default `Builds/hypedomino.aab`) together with the content, and fails when `ServerData/Android/catalog_<version>.bin` is missing. It restores the player version and the AAB switch afterwards. In CI: `gh workflow run release-build.yml -f catalog_version=<version>`. The workflow measures the download size with `bundletool` on the low, mid and high device specs in `tools/install-size/specs`, fails at 150 MB or more (`docs/performance.md` 3) and keeps the AAB, the size report and the remote folder as artifacts. `ReleaseBuildTests` cover the version rule and the remote folder.
 
+Optional arguments stamp the release, and the build restores the project settings afterwards:
+- `-appVersion <major.minor.patch>` sets the version name, the form the server compares with the minimum version (`proto/README.md`).
+- `-buildNumber <n>` sets the Android version code, 1 to 2,100,000,000.
+- `-applicationId <package>` sets the Android package name.
+- `-androidSigning <file>` signs with the upload key: a JSON file with `keystore`, `keystorePass`, `keyAlias` and `keyAliasPass`.
+
+Every run passes the workflow run number as the build number, so build numbers only grow. Pushing a tag `client-v<major>.<minor>.<patch>` runs the same workflow as a release:
+- The version comes from the tag, and the catalog version is `<version>-<build number>`.
+- The package name is the repository variable `ANDROID_APPLICATION_ID`.
+- The upload key comes from the `ANDROID_KEYSTORE_*` and `ANDROID_KEYALIAS_*` secrets (`docs/environments.md` 2.3). It is written to `client/Signing` for the build only and removed afterwards.
+- The signed AAB goes to the Play internal testing track with `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+
+A tag run fails before the build when a variable or secret is missing. The iOS build and the TestFlight upload are not built yet.
+
 ## Safe area
 
 `UI/Layout/SafeAreaFitter` sits on the root `RectTransform` of each screen and anchors it to `Screen.safeArea`, so camera holes, notches, the island and the home indicator never cover UI. It refits when the safe area or the resolution changes (rotation, split screen, a folding display) and does nothing on other frames. `SafeAreaAnchors` turns the safe area into anchors, clamped to the screen; an empty screen or safe area falls back to the full screen. The `SafeAreaTests` EditMode tests cover 20:9 Android with a camera hole, iPhone landscape and portrait, a 4:3 tablet and 16:9 without insets. The `AspectRatioTests` PlayMode tests render a `ScreenView` through a camera into a texture of each display size: every device of the matrix (`docs/performance.md` 1), 16:9, 21:9, a 4:3 tablet and a folding inner display, in portrait and landscape. On each one the short side must be 1080 units, the canvas must keep the display's aspect, and the safe content must keep its size and stay on screen. Orientation is still open (`docs/ui-motion.md` 9), so nothing here assumes one.
