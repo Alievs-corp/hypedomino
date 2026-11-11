@@ -91,7 +91,35 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 `UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
 
-`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
+`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` gives the built-in value of a key in one language. The `ShopTests` EditMode tests cover these types.
+
+## Localization
+
+`UI/Localization` is the client side of `docs/localization.md` (section 2.4).
+- **`GameLanguage`:** picks the language.
+- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match.
+- **`StringBundle`:** reads a published bundle after its hash check.
+- **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects.
+
+The `LocalizationTests` EditMode tests cover them. Format a string when a screen opens or a value changes, never per frame.
+
+## Sign-in
+
+`Net/Auth/AuthSession` is the client side of `POST /auth/nonce`, `/auth/signin`, `/auth/refresh` and `/auth/logout` (`server/internal/auth`). It is plain C# behind three seams:
+- `IIdentityProvider` is the native Google or Apple sign-in. It gets the nonce to put in the ID token: the server nonce for Google, its lowercase SHA-256 hex for Apple. It answers a token, `Cancelled` or `Failed`.
+- `IAuthTransport` posts JSON and answers the status and body; status 0 means no response.
+- `ISecureStore` is the platform secure storage (Keystore, Keychain; `docs/privacy.md` P-1). It holds only the refresh token (`auth.refreshToken`) and a random device id made once (`auth.deviceId`), never a hardware identifier.
+
+`SignIn` gets a nonce, asks the provider for an ID token and sends it with the raw nonce and the device id. `Resume` is the silent sign-in at later starts: it refreshes the stored token with the same device id. The access token, the request key and the account id stay in memory only.
+
+Outcomes:
+- `SignedIn`, with `NewAccount` set on the first sign-in so the profile setup can follow.
+- `Cancelled` when the player closes the account picker, `ProviderFailed` when the SDK fails.
+- `Offline`, `Unavailable` (5xx or an unreadable reply) and `RateLimited` (429). A refresh that fails this way keeps the stored token.
+- `Rejected` for a refused sign-in, `Banned`, `Deleted` and `DeletionPending` with `DeleteAt`. A refresh refused this way forgets the stored token; a refused refresh token answers `SignInRequired`.
+- `Busy` while another call runs, `Unsupported` when the platform has no such provider.
+
+`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows. The native Google Sign-In and Sign in with Apple plugins, the Keystore and Keychain store and the HTTP transport are not built yet.
 
 ## Graphics levels
 
@@ -116,6 +144,10 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 ## Lists
 
 `UI/Lists` holds the recycling list of `docs/ui-motion.md` 5 "Lists". Put `RecyclingList` next to a `ScrollRect`, call `Build(rowTemplate, rowHeight, gap)` once when the screen builds (height and gap are `TokenSize` and `TokenSpacing` values), then `Show(count, binder)`. `Build` creates the rows that cover the viewport plus a spare row above and below, makes the content its own sub-canvas with a `GraphicRaycaster`, and pins rows to the top. `Show` sets the content height and binds the visible rows. An `IRowBinder` fills a row for an item index. Scrolling rebinds a row only when it starts to show another item, and `Refresh(index)` rebinds one item if it is on screen. `RecyclingLayout` is the row arithmetic, covered by the `RecyclingLayoutTests` EditMode tests. The `RecyclingListTests` PlayMode tests cover row count, placement, hiding past the end, one rebind per scrolled row, the canvas, and scrolling allocating 0 B.
+
+## Board layout
+
+`UI/Board/ChainLayout` places the chain of `docs/ui-motion.md` 5 "Board". Create it once with the set size as capacity and call `Arrange(line, anchorIndex, top, bottom, boardSize, maxScale)` when the board changes: `anchorIndex` is the spinner's index in the line, or the opening tile's while there is no spinner. Each `PlacedDomino` gives the tile's center and heading in tile units, its near and far pips and whether it lies across. `Scale` turns tile units into board units and `Focus` is where the camera centers. It allocates nothing after construction. The `ChainLayoutTests` EditMode tests cover the arms, doubles, folding and a full set on every board shape.
 
 ## Canvas bench
 
@@ -180,6 +212,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 ## Device risk signals
 
 `Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device. The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
+
+## Error reports
+
+`Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The crash SDK behind `IErrorSender`, its DSN and its symbol upload are owner setup: the DSN comes from build config, never from code. The `ErrorReportsTests` EditMode tests cover the gate.
 
 ## Analytics
 
