@@ -47,6 +47,7 @@ The client keeps only device settings and content bookkeeping on the device. Eve
 | `content.clearAtStart` | Clear the content cache at the next start | Cache housekeeping only |
 | `graphics.choice`, `graphics.frameRate`, `graphics.batterySaver` | Graphics level, frame rate and battery saver chosen in settings | Device settings |
 | `graphics.probeDrops`, `graphics.probeSettled`, `graphics.probeVersion` | The startup frame probe result for this app version | Device settings |
+| `motion.reduce` | Reduce motion chosen in settings, or follow the system (`docs/ui-motion.md`, Reduce motion) | Device settings |
 | `haptics.enabled` | Haptics turned on or off in settings (`docs/ui-motion.md`, Haptics) | Device settings |
 
 - The client has no offline mode and grants nothing on its own: rewards, balances, inventory, scores and ratings come only from server messages and are never written to the device.
