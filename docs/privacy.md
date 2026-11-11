@@ -159,6 +159,8 @@ The privacy policy states this table. A deleted account appears in past matches 
 
 One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server timestamp, source (first launch or settings), app version. Choices made before sign-in are held on the device and written at step 5 with their original order. Rows are append-only.
 
+- Implementation: table `consent_records` (migration `00051_consent_records.sql`). Today only `PUT /push/settings` writes it, for `promotional_push` (`docs/push.md` PN-9); the policy and app versions come from the client, the timestamp from the server. On account deletion the rows move to the tombstone id (8.2). Not yet built: the sign-in write of choices made before sign-in (step 5), the `analytics` and `diagnostics` writes (#157, #181), and the purge after `ConsentRecordRetentionYears`.
+
 ### 6.4 Analytics rules (#181)
 
 - No event is sent, queued or written to disk before `analytics` is on. Events from before consent are dropped, not held.

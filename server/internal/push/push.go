@@ -21,6 +21,7 @@ var (
 	ErrNoToken         = errors.New("push.token_required")
 	ErrUnknownPlatform = errors.New("push.unknown_platform")
 	ErrMalformed       = errors.New("push.malformed")
+	ErrConsentContext  = errors.New("push.consent_context_required")
 	ErrInvalidToken    = errors.New("push: token rejected by the provider")
 )
 
@@ -30,6 +31,12 @@ type Settings struct {
 }
 
 var DefaultSettings = Settings{Gameplay: true}
+
+type SettingsChange struct {
+	Settings
+	PolicyVersion string `json:"policyVersion"`
+	AppVersion    string `json:"appVersion"`
+}
 
 func (s Settings) Allows(category Category) bool {
 	switch category {
