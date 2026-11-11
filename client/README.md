@@ -149,6 +149,10 @@ Without a local Unity license, an editor method that creates or changes assets r
 
 `UI/Match/MatchLayout` places the regions of the match screen inside the safe area (`docs/ui-motion.md`, Match layout): the seat panels, the hand along the bottom and the board in what is left. Sizes come from `TokenSize` and `TokenSpacing`; arranging again allocates nothing. `TableSides.Of` turns a seat into a side of the table, with the local player at the bottom and the next turn on the left; `Net/SeatOrder` gives the clockwise index of a `Seat` (North, East, South, West in 2v2, X, Y in 1v1) and places a viewer without a seat as South or X. `MatchLayoutView` sits on the safe-area root of the match screen, applies the layout to the board, hand and four seat `RectTransform`s when the root changes size, and hides the side seats in 1v1. The `MatchLayoutTests` EditMode tests check both modes on 16:9, 19.5:9, 20:9, 21:9, 4:3 and a folding display, in landscape and portrait, with and without insets: every region stays inside the safe area, nothing overlaps and the board is the largest region.
 
+## Hand
+
+`Game/Match/HandChoice` decides what the local player may do with the hand from the latest `MatchSnapshot` (`docs/ui-motion.md`, Hand). It never works out a legal move: while playing it offers the tiles and ends in `legal_moves`; while opening it offers the forced tile to its seat, or any tile to both players of the opening team. A tap places a tile with one legal end at once and selects a tile with several; `TryChooseEnd` then places it. `TryDrop` places a dragged tile at the nearest of its ends within `size.touchTargetMin`. End turn (R-31), draw (R-22, R-23) and pass (R-21) are offered from `turn_placements`, the mode and the boneyard size. After any intent the hand takes no input until the next view, so a double tap never sends twice. Reading a view and tapping allocate nothing; the `HandChoiceTests` EditMode tests cover each rule.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
