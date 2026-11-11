@@ -4,17 +4,18 @@ using UnityEngine.UI;
 
 namespace HypeDomino.UI.Screens
 {
-    [RequireComponent(typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))]
+    [RequireComponent(typeof(Canvas), typeof(CanvasScaler))]
     public sealed class ScreenView : MonoBehaviour
     {
-        const float ReferenceShortSide = 1080f;
+        public const float ReferenceShortSide = 1080f;
 
         [SerializeField] CanvasGroup content;
         [SerializeField] Image scrim;
 
         Canvas canvas;
+        RectTransform body;
         GraphicRaycaster raycaster;
-        ScreenFade body;
+        ScreenFade fade;
         ScreenFade shade;
 
         public bool IsModal => scrim != null;
@@ -23,7 +24,7 @@ namespace HypeDomino.UI.Screens
 
         public bool TakesInput => raycaster.enabled;
 
-        public float Visibility => body.Value;
+        public float Visibility => fade.Value;
 
         public int SortingOrder => canvas.sortingOrder;
 
@@ -31,6 +32,7 @@ namespace HypeDomino.UI.Screens
         {
             content = screenContent;
             scrim = modalScrim;
+            Nest();
             PaintScrim();
             Apply(false);
         }
@@ -40,14 +42,27 @@ namespace HypeDomino.UI.Screens
             canvas = GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.enabled = false;
-            raycaster = GetComponent<GraphicRaycaster>();
+            body = new GameObject("Body", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster)).GetComponent<RectTransform>();
+            body.SetParent(transform, false);
+            body.anchorMin = Vector2.zero;
+            body.anchorMax = Vector2.one;
+            body.sizeDelta = Vector2.zero;
+            raycaster = body.GetComponent<GraphicRaycaster>();
             raycaster.enabled = false;
             var scaler = GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(ReferenceShortSide, ReferenceShortSide);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            Nest();
             PaintScrim();
             Apply(false);
+        }
+
+        void Nest()
+        {
+            if (body == null) return;
+            if (scrim != null) scrim.transform.SetParent(body, false);
+            if (content != null) content.transform.SetParent(body, false);
         }
 
         void PaintScrim()
@@ -67,30 +82,30 @@ namespace HypeDomino.UI.Screens
 
         internal void Enter()
         {
-            body.Retarget(1f, IsModal ? TokenDurationMs.Moderate : TokenDurationMs.Slow, TokenEasing.Enter);
+            fade.Retarget(1f, IsModal ? TokenDurationMs.Moderate : TokenDurationMs.Slow, TokenEasing.Enter);
             if (IsModal) shade.Retarget(1f, TokenDurationMs.Base, TokenEasing.Standard);
         }
 
         internal void Exit()
         {
-            body.Retarget(0f, TokenDurationMs.Base, TokenEasing.Exit);
+            fade.Retarget(0f, TokenDurationMs.Base, TokenEasing.Exit);
             if (IsModal) shade.Retarget(0f, TokenDurationMs.Base, TokenEasing.Standard);
         }
 
         internal bool Advance(float deltaMs, bool reduceMotion)
         {
-            var bodyDone = body.Advance(deltaMs);
+            var fadeDone = fade.Advance(deltaMs);
             var shadeDone = shade.Advance(deltaMs);
             Apply(reduceMotion);
-            return bodyDone && shadeDone;
+            return fadeDone && shadeDone;
         }
 
         void Apply(bool reduceMotion)
         {
             if (content != null)
             {
-                content.alpha = body.Value;
-                var scale = reduceMotion ? 1f : Mathf.LerpUnclamped(TokenMotion.PanelEnterScale, 1f, body.Value);
+                content.alpha = fade.Value;
+                var scale = reduceMotion ? 1f : Mathf.LerpUnclamped(TokenMotion.PanelEnterScale, 1f, fade.Value);
                 content.transform.localScale = new Vector3(scale, scale, 1f);
             }
             if (scrim != null) scrim.canvasRenderer.SetAlpha(TokenOpacity.Scrim * shade.Value);
