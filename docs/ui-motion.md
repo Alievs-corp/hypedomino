@@ -260,6 +260,16 @@ A settings toggle, defaulting to the OS setting (Android animator duration scale
 | Any transition longer than `slow` | Capped at `slow`; holds are unchanged |
 | Information (scores, banners, timer) | Unchanged; only the motion is reduced |
 
+### Hand motion
+
+Deal, draw and pass are tweens from the pool (rule 3), with no particles and no extra draw calls.
+
+| Motion | Trigger | Presentation | Reduce motion |
+|---|---|---|---|
+| Deal | A hand is dealt (R-3) | Each tile travels from the table center to its seat in `base` with `enter`; tile n starts n × `micro` after the first | `fast` with `standard`, same spacing |
+| Draw | A tile is drawn in 1v1 (R-22) | The tile travels from the boneyard to the hand in `base` with `enter` | `fast` with `standard` |
+| Pass | A seat passes (R-21, R-23) | A localised "pass" label at the seat panel pops in (`fast`, `overshoot`), holds `slow`, and leaves (`base`, `exit`); 840 ms in total | Opacity fade in `fast` with `standard` instead of the pop; the hold and the exit are unchanged |
+
 ## 7. Effect levels
 
 The effect level follows the graphics level (`docs/performance.md` 1.1): Low uses low, Medium uses medium, High and Ultra use high. The default level per device tier (`docs/performance.md` section 1) is admin config, with the defaults below. The player may choose a lower level, not a higher one. Reduce motion is independent of the level.
@@ -285,7 +295,7 @@ Base scene plus effects stays within the p95 work-time gate; the checker enforce
 
 | Effect | Trigger | Presentation |
 |---|---|---|
-| `tilePlace` | Any placement (R-15) | Tile travels to its end (`base`, `standard`), turning the shorter way to its board angle, settles (`micro`, `overshoot`), dust burst |
+| `tilePlace` | Any placement (R-15) | Tile travels to its end (`base`, `standard`), turning the shorter way to its board angle, settles (`micro`, `overshoot`: scale from `pressScale` back to 1 as it lands), dust burst |
 | `scorePopup` | Any score event (section 8) | "+N" in `score` style and `role.score.text`, scaled by the score step, pops in, holds, pops out |
 | `scoreCascade` | Same, scaled by step | Particle burst and glow at the popup; points fly to the team meter |
 | `spinnerFormation` | A double becomes the spinner (R-17, R-18) | Ring pulse on the double, arm markers slide out on the two new ends |
@@ -399,5 +409,4 @@ The step table, chain boost and roll timings are admin config with these default
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - Sound and haptics per step are not part of this spec.
-- The squash amount of the `tilePlace` settle has no token yet; tile travel ships without the settle until it is decided.
 - The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
