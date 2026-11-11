@@ -995,14 +995,16 @@ func (x *BoardView) GetOpenEnds() []*OpenEnd {
 }
 
 type SeatView struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Seat            Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
-	HandSize        uint32                 `protobuf:"varint,2,opt,name=hand_size,json=handSize,proto3" json:"hand_size,omitempty"`
-	Controller      Controller             `protobuf:"varint,3,opt,name=controller,proto3,enum=hypedomino.v1.Controller" json:"controller,omitempty"`
-	LoadingProgress uint32                 `protobuf:"varint,4,opt,name=loading_progress,json=loadingProgress,proto3" json:"loading_progress,omitempty"`
-	Ready           bool                   `protobuf:"varint,5,opt,name=ready,proto3" json:"ready,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Seat                Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	HandSize            uint32                 `protobuf:"varint,2,opt,name=hand_size,json=handSize,proto3" json:"hand_size,omitempty"`
+	Controller          Controller             `protobuf:"varint,3,opt,name=controller,proto3,enum=hypedomino.v1.Controller" json:"controller,omitempty"`
+	LoadingProgress     uint32                 `protobuf:"varint,4,opt,name=loading_progress,json=loadingProgress,proto3" json:"loading_progress,omitempty"`
+	Ready               bool                   `protobuf:"varint,5,opt,name=ready,proto3" json:"ready,omitempty"`
+	Disconnected        bool                   `protobuf:"varint,6,opt,name=disconnected,proto3" json:"disconnected,omitempty"`
+	ConsecutiveTimeouts uint32                 `protobuf:"varint,7,opt,name=consecutive_timeouts,json=consecutiveTimeouts,proto3" json:"consecutive_timeouts,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *SeatView) Reset() {
@@ -1068,6 +1070,20 @@ func (x *SeatView) GetReady() bool {
 		return x.Ready
 	}
 	return false
+}
+
+func (x *SeatView) GetDisconnected() bool {
+	if x != nil {
+		return x.Disconnected
+	}
+	return false
+}
+
+func (x *SeatView) GetConsecutiveTimeouts() uint32 {
+	if x != nil {
+		return x.ConsecutiveTimeouts
+	}
+	return 0
 }
 
 type LegalMove struct {
@@ -1419,30 +1435,31 @@ func (x *RosterEntry) GetBot() bool {
 }
 
 type MatchView struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	State                 MatchState             `protobuf:"varint,1,opt,name=state,proto3,enum=hypedomino.v1.MatchState" json:"state,omitempty"`
-	Seat                  Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
-	Mode                  Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
-	HandsPlayed           uint32                 `protobuf:"varint,4,opt,name=hands_played,json=handsPlayed,proto3" json:"hands_played,omitempty"`
-	Scores                *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
-	CarryOver             uint32                 `protobuf:"varint,6,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
-	Hand                  []*Tile                `protobuf:"bytes,7,rep,name=hand,proto3" json:"hand,omitempty"`
-	Seats                 []*SeatView            `protobuf:"bytes,8,rep,name=seats,proto3" json:"seats,omitempty"`
-	BoneyardSize          uint32                 `protobuf:"varint,9,opt,name=boneyard_size,json=boneyardSize,proto3" json:"boneyard_size,omitempty"`
-	Board                 *BoardView             `protobuf:"bytes,10,opt,name=board,proto3" json:"board,omitempty"`
-	Current               Seat                   `protobuf:"varint,11,opt,name=current,proto3,enum=hypedomino.v1.Seat" json:"current,omitempty"`
-	OpeningTeam           Team                   `protobuf:"varint,12,opt,name=opening_team,json=openingTeam,proto3,enum=hypedomino.v1.Team" json:"opening_team,omitempty"`
-	ForcedOpening         *Opening               `protobuf:"bytes,13,opt,name=forced_opening,json=forcedOpening,proto3" json:"forced_opening,omitempty"`
-	TurnPlacements        uint32                 `protobuf:"varint,14,opt,name=turn_placements,json=turnPlacements,proto3" json:"turn_placements,omitempty"`
-	TurnDeadlineUnixMs    uint64                 `protobuf:"varint,15,opt,name=turn_deadline_unix_ms,json=turnDeadlineUnixMs,proto3" json:"turn_deadline_unix_ms,omitempty"`
-	LegalMoves            []*LegalMove           `protobuf:"bytes,16,rep,name=legal_moves,json=legalMoves,proto3" json:"legal_moves,omitempty"`
-	LastResult            *HandResult            `protobuf:"bytes,17,opt,name=last_result,json=lastResult,proto3" json:"last_result,omitempty"`
-	Winner                Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
-	Roster                []*RosterEntry         `protobuf:"bytes,19,rep,name=roster,proto3" json:"roster,omitempty"`
-	LoadingDeadlineUnixMs uint64                 `protobuf:"varint,20,opt,name=loading_deadline_unix_ms,json=loadingDeadlineUnixMs,proto3" json:"loading_deadline_unix_ms,omitempty"`
-	Table                 string                 `protobuf:"bytes,21,opt,name=table,proto3" json:"table,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	State                  MatchState             `protobuf:"varint,1,opt,name=state,proto3,enum=hypedomino.v1.MatchState" json:"state,omitempty"`
+	Seat                   Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Mode                   Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
+	HandsPlayed            uint32                 `protobuf:"varint,4,opt,name=hands_played,json=handsPlayed,proto3" json:"hands_played,omitempty"`
+	Scores                 *TeamPoints            `protobuf:"bytes,5,opt,name=scores,proto3" json:"scores,omitempty"`
+	CarryOver              uint32                 `protobuf:"varint,6,opt,name=carry_over,json=carryOver,proto3" json:"carry_over,omitempty"`
+	Hand                   []*Tile                `protobuf:"bytes,7,rep,name=hand,proto3" json:"hand,omitempty"`
+	Seats                  []*SeatView            `protobuf:"bytes,8,rep,name=seats,proto3" json:"seats,omitempty"`
+	BoneyardSize           uint32                 `protobuf:"varint,9,opt,name=boneyard_size,json=boneyardSize,proto3" json:"boneyard_size,omitempty"`
+	Board                  *BoardView             `protobuf:"bytes,10,opt,name=board,proto3" json:"board,omitempty"`
+	Current                Seat                   `protobuf:"varint,11,opt,name=current,proto3,enum=hypedomino.v1.Seat" json:"current,omitempty"`
+	OpeningTeam            Team                   `protobuf:"varint,12,opt,name=opening_team,json=openingTeam,proto3,enum=hypedomino.v1.Team" json:"opening_team,omitempty"`
+	ForcedOpening          *Opening               `protobuf:"bytes,13,opt,name=forced_opening,json=forcedOpening,proto3" json:"forced_opening,omitempty"`
+	TurnPlacements         uint32                 `protobuf:"varint,14,opt,name=turn_placements,json=turnPlacements,proto3" json:"turn_placements,omitempty"`
+	TurnDeadlineUnixMs     uint64                 `protobuf:"varint,15,opt,name=turn_deadline_unix_ms,json=turnDeadlineUnixMs,proto3" json:"turn_deadline_unix_ms,omitempty"`
+	LegalMoves             []*LegalMove           `protobuf:"bytes,16,rep,name=legal_moves,json=legalMoves,proto3" json:"legal_moves,omitempty"`
+	LastResult             *HandResult            `protobuf:"bytes,17,opt,name=last_result,json=lastResult,proto3" json:"last_result,omitempty"`
+	Winner                 Team                   `protobuf:"varint,18,opt,name=winner,proto3,enum=hypedomino.v1.Team" json:"winner,omitempty"`
+	Roster                 []*RosterEntry         `protobuf:"bytes,19,rep,name=roster,proto3" json:"roster,omitempty"`
+	LoadingDeadlineUnixMs  uint64                 `protobuf:"varint,20,opt,name=loading_deadline_unix_ms,json=loadingDeadlineUnixMs,proto3" json:"loading_deadline_unix_ms,omitempty"`
+	Table                  string                 `protobuf:"bytes,21,opt,name=table,proto3" json:"table,omitempty"`
+	AfkConsecutiveTimeouts uint32                 `protobuf:"varint,22,opt,name=afk_consecutive_timeouts,json=afkConsecutiveTimeouts,proto3" json:"afk_consecutive_timeouts,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *MatchView) Reset() {
@@ -1622,6 +1639,13 @@ func (x *MatchView) GetTable() string {
 	return ""
 }
 
+func (x *MatchView) GetAfkConsecutiveTimeouts() uint32 {
+	if x != nil {
+		return x.AfkConsecutiveTimeouts
+	}
+	return 0
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1665,7 +1689,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\aspinner\x18\x02 \x01(\v2\x13.hypedomino.v1.TileR\aspinner\x12-\n" +
 	"\x03top\x18\x03 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x03top\x123\n" +
 	"\x06bottom\x18\x04 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x06bottom\x123\n" +
-	"\topen_ends\x18\x05 \x03(\v2\x16.hypedomino.v1.OpenEndR\bopenEnds\"\xcc\x01\n" +
+	"\topen_ends\x18\x05 \x03(\v2\x16.hypedomino.v1.OpenEndR\bopenEnds\"\xa3\x02\n" +
 	"\bSeatView\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1b\n" +
 	"\thand_size\x18\x02 \x01(\rR\bhandSize\x129\n" +
@@ -1673,7 +1697,9 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"controller\x18\x03 \x01(\x0e2\x19.hypedomino.v1.ControllerR\n" +
 	"controller\x12)\n" +
 	"\x10loading_progress\x18\x04 \x01(\rR\x0floadingProgress\x12\x14\n" +
-	"\x05ready\x18\x05 \x01(\bR\x05ready\"_\n" +
+	"\x05ready\x18\x05 \x01(\bR\x05ready\x12\"\n" +
+	"\fdisconnected\x18\x06 \x01(\bR\fdisconnected\x121\n" +
+	"\x14consecutive_timeouts\x18\a \x01(\rR\x13consecutiveTimeouts\"_\n" +
 	"\tLegalMove\x12'\n" +
 	"\x04tile\x18\x01 \x01(\v2\x13.hypedomino.v1.TileR\x04tile\x12)\n" +
 	"\x03end\x18\x02 \x01(\x0e2\x17.hypedomino.v1.BoardEndR\x03end\"[\n" +
@@ -1704,7 +1730,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"rank_label\x18\a \x01(\tR\trankLabel\x12\x18\n" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
-	"\x03bot\x18\t \x01(\bR\x03bot\"\xd9\a\n" +
+	"\x03bot\x18\t \x01(\bR\x03bot\"\x93\b\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
@@ -1730,7 +1756,8 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x06winner\x18\x12 \x01(\x0e2\x13.hypedomino.v1.TeamR\x06winner\x122\n" +
 	"\x06roster\x18\x13 \x03(\v2\x1a.hypedomino.v1.RosterEntryR\x06roster\x127\n" +
 	"\x18loading_deadline_unix_ms\x18\x14 \x01(\x04R\x15loadingDeadlineUnixMs\x12\x14\n" +
-	"\x05table\x18\x15 \x01(\tR\x05table*w\n" +
+	"\x05table\x18\x15 \x01(\tR\x05table\x128\n" +
+	"\x18afk_consecutive_timeouts\x18\x16 \x01(\rR\x16afkConsecutiveTimeouts*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +
