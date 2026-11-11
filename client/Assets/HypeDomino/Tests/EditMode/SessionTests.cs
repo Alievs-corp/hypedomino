@@ -85,6 +85,21 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void EveryHelloCarriesTheDeviceRiskSignalsOnce()
+        {
+            session.DeviceRiskSignals.Add(HypeDomino.Core.DeviceRisk.DeviceRiskSignals.Root);
+            session.DeviceRiskSignals.Add(HypeDomino.Core.DeviceRisk.DeviceRiskSignals.Emulator);
+            var hello = new ClientHello();
+
+            session.Hello(transport, hello);
+            session.Hello(transport, hello);
+
+            var expected = new[] { "root", "emulator" };
+            CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[0]).ClientHello.DeviceRiskSignals);
+            CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[1]).ClientHello.DeviceRiskSignals);
+        }
+
+        [Test]
         public void AResumeHelloReportsTheLastAckedSequence()
         {
             Accept(41);

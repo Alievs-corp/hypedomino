@@ -67,6 +67,7 @@ type Manager struct {
 	auth     Authenticator
 	clocks   ClockObserver
 	replays  ReplayObserver
+	devices  DeviceObserver
 	checker  IntegrityChecker
 	queue    Queue
 	mu       sync.Mutex
@@ -94,6 +95,10 @@ type ReplayObserver interface {
 	Observe(ctx context.Context, account string)
 }
 
+type DeviceObserver interface {
+	Observe(ctx context.Context, account string, signals []string)
+}
+
 type IntegrityChecker interface {
 	SessionStart(ctx context.Context, account, session string, proof *pb.IntegrityProof) bool
 	MatchStart(ctx context.Context, account, session string, queue pb.QueueKind, proof *pb.IntegrityProof) pb.QueueRefusal
@@ -105,6 +110,10 @@ func (m *Manager) CheckIntegrity(checker IntegrityChecker) {
 
 func (m *Manager) ObserveClocks(observer ClockObserver) {
 	m.clocks = observer
+}
+
+func (m *Manager) ObserveDevices(observer DeviceObserver) {
+	m.devices = observer
 }
 
 func (m *Manager) ObserveReplays(observer ReplayObserver) {
@@ -265,6 +274,9 @@ func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 	}
 	if m.clocks != nil {
 		m.clocks.Observe(ctx, c.session.account, hello.GetClientTimeUnixMs())
+	}
+	if m.devices != nil {
+		m.devices.Observe(ctx, c.session.account, hello.GetDeviceRiskSignals())
 	}
 	return c, nil
 }

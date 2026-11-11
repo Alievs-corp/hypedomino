@@ -118,6 +118,11 @@ func (tab *table) connect(token string, expectAccepted bool) *player {
 
 func (tab *table) connectAt(token string, clientUnixMs uint64, expectAccepted bool) *player {
 	tab.t.Helper()
+	return tab.connectWith(&pb.ClientHello{AppVersion: "1.0.0", SessionToken: token, ClientTimeUnixMs: clientUnixMs}, expectAccepted)
+}
+
+func (tab *table) connectWith(hello *pb.ClientHello, expectAccepted bool) *player {
+	tab.t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	tab.t.Cleanup(cancel)
 	socket, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(tab.server.URL, "http"), nil)
@@ -129,7 +134,7 @@ func (tab *table) connectAt(token string, clientUnixMs uint64, expectAccepted bo
 	p.write(&pb.Envelope{
 		ProtocolVersion: gateway.ProtocolVersion,
 		Sequence:        1,
-		Payload:         &pb.Envelope_ClientHello{ClientHello: &pb.ClientHello{AppVersion: "1.0.0", SessionToken: token, ClientTimeUnixMs: clientUnixMs}},
+		Payload:         &pb.Envelope_ClientHello{ClientHello: hello},
 	})
 	p.hello = p.read()
 	if accepted := p.hello.GetServerHello().GetStatus() == pb.HelloStatus_HELLO_STATUS_ACCEPTED; accepted != expectAccepted {
@@ -550,6 +555,29 @@ func TestAMovedDeviceClockIsObservedButTheServerKeepsItsOwnTime(t *testing.T) {
 	defer clocks.mu.Unlock()
 	if len(clocks.seen) != 1 || clocks.seen[0] != (observedClock{"account-X", twoDaysAhead}) {
 		t.Fatalf("observed clocks %v", clocks.seen)
+	}
+}
+
+type deviceLog struct {
+	mu   sync.Mutex
+	seen map[string][]string
+}
+
+func (l *deviceLog) Observe(_ context.Context, account string, signals []string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.seen[account] = signals
+}
+
+func TestTheHelloDeviceSignalsAreObservedForTheAccount(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	devices := &deviceLog{seen: map[string][]string{}}
+	tab.manager.ObserveDevices(devices)
+	tab.connectWith(&pb.ClientHello{AppVersion: "1.0.0", SessionToken: tab.tokens[rules.SeatX], DeviceRiskSignals: []string{"root", "emulator"}}, true)
+	devices.mu.Lock()
+	defer devices.mu.Unlock()
+	if got := devices.seen["account-X"]; !slices.Equal(got, []string{"root", "emulator"}) {
+		t.Fatalf("observed device signals %v", devices.seen)
 	}
 }
 
