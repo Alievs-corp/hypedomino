@@ -40,6 +40,7 @@ namespace HypeDomino.Net
         public RoundTrip RoundTrip { get; } = new();
         public ConnectionState State { get; private set; } = ConnectionState.Offline;
         public int FailedAttempts { get; private set; }
+        public bool WasOnline { get; private set; }
         public double RetryAtSeconds => retryAtSeconds;
 
         public event Action<ConnectionState> Changed;
@@ -50,6 +51,7 @@ namespace HypeDomino.Net
             uri = serverUri;
             schedule.Reset();
             FailedAttempts = 0;
+            WasOnline = false;
             Dial();
         }
 
@@ -117,6 +119,7 @@ namespace HypeDomino.Net
             Clock.Sync(hello.ServerTimeUnixMs, helloSentSeconds, secondsNow());
             schedule.Reset();
             FailedAttempts = 0;
+            WasOnline = true;
             Enter(ConnectionState.Online);
         }
 

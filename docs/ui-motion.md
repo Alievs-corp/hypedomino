@@ -120,6 +120,8 @@ Rules:
 | `radius` | sm 8, md 16, lg 24, xl 36, pill 999 |
 | `spacing` | xxs 4, xs 8, sm 12, md 16, lg 24, xl 32, xxl 48, xxxl 64 |
 | `size.touchTargetMin` | 120 (about 48 dp) |
+| `size.seatPanelWidth`, `size.seatPanelHeight` | 264, 216: one seat panel of the match screen (Match layout) |
+| `size.handHeight` | 224: the hand strip of the match screen (Match layout) |
 | `elevation` | e0 none; e1 offset 4, alpha 0.35; e2 offset 8, alpha 0.45; e3 offset 16, alpha 0.55 |
 | `glow` | none; soft alpha 0.35, scale 1.15; strong alpha 0.55, scale 1.3; intense alpha 0.8, scale 1.5 |
 
@@ -170,6 +172,35 @@ A list that can hold more rows than fit on screen (shop, inventory, friends, lea
 - All rows of one list have the same height and gap, both tokens (`size.*`, `space.*`) the screen passes in. A list of mixed row heights is a design change.
 - The scrolling content is its own sub-canvas without a layout group or content size fitter. Rows are placed directly, so scrolling re-batches only the list and never rebuilds layout (section 6 rule 2).
 - A row is rebound only when it starts to show another item, or when its item changed. Rows past the last item are hidden.
+
+### Match layout
+
+The match screen places its regions inside the safe area with the same rules in either orientation, from 16:9 to 21:9 phones, on 4:3 tablets and on nearly square displays. `UI/Match/MatchLayout` computes them; nothing here depends on art.
+
+| Region | Size | Place |
+|---|---|---|
+| Edge margin | `spacing.md` | Between the safe area edge and every region, and between neighbouring regions |
+| Seat panel | `size.seatPanelWidth` x `size.seatPanelHeight` | Bottom: the local player, at the bottom left corner. Top: centred on the top edge. Left and right: on their edge, centred in the height above the bottom band |
+| Hand | Height `size.handHeight` | Along the bottom edge, from the bottom seat panel to the right edge |
+| Bottom band | The taller of the hand and a seat panel | The hand and the bottom seat panel share it |
+| Board | What is left | Above the bottom band and under the top seat panel; in 2v2 between the left and right seat panels, in 1v1 across the full width |
+
+- The local player always sits at the bottom. The other seats follow the turn order of R-7: turns pass clockwise, so in 2v2 the next seat is on the left, the partner (R-6) at the top and the last seat on the right. In 1v1 the opponent sits at the top and the sides stay empty.
+- The seat order is North, East, South, West in 2v2 and X, Y in 1v1 (`docs/rules.md` Examples). A viewer without a seat is placed as South or X.
+- Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
+- A seat panel holds the avatar with its frame, the name, the tile count and the turn timer. Their places inside the panel come with the panel art.
+
+### Hand
+
+The hand offers only what the server allows. The client never works out a legal move; it reads `legal_moves`, the opening fields and `turn_placements` of the latest `MatchView` (`proto/README.md`). `Game/Match/HandChoice` holds the rules below.
+
+- **Selectable tiles.** While playing, a tile is selectable on the local player's turn when `legal_moves` names it. During the opening phase (R-9 to R-13) a forced opening makes only that tile selectable, and only for that seat; otherwise every tile is selectable for both players of the opening team. Other tiles stay in the hand without the highlight.
+- **Tap.** A tap on a selectable tile with one legal end places it at once. With several legal ends (left and right, or a spinner arm, R-18) the tile is selected and its ends are highlighted on the board; a tap on one of them places it. A second tap on the selected tile, or a tap on another tile, changes the selection. An opening placement has no end (`BOARD_END_UNSPECIFIED`).
+- **Drag.** Dragging a selectable tile and releasing it within `size.touchTargetMin` of one of its highlighted ends places it there. Released anywhere else, it goes back to the hand and nothing is sent.
+- **Several doubles (R-31).** After a scoring double the turn stays open and `legal_moves` lists only the doubles that would score. Those stay selectable, and an end turn button shows while `turn_placements` is above 0.
+- **Draw and pass.** With no legal move on the local player's turn, a draw button shows in 1v1 while the boneyard holds more than one tile (R-22, R-23); otherwise a pass button shows (R-21). The server still decides; a rejected intent comes back with a fresh view.
+- **One intent at a time.** After an intent is sent the hand takes no more input until the next `MatchView` arrives, so a double tap never sends twice.
+- Legal tiles and ends show their highlight as soon as the view arrives (section 6 rule 5); the end highlight fades in over `moderate`.
 
 ### Board
 

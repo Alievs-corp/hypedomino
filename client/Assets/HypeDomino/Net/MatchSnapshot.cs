@@ -52,6 +52,7 @@ namespace HypeDomino.Net
         public HandResultValue LastResult { get; private set; }
         public Team Winner { get; private set; }
         public ulong LoadingDeadlineUnixMs { get; private set; }
+        public uint AfkConsecutiveTimeouts { get; private set; }
         public string Table { get; private set; } = string.Empty;
 
         public ReadOnlySpan<TileFace> Hand => new(hand, 0, handCount);
@@ -96,6 +97,7 @@ namespace HypeDomino.Net
             LastResult = default;
             Winner = default;
             LoadingDeadlineUnixMs = 0;
+            AfkConsecutiveTimeouts = 0;
             handCount = seatCount = lineCount = topCount = bottomCount = openEndCount = legalMoveCount = 0;
             rosterRead = false;
         }
@@ -187,6 +189,10 @@ namespace HypeDomino.Net
                 case (21 << 3) | Bytes:
                     if (!WireFormat.TryReadBytes(view, ref at, out bytes)) return false;
                     Table = Encoding.UTF8.GetString(bytes);
+                    return true;
+                case (22 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    AfkConsecutiveTimeouts = (uint)value;
                     return true;
                 default:
                     return WireFormat.TrySkip(view, ref at, tag & 7);
@@ -307,13 +313,13 @@ namespace HypeDomino.Net
             seat = default;
             Seat which = default;
             Controller controller = default;
-            uint handSize = 0, loadingProgress = 0;
-            var ready = false;
+            uint handSize = 0, loadingProgress = 0, consecutiveTimeouts = 0;
+            bool ready = false, disconnected = false;
             var at = 0;
             while (at < bytes.Length)
             {
                 if (!TryReadTag(bytes, ref at, out var tag)) return false;
-                if ((tag & 7) != Varint || tag >> 3 > 5)
+                if ((tag & 7) != Varint || tag >> 3 > 7)
                 {
                     if (!WireFormat.TrySkip(bytes, ref at, tag & 7)) return false;
                     continue;
@@ -326,9 +332,11 @@ namespace HypeDomino.Net
                     case 3: controller = (Controller)(int)value; break;
                     case 4: loadingProgress = (uint)value; break;
                     case 5: ready = value != 0; break;
+                    case 6: disconnected = value != 0; break;
+                    case 7: consecutiveTimeouts = (uint)value; break;
                 }
             }
-            seat = new SeatState(which, handSize, controller, loadingProgress, ready);
+            seat = new SeatState(which, handSize, controller, loadingProgress, ready, disconnected, consecutiveTimeouts);
             return true;
         }
 

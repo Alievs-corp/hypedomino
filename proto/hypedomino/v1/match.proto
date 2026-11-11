@@ -112,6 +112,8 @@ message SeatView {
   Controller controller = 3;
   uint32 loading_progress = 4;
   bool ready = 5;
+  bool disconnected = 6;
+  uint32 consecutive_timeouts = 7;
 }
 
 message LegalMove {
@@ -172,4 +174,5 @@ message MatchView {
   repeated RosterEntry roster = 19;
   uint64 loading_deadline_unix_ms = 20;
   string table = 21;
+  uint32 afk_consecutive_timeouts = 22;
 }
