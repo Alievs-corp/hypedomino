@@ -209,6 +209,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `EmojiTests` (EditMode) cover the wheel, the easing, the pop and the art choice. `SeatEmojiLayerTests` (PlayMode) cover the prewarm, replacement, expiry, the static fallback and reduce motion, and assert that showing and expiring emoji does not allocate.
 
+## Device risk signals
+
+`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device. The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
+
 ## Error reports
 
 `Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The crash SDK behind `IErrorSender`, its DSN and its symbol upload are owner setup: the DSN comes from build config, never from code. The `ErrorReportsTests` EditMode tests cover the gate.
