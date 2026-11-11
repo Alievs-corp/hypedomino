@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/bot"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
@@ -199,6 +200,11 @@ func New(options Options) *Room {
 
 func (r *Room) Run(ctx context.Context) {
 	defer close(r.done)
+	defer func() {
+		if panics.Caught("room", recover(), "kind", r.options.Kind, "mode", r.options.Mode) {
+			r.close()
+		}
+	}()
 	r.open()
 	for {
 		select {
@@ -223,6 +229,12 @@ func (r *Room) Finished() <-chan struct{} {
 func (r *Room) end() {
 	if !r.ended {
 		r.settleAbsences()
+	}
+	r.close()
+}
+
+func (r *Room) close() {
+	if !r.ended {
 		r.ended = true
 		close(r.finished)
 	}

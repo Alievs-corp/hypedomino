@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 )
 
 var moveBounds = []time.Duration{
@@ -28,6 +29,7 @@ func (a *App) debugHandler() http.Handler {
 		a.moves.WriteTo(w)
 		a.writeNodeGauges(w)
 		a.responses.WriteTo(w)
+		panics.WriteTo(w)
 		for _, exposed := range a.exposed {
 			exposed.WriteTo(w)
 		}

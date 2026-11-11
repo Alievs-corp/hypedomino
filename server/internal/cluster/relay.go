@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
 )
@@ -199,6 +200,11 @@ func (s *relaySession) Attach() {
 
 func (s *relaySession) pump() {
 	defer s.Close()
+	defer func() {
+		if panics.Caught("cluster relay", recover()) {
+			s.conn.Close(websocket.StatusInternalError, "internal error")
+		}
+	}()
 	for {
 		frame, err := s.read(context.Background())
 		if err != nil {
