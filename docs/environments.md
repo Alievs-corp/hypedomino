@@ -125,6 +125,12 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_COUNTRY_HEADER` | No | server | empty (no IP country fallback) | `CF-IPCountry` | No | from #117; only a header the edge overwrites on every request |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | No | server | `4320h` | `4320h` | No | from #117 |
 | `HD_ACCOUNT_DELETION_GRACE` | No | server | `720h` | `720h` | No | from #63; `AccountDeletionGraceDays` of `docs/privacy.md` section 4 |
+| `HD_EXPORT_STORE_URL` | No | server | none: `POST /account/export` is not served | `https://<object-store-host>/<private-export-bucket>` | No | from #63; a private bucket, never the public asset bucket |
+| `HD_EXPORT_STORE_REGION` | With `HD_EXPORT_STORE_URL` | server | none | `<store-region>` | No | from #63 |
+| `HD_EXPORT_STORE_ACCESS_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-access-key>` | Yes | from #63 |
+| `HD_EXPORT_STORE_SECRET_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-secret-key>` | Yes | from #63 |
+| `HD_EXPORT_LINK_TTL` | No | server | `72h`, at most `168h` | `72h` | No | from #63; `ExportLinkTtlHours` of `docs/privacy.md` section 4 |
+| `HD_DATA_EXPORT_COOLDOWN` | No | server | `168h` | `168h` | No | from #63; `DataExportCooldownDays` of `docs/privacy.md` section 11 |
 | `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |
 | `HD_PLAY_PACKAGE` | No | server | empty (Google purchases off) | `com.example.hypedomino` | No | from #106 |
 | `HD_PLAY_SERVICE_ACCOUNT` | With `HD_PLAY_PACKAGE` | server | empty | `/run/secrets/play-service-account.json` | Yes, the file it names | from #106 |

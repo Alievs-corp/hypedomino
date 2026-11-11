@@ -104,6 +104,25 @@ func TestAFilePutThroughASignedURLReadsBackFromARealStore(t *testing.T) {
 		t.Fatalf("read %q %v", read, err)
 	}
 
+	const written = "exports/server written.json"
+	if err := store.Put(ctx, written, "application/json", []byte(`{"v":1}`), now); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := store.Open(ctx, written, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail, err := io.ReadAll(stored); err != nil || string(detail) != `{"v":1}` {
+		t.Fatalf("read back %s %v", detail, err)
+	}
+	stored.Close()
+	if err := store.Delete(ctx, written, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Open(ctx, written, now); !errors.Is(err, objectstore.ErrNotFound) {
+		t.Fatalf("after delete %v", err)
+	}
+
 	otherObject := strings.Replace(store.SignedPut(key, now), "first%20upload", "other", 1)
 	if status, detail := send(t, otherObject, []byte("forged")); status != http.StatusForbidden {
 		t.Fatalf("a url signed for one object wrote another: %d %s", status, detail)
