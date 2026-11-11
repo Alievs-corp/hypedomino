@@ -104,8 +104,11 @@ namespace HypeDomino.Net
         public readonly uint CarryOver;
         public readonly TeamPointsValue Scores;
         public readonly Team NextOpener;
+        public readonly HandEnding Ending;
+        public readonly bool HandPointsLocked;
+        public readonly uint CarriedIn;
 
-        public HandResultValue(TeamPointsValue pips, Team winner, TeamPointsValue awarded, uint carryOver, TeamPointsValue scores, Team nextOpener)
+        public HandResultValue(TeamPointsValue pips, Team winner, TeamPointsValue awarded, uint carryOver, TeamPointsValue scores, Team nextOpener, HandEnding ending, bool handPointsLocked, uint carriedIn)
         {
             Pips = pips;
             Winner = winner;
@@ -113,6 +116,23 @@ namespace HypeDomino.Net
             CarryOver = carryOver;
             Scores = scores;
             NextOpener = nextOpener;
+            Ending = ending;
+            HandPointsLocked = handPointsLocked;
+            CarriedIn = carriedIn;
+        }
+    }
+
+    public readonly struct SeatTilesValue
+    {
+        public readonly Seat Seat;
+        public readonly int Start;
+        public readonly int Count;
+
+        public SeatTilesValue(Seat seat, int start, int count)
+        {
+            Seat = seat;
+            Start = start;
+            Count = count;
         }
     }
 }
