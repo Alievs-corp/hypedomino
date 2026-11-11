@@ -190,6 +190,18 @@ The match screen places its regions inside the safe area with the same rules in 
 - Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
 - A seat panel holds the avatar with its frame, the name, the tile count and the turn timer. Their places inside the panel come with the panel art.
 
+### Hand
+
+The hand offers only what the server allows. The client never works out a legal move; it reads `legal_moves`, the opening fields and `turn_placements` of the latest `MatchView` (`proto/README.md`). `Game/Match/HandChoice` holds the rules below.
+
+- **Selectable tiles.** While playing, a tile is selectable on the local player's turn when `legal_moves` names it. During the opening phase (R-9 to R-13) a forced opening makes only that tile selectable, and only for that seat; otherwise every tile is selectable for both players of the opening team. Other tiles stay in the hand without the highlight.
+- **Tap.** A tap on a selectable tile with one legal end places it at once. With several legal ends (left and right, or a spinner arm, R-18) the tile is selected and its ends are highlighted on the board; a tap on one of them places it. A second tap on the selected tile, or a tap on another tile, changes the selection. An opening placement has no end (`BOARD_END_UNSPECIFIED`).
+- **Drag.** Dragging a selectable tile and releasing it within `size.touchTargetMin` of one of its highlighted ends places it there. Released anywhere else, it goes back to the hand and nothing is sent.
+- **Several doubles (R-31).** After a scoring double the turn stays open and `legal_moves` lists only the doubles that would score. Those stay selectable, and an end turn button shows while `turn_placements` is above 0.
+- **Draw and pass.** With no legal move on the local player's turn, a draw button shows in 1v1 while the boneyard holds more than one tile (R-22, R-23); otherwise a pass button shows (R-21). The server still decides; a rejected intent comes back with a fresh view.
+- **One intent at a time.** After an intent is sent the hand takes no more input until the next `MatchView` arrives, so a double tap never sends twice.
+- Legal tiles and ends show their highlight as soon as the view arrives (section 6 rule 5); the end highlight fades in over `moderate`.
+
 ## 6. Motion
 
 | Duration | ms | Use |
