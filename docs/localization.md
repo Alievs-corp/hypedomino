@@ -81,6 +81,22 @@ The active versions are the `localization` config domain (`docs/admin.md` 3.1), 
 
 A value that fails to parse (bad placeholder syntax) is treated as missing for that lookup only.
 
+### 2.4 Client implementation
+
+Implemented in `client/Assets/HypeDomino/UI/Localization` (#70) as plain C#, covered by the `LocalizationTests` EditMode tests:
+
+- **Selection:** `GameLanguage.Pick` applies 1.1: a saved launch language wins, else the first device locale whose language subtag maps, else `en`.
+- **Lookup:** `GameStrings` runs 1.2 and 2.3. The chain comes from `fallback_chains` through `SetChain`; a chain that does not start with its language or end with `en` is refused. Without a server chain, the 1.2 default applies. Each step reads the downloaded bundle, else the built-in one. Step 3 returns `common.text.unavailable` from the built-in `en` bundle, else an empty string for the view to show its empty-state glyph. A debug build shows `[!key]`. Each key reaching step 2 or later is logged once per session as `Strings missing key=... language=... version=...`.
+- **Bundles:** `StringBundle` reads the `{"language","strings"}` JSON that the server publishes. It accepts the bundle only when its SHA-256 hex matches the `hash` of `string_bundles`. `GameStrings.Holds` tells whether a language already holds that hash. `Stage` keeps a downloaded bundle. `ApplyStaged` swaps it in at the next screen load, never in a match. A failed or mismatched download keeps the previous bundle.
+- **Formatting:** `MessageFormat` renders the 4.3 subset with typed `string` and integer arguments. A plural picks an `=N` branch first, then the CLDR category of 4.2 for the value's language, then `other`. Numbers use the grouping of the selected language (4.4).
+
+Not built yet:
+- **Downloader and storage:** the CDN path of a language bundle is not defined (#214).
+- **Device locale list:** reading it (Android `LocaleList`, iOS preferred languages).
+- **Saving and syncing:** saving and account sync of the choice.
+- **Remaining formatting:** decimal, timestamp and duration formatting.
+- **Fonts:** the font glyph check of 4.5.
+
 ## 3. Server-originated text
 
 The server never sends rendered text for display. It sends `key` plus typed parameters and the client renders in the player's current language, so a language change re-renders stored notices.
