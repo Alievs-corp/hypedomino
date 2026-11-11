@@ -23,6 +23,8 @@ namespace HypeDomino.Net
         readonly OrientedTileFace[] bottom = new OrientedTileFace[MaxTiles];
         readonly OpenEndValue[] openEnds = new OpenEndValue[MaxOpenEnds];
         readonly LegalMoveValue[] legalMoves = new LegalMoveValue[MaxLegalMoves];
+        readonly SeatTilesValue[] leftSeats = new SeatTilesValue[MaxSeats];
+        readonly TileFace[] leftTiles = new TileFace[MaxTiles];
         readonly List<RosterEntry> roster = new(MaxSeats);
         int handCount;
         int seatCount;
@@ -31,6 +33,10 @@ namespace HypeDomino.Net
         int bottomCount;
         int openEndCount;
         int legalMoveCount;
+        int leftSeatCount;
+        int leftTileCount;
+        bool lockedA;
+        bool lockedB;
         bool rosterRead;
 
         public MatchState State { get; private set; }
@@ -53,6 +59,8 @@ namespace HypeDomino.Net
         public Team Winner { get; private set; }
         public ulong LoadingDeadlineUnixMs { get; private set; }
         public uint AfkConsecutiveTimeouts { get; private set; }
+        public uint TargetScore { get; private set; }
+        public uint HandPointsLockThreshold { get; private set; }
         public string Table { get; private set; } = string.Empty;
 
         public ReadOnlySpan<TileFace> Hand => new(hand, 0, handCount);
@@ -62,6 +70,11 @@ namespace HypeDomino.Net
         public ReadOnlySpan<OrientedTileFace> Bottom => new(bottom, 0, bottomCount);
         public ReadOnlySpan<OpenEndValue> OpenEnds => new(openEnds, 0, openEndCount);
         public ReadOnlySpan<LegalMoveValue> LegalMoves => new(legalMoves, 0, legalMoveCount);
+        public ReadOnlySpan<SeatTilesValue> LeftSeats => new(leftSeats, 0, leftSeatCount);
+
+        public ReadOnlySpan<TileFace> LeftTiles(SeatTilesValue seat) => new(leftTiles, seat.Start, seat.Count);
+
+        public bool IsHandPointsLocked(Team team) => team == Team.A ? lockedA : team == Team.B && lockedB;
         public IReadOnlyList<RosterEntry> Roster => roster;
 
         public bool TryRead(ReadOnlySpan<byte> view)
@@ -98,7 +111,10 @@ namespace HypeDomino.Net
             Winner = default;
             LoadingDeadlineUnixMs = 0;
             AfkConsecutiveTimeouts = 0;
-            handCount = seatCount = lineCount = topCount = bottomCount = openEndCount = legalMoveCount = 0;
+            TargetScore = 0;
+            HandPointsLockThreshold = 0;
+            lockedA = lockedB = false;
+            handCount = seatCount = lineCount = topCount = bottomCount = openEndCount = legalMoveCount = leftSeatCount = leftTileCount = 0;
             rosterRead = false;
         }
 
@@ -193,6 +209,27 @@ namespace HypeDomino.Net
                 case (22 << 3) | Varint:
                     if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
                     AfkConsecutiveTimeouts = (uint)value;
+                    return true;
+                case (23 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    TargetScore = (uint)value;
+                    return true;
+                case (24 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    HandPointsLockThreshold = (uint)value;
+                    return true;
+                case (25 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    Lock((Team)(int)value);
+                    return true;
+                case (25 << 3) | Bytes:
+                    if (!WireFormat.TryReadBytes(view, ref at, out bytes)) return false;
+                    var packed = 0;
+                    while (packed < bytes.Length)
+                    {
+                        if (!WireFormat.TryReadVarint(bytes, ref packed, out value)) return false;
+                        Lock((Team)(int)value);
+                    }
                     return true;
                 default:
                     return WireFormat.TrySkip(view, ref at, tag & 7);
@@ -394,12 +431,15 @@ namespace HypeDomino.Net
             return true;
         }
 
-        static bool TryReadHandResult(ReadOnlySpan<byte> bytes, out HandResultValue result)
+        bool TryReadHandResult(ReadOnlySpan<byte> bytes, out HandResultValue result)
         {
             result = default;
             TeamPointsValue pips = default, awarded = default, scores = default;
             Team winner = default, nextOpener = default;
-            uint carryOver = 0;
+            var ending = HandEnding.Unspecified;
+            var locked = false;
+            uint carryOver = 0, carriedIn = 0;
+            leftSeatCount = leftTileCount = 0;
             var at = 0;
             while (at < bytes.Length)
             {
@@ -429,12 +469,60 @@ namespace HypeDomino.Net
                         if (!WireFormat.TryReadVarint(bytes, ref at, out value)) return false;
                         nextOpener = (Team)(int)value;
                         break;
+                    case (7 << 3) | Varint:
+                        if (!WireFormat.TryReadVarint(bytes, ref at, out value)) return false;
+                        ending = (HandEnding)(int)value;
+                        break;
+                    case (8 << 3) | Varint:
+                        if (!WireFormat.TryReadVarint(bytes, ref at, out value)) return false;
+                        locked = value != 0;
+                        break;
+                    case (9 << 3) | Varint:
+                        if (!WireFormat.TryReadVarint(bytes, ref at, out value)) return false;
+                        carriedIn = (uint)value;
+                        break;
+                    case (10 << 3) | Bytes:
+                        if (!WireFormat.TryReadBytes(bytes, ref at, out points) || leftSeatCount == MaxSeats || !TryReadSeatTiles(points)) return false;
+                        break;
                     default:
                         if (!WireFormat.TrySkip(bytes, ref at, tag & 7)) return false;
                         break;
                 }
             }
-            result = new HandResultValue(pips, winner, awarded, carryOver, scores, nextOpener);
+            result = new HandResultValue(pips, winner, awarded, carryOver, scores, nextOpener, ending, locked, carriedIn);
+            return true;
+        }
+
+        void Lock(Team team)
+        {
+            if (team == Team.A) lockedA = true;
+            if (team == Team.B) lockedB = true;
+        }
+
+        bool TryReadSeatTiles(ReadOnlySpan<byte> bytes)
+        {
+            Seat seat = default;
+            var start = leftTileCount;
+            var at = 0;
+            while (at < bytes.Length)
+            {
+                if (!TryReadTag(bytes, ref at, out var tag)) return false;
+                switch (tag)
+                {
+                    case (1 << 3) | Varint:
+                        if (!WireFormat.TryReadVarint(bytes, ref at, out var value)) return false;
+                        seat = (Seat)(int)value;
+                        break;
+                    case (2 << 3) | Bytes:
+                        if (!WireFormat.TryReadBytes(bytes, ref at, out var tileBytes) || leftTileCount == MaxTiles || !TryReadTile(tileBytes, out var tile)) return false;
+                        leftTiles[leftTileCount++] = tile;
+                        break;
+                    default:
+                        if (!WireFormat.TrySkip(bytes, ref at, tag & 7)) return false;
+                        break;
+                }
+            }
+            leftSeats[leftSeatCount++] = new SeatTilesValue(seat, start, leftTileCount - start);
             return true;
         }
 

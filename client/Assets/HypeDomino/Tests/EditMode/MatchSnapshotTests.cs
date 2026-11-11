@@ -114,6 +114,22 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(result.CarryOver, actual.LastResult.CarryOver, name);
             AssertPoints(result.Scores, actual.LastResult.Scores, name + " result scores");
             Assert.AreEqual(result.NextOpener, actual.LastResult.NextOpener, name);
+            Assert.AreEqual(result.Ending, actual.LastResult.Ending, name);
+            Assert.AreEqual(result.HandPointsLocked, actual.LastResult.HandPointsLocked, name);
+            Assert.AreEqual(result.CarriedIn, actual.LastResult.CarriedIn, name);
+            Assert.AreEqual(result.Left.Count, actual.LeftSeats.Length, name + " left");
+            for (var at = 0; at < result.Left.Count; at++)
+            {
+                var left = actual.LeftSeats[at];
+                Assert.AreEqual(result.Left[at].Seat, left.Seat, name + " left seat");
+                var tiles = actual.LeftTiles(left);
+                Assert.AreEqual(result.Left[at].Tiles.Count, tiles.Length, name + " left tiles");
+                for (var tile = 0; tile < tiles.Length; tile++) AssertTile(result.Left[at].Tiles[tile], tiles[tile], name + " left tile");
+            }
+            Assert.AreEqual(expected.TargetScore, actual.TargetScore, name);
+            Assert.AreEqual(expected.HandPointsLockThreshold, actual.HandPointsLockThreshold, name);
+            Assert.AreEqual(expected.LockedTeams.Contains(Team.A), actual.IsHandPointsLocked(Team.A), name + " lock A");
+            Assert.AreEqual(expected.LockedTeams.Contains(Team.B), actual.IsHandPointsLocked(Team.B), name + " lock B");
 
             CollectionAssert.AreEqual(expected.Roster, actual.Roster, name + " roster");
             Assert.AreEqual(expected.Table, actual.Table, name);
@@ -146,7 +162,20 @@ namespace HypeDomino.Tests.EditMode
                 CarryOver = 2,
                 Scores = new TeamPoints { TeamA = 40, TeamB = 55 },
                 NextOpener = Team.A,
+                Ending = HandEnding.Block,
+                HandPointsLocked = true,
+                CarriedIn = 10,
+                Left =
+                {
+                    new SeatTiles { Seat = Seat.North, Tiles = { new Tile { Low = 6, High = 6 } } },
+                    new SeatTiles { Seat = Seat.East },
+                    new SeatTiles { Seat = Seat.South, Tiles = { new Tile { Low = 1, High = 2 }, new Tile { Low = 0, High = 0 } } },
+                },
             };
+            view.TargetScore = 365;
+            view.HandPointsLockThreshold = 300;
+            view.LockedTeams.Clear();
+            view.LockedTeams.Add(Team.A);
             view.Table = "table_neon";
             view.AfkConsecutiveTimeouts = 3;
             view.Seats[1].Disconnected = true;

@@ -205,6 +205,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `Game/Match/HandChoice` decides what the local player may do with the hand from the latest `MatchSnapshot` (`docs/ui-motion.md`, Hand). It never works out a legal move: while playing it offers the tiles and ends in `legal_moves`; while opening it offers the forced tile to its seat, or any tile to both players of the opening team. A tap places a tile with one legal end at once and selects a tile with several; `TryChooseEnd` then places it. `TryDrop` places a dragged tile at the nearest of its ends within `size.touchTargetMin`. End turn (R-31), draw (R-22, R-23) and pass (R-21) are offered from `turn_placements`, the mode and the boneyard size. After any intent the hand takes no input until the next view, so a double tap never sends twice. Reading a view and tapping allocate nothing; the `HandChoiceTests` EditMode tests cover each rule.
 
+## Score panel
+
+`Game/Match/ScoreBoard` reads the team meters from each `MatchSnapshot`: the local team first, each filled to its score over `target_score`, the mark at `hand_points_lock_threshold`, and the lock badge for the teams in `locked_teams` (`docs/ui-motion.md`, Score panel and hand summary). `Game/Match/HandSummary` opens once per hand end, on the view that carries `last_result.left`, and explains it from server values only: the ending, the tiles left per seat, the counted pips, the hand points (`awarded` minus `carried_in`), the carry-over taken or kept, and the lock. Both allocate nothing per view; `ScoreBoardTests` cover them and `MatchSnapshotTests` cover the new fields.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
