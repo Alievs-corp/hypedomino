@@ -8,6 +8,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
@@ -74,6 +75,7 @@ func finished(s matchstore.Started, record replay.Record, recorded bool, offense
 }
 
 func (h *Host) archived(r *room.Room, s matchstore.Started, config penalties.Config, version int) {
+	defer func() { panics.Caught("match archive", recover(), "match", s.ID) }()
 	record, recorded := r.FinalRecord()
 	now := h.clock.Now()
 	offenses := map[rules.Seat]penalties.Kind{}
