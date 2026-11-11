@@ -202,6 +202,16 @@ The hand offers only what the server allows. The client never works out a legal 
 - **One intent at a time.** After an intent is sent the hand takes no more input until the next `MatchView` arrives, so a double tap never sends twice.
 - Legal tiles and ends show their highlight as soon as the view arrives (section 6 rule 5); the end highlight fades in over `moderate`.
 
+### Board
+
+The chain is laid out from the board the server sends (`BoardView`: the line, the spinner, its top and bottom arms) and fitted to the board area. The layout decides only where tiles are drawn; which ends are open and what they count is the server's.
+
+- Length unit: the short side of a tile. A tile is 2 by 1; a double is 1 along its arm and 2 across it (R-19). The spinner lies across the line.
+- The anchor sits at the center: the spinner when there is one (R-17), otherwise the opening tile. Line tiles right of the anchor grow east, those left of it grow west, the top arm north and the bottom arm south (R-18). Each tile shows its touching half nearest the tile it is attached to.
+- Folding: every arm runs straight inside a fold box with the board area's aspect. When an arm's next tile that is not a double would cross the box, that tile turns the arm right (east to south, south to west, west to north, north to east). The turning tile lies along the new heading, beside the end it touches. A double never turns an arm.
+- Fit: the layout tries fold boxes from one no arm reaches down to a half width of 1, in steps of 1, and drops any where two tiles overlap. The scale of a layout is the largest that fits its bounds in the board area, capped by the largest tile size. It keeps the layout with the highest scale; on a tie, the one with the larger box, so a chain folds only when that makes its tiles larger. The camera centers on the bounds.
+- A board of every tile of the set fits on every board shape without overlap (`ChainLayoutTests`).
+
 ## 6. Motion
 
 | Duration | ms | Use |
@@ -389,3 +399,4 @@ The step table, chain boost and roll timings are admin config with these default
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - Sound and haptics per step are not part of this spec.
+- The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
