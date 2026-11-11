@@ -25,6 +25,7 @@ Real-time online multiplayer mobile domino game. Hyperactive, colorful, effect-h
 - No allocations in hot paths on the client (Update loops, input, animation). Pool everything that spawns repeatedly.
 - Every number that designers may tune comes from admin-managed config, not constants.
 - Zero trust in the client: no balance, price, reward, inventory or score value is ever accepted from or stored authoritatively on the client. The client sends intents only; modified APKs and memory editors must gain nothing. See Epic 18 and `docs/anti-cheat.md`.
+- Review every change against NT-1 to NT-12 in `docs/anti-cheat.md` section 2. Device storage (PlayerPrefs, files, caches) holds only the keys listed under Device storage there; a new key is added to that table in the same PR.
 - Purchases are granted only after server-side receipt validation. Time-based logic uses server time only.
 - Secrets only from environment. Never commit keys, tokens or service accounts.
 
