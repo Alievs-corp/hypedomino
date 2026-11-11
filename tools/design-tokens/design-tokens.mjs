@@ -451,6 +451,7 @@ export function csharpTokens(tokens) {
     csharpClass("TokenEffectLevel", levels.flatMap((name) => [
       `public const int ${pascal(name)}MaxAnimatedCosmetics = ${intLiteral(["effects", "levels", name, "maxAnimatedCosmetics"], tokens.effects.levels[name].maxAnimatedCosmetics)};`,
       `public const float ${pascal(name)}WorkTimeP95Ms = ${floatLiteral(tokens.effects.levels[name].workTimeP95Ms)};`,
+      `public const int ${pascal(name)}MaxTweens = ${intLiteral(["effects", "levels", name, "maxTweens"], tokens.effects.levels[name].maxTweens)};`,
     ])),
     csharpClass("TokenEffect", Object.entries(tokens.effects.budgets).flatMap(([name, effect]) => [
       `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
