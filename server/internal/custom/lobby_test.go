@@ -45,7 +45,7 @@ type opened struct {
 func opener(t *testing.T) (Opener, *[]opened) {
 	t.Helper()
 	var tables []opened
-	return func(options room.Options) (*room.Room, error) {
+	return func(options room.Options, _ []SeatState) (*room.Room, error) {
 		options.Config, options.Bot, options.BotLevel, options.Clock = rules.DefaultConfig(), bot.DefaultConfig(), bot.Hard, realClock{}
 		r := room.New(options)
 		ctx, cancel := context.WithCancel(context.Background())
@@ -292,6 +292,31 @@ func TestActionsRelayOnlyTheCharacterClipsAndEquippedActions(t *testing.T) {
 		if got := relayed(sink, func(e Event) string { return e.Action }); !slices.Equal(got, []string{"ana:reaction", "ana:action.wave"}) {
 			t.Fatalf("relayed actions %v", got)
 		}
+	}
+}
+
+func TestASeatRequestReachesOnlyTheLeaderDuringTeamSetup(t *testing.T) {
+	open, _ := opener(t)
+	lobby := NewLobby(&counter{}, open)
+	anaSink, benSink := make(eventSink, 16), make(eventSink, 16)
+	r, _ := lobby.Create(Member{Account: "ana", Sink: anaSink})
+	must(t, r.Join(Member{Account: "ben", Sink: benSink}))
+	refused(t, r.Request("ben", rules.SeatY), ErrWrongPhase)
+	must(t, r.Teams("ana", rules.Mode1v1))
+	refused(t, r.Request("ben", rules.SeatNorth), ErrInvalidSeat)
+	refused(t, r.Request("zed", rules.SeatY), ErrNotInRoom)
+	must(t, r.Request("ben", rules.SeatY))
+	seat := func(e Event) string {
+		if !e.Request {
+			return ""
+		}
+		return e.Seat.String()
+	}
+	if got := relayed(anaSink, seat); !slices.Equal(got, []string{"ben:" + rules.SeatY.String()}) {
+		t.Fatalf("leader got %v", got)
+	}
+	if got := relayed(benSink, seat); len(got) != 0 {
+		t.Fatalf("member got %v", got)
 	}
 }
 

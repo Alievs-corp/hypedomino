@@ -12,6 +12,9 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/custom"
+	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
@@ -20,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
+	"github.com/Alievs-corp/hypedomino/server/internal/room"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -37,6 +41,8 @@ type matchmakingDeps struct {
 	profiles   *profile.Store
 	inventory  *inventory.Store
 	penalties  *penalties.Store
+	friends    *friends.Store
+	emoji      room.EmojiLimit
 	rankedOpen func() bool
 }
 
@@ -58,7 +64,14 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	penaltyRecords := deps.penalties
 	deps.sessions.Queue(matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger))
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
-	host := matchstart.NewHost(deps.rooms, deps.sessions, dispatcher, store, matchstore.New(deps.pool), penaltyRecords, matchstart.ProfileRoster(deps.pool, deps.profiles, deps.inventory.Freeze, deps.ratings.Label, deps.ratings.Showcase, time.Now), current, systemClock{}, seeded(), logger)
+	muted := matchstart.Muted(deps.pool, time.Now)
+	roster := matchstart.ProfileRoster(deps.profiles, deps.inventory.Freeze, deps.ratings.Label, deps.ratings.Showcase, muted)
+	host := matchstart.NewHost(deps.rooms, deps.sessions, dispatcher, store, matchstore.New(deps.pool), penaltyRecords, roster, current, systemClock{}, seeded(), logger)
+	lobby := custom.NewLobby(secrand.Source{}, matchstart.LobbyOpener(deps.rooms, roster, current, systemClock{}, secrand.Source{}))
+	lobby.Screen(deps.friends)
+	lobby.LimitEmoji(deps.emoji)
+	item := func(id string) (cosmetics.Item, bool) { return deps.inventory.Catalog().Item(id) }
+	deps.sessions.Host(lobby, matchstart.LobbyMember(deps.inventory.Freeze, item, muted), deps.friends)
 	go listen(ctx, dispatcher, host, deps.sessions, config.MatchmakingTick, logger)
 	place := func(ctx context.Context, placement matchqueue.Placement) error {
 		target, ok, err := deps.members.Least(ctx)

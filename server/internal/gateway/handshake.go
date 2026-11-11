@@ -126,6 +126,14 @@ type Queuer interface {
 	LeaveQueue()
 }
 
+type Lobbyist interface {
+	Lobby(intent *pb.LobbyIntent)
+}
+
+func LobbyStateFrame(state *pb.LobbyState, acked uint64) *pb.Envelope {
+	return &pb.Envelope{ProtocolVersion: ProtocolVersion, AckedSequence: acked, Payload: &pb.Envelope_LobbyState{LobbyState: state}}
+}
+
 func QueueStateFrame(state *pb.QueueState, acked uint64) *pb.Envelope {
 	return &pb.Envelope{ProtocolVersion: ProtocolVersion, AckedSequence: acked, Payload: &pb.Envelope_QueueState{QueueState: state}}
 }

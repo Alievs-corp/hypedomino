@@ -53,7 +53,7 @@ func startMatchmaking(t *testing.T, ctx context.Context, pool *pgxpool.Pool, cli
 	records := penalties.NewStore(pool, func() (penalties.Config, int) { return penalties.DefaultConfig(), 0 })
 	ratings := rating.NewStore(pool, rating.NewWatcher(pool, logger))
 	srv.sessions.Queue(matchqueue.NewGate(store, hostNode, "", matchqueue.PenalizedEntry(records.Record, matchqueue.RatedEntry(ratings)), always, always, time.Now, logger))
-	roster := matchstart.ProfileRoster(pool, profile.NewStore(pool, profile.DefaultConfig()), inventory.NewStore(pool, catalog, inventory.DefaultConfig()).Freeze, ratings.Label, ratings.Showcase, time.Now)
+	roster := matchstart.ProfileRoster(profile.NewStore(pool, profile.DefaultConfig()), inventory.NewStore(pool, catalog, inventory.DefaultConfig()).Freeze, ratings.Label, ratings.Showcase, matchstart.Muted(pool, time.Now))
 	rooms := app.NewRooms()
 	t.Cleanup(rooms.Stop)
 	dispatcher := matchqueue.NewDispatcher(client, prefix, hostNode)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
@@ -52,6 +53,7 @@ type Session struct {
 	active     *connection
 	generation uint64
 	routed     bool
+	lobby      *custom.Room
 }
 
 type Router interface {
@@ -69,6 +71,9 @@ type Manager struct {
 	replays  ReplayObserver
 	checker  IntegrityChecker
 	queue    Queue
+	lobby    *custom.Lobby
+	members  LobbyMembers
+	friends  Friends
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -226,6 +231,7 @@ func (m *Manager) Revoke(token string) {
 	routed := ok && s.routed
 	if ok {
 		s.routed = false
+		m.dropLobby(s)
 		delete(m.accounts[s.account], token)
 		if len(m.accounts[s.account]) == 0 {
 			delete(m.accounts, s.account)
@@ -327,6 +333,10 @@ func (c *connection) Emoji(item string) {
 	c.mu.Unlock()
 	if seat != nil {
 		seat.Emoji(item)
+		return
+	}
+	if r := c.manager.lobbyOf(c.session); r != nil {
+		r.Emote(c.session.account, item, c.manager.clock.Now())
 	}
 }
 
@@ -388,9 +398,11 @@ func (c *connection) Close() {
 	if seat != nil {
 		s.acked = seat.Acked()
 	}
-	if s.room != nil {
-		go c.manager.expire(s, s.generation, c.manager.clock.After(c.manager.config.ReconnectGrace))
+	if s.room == nil {
+		c.manager.dropLobby(s)
+		return
 	}
+	go c.manager.expire(s, s.generation, c.manager.clock.After(c.manager.config.ReconnectGrace))
 }
 
 func (m *Manager) Connected(token string) bool {
@@ -404,7 +416,11 @@ func (m *Manager) expire(s *Session, generation uint64, due <-chan time.Time) {
 	<-due
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if s.generation != generation || s.active != nil || s.room == nil {
+	if s.generation != generation || s.active != nil {
+		return
+	}
+	m.dropLobby(s)
+	if s.room == nil {
 		return
 	}
 	s.room.Leave(s.seat)

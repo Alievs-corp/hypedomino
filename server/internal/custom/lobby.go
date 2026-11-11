@@ -48,6 +48,8 @@ type Event struct {
 	Account string
 	Action  string
 	Emoji   string
+	Request bool
+	Seat    rules.Seat
 }
 
 type Phase uint8
@@ -70,7 +72,7 @@ type Random interface {
 	Uint64() uint64
 }
 
-type Opener func(options room.Options) (*room.Room, error)
+type Opener func(options room.Options, seats []SeatState) (*room.Room, error)
 
 type Lobby struct {
 	random Random
@@ -490,7 +492,7 @@ func (r *Room) Start(leader string, options room.Options) (*room.Room, error) {
 		}
 	}
 	options.Kind, options.Mode = room.KindCustom, r.mode
-	table, err := r.lobby.opener(options)
+	table, err := r.lobby.opener(options, r.state().Seats)
 	if err != nil {
 		return nil, err
 	}
@@ -517,6 +519,23 @@ func (r *Room) await(table *room.Room) {
 		}
 	}
 	r.changed()
+}
+
+func (r *Room) Request(account string, seat rules.Seat) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	switch {
+	case r.find(account) == nil:
+		return ErrNotInRoom
+	case r.phase != PhaseTeams:
+		return ErrWrongPhase
+	case !r.valid(seat):
+		return ErrInvalidSeat
+	}
+	if leader := r.members[0]; leader.Sink != nil {
+		leader.Sink.Deliver(Event{Account: account, Request: true, Seat: seat})
+	}
+	return nil
 }
 
 func (r *Room) Act(account, action string) error {

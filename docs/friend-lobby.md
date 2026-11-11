@@ -38,6 +38,8 @@ A member can leave the room in FL-1 and FL-2. Leaving during FL-3 and FL-4 is a 
 - Actions and emoji are relayed, not trusted: ownership of action items and emoji and clip existence are checked on every intent.
 - A member whose match has not ended cannot join another room or queue (R-58).
 - Nothing in a custom room grants coins, pass XP, missions, medals or rating (R-55, `docs/economy.md` 2.1).
+- Protocol: `LobbyIntent`, `LobbyState`, `LobbyRelay` and `LobbyInvite` (`proto/README.md`). A member's actions, emoji and mute come from their loadout when they create or join the room; the clips of an animated character are `idle`, `win`, `lose` and `reaction`. An in-game invite goes only to a friend. A member who disconnects outside a match leaves the room; during a custom match they keep their place until the reconnect grace ends. A seat left by a disconnected or removed player is played by the bot at the casual bot level of the matchmaking config (R-52, R-55).
+- Rooms live on the node that created them. Joining by code and in-game invites reach only players connected to the same node until cross-node routing exists.
 
 ## 5. Decisions and open items
 

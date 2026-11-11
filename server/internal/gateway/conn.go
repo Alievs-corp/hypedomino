@@ -294,8 +294,9 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	quick := frame.GetQuickMessageIntent()
 	join := frame.GetJoinQueueIntent()
 	leave := frame.GetLeaveQueueIntent()
+	lobby := frame.GetLobbyIntent()
 	intent, ok := DecodeIntent(frame)
-	if !ok && loading == nil && emoji == nil && quick == nil && join == nil && leave == nil {
+	if !ok && loading == nil && emoji == nil && quick == nil && join == nil && leave == nil && lobby == nil {
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
@@ -321,6 +322,9 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	}
 	if join != nil || leave != nil {
 		return c.matchmaking(join)
+	}
+	if lobby != nil {
+		return c.lobby(lobby)
 	}
 	c.session.Intent(sequence, intent)
 	return true
@@ -393,6 +397,15 @@ func EncodeIntent(intent replay.Intent) (*pb.Envelope, bool) {
 		return &pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}}, true
 	}
 	return nil, false
+}
+
+func (c *Conn) lobby(intent *pb.LobbyIntent) bool {
+	lobbyist, ok := c.session.(Lobbyist)
+	if !ok {
+		return c.Send(LobbyStateFrame(&pb.LobbyState{Refusal: pb.LobbyRefusal_LOBBY_REFUSAL_UNAVAILABLE}, c.session.Acked())) == nil
+	}
+	lobbyist.Lobby(intent)
+	return true
 }
 
 func (c *Conn) matchmaking(join *pb.JoinQueueIntent) bool {
