@@ -273,6 +273,51 @@ func TestHumansPlayAWholeMatchAndTheRecordVerifies(t *testing.T) {
 	}
 }
 
+func TestViewsShowTheTilesLeftOnlyBetweenHandsAndTheLockedTeams(t *testing.T) {
+	config := rules.DefaultConfig()
+	tab := newTable(t, rules.Mode2v2, 3)
+	sequences := map[rules.Seat]uint64{}
+	seat := tab.mode.Seats()[0]
+	between, playing := 0, 0
+	for steps := 0; tab.humanStep(sequences); steps++ {
+		if steps > 20000 {
+			t.Fatal("match does not end")
+		}
+		v := tab.snapshot(seat)
+		if v.TargetScore != config.TargetScore || v.LockThreshold != config.HandPointsLockThreshold {
+			t.Fatalf("view marks %d and %d, config says %d and %d", v.TargetScore, v.LockThreshold, config.TargetScore, config.HandPointsLockThreshold)
+		}
+		if v.State == StateOpening {
+			for _, team := range []rules.Team{rules.TeamA, rules.TeamB} {
+				if v.Locked[team] != (v.Scores[team] >= config.HandPointsLockThreshold) {
+					t.Fatalf("team %s locked %v with %v at the start of the hand", team, v.Locked[team], v.Scores)
+				}
+			}
+		}
+		if !v.HasLastResult {
+			continue
+		}
+		if v.State == StatePlaying {
+			playing++
+			if v.LastEnd.Left != nil {
+				t.Fatalf("a view during play shows the tiles left of the last hand: %+v", v.LastEnd)
+			}
+			continue
+		}
+		between++
+		pips := rules.TeamPoints{}
+		for _, s := range tab.mode.Seats() {
+			pips[s.Team()] += v.LastEnd.Left[s].Pips()
+		}
+		if pips != v.LastResult.Pips || v.LastEnd.Status == rules.HandContinues {
+			t.Fatalf("tiles left count %v, result says %v, ending %s", pips, v.LastResult.Pips, v.LastEnd.Status)
+		}
+	}
+	if between == 0 || playing == 0 {
+		t.Fatalf("saw %d views between hands and %d during play after a hand", between, playing)
+	}
+}
+
 func TestTimeoutsHandTheSeatToTheBotAndReconnectTakesItBack(t *testing.T) {
 	tab := newTable(t, rules.Mode2v2, 4)
 	tab.settle()

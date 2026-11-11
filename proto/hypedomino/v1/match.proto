@@ -131,6 +131,17 @@ message TeamPoints {
   uint32 team_b = 2;
 }
 
+enum HandEnding {
+  HAND_ENDING_UNSPECIFIED = 0;
+  HAND_ENDING_DOMINO = 1;
+  HAND_ENDING_BLOCK = 2;
+}
+
+message SeatTiles {
+  Seat seat = 1;
+  repeated Tile tiles = 2;
+}
+
 message HandResult {
   TeamPoints pips = 1;
   Team winner = 2;
@@ -138,6 +149,10 @@ message HandResult {
   uint32 carry_over = 4;
   TeamPoints scores = 5;
   Team next_opener = 6;
+  HandEnding ending = 7;
+  bool hand_points_locked = 8;
+  uint32 carried_in = 9;
+  repeated SeatTiles left = 10;
 }
 
 message RosterEntry {
@@ -175,4 +190,7 @@ message MatchView {
   uint64 loading_deadline_unix_ms = 20;
   string table = 21;
   uint32 afk_consecutive_timeouts = 22;
+  uint32 target_score = 23;
+  uint32 hand_points_lock_threshold = 24;
+  repeated Team locked_teams = 25;
 }
