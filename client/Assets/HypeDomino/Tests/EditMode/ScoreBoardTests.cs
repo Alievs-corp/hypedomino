@@ -10,9 +10,17 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class ScoreBoardTests
     {
-        readonly MatchSnapshot snapshot = new();
-        readonly ScoreBoard board = new();
-        readonly HandSummary summary = new();
+        MatchSnapshot snapshot;
+        ScoreBoard board;
+        HandSummary summary;
+
+        [SetUp]
+        public void StartFresh()
+        {
+            snapshot = new MatchSnapshot();
+            board = new ScoreBoard();
+            summary = new HandSummary();
+        }
 
         static MatchView View(Seat seat, uint teamA, uint teamB, params Team[] locked)
         {
