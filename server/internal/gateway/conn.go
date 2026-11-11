@@ -12,6 +12,7 @@ import (
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
 )
@@ -115,6 +116,7 @@ func (c *Conn) closeSocket() {
 }
 
 func (c *Conn) writeLoop(ctx context.Context) {
+	defer c.recovered("gateway write")
 	var buffer []byte
 	for {
 		select {
@@ -165,7 +167,14 @@ func (c *Conn) write(ctx context.Context, data []byte) error {
 	return c.socket.Write(ctx, websocket.MessageBinary, data)
 }
 
+func (c *Conn) recovered(where string) {
+	if panics.Caught(where, recover()) {
+		c.Close(websocket.StatusInternalError, "internal error")
+	}
+}
+
 func (c *Conn) readLoop(ctx context.Context) {
+	defer c.recovered("gateway read")
 	var buffer bytes.Buffer
 	frame := &pb.Envelope{}
 	if !c.handshake(ctx, &buffer, frame) {
@@ -232,6 +241,7 @@ func (c *Conn) handshake(ctx context.Context, buffer *bytes.Buffer, frame *pb.En
 }
 
 func (c *Conn) pingLoop(ctx context.Context) {
+	defer c.recovered("gateway ping")
 	ticker := time.NewTicker(c.options.Config.PingInterval)
 	defer ticker.Stop()
 	for {
