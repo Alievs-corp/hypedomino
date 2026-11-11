@@ -135,7 +135,7 @@ Outcomes:
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion` and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 
@@ -148,6 +148,10 @@ Outcomes:
 ## Board layout
 
 `UI/Board/ChainLayout` places the chain of `docs/ui-motion.md` 5 "Board". Create it once with the set size as capacity and call `Arrange(line, anchorIndex, top, bottom, boardSize, maxScale)` when the board changes: `anchorIndex` is the spinner's index in the line, or the opening tile's while there is no spinner. Each `PlacedDomino` gives the tile's center and heading in tile units, its near and far pips and whether it lies across. `Scale` turns tile units into board units and `Focus` is where the camera centers. It allocates nothing after construction. The `ChainLayoutTests` EditMode tests cover the arms, doubles, folding and a full set on every board shape.
+
+## Tweens
+
+`UI/Motion/TweenPool` runs the tweens of `docs/ui-motion.md` 6 rule 3. Create it once per scene with `TweenPool.For(level)`, which takes `TokenEffectLevel.*MaxTweens`. `Start(tween, ref sink)` and `Step(nowMs, ref sink)` write values through an `ITweenSink` struct, so neither allocates: a `Tween` is a value with a target index, a channel (position, rotation, scale, opacity), its from and to values, start, duration, a `TokenEasing` curve, and whether it is cosmetic. When the pool is full, the oldest cosmetic tween lands on its end value. `FinishAll` is the jump to the final state of rule 5. `UI/Board/TileTravel` starts the travel of `tilePlace`: position and the shorter turn, `base` with `standard`, or `fast` with reduce motion. The `TweenPoolTests` EditMode tests cover the curve, eviction, replacement, finishing, tile travel and 0 B per frame.
 
 ## Canvas bench
 

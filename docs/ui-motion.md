@@ -241,7 +241,7 @@ The chain is laid out from the board the server sends (`BoardView`: the line, th
 Rules:
 1. Animate only transform (position, rotation, scale) and opacity or vertex colour. Never animate layout (size, anchors, layout groups), text size, or a material property that creates a material instance; per-renderer values go through a property block.
 2. Animated UI sits on its own sub-canvas so a tween does not re-batch static UI.
-3. Tweens run from a pre-allocated pool of `maxTweens` per effect level (section 7). Tweens are value types without closures and allocate nothing. When the pool is full, the oldest cosmetic tween jumps to its end state.
+3. Tweens run from a pre-allocated pool of `maxTweens` per effect level (section 7). Tweens are value types without closures and allocate nothing. When the pool is full, the oldest cosmetic tween jumps to its end state. With no cosmetic tween in the pool, the oldest tween jumps instead, and a pool with no room at all puts the new tween at its end state at once. A new tween on a target and channel (position, rotation, scale, opacity) that is already moving replaces the old one. A tween that ends between frames lands exactly on its end value. Rule 5's jump to the final state finishes every tween at once (`TweenPool`).
 4. Input is never blocked by animation. Tile selection and dragging, buttons and emoji work during every effect. An intent is sent on input, never after an animation.
 5. Presentation never runs more than `motion.maxPresentationLagMs` (600) behind the latest server state. If queued effects would exceed it, the queue jumps to the final state. Turn ownership, legal-end highlights and the turn timer (R-49) show as soon as the state arrives, never after queued effects. The timer is server time; effects never extend a turn.
 6. At most `motion.maxFullScreenFlashesPerSecond` (3) full-screen flashes per second (WCAG 2.2 SC 2.3.1).
@@ -285,7 +285,7 @@ Base scene plus effects stays within the p95 work-time gate; the checker enforce
 
 | Effect | Trigger | Presentation |
 |---|---|---|
-| `tilePlace` | Any placement (R-15) | Tile travels to its end (`base`, `standard`), settles (`micro`, `overshoot`), dust burst |
+| `tilePlace` | Any placement (R-15) | Tile travels to its end (`base`, `standard`), turning the shorter way to its board angle, settles (`micro`, `overshoot`), dust burst |
 | `scorePopup` | Any score event (section 8) | "+N" in `score` style and `role.score.text`, scaled by the score step, pops in, holds, pops out |
 | `scoreCascade` | Same, scaled by step | Particle burst and glow at the popup; points fly to the team meter |
 | `spinnerFormation` | A double becomes the spinner (R-17, R-18) | Ring pulse on the double, arm markers slide out on the two new ends |
@@ -399,4 +399,5 @@ The step table, chain boost and roll timings are admin config with these default
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - Sound and haptics per step are not part of this spec.
+- The squash amount of the `tilePlace` settle has no token yet; tile travel ships without the settle until it is decided.
 - The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
