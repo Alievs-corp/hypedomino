@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'client-v*'
+  pull_request:
+    paths:
+      - 'client/**'
+      - 'tools/install-size/**'
+      - '.github/workflows/release-build.yml'
   workflow_dispatch:
     inputs:
       catalog_version:
@@ -13,6 +18,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: release-build-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 env:
   BUNDLETOOL_VERSION: 1.18.3
@@ -29,7 +38,7 @@ jobs:
       - name: Resolve the release
         id: release
         env:
-          INPUT_CATALOG_VERSION: ${{ inputs.catalog_version }}
+          INPUT_CATALOG_VERSION: ${{ inputs.catalog_version || format('pr-{0}', github.event.pull_request.number) }}
           BUILD_NUMBER: ${{ github.run_number }}
           APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
         run: |
