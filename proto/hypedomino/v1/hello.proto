@@ -25,6 +25,7 @@ message ClientHello {
   uint64 last_acked_sequence = 7;
   uint64 client_time_unix_ms = 8;
   IntegrityProof integrity = 9;
+  repeated string device_risk_signals = 10;
 }
 
 message IntegrityProof {

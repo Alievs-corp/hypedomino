@@ -24,7 +24,7 @@ namespace Hypedomino.V1 {
     static HelloReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIoUD",
+            "ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIrUD",
             "CgtDbGllbnRIZWxsbxIfCgthcHBfdmVyc2lvbhgBIAEoCVIKYXBwVmVyc2lv",
             "bhIdCgpidWlsZF9oYXNoGAIgASgJUglidWlsZEhhc2gSMwoIcGxhdGZvcm0Y",
             "AyABKA4yFy5oeXBlZG9taW5vLnYxLlBsYXRmb3JtUghwbGF0Zm9ybRIdCgpv",
@@ -33,41 +33,42 @@ namespace Hypedomino.V1 {
             "aW9uVG9rZW4SLgoTbGFzdF9hY2tlZF9zZXF1ZW5jZRgHIAEoBFIRbGFzdEFj",
             "a2VkU2VxdWVuY2USLQoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBFIQY2xp",
             "ZW50VGltZVVuaXhNcxI7CglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5v",
-            "LnYxLkludGVncml0eVByb29mUglpbnRlZ3JpdHkikQEKDkludGVncml0eVBy",
-            "b29mEjIKFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSABSEnBsYXlJbnRl",
-            "Z3JpdHlUb2tlbhJCCgphcHBfYXR0ZXN0GAIgASgLMiEuaHlwZWRvbWluby52",
-            "MS5BcHBBdHRlc3RBc3NlcnRpb25IAFIJYXBwQXR0ZXN0QgcKBXByb29mIl8K",
-            "EkFwcEF0dGVzdEFzc2VydGlvbhIVCgZrZXlfaWQYASABKAxSBWtleUlkEhQK",
-            "BW5vbmNlGAIgASgJUgVub25jZRIcCglhc3NlcnRpb24YAyABKAxSCWFzc2Vy",
-            "dGlvbiL3AwoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgOMhouaHlwZWRv",
-            "bWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmltdW1fYXBwX3Zl",
-            "cnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3NlcnZlcl90aW1l",
-            "X3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoPY2F0YWxvZ192",
-            "ZXJzaW9uGAQgASgJUg5jYXRhbG9nVmVyc2lvbhIZCghpbl9tYXRjaBgFIAEo",
-            "CFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21p",
-            "bm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUKD2ZhbGxiYWNr",
-            "X2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpblIO",
-            "ZmFsbGJhY2tDaGFpbnMSIwoNc2Vzc2lvbl9ub25jZRgIIAEoBlIMc2Vzc2lv",
-            "bk5vbmNlEigKEGNvbnRlbnRfYmFzZV91cmwYCSABKAlSDmNvbnRlbnRCYXNl",
-            "VXJsEjcKGG1haW50ZW5hbmNlX2VuZHNfdW5peF9tcxgKIAEoBFIVbWFpbnRl",
-            "bmFuY2VFbmRzVW5peE1zIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5ndWFnZRgB",
-            "IAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lvbhISCgRo",
-            "YXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3VhZ2UY",
-            "ASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3VhZ2Vz",
-            "KkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExB",
-            "VEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKoYBCgtIZWxsb1N0",
-            "YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUxMT19T",
-            "VEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRFX1JFUVVJ",
-            "UkVEEAISHAoYSEVMTE9fU1RBVFVTX01BSU5URU5BTkNFEANCxQEKEWNvbS5o",
-            "eXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZz",
-            "LWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWlu",
-            "by92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlw",
-            "ZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBl",
-            "ZG9taW5vOjpWMWIGcHJvdG8z"));
+            "LnYxLkludGVncml0eVByb29mUglpbnRlZ3JpdHkSLgoTZGV2aWNlX3Jpc2tf",
+            "c2lnbmFscxgKIAMoCVIRZGV2aWNlUmlza1NpZ25hbHMikQEKDkludGVncml0",
+            "eVByb29mEjIKFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSABSEnBsYXlJ",
+            "bnRlZ3JpdHlUb2tlbhJCCgphcHBfYXR0ZXN0GAIgASgLMiEuaHlwZWRvbWlu",
+            "by52MS5BcHBBdHRlc3RBc3NlcnRpb25IAFIJYXBwQXR0ZXN0QgcKBXByb29m",
+            "Il8KEkFwcEF0dGVzdEFzc2VydGlvbhIVCgZrZXlfaWQYASABKAxSBWtleUlk",
+            "EhQKBW5vbmNlGAIgASgJUgVub25jZRIcCglhc3NlcnRpb24YAyABKAxSCWFz",
+            "c2VydGlvbiL3AwoLU2VydmVySGVsbG8SMgoGc3RhdHVzGAEgASgOMhouaHlw",
+            "ZWRvbWluby52MS5IZWxsb1N0YXR1c1IGc3RhdHVzEi4KE21pbmltdW1fYXBw",
+            "X3ZlcnNpb24YAiABKAlSEW1pbmltdW1BcHBWZXJzaW9uEi0KE3NlcnZlcl90",
+            "aW1lX3VuaXhfbXMYAyABKARSEHNlcnZlclRpbWVVbml4TXMSJwoPY2F0YWxv",
+            "Z192ZXJzaW9uGAQgASgJUg5jYXRhbG9nVmVyc2lvbhIZCghpbl9tYXRjaBgF",
+            "IAEoCFIHaW5NYXRjaBJCCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVk",
+            "b21pbm8udjEuU3RyaW5nQnVuZGxlUg1zdHJpbmdCdW5kbGVzEkUKD2ZhbGxi",
+            "YWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFp",
+            "blIOZmFsbGJhY2tDaGFpbnMSIwoNc2Vzc2lvbl9ub25jZRgIIAEoBlIMc2Vz",
+            "c2lvbk5vbmNlEigKEGNvbnRlbnRfYmFzZV91cmwYCSABKAlSDmNvbnRlbnRC",
+            "YXNlVXJsEjcKGG1haW50ZW5hbmNlX2VuZHNfdW5peF9tcxgKIAEoBFIVbWFp",
+            "bnRlbmFuY2VFbmRzVW5peE1zIlgKDFN0cmluZ0J1bmRsZRIaCghsYW5ndWFn",
+            "ZRgBIAEoCVIIbGFuZ3VhZ2USGAoHdmVyc2lvbhgCIAEoDVIHdmVyc2lvbhIS",
+            "CgRoYXNoGAMgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3Vh",
+            "Z2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3Vh",
+            "Z2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQ",
+            "UExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKoYBCgtIZWxs",
+            "b1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUxM",
+            "T19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRFX1JF",
+            "UVVJUkVEEAISHAoYSEVMTE9fU1RBVFVTX01BSU5URU5BTkNFEANCxQEKEWNv",
+            "bS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20vQWxp",
+            "ZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRv",
+            "bWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygIN",
+            "SHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5I",
+            "eXBlZG9taW5vOjpWMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs", "Integrity" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs", "Integrity", "DeviceRiskSignals" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.IntegrityProof), global::Hypedomino.V1.IntegrityProof.Parser, new[]{ "PlayIntegrityToken", "AppAttest" }, new[]{ "Proof" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.AppAttestAssertion), global::Hypedomino.V1.AppAttestAssertion.Parser, new[]{ "KeyId", "Nonce", "Assertion" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains", "SessionNonce", "ContentBaseUrl", "MaintenanceEndsUnixMs" }, null, null, null, null),
@@ -139,6 +140,7 @@ namespace Hypedomino.V1 {
       lastAckedSequence_ = other.lastAckedSequence_;
       clientTimeUnixMs_ = other.clientTimeUnixMs_;
       integrity_ = other.integrity_ != null ? other.integrity_.Clone() : null;
+      deviceRiskSignals_ = other.deviceRiskSignals_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -256,6 +258,17 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "device_risk_signals" field.</summary>
+    public const int DeviceRiskSignalsFieldNumber = 10;
+    private static readonly pb::FieldCodec<string> _repeated_deviceRiskSignals_codec
+        = pb::FieldCodec.ForString(82);
+    private readonly pbc::RepeatedField<string> deviceRiskSignals_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> DeviceRiskSignals {
+      get { return deviceRiskSignals_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -280,6 +293,7 @@ namespace Hypedomino.V1 {
       if (LastAckedSequence != other.LastAckedSequence) return false;
       if (ClientTimeUnixMs != other.ClientTimeUnixMs) return false;
       if (!object.Equals(Integrity, other.Integrity)) return false;
+      if(!deviceRiskSignals_.Equals(other.deviceRiskSignals_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -296,6 +310,7 @@ namespace Hypedomino.V1 {
       if (LastAckedSequence != 0UL) hash ^= LastAckedSequence.GetHashCode();
       if (ClientTimeUnixMs != 0UL) hash ^= ClientTimeUnixMs.GetHashCode();
       if (integrity_ != null) hash ^= Integrity.GetHashCode();
+      hash ^= deviceRiskSignals_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -350,6 +365,7 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(74);
         output.WriteMessage(Integrity);
       }
+      deviceRiskSignals_.WriteTo(output, _repeated_deviceRiskSignals_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -396,6 +412,7 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(74);
         output.WriteMessage(Integrity);
       }
+      deviceRiskSignals_.WriteTo(ref output, _repeated_deviceRiskSignals_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -433,6 +450,7 @@ namespace Hypedomino.V1 {
       if (integrity_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Integrity);
       }
+      size += deviceRiskSignals_.CalculateSize(_repeated_deviceRiskSignals_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -475,6 +493,7 @@ namespace Hypedomino.V1 {
         }
         Integrity.MergeFrom(other.Integrity);
       }
+      deviceRiskSignals_.Add(other.deviceRiskSignals_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -533,6 +552,10 @@ namespace Hypedomino.V1 {
             input.ReadMessage(Integrity);
             break;
           }
+          case 82: {
+            deviceRiskSignals_.AddEntriesFrom(input, _repeated_deviceRiskSignals_codec);
+            break;
+          }
         }
       }
     #endif
@@ -589,6 +612,10 @@ namespace Hypedomino.V1 {
               Integrity = new global::Hypedomino.V1.IntegrityProof();
             }
             input.ReadMessage(Integrity);
+            break;
+          }
+          case 82: {
+            deviceRiskSignals_.AddEntriesFrom(ref input, _repeated_deviceRiskSignals_codec);
             break;
           }
         }
