@@ -91,7 +91,17 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 `UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
 
-`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` looks a key up along the 1.2 fallback chain. The `ShopTests` EditMode tests cover these types.
+`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` gives the built-in value of a key in one language. The `ShopTests` EditMode tests cover these types.
+
+## Localization
+
+`UI/Localization` is the client side of `docs/localization.md` (section 2.4).
+- **`GameLanguage`:** picks the language.
+- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match.
+- **`StringBundle`:** reads a published bundle after its hash check.
+- **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects.
+
+The `LocalizationTests` EditMode tests cover them. Format a string when a screen opens or a value changes, never per frame.
 
 ## Graphics levels
 
@@ -140,6 +150,20 @@ Without a local Unity license, an editor method that creates or changes assets r
 ## Release build
 
 `Editor/ReleaseBuild.BuildAndroid` builds the release AAB for one catalog version (`docs/content-delivery.md` 6): it sets the Addressables player version to `-catalogVersion <version>`, builds the scenes in Build Settings into `-customBuildPath` (default `Builds/hypedomino.aab`) together with the content, and fails when `ServerData/Android/catalog_<version>.bin` is missing. It restores the player version and the AAB switch afterwards. In CI: `gh workflow run release-build.yml -f catalog_version=<version>`. The workflow measures the download size with `bundletool` on the low, mid and high device specs in `tools/install-size/specs`, fails at 150 MB or more (`docs/performance.md` 3) and keeps the AAB, the size report and the remote folder as artifacts. `ReleaseBuildTests` cover the version rule and the remote folder.
+
+Optional arguments stamp the release, and the build restores the project settings afterwards:
+- `-appVersion <major.minor.patch>` sets the version name, the form the server compares with the minimum version (`proto/README.md`).
+- `-buildNumber <n>` sets the Android version code, 1 to 2,100,000,000.
+- `-applicationId <package>` sets the Android package name.
+- `-androidSigning <file>` signs with the upload key: a JSON file with `keystore`, `keystorePass`, `keyAlias` and `keyAliasPass`.
+
+Every run passes the workflow run number as the build number, so build numbers only grow. Pushing a tag `client-v<major>.<minor>.<patch>` runs the same workflow as a release:
+- The version comes from the tag, and the catalog version is `<version>-<build number>`.
+- The package name is the repository variable `ANDROID_APPLICATION_ID`.
+- The upload key comes from the `ANDROID_KEYSTORE_*` and `ANDROID_KEYALIAS_*` secrets (`docs/environments.md` 2.3). It is written to `client/Signing` for the build only and removed afterwards.
+- The signed AAB goes to the Play internal testing track with `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+
+A tag run fails before the build when a variable or secret is missing. The iOS build and the TestFlight upload are not built yet.
 
 ## Safe area
 
