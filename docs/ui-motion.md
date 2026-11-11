@@ -416,7 +416,7 @@ Worked from `docs/rules.md`:
 | 7 | B scores 15 hand points and 35 carry-over | 3, then 6; roll of 50 points 400 ms |
 | 8 | B scores 80 from a block | 6; roll 640 ms (the 1200 ms cap starts at 150 points) |
 
-The step table, chain boost and roll timings are admin config with these defaults, so they can be tuned without a release.
+The step table, chain boost and roll timings are admin config with these defaults, so they can be tuned without a release. Until that config reaches the client, `UI/Motion/ScoreCascade` reads the defaults from `TokenScoreCascade`. Particle counts round half up, and a step's text size is the `score` size times its text scale, rounded. With reduce motion a popup fades in and out instead of scaling, the shake is dropped and particles use the low level's counts.
 
 ### Score panel and hand summary
 
