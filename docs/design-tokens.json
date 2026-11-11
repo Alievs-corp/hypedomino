@@ -89,7 +89,10 @@
     "xxxl": 64
   },
   "size": {
-    "touchTargetMin": 120
+    "touchTargetMin": 120,
+    "seatPanelWidth": 264,
+    "seatPanelHeight": 216,
+    "handHeight": 224
   },
   "elevation": {
     "e0": { "offsetY": 0, "alpha": 0 },
