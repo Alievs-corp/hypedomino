@@ -139,7 +139,19 @@ func (s *Store) Revoke(ctx context.Context, refresh string, now time.Time) error
 }
 
 func (s *Store) RevokeAccount(ctx context.Context, account string, now time.Time) (int, error) {
-	return RevokeAccountIn(ctx, s.pool, account, ReasonLogoutAll, now)
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+	revoked, err := RevokeAccountIn(ctx, tx, account, ReasonLogoutAll, now)
+	if err != nil {
+		return 0, err
+	}
+	if _, err := tx.Exec(ctx, `delete from push_devices where account_id = $1`, account); err != nil {
+		return 0, err
+	}
+	return revoked, tx.Commit(ctx)
 }
 
 type Execer interface {

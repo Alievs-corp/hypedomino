@@ -57,6 +57,7 @@ var exportSections = []exportSection{
 		where $1 in (r.sender_id, r.recipient_id) order by r.created_at`},
 	{"blocks", "blocks", `select p.nickname, b.created_at from blocks b left join profiles p on p.account_id = b.blocked_id where b.account_id = $1 order by b.created_at`},
 	{"friend_code", "friend_codes", `select code from friend_codes where account_id = $1`},
+	{"consents", "consent_records", `select purpose, granted, policy_version, source, app_version, recorded_at from consent_records where account_id = $1 order by recorded_at, id`},
 }
 
 var withheldFromExport = map[string]bool{

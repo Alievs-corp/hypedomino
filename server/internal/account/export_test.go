@@ -30,6 +30,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		{`insert into purchases (platform, transaction_id, account_id, offer_id, product_id, environment, state, grant_key, purchased_at) values ('google', 'tx-1', $1, 'offer', 'product', 'production', 'granted', 'secret-grant-key', $2)`, own},
 		{`insert into risk_signals (account_id, kind, weight, dedupe_key, evidence, created_at) values ($1, 'clock_skew', 7, 'd-1', '{"detector":"hidden-evidence"}', $2::timestamptz - interval '1 day'), ($1, 'mac_failure', 5, 'd-2', '{}', $2::timestamptz + interval '1 day')`, own},
 		{`insert into risk_actions (account_id, action, score, wave, created_at) values ($1, 'shadowban', 987654321, $2, $2)`, own},
+		{`insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at) values ($1, 'promotional_push', true, 'p-3', 'settings', '1.0.0', $2)`, own},
 	} {
 		if _, err := pool.Exec(ctx, seed.statement, seed.args...); err != nil {
 			t.Fatalf("%s: %v", seed.statement, err)
@@ -65,6 +66,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		"purchases":        {`"transaction_id":"tx-1"`},
 		"sanctions":        {`"action":"shadowban"`},
 		"sanction_signals": {`"category":"clock_skew"`},
+		"consents":         {`"purpose":"promotional_push"`, `"granted":true`},
 		"blocks":           nil,
 	}
 	for name, fragments := range wants {

@@ -159,6 +159,8 @@ The privacy policy states this table. A deleted account appears in past matches 
 
 One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server timestamp, source (first launch or settings), app version. Choices made before sign-in are held on the device and written at step 5 with their original order. Rows are append-only.
 
+- Implementation: table `consent_records` (migration `00051_consent_records.sql`). Today only `PUT /push/settings` writes it, for `promotional_push` (`docs/push.md` PN-9); the policy and app versions come from the client, the timestamp from the server. On account deletion the rows move to the tombstone id (8.2). Not yet built: the sign-in write of choices made before sign-in (step 5), the `analytics` and `diagnostics` writes (#157, #181), and the purge after `ConsentRecordRetentionYears`.
+
 ### 6.4 Analytics rules (#181)
 
 - No event is sent, queued or written to disk before `analytics` is on. Events from before consent are dropped, not held.
@@ -259,7 +261,8 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 - Implemented in `server/internal/account/export.go` and `server/internal/dataexport` (#63). `POST /account/export` with the access token reserves a request row in `data_exports`, builds the document, writes it to the private export bucket as `exports/<random id>.json` and answers 201 with the signed URL and `expires_at`. Inside the cooldown it answers 429 `export_cooldown` with `retry_at`; if the build or upload fails the row is released and it answers 503 `export_unavailable`, so a failure does not start the cooldown. A purge job, run every `HD_SEASON_POLL`, deletes each file once `expires_at` passes and marks the row. Without `HD_EXPORT_STORE_URL` the endpoint is not served (`docs/environments.md` 2.1).
 - Document: `schema_version` (1), `generated_at` and `sections`, each a list of rows. Every table that references an account is either exported with an explicit column list or withheld, and a test fails when a new table is neither. Withheld: `auth_sessions` (D-4), `app_attest_keys` (D-19 device keys), `push_devices` (D-22), `rating_signals` and `risk_reviews` (detection internals, other players' account ids), `player_reports` (D-20, reporter identities), `data_exports`. D-2 is left out; the email (D-3) is included.
 - Anti-cheat content: `sanctions` lists each ban-wave action with its time; the `account` section holds the current `banned_until`, `shadowbanned_at` and `muted_until`; `sanction_signals` lists the category (the signal kind) and time of each signal recorded at or before the latest sanction. Signals after the latest sanction, weights, scores, dedupe keys and evidence are withheld.
-- Not yet in the document, because the data is not stored yet: D-23 consent records, D-24 analytics events, and the history of past admin bans and mutes, which today lives only in the admin audit log (D-27).
+- D-23: the `consents` section lists every `consent_records` row (purpose, choice, policy and app version, source, time). The age gate result is not stored yet, so it is not in the document.
+- Not yet in the document, because the data is not stored yet: D-24 analytics events, and the history of past admin bans and mutes, which today lives only in the admin audit log (D-27).
 - A support answer to an access request (8.1) gives the same anti-cheat content and states, with the reason, what was withheld and that the player may complain to a supervisory authority (GDPR Art. 12(4)).
 
 ## 9. Regulation mapping
