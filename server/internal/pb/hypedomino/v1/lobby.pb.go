@@ -36,6 +36,7 @@ const (
 	LobbyCommand_LOBBY_COMMAND_ACT          LobbyCommand = 9
 	LobbyCommand_LOBBY_COMMAND_INVITE       LobbyCommand = 10
 	LobbyCommand_LOBBY_COMMAND_REQUEST_SEAT LobbyCommand = 11
+	LobbyCommand_LOBBY_COMMAND_ADD          LobbyCommand = 12
 )
 
 // Enum value maps for LobbyCommand.
@@ -53,6 +54,7 @@ var (
 		9:  "LOBBY_COMMAND_ACT",
 		10: "LOBBY_COMMAND_INVITE",
 		11: "LOBBY_COMMAND_REQUEST_SEAT",
+		12: "LOBBY_COMMAND_ADD",
 	}
 	LobbyCommand_value = map[string]int32{
 		"LOBBY_COMMAND_UNSPECIFIED":  0,
@@ -67,6 +69,7 @@ var (
 		"LOBBY_COMMAND_ACT":          9,
 		"LOBBY_COMMAND_INVITE":       10,
 		"LOBBY_COMMAND_REQUEST_SEAT": 11,
+		"LOBBY_COMMAND_ADD":          12,
 	}
 )
 
@@ -623,7 +626,7 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x0erequested_seat\x18\x04 \x01(\x0e2\x13.hypedomino.v1.SeatR\rrequestedSeat\"I\n" +
 	"\vLobbyInvite\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12&\n" +
-	"\x0ffrom_account_id\x18\x02 \x01(\tR\rfromAccountId*\xc6\x02\n" +
+	"\x0ffrom_account_id\x18\x02 \x01(\tR\rfromAccountId*\xdd\x02\n" +
 	"\fLobbyCommand\x12\x1d\n" +
 	"\x19LOBBY_COMMAND_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14LOBBY_COMMAND_CREATE\x10\x01\x12\x16\n" +
@@ -637,7 +640,8 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x11LOBBY_COMMAND_ACT\x10\t\x12\x18\n" +
 	"\x14LOBBY_COMMAND_INVITE\x10\n" +
 	"\x12\x1e\n" +
-	"\x1aLOBBY_COMMAND_REQUEST_SEAT\x10\v*n\n" +
+	"\x1aLOBBY_COMMAND_REQUEST_SEAT\x10\v\x12\x15\n" +
+	"\x11LOBBY_COMMAND_ADD\x10\f*n\n" +
 	"\n" +
 	"LobbyPhase\x12\x1b\n" +
 	"\x17LOBBY_PHASE_UNSPECIFIED\x10\x00\x12\x15\n" +

@@ -39,7 +39,8 @@ A member can leave the room in FL-1 and FL-2. Leaving during FL-3 and FL-4 is a 
 - A member whose match has not ended cannot join another room or queue (R-58).
 - Nothing in a custom room grants coins, pass XP, missions, medals or rating (R-55, `docs/economy.md` 2.1).
 - Protocol: `LobbyIntent`, `LobbyState`, `LobbyRelay` and `LobbyInvite` (`proto/README.md`). A member's actions, emoji and mute come from their loadout when they create or join the room; the clips of an animated character are `idle`, `win`, `lose` and `reaction`. An in-game invite goes only to a friend. A member who disconnects outside a match leaves the room; during a custom match they keep their place until the reconnect grace ends. A seat left by a disconnected or removed player is played by the bot at the casual bot level of the matchmaking config (R-52, R-55).
-- Rooms live on the node that created them. Joining by code and in-game invites reach only players connected to the same node until cross-node routing exists.
+- Rooms live on the node that created them, and the room code is unique across nodes. A player connected to another node who joins by code is moved to the room's node: the server closes the connection, the client reconnects as after any drop and arrives in the room with its `LobbyState`. In-game invites reach the friend on whichever node they are connected to (`server/README.md`, Cluster).
+- The leader adds a member who has no seat to a free seat in team setup or during the match (`ADD`, R-55); during the match the member takes the seat back from the bot. A player outside the room joins it first; a removed player can join again only in the lobby or team setup, because a running match accepts no joins.
 
 ## 5. Decisions and open items
 

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/bot"
 	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
@@ -178,4 +180,98 @@ func TestLobbyIntentsAreRefusedWithoutAHostedLobby(t *testing.T) {
 	p := tab.connect(tab.manager.Create("ana"), true)
 	p.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
 	p.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_UNAVAILABLE)
+}
+
+func TestTheLeaderAddsAWaitingMemberToAFreeSeatDuringTheMatch(t *testing.T) {
+	tab, _ := newLobbyTable(t)
+	ana, ben, cem := tab.member("ana"), tab.member("ben"), tab.member("cem")
+	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
+	code := ana.lobbyState().GetCode()
+	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code})
+	ben.lobbyState()
+	cem.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code})
+	cem.lobbyState()
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_TEAMS, Mode: pb.Mode_MODE_1V1})
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_PLACE, AccountId: "ana", Seat: pb.Seat_SEAT_X})
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_PLACE, AccountId: "ben", Seat: pb.Seat_SEAT_Y})
+	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_START))
+	ana.view()
+	ben.view()
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ADD, AccountId: "dan", Seat: pb.Seat_SEAT_Y})
+	ana.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_NOT_IN_LOBBY)
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ADD, AccountId: "cem", Seat: pb.Seat_SEAT_Y})
+	ana.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_SEAT_TAKEN)
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_REMOVE, AccountId: "ben"})
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ADD, AccountId: "cem", Seat: pb.Seat_SEAT_Y})
+	if view := cem.view(); view.GetSeat() != pb.Seat_SEAT_Y || view.GetMode() != pb.Mode_MODE_1V1 {
+		t.Fatalf("added member's view %v", view)
+	}
+	if !tab.manager.InMatch("cem") {
+		t.Fatal("the added member did not take the seat")
+	}
+}
+
+type fakeRemote struct {
+	refusal pb.LobbyRefusal
+	joins   chan string
+	invites chan string
+}
+
+func (f *fakeRemote) Join(ctx context.Context, code, account, session string) (pb.LobbyRefusal, error) {
+	f.joins <- code + ":" + account + ":" + session
+	return f.refusal, nil
+}
+
+func (f *fakeRemote) Invite(ctx context.Context, to string, invite *pb.LobbyInvite) error {
+	f.invites <- to + ":" + invite.GetCode() + ":" + invite.GetFromAccountId()
+	return nil
+}
+
+func TestACodeHostedOnAnotherNodeMovesTheJoinerThere(t *testing.T) {
+	tab, _ := newLobbyTable(t)
+	remote := &fakeRemote{refusal: pb.LobbyRefusal_LOBBY_REFUSAL_FULL, joins: make(chan string, 2), invites: make(chan string, 1)}
+	tab.manager.Reach(remote)
+	token := tab.manager.Create("ben")
+	ben := tab.connect(token, true)
+	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: "ELSEWH"})
+	ben.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_FULL)
+	if join := <-remote.joins; join != "ELSEWH:ben:"+token {
+		t.Fatalf("remote join %q", join)
+	}
+	remote.refusal = pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED
+	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: "ELSEWH"})
+	if status := ben.closeStatus(); status != websocket.StatusGoingAway {
+		t.Fatalf("joiner of a remote room closed with %v", status)
+	}
+	ana := tab.member("ana")
+	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
+	code := ana.lobbyState().GetCode()
+	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_INVITE, AccountId: "ben"})
+	if invite := <-remote.invites; invite != "ben:"+code+":ana" {
+		t.Fatalf("remote invite %q", invite)
+	}
+}
+
+func TestAnAdoptedJoinerFindsTheLobbyWhenItsConnectionArrives(t *testing.T) {
+	tab, _ := newLobbyTable(t)
+	ana := tab.member("ana")
+	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
+	code := ana.lobbyState().GetCode()
+	ctx := context.Background()
+	if refusal := tab.manager.Adopt(ctx, "NOSUCH", "ben", "sid-ben"); refusal != pb.LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_CODE {
+		t.Fatalf("adopt into an unknown code: %v", refusal)
+	}
+	if refusal := tab.manager.Adopt(ctx, code, "ben", "sid-ben"); refusal != pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED {
+		t.Fatalf("adopt: %v", refusal)
+	}
+	if state := ana.lobbyState(); !slices.Equal(state.GetMemberAccountIds(), []string{"ana", "ben"}) {
+		t.Fatalf("leader sees %v", state)
+	}
+	ben := tab.connect("sid-ben", true)
+	if state := ben.lobbyState(); state.GetCode() != code || !slices.Equal(state.GetMemberAccountIds(), []string{"ana", "ben"}) {
+		t.Fatalf("adopted joiner sees %v", state)
+	}
+	if refusal := tab.manager.Adopt(ctx, code, "ben", "sid-ben"); refusal != pb.LobbyRefusal_LOBBY_REFUSAL_ALREADY_IN_LOBBY {
+		t.Fatalf("second adopt: %v", refusal)
+	}
 }

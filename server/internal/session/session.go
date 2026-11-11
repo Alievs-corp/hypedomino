@@ -75,6 +75,7 @@ type Manager struct {
 	lobby    *custom.Lobby
 	members  LobbyMembers
 	friends  Friends
+	remote   RemoteLobby
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -204,10 +205,13 @@ func (m *Manager) finish(s *Session, r *room.Room) {
 		return
 	}
 	s.room, s.joined, s.acked = nil, false, 0
-	routed := s.routed
-	s.routed = false
+	m.unroute(s)
 	m.mu.Unlock()
-	if routed {
+}
+
+func (m *Manager) unroute(s *Session) {
+	if s.routed && s.room == nil && s.lobby == nil {
+		s.routed = false
 		m.release(s.token)
 	}
 }
@@ -363,9 +367,13 @@ func (c *connection) QuickMessage(key string, teamOnly bool) {
 
 func (c *connection) Attach() {
 	c.manager.mu.Lock()
-	defer c.manager.mu.Unlock()
 	if c.session.room != nil {
 		c.attach(c.session)
+	}
+	lobby := c.session.lobby
+	c.manager.mu.Unlock()
+	if lobby != nil {
+		c.sendLobby(stateMessage(lobby.State()))
 	}
 }
 
