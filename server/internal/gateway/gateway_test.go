@@ -15,6 +15,7 @@ import (
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -173,6 +174,9 @@ func (h *harness) connect(ctx context.Context, conn *Conn, hello *pb.ClientHello
 	}
 	if hello.GetSessionToken() == "ok-broken" {
 		return nil, errors.New("storage down")
+	}
+	if hello.GetSessionToken() == "ok-panic" {
+		panic("handler broke")
 	}
 	if hello.GetSessionToken() == "ok-tampered" {
 		return nil, ErrIntegrityFailed
@@ -391,6 +395,23 @@ func TestHandlerFailureClosesWithInternalError(t *testing.T) {
 	c := h.dial()
 	c.send(hello("ok-broken", "1.2.3", 3))
 	c.expectClose(websocket.StatusInternalError)
+}
+
+func TestHandlerPanicClosesOnlyThatConnectionAndIsCounted(t *testing.T) {
+	h := newHarness(t, testConfig())
+	c := h.dial()
+	c.send(hello("ok-panic", "1.2.3", 3))
+	c.expectClose(websocket.StatusInternalError)
+	var metrics strings.Builder
+	panics.WriteTo(&metrics)
+	if !strings.Contains(metrics.String(), `hd_panics_total{where="gateway read"}`) {
+		t.Fatalf("metrics:\n%s", metrics.String())
+	}
+	other := h.dial()
+	other.send(hello("ok-after", "1.2.3", 3))
+	if other.recv().GetServerHello() == nil {
+		t.Fatal("the gateway stopped serving after a connection panicked")
+	}
 }
 
 func TestFirstFrameMustBeTheHello(t *testing.T) {

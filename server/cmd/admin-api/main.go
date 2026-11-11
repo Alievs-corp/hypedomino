@@ -29,6 +29,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
@@ -219,6 +220,7 @@ func main() {
 		os.Exit(2)
 	}
 	logger := app.NewLogger(os.Stdout, c.logLevel)
+	slog.SetDefault(logger)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 	if *email != "" {
@@ -251,7 +253,7 @@ func run(ctx context.Context, c config, logger *slog.Logger) error {
 	handler := adminapi.New(c.api, verifier, buckets, pool, time.Now, logger)
 	if client != nil {
 		ratingConfigs := rating.NewWatcher(pool, logger)
-		go ratingConfigs.Run(ctx, c.configPoll)
+		go panics.Supervise(ctx, "config rating", c.configPoll, ratingConfigs.Run)
 		ratings := rating.NewStore(pool, ratingConfigs)
 		ratings.SetBoards(leaderboard.New(client, ratings, ratings, leaderboard.DefaultConfig()), logger)
 		handler.OnShadowban(ratings.HideFromBoards)
