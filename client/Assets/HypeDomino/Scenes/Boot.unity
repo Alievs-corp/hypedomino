@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1629112806}
   - component: {fileID: 1629112805}
+  - component: {fileID: 1629112807}
   m_Layer: 0
   m_Name: FrameTimingSampler
   m_TagString: Untagged
@@ -148,6 +149,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f2284e754d603d4bbd2afbf4b62f4b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HypeDomino.Core::HypeDomino.Core.Diagnostics.FrameTimingSampler
+--- !u!114 &1629112807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1629112804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071da87a8b94403f80ca8070c2ee4725, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: HypeDomino.UI::HypeDomino.UI.Diagnostics.FrameStatsOverlay
 --- !u!4 &1629112806
 Transform:
   m_ObjectHideFlags: 0

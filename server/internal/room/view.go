@@ -34,6 +34,9 @@ type View struct {
 	TurnPlacements  int
 	TurnDeadline    time.Time
 	Controllers     [6]rules.Controller
+	Disconnected    [6]bool
+	Timeouts        [6]int
+	AfkTimeouts     int
 	Presence        [6]rules.PresenceReport
 	LegalMoves      []rules.Move
 	LastResult      rules.HandResult
@@ -48,10 +51,12 @@ type View struct {
 }
 
 func (r *Room) view(seat rules.Seat) View {
-	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked}
+	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked, AfkTimeouts: r.options.Config.AfkConsecutiveTimeouts}
 	for _, s := range r.options.Mode.Seats() {
 		v.Controllers[s] = r.presence.Controller(s)
 		v.Presence[s] = r.presence.Report(s)
+		v.Disconnected[s] = r.seats[s].sink == nil && !r.botSeat(s)
+		v.Timeouts[s] = r.presence.ConsecutiveTimeouts(s)
 		v.Loading[s] = r.seats[s].loading
 		v.Ready[s] = r.seats[s].ready
 	}
@@ -96,4 +101,13 @@ func (r *Room) view(seat rules.Seat) View {
 		}
 	}
 	return v
+}
+
+func (r *Room) botSeat(seat rules.Seat) bool {
+	for _, player := range r.options.Roster {
+		if player.Seat == seat {
+			return player.Bot
+		}
+	}
+	return false
 }

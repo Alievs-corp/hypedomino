@@ -47,6 +47,12 @@ test("C# frame rate tokens carry the offered rates and each effect level's targe
   assert.ok(source.includes("public const int BatterySaverFrameRate = 30;"));
 });
 
+test("C# text size tokens carry each type style's size", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public const int Caption = 30;"));
+  assert.ok(source.includes("public const int Score = 108;"));
+});
+
 test("a GPU pattern that is not a regular expression is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.graphics.deviceClass.lowGpuPatterns.push("^Mali-(G52"); }), "^Mali-(G52 is not a regular expression");
 });
