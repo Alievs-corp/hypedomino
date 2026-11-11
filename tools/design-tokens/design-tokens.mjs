@@ -444,6 +444,7 @@ export function csharpTokens(tokens) {
     csharpClass("TokenSpacing", constants(tokens.spacing, "int", intLiteral)),
     csharpClass("TokenRadius", constants(tokens.radius, "int", intLiteral)),
     csharpClass("TokenSize", constants(tokens.size, "int", intLiteral)),
+    csharpClass("TokenTextSize", Object.entries(tokens.typography.scale).map(([name, style]) => `public const int ${pascal(name)} = ${intLiteral(["typography", "scale", name, "size"], style.size)};`)),
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
     csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`]),
