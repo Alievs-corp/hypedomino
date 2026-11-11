@@ -124,6 +124,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signals := risk.NewStore(pool)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
+	sessions.ObserveDevices(integrity.NewDeviceReports(config.IntegrityPolicy, risk.NewIntegrity(signals, systemClock{}, logger)))
 	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)
 	critical := func(next http.Handler) http.Handler { return token.RequireMac(tokens, macFailures, next) }
 	limiter.Authenticate(tokens)

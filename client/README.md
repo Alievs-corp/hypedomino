@@ -142,7 +142,7 @@ Outcomes:
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 
@@ -161,6 +161,15 @@ Outcomes:
 `UI/Motion/TweenPool` runs the tweens of `docs/ui-motion.md` 6 rule 3. Create it once per scene with `TweenPool.For(level)`, which takes `TokenEffectLevel.*MaxTweens`. `Start(tween, ref sink)` and `Step(nowMs, ref sink)` write values through an `ITweenSink` struct, so neither allocates: a `Tween` is a value with a target index, a channel (position, rotation, scale, opacity), its from and to values, start, duration, a `TokenEasing` curve, and whether it is cosmetic. When the pool is full, the oldest cosmetic tween lands on its end value. `FinishAll` is the jump to the final state of rule 5. A tween does nothing to its target before its start time. `UI/Board/TileTravel.Start` runs `tilePlace`: position and the shorter turn in `base` with `standard`, then the settle from `pressScale` in `micro` with `overshoot` (300 ms, the `tilePlace` duration); with reduce motion `fast` and no settle. `TileTravel.Arrive` is the deal and draw of 6 "Hand motion": tile n starts n × `micro` later. `UI/Match/PassNotice` gives the scale and opacity of the pass label at a time, like `EmojiPop`. The `TweenPoolTests` EditMode tests cover the curve, eviction, replacement, finishing, tile travel, settle, deal spacing, draw and 0 B per frame; `PassNoticeTests` cover the pass label.
 
 `UI/Motion/MotionPreference` holds reduce motion (`docs/ui-motion.md` 6, Reduce motion): the player's choice when there is one, otherwise the system setting, with `Changed` raised whenever the value in use may have changed. `Game/MotionBoot` creates it before the first scene from the saved `motion.reduce` choice and the system setting (Android `Settings.Global` animator duration scale 0, iOS `UIAccessibilityIsReduceMotionEnabled` through `Plugins/iOS/HypeDominoAccessibility.mm`), rereads the system setting whenever the app regains focus, saves a new choice and logs one `Motion reduce=...` line per change. `MotionPreferenceTests` cover the rules.
+
+## Score cascade
+
+`UI/Motion/ScoreCascade` turns a score value into the presentation of `docs/ui-motion.md` 8:
+- `StepOf(points)` gives the step, and `ChainStepOf(points, placement)` adds the chain boost of several doubles, capped at the last step.
+- `Burst(step, level, reduceMotion)` gives the text size, particle count, hold and shake.
+- `RollMs(points)` gives the meter roll time, and `ChainStartMs` and `CarryOverStartMs` give the gaps.
+
+`ScorePopup.At(elapsedMs, holdMs, reduceMotion, out popup)` gives the popup's scale and opacity at a time. The values come from `TokenScoreCascade`, generated from `scoreCascade` in `docs/design-tokens.json`. The `ScoreCascadeTests` EditMode tests check every step against the spec table and the worked examples, and that a frame allocates 0 B.
 
 ## Canvas bench
 
@@ -236,7 +245,7 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 ## Device risk signals
 
-`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device. The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
+`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device into `Net/Session.DeviceRiskSignals`, and every `ClientHello` carries them in `device_risk_signals` (`SessionTests`). The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
 
 ## Error reports
 
