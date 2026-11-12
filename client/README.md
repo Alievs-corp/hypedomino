@@ -103,6 +103,10 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 The `LocalizationTests` EditMode tests cover them. Format a string when a screen opens or a value changes, never per frame.
 
+## Fonts
+
+`UI/Fonts` holds the type set of `docs/ui-motion.md` section 3. `Source/<Family>/` has each static face (`<family>-<weight>.ttf`) and the family's `OFL.txt`; `python tools/fonts/build_fonts.py` (fontTools at the version pinned in `fonts.json`) rebuilds them from the pinned google/fonts commit. `Editor/FontSetup.GenerateAndExit` (menu HypeDomino > Generate Font Assets, or the `Unity editor method` workflow) imports the TextMeshPro essentials if they are missing, writes one static TextMeshPro font asset per face with its fallbacks, `Resources/TypeSet.asset`, and makes `ui-400` the TextMeshPro default font. Regenerating replaces the font assets, so views pick fonts through `TypeSet.Apply` or `TokenText`, never by referencing a font asset. `TypeSetTests` and `node tools/fonts/fonts.mjs` check the coverage.
+
 ## Sign-in
 
 `Net/Auth/AuthSession` is the client side of `POST /auth/nonce`, `/auth/signin`, `/auth/refresh` and `/auth/logout` (`server/internal/auth`). It is plain C# behind three seams:
@@ -142,7 +146,7 @@ Outcomes:
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenFontFamily`, `TokenTextStyle` and `TokenTypography` (family, weight, size and line height per style, read by `UI/Typography/TypeSet`), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 

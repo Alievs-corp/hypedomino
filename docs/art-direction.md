@@ -222,7 +222,7 @@ A cosmetic's palette is reviewed per asset on the board: shown on both `color.su
 
 ## 10. Open items
 
-- Fonts in the client: the five families of section 5.6 as static SDF atlases with the glyph sets of ui-motion section 3, the Cyrillic fallback wired to `ui`, and the font check of `docs/localization.md` 4.5. Not in the client yet.
+- Fonts in the client: done in #592 (ui-motion section 3, "In the client"). The client ships the faces renamed (for example `HypeDomino Display 900 Italic`): Playfair Display and Josefin Sans carry a Reserved Font Name, and a static instance cut from the variable font is a Modified Version under the OFL.
 - Name letter effects: whether the effect follows the frame (the proposal of section 5.6) or is its own item, and the draw call cost of one material preset per effect against the three-preset rule of ui-motion section 3. Measured before the effects ship.
 - Iconsax: the npm package declares the MIT licence; the terms for the icon artwork on the vendor's site are confirmed by the owner before the icons ship. Which icons are used is #168.
 - Placement of the face-down rows and of the name and timer inside the seat box: #168 and #169 with `UI/Match/MatchLayout`.

@@ -137,6 +137,8 @@ Rules:
 - No runtime case conversion. Turkish and Azerbaijani map i to İ and ı to I, which culture-invariant upper-casing breaks; strings arrive from localisation already in their final case.
 - Text size never animates. A text pop scales its transform.
 
+In the client (#592): text is TextMeshPro, which ships inside the Unity UI package. `client/Assets/HypeDomino/UI/Fonts/fonts.json` lists the faces the scale uses (Cinzel 900, Playfair Display Italic 700 and 900, Cormorant Garamond Italic 700, Josefin Sans 300 and 400, Montserrat 300 and 400), the pinned google/fonts commit and the character sets of the table above. Each face is a static SDF atlas (sampling size 56, padding 7, the smallest listed atlas that fits) holding the listed characters it has plus every character of the built-in strings. Fallback chains: `ui` falls back to `uiCyrillic` of the same weight; `numeral`, `display` and `hint` fall back to `ui` 400, then `uiCyrillic` 400, so no role draws a box for an AZ, EN, TR or RU letter. ₼ ₺ ₽ are left out of the `numeral`, `display` and `hint` atlases, so they always come from `ui`. `TypeSet` (`Resources/TypeSet`) maps each style of the table above to its font asset; `TypeSet.Apply` or the `TokenText` component sets the font, size and line height from `TokenTypography`. `node tools/fonts/fonts.mjs` checks (in CI through `npm run test:tools`) every chain against the font files and the generated font assets.
+
 ## 4. Shape, space, elevation and glow
 
 | Group | Tokens |
@@ -454,3 +456,4 @@ The panel and the summary only present values from the latest `MatchView` (`prot
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - Sound per step is not part of this spec.
 - The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
+- Nicknames may hold any Latin or Cyrillic letter (`docs/localization.md` 5.1), but the static atlases hold only the sets of section 3, so a name with another letter (for example é, ß or і) draws a box in the `name` style. Owner decision: narrow the nickname letters to these sets, or add more letters to the `display` and `ui` atlases at an install size cost.

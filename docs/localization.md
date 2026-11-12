@@ -95,7 +95,6 @@ Not built yet:
 - **Device locale list:** reading it (Android `LocaleList`, iOS preferred languages).
 - **Saving and syncing:** saving and account sync of the choice.
 - **Remaining formatting:** decimal, timestamp and duration formatting.
-- **Fonts:** the font glyph check of 4.5.
 
 ## 3. Server-originated text
 
@@ -167,8 +166,8 @@ ICU MessageFormat subset: `{name}`, `{count, plural, one {...} few {...} many {.
 | Cyrillic | The Russian alphabet including `ё Ё`. |
 | Shared | Digits, punctuation, currency signs, UI symbols. |
 | Display fonts | Every stylised or effect font contains all of the above, or has a per-script fallback font. A missing glyph (tofu box) blocks release. |
-| Atlas | Dynamic atlases for text; static atlases only for fixed numeric displays. Font data ships in the install package or an Addressables group within the budget in `CLAUDE.md`. |
-| Check | A CI test checks font assets against these sets and against every character in approved bundle values. |
+| Atlas | Static SDF atlases holding the sets above and every character of the built-in bundle (`docs/ui-motion.md` section 3), so a match never adds a glyph at runtime. They ship in the install package. |
+| Check | `node tools/fonts/fonts.mjs` (in CI through `npm run test:tools`) checks every role's fallback chain, in the font files and in the generated font assets, against these sets and every character of the built-in bundle; `TypeSetTests` checks the same in the editor. Approved bundle values published from admin are not checked yet. |
 
 ### 4.6 Casing: the Turkish i trap
 
