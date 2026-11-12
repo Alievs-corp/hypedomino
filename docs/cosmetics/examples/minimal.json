@@ -21,23 +21,6 @@
       "culturalReview": "approved"
     },
     {
-      "id": "character.starter",
-      "type": "character",
-      "revision": 1,
-      "nameKey": "cosmetic.character.starter.name",
-      "rarityId": "common",
-      "animated": false,
-      "staticAddress": "cosmetic/character/starter/static",
-      "availability": "live",
-      "sources": [
-        {
-          "type": "default"
-        }
-      ],
-      "artSource": "handmade",
-      "culturalReview": "approved"
-    },
-    {
       "id": "frame.starter",
       "type": "frame",
       "revision": 1,

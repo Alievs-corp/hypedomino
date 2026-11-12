@@ -4,7 +4,7 @@ Status: Proposed. The format follows from constraints checked below. A first dev
 Date: 2026-11-06
 Issue: #93
 
-Characters are real-time 3D and stay under ADR 0009. This ADR covers the other animated cosmetics: avatars, frames, emoji and table layers.
+This ADR covers the animated cosmetics: avatars, frames, emoji and table layers. The game has no characters (ADR 0009 is superseded).
 
 ## Context
 

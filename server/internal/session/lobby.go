@@ -62,7 +62,6 @@ var refusals = []struct {
 	{custom.ErrInMatch, pb.LobbyRefusal_LOBBY_REFUSAL_IN_MATCH},
 	{custom.ErrWrongPhase, pb.LobbyRefusal_LOBBY_REFUSAL_WRONG_PHASE},
 	{custom.ErrBlocked, pb.LobbyRefusal_LOBBY_REFUSAL_BLOCKED},
-	{custom.ErrUnknownAction, pb.LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_ACTION},
 	{errNotFriend, pb.LobbyRefusal_LOBBY_REFUSAL_NOT_FRIEND},
 }
 
@@ -119,7 +118,7 @@ func lobbyFrame(event custom.Event, acked uint64) *pb.Envelope {
 	if event.State != nil {
 		return gateway.LobbyStateFrame(stateMessage(*event.State), acked)
 	}
-	relay := &pb.LobbyRelay{AccountId: event.Account, Action: event.Action, ItemId: event.Emoji}
+	relay := &pb.LobbyRelay{AccountId: event.Account, ItemId: event.Emoji}
 	if event.Request {
 		relay.RequestedSeat = pb.Seat(event.Seat) + 1
 	}
@@ -235,8 +234,6 @@ func (c *connection) inLobby(r *custom.Room, intent *pb.LobbyIntent) error {
 		return c.remove(r, intent.GetAccountId())
 	case pb.LobbyCommand_LOBBY_COMMAND_START:
 		return c.start(r)
-	case pb.LobbyCommand_LOBBY_COMMAND_ACT:
-		return r.Act(account, intent.GetAction())
 	case pb.LobbyCommand_LOBBY_COMMAND_INVITE:
 		return c.invite(r, intent.GetAccountId())
 	case pb.LobbyCommand_LOBBY_COMMAND_REQUEST_SEAT:

@@ -14,7 +14,7 @@ enum LobbyCommand {
   LOBBY_COMMAND_PLACE = 6;
   LOBBY_COMMAND_REMOVE = 7;
   LOBBY_COMMAND_START = 8;
-  LOBBY_COMMAND_ACT = 9;
+  LOBBY_COMMAND_ACT = 9 [deprecated = true];
   LOBBY_COMMAND_INVITE = 10;
   LOBBY_COMMAND_REQUEST_SEAT = 11;
   LOBBY_COMMAND_ADD = 12;
@@ -43,7 +43,7 @@ enum LobbyRefusal {
   LOBBY_REFUSAL_IN_MATCH = 12;
   LOBBY_REFUSAL_WRONG_PHASE = 13;
   LOBBY_REFUSAL_BLOCKED = 14;
-  LOBBY_REFUSAL_UNKNOWN_ACTION = 15;
+  LOBBY_REFUSAL_UNKNOWN_ACTION = 15 [deprecated = true];
   LOBBY_REFUSAL_NOT_FRIEND = 16;
 }
 
@@ -53,7 +53,7 @@ message LobbyIntent {
   Mode mode = 3;
   string account_id = 4;
   Seat seat = 5;
-  string action = 6;
+  string action = 6 [deprecated = true];
 }
 
 message LobbySeat {
@@ -73,7 +73,7 @@ message LobbyState {
 
 message LobbyRelay {
   string account_id = 1;
-  string action = 2;
+  string action = 2 [deprecated = true];
   string item_id = 3;
   Seat requested_seat = 4;
 }

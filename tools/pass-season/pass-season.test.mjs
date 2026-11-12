@@ -19,7 +19,7 @@ test("the committed sample season matches the XP formula and the economy coin bu
 test("the sample table has one row per level", () => {
   const rows = parseSampleTable(docText);
   assert.equal(rows.length, 100);
-  assert.deepEqual(rows[0], { level: 1, xpTotal: 0, free: "30 coins", premium: "6 crystals + `character.s1_navigator` (`epic`)" });
+  assert.deepEqual(rows[0], { level: 1, xpTotal: 0, free: "30 coins", premium: "6 crystals + `avatar.s1_navigator` (`epic`)" });
 });
 
 test("the XP formula grows linearly and then flattens at the maximum", () => {

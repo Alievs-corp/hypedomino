@@ -269,7 +269,6 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 		config.Rarities = parsed
 	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
-	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
 	r.integer("HD_FRIENDS_MAX", &config.Friends.MaxFriends)
 	r.integer("HD_FRIEND_REQUESTS_MAX", &config.Friends.MaxRequests)
 	r.integer("HD_REPORT_AUTO_RENAME_THRESHOLD", &config.Reports.AutoRenameThreshold)
@@ -405,8 +404,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	if err := config.Friends.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_FRIENDS_MAX and HD_FRIEND_REQUESTS_MAX: %w", err))
 	}
-	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
-		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))
+	if config.Inventory.EmojiSlots < 1 {
+		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS: at least 1"))
 	}
 	if config.Emoji.Burst < 1 || config.Emoji.Refill <= 0 {
 		r.errs = append(r.errs, errors.New("HD_EMOJI_BURST and HD_EMOJI_REFILL: a burst of at least 1 and a positive refill"))

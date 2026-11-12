@@ -20,7 +20,6 @@ import {
   validSlug,
   withAnimated,
   withBulkChange,
-  withHighDetail,
   withLayers,
   withNewSource,
   withoutSource,
@@ -40,11 +39,10 @@ const quietButton = "rounded-md bg-surface px-3 py-1 text-sm text-text-secondary
 
 const typeLabel: Record<string, MessageKey> = {
   avatar: "cosmetics.type.avatar",
-  character: "cosmetics.type.character",
   frame: "cosmetics.type.frame",
   table: "cosmetics.type.table",
+  tile: "cosmetics.type.tile",
   emoji: "cosmetics.type.emoji",
-  action: "cosmetics.type.action",
 };
 
 const availabilityLabel: Record<string, MessageKey> = {
@@ -352,7 +350,7 @@ function ItemForm({ item, rules, canReview, removable, onChange, onRemove }: For
         <SelectField label={t("cosmetics.rarity")} value={item.rarityId} options={rules.rarities} display={(id) => label(rarityLabel, id)} onChange={(rarityId) => onChange({ ...item, rarityId })} />
         <SelectField label={t("cosmetics.availability")} value={item.availability} options={rules.availability} display={(id) => label(availabilityLabel, id)} onChange={(availability) => onChange({ ...item, availability })} />
         <SelectField label={t("cosmetics.art_source")} value={item.artSource} options={rules.art_sources} display={(id) => label(artLabel, id)} onChange={(artSource) => onChange({ ...item, artSource })} />
-        <Toggle label={t("cosmetics.animated")} checked={item.animated} disabled={item.type === "action"} onChange={(animated) => onChange(withAnimated(item, animated))} />
+        <Toggle label={t("cosmetics.animated")} checked={item.animated} onChange={(animated) => onChange(withAnimated(item, animated))} />
         <Toggle label={t("cosmetics.review_approved")} checked={item.culturalReview === "approved"} disabled={!canReview} onChange={(on) => onChange({ ...item, culturalReview: on ? "approved" : "" })} />
       </div>
       <TypeFields item={item} onChange={onChange} />
@@ -376,14 +374,6 @@ function TypeFields({ item, onChange }: { item: CosmeticItem; onChange: (item: C
         {t("cosmetics.group")}
         <input value={item.group ?? ""} onChange={(event) => onChange({ ...item, group: event.target.value })} className={`${fieldClass} self-start font-mono`} />
       </label>
-    );
-  }
-  if (item.type === "character" && item.animated) {
-    return (
-      <div className="flex flex-col gap-2">
-        <p className="text-sm text-text-muted">{t("cosmetics.character_hint")}</p>
-        <Toggle label={t("cosmetics.high_detail")} checked={item.modelHqAddress !== undefined} onChange={(on) => onChange(withHighDetail(item, on))} />
-      </div>
     );
   }
   if (item.type === "table" && item.animated) {

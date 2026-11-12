@@ -25,7 +25,6 @@ var (
 	ErrInMatch        = errors.New("custom: account is in a running match")
 	ErrWrongPhase     = errors.New("custom: not allowed in this phase")
 	ErrBlocked        = errors.New("custom: a block stands between the accounts")
-	ErrUnknownAction  = errors.New("custom: action not available to the member")
 	ErrUnknownEmoji   = errors.New("custom: emoji not equipped by the member")
 	ErrMuted          = errors.New("custom: the member is muted")
 	ErrEmojiThrottled = errors.New("custom: emoji sent too fast")
@@ -46,7 +45,6 @@ type Sink interface {
 type Event struct {
 	State   *State
 	Account string
-	Action  string
 	Emoji   string
 	Request bool
 	Seat    rules.Seat
@@ -171,8 +169,6 @@ func (l *Lobby) close(code string) {
 
 type Member struct {
 	Account string
-	Clips   []string
-	Actions []string
 	Emoji   []string
 	Muted   bool
 	Sink    Sink
@@ -553,20 +549,6 @@ func (r *Room) Request(account string, seat rules.Seat) error {
 	if leader := r.members[0]; leader.Sink != nil {
 		leader.Sink.Deliver(Event{Account: account, Request: true, Seat: seat})
 	}
-	return nil
-}
-
-func (r *Room) Act(account, action string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	m, err := r.inLobby(account)
-	if err != nil {
-		return err
-	}
-	if !slices.Contains(m.Clips, action) && !slices.Contains(m.Actions, action) {
-		return ErrUnknownAction
-	}
-	r.deliver(Event{Account: account, Action: action})
 	return nil
 }
 

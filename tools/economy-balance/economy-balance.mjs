@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const rarityIds = ["common", "rare", "epic", "legendary", "mythic"];
-export const itemTypes = ["avatar", "character", "frame", "table", "tile", "emoji", "action"];
+export const itemTypes = ["avatar", "frame", "table", "tile", "emoji"];
 
 const header = "key,value,unit,kind,section";
 const keyPattern = /^[A-Z][A-Za-z0-9]*$/;

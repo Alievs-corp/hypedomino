@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 
 var now = time.Date(2026, 12, 10, 12, 0, 0, 0, time.UTC)
 
-const premiumItem = "character.tile_wizard"
+const premiumItem = "avatar.tile_wizard"
 
 type fixture struct {
 	pool    *pgxpool.Pool

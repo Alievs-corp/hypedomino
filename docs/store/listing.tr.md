@@ -35,7 +35,7 @@ domino oyunu,taş,masa oyunu,arkadaş,eşli,takım,çift,çok oyunculu,canlı,ra
 ## apple.promo
 
 ```text
-Beşin her katı puan getirir. 1v1 ve 2v2 derecelide yüksel, arkadaşlarını kendi odana davet et ve karakterlerini masada göster.
+Beşin her katı puan getirir. 1v1 ve 2v2 derecelide yüksel, arkadaşlarını kendi odana davet et, avatar ve çerçevelerini masada göster.
 ```
 
 ## description
@@ -60,7 +60,7 @@ ADİL OYUN
 • Bağlantısı kopan oyuncunun yerine o dönene kadar bot oynar, maç yarıda kalmaz.
 
 TARZINI YANSIT
-Karakterler, avatarlar, çerçeveler, masalar, emojiler ve lobi hareketleri topla. Onları masada ve 3D karakterlerinizin maç aralarında buluştuğu arkadaş lobisinde göster. Mağazadaki her teklif, sana tam olarak ne verileceğini gösterir.
+Avatarlar, çerçeveler, masalar, taş kaplamaları ve emojiler topla. Onları masada ve maç aralarında arkadaş lobisinde göster. Mağazadaki her teklif, sana tam olarak ne verileceğini gösterir.
 
 BİRLİKTE OYNAYIN
 Maç sırasında emojiler ve hazır mesajlarla tepki ver. Arkadaş ekle, kimlerin çevrimiçi olduğunu gör ve onları odana çağır.
@@ -109,7 +109,7 @@ Bağlantı ya da kodla davet et
 ## caption.S-6
 
 ```text
-Karakter ve masa topla
+Avatar ve masa topla
 ```
 
 ## caption.S-7

@@ -331,7 +331,7 @@ Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level.
 
 | Level | XP total to reach | Free | Premium |
 |---|---|---|---|
-| 1 | 0 | 30 coins | 6 crystals + `character.s1_navigator` (`epic`) |
+| 1 | 0 | 30 coins | 6 crystals + `avatar.s1_navigator` (`epic`) |
 | 2 | 300 | - | 6 crystals |
 | 3 | 650 | 30 coins | 6 crystals |
 | 4 | 1050 | - | 6 crystals |
@@ -430,7 +430,7 @@ Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level.
 | 97 | 90750 | 30 coins | 6 crystals |
 | 98 | 91750 | - | 6 crystals |
 | 99 | 92750 | 30 coins | 6 crystals |
-| 100 | 93750 | `frame.s1_compass` (`epic`) | 6 crystals + `character.s1_sea_queen` (`legendary`) |
+| 100 | 93750 | `frame.s1_compass` (`epic`) | 6 crystals + `avatar.s1_sea_queen` (`legendary`) |
 
 ### 8.3 Missions
 

@@ -28,12 +28,11 @@ var (
 )
 
 type Config struct {
-	EmojiSlots  int
-	ActionSlots int
+	EmojiSlots int
 }
 
 func DefaultConfig() Config {
-	return Config{EmojiSlots: 6, ActionSlots: 4}
+	return Config{EmojiSlots: 6}
 }
 
 type Owned struct {
@@ -226,17 +225,13 @@ func (s *Store) Freeze(ctx context.Context, account string) (profile.Loadout, er
 
 func (s *Store) fits(slot string, ids []string) error {
 	switch slot {
-	case cosmetics.TypeAvatar, cosmetics.TypeFrame, cosmetics.TypeCharacter, cosmetics.TypeTable, cosmetics.TypeTile:
+	case cosmetics.TypeAvatar, cosmetics.TypeFrame, cosmetics.TypeTable, cosmetics.TypeTile:
 		if len(ids) != 1 {
 			return fmt.Errorf("%w: %s takes exactly one item", ErrTooMany, slot)
 		}
 	case cosmetics.TypeEmoji:
 		if len(ids) > s.config.EmojiSlots {
 			return fmt.Errorf("%w: at most %d emojis", ErrTooMany, s.config.EmojiSlots)
-		}
-	case cosmetics.TypeAction:
-		if len(ids) > s.config.ActionSlots {
-			return fmt.Errorf("%w: at most %d actions", ErrTooMany, s.config.ActionSlots)
 		}
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownSlot, slot)
@@ -283,7 +278,7 @@ func (s *Store) resolve(ctx context.Context, q querier, account string, loadout 
 	for _, slot := range []struct {
 		name string
 		id   *string
-	}{{cosmetics.TypeAvatar, &loadout.Avatar}, {cosmetics.TypeFrame, &loadout.Frame}, {cosmetics.TypeCharacter, &loadout.Character}, {cosmetics.TypeTable, &loadout.Table}, {cosmetics.TypeTile, &loadout.Tile}} {
+	}{{cosmetics.TypeAvatar, &loadout.Avatar}, {cosmetics.TypeFrame, &loadout.Frame}, {cosmetics.TypeTable, &loadout.Table}, {cosmetics.TypeTile, &loadout.Tile}} {
 		if *slot.id == "" || s.equippable(ctx, q, account, slot.name, *slot.id) != nil {
 			if def, ok := s.Catalog().Default(slot.name); ok {
 				*slot.id = def.ID
@@ -293,7 +288,6 @@ func (s *Store) resolve(ctx context.Context, q querier, account string, loadout 
 		}
 	}
 	loadout.Emojis = s.keep(ctx, q, account, cosmetics.TypeEmoji, loadout.Emojis)
-	loadout.Actions = s.keep(ctx, q, account, cosmetics.TypeAction, loadout.Actions)
 	return loadout
 }
 
@@ -313,16 +307,12 @@ func set(loadout *profile.Loadout, slot string, ids []string) {
 		loadout.Avatar = ids[0]
 	case cosmetics.TypeFrame:
 		loadout.Frame = ids[0]
-	case cosmetics.TypeCharacter:
-		loadout.Character = ids[0]
 	case cosmetics.TypeTable:
 		loadout.Table = ids[0]
 	case cosmetics.TypeTile:
 		loadout.Tile = ids[0]
 	case cosmetics.TypeEmoji:
 		loadout.Emojis = slices.Clone(ids)
-	case cosmetics.TypeAction:
-		loadout.Actions = slices.Clone(ids)
 	}
 }
 

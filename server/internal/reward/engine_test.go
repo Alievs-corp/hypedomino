@@ -95,7 +95,7 @@ func (f *fixture) account(t *testing.T) string {
 
 var (
 	spring = cosmetics.Source{Type: "event", Ref: "event.spring_cup"}
-	fox    = reward.Bundle{ID: "bundle.spring_fox", Revision: 2, Coins: 300, Cosmetics: []string{"avatar.comet_fox", "action.victory_dance"}, Medals: []string{"medal.spring"}, PassXP: 40}
+	fox    = reward.Bundle{ID: "bundle.spring_fox", Revision: 2, Coins: 300, Cosmetics: []string{"avatar.comet_fox", "emoji.victory_dance"}, Medals: []string{"medal.spring"}, PassXP: 40}
 )
 
 func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
@@ -111,7 +111,7 @@ func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
 	if balance, err := f.wallet.Balance(ctx, ayla, wallet.Coin); err != nil || balance != 300 {
 		t.Fatalf("balance %d %v", balance, err)
 	}
-	if owns, err := f.inventory.Owns(ctx, ayla, "action.victory_dance"); err != nil || !owns {
+	if owns, err := f.inventory.Owns(ctx, ayla, "emoji.victory_dance"); err != nil || !owns {
 		t.Fatalf("owns %v %v", owns, err)
 	}
 	if f.pass.added != 40 || !f.medals.held[ayla+":medal.spring"] {
@@ -154,7 +154,7 @@ func TestDuplicatesPayCompensationAndMissingServicesDropTheirParts(t *testing.T)
 	}
 	item, _ := f.inventory.Catalog().Item("avatar.comet_fox")
 	compensation := reward.DefaultConfig().Compensation(item)
-	if compensation == 0 || report.Duplicates["avatar.comet_fox"] != compensation || len(report.Cosmetics) != 1 || report.Cosmetics[0] != "action.victory_dance" {
+	if compensation == 0 || report.Duplicates["avatar.comet_fox"] != compensation || len(report.Cosmetics) != 1 || report.Cosmetics[0] != "emoji.victory_dance" {
 		t.Fatalf("duplicate handling %+v (compensation %d)", report, compensation)
 	}
 	if len(report.Medals) != 0 || len(report.MedalsSkipped) != 1 || report.PassXP != 0 || report.PassXPDropped != 40 {
@@ -206,7 +206,7 @@ func TestRevokeTakesBackCoinsItemsAndMedalsOnce(t *testing.T) {
 	if _, err := engine.Apply(ctx, grant, start); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.inventory.Equip(ctx, ayla, "action", []string{"action.victory_dance"}, start); !errors.Is(err, inventory.ErrNoProfile) {
+	if _, err := f.inventory.Equip(ctx, ayla, "emoji", []string{"emoji.victory_dance"}, start); !errors.Is(err, inventory.ErrNoProfile) {
 		t.Fatalf("equip without a profile: %v", err)
 	}
 	revoked, err := engine.Revoke(ctx, ayla, grant.Key, wallet.AdminAdjust, "refund:google:t9", start.Add(time.Hour))
