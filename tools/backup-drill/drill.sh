@@ -43,7 +43,7 @@ sql() {
 
 wait_ready() {
   for _ in $(seq 1 120); do
-    docker exec -u postgres "$1" pg_isready -q -h /var/run/postgresql && return 0
+    docker exec -u postgres "$1" pg_isready -q -h 127.0.0.1 && return 0
     sleep 0.5
   done
   echo "$1 did not become ready"
