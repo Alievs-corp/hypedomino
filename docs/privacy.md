@@ -175,7 +175,7 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 
 - Content target is PEGI 3, IARC lowest tier, App Store 4+ (`docs/localization.md` 7). A content rating says the content suits all ages; it does not declare who the game targets. The target audience declared to the stores is 13 and older (7.3).
 - The game has accounts, purchases, public nicknames, leaderboards and moderated user names; it has no free-text or voice chat.
-- Bright cartoon visuals make the stores likely to treat the game as appealing to children even if not targeted at them, so the store listing and the age gate must be consistent with option A.
+- Animated, effect-heavy visuals can make the stores treat the game as appealing to children even if not targeted at them, even with the premium look of `docs/art-direction.md`, so the store listing and the age gate must be consistent with option A.
 
 ### 7.2 Thresholds (KVKK and Azerbaijan open, OQ-14)
 
