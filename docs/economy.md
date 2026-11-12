@@ -263,35 +263,51 @@ Products `crystals_tier1` to `crystals_tier5`. USD prices `CrystalPackUsd` (0.99
 
 ### 7.4 Regional pricing
 
-- Local prices come only from the stores: App Store price equalisation from the base storefront, Google Play pricing templates and automatic conversion. A market-specific override is a country price set in the store console. It needs owner approval in this section and is noted on the admin offer's `regionalOverrideNote` (`docs/admin.md` 5.5) with the countries and price points.
-- Azerbaijan and Turkey override (owner decision 2026-11-12, OQ-8): every real-money product (`crystals_tier1` to `crystals_tier5`, `pass_premium`, `pass_premium_plus`, `offer_starter`) costs about 60% of its USD reference price there, about 40% less, set to the nearest price point each store offers in that country. Reason: purchasing power in the launch markets. A `legendary` set of avatar, frame and tile skin (3900 crystals) costs about 66 AZN at the reference price and about 40 AZN with the override; Hype Pass about 8.5 AZN becomes about 5 AZN.
-- Every other market, including the Russian-speaking ones, keeps store equalisation without an override.
-- A new real-money product gets the same override before it goes on sale: its target is 60% of its USD reference price, added to the table below in the same PR that adds the product, and set in both consoles by the runbook steps below.
-- The override changes only the store price. The crystal amount of a product, every coin and crystal price in the game, and the content of every offer are the same in every market (EP-8).
-- The game holds no exchange rates and computes no local price. The client shows the localized price string from the billing SDK.
+The store price of each real-money product is set per country by purchasing power (owner decision 2026-11-12, OQ-8). The table that sets it is admin config: the `store_prices` domain, edited on the Store prices page (`docs/admin.md` 5.6), published and rolled back like every other domain.
+
+- **Reference prices.** `referenceUsd` holds the USD reference price of every real-money product: `CrystalPackUsd`, `PassPremiumUsd`, `PassPremiumPlusUsd` and `StarterOfferUsd` (7.1 to 7.3). A publish without one of the eight products, or with another product, is refused.
+- **Tiers.** `tiers` names a percent of the reference price, a whole number from 1 to 100. The defaults are `full` 100, `high` 80, `mid` 60 and `low` 45.
+- **Countries.** `countries` maps an ISO 3166-1 alpha-2 code to a tier. A country that is not listed has no target and keeps store equalisation: App Store price equalisation from the base storefront, Google Play automatic conversion. `full` is kept for a country that must be listed at the reference price on purpose. Russia (`RU`) is not a store country (`docs/privacy.md` 9.3), and a table that lists it is refused.
+- **Overrides.** `overrides` sets an exact USD-equivalent target for one product in one country, for example `{"pass_premium": {"AZ": 2.99}}`. It must be above zero and not above the reference price.
+- **Target.** The target of a product in a country is its override if there is one, otherwise its reference price times its tier percent / 100, rounded to the cent. It is a store-console target and nothing more.
+- The table changes only the store price. The crystal amount of a product, every coin and crystal price in the game, and the content of every offer are the same in every market (EP-8).
+- The game holds no exchange rates and computes no local price; the game servers never read `store_prices`. The client shows the localized price string from the billing SDK.
+- A new real-money product is added to the table (server `storeprice.Products` and its reference price) in the same PR that adds the product. From then on every listed country has a target for it.
 - Taxes are the stores' as merchant of record (`docs/privacy.md` section 2).
 - Where a store cannot charge in a country, the shop hides real-money products there. No other payment path is added (EP-7).
 
-| Product | USD reference | AZ and TR target, USD equivalent | AZN at reference (1 USD = 1.70 AZN) | AZN with override, about |
+Targets of each tier at the default reference prices, USD equivalent:
+
+| Product | USD reference (`full`) | `high` 80% | `mid` 60% | `low` 45% |
 |---|---|---|---|---|
-| `crystals_tier1` | 0.99 | 0.59 | 1.68 | 1.00 |
-| `crystals_tier2` | 4.99 | 2.99 | 8.48 | 5.08 |
-| `crystals_tier3` | 9.99 | 5.99 | 16.98 | 10.18 |
-| `crystals_tier4` | 19.99 | 11.99 | 33.98 | 20.38 |
-| `crystals_tier5` | 49.99 | 29.99 | 84.98 | 50.98 |
-| `pass_premium` | 4.99 | 2.99 | 8.48 | 5.08 |
-| `pass_premium_plus` | 9.99 | 5.99 | 16.98 | 10.18 |
-| `offer_starter` | 1.99 | 1.19 | 3.38 | 2.02 |
+| `crystals_tier1` | 0.99 | 0.79 | 0.59 | 0.45 |
+| `crystals_tier2` | 4.99 | 3.99 | 2.99 | 2.25 |
+| `crystals_tier3` | 9.99 | 7.99 | 5.99 | 4.50 |
+| `crystals_tier4` | 19.99 | 15.99 | 11.99 | 9.00 |
+| `crystals_tier5` | 49.99 | 39.99 | 29.99 | 22.50 |
+| `pass_premium` | 4.99 | 3.99 | 2.99 | 2.25 |
+| `pass_premium_plus` | 9.99 | 7.99 | 5.99 | 4.50 |
+| `offer_starter` | 1.99 | 1.59 | 1.19 | 0.90 |
 
-The AZN columns are for orientation only. The price set is the store's nearest price point in the currency that store charges in that country, closest to the USD-equivalent target at the console's own conversion; the Turkey price point is picked in the console the same way, and this document holds no lira figure.
+Default countries, shipped as the server's built-in default and in `docs/economy/examples/store_prices.json` (80 countries):
 
-Applying the override, for each product of the table:
+| Tier | Countries |
+|---|---|
+| `high` 80% | PT GR CY MT SI CZ SK EE LV LT PL HU HR CL UY PA BN |
+| `mid` 60% | AZ TR GE AM KZ UZ KG TJ TM BY UA MD RO BG RS BA ME MK AL MX BR AR CO PE EC CR DO MY TH CN ZA MA TN JO LB IQ MN |
+| `low` 45% | IN PK BD LK NP ID PH VN KH LA MM EG NG KE GH TZ UG ET DZ BO PY VE HN NI GT SV |
 
-1. Google Play Console: the app, Monetize, the product, Prices; set a country price for Azerbaijan and for Turkey at the store price point closest to the target; save and activate.
-2. App Store Connect: the app, In-App Purchases, the product, Price Schedule; add a manual price for the Azerbaijan and the Turkey storefronts at the price point closest to the target; keep the United States base price at the USD reference.
-3. Note the countries and chosen price points on the offer's `regionalOverrideNote` in admin.
-4. Verify on a licensed test account (Play) and a sandbox account (App Store) in each of the two storefronts: the shop shows the localized price from the billing SDK at the new level, and a test purchase grants the same crystal amount as in any other country.
-5. A manually set country price no longer follows later store-wide price or tax adjustments. When a store announces one for Azerbaijan or Turkey, check the price points against the table again.
+Azerbaijan and Turkey are in `mid`, so every product costs about 60% of its reference there, the level first decided for these two launch markets. For orientation: a `legendary` set of avatar, frame and tile skin (3900 crystals) costs about 66 AZN at the reference price and about 40 AZN at 60%; Hype Pass about 8.5 AZN becomes about 5 AZN (1 USD = 1.70 AZN). This document holds no other local-currency figure: the price set is the store's own price point.
+
+Applying a published table to the stores:
+
+1. Store prices page, CSV for the consoles: download the Google Play Console file and the App Store Connect file of the published version. Each row is `product_id,country_code,target_usd`; the file name carries the store and the config version.
+2. Google Play Console: the app, Monetize, the product, Prices; for each row, set the country price at the store price point closest to the target; leave countries without a row on automatic conversion; save and activate.
+3. App Store Connect: the app, In-App Purchases, the product, Price Schedule; for each row, add a manual price for the storefront at the price point closest to the target; keep the United States base price at the USD reference; remove a manual price whose country no longer has a row.
+4. Verify on a licensed test account (Play) and a sandbox account (App Store) in Azerbaijan, Turkey and one country of each other tier: the shop shows the localized price from the billing SDK at the new level, and a test purchase grants the same crystal amount as in any other country.
+5. A manually set country price no longer follows later store-wide price or tax adjustments. When a store announces one, export the table again and check the console against it.
+
+Pushing the prices to the stores through the Google Play and App Store Connect APIs is not built; it needs store credentials and its own issue.
 
 ### 7.5 Purchase flow
 
@@ -452,7 +468,7 @@ Reading the sheet:
 
 ## 12. Config
 
-Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind `config` are admin config (ADR 0006); `model` keys are never read by the server. Used here and defined elsewhere: `RefundWeight` (`docs/anti-cheat.md`), `NicknameRenameCooldownDays` (`docs/localization.md`), the purchase kill switch (#210).
+Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind `config` are admin config (ADR 0006); `model` keys are never read by the server. The per-country store price table is the `store_prices` domain (7.4, `docs/economy/examples/store_prices.json`), not a key of the sheet; its default reference prices are the `*Usd` keys of the sheet, and a server test keeps the two equal. Used here and defined elsewhere: `RefundWeight` (`docs/anti-cheat.md`), `NicknameRenameCooldownDays` (`docs/localization.md`), the purchase kill switch (#210).
 
 ## 13. Owner decisions
 
@@ -467,7 +483,7 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-5 | Premium pass for coins | No, real money only (3.2) |
 | OQ-6 | `mythic` items in the shop | Yes, time-limited offers only (3.1) |
 | OQ-7 | Starter offer and first-purchase bonus | Both (7.3) |
-| OQ-8 | Market-specific price overrides, for example a lower Turkey price (2026-11-12) | Azerbaijan and Turkey: every real-money product at about 60% of its USD reference price, nearest store price point, set in the store consoles; crystal amounts and in-game prices unchanged; other markets store equalisation only (7.4) |
+| OQ-8 | Market-specific store prices, for example a lower Turkey price (2026-11-12) | Every real-money product is priced per country by purchasing power from an admin-managed table (`store_prices`): tiers `high` 80%, `mid` 60% (Azerbaijan and Turkey among them), `low` 45% of the USD reference price, optional exact overrides, countries not listed at store equalisation, Russia never listed; set in the store consoles from the table's CSV export; crystal amounts and in-game prices unchanged (7.4) |
 | OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; sending it later needs a consent purpose first (`docs/privacy.md` 12.2, OQ-13) |
 | OQ-10 | Missed daily login day | Pauses the cycle, no reset (2.3) |
 | OQ-11 | Currencies (2026-11-01) | Two: the coin, earned by play and never sold, and the crystal, from real money only; no conversion either way (EP-1) |

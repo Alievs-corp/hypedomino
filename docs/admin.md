@@ -25,7 +25,7 @@ Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs
 |---|---|---|---|
 | `super_admin` | Admin accounts and roles, retention and privacy config, anti-cheat config, audit log, every permission of the other roles | Every row any admin role can see, plus D-2, D-27, D-28 | Product owner, security lead |
 | `content` | Cosmetics, assets, rarity, medals, emblem art, game strings and their translations, cultural review | None | Art and content team |
-| `live_ops` | Economy config, reward bundles, shop, chests, crystal packs, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
+| `live_ops` | Economy config, reward bundles, shop, chests, crystal packs, store prices, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
 | `support` | Player lookup and support actions, sanctions, review, report and appeal queues, moderation lists, rights request records, targeted promo account lists | D-1, D-3, D-5, D-6, D-8 to D-10, D-12, D-13, D-15 to D-21, D-23 | Support lead, support agents, moderators |
 | `analyst` | Dashboards, KPI and economy monitors, aggregate exports, pseudonymous analytics events | D-24 only; every other number as an aggregate without ids | Analyst |
 
@@ -96,6 +96,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3); `LobbyActionSlots` (`docs/friend-lobby.md` section 5) | Manifest file on the CDN; slot count with client config |
 | `rarity` | Rarity table (`docs/rarity.md` section 7) | With client config |
 | `economy` | `docs/economy/balance.csv` keys of kind `config`, reward bundles, shop offers and rotations, store product mapping, daily login | Shop and reward views from the server |
+| `store_prices` | Reference USD price of every real-money product, price tiers, country tiers and per-country overrides (`docs/economy.md` 7.4) | Never; exported as CSV for the store consoles (5.6) |
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
 | `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
@@ -266,7 +267,7 @@ Today a bundle is stored inside each object that grants it, not in a catalog of 
 | `eligibility` | Optional hours since account creation, first purchase only |
 | `nameKey` | Game string for the offer title |
 | `referencePrice` | Optional struck-through price in the currency of the price (`referencePriceCoins` or `referencePriceCrystals`), validated by `docs/economy.md` 6.3 |
-| `regionalOverrideNote` | Text; a store-console override needs owner approval (`docs/economy.md` 7.4) |
+| `regionalOverrideNote` | Optional text about the offer. It records no country price: those live only in `store_prices` (5.6, `docs/economy.md` 7.4) |
 | `pool` | Chests only: the `common` and `rare` items of the chest, stored as its bundle cosmetics; the editor offers only published `common` and `rare` items (`docs/economy.md` 3.4) |
 | `chests` | Catalog-wide: `rarityPercent` (`ChestRarityPercent`) and `rarePityCount` (`ChestRarePityCount`) |
 
@@ -278,11 +279,20 @@ A rotation is a schedule entry: period (`daily` or `weekly`), period start in UT
 |---|---|
 | `productId` | `crystals_tier1` to `crystals_tier5`, `pass_premium`, `pass_premium_plus`, `offer_starter` (`docs/economy.md` section 7). Created in both store consoles first |
 | `crystals` | For crystal packs, entry of `CrystalPackCrystals` |
-| `usdReference` | The store price point, recorded for checks; the price itself is set only in the store consoles |
+| `usdReference` | The store base price point, held as `referenceUsd` in `store_prices` (below); the price itself is set only in the store consoles |
 | `offer` | The offer that sells it |
 | `storeStatus` | Server: product found and active in each store |
 
-The admin never sets a local price (`docs/economy.md` 7.4). Store products must match admin config before launch (`docs/launch-runbook.md` GN-22).
+Store prices (`/store-prices`, the `store_prices` domain, `docs/economy.md` 7.4) are edited under the store products permissions:
+
+| Field | Rule |
+|---|---|
+| `referenceUsd` | The USD reference price of each of the eight products above, a positive amount with at most two decimals; defaults from `docs/economy/balance.csv` |
+| `tiers` | Tier name (lowercase letters, digits, underscore) to a whole percent from 1 to 100 |
+| `countries` | ISO 3166-1 alpha-2 code to a tier; `RU` is refused (`docs/privacy.md` 9.3); a country not listed keeps store equalisation |
+| `overrides` | Product to country to an exact USD-equivalent target, above zero and not above the reference price |
+
+The page edits tier percents, the tier of each country (searchable table of every store country, named in the panel language), overrides per product and country, and the reference prices. A live preview shows the target of every product in every priced country next to the reference price, computed in the browser as the server does. Publish takes a reason; rollback is in the version history. The published version exports one CSV per store, Google Play Console and App Store Connect, with the columns `product_id`, `country_code` and `target_usd` and the config version in the file name; the targets come from the server. The admin never sets a price in the game: the table is a store-console target, the stores set the local price and the client shows it. Store products and the console prices must match admin config before launch (`docs/launch-runbook.md` GN-22).
 
 ### 5.7 Pass seasons
 
@@ -622,6 +632,10 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/cosmetics/items` | V on cosmetic items | The published cosmetic items (`id`, `type`, `rarity`, `availability`, `sources`), the built-in ones before the first publish; the chest pool editor picks from them |
 | `GET /admin/config/shop/history` | V on shop offers | The last 50 `shop` snapshots, newest first |
 | `POST /admin/config/shop/rollback` `{"version"}` | P on shop offers and S: rollback on snapshots | Publishes the content of an earlier `shop` snapshot as the next version |
+| `GET /admin/config/store-prices` | V on store products | The published `store_prices` table (5.6), its `config_version` (0 and `null` before the first publish) and `rules`: `default`, `products`, store `countries` (ISO 3166-1 alpha-2 without `RU`) and the `targets` (`product`, `country`, `tier` or `override`, `cents`) of the published table, or of the default before the first publish |
+| `PUT /admin/config/store-prices` `{"catalog","reason"}` | P on store products | Publishes the next `store_prices` snapshot through `storeprice.Parse`; an unknown key or product, a bad country code, `RU`, an unknown tier, a percent outside 1 to 100 or an override above its reference gets 400 `invalid` |
+| `GET /admin/config/store-prices/history` | V on store products | The last 50 `store_prices` snapshots, newest first |
+| `POST /admin/config/store-prices/rollback` `{"version","reason"}` | P on store products and S: rollback on snapshots | Publishes the content of an earlier table as the next version |
 | `POST /admin/config/shop/preview` `{"catalog","at"}` | V on shop offers | Checks a draft catalog like the game servers and answers `{"at","sections":[{"section","ends_at","offers"}]}`: the offer ids each shop section shows at `at` (server time when omitted), computed by the game server's section logic. Writes nothing |
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
 | `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
@@ -736,7 +750,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ## 10. Screens and navigation
 
-The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price.
+The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price, except the USD-equivalent store-console targets of the Store prices page (5.6).
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
@@ -751,7 +765,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-9 Medals; A-10 Emblems | `super_admin`, `content`; others view | 5.9, 5.10 |
 | Economy | A-11 Reward bundles with usage | `super_admin`, `live_ops`; others view | 5.4 |
 | | A-12 Shop offers; A-13 Rotations | `super_admin`, `live_ops`; others view | 5.5 |
-| | A-14 Store products | `super_admin`, `live_ops`; `support`, `analyst` view | 5.6 |
+| | A-14 Store products; store prices per country with CSV export (`/store-prices`) | `super_admin`, `live_ops`; `support`, `analyst` view | 5.6 |
 | | A-15 Promo codes and campaigns | `super_admin`, `live_ops`; `support` targeted lists | 5.11 |
 | Progression | A-16 Pass seasons; A-17 Missions; A-18 Daily login | `super_admin`, `live_ops`; others view | 5.7, 5.8 |
 | Ranked | A-19 Seasons and reset table; A-20 Leaderboards (public data) | `super_admin`, `live_ops`; others view | 5.12 |
@@ -788,7 +802,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `CrystalPackUsd`, `PassPremiumUsd`, `PassPremiumPlusUsd`, `StarterOfferUsd`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
 
 ## 12. Implementation
 
@@ -800,6 +814,7 @@ Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength
 | #137 Forms per cosmetic type | 5.1 |
 | #138 Reward bundles | 5.4 |
 | #139 Shop offers and rotations | 5.5, 5.6 |
+| #581 Store prices per country | 5.6, 9.1 |
 | #140 Pass seasons | 5.7 |
 | #141 Missions and medals | 5.8, 5.9 |
 | #142 Promo codes | 5.11 |

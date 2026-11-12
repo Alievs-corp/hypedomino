@@ -48,13 +48,21 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 ## Shop offers
 
 `/shop` (A-17, `docs/admin.md` 5.5) edits the published catalog of `GET /admin/config/shop`.
-- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish. A store product price also takes the regional override note (`docs/economy.md` 7.4): local prices come from the stores, and a market override made in the store console is noted here; switching to coins or crystals drops it.
+- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish. A store product price also takes an optional note about the offer; switching to coins or crystals drops it. Country prices are not noted here: they live on the Store prices page.
 - **Catalog-wide:** crystal pack amounts, and chest pools and odds.
 - **Rotations:** plan the offers of a daily or weekly period ahead. The slot counts and reset hour come from the server (`rotation` in `GET /admin/config/shop`). A daily period starts at the reset hour, a weekly one on a Monday at the reset hour. Candidates are the offers of the period's rotation section; checked offers take the slots in the order they were checked. A rotation with no offers or more offers than slots blocks the publish.
 - **Preview:** shows the offer ids each section of the draft would show at a chosen UTC moment, or now (`POST /admin/config/shop/preview`). Nothing is published.
 - **Publish** (`PUT /admin/config/shop`) takes a reason. The API checks the catalog like the game servers, and they open and close offers on server time once they load the version.
 - **History:** the last 50 versions, each with its offer count and the offers it added or changed against the version before.
 - **Rollback:** roles with publish on shop offers and rollback on snapshots can roll back to an earlier version. It needs a reason and a fresh sign-in (`POST /admin/config/shop/rollback`), using the same `Rollback` component as match rules.
+
+## Store prices
+
+`/store-prices` (A-14, `docs/admin.md` 5.6, `docs/economy.md` 7.4) edits the `store_prices` table of `GET /admin/config/store-prices`: the USD reference price of each real-money product, tier percents, the tier of each store country (searchable by code or by its name in the panel language), and exact overrides per product and country. Before the first publish the page starts from the server's default.
+- **Preview:** the target of every product in every priced country, override in bold, computed in the browser like `storeprice.Target` (`admin/src/storeprices/prices.ts`). Countries without a tier or override keep the store's own price and are not shown.
+- **Publish** (`PUT /admin/config/store-prices`) takes a reason; the API refuses `RU`, an unknown tier, product or country code, a percent outside 1 to 100 and an override above its reference.
+- **CSV for the consoles:** after a publish, one file per store (Google Play Console, App Store Connect) with `product_id,country_code,target_usd` rows of the published version's server-computed targets.
+- **History and rollback** like the other config pages, under publish on store products and rollback on snapshots.
 
 ## Pass seasons
 

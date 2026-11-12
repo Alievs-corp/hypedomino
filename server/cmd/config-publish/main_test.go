@@ -23,6 +23,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
+	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
 )
 
 func TestMain(m *testing.M) {
@@ -249,5 +250,25 @@ func TestTheOffenseRatingPenaltyMustFitTheDivisionInBothDomains(t *testing.T) {
 	}
 	if err := run(ctx, url, penalties.Domain, file, &out); !errors.Is(err, rating.ErrInvalidConfig) || !strings.Contains(err.Error(), "offenseRatingPenalty") {
 		t.Fatalf("penalty past the published division = %v", err)
+	}
+}
+
+func TestStorePricesArePublishedFromTheExampleAndCheckedFirst(t *testing.T) {
+	url, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	var out bytes.Buffer
+	russia := filepath.Join(t.TempDir(), "store_prices.json")
+	if err := os.WriteFile(russia, []byte(`{"schema":1,"referenceUsd":{},"tiers":{"mid":60},"countries":{"RU":"mid"},"overrides":{}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(ctx, url, storeprice.Domain, russia, &out); !errors.Is(err, storeprice.ErrInvalid) {
+		t.Fatalf("Russia priced: %v", err)
+	}
+	if err := run(ctx, url, storeprice.Domain, "../../../docs/economy/examples/store_prices.json", &out); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := pool.QueryRow(ctx, `select count(*) from config_snapshots where domain = 'store_prices'`).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("stored snapshots %d %v", count, err)
 	}
 }
