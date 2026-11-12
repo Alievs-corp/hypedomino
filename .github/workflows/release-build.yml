@@ -143,6 +143,26 @@ jobs:
           path: ${{ env.REMOTE }}
           if-no-files-found: error
           retention-days: 14
+      - name: Set up Go for the content upload
+        if: github.ref_type == 'tag' && vars.CONTENT_STORE_URL != ''
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Upload the remote folder
+        if: github.ref_type == 'tag' && vars.CONTENT_STORE_URL != ''
+        working-directory: server
+        env:
+          HD_CONTENT_STORE_URL: ${{ vars.CONTENT_STORE_URL }}
+          HD_CONTENT_STORE_REGION: ${{ vars.CONTENT_STORE_REGION }}
+          HD_CONTENT_STORE_ACCESS_KEY: ${{ secrets.CONTENT_STORE_ACCESS_KEY }}
+          HD_CONTENT_STORE_SECRET_KEY: ${{ secrets.CONTENT_STORE_SECRET_KEY }}
+          CONTENT_ENVIRONMENT: ${{ vars.CONTENT_ENVIRONMENT }}
+          CATALOG_VERSION: ${{ steps.release.outputs.catalog }}
+        run: go run ./cmd/content-publish -dir "../$REMOTE" -environment "$CONTENT_ENVIRONMENT" -platform Android -catalog-version "$CATALOG_VERSION"
+      - name: Note that the CDN upload is not configured
+        if: github.ref_type == 'tag' && vars.CONTENT_STORE_URL == ''
+        run: echo "::warning::CONTENT_STORE_URL is not set, so the remote content was not uploaded to the CDN bucket (docs/content-delivery.md 9)"
       - name: Upload to the Play internal testing track
         if: github.ref_type == 'tag'
         uses: r0adkll/upload-google-play@v1.1.5
