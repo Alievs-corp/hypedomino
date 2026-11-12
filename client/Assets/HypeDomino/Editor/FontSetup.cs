@@ -21,7 +21,7 @@ namespace HypeDomino.Editor
         const string TypeSetPath = ResourcesFolder + "/" + TypeSet.ResourceName + ".asset";
         const string EssentialsPackage = "TMP Essential Resources.unitypackage";
         const string MobileDistanceField = "TextMeshPro/Mobile/Distance Field";
-        static readonly string[] LeftOutEssentials = { "LiberationSans", "EmojiOne" };
+        static readonly string[] LeftOutEssentials = { "LiberationSans", "EmojiOne", "HDRP" };
         const string TextMeshProFolder = "Assets/TextMesh Pro";
 
         [Serializable]
@@ -179,7 +179,11 @@ namespace HypeDomino.Editor
             foreach (var size in manifest.atlas.sizes)
             {
                 var font = TMP_FontAsset.CreateFontAsset(source, manifest.atlas.samplingPointSize, manifest.atlas.padding, GlyphRenderMode.SDFAA, size.width, size.height, AtlasPopulationMode.Dynamic, false);
-                if (font.TryAddCharacters(characters, out var missing, true) && string.IsNullOrEmpty(missing)) return Save(font, face.id);
+                if (font.TryAddCharacters(characters, out var missing, true) && string.IsNullOrEmpty(missing))
+                {
+                    KeepFeaturesOfDrawnGlyphs(font);
+                    return Save(font, face.id);
+                }
                 UnityEngine.Object.DestroyImmediate(font.atlasTexture);
                 UnityEngine.Object.DestroyImmediate(font.material);
                 UnityEngine.Object.DestroyImmediate(font);
@@ -196,6 +200,17 @@ namespace HypeDomino.Editor
                 if (excluded.IndexOf(character) < 0 && FontEngine.TryGetGlyphWithUnicodeValue(character, GlyphLoadFlags.LOAD_NO_BITMAP, out var glyph) && glyph.index != 0)
                     characters.Append(character);
             return characters.ToString();
+        }
+
+        static void KeepFeaturesOfDrawnGlyphs(TMP_FontAsset font)
+        {
+            var drawn = new HashSet<uint>();
+            foreach (var character in font.characterTable) drawn.Add(character.glyphIndex);
+            var features = font.fontFeatureTable;
+            features.glyphPairAdjustmentRecords.RemoveAll(pair => !drawn.Contains(pair.firstAdjustmentRecord.glyphIndex) || !drawn.Contains(pair.secondAdjustmentRecord.glyphIndex));
+            features.MarkToBaseAdjustmentRecords.RemoveAll(mark => !drawn.Contains(mark.baseGlyphID) || !drawn.Contains(mark.markGlyphID));
+            features.MarkToMarkAdjustmentRecords.RemoveAll(mark => !drawn.Contains(mark.baseMarkGlyphID) || !drawn.Contains(mark.combiningMarkGlyphID));
+            font.ReadFontAssetDefinition();
         }
 
         static TMP_FontAsset Save(TMP_FontAsset font, string id)
