@@ -56,7 +56,7 @@ func TestDefaultsAreOwnedByEveryoneAndGrantsNeedAListedSource(t *testing.T) {
 	ctx := context.Background()
 	ayla := player(t, pool, "Ayla")
 	owned, err := store.Owned(ctx, ayla)
-	if err != nil || len(owned) != 5 || owned[0].ID != "avatar.starter" || owned[0].Source.Type != cosmetics.SourceDefault || !owned[0].GrantedAt.IsZero() {
+	if err != nil || len(owned) != 6 || owned[0].ID != "avatar.starter" || owned[0].Source.Type != cosmetics.SourceDefault || !owned[0].GrantedAt.IsZero() {
 		t.Fatalf("fresh inventory %+v %v", owned, err)
 	}
 	if owns, err := store.Owns(ctx, ayla, "table.starter"); err != nil || !owns {
@@ -82,7 +82,7 @@ func TestDefaultsAreOwnedByEveryoneAndGrantsNeedAListedSource(t *testing.T) {
 		t.Fatalf("second grant of an owned item %v %v", granted, err)
 	}
 	owned, err = store.Owned(ctx, ayla)
-	if err != nil || len(owned) != 6 || owned[5].ID != "avatar.comet_fox" || owned[5].Type != "avatar" || owned[5].Source != shopFox || !owned[5].GrantedAt.Equal(start) {
+	if err != nil || len(owned) != 7 || owned[6].ID != "avatar.comet_fox" || owned[6].Type != "avatar" || owned[6].Source != shopFox || !owned[6].GrantedAt.Equal(start) {
 		t.Fatalf("inventory after grant %+v %v", owned, err)
 	}
 	if owns, err := store.Owns(ctx, ayla, "avatar.comet_fox"); err != nil || !owns {
@@ -151,15 +151,15 @@ func TestFreezeFallsBackToDefaultsAndRevokeUnequips(t *testing.T) {
 	ctx := context.Background()
 	ayla, fresh := player(t, pool, "Ayla"), player(t, pool, "")
 	frozen, err := store.Freeze(ctx, fresh)
-	if err != nil || frozen.Avatar != "avatar.starter" || frozen.Frame != "frame.starter" || frozen.Character != "character.starter" || frozen.Table != "table.starter" || len(frozen.Emojis) != 0 {
+	if err != nil || frozen.Avatar != "avatar.starter" || frozen.Frame != "frame.starter" || frozen.Character != "character.starter" || frozen.Table != "table.starter" || frozen.Tile != "tile.starter" || len(frozen.Emojis) != 0 {
 		t.Fatalf("freeze without a profile %+v %v", frozen, err)
 	}
-	for id, source := range map[string]cosmetics.Source{"avatar.comet_fox": shopFox, "character.tile_wizard": passWiz, "table.night_market": promoNite} {
+	for id, source := range map[string]cosmetics.Source{"avatar.comet_fox": shopFox, "character.tile_wizard": passWiz, "table.night_market": promoNite, "tile.storm_sapphire": {Type: "event", Ref: "event.spring_cup"}} {
 		if _, err := store.Grant(ctx, ayla, id, source, start); err != nil {
 			t.Fatal(id, err)
 		}
 	}
-	for slot, id := range map[string]string{"avatar": "avatar.comet_fox", "character": "character.tile_wizard", "table": "table.night_market"} {
+	for slot, id := range map[string]string{"avatar": "avatar.comet_fox", "character": "character.tile_wizard", "table": "table.night_market", "tile": "tile.storm_sapphire"} {
 		if _, err := store.Equip(ctx, ayla, slot, []string{id}, start); err != nil {
 			t.Fatal(slot, err)
 		}
@@ -168,7 +168,7 @@ func TestFreezeFallsBackToDefaultsAndRevokeUnequips(t *testing.T) {
 		t.Fatal(err)
 	}
 	frozen, err = store.Freeze(ctx, ayla)
-	if err != nil || frozen.Avatar != "avatar.comet_fox" || frozen.Character != "character.tile_wizard" || frozen.Table != "table.night_market" || frozen.Frame != "frame.starter" || len(frozen.Emojis) != 1 || frozen.Emojis[0] != "emoji.smile" || len(frozen.Actions) != 0 {
+	if err != nil || frozen.Avatar != "avatar.comet_fox" || frozen.Character != "character.tile_wizard" || frozen.Table != "table.night_market" || frozen.Tile != "tile.storm_sapphire" || frozen.Frame != "frame.starter" || len(frozen.Emojis) != 1 || frozen.Emojis[0] != "emoji.smile" || len(frozen.Actions) != 0 {
 		t.Fatalf("frozen loadout %+v %v", frozen, err)
 	}
 	if err := store.Revoke(ctx, ayla, "avatar.starter", start); !errors.Is(err, inventory.ErrDefaultItem) {
@@ -188,7 +188,7 @@ func TestFreezeFallsBackToDefaultsAndRevokeUnequips(t *testing.T) {
 		t.Fatalf("loadout after revoke %+v %v", p.Loadout, err)
 	}
 	owned, err := store.Owned(ctx, ayla)
-	if err != nil || len(owned) != 7 {
+	if err != nil || len(owned) != 9 {
 		t.Fatalf("inventory after revoke %+v %v", owned, err)
 	}
 	if granted, err := store.Grant(ctx, ayla, "avatar.comet_fox", cosmetics.Source{Type: "event", Ref: "event.spring_cup"}, start.Add(2*time.Hour)); err != nil || !granted {

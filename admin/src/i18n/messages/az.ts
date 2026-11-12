@@ -810,6 +810,7 @@ export const az: Messages = {
   "cosmetics.type.character": "Personaj",
   "cosmetics.type.frame": "Çərçivə",
   "cosmetics.type.table": "Masa",
+  "cosmetics.type.tile": "Daş skini",
   "cosmetics.type.emoji": "Emoji",
   "cosmetics.type.action": "Hərəkət",
   "cosmetics.slug": "Növdən sonrakı id",

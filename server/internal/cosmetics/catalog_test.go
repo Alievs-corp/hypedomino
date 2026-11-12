@@ -18,7 +18,7 @@ func TestTheBuiltinManifestIsTheDocumentedMinimalExample(t *testing.T) {
 		t.Fatal("builtin.json differs from docs/cosmetics/examples/minimal.json")
 	}
 	catalog := Builtin()
-	if catalog.Version != 1 || len(catalog.Items()) != 5 || len(catalog.Defaults()) != 5 {
+	if catalog.Version != 1 || len(catalog.Items()) != 6 || len(catalog.Defaults()) != 6 {
 		t.Fatalf("builtin catalog %+v", catalog.Items())
 	}
 }
@@ -28,7 +28,7 @@ func TestTheExampleCatalogParsesWithItsAvailabilityAndSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if catalog.Version < 1 || len(catalog.Items()) != 15 {
+	if catalog.Version < 1 || len(catalog.Items()) != 17 {
 		t.Fatalf("catalog %d %d", catalog.Version, len(catalog.Items()))
 	}
 	fox, ok := catalog.Item("avatar.comet_fox")

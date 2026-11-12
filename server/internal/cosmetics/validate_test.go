@@ -178,7 +178,8 @@ func TestStampGivesEveryTypeItsAddresses(t *testing.T) {
 	table := map[string]any{"id": "table.reef", "type": "table", "animated": true, "layers": []any{map[string]any{"name": "back", "animated": true}}}
 	action := map[string]any{"id": "action.wave", "type": "action", "animated": true}
 	still := map[string]any{"id": "frame.plain", "type": "frame", "animated": false}
-	stamped, err := Stamp(manifestOf(t, avatar()), submit(t, character, table, action, still))
+	tile := map[string]any{"id": "tile.storm", "type": "tile", "animated": true}
+	stamped, err := Stamp(manifestOf(t, avatar()), submit(t, character, table, action, still, tile))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,6 +193,9 @@ func TestStampGivesEveryTypeItsAddresses(t *testing.T) {
 	}
 	if items["action.wave"]["animationAddress"] != "cosmetic/action/wave/anim" {
 		t.Errorf("action %v", items["action.wave"])
+	}
+	if items["tile.storm"]["animationAddress"] != "cosmetic/tile/storm/anim" || items["tile.storm"]["staticAddress"] != "cosmetic/tile/storm/static" {
+		t.Errorf("tile %v", items["tile.storm"])
 	}
 	if _, has := items["frame.plain"]["animationAddress"]; has || items["frame.plain"]["revision"] != 1.0 {
 		t.Errorf("static frame %v", items["frame.plain"])

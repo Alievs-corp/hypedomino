@@ -72,6 +72,23 @@
       "culturalReview": "approved"
     },
     {
+      "id": "tile.starter",
+      "type": "tile",
+      "revision": 1,
+      "nameKey": "cosmetic.tile.starter.name",
+      "rarityId": "common",
+      "animated": false,
+      "staticAddress": "cosmetic/tile/starter/static",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "default"
+        }
+      ],
+      "artSource": "handmade",
+      "culturalReview": "approved"
+    },
+    {
       "id": "emoji.smile",
       "type": "emoji",
       "revision": 1,
@@ -235,6 +252,25 @@
         {
           "type": "shop",
           "ref": "offer.table_night_market"
+        }
+      ],
+      "artSource": "ai_assisted",
+      "culturalReview": "approved"
+    },
+    {
+      "id": "tile.storm_sapphire",
+      "type": "tile",
+      "revision": 1,
+      "nameKey": "cosmetic.tile.storm_sapphire.name",
+      "rarityId": "legendary",
+      "animated": true,
+      "staticAddress": "cosmetic/tile/storm_sapphire/static",
+      "animationAddress": "cosmetic/tile/storm_sapphire/anim",
+      "availability": "live",
+      "sources": [
+        {
+          "type": "event",
+          "ref": "event.spring_cup"
         }
       ],
       "artSource": "ai_assisted",

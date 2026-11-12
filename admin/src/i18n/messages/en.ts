@@ -815,6 +815,7 @@ export const en = {
   "cosmetics.type.character": "Character",
   "cosmetics.type.frame": "Frame",
   "cosmetics.type.table": "Table",
+  "cosmetics.type.tile": "Tile skin",
   "cosmetics.type.emoji": "Emoji",
   "cosmetics.type.action": "Action",
   "cosmetics.slug": "Id after the type",

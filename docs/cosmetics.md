@@ -1,6 +1,6 @@
 # Cosmetics catalog
 
-Data model for the five cosmetic types: shared fields, type fields, acquisition sources, the published manifest, Addressables addressing and validation. The contract is [`docs/cosmetics/schema.json`](cosmetics/schema.json) (JSON Schema draft 2020-12); this document gives its meaning and the rules a schema cannot express. Valid examples: [`docs/cosmetics/examples/`](cosmetics/examples/). `node tools/cosmetics-schema/cosmetics-schema.mjs [manifest.json ...]` checks manifests against the schema and the single-manifest rules in section 9 (without arguments it checks the examples); CI runs its tests through `npm run test:tools`.
+Data model for the seven cosmetic types: shared fields, type fields, acquisition sources, the published manifest, Addressables addressing and validation. The contract is [`docs/cosmetics/schema.json`](cosmetics/schema.json) (JSON Schema draft 2020-12); this document gives its meaning and the rules a schema cannot express. Valid examples: [`docs/cosmetics/examples/`](cosmetics/examples/). `node tools/cosmetics-schema/cosmetics-schema.mjs [manifest.json ...]` checks manifests against the schema and the single-manifest rules in section 9 (without arguments it checks the examples); CI runs its tests through `npm run test:tools`.
 
 Delivery follows `docs/adr/0002-asset-delivery.md`, publishing and versioning follow `docs/adr/0006-admin-panel.md`, name keys follow `docs/localization.md` section 2, and the static or animated choice follows the effect levels in `docs/ui-motion.md` section 7.
 
@@ -29,10 +29,15 @@ This document stores references to these decisions and never their values.
 | `character` | Full-body figure that reacts to match events | Match seat, loading screen, friend lobby (its clips are the lobby actions, `docs/friend-lobby.md`), profile, shop, collection |
 | `frame` | Border around the avatar | Everywhere the avatar shows |
 | `table` | Match table background | Match scene, collection, shop |
+| `tile` | Back face of the player's domino tiles | Match scene: the player's face-down tiles as the other seats see them, including the deal (`docs/ui-motion.md` Hand motion); collection, shop |
 | `emoji` | Reaction sent by id in a match or a friend lobby (`docs/localization.md` 5.7) | Match seat, friend lobby, emoji wheel, collection |
 | `action` | Full-body motion the equipped character plays in the friend lobby, on demand (`docs/friend-lobby.md`) | Friend lobby action wheel, collection, shop |
 
 Adding a type is a schema change (section 7.2) and a change to this table.
+
+- A `tile` skin changes only the back face. The face side, pips and the divider are the same for every player, so a skin never affects how a tile's value reads (`docs/art-direction.md` section 3). Boneyard tiles (R-3) belong to no seat and use the first `live` `default` tile item.
+- An animated `tile` plays one animation per seat: every face-down tile of that seat draws from the same atlas entry on the same animation clock, so a seat costs the same whether it holds 1 or 14 tiles (#572).
+- Owner decision 2026-11-12: these proposed types are not added before launch: player title, profile banner, chat bubble, tile-place effect, win effect and sound pack. Each is a schema change with its own art and performance work. The tile-place and win effects come first after launch, because every player sees them in every match.
 
 ## 3. Shared fields
 
@@ -56,7 +61,7 @@ All required on every item.
 
 | Type | Field | When | Rule |
 |---|---|---|---|
-| `avatar`, `frame`, `emoji` | `animationAddress` | Required if `animated`, forbidden otherwise | One looping animation |
+| `avatar`, `frame`, `tile`, `emoji` | `animationAddress` | Required if `animated`, forbidden otherwise | One looping animation |
 | `character` | `clips` | Required if `animated`, forbidden otherwise | Object with exactly `idle`, `win`, `lose`, `reaction`, each an address of an animation clip on the shared humanoid skeleton (ADR 0009). A static character shows `staticAddress` in every state |
 | `character` | `modelAddress` | Required if `animated`, forbidden otherwise | The real-time 3D model at medium detail: seat level of detail and base colour texture (ADR 0009) |
 | `character` | `modelHqAddress` | Optional if `animated`, forbidden otherwise | The high-detail model: hero level of detail, larger textures and normal map. Without it the high level shows `modelAddress` |
@@ -149,7 +154,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Asset | Address |
 |---|---|
 | Static sprite | `cosmetic/<type>/<slug>/static` |
-| Animation (avatar, frame, emoji), action clip | `cosmetic/<type>/<slug>/anim` |
+| Animation (avatar, frame, tile, emoji), action clip | `cosmetic/<type>/<slug>/anim` |
 | Character clip | `cosmetic/character/<slug>/clip/<idle\|win\|lose\|reaction>` |
 | Character model | `cosmetic/character/<slug>/model` |
 | Character high-detail model | `cosmetic/character/<slug>/model_hq` |

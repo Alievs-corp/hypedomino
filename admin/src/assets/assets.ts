@@ -22,7 +22,7 @@ export type AssetRefusal = { ok: false; error: string; detail: string };
 export type AssetUploadStart = { ok: true; id: string; uploadUrl: string } | AssetRefusal;
 export type AssetCheckResult = { ok: true } | AssetRefusal;
 
-const itemIdPattern = /^(avatar|character|frame|table|emoji|action)\.[a-z0-9_]+$/;
+const itemIdPattern = /^(avatar|character|frame|table|tile|emoji|action)\.[a-z0-9_]+$/;
 
 const checkLabels: Record<string, MessageKey> = {
   format: "assets.check.format",
