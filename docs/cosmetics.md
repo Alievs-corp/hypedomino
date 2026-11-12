@@ -160,7 +160,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Item | Rule |
 |---|---|
 | Group | One Addressables group per item, `cosmetic-<type>-<slug>`, holding the static sprite and every animation asset of the item (ADR 0002). Bundle mode packs each entry separately, so the static sprite downloads on its own and before the animation |
-| Atlas | Sprites of one item share one atlas inside its group |
+| Atlas | The frames of one loop (the animation, or one table layer) share one atlas inside the item's group. The static sprite is not packed, so it downloads on its own (`docs/asset-workflow.md` 5.4) |
 | Built-in group | Every asset of a `default` item is in the install-time group `cosmetic-builtin` instead of an item group, so offline start and fallbacks render without a download. Default items are static (V-19), so the group holds one static sprite per default item and stays within the install size budget (`docs/performance.md`) |
 | Labels | `cosmetic`, `cosmetic-<type>`, and `cosmetic-static` on static sprites. Which labels are prefetched and when is #68's decision |
 | Source art | Lives in `assets-src/` and never ships directly |

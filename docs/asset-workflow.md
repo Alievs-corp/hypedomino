@@ -134,13 +134,31 @@ assets-src/
 
 For cosmetics the path under `export/` is the address tail, so the mapping needs no table lookup:
 
-| Export path in `assets-src/cosmetic/<type>/<slug>/` | Address (`docs/cosmetics.md` 8.1) | Manifest field |
-|---|---|---|
-| `export/static.png` | `cosmetic/<type>/<slug>/static` | `staticAddress` |
-| `export/anim/` | `cosmetic/<type>/<slug>/anim` | `animationAddress` |
-| `export/layer/<layer>/` | `cosmetic/table/<slug>/layer/<layer>` | `layers[].address` |
+| Export path in `assets-src/cosmetic/<type>/<slug>/` | Address (`docs/cosmetics.md` 8.1) | Manifest field | Addressables asset in the client (5.4) |
+|---|---|---|---|
+| `export/static.png` | `cosmetic/<type>/<slug>/static` | `staticAddress` | The sprite `static.png`, not packed in an atlas |
+| `export/anim/<nnnn>.png` | `cosmetic/<type>/<slug>/anim` | `animationAddress` | `anim.asset`, a `SpriteLoop` of the frames in name order, packed in `anim.spriteatlasv2` |
+| `export/layer/<layer>/<nnnn>.png` | `cosmetic/table/<slug>/layer/<layer>` | `layers[].address` | `layer/<layer>.asset`, a `SpriteLoop` packed in `layer/<layer>.spriteatlasv2`; a layer of one frame is a static layer |
 
-Item id `<type>.<slug>`, group `cosmetic-<type>-<slug>` (or `cosmetic-builtin` for a `default` item), one atlas per item inside its group, labels `cosmetic`, `cosmetic-<type>` and `cosmetic-static` on the static sprite (`docs/cosmetics.md` 8.2). Once `export/` exists it holds `export/static.png`, as V-2 requires `staticAddress` for every item. The files inside `anim/` and `layer/<layer>/` are in the format #93 picks. Automating W-5 and W-6 with one command is #179.
+Item id `<type>.<slug>`, group `cosmetic-<type>-<slug>` (or `cosmetic-builtin` for a `default` item), labels `cosmetic`, `cosmetic-<type>` and `cosmetic-static` on the static sprite (`docs/cosmetics.md` 8.2). Once `export/` exists it holds `export/static.png`, as V-2 requires `staticAddress` for every item. The format is the sprite sheet loop of ADR 0012: loop frames are whole PNGs named `0001.png`, `0002.png` and on without gaps, each at the canvas of the static (`docs/art-direction.md` section 7).
+
+One command takes a reviewed item from `export/` into a manifest and into the client:
+
+```bash
+npm run asset:add -- assets-src/cosmetic/avatar/comet_fox --manifest <manifest.json> --rarity rare --availability live --source shop:offer.avatar_comet_fox
+```
+
+`tools/asset-export` runs these steps in order and writes nothing when one fails:
+
+1. Naming of the item folder (section 4.1, `tools/asset-naming`).
+2. Export: `export/static.png` is present, every PNG has an alpha channel, loop frames are numbered without gaps and share the canvas of the static. A Git LFS pointer instead of a PNG is reported as such.
+3. Size: the budget of 5.4.
+4. `provenance.md` (section 3): `artSource` is `handmade` or `ai_assisted`, and the Cultural review line ends in `approved`. A manifest only holds reviewed items (`culturalReview` is `approved`, V-1).
+5. Entry: the id, `nameKey`, `animated`, the addresses and `layers` follow from the folder, and `artSource` from `provenance.md`. `rarityId` (`--rarity`), `availability` (`--availability`), `sources` (`--source <type>[:<ref>]`, repeated per source), `group` (`--group`, emoji) and the layer order (`--layers <back>,...,<front>`, a table with more than one layer) come from the options; an item already in the manifest keeps its values for the options left out. `revision` is 1 for a new item and rises by one when the entry changed (V-13). `manifestVersion` stays as it is, as the server sets it at publish (`docs/admin.md`, Cosmetics manifest note).
+6. The whole manifest passes `tools/cosmetics-schema` (V-1 to V-11, V-19); only then is the file written.
+7. The export is copied to `client/Assets/Cosmetics/<placement>/<type>/<slug>/`, where `<placement>` is `builtin` for an item with a `default` source and `remote` otherwise. The copy in the other placement and frames that are no longer exported are removed with their `.meta` files. `--client <dir>` changes the folder, `--no-client` skips the step.
+
+`--manifest` names an existing manifest file: the published manifest (`GET /admin/config/cosmetics`), a draft, or a copy of `docs/cosmetics/examples/minimal.json` to start from. The admin publish (W-7, W-8) stays the step that puts an item in front of players. After the command, `HypeDomino/Import Cosmetics` in Unity builds the content of 5.4; the PNGs and the generated assets under `client/Assets/Cosmetics` are committed, the PNGs through Git LFS (`.gitattributes`).
 
 ## 5. From raw image to game
 
@@ -167,15 +185,33 @@ Static fallback, every item: a chosen key frame, not frame 0, exported at the sa
 
 ### 5.3 Export (W-5)
 
-- PNG, straight alpha, sRGB, trimmed to the class canvas, into the `export/` path of section 4.2.
+- PNG with an alpha channel, straight alpha, sRGB, at the class canvas, into the `export/` path of section 4.2. Loop frames are `0001.png` on, without gaps, at the canvas of the static.
 - Effect sprites exported white or greyscale for runtime tint (`docs/art-direction.md` section 2).
-- `node tools/asset-naming/asset-naming.mjs` passes before the commit.
+- `node tools/asset-naming/asset-naming.mjs` passes before the commit. `npm run asset:check -- <item folder>...` runs the export and size checks of 4.2 without a manifest.
+
+| Path | Export |
+|---|---|
+| Photoshop (static only) | File > Export > Export As: PNG, Transparency on, Convert to sRGB on, size 100% |
+| Blender | `blender --background <file>.blend --python-exit-code 1 --python tools/asset-export/blender/export_loop.py -- --frames <item>/export/anim --static <item>/export/static.png --static-frame <n>`. For a table layer, `--frames <item>/export/layer/<layer>` from the scene of that layer. The script refuses a scene without an orthographic camera and a static frame outside the scene range. It removes the numbered frames already in the folder, renders every frame of the scene range as `0001.png` on, and renders the chosen key frame `<n>` as the static. It sets the output: PNG, RGBA, 8 bit, transparent film, resolution at 100%, Standard view transform with no look, exposure 0, gamma 1, sRGB display, compositor and sequencer off. Canvas size, frame range and frame step stay in the `.blend` (O-6). `tools/asset-export/blender-export.test.mjs` runs it with Blender where Blender is installed (`BLENDER` names the executable); CI has no Blender and skips that test |
+| After Effects | No script: none could be tested without After Effects, so a script is open on #179. Render Queue output module: format PNG Sequence, channels RGB + Alpha, color Straight (Unmatted), depth Millions of Colors+, colour profile sRGB, Starting # 1 with Use Comp Frame Number off; output file `[####].png` into `export/anim/` or `export/layer/<layer>/`. The static: Composition > Save Frame As > File at the chosen key frame with the same output module, saved as `export/static.png` |
 
 ### 5.4 Pack (W-6)
 
-- One Sprite Atlas per item in its group; effect sprites only in the shared effects atlas (`docs/art-direction.md` section 6).
-- ASTC on both platforms (ADR 0002); block size per asset class is set in the asset class spec (O-5).
-- Size: limits per class and the atlas limits are #93 and #135. The admin measures format, size, atlas and frame count on upload (`docs/admin.md` 5.2).
+`HypeDomino/Import Cosmetics` in the Unity editor (`CosmeticContent`; batch: `-executeMethod HypeDomino.Editor.CosmeticContent.ImportAllAndExit`) turns every item folder under `client/Assets/Cosmetics` into its Addressables content. It can be run again after any change:
+
+- Group: `cosmetic-<type>-<slug>` with the remote settings of the `ContentSetup` item template (one bundle per entry, content-hashed names), or `cosmetic-builtin` for the `builtin` placement. An item that moved between placements leaves its old group.
+- Entries: the addresses and labels of 4.2. Entries of the item whose files are gone are removed, and so are the loop and atlas of a loop that has no frames left.
+- Sprites: Sprite, single, full rect mesh, no mipmaps, alpha is transparency, sRGB.
+- One Sprite Atlas per loop (`anim.spriteatlasv2`, `layer/<layer>.spriteatlasv2`) in the item's group, without rotation or tight packing, so a UI `Image` draws its sprites. The static is not packed, so it downloads on its own and before the animation (`docs/cosmetics.md` 8.2). Effect sprites only in the shared effects atlas (`docs/art-direction.md` section 6).
+- ASTC on both platforms (ADR 0002) for sprites and atlases, with the block of `ProjectSetup.SpriteFormat`: ASTC 6x6, the format of the project sprite preset. A block size per asset class is O-5; once it is set, it replaces this default in `CosmeticContent` and in `tools/asset-export/budgets.json`.
+- `CosmeticContentTests` (EditMode, client CI job) cover groups, addresses, labels, loops, importer and atlas settings.
+
+Size:
+
+- `tools/asset-export` estimates an item's texture bytes with the size rule of ADR 0012: every sprite of the item, the static and every frame, at 16 bytes per ASTC block of the default block, summed. Atlas padding and bundle overhead only add to it, so an item over its limit here is over it in the build too. An item under it still owes the bundle measurement of ADR 0012.
+- Limits are in `tools/asset-export/budgets.json`, each with its source: an animated avatar under 300,000 bytes (#171) and an emoji under 100,000 bytes (#175), reading 1 KB as 1,000 bytes. Static avatars, frames, tables and tile skins have no limit yet (#93, #135, class specs #168 to #175, O-5); their estimate is reported and never fails.
+- CI job `assets`, part of `CI complete`, runs when `assets-src/` or these tools change: the naming check over all of `assets-src/`, then the export and size checks over every cosmetic item the change touches, with Git LFS files pulled for those items only. The estimates go to the job summary.
+- The admin measures format, size, atlas and frame count on upload (`docs/admin.md` 5.2).
 - A new or changed effect, or anything in the match scene, reports the measurements of `docs/performance.md` section 8.
 
 ## 6. Sample tile skin walkthrough
