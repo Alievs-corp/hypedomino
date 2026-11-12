@@ -134,13 +134,23 @@ func classify(file, platform, catalog string) (Upload, error) {
 
 func Publish(ctx context.Context, store Store, dir string, uploads []Upload, now time.Time) (int, error) {
 	last := uploads[len(uploads)-1]
-	if exists(ctx, store, last.Key, now) {
+	live, err := exists(ctx, store, last.Key, now)
+	if err != nil {
+		return 0, err
+	}
+	if live {
 		return 0, fmt.Errorf("%w: %s", ErrAlreadyLive, last.Key)
 	}
 	sent := 0
 	for _, upload := range uploads {
-		if upload.CacheControl == ImmutableCacheControl && exists(ctx, store, upload.Key, now) {
-			continue
+		if upload.CacheControl == ImmutableCacheControl {
+			present, err := exists(ctx, store, upload.Key, now)
+			if err != nil {
+				return sent, err
+			}
+			if present {
+				continue
+			}
 		}
 		body, err := os.ReadFile(filepath.Join(dir, upload.File))
 		if err != nil {
@@ -155,13 +165,16 @@ func Publish(ctx context.Context, store Store, dir string, uploads []Upload, now
 	return sent, nil
 }
 
-func exists(ctx context.Context, store Store, key string, now time.Time) bool {
+func exists(ctx context.Context, store Store, key string, now time.Time) (bool, error) {
 	body, err := store.Open(ctx, key, now)
+	if errors.Is(err, objectstore.ErrNotFound) {
+		return false, nil
+	}
 	if err != nil {
-		return false
+		return false, fmt.Errorf("%s: %w", key, err)
 	}
 	body.Close()
-	return true
+	return true, nil
 }
 
 func contains(list []string, value string) bool {

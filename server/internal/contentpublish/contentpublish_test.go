@@ -165,3 +165,37 @@ func TestPublishKeepsOlderCatalogsWorkingAndRefusesARepublish(t *testing.T) {
 		t.Fatalf("republish %v, %d new puts", err, len(fake.puts)-puts)
 	}
 }
+
+type failingOpen struct {
+	*objectstore.Store
+	failKey string
+	puts    int
+}
+
+func (f *failingOpen) Open(ctx context.Context, key string, now time.Time) (io.ReadCloser, error) {
+	if strings.HasSuffix(key, f.failKey) {
+		return nil, objectstore.ErrUnavailable
+	}
+	return f.Store.Open(ctx, key, now)
+}
+
+func (f *failingOpen) PutObject(ctx context.Context, key string, object objectstore.Object, now time.Time) error {
+	f.puts++
+	return f.Store.PutObject(ctx, key, object, now)
+}
+
+func TestPublishStopsWhenTheStoreCannotAnswerAnExistenceCheck(t *testing.T) {
+	dir := buildFolder(t, "1.0", "catalog_1.0.bin", "a_"+hash+".bundle")
+	plan, err := contentpublish.Plan(dir, target("1.0"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, failKey := range map[string]string{"catalog": "catalog_1.0.bin", "bundle": "a_" + hash + ".bundle"} {
+		_, store := newFakeStore()
+		wrapped := &failingOpen{Store: store, failKey: failKey}
+		sent, err := contentpublish.Publish(context.Background(), wrapped, dir, plan, time.Now())
+		if !errors.Is(err, objectstore.ErrUnavailable) || errors.Is(err, contentpublish.ErrAlreadyLive) || sent != 0 || wrapped.puts != 0 {
+			t.Errorf("%s: sent %d puts %d err %v", name, sent, wrapped.puts, err)
+		}
+	}
+}
