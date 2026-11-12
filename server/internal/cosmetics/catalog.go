@@ -17,11 +17,12 @@ const (
 	TypeCharacter = "character"
 	TypeFrame     = "frame"
 	TypeTable     = "table"
+	TypeTile      = "tile"
 	TypeEmoji     = "emoji"
 	TypeAction    = "action"
 )
 
-var Types = []string{TypeAvatar, TypeCharacter, TypeFrame, TypeTable, TypeEmoji, TypeAction}
+var Types = []string{TypeAvatar, TypeCharacter, TypeFrame, TypeTable, TypeTile, TypeEmoji, TypeAction}
 
 const (
 	Live     = "live"
@@ -88,7 +89,7 @@ type manifest struct {
 	Items           []Item `json:"items"`
 }
 
-var idPattern = regexp.MustCompile(`^(avatar|character|frame|table|emoji|action)\.[a-z0-9_]+$`)
+var idPattern = regexp.MustCompile(`^(avatar|character|frame|table|tile|emoji|action)\.[a-z0-9_]+$`)
 
 func Builtin() *Catalog {
 	catalog, err := Parse(builtin)

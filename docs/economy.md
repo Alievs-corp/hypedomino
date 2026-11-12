@@ -112,9 +112,10 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 ```
 
 - `GuidePriceCoins` per rarity id of #5 in order `common`, `rare`, `epic`, `legendary`, `mythic`: 400, 1500, 3500, 12000, 30000. Rarities are referenced by id only.
-- `GuidePriceCrystals` per rarity, same order: 80, 300, 700, 2400, 6000, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`.
-- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `emoji`, `action`: 100, 150, 100, 150, 50, 50. A character carries four clips and a table fills the match scene; an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
+- `GuidePriceCrystals` per rarity, same order: 60, 200, 500, 1200, 2500, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`. Owner decision 2026-11-12 (OQ-15): lowered from 80, 300, 700, 2400, 6000 so that a `legendary` item costs about the price of two premium passes and a `mythic` one stays under 25 USD in the Azerbaijan and Turkey markets. Coin prices are unchanged, so play time per item is unchanged.
+- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `tile`, `emoji`, `action`: 100, 150, 100, 150, 125, 50, 50. A character carries four clips and a table fills the match scene; a tile skin is on every face-down tile of its seat in every match, more visible than a frame and smaller than the table (OQ-16); an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer.
+- An animated item is priced by its rarity like a static one. The admin may set an animated `epic` offer up to half above its guide price; a `legendary` or `mythic` item is expected to be animated, so its guide price already includes the animation.
 - The full table and the play time each price takes are in section 11.
 
 ### 3.2 Pass levels
@@ -256,7 +257,7 @@ Products `crystals_tier1` to `crystals_tier5`. USD prices `CrystalPackUsd` (0.99
 
 ### 7.3 Starter and first-purchase offers
 
-- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCrystals` (300) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 900 crystals at crystal guide prices, about 4.5 times its price at the reference rate.
+- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCrystals` (300) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 700 crystals at crystal guide prices, about 3.5 times its price at the reference rate.
 - First-purchase bonus: the first validated real-money purchase of an account grants `bundle.first_purchase` once: `FirstPurchaseBonusCrystals` (100) plus one `epic` frame. Any product counts, including the starter offer.
 - A refund revokes the bonus with its purchase (section 9). A later purchase does not become "first" again.
 
@@ -392,23 +393,23 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 
 #### Guide prices by rarity and type (coins)
 
-| Rarity | `avatar` | `character` | `frame` | `table` | `emoji` | `action` |
-|---|---|---|---|---|---|---|
-| `common` | 400 | 600 | 400 | 600 | 200 | 200 |
-| `rare` | 1500 | 2250 | 1500 | 2250 | 750 | 750 |
-| `epic` | 3500 | 5250 | 3500 | 5250 | 1750 | 1750 |
-| `legendary` | 12000 | 18000 | 12000 | 18000 | 6000 | 6000 |
-| `mythic` | 30000 | 45000 | 30000 | 45000 | 15000 | 15000 |
+| Rarity | `avatar` | `character` | `frame` | `table` | `tile` | `emoji` | `action` |
+|---|---|---|---|---|---|---|---|
+| `common` | 400 | 600 | 400 | 600 | 500 | 200 | 200 |
+| `rare` | 1500 | 2250 | 1500 | 2250 | 1875 | 750 | 750 |
+| `epic` | 3500 | 5250 | 3500 | 5250 | 4375 | 1750 | 1750 |
+| `legendary` | 12000 | 18000 | 12000 | 18000 | 15000 | 6000 | 6000 |
+| `mythic` | 30000 | 45000 | 30000 | 45000 | 37500 | 15000 | 15000 |
 
 #### Price against earn rate
 
 | Rarity | Guide price in coins (avatar, frame) | Days at 0.5 h/day | Days at 1 h/day | Days at 3 h/day | Guide price in crystals | USD for the crystals (best to smallest pack) |
 |---|---|---|---|---|---|---|
-| `common` | 400 | 1.2 | 0.8 | 0.6 | 80 | 0.57 to 0.79 |
-| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 300 | 2.14 to 2.97 |
-| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 700 | 5.00 to 6.93 |
-| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 2400 | 17.14 to 23.76 |
-| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 6000 | 42.85 to 59.40 |
+| `common` | 400 | 1.2 | 0.8 | 0.6 | 60 | 0.43 to 0.59 |
+| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 200 | 1.43 to 1.98 |
+| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 500 | 3.57 to 4.95 |
+| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 1200 | 8.57 to 11.88 |
+| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 2500 | 17.85 to 24.75 |
 
 #### Pass and offer value
 
@@ -448,3 +449,6 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-12 | Chests (2026-11-01) | Bought with coins only; `common` and `rare` items, `rare` being the middle tier; odds and pity shown before purchase (3.4) |
 | OQ-13 | Currency names (2026-11-01) | Coin (AZ Sikkə, TR Coin, RU Монета) and Crystal (AZ, TR Kristal, RU Кристалл). Not "gem": its Azerbaijani and Turkish word (`daş`, `taş`) is also the domino tile |
 | OQ-14 | Daily login reward and economy day (2026-11-01) | Coins only; 00:00 UTC for every player, no per-player reset time zone (2.3) |
+| OQ-15 | Crystal guide prices (2026-11-12) | Lowered to 60, 200, 500, 1200, 2500 for the launch markets; coin prices unchanged (3.1) |
+| OQ-16 | Tile skin type (2026-11-12) | Added: `tile` (`docs/cosmetics.md` section 2), `GuidePriceTypePercent` 125 (3.1) |
+| OQ-17 | Other proposed cosmetic types (2026-11-12) | Player title, profile banner, chat bubble, tile-place effect, win effect and sound pack are not added before launch; the tile-place and win effects come first after launch (`docs/cosmetics.md` section 2) |

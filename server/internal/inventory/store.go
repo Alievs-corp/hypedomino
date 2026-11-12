@@ -226,7 +226,7 @@ func (s *Store) Freeze(ctx context.Context, account string) (profile.Loadout, er
 
 func (s *Store) fits(slot string, ids []string) error {
 	switch slot {
-	case cosmetics.TypeAvatar, cosmetics.TypeFrame, cosmetics.TypeCharacter, cosmetics.TypeTable:
+	case cosmetics.TypeAvatar, cosmetics.TypeFrame, cosmetics.TypeCharacter, cosmetics.TypeTable, cosmetics.TypeTile:
 		if len(ids) != 1 {
 			return fmt.Errorf("%w: %s takes exactly one item", ErrTooMany, slot)
 		}
@@ -283,7 +283,7 @@ func (s *Store) resolve(ctx context.Context, q querier, account string, loadout 
 	for _, slot := range []struct {
 		name string
 		id   *string
-	}{{cosmetics.TypeAvatar, &loadout.Avatar}, {cosmetics.TypeFrame, &loadout.Frame}, {cosmetics.TypeCharacter, &loadout.Character}, {cosmetics.TypeTable, &loadout.Table}} {
+	}{{cosmetics.TypeAvatar, &loadout.Avatar}, {cosmetics.TypeFrame, &loadout.Frame}, {cosmetics.TypeCharacter, &loadout.Character}, {cosmetics.TypeTable, &loadout.Table}, {cosmetics.TypeTile, &loadout.Tile}} {
 		if *slot.id == "" || s.equippable(ctx, q, account, slot.name, *slot.id) != nil {
 			if def, ok := s.Catalog().Default(slot.name); ok {
 				*slot.id = def.ID
@@ -317,6 +317,8 @@ func set(loadout *profile.Loadout, slot string, ids []string) {
 		loadout.Character = ids[0]
 	case cosmetics.TypeTable:
 		loadout.Table = ids[0]
+	case cosmetics.TypeTile:
+		loadout.Tile = ids[0]
 	case cosmetics.TypeEmoji:
 		loadout.Emojis = slices.Clone(ids)
 	case cosmetics.TypeAction:

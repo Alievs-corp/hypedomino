@@ -29,7 +29,7 @@ func TestCosmeticsPublishStampsItemsAndKeepsThemForever(t *testing.T) {
 
 	status, body := a.call("GET", "/admin/config/cosmetics", liveOps, nil)
 	rules, _ := body["rules"].(map[string]any)
-	if status != http.StatusOK || body["catalog"] != nil || len(rules["types"].([]any)) != 6 || len(rules["source_types"].([]any)) != 9 {
+	if status != http.StatusOK || body["catalog"] != nil || len(rules["types"].([]any)) != 7 || len(rules["source_types"].([]any)) != 9 {
 		t.Fatalf("empty %d %v", status, body)
 	}
 	builtin := rules["builtin"].(map[string]any)

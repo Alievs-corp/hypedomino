@@ -48,6 +48,7 @@ func TestDuplicateCompensationFollowsTheGuidePrice(t *testing.T) {
 		{cosmetics.Item{Type: cosmetics.TypeAvatar, Rarity: "common"}, 80},
 		{cosmetics.Item{Type: cosmetics.TypeCharacter, Rarity: "rare"}, 450},
 		{cosmetics.Item{Type: cosmetics.TypeTable, Rarity: "epic"}, 1050},
+		{cosmetics.Item{Type: cosmetics.TypeTile, Rarity: "legendary"}, 3000},
 		{cosmetics.Item{Type: cosmetics.TypeEmoji, Rarity: "legendary"}, 1200},
 		{cosmetics.Item{Type: cosmetics.TypeAction, Rarity: "mythic"}, 3000},
 		{cosmetics.Item{Type: cosmetics.TypeFrame, Rarity: "unknown"}, 0},

@@ -21,6 +21,7 @@ type Loadout struct {
 	Frame     string   `json:"frame,omitempty"`
 	Character string   `json:"character,omitempty"`
 	Table     string   `json:"table,omitempty"`
+	Tile      string   `json:"tile,omitempty"`
 	Emojis    []string `json:"emojis,omitempty"`
 	Actions   []string `json:"actions,omitempty"`
 }

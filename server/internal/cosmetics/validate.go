@@ -119,7 +119,7 @@ func (i strictItem) checkTypeFields() error {
 	animated := *i.Animated
 	hasClipsOrModel := i.Clips != nil || i.ModelAddress != "" || i.ModelHqAddress != ""
 	switch i.Type {
-	case TypeAvatar, TypeFrame, TypeEmoji:
+	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
 		if hasClipsOrModel || len(i.Layers) > 0 || animated != (i.AnimationAddress != "") {
 			return fmt.Errorf("V-3 fields do not match a %s with animated %t", i.Type, animated)
 		}
@@ -251,7 +251,7 @@ func deriveFields(fields map[string]any, id string) {
 	fields["staticAddress"] = AddressOf(id, "static")
 	animated, _ := fields["animated"].(bool)
 	switch TypeOf(id) {
-	case TypeAvatar, TypeFrame, TypeEmoji:
+	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
 		if animated {
 			fields["animationAddress"] = AddressOf(id, "anim")
 		}
