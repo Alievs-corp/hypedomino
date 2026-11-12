@@ -29,7 +29,7 @@ ASTC stores 16 bytes per block, so the texture size follows from the atlas and t
 | 768 x 768 | 6x6 | 262,144 | Yes |
 | 1024 x 1024 | 8x8 | 262,144 | Yes |
 
-As an illustration, 768 x 768 holds 16 frames of 192 x 192. The canvas per class, the block size per class and the frame rate stay open (`docs/asset-workflow.md` O-5, O-6). 8x8 may not hold the outline of `docs/art-direction.md` section 4; that needs a look at real art on the reference panel.
+As an illustration, 768 x 768 holds 16 frames of 192 x 192. The canvas per class, the block size per class and the frame rate stay open (`docs/asset-workflow.md` O-5, O-6). 8x8 may blur the fine ornament and the pip edges of `docs/art-direction.md` section 4; that needs a look at real art on the reference panel.
 
 ## Alternatives considered and why rejected
 

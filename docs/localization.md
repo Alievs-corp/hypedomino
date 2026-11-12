@@ -293,7 +293,7 @@ Applies to every art asset, animation, sound, store screenshot and text before i
 | Area | Rule |
 |---|---|
 | Colours | UI, effect, team, score and role colours come only from colour tokens. Cosmetic illustration art (avatars, tables, frames, tile skins, emoji) may use its own palette, but is never dominated by a team or role hue. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
-| Symbols | No national or party emblems, no military insignia, no symbols tied to banned organisations. |
+| Symbols | No national or party emblems, no military insignia, no symbols tied to banned organisations. Carpet and filigree ornament is an original geometric or floral pattern with no script, emblem or religious symbol worked into it. |
 | Flags and maps | No flags as decoration and no flag standing in for a language (the language list uses names). No maps in launch content. Any later use needs owner review for disputed territory. |
 | Religion | No religious symbols, scriptures, places of worship or clergy in assets or cosmetic themes. Holiday events are reviewed per region by the owner. |
 | Gestures | No avatar or emote with a hand or body sign that is offensive in any launch market. The emote list is reviewed for this. |
