@@ -300,6 +300,7 @@ jobs:
       - if: github.event_name == 'pull_request' && needs.changes.outputs.proto_breaking == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GIT_LFS_SKIP_SMUDGE: '1'
         run: buf breaking proto --against ".git#ref=${BASE_SHA},subdir=proto"
       - uses: actions/setup-node@v4
         with:
