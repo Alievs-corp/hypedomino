@@ -5,6 +5,8 @@ export const fontsFolder = "client/Assets/HypeDomino/UI/Fonts";
 export const manifestPath = `${fontsFolder}/fonts.json`;
 export const builtinStringsPath = "client/Assets/HypeDomino/UI/Localization/builtin-strings.json";
 export const tokensPath = "docs/design-tokens.json";
+export const nicknameCharactersPath = "server/internal/profile/nickname-characters.json";
+const nicknameStyle = "name";
 const staticPopulationMode = 0;
 const builtinLanguages = ["en", "az", "tr", "ru"];
 const licenseMarker = "SIL Open Font License, Version 1.1";
@@ -96,6 +98,17 @@ export function requiredCharacters(manifest, builtinStrings) {
   return [...characters].sort((a, b) => a - b);
 }
 
+export function nicknameCharacters(set) {
+  const characters = new Set();
+  for (const text of [...Object.values(set.letters), set.digits, set.separators]) for (const character of text) characters.add(character.codePointAt(0));
+  return [...characters].sort((a, b) => a - b);
+}
+
+export function nicknameFace(tokens) {
+  const style = tokens.typography.scale[nicknameStyle];
+  return `${style.family}-${style.weight}`;
+}
+
 export function chainOf(faceId, faces) {
   const byId = new Map(faces.map((face) => [face.id, face]));
   const chain = [];
@@ -153,12 +166,20 @@ export function coverageErrors({ manifest, required, glyphsOf, source }) {
   return errors;
 }
 
+export function nicknameErrors({ manifest, faceId, allowed, glyphsOf, source }) {
+  const chain = chainOf(faceId, manifest.faces);
+  const missing = allowed.filter((codePoint) => !chain.some((id) => glyphsOf(id).has(codePoint)));
+  if (missing.length === 0) return [];
+  return [`${source} chain ${chain.join(" > ")} of the ${nicknameStyle} style misses nickname characters ${missing.map(label).join(", ")} (${nicknameCharactersPath})`];
+}
+
 export function checkFonts(root = ".") {
   const read = (path) => readFileSync(`${root}/${path}`);
   const exists = (path) => existsSync(`${root}/${path}`);
   const manifest = JSON.parse(read(manifestPath).toString("utf8"));
   const tokens = JSON.parse(read(tokensPath).toString("utf8"));
   const builtinStrings = JSON.parse(read(builtinStringsPath).toString("utf8"));
+  const allowed = nicknameCharacters(JSON.parse(read(nicknameCharactersPath).toString("utf8")));
   const errors = manifestErrors(manifest, tokens);
   if (errors.length > 0) return { errors, report: [] };
   const families = new Map(manifest.families.map((family) => [family.token, family]));
@@ -185,6 +206,9 @@ export function checkFonts(root = ".") {
   const required = requiredCharacters(manifest, builtinStrings);
   errors.push(...coverageErrors({ manifest, required, glyphsOf: (id) => sources.get(id), source: "font file" }));
   errors.push(...coverageErrors({ manifest, required, glyphsOf: (id) => assets.get(id).characters, source: "font asset" }));
+  const faceId = nicknameFace(tokens);
+  errors.push(...nicknameErrors({ manifest, faceId, allowed, glyphsOf: (id) => sources.get(id), source: "font file" }));
+  errors.push(...nicknameErrors({ manifest, faceId, allowed, glyphsOf: (id) => assets.get(id).characters, source: "font asset" }));
   for (const face of manifest.faces) {
     const facts = assets.get(face.id);
     if (facts.populationMode !== staticPopulationMode) errors.push(`${fontAssetPath(face)}: atlas population mode ${facts.populationMode}, must be static`);
@@ -192,6 +216,7 @@ export function checkFonts(root = ".") {
     if (linked.join(",") !== face.fallbacks.join(",")) errors.push(`${fontAssetPath(face)}: fallbacks ${linked.join(", ") || "none"}, fonts.json says ${face.fallbacks.join(", ") || "none"}`);
   }
   const report = manifest.faces.map((face) => `${chainOf(face.id, manifest.faces).join(" > ")}: ${required.length}/${required.length}`);
+  report.push(`nickname characters in the ${nicknameStyle} style (${chainOf(faceId, manifest.faces).join(" > ")}): ${allowed.length}/${allowed.length}`);
   return { errors, report };
 }
 
