@@ -216,7 +216,7 @@ The board is a set of panels stored in `assets-src/board/b_<n>/` under the namin
 | B-7 Type and icons | Score panel, hint, the four name effects, the icon row, cut from B-1 | Sections 5.6 and 5.7 | Committed 2026-11-12 |
 | B-8 Effects storyboard | `tilePlace`, `scoreCascade` at steps 1, 3 and 6, `domino` and `block`, each at the low and high level | Section 6 and its budgets | Open, #176 |
 | B-9 Static fallback and size test | One skin's static over its animated key frame with the shared pivot marked; avatar, frame, tile back and an icon at their smallest display size | Sections 3 and 7 | Open, #167 and #168 |
-| B-10 Do and don't | Paired examples for at least: baked text, baked glow, decoration in a team hue, casino cues, a recoloured frame, frame 0 fallback | Section 8 | Open, #167 |
+| B-10 Do and don't | Paired examples for at least: baked text, baked glow, decoration in a team hue, casino cues, a recoloured frame or skin, frame 0 fallback | Section 8 | Committed 2026-11-12, drawn from the sample skin `tile.sema` |
 
 A cosmetic's palette is reviewed per asset on the board: shown on both `color.surface.default` and `color.surface.raised` and beside `color.role.teamA` and `color.role.teamB`, so it never reads as a team marker.
 
@@ -227,4 +227,4 @@ A cosmetic's palette is reviewed per asset on the board: shown on both `color.su
 - Iconsax: the npm package declares the MIT licence; the terms for the icon artwork on the vendor's site are confirmed by the owner before the icons ship. Which icons are used is #168.
 - Placement of the face-down rows and of the name and timer inside the seat box: #168 and #169 with `UI/Match/MatchLayout`.
 - Smallest display size, any outline weight and the avatar frame band per asset class: #168 to #175.
-- Board panels B-8 to B-10: #167, #168, #176. Provenance of the prototype art used on B-1 to B-7 (generator, account, prompts) is recorded by #167 before any of it becomes a shipped item.
+- Board panels B-8 and B-9: #176, #167 and #168. Provenance of the prototype art used on B-1 to B-7 (generator, account, prompts) is recorded before any of it becomes a shipped item, as `tile.sema` started in `assets-src/cosmetic/tile/sema/provenance.md` (#167).
