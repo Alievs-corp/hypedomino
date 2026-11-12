@@ -26,6 +26,7 @@ jobs:
       proto: ${{ steps.areas.outputs.proto }}
       proto_breaking: ${{ steps.areas.outputs.proto_breaking }}
       deploy: ${{ steps.areas.outputs.deploy }}
+      backup: ${{ steps.areas.outputs.backup }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,6 +49,10 @@ jobs:
               - 'deploy/**'
               - 'tools/deploy/**'
               - '.github/workflows/ci.yml'
+            backup:
+              - 'tools/backup-drill/**'
+              - 'deploy/k8s/backup/**'
+              - '.github/workflows/ci.yml'
             proto:
               - 'proto/**'
               - 'server/internal/pb/**'
@@ -62,6 +67,7 @@ jobs:
           CLIENT_CHANGED: ${{ steps.filter.outputs.client }}
           PROTO_CHANGED: ${{ steps.filter.outputs.proto }}
           DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy }}
+          BACKUP_CHANGED: ${{ steps.filter.outputs.backup }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           emit() {
@@ -72,6 +78,7 @@ jobs:
           emit client "$CLIENT_CHANGED" client/ProjectSettings/ProjectVersion.txt
           emit proto "$PROTO_CHANGED" proto/buf.yaml
           emit deploy "$DEPLOY_CHANGED" server/Dockerfile
+          emit backup "$BACKUP_CHANGED" tools/backup-drill/drill.sh
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:proto/buf.yaml" 2>/dev/null; then
             echo "proto_breaking=true" >> "$GITHUB_OUTPUT"
           else
@@ -220,6 +227,18 @@ jobs:
       - name: Rolling deploy drains old pods, rollback under 5 minutes
         run: bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
 
+  backup-drill:
+    needs: changes
+    if: needs.changes.outputs.backup == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backup manifests render
+        run: kubectl kustomize deploy/k8s/backup > /dev/null
+      - name: Restore to a point in time from WAL-G backups
+        run: bash tools/backup-drill/drill.sh
+
   admin:
     needs: changes
     if: needs.changes.outputs.admin == 'true'
@@ -281,6 +300,7 @@ jobs:
       - if: github.event_name == 'pull_request' && needs.changes.outputs.proto_breaking == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GIT_LFS_SKIP_SMUDGE: '1'
         run: buf breaking proto --against ".git#ref=${BASE_SHA},subdir=proto"
       - uses: actions/setup-node@v4
         with:
@@ -295,7 +315,7 @@ jobs:
   ci-complete:
     name: CI complete
     if: always()
-    needs: [changes, lint, secret-scan, pr-meta, server, image, admin, client, proto]
+    needs: [changes, lint, secret-scan, pr-meta, server, image, backup-drill, admin, client, proto]
     runs-on: ubuntu-latest
     steps:
       - env:

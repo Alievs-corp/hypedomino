@@ -2,7 +2,7 @@
 
 The environments the game runs in, every environment variable the code reads, where secrets live and how they are rotated, the secret scan, and how database schema changes reach each environment (#24).
 
-Scope boundaries: deploy, rollback and orchestration are #25 and `docs/launch-runbook.md` section 5. Backups and restore are #188. Observability is #28. Admin config (every number a designer tunes) is never an environment variable; it is versioned in admin (ADR 0006).
+Scope boundaries: deploy, rollback and orchestration are #25 and `docs/launch-runbook.md` section 5. Backups and restore are #188 and `docs/backup-restore.md`. Observability is #28. Admin config (every number a designer tunes) is never an environment variable; it is versioned in admin (ADR 0006).
 
 ## 1. Environments
 

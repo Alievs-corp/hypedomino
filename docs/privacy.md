@@ -106,7 +106,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 | `PurchaseRecordRetentionYears` | 10, counted from the end of the purchase's calendar year (OQ-7) | D-17 | Delete |
 | `ConsentRecordRetentionYears` | 3, counted from the end of the calendar year of the account's deletion (OQ-7) | D-23 after deletion | Delete |
 | `PermanentBanEvasionRetentionDays` | 1095 after the account's deletion (OQ-10) | D-28 hash for a permanent ban | Delete |
-| `BackupRetentionDays` | set in #188 | D-30, D-28 tombstone | Backup rotated out |
+| `BackupRetentionDays` | 35 (`docs/backup-restore.md` section 3.2) | D-30, D-28 tombstone | Backup rotated out |
 
 - Inactive accounts are never deleted automatically (owner decision, #187). There is no inactivity deletion and no config key for it at launch.
 - A temporary ban's ban-evasion hash expires when the ban would have ended.
