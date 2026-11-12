@@ -89,6 +89,8 @@ var statuses = []struct {
 	{ErrExpired, http.StatusConflict},
 	{ErrExhausted, http.StatusConflict},
 	{ErrAlreadyRedeemed, http.StatusConflict},
+	{ErrNoPassSeason, http.StatusConflict},
+	{ErrPassOwned, http.StatusConflict},
 	{inventory.ErrSourceNotListed, http.StatusConflict},
 	{ErrRateLimited, http.StatusTooManyRequests},
 	{ErrLocked, http.StatusTooManyRequests},

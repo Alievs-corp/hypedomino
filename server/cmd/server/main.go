@@ -357,7 +357,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("POST /shop/complete", critical(guarded(gate, tokens, integrity.PurposePurchase, receipts)))
 	a.Handle("GET /purchases", receipts)
 	a.Handle("POST /store/", receipts)
-	promos, err := promos(pool, engine, catalog, config)
+	promos, err := promos(pool, engine, catalog, passes, config)
 	if err != nil {
 		pool.Close()
 		return nil, nil, err
@@ -425,7 +425,7 @@ func stores(config app.Config) (map[purchase.Platform]purchase.Validator, purcha
 	return validators, google, apple, nil
 }
 
-func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, config app.Config) (promo.Promos, error) {
+func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, passes promo.Pass, config app.Config) (promo.Promos, error) {
 	if config.PromoKey == "" {
 		return nil, nil
 	}
@@ -433,7 +433,9 @@ func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalo
 	if err != nil {
 		return nil, fmt.Errorf("HD_PROMO_KEY: %w", err)
 	}
-	return promo.NewStore(pool, engine, catalog, hasher, config.Promo), nil
+	store := promo.NewStore(pool, engine, catalog, hasher, config.Promo)
+	store.WithPass(passes)
+	return store, nil
 }
 
 func loadCatalog(path string) (*cosmetics.Catalog, error) {

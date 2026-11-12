@@ -137,6 +137,13 @@ export function PromoCreator({ templates, mayEditTemplates }: { templates: reado
           {t("promo.cosmetics")}
           <input value={draft.cosmetics} onChange={(event) => edit("cosmetics", event.target.value)} className={fieldClass} />
         </label>
+        <label className="flex items-start gap-2 text-sm text-text-secondary sm:col-span-2">
+          <input type="checkbox" checked={draft.passPremium} onChange={(event) => edit("passPremium", event.target.checked)} className="mt-1" />
+          <span className="flex flex-col gap-1">
+            <span className="text-text-primary">{t("promo.pass_premium")}</span>
+            <span className="text-text-muted">{t("promo.pass_premium_hint")}</span>
+          </span>
+        </label>
         <label className={labelClass}>
           {t("promo.start")}
           <input type="datetime-local" value={draft.startMinute} onChange={(event) => edit("startMinute", event.target.value)} className={fieldClass} />

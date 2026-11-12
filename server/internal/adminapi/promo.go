@@ -37,16 +37,17 @@ var (
 )
 
 type promoRequest struct {
-	ID       string          `json:"id"`
-	Campaign string          `json:"campaign"`
-	Kind     string          `json:"kind"`
-	Bundle   json.RawMessage `json:"bundle"`
-	Start    time.Time       `json:"start"`
-	End      time.Time       `json:"end"`
-	Cap      int             `json:"cap"`
-	Code     string          `json:"code"`
-	Accounts []string        `json:"accounts"`
-	Count    int             `json:"count"`
+	ID          string          `json:"id"`
+	Campaign    string          `json:"campaign"`
+	Kind        string          `json:"kind"`
+	Bundle      json.RawMessage `json:"bundle"`
+	Start       time.Time       `json:"start"`
+	End         time.Time       `json:"end"`
+	Cap         int             `json:"cap"`
+	Code        string          `json:"code"`
+	Accounts    []string        `json:"accounts"`
+	Count       int             `json:"count"`
+	PassPremium bool            `json:"passPremium"`
 	changeNote
 }
 
@@ -91,7 +92,7 @@ func (r promoRequest) definition(creator string) (promo.Definition, error) {
 	}
 	return promo.Definition{
 		ID: r.ID, Campaign: r.Campaign, Kind: r.Kind, Bundle: bundle, Start: r.Start, End: r.End,
-		Cap: r.Cap, Code: r.Code, Accounts: r.Accounts, Creator: creator,
+		Cap: r.Cap, Code: r.Code, Accounts: r.Accounts, Creator: creator, PassPremium: r.PassPremium,
 	}, nil
 }
 
