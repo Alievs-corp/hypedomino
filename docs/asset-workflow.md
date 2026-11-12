@@ -1,6 +1,6 @@
 # Asset workflow
 
-Status: proposal; the owner approves it by merging. How an asset goes from an AI-assisted concept to a published cosmetic: prompt templates and consistency, rights record, naming and folders in `assets-src/`, the clean-up and animation steps, and the sample avatar walkthrough. It defines no colour, size, duration or budget. Look and rules come from `docs/art-direction.md`, item data and addresses from `docs/cosmetics.md`, rarity from `docs/rarity.md`, delivery from ADR 0002, budgets from `docs/performance.md` and `docs/ui-motion.md` section 7, upload and publish from `docs/admin.md` section 5.2, the content checklist from `docs/localization.md` section 6. `node tools/asset-naming/asset-naming.mjs` checks `assets-src/` against section 4; CI runs its tests through `npm run test:tools`.
+Status: proposal; the owner approves it by merging. How an asset goes from an AI-assisted concept to a published cosmetic: prompt templates and consistency, rights record, naming and folders in `assets-src/`, the clean-up and animation steps, and the sample tile skin walkthrough. It defines no colour, size, duration or budget. Look and rules come from `docs/art-direction.md`, item data and addresses from `docs/cosmetics.md`, rarity from `docs/rarity.md`, delivery from ADR 0002, budgets from `docs/performance.md` and `docs/ui-motion.md` section 7, upload and publish from `docs/admin.md` section 5.2, the content checklist from `docs/localization.md` section 6. `node tools/asset-naming/asset-naming.mjs` checks `assets-src/` against section 4; CI runs its tests through `npm run test:tools`.
 
 ## 1. Stages
 
@@ -50,12 +50,13 @@ The plain background makes extraction in W-3 a single selection. Painted art has
 | P-4 | Frame | `Ornamental round frame for a circular portrait, {theme in plain words}, symmetric, open centre left empty, thin enough not to cover a face. Palette: {colour words}.` |
 | P-5 | Table layer | `Top-down view of a woven carpet table cloth, {theme}, {back / middle / front} layer only, original geometric and floral pattern, calm low-contrast centre where game pieces will sit. Palette: {colour words}.` |
 | P-6 | Emoji | `Single expressive reaction icon: {emotion}, readable as a silhouette, one subject, no hands making any sign.` |
+| P-8 | Tile back skin | `Back face of a domino tile, portrait 1:2, {theme in plain words}, one symmetric central emblem with filigree reaching every edge, polished metal and gemstone, reads as one jewel from across a table. The design fills the whole image edge to edge, so no background shows. Palette: {colour words}.` |
 
 Effect sprites (`docs/art-direction.md` section 6) are white or greyscale shapes; they are drawn by hand in W-3 and need no template.
 
 ### 2.4 Keeping an item consistent
 
-1. The approved concept (P-3 to P-6) is the canonical reference, saved as `concept/<date>-<nn>.png` and marked as canonical in `provenance.md`.
+1. The approved concept (P-3 to P-6, P-8) is the canonical reference, saved as `concept/<date>-<nn>.png` and marked as canonical in `provenance.md`.
 2. Every later prompt for the item attaches the canonical concept and repeats its filled placeholders word for word.
 3. All variants of one item are generated in one conversation started from the canonical concept. A new conversation starts again from step 2.
 4. A generation that changes proportions, palette or outline weight is rejected, not fixed in the prompt chain. Small drift (a hand, a fold) is fixed in W-3.
@@ -177,22 +178,35 @@ Static fallback, every item: a chosen key frame, not frame 0, exported at the sa
 - Size: limits per class and the atlas limits are #93 and #135. The admin measures format, size, atlas and frame count on upload (`docs/admin.md` 5.2).
 - A new or changed effect, or anything in the match scene, reports the measurements of `docs/performance.md` section 8.
 
-## 6. Sample avatar walkthrough
+## 6. Sample tile skin walkthrough
 
-The acceptance check of #167. The art team fills the evidence column for one animated avatar; its board panels are B-4 to B-8 (`docs/art-direction.md` section 9). The item is complete when every row has evidence.
+The acceptance check of #167. The game has no characters (#584), so the sample is a tile back skin instead of the character the issue first named: `tile.sema`, the sky skin of the approved prototype, in `assets-src/cosmetic/tile/sema/`. It is an animated `tile` item (`docs/cosmetics.md` sections 2 and 4); its board panels are B-4, B-9 and B-10 (`docs/art-direction.md` section 9). Evidence is filled in only for steps that are done. The item is complete when every row has evidence.
 
 | Step | Done when | Evidence |
 |---|---|---|
-| 1. Item id chosen | `avatar.<slug>` free in the manifest, folder `assets-src/cosmetic/avatar/<slug>/` created | |
-| 2. Concept (W-1) | P-3 used with the style key; prompt log in `provenance.md` | |
-| 3. Concept review (W-2) | Canonical concept marked; silhouette and size tests passed; RC-2, RC-3 recorded | |
-| 4. Clean-up (W-3) | 5.1 steps done; layered master in `work/`; B-4 and B-5 drawn | |
-| 5. Animation (W-4) | One loop per 5.2; B-6 drawn | |
-| 6. Static fallback | Key frame exported at the same canvas and pivot; B-8 drawn | |
+| 1. Item id chosen | `tile.sema` free in the manifest, folder `assets-src/cosmetic/tile/sema/` created with `provenance.md` | 2026-11-12: no `tile.sema` in `server/internal/cosmetics/builtin.json` or `docs/cosmetics/examples/`; folder, canonical concept and `provenance.md` added by #167; `node tools/asset-naming/asset-naming.mjs` passes |
+| 2. Concept (W-1) | P-8 used with the style key; prompt log, generator, account holder, plan and terms in `provenance.md` (RC-1) | |
+| 3. Concept review (W-2) | Canonical concept marked; shown on B-4; silhouette and size tests passed; RC-2, RC-3 recorded | |
+| 4. Clean-up (W-3) | 5.1 steps done; layered master in `work/` | |
+| 5. Animation (W-4) | One loop per 5.2, in the skin's theme (`docs/art-direction.md` 5.3) | |
+| 6. Static fallback | Key frame exported at the same canvas and pivot; B-9 drawn | |
 | 7. Export (W-5) | `export/static.png` and `export/anim/` present; naming check passes | |
-| 8. Pack (W-6) | Item group and atlas built with ASTC, within the avatar size limit of #171 | |
+| 8. Pack (W-6) | Item group and atlas built with ASTC, within the tile limits of O-5 | |
 | 9. Upload (W-7) | Admin asset checks pass; self-check and cultural review by another account recorded | |
-| 10. Publish (W-8) | Manifest entry valid with `artSource` set; item renders animated on medium and high and static on low, on Mid and High devices | |
+| 10. Publish (W-8) | Manifest entry valid with `artSource` `ai_assisted`; item renders animated on medium and high and static on low, on Mid and High devices | |
+
+State on 2026-11-12 of the steps without evidence:
+
+| Step | What exists | What closes it |
+|---|---|---|
+| 2 | `concept/20261112-01.png` is the generator's download, unchanged. Its embedded C2PA manifest names ChatGPT, model `gpt-image`, and the creation time. The prompt, account holder, plan and terms were not recorded, and P-8 did not exist yet | The account holder copies the prompt from that conversation's history and names account, plan and terms; or the concept is made again with P-8 and logged |
+| 3 | Canonical concept marked in `provenance.md`; the skin is on B-4 (#166) | Silhouette and smallest-size tests once the tile's smallest display size is set (O-6, #169); RC-2 with the prompt of step 2; RC-3 once O-7 names a search tool |
+| 4 | `work/` holds only a downscale of the concept and a Blender render of it on the modelled tile; `provenance.md` lists how both were made and how to reproduce the render | 5.1 done by an artist. Raw AI output never reaches W-5 (section 1), so there is no `export/` yet |
+| 5 to 8 | Nothing | An artist (step 5) and the Unity editor with Addressables (steps 6 to 8); B-9 also needs the smallest display sizes of #168 and #169 |
+| 9 | `provenance.md` raises one point for the cultural review: the central emblem is a crescent with a gem among four-point stars (`docs/localization.md` section 6, Symbols and Religion) | Self-check by the author, review by another account (`docs/localization.md` 6.1) |
+| 10 | Nothing | Steps 1 to 9, a publish and a check on Mid and High devices |
+
+B-10 (do and don't) is drawn from this skin and its render.
 
 ## 7. Open items
 
@@ -205,4 +219,4 @@ The acceptance check of #167. The art team fills the evidence column for one ani
 | O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |
-| O-8 | The sample item of section 6 and the board images B-8 to B-10 (B-1 to B-7 were committed with #166) | Art team, #167 |
+| O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board images B-8 and B-9 (B-1 to B-7 were committed with #166, B-10 with #167) | Art team, #167; step 2 with the account holder of the 2026-11-12 generation; B-8 #176; B-9 #167 and #168 |
