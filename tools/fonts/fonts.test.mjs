@@ -2,7 +2,22 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { chainOf, checkFonts, cmapCodePoints, coverageErrors, fontAssetFacts, manifestErrors, manifestPath, metaGuid, requiredCharacters, tokensPath } from "./fonts.mjs";
+import {
+  chainOf,
+  checkFonts,
+  cmapCodePoints,
+  coverageErrors,
+  fontAssetFacts,
+  manifestErrors,
+  manifestPath,
+  metaGuid,
+  nicknameCharacters,
+  nicknameCharactersPath,
+  nicknameErrors,
+  nicknameFace,
+  requiredCharacters,
+  tokensPath,
+} from "./fonts.mjs";
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 const readJson = (path) => JSON.parse(readFileSync(`${repoRoot}/${path}`, "utf8"));
@@ -13,7 +28,31 @@ const code = (character) => character.codePointAt(0);
 test("the committed font set covers every role chain and matches its font assets", () => {
   const { errors, report } = checkFonts(repoRoot);
   assert.deepEqual(errors, []);
-  assert.equal(report.length, manifest.faces.length);
+  assert.equal(report.length, manifest.faces.length + 1);
+});
+
+test("the nickname characters the server allows are the letters of the name style sets", () => {
+  const allowed = nicknameCharacters(readJson(nicknameCharactersPath));
+  assert.equal(nicknameFace(tokens), "display-900");
+  assert.equal(allowed.length, 52 + 14 + 6 + 66 + 10 + 4);
+  for (const character of "AzƏəĞğİıŞşÇçÖöÜüÂâÎîÛûЖжЁё0_.- ") assert.ok(allowed.includes(code(character)), character);
+  for (const character of "éßіÄñЎ€!@") assert.ok(!allowed.includes(code(character)), character);
+});
+
+test("a nickname character the name chain cannot draw is reported", () => {
+  const small = {
+    faces: [
+      { id: "display-900", fallbacks: ["ui-400"] },
+      { id: "ui-400", fallbacks: [] },
+    ],
+  };
+  const glyphs = { "display-900": new Set([code("A")]), "ui-400": new Set([code("ə")]) };
+  const allowed = nicknameCharacters({ letters: { latin: "Aə", extra: "é" }, digits: "", separators: "" });
+  assert.deepEqual(nicknameErrors({ manifest: small, faceId: "display-900", allowed, glyphsOf: (id) => glyphs[id], source: "font asset" }), [
+    `font asset chain display-900 > ui-400 of the name style misses nickname characters é U+00E9 (${nicknameCharactersPath})`,
+  ]);
+  glyphs["ui-400"].add(code("é"));
+  assert.deepEqual(nicknameErrors({ manifest: small, faceId: "display-900", allowed, glyphsOf: (id) => glyphs[id], source: "font asset" }), []);
 });
 
 test("the cmap of a committed face lists what the face draws", () => {
