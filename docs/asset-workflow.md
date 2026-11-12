@@ -216,30 +216,32 @@ Size:
 
 ## 6. Sample tile skin walkthrough
 
-The acceptance check of #167. The game has no characters (#584), so the sample is a tile back skin instead of the character the issue first named: `tile.sema`, the sky skin of the approved prototype, in `assets-src/cosmetic/tile/sema/`. It is an animated `tile` item (`docs/cosmetics.md` sections 2 and 4); its board panels are B-4, B-9 and B-10 (`docs/art-direction.md` section 9). Evidence is filled in only for steps that are done. The item is complete when every row has evidence.
+The acceptance check of #167. The game has no characters (#584), so the sample is a tile back skin instead of the character the issue first named: `tile.sema`, the sky skin of the approved prototype, in `assets-src/cosmetic/tile/sema/`. It is an animated `tile` item (`docs/cosmetics.md` sections 2 and 4); its board panels are B-4, B-9 and B-10 (`docs/art-direction.md` section 9). Evidence is filled in for steps that are done; a step marked Partial lists what is still missing in the state table below. The item is complete when every row has full evidence.
 
 | Step | Done when | Evidence |
 |---|---|---|
 | 1. Item id chosen | `tile.sema` free in the manifest, folder `assets-src/cosmetic/tile/sema/` created with `provenance.md` | 2026-11-12: no `tile.sema` in `server/internal/cosmetics/builtin.json` or `docs/cosmetics/examples/`; folder, canonical concept and `provenance.md` added by #167; `node tools/asset-naming/asset-naming.mjs` passes |
-| 2. Concept (W-1) | P-8 used with the style key; prompt log, generator, account holder, plan and terms in `provenance.md` (RC-1) | |
+| 2. Concept (W-1) | P-8 used with the style key; prompt log, generator, account holder, plan and terms in `provenance.md` (RC-1) | Partial, 2026-11-12: prompt (verbatim), generator, account holder (the project owner's own account), plan (Free), no uploaded inputs and the conversation time matching the C2PA manifest are in `provenance.md`; RC-2 recorded against the prompt. The prompt predates P-8 and the style key, and the terms are not read yet |
 | 3. Concept review (W-2) | Canonical concept marked; shown on B-4; silhouette and size tests passed; RC-2, RC-3 recorded | |
-| 4. Clean-up (W-3) | 5.1 steps done; layered master in `work/` | |
-| 5. Animation (W-4) | One loop per 5.2, in the skin's theme (`docs/art-direction.md` 5.3) | |
-| 6. Static fallback | Key frame exported at the same canvas and pivot; B-9 drawn | |
-| 7. Export (W-5) | `export/static.png` and `export/anim/` present; naming check passes | |
+| 4. Clean-up (W-3) | 5.1 steps done; layered master in `work/` | Partial, 2026-11-12: layered master (`work/sema_master.png`, `sema_stars.png`, `sema_sparkles.png`) made by an AI agent with `work/sema_cleanup.py`; 5.1 step 3 done, steps 1 and 2 in part, steps 4 and 5 not done (`provenance.md`, Clean-up) |
+| 5. Animation (W-4) | One loop per 5.2, in the skin's theme (`docs/art-direction.md` 5.3) | Partial, 2026-11-12: one 16-frame star twinkle loop for 12 fps at 128 x 256 by an AI agent with `work/sema_loop.py`; sheen and glow pulse stay runtime (`docs/art-direction.md` section 4). Reduce-motion and low-level check not done |
+| 6. Static fallback | Key frame exported at the same canvas and pivot; B-9 drawn | Partial, 2026-11-12: `export/static.png` is loop frame 9, the rest frame, same canvas and pivot. B-9 not drawn |
+| 7. Export (W-5) | `export/static.png` and `export/anim/` present; naming check passes | 2026-11-12: `export/static.png` and `export/anim/0001.png` to `0016.png`; `node tools/asset-naming/asset-naming.mjs` and `npm run asset:check -- assets-src/cosmetic/tile/sema` pass (17 sprites, ASTC 6x6 estimate 257,312 bytes, no tile limit yet). `npm run asset:add` refuses the item until the cultural review is approved (4.2 step 4), so nothing is in `client/` yet |
 | 8. Pack (W-6) | Item group and atlas built with ASTC, within the tile limits of O-5 | |
 | 9. Upload (W-7) | Admin asset checks pass; self-check and cultural review by another account recorded | |
 | 10. Publish (W-8) | Manifest entry valid with `artSource` `ai_assisted`; item renders animated on medium and high and static on low, on Mid and High devices | |
 
-State on 2026-11-12 of the steps without evidence:
+State on 2026-11-12 of the steps without full evidence:
 
 | Step | What exists | What closes it |
 |---|---|---|
-| 2 | `concept/20261112-01.png` is the generator's download, unchanged. Its embedded C2PA manifest names ChatGPT, model `gpt-image`, and the creation time. The prompt, account holder, plan and terms were not recorded, and P-8 did not exist yet | The account holder copies the prompt from that conversation's history and names account, plan and terms; or the concept is made again with P-8 and logged |
-| 3 | Canonical concept marked in `provenance.md`; the skin is on B-4 (#166) | Silhouette and smallest-size tests once the tile's smallest display size is set (O-6, #169); RC-2 with the prompt of step 2; RC-3 once O-7 names a search tool |
-| 4 | `work/` holds only a downscale of the concept and a Blender render of it on the modelled tile; `provenance.md` lists how both were made and how to reproduce the render | 5.1 done by an artist. Raw AI output never reaches W-5 (section 1), so there is no `export/` yet |
-| 5 to 8 | Nothing | An artist (step 5) and the Unity editor with Addressables (steps 6 to 8); B-9 also needs the smallest display sizes of #168 and #169 |
-| 9 | `provenance.md` raises one point for the cultural review: the central emblem is a crescent with a gem among four-point stars (`docs/localization.md` section 6, Symbols and Religion) | Self-check by the author, review by another account (`docs/localization.md` 6.1) |
+| 2 | Everything but the terms; the prompt was written before P-8 and asks for a glow | The account holder reads the OpenAI terms in force on 2026-11-12 for the Free plan and records URL and date (an automated fetch was refused). Whether a concept made before P-8 may stay canonical, or is made again with P-8, is the owner's call |
+| 3 | Canonical concept marked in `provenance.md`; the skin is on B-4 (#166); RC-2 recorded | Silhouette and smallest-size tests once the tile's smallest display size is set (O-6, #169); RC-3 once O-7 names a search tool |
+| 4 | Scripted clean-up by an AI agent: violet haze around the emblem reduced, moving parts on layers. No paint-over; the lens flare at the gem and the bloom on the crescent remain (`docs/art-direction.md` section 8) | An artist paints over the master (5.1 steps 2 and 4) and documents the human work (RC-5); silhouette and size tests with O-6 |
+| 5 | A procedural star twinkle; canvas, frame count and rate taken from the ADR 0012 measurement because O-5 and O-6 are open | Reduce-motion and low-level check in Unity; the class canvas and rate once O-5 and O-6 are set, then a new export |
+| 6 | The static | B-9, which also needs the smallest display sizes of #168 and #169 |
+| 8 | Nothing in `client/`: `asset:add` refuses the item while the cultural review is not approved | Cultural review (step 9), then `asset:add` and `HypeDomino/Import Cosmetics` (ASTC pack); the tile limits of O-5 |
+| 9 | `provenance.md` raises one point for the cultural review: the central emblem is a crescent with a gem among four-point stars (`docs/localization.md` section 6, Symbols and Religion). Self-check not signed: W-3 and W-4 have no human author | Self-check by the author, review by another account (`docs/localization.md` 6.1) |
 | 10 | Nothing | Steps 1 to 9, a publish and a check on Mid and High devices |
 
 B-10 (do and don't) is drawn from this skin and its render.
@@ -255,4 +257,4 @@ B-10 (do and don't) is drawn from this skin and its render.
 | O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |
-| O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board images B-8 and B-9 (B-1 to B-7 were committed with #166, B-10 with #167) | Art team, #167; step 2 with the account holder of the 2026-11-12 generation; B-8 #176; B-9 #167 and #168 |
+| O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board images B-8 and B-9 (B-1 to B-7 were committed with #166, B-10 with #167) | Art team, #167; the terms of step 2 with the account holder of the 2026-11-12 generation; paint-over and human work of steps 4 and 5 by an artist; cultural review by the owner or a delegate; B-8 #176; B-9 #167 and #168 |
