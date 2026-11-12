@@ -34,7 +34,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Catalog:** every item with its rarity, availability, animation, sources and revision. It can be searched by id or source record and filtered by type, rarity, availability and source type.
 - **Bulk edit:** rarity and availability over the checked items. The header box checks every listed item.
 - **New item:** a type and a slug become `<type>.<slug>`; a taken id is refused. The id and the type never change, and a published item cannot be removed: retire or disable it.
-- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a character's high detail model, a table's ordered layers. Turning animation off drops the fields a static item must not have.
+- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a table's ordered layers. Turning animation off drops the fields a static item must not have.
 - **Server fields:** `revision`, `nameKey` and every address are set by the API on publish, so they are shown and never typed.
 - **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
 - **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.

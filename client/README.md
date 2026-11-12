@@ -1,6 +1,6 @@
 # client
 
-Unity 6 LTS game client (URP Universal Renderer with 2D sprites and real-time 3D characters, ADR 0009; C#, Addressables). It renders state and sends player intents only; the server decides every rule, score and reward.
+Unity 6 LTS game client (URP Universal Renderer with 2D sprites, kept from the superseded ADR 0009; C#, Addressables). It renders state and sends player intents only; the server decides every rule, score and reward.
 
 ## Editor
 
@@ -33,15 +33,15 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 | Scripting | IL2CPP, high managed stripping, engine code stripping, .NET Standard 2.1 on Android and iOS | ADR 0001; install size |
 | Android | ARM64 only; Vulkan, then OpenGL ES 3 | Install size; no 32-bit devices in the matrix (`docs/performance.md` 1) |
 | iOS | Metal | Only API on target devices |
-| Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | ADR 0009, `docs/ui-motion.md` 4 |
+| Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | Kept from ADR 0009 (superseded 2026-11-12: no 3D characters), `docs/ui-motion.md` 4 |
 | Quality levels | No per-level pipeline; every level uses the default URP asset; `vSyncCount` 0 | One renderer; graphics levels set only its render scale (`docs/performance.md` 1.1); `Application.targetFrameRate` alone sets the rate (1.2) |
 | Profiling | Frame Timing Stats on | `FrameTimingManager` measurements, `docs/performance.md` 2 |
-| Color space | Linear | Lit 3D characters, ADR 0009 |
+| Color space | Linear | Kept from ADR 0009 (superseded); changing it is its own measured change |
 
 ## Textures and atlases
 
 - Android texture compression is ASTC only; the build subtarget is ASTC (ADR 0002).
-- `Settings/SpriteTextureASTC.preset` is the default preset for every new texture: Sprite, no mipmaps, ASTC 6x6 on Android and iOS. ASTC 6x6 is the base-colour block size of ADR 0009. Per-class block and maximum sizes are open item O-5 in `docs/asset-workflow.md` (#93, #135); a class that needs other values adds a preset with a folder filter above this one in the Preset Manager.
+- `Settings/SpriteTextureASTC.preset` is the default preset for every new texture: Sprite, no mipmaps, ASTC 6x6 on Android and iOS. Per-class block and maximum sizes are open item O-5 in `docs/asset-workflow.md` (#93, #135); a class that needs other values adds a preset with a folder filter above this one in the Preset Manager.
 - Sprite Atlas V2 is the packer. One atlas per cosmetic item inside its Addressables group and effect sprites only in the shared effects atlas (`docs/cosmetics.md` 8.2, `docs/art-direction.md` 6).
 
 ## Measuring the empty build
