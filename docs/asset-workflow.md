@@ -32,10 +32,10 @@ Raw AI output never reaches W-5. Every exported pixel has passed W-3.
 ### 2.2 Style key
 
 ```text
-Original 2D game art for an all-ages mobile game. Flat cel shading with exactly three tones per material: base, one shade, one highlight. One light from directly above. Solid dark outer outline of even weight around the whole silhouette, thinner inner lines only where shapes overlap. Big simple shapes with rounded corners, no sharp points, no fine texture, no gradients, no photographic detail. No text, letters, numbers, logos, flags or symbols. No glow, no drop shadow, no cast shadow, no background scenery. Isolated on a plain flat light grey background that does not appear anywhere in the subject.
+Original 2D game art for an all-ages mobile game with a premium, aristocratic look. Painted, semi-realistic rendering with soft volume and rich materials: polished gold and brass, ivory, deep lacquer, gemstone, crystal, silk and wool. Fine ornament inside a clear, readable outer shape. One warm light from above. No text, letters, numbers, logos, flags, emblems or religious symbols. No weapons. No glow, no drop shadow, no cast shadow, no background scenery. Isolated on a plain flat light grey background that does not appear anywhere in the subject.
 ```
 
-The plain background makes extraction in W-3 a single selection. The outline is recoloured to `color.shadow` in W-3; prompts never try to hit a token value.
+The plain background makes extraction in W-3 a single selection. Painted art has no forced outline (`docs/art-direction.md` section 4); prompts never try to hit a token value.
 
 ### 2.3 Templates
 
@@ -46,9 +46,9 @@ The plain background makes extraction in W-3 a single selection. The outline is 
 | P-1 | Removed 2026-11-12 (character concept sheet; the game has no characters) | |
 | P-2 | Removed 2026-11-12 (character model view) | |
 | P-7 | Removed 2026-11-12 (character face reference) | |
-| P-3 | Avatar | `Head and shoulders portrait of {identity}, face centred, looking slightly toward the viewer, friendly expression. Keep the outer band of the image empty of anything essential.` |
-| P-4 | Frame | `Decorative square border for a round portrait, {theme in plain words}, symmetric, open centre left empty, thin enough not to cover a face. Palette: {colour words}.` |
-| P-5 | Table layer | `Top-down view of a game table surface, {theme}, {back / middle / front} layer only, calm low-contrast centre where game pieces will sit, decoration only toward the edges. Palette: {colour words}.` |
+| P-3 | Avatar | `Painted splash-art head and shoulders portrait of {identity}, face centred, looking slightly toward the viewer, friendly expression, rich costume detail. Keep the outer band of the image empty of anything essential.` |
+| P-4 | Frame | `Ornamental round frame for a circular portrait, {theme in plain words}, symmetric, open centre left empty, thin enough not to cover a face. Palette: {colour words}.` |
+| P-5 | Table layer | `Top-down view of a woven carpet table cloth, {theme}, {back / middle / front} layer only, original geometric and floral pattern, calm low-contrast centre where game pieces will sit. Palette: {colour words}.` |
 | P-6 | Emoji | `Single expressive reaction icon: {emotion}, readable as a silhouette, one subject, no hands making any sign.` |
 
 Effect sprites (`docs/art-direction.md` section 6) are white or greyscale shapes; they are drawn by hand in W-3 and need no template.
@@ -146,8 +146,8 @@ Item id `<type>.<slug>`, group `cosmetic-<type>-<slug>` (or `cosmetic-builtin` f
 ### 5.1 Clean-up (W-3)
 
 1. Photoshop: remove the background, trim, place on the class canvas at the class pivot (`docs/art-direction.md` 5.1; sizes per class: O-6).
-2. Illustrator: redraw or trace the approved concept as flat shapes, three tones per material (`docs/art-direction.md` section 4). Fix AI artefacts: hands, eyes, asymmetry, merged or extra parts.
-3. Outer outline in `color.shadow`, at the one weight of the asset class (#168 to #175); inner lines thinner, in the item palette.
+2. Photoshop: paint over the approved concept so material and light follow `docs/art-direction.md` section 4. Fix AI artefacts: hands, eyes, asymmetry, merged or extra parts, smeared ornament.
+3. Separate the parts that move (ornament, gems, flames, crystals) onto their own layers for W-4. An outline only where the class spec asks for one (#168 to #175).
 4. Remove anything art-direction section 8 forbids: text, glow, drop shadow, rarity colour, team or score hue as decoration.
 5. Silhouette test (filled black) and smallest-display-size test (`docs/art-direction.md` sections 3 and 5) on the reference board.
 
@@ -158,7 +158,7 @@ The runtime format and the per-screen animation budget are ADR 0012 (#93); this 
 | Path | Steps | Delivers |
 |---|---|---|
 | After Effects | Animate the layered master, render each clip as a PNG sequence with alpha, no effects that add glow, blur or shadow | Frame sequences for a sprite sheet |
-| Blender | Orthographic camera at the class canvas, flat shading with three tones, outline matching 5.1 step 3, no post-processing, render PNG sequence with alpha | Frame sequences for a sprite sheet |
+| Blender | Orthographic camera at the class canvas, lighting matching `docs/art-direction.md` section 4, no post-processing, render PNG sequence with alpha | Frame sequences for a sprite sheet |
 
 Per type: avatar, frame, tile and emoji deliver one loop; an animated table delivers its layers, back to front, at most `TableMaxLayers` (`docs/cosmetics.md` section 4). Each clip is checked with reduce motion and on the low effect level, where only the static shows.
 
@@ -205,4 +205,4 @@ The acceptance check of #167. The art team fills the evidence column for one ani
 | O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |
-| O-8 | The sample avatar of section 6 and the board images B-1 to B-10 | Art team, #167 |
+| O-8 | The sample item of section 6 and the board images B-8 to B-10 (B-1 to B-7 were committed with #166) | Art team, #167 |
