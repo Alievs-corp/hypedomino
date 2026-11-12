@@ -1,6 +1,6 @@
 # Rarity
 
-Status: proposal. Every hex value, glow level, size and period here is an initial proposal; the owner approves them by merging the pull request that adds or changes them. Tiers, order and the colour convention are owner decisions of 2026-10-26.
+Status: proposal. The `on` shade follows the ink of the 2026-11-12 art direction (`docs/art-direction.md`). Every hex value, glow level, size and period here is an initial proposal; the owner approves them by merging the pull request that adds or changes them. Tiers, order and the colour convention are owner decisions of 2026-10-26.
 
 Rarity tiers, their order, colours, the status diamond, the rarity glow, the comparison rule and the table background selection at match start. `docs/design-tokens.json` group `rarity` holds the values; this file explains them. `node tools/design-tokens/design-tokens.mjs` checks the group (ids, ordinals, pips, glow order, contrast) and that the contrast table and colours below match it; CI runs it through `npm run test:tools`.
 
@@ -10,16 +10,16 @@ Items refer to a tier by `rarityId` (`docs/cosmetics.md` section 3). Glow levels
 
 | `rarityId` | Ordinal | Name key (`en` reference) | `fill` | `on` | `text` | Pips | Glow | Flow |
 |---|---|---|---|---|---|---|---|---|
-| `common` | 1 | `rarity.common.name` (Common) | `#A3A6BF` | `#120A2C` | `#C9CBDB` | 1 | `glow.none` | No |
-| `rare` | 2 | `rarity.rare.name` (Rare) | `#5C78FF` | `#120A2C` | `#A3B3FF` | 2 | `glow.soft` | No |
-| `epic` | 3 | `rarity.epic.name` (Epic) | `#B45CFF` | `#120A2C` | `#D3A3FF` | 3 | `glow.strong` | No |
-| `legendary` | 4 | `rarity.legendary.name` (Legendary) | `#FFC23D` | `#120A2C` | `#FFD98A` | 4 | `glow.intense` | No |
-| `mythic` | 5 | `rarity.mythic.name` (Mythic) | `#FF4530` | `#120A2C` | `#FF9C8F` | 5 | `glow.intense` | Yes |
+| `common` | 1 | `rarity.common.name` (Common) | `#A3A6BF` | `#0B0605` | `#C9CBDB` | 1 | `glow.none` | No |
+| `rare` | 2 | `rarity.rare.name` (Rare) | `#5C78FF` | `#0B0605` | `#A3B3FF` | 2 | `glow.soft` | No |
+| `epic` | 3 | `rarity.epic.name` (Epic) | `#B45CFF` | `#0B0605` | `#D3A3FF` | 3 | `glow.strong` | No |
+| `legendary` | 4 | `rarity.legendary.name` (Legendary) | `#FFC23D` | `#0B0605` | `#FFD98A` | 4 | `glow.intense` | No |
+| `mythic` | 5 | `rarity.mythic.name` (Mythic) | `#FF4530` | `#0B0605` | `#FF9C8F` | 5 | `glow.intense` | Yes |
 
 - Hues follow the genre convention: grey, blue, purple, gold, red. `fill` is the diamond and the glow tint, `on` the pips on the diamond, `text` the tier label on a dark layer, as with the roles in `docs/ui-motion.md` section 2.
 - The status colour of an item is its tier's `fill`. The manifest has no colour field.
 - Name values in other languages are managed in admin (`docs/localization.md` section 2.1).
-- `rare` (hue 230) sits next to `role.teamA` (216), `legendary` (41) next to `role.warning` (39) and `role.score` (50), `mythic` (6) next to `role.danger` (354). Colour is never the only cue: tiers differ by pip pattern, and in a match rarity shows only as a halo behind a seat frame, while team identity comes from seat position and badge, outcomes carry an icon and score yellow appears only in score effects.
+- `rare` (hue 230) sits next to `role.teamA` (216), `legendary` (41) next to `role.warning` (39) and `role.score` (43), `mythic` (6) next to `role.danger` (354). Colour is never the only cue: tiers differ by pip pattern, and in a match rarity shows only as a halo behind a seat frame, while team identity comes from seat position and badge, outcomes carry an icon and score gold appears only in score numerals and score effects. `legendary` gold also sits next to the gold ornament of the aristocratic look (`docs/art-direction.md` section 2); a tier still reads by its pip pattern, and the small diamond gems of the score panel carry no pips and show no rarity.
 
 ## 2. Marks
 
@@ -83,16 +83,16 @@ Same thresholds as `docs/ui-motion.md` section 2: `fill` is non-text UI and need
 
 | Foreground | `background.base` | `background.raised` | `surface.default` | `surface.raised` | `on` on `fill` |
 |---|---|---|---|---|---|
-| `rarity.tiers.common.fill` | 8.03 | 7.31 | 6.41 | 5.47 | 7.92 |
-| `rarity.tiers.common.text` | 11.96 | 10.89 | 9.55 | 8.14 | - |
-| `rarity.tiers.rare.fill` | 5.12 | 4.66 | 4.09 | 3.48 | 5.05 |
-| `rarity.tiers.rare.text` | 9.58 | 8.72 | 7.65 | 6.52 | - |
-| `rarity.tiers.epic.fill` | 5.42 | 4.93 | 4.33 | 3.69 | 5.35 |
-| `rarity.tiers.epic.text` | 9.58 | 8.72 | 7.65 | 6.52 | - |
-| `rarity.tiers.legendary.fill` | 11.95 | 10.88 | 9.54 | 8.13 | 11.79 |
-| `rarity.tiers.legendary.text` | 14.25 | 12.97 | 11.38 | 9.70 | - |
-| `rarity.tiers.mythic.fill` | 5.63 | 5.13 | 4.50 | 3.83 | 5.55 |
-| `rarity.tiers.mythic.text` | 9.54 | 8.68 | 7.61 | 6.49 | - |
+| `rarity.tiers.common.fill` | 8.40 | 7.96 | 7.17 | 5.91 | 8.40 |
+| `rarity.tiers.common.text` | 12.51 | 11.85 | 10.67 | 8.80 | - |
+| `rarity.tiers.rare.fill` | 5.35 | 5.07 | 4.57 | 3.76 | 5.35 |
+| `rarity.tiers.rare.text` | 10.02 | 9.49 | 8.55 | 7.05 | - |
+| `rarity.tiers.epic.fill` | 5.67 | 5.37 | 4.84 | 3.99 | 5.67 |
+| `rarity.tiers.epic.text` | 10.02 | 9.49 | 8.55 | 7.05 | - |
+| `rarity.tiers.legendary.fill` | 12.50 | 11.84 | 10.66 | 8.79 | 12.50 |
+| `rarity.tiers.legendary.text` | 14.91 | 14.11 | 12.72 | 10.48 | - |
+| `rarity.tiers.mythic.fill` | 5.89 | 5.58 | 5.03 | 4.14 | 5.89 |
+| `rarity.tiers.mythic.text` | 9.98 | 9.45 | 8.51 | 7.02 | - |
 
 ## 4. Comparison
 

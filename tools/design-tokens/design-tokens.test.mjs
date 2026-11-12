@@ -165,7 +165,7 @@ test("the committed C# tokens match the JSON", () => {
 
 test("C# tokens carry hex colours, nested names and float easing points", () => {
   const source = csharpTokens(tokens);
-  assert.ok(source.includes("public static readonly Color32 BackgroundBase = new Color32(0x0D, 0x0B, 0x24, 0xFF);"));
+  assert.ok(source.includes("public static readonly Color32 BackgroundBase = new Color32(0x0B, 0x06, 0x05, 0xFF);"));
   assert.ok(source.includes("public static readonly Color32 RoleTeamAFill = new Color32(0x3D, 0x8B, 0xFF, 0xFF);"));
   assert.ok(source.includes("public const int Md = 16;"));
   assert.ok(source.includes("public static readonly Vector4 Overshoot = new Vector4(0.34f, 1.56f, 0.64f, 1f);"));
