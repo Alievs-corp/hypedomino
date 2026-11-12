@@ -12,7 +12,7 @@ Animated avatars appear in lists, the shop and the profile as well as at the sea
 
 ## Decision
 
-- An animated 2D item is a loop of whole frames in the item's one atlas (`docs/cosmetics.md` 8.2), compressed with ASTC, without mipmaps, with its static sprite in the same group.
+- An animated 2D item is a loop of whole frames in one atlas in the item's group (one atlas per loop, so one per table layer; `docs/cosmetics.md` 8.2), compressed with ASTC, without mipmaps, with its static sprite in the same group.
 - Frames keep the class canvas and pivot untrimmed, so swapping a frame or the static shows no jump (`docs/art-direction.md` section 7).
 - `AnimatedImage` plays the loop on a UI `Image`. It sets the sprite only when the frame changes and allocates nothing while playing.
 - It shows the static on the low effect level, with reduce motion, for an item with no loop, and when the screen's budget is spent (`docs/cosmetics.md` 8.3). A row that is disabled frees its slot and rests on the static.
