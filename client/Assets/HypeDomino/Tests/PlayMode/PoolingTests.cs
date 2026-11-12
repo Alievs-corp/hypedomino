@@ -5,8 +5,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Pool;
 using UnityEngine.TestTools;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -75,7 +73,7 @@ namespace HypeDomino.Tests.PlayMode
                     for (var i = 0; i < Prewarm; i++) taken[i] = pool.Get();
                     for (var i = 0; i < Prewarm; i++) pool.Release(taken[i]);
                 }
-            }, Is.Not.AllocatingGCMemory());
+            }, Allocates.Nothing);
         }
 
         [Test]
@@ -97,7 +95,7 @@ namespace HypeDomino.Tests.PlayMode
             Assert.That(() =>
             {
                 for (var cycle = 0; cycle < Cycles; cycle++) Cycle();
-            }, Is.Not.AllocatingGCMemory());
+            }, Allocates.Nothing);
         }
     }
 }

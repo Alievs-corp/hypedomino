@@ -3,8 +3,6 @@ using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using Hypedomino.V1;
 using NUnit.Framework;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -117,7 +115,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsTrue(snapshot.TryRead(View(Seat.South, Seat.South, 3, 10, 0).ToByteArray()));
             TestDelegate step = () => cues.Read(snapshot);
             step();
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
     }
 }

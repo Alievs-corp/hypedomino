@@ -263,4 +263,4 @@ Anything that spawns more than once is pooled; a match frame allocates 0 B (`doc
 - Scene objects use `Core/Pooling/PrefabPool<T>`: it instantiates `prewarm` inactive copies under one parent at load time, activates on `Get`, deactivates on `Release` and destroys only what exceeds `maxSize`. Size it for the worst case of the scene so a frame never instantiates.
 - Runtime assemblies do not use `System.Linq`; iterate arrays and `List<T>` with `for`. `RuntimeCodeRulesTests` fails on any `System.Linq` outside `Editor`, `Generated` and `Tests`.
 - No string concatenation, interpolation or `ToString()` in `Update`, input or animation code; text changes only when its value changes.
-- The `PoolingTests` PlayMode tests assert with `Is.Not.AllocatingGCMemory()` that warmed pools cycle without allocating. Every new per-frame path adds the same assertion.
+- The `PoolingTests` PlayMode tests assert with `Allocates.Nothing` (`Tests/Support`, see `docs/test-strategy.md`) that warmed pools cycle without allocating. Every new per-frame path adds the same assertion.

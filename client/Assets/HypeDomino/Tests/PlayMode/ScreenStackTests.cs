@@ -5,9 +5,7 @@ using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -266,7 +264,7 @@ namespace HypeDomino.Tests.PlayMode
             stack.Advance(TokenDurationMs.Slow);
             PopAndPushBack(next);
 
-            Assert.That(() => PopAndPushBack(next), Is.Not.AllocatingGCMemory());
+            Assert.That(() => PopAndPushBack(next), Allocates.Nothing);
         }
 
         [UnityTest]

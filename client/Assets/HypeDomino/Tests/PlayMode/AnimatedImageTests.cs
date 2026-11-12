@@ -1,9 +1,7 @@
 using HypeDomino.UI.Motion;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -127,7 +125,7 @@ namespace HypeDomino.Tests.PlayMode
             image.Show(loop, EffectLevel.Medium, false, new AnimationBudget(1), 10f);
             image.Advance(10.15f);
 
-            Assert.That(() => image.Advance(10.25f), Is.Not.AllocatingGCMemory());
+            Assert.That(() => image.Advance(10.25f), Allocates.Nothing);
         }
     }
 }

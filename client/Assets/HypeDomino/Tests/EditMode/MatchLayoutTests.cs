@@ -5,8 +5,6 @@ using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -165,7 +163,7 @@ namespace HypeDomino.Tests.EditMode
             var safe = new Rect(0, 0, 2400, 1080);
             TestDelegate step = () => layout.Arrange(safe, 4);
             step();
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
 
         [Test]

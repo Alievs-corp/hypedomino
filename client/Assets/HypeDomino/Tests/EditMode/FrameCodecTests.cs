@@ -7,8 +7,6 @@ using HypeDomino.Net;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -127,7 +125,7 @@ namespace HypeDomino.Tests.EditMode
             };
             step();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
 
         [Test]
@@ -144,7 +142,7 @@ namespace HypeDomino.Tests.EditMode
             };
             step();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
     }
 }

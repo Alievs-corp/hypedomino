@@ -4,9 +4,7 @@ using HypeDomino.UI.Rarity;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -186,7 +184,7 @@ namespace HypeDomino.Tests.PlayMode
             var halo = NewHalo();
             halo.Show(table, "top", EffectLevel.Medium, false, 0f);
             halo.Advance(0.25f);
-            Assert.That(() => halo.Advance(0.5f), Is.Not.AllocatingGCMemory());
+            Assert.That(() => halo.Advance(0.5f), Allocates.Nothing);
         }
     }
 }
