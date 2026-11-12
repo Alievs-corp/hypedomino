@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using HypeDomino.UI.Text;
+using HypeDomino.UI.Typography;
 using HypeDomino.UI.Tokens;
 using TMPro;
 using UnityEditor;

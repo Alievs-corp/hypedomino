@@ -2,7 +2,7 @@ using HypeDomino.UI.Tokens;
 using TMPro;
 using UnityEngine;
 
-namespace HypeDomino.UI.Text
+namespace HypeDomino.UI.Typography
 {
     [RequireComponent(typeof(TMP_Text))]
     public sealed class TokenText : MonoBehaviour

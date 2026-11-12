@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.TextCore;
 
-namespace HypeDomino.UI.Text
+namespace HypeDomino.UI.Typography
 {
     public sealed class TypeSet : ScriptableObject
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.Editor;
-using HypeDomino.UI.Text;
+using HypeDomino.UI.Typography;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using TMPro;
