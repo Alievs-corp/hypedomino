@@ -44,6 +44,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
+	"github.com/Alievs-corp/hypedomino/server/internal/storesync"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
@@ -69,6 +70,7 @@ type Config struct {
 	Cosmetics *cosmetics.Catalog
 	Assets    AssetStore
 	Economy   economy.Config
+	Stores    storesync.Stores
 }
 
 type Verifier interface {
@@ -185,6 +187,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/config/store-prices", h.allowed(rbac.StoreProducts, rbac.Publish, h.publishDomain(storePricesDomain)))
 	h.mux.HandleFunc("GET /admin/config/store-prices/history", h.allowed(rbac.StoreProducts, rbac.View, h.domainHistory(storeprice.Domain)))
 	h.mux.HandleFunc("POST /admin/config/store-prices/rollback", h.allowed(rbac.StoreProducts, rbac.Publish, h.rollbackDomain(storePricesDomain)))
+	h.mux.HandleFunc("POST /admin/config/store-prices/sync/plan", h.allowed(rbac.StoreProducts, rbac.View, h.planStorePush))
+	h.mux.HandleFunc("POST /admin/config/store-prices/sync/apply", h.allowed(rbac.StoreProducts, rbac.PushStorePrices, h.applyStorePush))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
 	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, publisher) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
@@ -488,6 +492,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "disabled"
 	case errors.Is(err, errBanNotConfigured), errors.Is(err, errPromoNotConfigured):
 		return http.StatusConflict, "not_configured"
+	case errors.Is(err, errNotPublished):
+		return http.StatusConflict, "not_published"
 	case errors.Is(err, errNotBanned):
 		return http.StatusConflict, "not_banned"
 	case errors.Is(err, errShadowbanned):

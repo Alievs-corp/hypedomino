@@ -56,7 +56,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Rarity table (5.3) | VCEP | VCEP | V | V | V |
 | Reward bundles (5.4) | VCEPRD | V | VCEPRD | V | V |
 | Shop offers and rotations (5.5) | VCEPRD | V | VCEPRD | V | V |
-| Store products and crystal packs (5.6) | VCEPR | | VCEPR | V | V |
+| Store products and crystal packs (5.6) | VCEPR, S: push to stores | | VCEPR | V | V |
 | Pass seasons (5.7) | VCEPRD | V | VCEPRD | V | V |
 | Missions (5.8) | VCEPRD | V | VCEPRD | V | V |
 | Medals (5.9) | VCEPRD | VCEPRD | V | V | V |
@@ -96,7 +96,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3) | Manifest file on the CDN |
 | `rarity` | Rarity table (`docs/rarity.md` section 7) | With client config |
 | `economy` | `docs/economy/balance.csv` keys of kind `config`, reward bundles, shop offers and rotations, store product mapping, daily login | Shop and reward views from the server |
-| `store_prices` | Reference USD price of every real-money product, price tiers, country tiers and per-country overrides (`docs/economy.md` 7.4) | Never; exported as CSV for the store consoles (5.6) |
+| `store_prices` | Reference USD price of every real-money product, price tiers, country tiers and per-country overrides (`docs/economy.md` 7.4) | Never; pushed to the stores, or exported as CSV for the store consoles (5.6) |
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
 | `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
@@ -291,7 +291,7 @@ Store prices (`/store-prices`, the `store_prices` domain, `docs/economy.md` 7.4)
 | `countries` | ISO 3166-1 alpha-2 code to a tier; `RU` is refused (`docs/privacy.md` 9.3); a country not listed keeps store equalisation |
 | `overrides` | Product to country to an exact USD-equivalent target, above zero and not above the reference price |
 
-The page edits tier percents, the tier of each country (searchable table of every store country, named in the panel language), overrides per product and country, and the reference prices. A live preview shows the target of every product in every priced country next to the reference price, computed in the browser as the server does. Publish takes a reason; rollback is in the version history. The published version exports one CSV per store, Google Play Console and App Store Connect, with the columns `product_id`, `country_code` and `target_usd` and the config version in the file name; the targets come from the server. The admin never sets a price in the game: the table is a store-console target, the stores set the local price and the client shows it. Store products and the console prices must match admin config before launch (`docs/launch-runbook.md` GN-22).
+The page edits tier percents, the tier of each country (searchable table of every store country, named in the panel language), overrides per product and country, and the reference prices. A live preview shows the target of every product in every priced country next to the reference price, computed in the browser as the server does. Publish takes a reason; rollback is in the version history. The "Push to stores" section sends the published version to Google Play and App Store Connect (`docs/economy.md` 7.4): Plan shows, per store, product and country, the store's current price, the new price and the status (`change`, `unchanged`, `not_in_store`, `error`), filtered to the rows that need attention by default, and writes nothing; a store without credentials shows as not configured. Apply (`super_admin`, S: push to stores, with a reason, a confirmation and a recent sign-in) runs the plan again on the server, writes only the changes and shows the result (`written`, `failed`). The published version also exports one CSV per store, Google Play Console and App Store Connect, with the columns `product_id`, `country_code` and `target_usd` and the config version in the file name, the fallback for setting the console prices by hand; the targets come from the server. The admin never sets a price in the game: the table is a store target, the stores set the local price and the client shows it. Store products and the store prices must match admin config before launch (`docs/launch-runbook.md` GN-22).
 
 ### 5.7 Pass seasons
 
@@ -545,7 +545,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `time` | Server UTC |
 | `actor` | Admin account and the roles it used |
 | `environment` | `staging` or `production` |
-| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, a section 4 control or a section 6.2 action |
+| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, `push` (store prices to a store, object `store_products` with the store as id), a section 4 control or a section 6.2 action |
 | `object` | Type and id; for player actions the account id |
 | `before`, `after` | Field values of the affected record; secrets (promo plaintext, tokens) never |
 | `reason` | Text; mandatory for every `S` action of 2.3, every section 4 and 6.2 action and every rollback |
@@ -635,6 +635,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/config/store-prices` `{"catalog","reason"}` | P on store products | Publishes the next `store_prices` snapshot through `storeprice.Parse`; an unknown key or product, a bad country code, `RU`, an unknown tier, a percent outside 1 to 100 or an override above its reference gets 400 `invalid` |
 | `GET /admin/config/store-prices/history` | V on store products | The last 50 `store_prices` snapshots, newest first |
 | `POST /admin/config/store-prices/rollback` `{"version","reason"}` | P on store products and S: rollback on snapshots | Publishes the content of an earlier table as the next version |
+| `POST /admin/config/store-prices/sync/plan` | V on store products | Reads Google Play and App Store Connect for the targets of the published table (`server/internal/storesync`, `docs/economy.md` 7.4) and writes nothing. Answers `config_version` and `stores`: per store (`google_play`, `app_store`) `configured`, `counts` per status and `rows` (`product`, `country`, `target_cents`, `current` and `next` as `{"currency","amount"}`, `status` `change`, `unchanged`, `not_in_store` or `error`, `detail`). A store without credentials is `configured: false` with no rows; before the first publish 409 `not_published` |
+| `POST /admin/config/store-prices/sync/apply` `{"reason","ref"}` | S: push to stores on store products | Runs the plan again and writes only the `change` rows, each becoming `written` or `failed`; answers like the plan. One `push` audit entry per configured store with the counts in `after` and the config version. The run finishes even if the admin web drops the request. Needs a reason (400 `reason_required`) and a recent sign-in (403 `step_up_required`) |
 | `POST /admin/config/shop/preview` `{"catalog","at"}` | V on shop offers | Checks a draft catalog like the game servers and answers `{"at","sections":[{"section","ends_at","offers"}]}`: the offer ids each shop section shows at `at` (server time when omitted), computed by the game server's section logic. Writes nothing |
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
 | `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
@@ -764,7 +766,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-9 Medals; A-10 Emblems | `super_admin`, `content`; others view | 5.9, 5.10 |
 | Economy | A-11 Reward bundles with usage | `super_admin`, `live_ops`; others view | 5.4 |
 | | A-12 Shop offers; A-13 Rotations | `super_admin`, `live_ops`; others view | 5.5 |
-| | A-14 Store products; store prices per country with CSV export (`/store-prices`) | `super_admin`, `live_ops`; `support`, `analyst` view | 5.6 |
+| | A-14 Store products; store prices per country, push to the stores and CSV export (`/store-prices`) | `super_admin`, `live_ops`; `support`, `analyst` view and plan; push `super_admin` | 5.6 |
 | | A-15 Promo codes and campaigns | `super_admin`, `live_ops`; `support` targeted lists | 5.11 |
 | Progression | A-16 Pass seasons; A-17 Missions; A-18 Daily login | `super_admin`, `live_ops`; others view | 5.7, 5.8 |
 | Ranked | A-19 Seasons and reset table; A-20 Leaderboards (public data) | `super_admin`, `live_ops`; others view | 5.12 |
