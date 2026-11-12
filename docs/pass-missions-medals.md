@@ -1,6 +1,6 @@
 # Pass, missions and medals
 
-The seasonal pass with a free and a premium track, daily, weekly, achievement and event missions, and the medal collection. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
+The seasonal pass, named **Hype Pass**, with a free and a premium track, daily, weekly, achievement and event missions, and the medal collection. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
 
 **Status: approved by the owner on 2026-10-26 (section 11).** Every number is a launch default to be tuned with closed-beta data (#193). Values marked *economy* are defined in `docs/economy.md` and only repeated here. Every number is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys (section 9).
 
@@ -564,3 +564,4 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-8 | Medals and emblems | Separate systems with their own profile showcase: `ProfileEmblemSlots` (3) emblems and `ProfileMedalSlots` (3) medals; emblems have their own section of the medal collection (5.4, 5.5) |
 | OQ-9 | Catch-up for players who join late in a season | None at launch; level purchase and premium plus cover it |
 | OQ-10 | `mythic` items on pass tracks | None; the sample tops out at one `legendary` per track season (8.2) |
+| OQ-11 | Name of the pass (2026-11-12) | **Hype Pass** in every language and every player-facing text, never translated. Code, config keys, ledger reasons and store product ids keep `pass` |
