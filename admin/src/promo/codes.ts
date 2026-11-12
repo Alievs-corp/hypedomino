@@ -17,6 +17,7 @@ export type PromoCode = {
   approver?: string;
   batch?: string;
   redemptions: number;
+  passPremium?: boolean;
 };
 
 export type CampaignUsage = {
@@ -44,6 +45,7 @@ export type PromoDraft = {
   cap: number;
   code: string;
   count: number;
+  passPremium: boolean;
 };
 
 export const emptyDraft: PromoDraft = {
@@ -59,6 +61,7 @@ export const emptyDraft: PromoDraft = {
   cap: 1,
   code: "",
   count: 100,
+  passPremium: false,
 };
 
 export type PromoRequest = {
@@ -71,6 +74,7 @@ export type PromoRequest = {
   cap?: number;
   code?: string;
   count?: number;
+  passPremium?: boolean;
 };
 
 export function listOf(text: string): string[] {
@@ -101,6 +105,9 @@ export function promoRequest(draft: PromoDraft, batch: boolean): PromoRequest {
     start: `${draft.startMinute}:00Z`,
     end: `${draft.endMinute}:00Z`,
   };
+  if (draft.passPremium) {
+    request.passPremium = true;
+  }
   if (batch) {
     return { ...request, count: draft.count };
   }
@@ -149,6 +156,11 @@ export function bundleSummary(bundle: Bundle): string {
   return parts.join(" + ");
 }
 
+export function codeGrants(code: PromoCode, premiumPass: string): string {
+  const grants = bundleSummary(code.bundle);
+  return code.passPremium ? `${grants} + ${premiumPass}` : grants;
+}
+
 export function promoApiPath(campaign: string): string {
   return campaign ? `/admin/promo-codes?campaign=${encodeURIComponent(campaign)}` : "/admin/promo-codes";
 }
@@ -166,7 +178,7 @@ export function promoChangeSummary(change: unknown): string | null {
   }
   const { code } = promo;
   const codes = promo.batch ? `${promo.count} single_use codes` : code.kind;
-  return `${codes}; ${code.campaign}; ${bundleSummary(code.bundle)}; ${code.start} to ${code.end}`;
+  return `${codes}; ${code.campaign}; ${codeGrants(code, "premium Hype Pass")}; ${code.start} to ${code.end}`;
 }
 
 export function batchLeads(codes: readonly PromoCode[]): Set<string> {

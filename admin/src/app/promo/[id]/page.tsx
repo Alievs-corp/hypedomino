@@ -4,7 +4,7 @@ import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
-import { bundleSummary, detailPath, shownState, type PromoDetail } from "@/promo/codes";
+import { codeGrants, detailPath, shownState, type PromoDetail } from "@/promo/codes";
 import { Notice } from "../../players/Notice";
 import { TargetsEditor } from "./TargetsEditor";
 
@@ -32,7 +32,7 @@ export default async function PromoCodePage({ params }: { params: Promise<{ id: 
     [t("promo.campaign_column"), code.campaign],
     [t("promo.kind"), code.kind],
     [t("promo.state"), shownState(code, new Date())],
-    [t("promo.grants"), bundleSummary(code.bundle)],
+    [t("promo.grants"), codeGrants(code, t("promo.pass_premium"))],
     [t("promo.window"), `${t.when(code.start)} → ${t.when(code.end)}`],
     [t("promo.redemptions"), `${code.redemptions} / ${code.cap}`],
     [t("promo.creator"), code.approver ? `${code.creator} / ${code.approver}` : code.creator],

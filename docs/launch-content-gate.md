@@ -105,7 +105,7 @@ The ranked season whose window contains `launchAt`.
 
 ### 3.6 Promo code template
 
-A template is a promo code record with `template` true (`docs/admin.md` 5.11): it stays a draft, never redeems, and is cloned to issue codes. Cloning adds the window, cap, code and, for `targeted`, the account list, and then follows `docs/economy.md` section 8, including second-admin approval above `PromoCoinsApprovalThreshold` or with a `mythic` item.
+A template is a promo code record with `template` true (`docs/admin.md` 5.11): it stays a draft, never redeems, and is cloned to issue codes. Cloning adds the window, cap, code and, for `targeted`, the account list, and then follows `docs/economy.md` section 8, including second-admin approval above `PromoCoinsApprovalThreshold`, with a `mythic` item or with `passPremium`. A template does not hold `passPremium`; it is chosen when the code is issued.
 
 | Id | Rule | Source |
 |---|---|---|

@@ -37,6 +37,7 @@ type fixture struct {
 	pool      *pgxpool.Pool
 	wallet    *wallet.Store
 	inventory *inventory.Store
+	engine    *reward.Engine
 	store     *promo.Store
 }
 
@@ -53,8 +54,8 @@ func newFixture(t *testing.T, config promo.Config) *fixture {
 	}
 	f := &fixture{pool: pool, wallet: wallet.NewStore(pool)}
 	f.inventory = inventory.NewStore(pool, catalog, inventory.DefaultConfig())
-	engine := reward.NewEngine(pool, f.wallet, f.inventory, nil, nil, reward.DefaultConfig())
-	f.store = promo.NewStore(pool, engine, catalog, hasher, config)
+	f.engine = reward.NewEngine(pool, f.wallet, f.inventory, nil, nil, reward.DefaultConfig())
+	f.store = promo.NewStore(pool, f.engine, catalog, hasher, config)
 	return f
 }
 

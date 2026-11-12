@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -49,6 +50,8 @@ var (
 	ErrLocked          = errors.New("promo.locked")
 	ErrDuplicate       = errors.New("promo.duplicate")
 	ErrApprover        = errors.New("promo.approver")
+	ErrNoPassSeason    = errors.New("promo.no_pass_season")
+	ErrPassOwned       = errors.New("promo.pass_premium_owned")
 
 	promoID    = regexp.MustCompile(`^promo\.[a-z0-9_]+$`)
 	campaignID = regexp.MustCompile(`^campaign\.[a-z0-9_]+$`)
@@ -88,16 +91,17 @@ func (c Config) Validate() error {
 }
 
 type Definition struct {
-	ID       string
-	Campaign string
-	Kind     string
-	Bundle   reward.Bundle
-	Start    time.Time
-	End      time.Time
-	Cap      int
-	Code     string
-	Accounts []string
-	Creator  string
+	ID          string
+	Campaign    string
+	Kind        string
+	Bundle      reward.Bundle
+	Start       time.Time
+	End         time.Time
+	Cap         int
+	Code        string
+	Accounts    []string
+	Creator     string
+	PassPremium bool
 }
 
 type Code struct {
@@ -114,6 +118,7 @@ type Code struct {
 	Batch       string        `json:"batch,omitempty"`
 	Redemptions int           `json:"redemptions"`
 	SpikeAt     *time.Time    `json:"spike_at,omitempty"`
+	PassPremium bool          `json:"passPremium"`
 }
 
 type CampaignUsage struct {
@@ -159,16 +164,26 @@ type TargetChange struct {
 	Count   int
 }
 
+type Pass interface {
+	ActiveSeason(at time.Time) (string, bool)
+	UnlockPremiumIn(ctx context.Context, tx pgx.Tx, account, season, ref string, now time.Time) (int, error)
+}
+
 type Store struct {
 	db      database
 	engine  *reward.Engine
 	catalog *cosmetics.Catalog
 	hasher  Hasher
 	config  Config
+	pass    Pass
 }
 
 func NewStore(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, hasher Hasher, config Config) *Store {
 	return &Store{db: pool, engine: engine, catalog: catalog, hasher: hasher, config: config}
+}
+
+func (s *Store) WithPass(p Pass) {
+	s.pass = p
 }
 
 func (s *Store) In(tx pgx.Tx) *Store {
@@ -223,11 +238,11 @@ func uniqueAccounts(accounts []string) error {
 	return nil
 }
 
-func (s *Store) needsApproval(bundle reward.Bundle) bool {
-	if bundle.Coins > int64(s.config.CoinsApprovalThreshold) {
+func (s *Store) needsApproval(d Definition) bool {
+	if d.PassPremium || d.Bundle.Coins > int64(s.config.CoinsApprovalThreshold) {
 		return true
 	}
-	for _, id := range bundle.Cosmetics {
+	for _, id := range d.Bundle.Cosmetics {
 		if item, ok := s.catalog.Item(id); ok && item.Rarity == MythicRarity {
 			return true
 		}
@@ -287,13 +302,13 @@ func (s *Store) insert(ctx context.Context, tx pgx.Tx, d Definition, plaintext s
 		return Code{}, err
 	}
 	state := StateActive
-	if s.needsApproval(d.Bundle) {
+	if s.needsApproval(d) {
 		state = StatePending
 	}
-	code := Code{ID: d.ID, Campaign: d.Campaign, Kind: d.Kind, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: s.cap(d), State: state, Creator: d.Creator}
-	_, err = tx.Exec(ctx, `insert into promo_codes (promo_id, campaign_id, kind, bundle, code_hash, starts_at, ends_at, cap, state, created_by, created_at)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-		code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now)
+	code := Code{ID: d.ID, Campaign: d.Campaign, Kind: d.Kind, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: s.cap(d), State: state, Creator: d.Creator, PassPremium: d.PassPremium}
+	_, err = tx.Exec(ctx, `insert into promo_codes (promo_id, campaign_id, kind, bundle, code_hash, starts_at, ends_at, cap, state, created_by, created_at, pass_premium)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now, code.PassPremium)
 	if isUniqueViolation(err) {
 		return Code{}, fmt.Errorf("%w: id or code already exists", ErrDuplicate)
 	}
@@ -315,7 +330,7 @@ func (s *Store) Batch(ctx context.Context, d Definition, count int, now time.Tim
 		return nil, err
 	}
 	state := StateActive
-	if s.needsApproval(d.Bundle) {
+	if s.needsApproval(d) {
 		state = StatePending
 	}
 	created := make([]Created, 0, count)
@@ -326,11 +341,11 @@ func (s *Store) Batch(ctx context.Context, d Definition, count int, now time.Tim
 		if err != nil {
 			return nil, err
 		}
-		code := Code{ID: fmt.Sprintf("%s_%0*d", d.ID, width, i), Campaign: d.Campaign, Kind: SingleUse, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: 1, State: state, Creator: d.Creator, Batch: d.ID}
+		code := Code{ID: fmt.Sprintf("%s_%0*d", d.ID, width, i), Campaign: d.Campaign, Kind: SingleUse, Bundle: d.Bundle, Start: d.Start.UTC(), End: d.End.UTC(), Cap: 1, State: state, Creator: d.Creator, Batch: d.ID, PassPremium: d.PassPremium}
 		created = append(created, Created{Code: code, Plaintext: plaintext})
-		rows = append(rows, []any{code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now, code.Batch})
+		rows = append(rows, []any{code.ID, code.Campaign, code.Kind, encoded, s.hasher.Hash(plaintext), code.Start, code.End, code.Cap, code.State, code.Creator, now, code.Batch, code.PassPremium})
 	}
-	columns := []string{"promo_id", "campaign_id", "kind", "bundle", "code_hash", "starts_at", "ends_at", "cap", "state", "created_by", "created_at", "batch_id"}
+	columns := []string{"promo_id", "campaign_id", "kind", "bundle", "code_hash", "starts_at", "ends_at", "cap", "state", "created_by", "created_at", "batch_id", "pass_premium"}
 	if _, err := s.db.CopyFrom(ctx, pgx.Identifier{"promo_codes"}, columns, pgx.CopyFromRows(rows)); err != nil {
 		if isUniqueViolation(err) {
 			return nil, fmt.Errorf("%w: id or code already exists", ErrDuplicate)
@@ -525,13 +540,13 @@ func (s *Store) Disable(ctx context.Context, id string, now time.Time) (Code, er
 	return code, nil
 }
 
-const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by, c.batch_id, c.spike_at,
+const codeColumns = `c.promo_id, c.campaign_id, c.kind, c.bundle, c.starts_at, c.ends_at, c.cap, c.state, c.created_by, c.approved_by, c.batch_id, c.spike_at, c.pass_premium,
 	(select count(*) from promo_redemptions r where r.promo_id = c.promo_id)`
 
 func scanCode(row pgx.Row) (Code, error) {
 	var code Code
 	var bundle []byte
-	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Batch, &code.SpikeAt, &code.Redemptions); err != nil {
+	if err := row.Scan(&code.ID, &code.Campaign, &code.Kind, &bundle, &code.Start, &code.End, &code.Cap, &code.State, &code.Creator, &code.Approver, &code.Batch, &code.SpikeAt, &code.PassPremium, &code.Redemptions); err != nil {
 		return Code{}, err
 	}
 	if err := json.Unmarshal(bundle, &code.Bundle); err != nil {
@@ -616,6 +631,9 @@ func (s *Store) redeem(ctx context.Context, account string, hash []byte, now tim
 	if err := s.check(ctx, tx, code, account, now); err != nil {
 		return Redemption{}, err
 	}
+	if err := s.unlockPremium(ctx, tx, code, account, now); err != nil {
+		return Redemption{}, err
+	}
 	key := "promo:" + code.ID + ":" + account
 	source := cosmetics.Source{Type: SourceType, Ref: code.Campaign}
 	report, err := s.engine.ApplyIn(ctx, tx, reward.Grant{Account: account, Bundle: code.Bundle, Source: source, Reason: wallet.Promo, Key: key}, now)
@@ -633,6 +651,24 @@ func (s *Store) redeem(ctx context.Context, account string, hash []byte, now tim
 		return Redemption{}, err
 	}
 	return Redemption{Promo: code.ID, Campaign: code.Campaign, Grant: report, Spiked: spiked}, tx.Commit(ctx)
+}
+
+func (s *Store) unlockPremium(ctx context.Context, tx pgx.Tx, code Code, account string, now time.Time) error {
+	if !code.PassPremium {
+		return nil
+	}
+	if s.pass == nil {
+		return ErrNoPassSeason
+	}
+	season, ok := s.pass.ActiveSeason(now)
+	if !ok {
+		return ErrNoPassSeason
+	}
+	_, err := s.pass.UnlockPremiumIn(ctx, tx, account, season, "promo:"+code.ID, now)
+	if errors.Is(err, pass.ErrPremiumOwned) {
+		return ErrPassOwned
+	}
+	return err
 }
 
 func (s *Store) flagLock(ctx context.Context, account string, now time.Time) error {

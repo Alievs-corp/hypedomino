@@ -49,6 +49,7 @@ type command struct {
 	creator  string
 	count    int
 	approver string
+	premium  bool
 }
 
 func newCommand(name string) *command {
@@ -65,11 +66,12 @@ func newCommand(name string) *command {
 	c.flags.StringVar(&c.creator, "creator", "", "admin creating the code")
 	c.flags.IntVar(&c.count, "count", 0, "number of single_use codes of a batch")
 	c.flags.StringVar(&c.approver, "approver", "", "admin approving the code")
+	c.flags.BoolVar(&c.premium, "pass-premium", false, "unlock the premium pass track of the active season")
 	return c
 }
 
 func (c *command) definition() (promo.Definition, error) {
-	d := promo.Definition{ID: c.id, Campaign: c.campaign, Kind: c.kind, Cap: c.cap, Code: c.code, Creator: c.creator}
+	d := promo.Definition{ID: c.id, Campaign: c.campaign, Kind: c.kind, Cap: c.cap, Code: c.code, Creator: c.creator, PassPremium: c.premium}
 	if c.accounts != "" {
 		d.Accounts = strings.Split(c.accounts, ",")
 	}

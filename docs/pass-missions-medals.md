@@ -85,6 +85,8 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 
 Products, *economy* (`docs/economy.md` 7.2): `pass_premium` (`PassPremiumUsd` 4.99) unlocks the premium track of the current season; `pass_premium_plus` (`PassPremiumPlusUsd` 9.99) unlocks it and adds `PassPremiumPlusLevels` (20) levels. The premium track is never sold for coins.
 
+The premium track is unlocked by `pass_premium`, by `pass_premium_plus`, or by a `passPremium` promo code approved by a second admin (`docs/economy.md` section 8, OQ-18). The code unlocks the season active at redemption with premium ref `promo:<codeId>`, and the late-purchase rule below applies to it the same way. It is refused, and stays redeemable, when no season is active or the account already has premium in it. A promo unlock is not a store transaction, so the refund rules below do not apply to it.
+
 - Purchase flow, receipt validation and binding to the season active at the store's purchase time: `docs/economy.md` 7.5 and #125. A second premium purchase in the same season is rejected before the store flow starts.
 - **Late purchase.** When premium unlocks at level `L`, the server grants the premium bundle of every level 1 to `L` at once, then continues normally. Each level is its own grant with key `pass:<seasonId>:premium:<level>`, so an interrupted batch resumes and a repeated one grants nothing twice.
 - `pass_premium_plus` adds the XP from the current XP total to the total of level `L + 20`, keeping progress inside the current level. Levels crossed grant both tracks.
@@ -297,7 +299,7 @@ Uses existing tokens of `docs/ui-motion.md` and `docs/rarity.md`; no new duratio
 | Record | Holds | Unique on |
 |---|---|---|
 | Pass season | Id, window, `PassLevels`, curve values, the level-to-bundle table per track, config version | Season id |
-| Pass progress | Account, season, XP total, premium flag with its purchase ref | Account, season |
+| Pass progress | Account, season, XP total, premium flag with its purchase or promo ref | Account, season |
 | XP event | Account, season, amount, source type, source ref, idempotency key, server time | Account, key |
 | Mission assignment | Account, mission, period, slot, progress, completed time | Account, mission, period |
 | Medal ownership | Account, medal, server time, source type and ref, grant key | Account, medal |
