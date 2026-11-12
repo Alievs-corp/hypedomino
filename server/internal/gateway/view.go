@@ -130,6 +130,7 @@ func rosterMessage(roster []room.Player) []*pb.RosterEntry {
 			Character: player.Character,
 			Frame:     player.Frame,
 			Avatar:    player.Avatar,
+			Tile:      player.Tile,
 			RankLabel: player.RankLabel,
 			Emblems:   player.Emblems,
 			Bot:       player.Bot,

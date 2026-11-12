@@ -15,8 +15,8 @@ import (
 func TestAMatchThatNeverDealtIsArchivedCancelledWithOneOutcomePerPlayer(t *testing.T) {
 	now := time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC)
 	match := matchmaking.Match{Mode: rules.Mode2v2, Queue: matchmaking.QueueRanked, Seats: []matchmaking.Seat{{Seat: rules.SeatNorth, Account: "a"}, {Seat: rules.SeatEast, Bot: true}, {Seat: rules.SeatSouth, Account: "b"}, {Seat: rules.SeatWest, Account: "c"}}}
-	s := started(match, []room.Player{{Seat: rules.SeatNorth, Character: "char.a"}}, 7, now)
-	if s.Kind != matchstore.KindRanked || s.Participants[0].Loadout.Character != "char.a" || !s.Participants[1].Bot {
+	s := started(match, []room.Player{{Seat: rules.SeatNorth, Character: "char.a", Tile: "tile.storm_sapphire"}}, 7, now)
+	if s.Kind != matchstore.KindRanked || s.Participants[0].Loadout.Character != "char.a" || s.Participants[0].Loadout.Tile != "tile.storm_sapphire" || !s.Participants[1].Bot {
 		t.Fatalf("started %+v", s)
 	}
 	f := finished(s, replay.Record{}, false, map[rules.Seat]penalties.Kind{rules.SeatNorth: penalties.KindLeave, rules.SeatSouth: penalties.KindAfkReturned}, penalties.Config{OffenseRatingPenalty: 15, PartnerLossReductionPercent: 40}, now)

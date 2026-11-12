@@ -165,6 +165,7 @@ message RosterEntry {
   string rank_label = 7;
   repeated string emblems = 8;
   bool bot = 9;
+  string tile = 10;
 }
 
 message MatchView {
