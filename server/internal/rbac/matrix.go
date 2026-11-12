@@ -40,7 +40,7 @@ var matrix = map[Object]map[Role][]Action{
 	RewardBundles: liveOpsOwned("VCEPRD"),
 	ShopOffers:    liveOpsOwned("VCEPRD"),
 	StoreProducts: {
-		SuperAdmin: grant("VCEPR"),
+		SuperAdmin: grant("VCEPR", PushStorePrices),
 		LiveOps:    grant("VCEPR"),
 		Support:    grant("V"),
 		Analyst:    grant("V"),

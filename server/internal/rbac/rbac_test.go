@@ -56,6 +56,7 @@ var actionBySpecPhrase = map[string]Action{
 	"S":                                  ActOnQueue,
 	"grant `super_admin`":                GrantSuperAdmin,
 	"export":                             ExportAudit,
+	"push to stores":                     PushStorePrices,
 }
 
 var viewScopeBySpecQualifier = map[string]Action{
@@ -69,7 +70,7 @@ var everyAction = []Action{
 	View, Create, Edit, Publish, Retire, Delete, ViewCounts, CulturalReview,
 	SwitchOffForIncident, ApprovePromo, DisablePromo, EditTargetedAccounts,
 	SwitchLiveControl, Rollback, RollbackOwnDomains, ActOnPlayer, ActOnQueue,
-	GrantSuperAdmin, ExportAudit,
+	GrantSuperAdmin, ExportAudit, PushStorePrices,
 }
 
 func TestEveryRoleIsAllowedExactlyWhatTheAdminSpecGrants(t *testing.T) {

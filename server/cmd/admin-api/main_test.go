@@ -1,6 +1,13 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -9,6 +16,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
 	"github.com/Alievs-corp/hypedomino/server/internal/economy"
+	"github.com/Alievs-corp/hypedomino/server/internal/googleauth/googleauthtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -113,5 +121,39 @@ func TestConfigTakesPromoCodesOnlyWithTheirKey(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), name) {
 			t.Errorf("error %v does not name %s", err, name)
 		}
+	}
+}
+
+func TestStoreCredentialsAreOptionalButCompleteOnceNamed(t *testing.T) {
+	base := func(extra map[string]string) map[string]string {
+		values := map[string]string{"HD_DATABASE_URL": "postgres://admin", "HD_ADMIN_ENVIRONMENT": "staging", "HD_ADMIN_GOOGLE_DOMAIN": "example.com", "HD_ADMIN_GOOGLE_AUDIENCES": "web"}
+		for key, value := range extra {
+			values[key] = value
+		}
+		return values
+	}
+	without, err := configFromEnv(env(base(nil)))
+	if err != nil || without.api.Stores.GooglePlay != nil || without.api.Stores.AppStore != nil {
+		t.Fatalf("without credentials: %+v %v", without.api.Stores, err)
+	}
+
+	_, err = configFromEnv(env(base(map[string]string{"HD_PLAY_PACKAGE": "com.example.game", "HD_ASC_ISSUER_ID": "issuer", "HD_ASC_APP_ID": "123"})))
+	for _, name := range []string{"HD_PLAY_SERVICE_ACCOUNT", "HD_ASC_PRIVATE_KEY"} {
+		if err == nil || !strings.Contains(err.Error(), name) {
+			t.Errorf("error %v does not name %s", err, name)
+		}
+	}
+
+	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	der, _ := x509.MarshalPKCS8PrivateKey(key)
+	p8 := filepath.Join(t.TempDir(), "AuthKey.p8")
+	os.WriteFile(p8, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), 0o600)
+	play := googleauthtest.New(t, "scope")
+	with, err := configFromEnv(env(base(map[string]string{
+		"HD_PLAY_PACKAGE": "com.example.game", "HD_PLAY_SERVICE_ACCOUNT": play.File,
+		"HD_ASC_ISSUER_ID": "issuer", "HD_ASC_KEY_ID": "KEY", "HD_ASC_PRIVATE_KEY": p8, "HD_ASC_APP_ID": "123",
+	})))
+	if err != nil || with.api.Stores.GooglePlay == nil || with.api.Stores.AppStore == nil {
+		t.Fatalf("with credentials: %+v %v", with.api.Stores, err)
 	}
 }

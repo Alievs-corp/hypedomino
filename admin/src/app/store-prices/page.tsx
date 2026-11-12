@@ -9,6 +9,7 @@ import { Rollback } from "../config/Rollback";
 import { rollbackStorePrices } from "./actions";
 import { StoreExport } from "./StoreExport";
 import { StorePricesEditor } from "./StorePricesEditor";
+import { StorePush } from "./StorePush";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,7 @@ export default async function StorePricesPage() {
         </p>
       )}
       {catalog !== null && <StoreExport version={version} targets={rules.targets} />}
+      {catalog !== null && <StorePush applyClientId={can(admin.permissions, "store_products", "push_store_prices") ? googleClientId() : null} />}
       <StorePricesEditor
         key={version}
         published={catalog}

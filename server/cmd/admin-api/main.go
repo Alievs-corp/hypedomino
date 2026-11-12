@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -34,6 +35,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/storesync"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -139,6 +141,8 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_SINK_RATIO_ALERT_*, HD_ACCOUNT_DAILY_EARN_ALERT_COINS and HD_BALANCE_MEDIAN_ALERT_COINS: %w", err))
 	}
 	errs = append(errs, assetStoreFromEnv(&c.api, text, duration)...)
+	errs = append(errs, playFromEnv(&c.api, text)...)
+	errs = append(errs, appStoreFromEnv(&c.api, text)...)
 	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
 	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)
 	integer("HD_ADMIN_RATE_SIGNIN_PER_MINUTE", &c.api.Limits.SignIn.PerMinute)
@@ -176,6 +180,45 @@ func assetStoreFromEnv(api *adminapi.Config, text func(string, *string), duratio
 		return []error{fmt.Errorf("HD_ASSET_STORE_*: %w", err)}
 	}
 	api.Assets = store
+	return nil
+}
+
+func playFromEnv(api *adminapi.Config, text func(string, *string)) []error {
+	var config storesync.GoogleConfig
+	text("HD_PLAY_PACKAGE", &config.PackageName)
+	text("HD_PLAY_SERVICE_ACCOUNT", &config.ServiceAccountFile)
+	if config.PackageName == "" && config.ServiceAccountFile == "" {
+		return nil
+	}
+	if config.PackageName == "" || config.ServiceAccountFile == "" {
+		return []error{errors.New("HD_PLAY_PACKAGE and HD_PLAY_SERVICE_ACCOUNT: both or neither")}
+	}
+	google, err := storesync.NewGoogle(config)
+	if err != nil {
+		return []error{fmt.Errorf("HD_PLAY_SERVICE_ACCOUNT: %w", err)}
+	}
+	api.Stores.GooglePlay = google
+	return nil
+}
+
+func appStoreFromEnv(api *adminapi.Config, text func(string, *string)) []error {
+	var config storesync.AppleConfig
+	text("HD_ASC_ISSUER_ID", &config.IssuerID)
+	text("HD_ASC_KEY_ID", &config.KeyID)
+	text("HD_ASC_PRIVATE_KEY", &config.PrivateKeyFile)
+	text("HD_ASC_APP_ID", &config.AppID)
+	named := slices.DeleteFunc([]string{config.IssuerID, config.KeyID, config.PrivateKeyFile, config.AppID}, func(value string) bool { return value == "" })
+	if len(named) == 0 {
+		return nil
+	}
+	if len(named) < 4 {
+		return []error{errors.New("HD_ASC_ISSUER_ID, HD_ASC_KEY_ID, HD_ASC_PRIVATE_KEY and HD_ASC_APP_ID: all or none")}
+	}
+	apple, err := storesync.NewApple(config)
+	if err != nil {
+		return []error{fmt.Errorf("HD_ASC_PRIVATE_KEY: %w", err)}
+	}
+	api.Stores.AppStore = apple
 	return nil
 }
 

@@ -299,15 +299,26 @@ Default countries, shipped as the server's built-in default and in `docs/economy
 
 Azerbaijan and Turkey are in `mid`, so every product costs about 60% of its reference there, the level first decided for these two launch markets. For orientation: a `legendary` set of avatar, frame and tile skin (3900 crystals) costs about 66 AZN at the reference price and about 40 AZN at 60%; Hype Pass about 8.5 AZN becomes about 5 AZN (1 USD = 1.70 AZN). This document holds no other local-currency figure: the price set is the store's own price point.
 
-Applying a published table to the stores:
+Applying a published table to the stores is a push from the Store prices page (`docs/admin.md` 5.6, #585), in two steps:
 
-1. Store prices page, CSV for the consoles: download the Google Play Console file and the App Store Connect file of the published version. Each row is `product_id,country_code,target_usd`; the file name carries the store and the config version.
-2. Google Play Console: the app, Monetize, the product, Prices; for each row, set the country price at the store price point closest to the target; leave countries without a row on automatic conversion; save and activate.
-3. App Store Connect: the app, In-App Purchases, the product, Price Schedule; for each row, add a manual price for the storefront at the price point closest to the target; keep the United States base price at the USD reference; remove a manual price whose country no longer has a row.
-4. Verify on a licensed test account (Play) and a sandbox account (App Store) in Azerbaijan, Turkey and one country of each other tier: the shop shows the localized price from the billing SDK at the new level, and a test purchase grants the same crystal amount as in any other country.
-5. A manually set country price no longer follows later store-wide price or tax adjustments. When a store announces one, export the table again and check the console against it.
+1. **Plan.** Anyone who can view store prices runs the plan. The admin API reads both stores and writes nothing. For every product and every country with a target it shows the store's current price (local currency and amount as the store reports it), the new price and a status: `change`, `unchanged`, `not_in_store` (the product, the region or the territory does not exist in that store) or `error`. A store without credentials in the environment is shown as not configured.
+2. **Apply.** Only `super_admin` applies, with a reason and a recent sign-in. The admin API runs the plan again on the published version, writes only the `change` rows and records one audit entry per store with the counts and the config version. A second apply right after writes nothing. Calls are sequential; a rate limit (429) or a server error (5xx) is retried with a growing pause a few times, and a product that still fails is reported (`error` or `failed`) while the other products go on.
 
-Pushing the prices to the stores through the Google Play and App Store Connect APIs is not built; it needs store credentials and its own issue.
+How each store sets the price:
+
+- **Google Play.** The USD target is converted with the Play pricing conversion (`monetization.convertRegionPrices`), and the converted price of the country's region becomes the product's price for that region. Every other region, the default USD price and every other field of the product stay as they were. Play converts with its own exchange rates and local price patterns, and the rates move, so a later plan can show small changes for an unchanged table.
+- **App Store.** The USA price point nearest the target (a tie takes the lower point) is equalized to the country's territory, and that equalized point becomes a manual price in the product's price schedule. The base territory price (USA at the reference) and every other manual price are kept. App Store prices are fixed price points, so the store price can differ slightly from the USD-equivalent target.
+- A country without a target keeps store equalisation and is not touched; Russia is never touched. A manual price for a country that no longer has a target stays until it is removed in the console.
+
+Then:
+
+1. Verify on a licensed test account (Play) and a sandbox account (App Store) in Azerbaijan, Turkey and one country of each other tier: the shop shows the localized price from the billing SDK at the new level, and a test purchase grants the same crystal amount as in any other country.
+2. A manually set country price no longer follows later store-wide price or tax adjustments. When a store announces one, run the plan again.
+
+Fallback when the push cannot be used (no credentials, a store API outage): the CSV for the consoles on the same page, one file per store with the rows `product_id,country_code,target_usd` and the store and config version in the file name.
+
+1. Google Play Console: the app, Monetize, the product, Prices; for each row, set the country price at the store price point closest to the target; leave countries without a row on automatic conversion; save and activate.
+2. App Store Connect: the app, In-App Purchases, the product, Price Schedule; for each row, add a manual price for the storefront at the price point closest to the target; keep the United States base price at the USD reference; remove a manual price whose country no longer has a row.
 
 ### 7.5 Purchase flow
 
