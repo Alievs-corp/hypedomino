@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { emptyGrant, grantChangeSummary, grantReady, grantRequest, type GrantDraft } from "./grant.ts";
 
-const draft: GrantDraft = { ...emptyGrant, sourceRef: " event.spring_cup ", bundleId: " bundle.spring_cup ", coins: 300, cosmetics: "avatar.comet_fox, action.victory_dance avatar.comet_fox" };
+const draft: GrantDraft = { ...emptyGrant, sourceRef: " event.spring_cup ", bundleId: " bundle.spring_cup ", coins: 300, cosmetics: "avatar.comet_fox, emoji.victory_dance avatar.comet_fox" };
 
 test("a grant sends only what it grants under the chosen source", () => {
   assert.deepEqual(grantRequest(draft), {
-    bundle: { id: "bundle.spring_cup", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "action.victory_dance"] },
+    bundle: { id: "bundle.spring_cup", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "emoji.victory_dance"] },
     source: { type: "event", ref: "event.spring_cup" },
   });
   assert.deepEqual(grantRequest({ ...draft, coins: 0, cosmetics: "", medals: "medal.first_win", passXp: 250 }).bundle, { id: "bundle.spring_cup", revision: 1, passXp: 250, medals: ["medal.first_win"] });

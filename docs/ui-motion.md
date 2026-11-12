@@ -53,7 +53,7 @@ The game is drawn on dark, layered backgrounds so vivid fills, glows and particl
 Rules:
 - Colour is never the only cue. Team identity also shows as seat position and the team badge; `success`, `warning` and `danger` always come with an icon. Team A blue and team B orange stay distinct under protan and deutan simulation (Viénot 1999); `primary` and `danger` are close under it, which is why danger carries an icon.
 - Rarity colours, marks and glow levels are defined in `docs/rarity.md`, which explains the `rarity` token group.
-- UI, effect, team, score and role colours come only from these tokens. Cosmetic illustration art (avatars, characters, tables, frames, emoji) uses its own palette per asset, reviewed on the reference board (`docs/art-direction.md` section 9); it is never dominated by a team or role hue and never evokes a flag or political side (`docs/localization.md` 6).
+- UI, effect, team, score and role colours come only from these tokens. Cosmetic illustration art (avatars, tables, frames, tile skins, emoji) uses its own palette per asset, reviewed on the reference board (`docs/art-direction.md` section 9); it is never dominated by a team or role hue and never evokes a flag or political side (`docs/localization.md` 6).
 
 ### Contrast
 
@@ -300,7 +300,6 @@ The effect level follows the graphics level (`docs/performance.md` 1.1): Low use
 | `maxTweens` | 32 | 64 | 96 |
 | Animated cosmetics (avatars, emoji) | Static fallback (ADR 0002) | Animated | Animated |
 | `maxAnimatedCosmetics` per screen (ADR 0012) | 0 | 10 | 10 |
-| Characters (ADR 0009) | Static fallback (ADR 0002) | 3D, `modelAddress` | 3D, `modelHqAddress` where the item has one |
 
 Base scene plus effects stays within the p95 work-time gate; the checker enforces it. The high level is budgeted at 120 fps, so it also holds at 60.
 

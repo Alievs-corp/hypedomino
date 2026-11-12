@@ -24,15 +24,16 @@ const (
 type LobbyCommand int32
 
 const (
-	LobbyCommand_LOBBY_COMMAND_UNSPECIFIED  LobbyCommand = 0
-	LobbyCommand_LOBBY_COMMAND_CREATE       LobbyCommand = 1
-	LobbyCommand_LOBBY_COMMAND_JOIN         LobbyCommand = 2
-	LobbyCommand_LOBBY_COMMAND_LEAVE        LobbyCommand = 3
-	LobbyCommand_LOBBY_COMMAND_TEAMS        LobbyCommand = 4
-	LobbyCommand_LOBBY_COMMAND_BACK         LobbyCommand = 5
-	LobbyCommand_LOBBY_COMMAND_PLACE        LobbyCommand = 6
-	LobbyCommand_LOBBY_COMMAND_REMOVE       LobbyCommand = 7
-	LobbyCommand_LOBBY_COMMAND_START        LobbyCommand = 8
+	LobbyCommand_LOBBY_COMMAND_UNSPECIFIED LobbyCommand = 0
+	LobbyCommand_LOBBY_COMMAND_CREATE      LobbyCommand = 1
+	LobbyCommand_LOBBY_COMMAND_JOIN        LobbyCommand = 2
+	LobbyCommand_LOBBY_COMMAND_LEAVE       LobbyCommand = 3
+	LobbyCommand_LOBBY_COMMAND_TEAMS       LobbyCommand = 4
+	LobbyCommand_LOBBY_COMMAND_BACK        LobbyCommand = 5
+	LobbyCommand_LOBBY_COMMAND_PLACE       LobbyCommand = 6
+	LobbyCommand_LOBBY_COMMAND_REMOVE      LobbyCommand = 7
+	LobbyCommand_LOBBY_COMMAND_START       LobbyCommand = 8
+	// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
 	LobbyCommand_LOBBY_COMMAND_ACT          LobbyCommand = 9
 	LobbyCommand_LOBBY_COMMAND_INVITE       LobbyCommand = 10
 	LobbyCommand_LOBBY_COMMAND_REQUEST_SEAT LobbyCommand = 11
@@ -170,8 +171,9 @@ const (
 	LobbyRefusal_LOBBY_REFUSAL_IN_MATCH         LobbyRefusal = 12
 	LobbyRefusal_LOBBY_REFUSAL_WRONG_PHASE      LobbyRefusal = 13
 	LobbyRefusal_LOBBY_REFUSAL_BLOCKED          LobbyRefusal = 14
-	LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_ACTION   LobbyRefusal = 15
-	LobbyRefusal_LOBBY_REFUSAL_NOT_FRIEND       LobbyRefusal = 16
+	// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
+	LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_ACTION LobbyRefusal = 15
+	LobbyRefusal_LOBBY_REFUSAL_NOT_FRIEND     LobbyRefusal = 16
 )
 
 // Enum value maps for LobbyRefusal.
@@ -244,13 +246,14 @@ func (LobbyRefusal) EnumDescriptor() ([]byte, []int) {
 }
 
 type LobbyIntent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Command       LobbyCommand           `protobuf:"varint,1,opt,name=command,proto3,enum=hypedomino.v1.LobbyCommand" json:"command,omitempty"`
-	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	Mode          Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
-	AccountId     string                 `protobuf:"bytes,4,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
-	Seat          Seat                   `protobuf:"varint,5,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
-	Action        string                 `protobuf:"bytes,6,opt,name=action,proto3" json:"action,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Command   LobbyCommand           `protobuf:"varint,1,opt,name=command,proto3,enum=hypedomino.v1.LobbyCommand" json:"command,omitempty"`
+	Code      string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	Mode      Mode                   `protobuf:"varint,3,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
+	AccountId string                 `protobuf:"bytes,4,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Seat      Seat                   `protobuf:"varint,5,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
+	Action        string `protobuf:"bytes,6,opt,name=action,proto3" json:"action,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -320,6 +323,7 @@ func (x *LobbyIntent) GetSeat() Seat {
 	return Seat_SEAT_UNSPECIFIED
 }
 
+// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
 func (x *LobbyIntent) GetAction() string {
 	if x != nil {
 		return x.Action
@@ -472,11 +476,12 @@ func (x *LobbyState) GetRefusal() LobbyRefusal {
 }
 
 type LobbyRelay struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccountId     string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
-	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
-	ItemId        string                 `protobuf:"bytes,3,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
-	RequestedSeat Seat                   `protobuf:"varint,4,opt,name=requested_seat,json=requestedSeat,proto3,enum=hypedomino.v1.Seat" json:"requested_seat,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	AccountId string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
+	Action        string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	ItemId        string `protobuf:"bytes,3,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	RequestedSeat Seat   `protobuf:"varint,4,opt,name=requested_seat,json=requestedSeat,proto3,enum=hypedomino.v1.Seat" json:"requested_seat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -518,6 +523,7 @@ func (x *LobbyRelay) GetAccountId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
 func (x *LobbyRelay) GetAction() string {
 	if x != nil {
 		return x.Action
@@ -595,15 +601,15 @@ var File_hypedomino_v1_lobby_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/lobby.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/match.proto\"\xe1\x01\n" +
+	"\x19hypedomino/v1/lobby.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/match.proto\"\xe5\x01\n" +
 	"\vLobbyIntent\x125\n" +
 	"\acommand\x18\x01 \x01(\x0e2\x1b.hypedomino.v1.LobbyCommandR\acommand\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12'\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x04 \x01(\tR\taccountId\x12'\n" +
-	"\x04seat\x18\x05 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x16\n" +
-	"\x06action\x18\x06 \x01(\tR\x06action\"S\n" +
+	"\x04seat\x18\x05 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1a\n" +
+	"\x06action\x18\x06 \x01(\tB\x02\x18\x01R\x06action\"S\n" +
 	"\tLobbySeat\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1d\n" +
 	"\n" +
@@ -616,17 +622,17 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x05phase\x18\x04 \x01(\x0e2\x19.hypedomino.v1.LobbyPhaseR\x05phase\x12'\n" +
 	"\x04mode\x18\x05 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12.\n" +
 	"\x05seats\x18\x06 \x03(\v2\x18.hypedomino.v1.LobbySeatR\x05seats\x125\n" +
-	"\arefusal\x18\a \x01(\x0e2\x1b.hypedomino.v1.LobbyRefusalR\arefusal\"\x98\x01\n" +
+	"\arefusal\x18\a \x01(\x0e2\x1b.hypedomino.v1.LobbyRefusalR\arefusal\"\x9c\x01\n" +
 	"\n" +
 	"LobbyRelay\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x01 \x01(\tR\taccountId\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\x12\x17\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1a\n" +
+	"\x06action\x18\x02 \x01(\tB\x02\x18\x01R\x06action\x12\x17\n" +
 	"\aitem_id\x18\x03 \x01(\tR\x06itemId\x12:\n" +
 	"\x0erequested_seat\x18\x04 \x01(\x0e2\x13.hypedomino.v1.SeatR\rrequestedSeat\"I\n" +
 	"\vLobbyInvite\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12&\n" +
-	"\x0ffrom_account_id\x18\x02 \x01(\tR\rfromAccountId*\xdd\x02\n" +
+	"\x0ffrom_account_id\x18\x02 \x01(\tR\rfromAccountId*\xe1\x02\n" +
 	"\fLobbyCommand\x12\x1d\n" +
 	"\x19LOBBY_COMMAND_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14LOBBY_COMMAND_CREATE\x10\x01\x12\x16\n" +
@@ -636,8 +642,8 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x12LOBBY_COMMAND_BACK\x10\x05\x12\x17\n" +
 	"\x13LOBBY_COMMAND_PLACE\x10\x06\x12\x18\n" +
 	"\x14LOBBY_COMMAND_REMOVE\x10\a\x12\x17\n" +
-	"\x13LOBBY_COMMAND_START\x10\b\x12\x15\n" +
-	"\x11LOBBY_COMMAND_ACT\x10\t\x12\x18\n" +
+	"\x13LOBBY_COMMAND_START\x10\b\x12\x19\n" +
+	"\x11LOBBY_COMMAND_ACT\x10\t\x1a\x02\b\x01\x12\x18\n" +
 	"\x14LOBBY_COMMAND_INVITE\x10\n" +
 	"\x12\x1e\n" +
 	"\x1aLOBBY_COMMAND_REQUEST_SEAT\x10\v\x12\x15\n" +
@@ -647,7 +653,7 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x17LOBBY_PHASE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOBBY_PHASE_LOBBY\x10\x01\x12\x15\n" +
 	"\x11LOBBY_PHASE_TEAMS\x10\x02\x12\x15\n" +
-	"\x11LOBBY_PHASE_MATCH\x10\x03*\x93\x04\n" +
+	"\x11LOBBY_PHASE_MATCH\x10\x03*\x97\x04\n" +
 	"\fLobbyRefusal\x12\x1d\n" +
 	"\x19LOBBY_REFUSAL_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19LOBBY_REFUSAL_UNAVAILABLE\x10\x01\x12\x1e\n" +
@@ -664,8 +670,8 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x1aLOBBY_REFUSAL_INVALID_MODE\x10\v\x12\x1a\n" +
 	"\x16LOBBY_REFUSAL_IN_MATCH\x10\f\x12\x1d\n" +
 	"\x19LOBBY_REFUSAL_WRONG_PHASE\x10\r\x12\x19\n" +
-	"\x15LOBBY_REFUSAL_BLOCKED\x10\x0e\x12 \n" +
-	"\x1cLOBBY_REFUSAL_UNKNOWN_ACTION\x10\x0f\x12\x1c\n" +
+	"\x15LOBBY_REFUSAL_BLOCKED\x10\x0e\x12$\n" +
+	"\x1cLOBBY_REFUSAL_UNKNOWN_ACTION\x10\x0f\x1a\x02\b\x01\x12\x1c\n" +
 	"\x18LOBBY_REFUSAL_NOT_FRIEND\x10\x10B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"LobbyProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"

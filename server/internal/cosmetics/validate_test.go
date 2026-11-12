@@ -45,26 +45,13 @@ func TestValidateManifestRefusesWhatTheSchemaRefuses(t *testing.T) {
 		item["layers"] = []any{map[string]any{"name": "back", "address": "cosmetic/table/reef/layer/back", "animated": true}}
 		return item
 	}
-	character := func() map[string]any {
-		item := avatar()
-		delete(item, "animationAddress")
-		item["id"], item["type"], item["nameKey"], item["staticAddress"] = "character.ali", "character", "cosmetic.character.ali.name", "cosmetic/character/ali/static"
-		item["modelAddress"] = "cosmetic/character/ali/model"
-		item["clips"] = map[string]any{"idle": "cosmetic/character/ali/clip/idle", "win": "cosmetic/character/ali/clip/win", "lose": "cosmetic/character/ali/clip/lose", "reaction": "cosmetic/character/ali/clip/reaction"}
-		return item
-	}
-	action := func() map[string]any {
-		item := avatar()
-		item["id"], item["type"], item["nameKey"], item["staticAddress"], item["animationAddress"] = "action.wave", "action", "cosmetic.action.wave.name", "cosmetic/action/wave/static", "cosmetic/action/wave/anim"
-		return item
-	}
 	emoji := func() map[string]any {
 		item := avatar()
 		item["id"], item["type"], item["nameKey"], item["staticAddress"], item["animationAddress"] = "emoji.wink", "emoji", "cosmetic.emoji.wink.name", "cosmetic/emoji/wink/static", "cosmetic/emoji/wink/anim"
 		item["group"] = "faces"
 		return item
 	}
-	for name, item := range map[string]map[string]any{"avatar": avatar(), "table": table(), "character": character(), "action": action(), "emoji": emoji()} {
+	for name, item := range map[string]map[string]any{"avatar": avatar(), "table": table(), "emoji": emoji()} {
 		if err := ValidateManifest(manifestOf(t, item), DefaultRarities()); err != nil {
 			t.Errorf("valid %s: %v", name, err)
 		}
@@ -84,10 +71,8 @@ func TestValidateManifestRefusesWhatTheSchemaRefuses(t *testing.T) {
 		{"no animated flag", avatar, func(i map[string]any) { delete(i, "animated") }, "V-1"},
 		{"animated without an animation", avatar, func(i map[string]any) { delete(i, "animationAddress") }, "V-3"},
 		{"static with an animation", avatar, func(i map[string]any) { i["animated"] = false }, "V-3"},
-		{"clips on an avatar", avatar, func(i map[string]any) { i["modelAddress"] = "cosmetic/avatar/fox/model" }, "V-3"},
-		{"an animated character without clips", character, func(i map[string]any) { delete(i, "clips") }, "V-4"},
-		{"a static character with a model", character, func(i map[string]any) { i["animated"] = false; delete(i, "clips") }, "V-3"},
-		{"a missing clip name", character, func(i map[string]any) { i["clips"].(map[string]any)["win"] = "" }, "V-10"},
+		{"a model on an avatar", avatar, func(i map[string]any) { i["modelAddress"] = "cosmetic/avatar/fox/model" }, "V-1"},
+		{"clips on an avatar", avatar, func(i map[string]any) { i["clips"] = map[string]any{"idle": "cosmetic/avatar/fox/clip/idle"} }, "V-1"},
 		{"an animated table without layers", table, func(i map[string]any) { delete(i, "layers") }, "V-3"},
 		{"no animated layer", table, func(i map[string]any) {
 			i["layers"] = []any{map[string]any{"name": "back", "address": "cosmetic/table/reef/layer/back", "animated": false}}
@@ -96,8 +81,6 @@ func TestValidateManifestRefusesWhatTheSchemaRefuses(t *testing.T) {
 			layer := map[string]any{"name": "back", "address": "cosmetic/table/reef/layer/back", "animated": true}
 			i["layers"] = []any{layer, layer}
 		}, "V-5"},
-		{"an action without animation", action, func(i map[string]any) { delete(i, "animationAddress") }, "V-3"},
-		{"a default action", action, func(i map[string]any) { i["sources"] = []any{map[string]any{"type": "default"}} }, "V-11"},
 		{"an emoji without a group", emoji, func(i map[string]any) { delete(i, "group") }, "V-6"},
 		{"a group on an avatar", avatar, func(i map[string]any) { i["group"] = "faces" }, "V-6"},
 		{"another name key", avatar, func(i map[string]any) { i["nameKey"] = "cosmetic.avatar.other.name" }, "V-9"},
@@ -174,25 +157,16 @@ func TestStampDerivesTheServerFieldsAndRaisesRevisionsOnce(t *testing.T) {
 }
 
 func TestStampGivesEveryTypeItsAddresses(t *testing.T) {
-	character := map[string]any{"id": "character.ali", "type": "character", "animated": true, "modelHqAddress": ""}
 	table := map[string]any{"id": "table.reef", "type": "table", "animated": true, "layers": []any{map[string]any{"name": "back", "animated": true}}}
-	action := map[string]any{"id": "action.wave", "type": "action", "animated": true}
 	still := map[string]any{"id": "frame.plain", "type": "frame", "animated": false}
 	tile := map[string]any{"id": "tile.storm", "type": "tile", "animated": true}
-	stamped, err := Stamp(manifestOf(t, avatar()), submit(t, character, table, action, still, tile))
+	stamped, err := Stamp(manifestOf(t, avatar()), submit(t, table, still, tile))
 	if err != nil {
 		t.Fatal(err)
 	}
 	items := decodedItems(t, stamped)
-	ali := items["character.ali"]
-	if ali["modelAddress"] != "cosmetic/character/ali/model" || ali["modelHqAddress"] != "cosmetic/character/ali/model_hq" || ali["clips"].(map[string]any)["reaction"] != "cosmetic/character/ali/clip/reaction" {
-		t.Errorf("character %v", ali)
-	}
 	if layer := items["table.reef"]["layers"].([]any)[0].(map[string]any); layer["address"] != "cosmetic/table/reef/layer/back" {
 		t.Errorf("table %v", layer)
-	}
-	if items["action.wave"]["animationAddress"] != "cosmetic/action/wave/anim" {
-		t.Errorf("action %v", items["action.wave"])
 	}
 	if items["tile.storm"]["animationAddress"] != "cosmetic/tile/storm/anim" || items["tile.storm"]["staticAddress"] != "cosmetic/tile/storm/static" {
 		t.Errorf("tile %v", items["tile.storm"])
@@ -203,8 +177,10 @@ func TestStampGivesEveryTypeItsAddresses(t *testing.T) {
 }
 
 func TestStampRefusesAnItemWithoutAValidID(t *testing.T) {
-	if _, err := Stamp(manifestOf(t, avatar()), submit(t, map[string]any{"id": "hat.red"})); !errors.Is(err, ErrInvalid) {
-		t.Fatalf("err = %v", err)
+	for _, id := range []string{"hat.red", "character.ali", "action.wave"} {
+		if _, err := Stamp(manifestOf(t, avatar()), submit(t, map[string]any{"id": id})); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("%s: err = %v", id, err)
+		}
 	}
 	if _, err := Stamp(manifestOf(t, avatar()), []byte(`{`)); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("err = %v", err)

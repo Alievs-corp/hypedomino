@@ -92,7 +92,7 @@ Placeholders in angle brackets are replaced before submission (ST-1, ST-7, ST-8)
 | CL-3 | In 2v2 partners sit opposite each other | R-6 |
 | CL-4 | 1v1 and 2v2 are both ranked, each with its own rank and leaderboard, by season | R-53, `docs/ranking.md` 1, 7 |
 | CL-5 | Casual play with the same rules and no rating | R-56 |
-| CL-6 | Custom rooms with friends by invite link or room code; the creator sets up the teams; friend lobby with 3D characters between matches | R-55, `docs/friend-lobby.md` 1 to 3 |
+| CL-6 | Custom rooms with friends by invite link or room code; the creator sets up the teams; friend lobby between matches | R-55, `docs/friend-lobby.md` 1 to 3 |
 | CL-7 | A placement whose open ends total a multiple of five scores that total; special cases named | R-25, R-28 to R-30 |
 | CL-8 | The first double with tiles on both sides becomes the spinner and opens up to four ends; there is one per hand | R-17, R-18 |
 | CL-9 | The team that plays all its tiles first scores the pips left in the opponents' hands; the 300 rule is named as a special case | R-32, R-33, R-41 |
@@ -101,7 +101,7 @@ Placeholders in angle brackets are replaced before submission (ST-1, ST-7, ST-8)
 | CL-12 | The server checks every move, point and reward | NT-1, NT-2, ADR 0003 |
 | CL-13 | Nothing for sale changes rank, tiles or rules; no pay-to-win | `docs/economy.md` EP-2 |
 | CL-14 | A bot plays for a player who drops out until they return; the match goes on | R-51, R-52 |
-| CL-15 | Cosmetic types: characters, avatars, frames, tables, emoji, lobby actions | `docs/cosmetics.md` 2 |
+| CL-15 | Cosmetic types: avatars, frames, tables, tile skins, emoji | `docs/cosmetics.md` 2 |
 | CL-16 | Every shop offer shows exactly what it grants; a chest shows its pool, odds and pity before purchase | `docs/economy.md` EP-3 |
 | CL-17 | Emoji and quick messages in a match; friends, online presence, invites | `docs/localization.md` 5.7, #151, #152, #153 |
 | CL-18 | Coins are earned by playing; daily and weekly missions; a season pass; medals | `docs/economy.md` 2, `docs/pass-missions-medals.md` 1 to 5 |
@@ -131,14 +131,14 @@ The term lists are generic on purpose: they name no game or product (CR-2). What
 
 ## 5. Graphics
 
-No art exists yet. Production belongs to Epic 15 (#165): UI kit #168, tiles and tables #169, characters #170, avatars #171 and #172, frames #173, table backgrounds #174, emoji #175, effects #176, sound #177; the style is `docs/art-direction.md` (#166) and the workflow `docs/asset-workflow.md` (#167). Every store graphic passes the cultural review (`docs/localization.md` 6.1 step 4).
+No art exists yet. Production belongs to Epic 15 (#165): UI kit #168, tiles and tables #169, avatars #171 and #172, frames #173, table backgrounds #174, emoji #175, effects #176, sound #177; the style is `docs/art-direction.md` (#166) and the workflow `docs/asset-workflow.md` (#167). Every store graphic passes the cultural review (`docs/localization.md` 6.1 step 4).
 
 ### 5.1 Icon
 
 | Id | Requirement |
 |---|---|
 | IC-1 | One icon design for both stores and every locale. Original, no text or letters, no coins, chips, cards or other casino cues, no rarity marks (`docs/art-direction.md` 2, 3, 8). Reads as a silhouette at small sizes |
-| IC-2 | Colours follow `docs/art-direction.md` section 2: named tokens for UI and role colours, character art in its own reviewed palette. No new colour is defined here |
+| IC-2 | Colours follow `docs/art-direction.md` section 2: named tokens for UI and role colours, cosmetic art in its own reviewed palette. No new colour is defined here |
 | IC-3 | Google Play listing icon: 512 x 512 px, 32-bit PNG, at most 1024 KB, full square. Play applies the mask and shadow, so the file has neither |
 | IC-4 | Android launcher: adaptive icon with a foreground and a background layer of 108 x 108 dp, the motif inside the central 66 dp safe zone (72 dp visible), plus a monochrome layer for themed icons. Legacy and round icons are generated from it in Unity Player Settings |
 | IC-5 | App Store icon: 1024 x 1024 px PNG, no transparency, square corners (iOS applies the mask). Dark and tinted variants are supplied for the iOS home screen appearances |
@@ -159,18 +159,18 @@ Orientation follows OQ-3 (default landscape); only that orientation is produced.
 
 - Every image set exists once per listing locale (2.3): the UI in the capture is in that locale's language and the caption comes from that locale's file.
 - The first three images carry the decision (search results show them first): S-1, S-2 and S-3 in that order.
-- The feature graphic carries no words other than the `HypeDomino` name (CR-6); it shows the table and characters, never a price or a call to install.
+- The feature graphic carries no words other than the `HypeDomino` name (CR-6); it shows the table and cosmetics, never a price or a call to install.
 
 ### 5.3 Shot list
 
 | Shot | Screen | State to capture | Caption field |
 |---|---|---|---|
 | S-1 | 2v2 match | A placement that scores: open ends on a multiple of five, `scoreCascade` at its peak step, both team meters visible | `caption.S-1` |
-| S-2 | Friend lobby (FL-1) | Four members as their 3D characters, one playing a lobby action, one emoji above a character | `caption.S-2` |
+| S-2 | Friend lobby (FL-1) | Four members as their avatars in animated frames, one emoji above an avatar | `caption.S-2` |
 | S-3 | Rank screen | Ranked 1v1 and 2v2 ranks side by side or the mode switch visible, a leaderboard behind | `caption.S-3` |
 | S-4 | 2v2 match | A spinner with tiles on all four arms | `caption.S-4` |
 | S-5 | Team setup (FL-2) | Teams split, the invite panel open with the link and room code | `caption.S-5` |
-| S-6 | Collection | Characters and tables of several rarity tiers, rarity drawn by the client | `caption.S-6` |
+| S-6 | Collection | Avatars and tables of several rarity tiers, rarity drawn by the client | `caption.S-6` |
 | S-7 | Pass | Both tracks with exact rewards shown, a mission panel | `caption.S-7` |
 | S-8 | Match end | The `domino` banner with emoji reactions from the seats | `caption.S-8` |
 
@@ -195,7 +195,7 @@ One 30-second master edit serves both stores: the Google Play promo video (a You
 | TR-1 | 0 to 3 | The hook: a scoring placement and `scoreCascade`, no logo first |
 | TR-2 | 3 to 9 | A 2v2 hand: partners across the table, a double turning into the spinner, a second scoring placement |
 | TR-3 | 9 to 14 | A 1v1 hand: a draw from the boneyard, the last tile, the `domino` banner |
-| TR-4 | 14 to 19 | The friend lobby: characters, a lobby action, emoji |
+| TR-4 | 14 to 19 | The friend lobby: avatars in frames, emoji |
 | TR-5 | 19 to 24 | Ranked: a rank up (`rankUp`), a leaderboard |
 | TR-6 | 24 to 30 | The collection, then an end card with the icon and `HypeDomino` |
 
@@ -216,7 +216,7 @@ The answers follow from the documents named per row. The questionnaire wording c
 | Id | Topic | Answer | Source |
 |---|---|---|---|
 | AR-1 | Category | Game | |
-| AR-2 | Violence, blood, gore | No. Cartoon impact effects only, no weapons, no harm to characters | `docs/localization.md` 6, `docs/art-direction.md` 8 |
+| AR-2 | Violence, blood, gore | No. Cartoon impact effects only, no weapons, no harm to anyone shown | `docs/localization.md` 6, `docs/art-direction.md` 8 |
 | AR-3 | Fear, horror | No | `docs/localization.md` 6 |
 | AR-4 | Sexuality, nudity, suggestive themes | No | `docs/localization.md` 6 |
 | AR-5 | Language: profanity, crude humour, discrimination | No. All text is ours and reviewed; player names are filtered and moderated | `docs/localization.md` 5.3, 6 |
@@ -305,8 +305,8 @@ Google Play Data safety and Apple App Privacy are answered from `docs/privacy.md
 |---|---|---|---|---|
 | EX-1 | Both | First screenshot | S-1 scoring moment against S-2 friend lobby first | Learns whether play or social sells the game |
 | EX-2 | Play, `az` and `tr` localized | Short description | Rules hook against social hook (`play.short@B`) | Primary markets first |
-| EX-3 | Both | Icon | Tile motif against character motif | Needs two approved icon designs (IC-1) and IC-6 |
-| EX-4 | Play | Feature graphic | Table scene against characters | Default graphics experiment |
+| EX-3 | Both | Icon | Tile motif against avatar motif | Needs two approved icon designs (IC-1) and IC-6 |
+| EX-4 | Play | Feature graphic | Table scene against a collection of avatars and frames | Default graphics experiment |
 | EX-5 | Both | Video | With against without the promo video or preview | Measures the trailer before a second edit is made |
 
 ## 9. Pre-submission checklist

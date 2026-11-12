@@ -113,7 +113,7 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 
 - `GuidePriceCoins` per rarity id of #5 in order `common`, `rare`, `epic`, `legendary`, `mythic`: 400, 1500, 3500, 12000, 30000. Rarities are referenced by id only.
 - `GuidePriceCrystals` per rarity, same order: 60, 200, 500, 1200, 2500, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`. Owner decision 2026-11-12 (OQ-15): lowered from 80, 300, 700, 2400, 6000 so that a `legendary` item costs about the price of two premium passes and a `mythic` one stays under 25 USD in the Azerbaijan and Turkey markets. Coin prices are unchanged, so play time per item is unchanged.
-- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `tile`, `emoji`, `action`: 100, 150, 100, 150, 125, 50, 50. A character carries four clips and a table fills the match scene; a tile skin is on every face-down tile of its seat in every match, more visible than a frame and smaller than the table (OQ-16); an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
+- `GuidePriceTypePercent` per type in order `avatar`, `frame`, `table`, `tile`, `emoji`: 100, 100, 150, 125, 50. A table fills the match scene; a tile skin is on every face-down tile of its seat in every match, more visible than a frame and smaller than the table (OQ-16); an emoji is a small, frequent item. The `character` and `action` types were removed by owner decision 2026-11-12 (no 3D characters, no lobby actions).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer.
 - An animated item is priced by its rarity like a static one. The admin may set an animated `epic` offer up to half above its guide price; a `legendary` or `mythic` item is expected to be animated, so its guide price already includes the animation.
 - The full table and the play time each price takes are in section 11.
@@ -434,13 +434,13 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 
 #### Guide prices by rarity and type (coins)
 
-| Rarity | `avatar` | `character` | `frame` | `table` | `tile` | `emoji` | `action` |
-|---|---|---|---|---|---|---|---|
-| `common` | 400 | 600 | 400 | 600 | 500 | 200 | 200 |
-| `rare` | 1500 | 2250 | 1500 | 2250 | 1875 | 750 | 750 |
-| `epic` | 3500 | 5250 | 3500 | 5250 | 4375 | 1750 | 1750 |
-| `legendary` | 12000 | 18000 | 12000 | 18000 | 15000 | 6000 | 6000 |
-| `mythic` | 30000 | 45000 | 30000 | 45000 | 37500 | 15000 | 15000 |
+| Rarity | `avatar` | `frame` | `table` | `tile` | `emoji` |
+|---|---|---|---|---|---|
+| `common` | 400 | 400 | 600 | 500 | 200 |
+| `rare` | 1500 | 1500 | 2250 | 1875 | 750 |
+| `epic` | 3500 | 3500 | 5250 | 4375 | 1750 |
+| `legendary` | 12000 | 12000 | 18000 | 15000 | 6000 |
+| `mythic` | 30000 | 30000 | 45000 | 37500 | 15000 |
 
 #### Price against earn rate
 

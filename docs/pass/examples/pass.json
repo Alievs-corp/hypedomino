@@ -354,7 +354,7 @@
           "revision": 1,
           "crystals": 6,
           "cosmetics": [
-            "character.s1_navigator"
+            "avatar.s1_navigator"
           ]
         },
         "2": {
@@ -879,7 +879,7 @@
           "revision": 1,
           "crystals": 6,
           "cosmetics": [
-            "character.s1_sea_queen"
+            "avatar.s1_sea_queen"
           ]
         }
       }

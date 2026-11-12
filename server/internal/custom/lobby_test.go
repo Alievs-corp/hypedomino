@@ -194,7 +194,7 @@ func TestTheLeaderSplitsTeamsStartsAndEveryoneReturnsToTheLobby(t *testing.T) {
 	refused(t, err, ErrStarted)
 	refused(t, r.Join(player("dan")), ErrStarted)
 	refused(t, r.Teams("ana", rules.Mode1v1), ErrStarted)
-	refused(t, r.Act("cem", "idle"), ErrWrongPhase)
+	refused(t, r.Emote("cem", "emoji.laugh", time.Now()), ErrWrongPhase)
 	must(t, r.Leave("ben"))
 	(*tables)[0].cancel()
 	waitPhase(t, r, PhaseLobby)
@@ -274,24 +274,6 @@ func TestTheLeaderRemovesAndAddsPlayersDuringTheMatch(t *testing.T) {
 	table.Snapshot(rules.SeatX, reply)
 	if v := <-reply; v.Controllers[rules.SeatY] != rules.ControllerBot || accounts(r.State())[1] != "cem" {
 		t.Fatalf("leaving during the match: %+v seats %v", v, accounts(r.State()))
-	}
-}
-
-func TestActionsRelayOnlyTheCharacterClipsAndEquippedActions(t *testing.T) {
-	open, _ := opener(t)
-	lobby := NewLobby(&counter{}, open)
-	anaSink, benSink := make(eventSink, 16), make(eventSink, 16)
-	r, _ := lobby.Create(Member{Account: "ana", Clips: []string{"idle", "win", "lose", "reaction"}, Actions: []string{"action.wave"}, Sink: anaSink})
-	must(t, r.Join(Member{Account: "ben", Sink: benSink}))
-	must(t, r.Act("ana", "reaction"))
-	must(t, r.Act("ana", "action.wave"))
-	refused(t, r.Act("ana", "action.dance"), ErrUnknownAction)
-	refused(t, r.Act("ben", "idle"), ErrUnknownAction)
-	refused(t, r.Act("zed", "idle"), ErrNotInRoom)
-	for _, sink := range []eventSink{anaSink, benSink} {
-		if got := relayed(sink, func(e Event) string { return e.Action }); !slices.Equal(got, []string{"ana:reaction", "ana:action.wave"}) {
-			t.Fatalf("relayed actions %v", got)
-		}
 	}
 }
 

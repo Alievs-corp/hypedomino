@@ -35,7 +35,7 @@ domino oyunu,daş,stolüstü oyun,dostlar,komanda,tərəfdaş,qoşa,multiplayer,
 ## apple.promo
 
 ```text
-Hər beşlik xal gətirir. 1v1 və 2v2 reytinqində yüksəl, dostlarını öz otağına dəvət et və personajlarını masada göstər.
+Hər beşlik xal gətirir. 1v1 və 2v2 reytinqində yüksəl, dostlarını öz otağına dəvət et, avatar və çərçivələrini masada göstər.
 ```
 
 ## description
@@ -60,7 +60,7 @@ Daşı elə qoy ki, açıq ucların cəmi beşə bölünsün: komandan həmin c�
 • Kimsə oyundan çıxsa, o qayıdana qədər onun yerinə bot oynayır və matç davam edir.
 
 ÖZ ÜSLUBUNU YARAT
-Personajlar, avatarlar, çərçivələr, masalar, emojilər və lobbi hərəkətləri topla. Onları masada və 3D personajların matçlar arasında bir araya gəldiyi dost lobbisində göstər. Mağazadakı hər təklif sənə nə veriləcəyini dəqiq göstərir.
+Avatarlar, çərçivələr, masalar, daş skinləri və emojilər topla. Onları masada və matçlar arasında dost lobbisində göstər. Mağazadakı hər təklif sənə nə veriləcəyini dəqiq göstərir.
 
 BİRLİKDƏ OYNA
 Matç zamanı emoji və hazır mesajlarla reaksiya ver. Dost əlavə et, kimin onlayn olduğunu gör və onları otağına dəvət et.
@@ -109,7 +109,7 @@ Keçid və ya kodla dəvət et
 ## caption.S-6
 
 ```text
-Personaj və masalar topla
+Avatar və masalar topla
 ```
 
 ## caption.S-7

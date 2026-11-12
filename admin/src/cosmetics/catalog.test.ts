@@ -15,7 +15,6 @@ import {
   validSlug,
   withAnimated,
   withBulkChange,
-  withHighDetail,
   withNewSource,
   withoutSource,
   withSource,
@@ -24,7 +23,7 @@ import {
 } from "./catalog.ts";
 
 const rules: CosmeticRules = {
-  types: ["avatar", "character", "frame", "table", "emoji", "action"],
+  types: ["avatar", "frame", "table", "tile", "emoji"],
   rarities: ["common", "rare"],
   availability: ["live", "retired", "disabled"],
   source_types: ["default", "shop", "pass"],
@@ -53,8 +52,8 @@ test("a new item is unreviewed, has a source to fill and leaves the server field
   assert.deepEqual(itemIssues(fox), []);
 });
 
-test("an action is born animated and an emoji with a group to fill", () => {
-  assert.equal(newItem("action", "wave", rules).animated, true);
+test("a new item is born static and an emoji with a group to fill", () => {
+  assert.equal(newItem("avatar", "fox", rules).animated, false);
   assert.deepEqual(itemIssues(ready(newItem("emoji", "wink", rules))), ["cosmetics.issue.group"]);
   assert.deepEqual(itemIssues({ ...ready(newItem("emoji", "wink", rules)), group: "faces" }), []);
 });
@@ -67,8 +66,6 @@ test("a taken id is refused", () => {
 });
 
 test("turning animation off drops the type fields the schema forbids on a static item", () => {
-  const character: CosmeticItem = { ...ready(newItem("character", "ali", rules)), animated: true, modelAddress: "m", modelHqAddress: "h", clips: { idle: "i" } };
-  assert.deepEqual(withAnimated(character, false), { ...ready(newItem("character", "ali", rules)), animated: false });
   const avatar: CosmeticItem = { ...fox, animated: true, animationAddress: "a" };
   assert.equal(withAnimated(avatar, false).animationAddress, undefined);
 });
@@ -91,12 +88,6 @@ test("layers keep their order and stop at the ends", () => {
   assert.equal(moveLayer(layers, 1, 1), layers);
 });
 
-test("the high detail model is a flag the server fills", () => {
-  const character = withAnimated(ready(newItem("character", "ali", rules)), true);
-  assert.equal(withHighDetail(character, true).modelHqAddress, "");
-  assert.equal("modelHqAddress" in withHighDetail(withHighDetail(character, true), false), false);
-});
-
 test("sources check their ref, a default has none and repeats are refused", () => {
   const added = withNewSource(fox, rules);
   assert.deepEqual(added.sources[1], { type: "shop", ref: "" });
@@ -107,16 +98,15 @@ test("sources check their ref, a default has none and repeats are refused", () =
   assert.deepEqual(itemIssues(withoutSource(fox, 0)), ["cosmetics.issue.no_source"]);
 });
 
-test("a default item stays live and static and an action is never default", () => {
+test("a default item stays live and static", () => {
   const starter = withSource(fox, 0, { type: "default" });
   assert.deepEqual(itemIssues({ ...starter, animated: true }), ["cosmetics.issue.default_item"]);
   assert.deepEqual(itemIssues({ ...starter, availability: "retired" }), ["cosmetics.issue.default_item"]);
-  assert.ok(itemIssues(withSource(ready(newItem("action", "wave", rules)), 0, { type: "default" })).includes("cosmetics.issue.default_action"));
 });
 
-test("every type but action keeps a live default item", () => {
+test("every type keeps a live default item", () => {
   const starter = (type: string): CosmeticItem => withSource(ready(newItem(type, "starter", rules)), 0, { type: "default" });
-  const all = ["avatar", "character", "frame", "table", "emoji"].map(starter);
+  const all = rules.types.map(starter);
   assert.deepEqual(missingDefaults(all, rules.types), []);
   assert.deepEqual(missingDefaults(all.slice(1), rules.types), ["avatar"]);
   assert.deepEqual(missingDefaults([{ ...all[0], availability: "retired" }, ...all.slice(1)], rules.types), ["avatar"]);

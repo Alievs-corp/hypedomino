@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/bot"
-	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstart"
@@ -16,45 +15,34 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
-func TestALobbyMemberCarriesTheLoadoutAndOnlyAnAnimatedCharacterHasClips(t *testing.T) {
-	items := map[string]cosmetics.Item{
-		"character.fox":    {ID: "character.fox", Type: cosmetics.TypeCharacter, Animated: true},
-		"character.statue": {ID: "character.statue", Type: cosmetics.TypeCharacter},
-	}
-	item := func(id string) (cosmetics.Item, bool) {
-		i, ok := items[id]
-		return i, ok
-	}
+func TestALobbyMemberCarriesTheEquippedEmojiAndTheMute(t *testing.T) {
 	failure := errors.New("store down")
 	for _, tc := range []struct {
 		name      string
-		character string
 		muted     bool
 		freezeErr error
 		mutedErr  error
-		clips     []string
 		err       error
 	}{
-		{name: "animated", character: "character.fox", clips: matchstart.CharacterClips},
-		{name: "static", character: "character.statue", muted: true},
-		{name: "unknown", character: "character.gone"},
+		{name: "speaking"},
+		{name: "muted", muted: true},
 		{name: "loadout fails", freezeErr: failure, err: failure},
 		{name: "mute check fails", mutedErr: failure, err: failure},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			freeze := func(ctx context.Context, account string) (profile.Loadout, error) {
-				return profile.Loadout{Character: tc.character, Emojis: []string{"emoji.laugh"}, Actions: []string{"action.wave"}}, tc.freezeErr
+				return profile.Loadout{Avatar: "avatar.fox", Emojis: []string{"emoji.laugh"}}, tc.freezeErr
 			}
 			muted := func(ctx context.Context, account string) (bool, error) { return tc.muted, tc.mutedErr }
-			member, err := matchstart.LobbyMember(freeze, item, muted)(context.Background(), "ana")
+			member, err := matchstart.LobbyMember(freeze, muted)(context.Background(), "ana")
 			if !errors.Is(err, tc.err) {
 				t.Fatalf("error %v, want %v", err, tc.err)
 			}
 			if err != nil {
 				return
 			}
-			want := custom.Member{Account: "ana", Clips: tc.clips, Actions: []string{"action.wave"}, Emoji: []string{"emoji.laugh"}, Muted: tc.muted}
-			if member.Account != want.Account || !slices.Equal(member.Clips, want.Clips) || !slices.Equal(member.Actions, want.Actions) || !slices.Equal(member.Emoji, want.Emoji) || member.Muted != want.Muted {
+			want := custom.Member{Account: "ana", Emoji: []string{"emoji.laugh"}, Muted: tc.muted}
+			if member.Account != want.Account || !slices.Equal(member.Emoji, want.Emoji) || member.Muted != want.Muted {
 				t.Fatalf("member %+v, want %+v", member, want)
 			}
 		})

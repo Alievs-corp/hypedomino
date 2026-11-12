@@ -200,7 +200,7 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	withChest["chests"] = map[string]any{"rarityPercent": map[string]int{"common": 85, "rare": 15}, "rarePityCount": 10}
 
 	status, body := a.call("GET", "/admin/cosmetics/items", liveOps, nil)
-	if status != http.StatusOK || len(body["items"].([]any)) != 6 {
+	if status != http.StatusOK || len(body["items"].([]any)) != 5 {
 		t.Fatalf("built-in items %d %v", status, body)
 	}
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": withChest})
@@ -216,10 +216,10 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	}
 	status, body = a.call("GET", "/admin/cosmetics/items", liveOps, nil)
 	items := body["items"].([]any)
-	if status != http.StatusOK || len(items) != 17 {
+	if status != http.StatusOK || len(items) != 16 {
 		t.Fatalf("published items %d %v", status, body)
 	}
-	kite := items[7].(map[string]any)
+	kite := items[6].(map[string]any)
 	if kite["id"] != "avatar.paper_kite" || kite["rarity"] != "common" || kite["availability"] != "live" || kite["sources"].([]any)[0].(map[string]any)["type"] != "chest" {
 		t.Fatalf("chest item %v", kite)
 	}

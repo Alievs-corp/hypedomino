@@ -35,7 +35,7 @@ func TestTheExampleSeasonFollowsTheSampleOfTheSpec(t *testing.T) {
 	if len(season.Premium) != 100 || len(season.Free) != 60 {
 		t.Fatalf("premium %d, free %d levels", len(season.Premium), len(season.Free))
 	}
-	if got := season.Premium[100].Cosmetics; len(got) != 1 || got[0] != "character.s1_sea_queen" {
+	if got := season.Premium[100].Cosmetics; len(got) != 1 || got[0] != "avatar.s1_sea_queen" {
 		t.Fatalf("premium 100 = %v", got)
 	}
 }
@@ -214,11 +214,11 @@ func TestTrackCosmeticsMustListTheirLevelAndNeverBeMythic(t *testing.T) {
 	}
 	delete(listed, TrackSource("season_1", Premium, 100))
 	err := snapshot.CheckSources(grantable, never)
-	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "pass.season_1.premium.level_100 grants character.s1_sea_queen") {
+	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "pass.season_1.premium.level_100 grants avatar.s1_sea_queen") {
 		t.Fatalf("unlisted: %v", err)
 	}
-	err = snapshot.CheckSources(func(string, cosmetics.Source) bool { return true }, func(id string) bool { return id == "character.s1_sea_queen" })
-	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "mythic item character.s1_sea_queen") {
+	err = snapshot.CheckSources(func(string, cosmetics.Source) bool { return true }, func(id string) bool { return id == "avatar.s1_sea_queen" })
+	if !errors.Is(err, ErrInvalidConfig) || !strings.Contains(err.Error(), "mythic item avatar.s1_sea_queen") {
 		t.Fatalf("mythic: %v", err)
 	}
 }

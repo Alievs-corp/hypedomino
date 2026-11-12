@@ -18,9 +18,6 @@ export type CosmeticItem = {
   artSource: string;
   culturalReview: string;
   animationAddress?: string;
-  clips?: Record<string, string>;
-  modelAddress?: string;
-  modelHqAddress?: string;
   layers?: ItemLayer[];
   group?: string;
 };
@@ -50,7 +47,7 @@ export function newItem(type: string, slug: string, rules: CosmeticRules): Cosme
     type,
     revision: 0,
     rarityId: rules.rarities[0] ?? "",
-    animated: type === "action",
+    animated: false,
     availability: rules.availability[0] ?? "",
     sources: [{ type: rules.source_types.find((candidate) => candidate !== defaultSource) ?? "", ref: "" }],
     artSource: rules.art_sources[0] ?? "",
@@ -72,16 +69,11 @@ export function removeItem(items: CosmeticItem[], id: string): CosmeticItem[] {
 }
 
 export function withAnimated(item: CosmeticItem, animated: boolean): CosmeticItem {
-  const { animationAddress: _animation, clips: _clips, modelAddress: _model, modelHqAddress: _modelHq, layers: _layers, ...rest } = item;
+  const { animationAddress: _animation, layers: _layers, ...rest } = item;
   if (!animated) {
     return { ...rest, animated };
   }
   return item.type === "table" ? { ...rest, animated, layers: item.layers ?? [] } : { ...rest, animated };
-}
-
-export function withHighDetail(item: CosmeticItem, highDetail: boolean): CosmeticItem {
-  const { modelHqAddress: _modelHq, ...rest } = item;
-  return highDetail ? { ...rest, modelHqAddress: "" } : rest;
 }
 
 export function withLayers(item: CosmeticItem, layers: ItemLayer[]): CosmeticItem {
@@ -118,7 +110,6 @@ export function itemIssues(item: CosmeticItem): MessageKey[] {
   if (item.sources.some((source) => source.type !== defaultSource && !referencePattern.test(source.ref ?? ""))) found.push("cosmetics.issue.ref");
   const keys = item.sources.map((source) => `${source.type}:${source.ref ?? ""}`);
   if (new Set(keys).size !== keys.length) found.push("cosmetics.issue.duplicate_source");
-  if (isDefault && item.type === "action") found.push("cosmetics.issue.default_action");
   if (isDefault && (item.animated || item.availability !== "live")) found.push("cosmetics.issue.default_item");
   if (item.culturalReview !== approved) found.push("cosmetics.issue.review");
   if (item.type === "emoji" && !referencePattern.test(item.group ?? "")) found.push("cosmetics.issue.group");
@@ -136,7 +127,7 @@ function layerIssues(layers: ItemLayer[]): MessageKey[] {
 
 export function missingDefaults(items: CosmeticItem[], types: readonly string[]): string[] {
   const covered = new Set(items.filter((item) => item.availability === "live" && item.sources.some((source) => source.type === defaultSource)).map((item) => item.type));
-  return types.filter((type) => type !== "action" && !covered.has(type));
+  return types.filter((type) => !covered.has(type));
 }
 
 export function filteredItems(items: CosmeticItem[], filter: ItemFilter): CosmeticItem[] {

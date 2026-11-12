@@ -127,7 +127,6 @@ func rosterMessage(roster []room.Player) []*pb.RosterEntry {
 			Seat:      seatMessage(player.Seat),
 			Team:      teamMessage(player.Seat.Team()),
 			Nickname:  player.Nickname,
-			Character: player.Character,
 			Frame:     player.Frame,
 			Avatar:    player.Avatar,
 			Tile:      player.Tile,

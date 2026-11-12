@@ -97,7 +97,7 @@ func newFixture(t *testing.T) *fixture {
 	profiles := &fakeProfiles{config: profile.DefaultConfig(), profiles: map[string]profile.Profile{}, taken: map[string]bool{}, now: start}
 	profiles.profiles["ben"] = profile.Profile{
 		Account: "ben", Nickname: "Ben",
-		Loadout: profile.Loadout{Avatar: "avatar.comet_fox", Frame: "frame.gold", Character: "character.nar", Table: "table.classic", Emojis: []string{"emoji.wave"}},
+		Loadout: profile.Loadout{Avatar: "avatar.comet_fox", Frame: "frame.gold", Table: "table.classic", Emojis: []string{"emoji.wave"}},
 		Stats:   profile.Stats{Games: 10, Wins: 7, Losses: 3, Streak: 2, BestStreak: 4, Modes: map[string]profile.ModeStats{"1v1": {Games: 10, Wins: 7, Losses: 3}}},
 	}
 	handler := profile.NewHandler(fakeVerifier{}, profiles, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return profiles.now })

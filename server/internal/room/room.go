@@ -96,7 +96,6 @@ type MoveObserver interface {
 type Player struct {
 	Seat      rules.Seat
 	Nickname  string
-	Character string
 	Frame     string
 	Avatar    string
 	Tile      string

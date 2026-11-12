@@ -12,7 +12,6 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
-	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -74,8 +73,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	lobby.LimitEmoji(deps.emoji)
 	lobbies := lobbynet.New(deps.client, deps.members, prefix, config.Relay.DialTimeout)
 	lobby.Route(lobbies)
-	item := func(id string) (cosmetics.Item, bool) { return deps.inventory.Catalog().Item(id) }
-	deps.sessions.Host(lobby, matchstart.LobbyMember(deps.inventory.Freeze, item, muted), deps.friends)
+	deps.sessions.Host(lobby, matchstart.LobbyMember(deps.inventory.Freeze, muted), deps.friends)
 	deps.sessions.Reach(lobbies)
 	go panics.Supervise(ctx, "lobby listener", config.MatchmakingTick, func(ctx context.Context, retry time.Duration) {
 		listenLobbies(ctx, lobbies, deps.sessions, retry, logger)

@@ -544,7 +544,7 @@ func snapshotOf(r *Room, seat rules.Seat) View {
 
 func TestLoadingShowsTheRosterProgressAndDeadline(t *testing.T) {
 	clock := newFakeClock()
-	roster := []Player{{Seat: rules.SeatX, Nickname: "ayla", Character: "nar", RankLabel: "Silver II"}, {Seat: rules.SeatY, Nickname: "bot", Bot: true}}
+	roster := []Player{{Seat: rules.SeatX, Nickname: "ayla", Avatar: "avatar.nar", RankLabel: "Silver II"}, {Seat: rules.SeatY, Nickname: "bot", Bot: true}}
 	room := New(Options{Mode: rules.Mode1v1, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Seed: 9, Clock: clock, Roster: roster})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

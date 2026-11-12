@@ -35,7 +35,7 @@ domino,board game,multiplayer,tiles,double six,friends,pvp,team,partner,spinner,
 ## apple.promo
 
 ```text
-Every five counts. Climb the 1v1 and 2v2 ranked ladders, invite friends to your own room and collect characters to show off at the table.
+Every five counts. Climb the 1v1 and 2v2 ranked ladders, invite friends to your own room and collect avatars and frames to show off at the table.
 ```
 
 ## description
@@ -60,7 +60,7 @@ FAIR BY DESIGN
 • If a player drops out, a bot plays their turns until they come back, so the match goes on.
 
 MAKE IT YOURS
-Collect characters, avatars, frames, tables, emoji and lobby actions. Show them off at the table and in the friend lobby, where your 3D characters meet between matches. Every shop offer shows exactly what you get.
+Collect avatars, frames, tables, tile skins and emoji. Show them off at the table and in the friend lobby between matches. Every shop offer shows exactly what you get.
 
 PLAY TOGETHER
 React with emoji and quick messages during the match. Add friends, see who is online and invite them to your room.
@@ -109,7 +109,7 @@ Invite friends by link or code
 ## caption.S-6
 
 ```text
-Collect characters and tables
+Collect avatars and tables
 ```
 
 ## caption.S-7

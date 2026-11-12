@@ -292,7 +292,7 @@ Applies to every art asset, animation, sound, store screenshot and text before i
 
 | Area | Rule |
 |---|---|
-| Colours | UI, effect, team, score and role colours come only from colour tokens. Cosmetic illustration art (avatars, characters, tables, frames, emoji) may use its own palette, but is never dominated by a team or role hue. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
+| Colours | UI, effect, team, score and role colours come only from colour tokens. Cosmetic illustration art (avatars, tables, frames, tile skins, emoji) may use its own palette, but is never dominated by a team or role hue. No colour used to evoke a national flag, party or political side. A status colour is never the only signal; add shape or label. |
 | Symbols | No national or party emblems, no military insignia, no symbols tied to banned organisations. |
 | Flags and maps | No flags as decoration and no flag standing in for a language (the language list uses names). No maps in launch content. Any later use needs owner review for disputed territory. |
 | Religion | No religious symbols, scriptures, places of worship or clergy in assets or cosmetic themes. Holiday events are reviewed per region by the owner. |
@@ -300,8 +300,8 @@ Applies to every art asset, animation, sound, store screenshot and text before i
 | Gambling imagery | Dominoes with coins must not read as a casino. Avoid slot and roulette cues, card suits, chips, cash piles, spinning-reel reward presentation and the words jackpot, bet, wager. Currency is abstract game tokens. Random rewards follow store disclosure rules where they apply. |
 | Alcohol, tobacco, drugs | None in assets, avatars, items or text. |
 | Violence and fear | Cartoon impact effects only. No weapons, blood or real tragedies. |
-| Sexual content | No sexualised characters, poses or outfits. Avatars are all-ages. |
-| Representation | No ethnic, regional, gender or disability stereotypes in characters or names. AI-generated people are checked for artefacts and for resemblance to real people. |
+| Sexual content | No sexualised figures, poses or outfits. Avatars are all-ages. |
+| Representation | No ethnic, regional, gender or disability stereotypes in avatars or names. AI-generated people are checked for artefacts and for resemblance to real people. |
 | Likeness and brands | No real persons, brands, third-party game names or look-alike styles. The art source (including AI-generated) is recorded in the manifest. |
 | Text in art | No text baked into images; every word is a key (section 2). Numerals and icons read the same in all four languages. |
 | Motion and sound | Flashing stays within the photosensitivity limits (admin config) and a reduce-effects setting exists. No sudden loud sounds. |

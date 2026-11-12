@@ -32,7 +32,7 @@ const season: Season = {
   curve,
   free: { "1": { id: "bundle.pass_season_1_free_1", revision: 1, coins: 30 }, "3": { id: "bundle.pass_season_1_free_3", revision: 1, cosmetics: ["emoji.s1_wave"] } },
   premium: {
-    "1": { id: "bundle.pass_season_1_premium_1", revision: 1, crystals: 6, cosmetics: ["character.s1_navigator"] },
+    "1": { id: "bundle.pass_season_1_premium_1", revision: 1, crystals: 6, cosmetics: ["avatar.s1_navigator"] },
     "2": { id: "bundle.pass_season_1_premium_2", revision: 1, crystals: 6 },
     "3": { id: "bundle.pass_season_1_premium_3", revision: 1, crystals: 6 },
     "4": { id: "bundle.pass_season_1_premium_4", revision: 2, crystals: 6 },

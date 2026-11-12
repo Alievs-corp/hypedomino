@@ -78,7 +78,6 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_COSMETICS_MANIFEST":                "/etc/hypedomino/cosmetics.json",
 		"HD_RARITY_ORDINALS":                   "common:1,rare:2,epic:3,legendary:4,mythic:5,cosmic:6",
 		"HD_EMOJI_SLOTS":                       "8",
-		"HD_ACTION_SLOTS":                      "2",
 		"HD_EMOJI_BURST":                       "4",
 		"HD_EMOJI_REFILL":                      "3s",
 		"HD_SHOP_CATALOG":                      "/etc/hypedomino/shop.json",
@@ -153,7 +152,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if p.NicknameMinLength != 2 || p.NicknameMaxLength != 12 || !p.NicknameAllowMixedScript || p.NicknameRenameCooldown != 168*time.Hour || p.NicknameRelease != 48*time.Hour {
 		t.Fatalf("profile config %+v", p)
 	}
-	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 || config.Inventory.ActionSlots != 2 {
+	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 {
 		t.Fatalf("inventory config %q %+v", config.Cosmetics, config.Inventory)
 	}
 	if config.Emoji != (room.EmojiLimit{Burst: 4, Refill: 3 * time.Second}) {

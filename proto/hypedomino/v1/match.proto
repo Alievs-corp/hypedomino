@@ -159,7 +159,7 @@ message RosterEntry {
   Seat seat = 1;
   Team team = 2;
   string nickname = 3;
-  string character = 4;
+  string character = 4 [deprecated = true];
   string frame = 5;
   string avatar = 6;
   string rank_label = 7;

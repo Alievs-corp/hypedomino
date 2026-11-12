@@ -39,7 +39,7 @@ func (n *gameNode) hostLobby(t *testing.T, client *redis.Client, prefix string) 
 	lobbies := lobbynet.New(client, n.cluster, prefix, 5*time.Second)
 	lobby.Route(lobbies)
 	members := func(ctx context.Context, account string) (custom.Member, error) {
-		return custom.Member{Clips: []string{"idle"}}, nil
+		return custom.Member{Emoji: []string{"emoji.laugh"}}, nil
 	}
 	n.sessions.Host(lobby, members, everyoneFriends{})
 	n.sessions.Reach(lobbies)
@@ -78,7 +78,17 @@ func dialLobby(t *testing.T, url, token string) *lobbyClient {
 
 func (c *lobbyClient) send(intent *pb.LobbyIntent) {
 	c.t.Helper()
-	frame := &pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, SessionNonce: c.nonce, Payload: &pb.Envelope_LobbyIntent{LobbyIntent: intent}}
+	c.write(&pb.Envelope{Payload: &pb.Envelope_LobbyIntent{LobbyIntent: intent}})
+}
+
+func (c *lobbyClient) emoji(item string) {
+	c.t.Helper()
+	c.write(&pb.Envelope{Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: item}}})
+}
+
+func (c *lobbyClient) write(frame *pb.Envelope) {
+	c.t.Helper()
+	frame.ProtocolVersion, frame.SessionNonce = gateway.ProtocolVersion, c.nonce
 	if err := writeFrame(c.ctx, c.socket, frame); err != nil {
 		c.t.Fatal(err)
 	}
@@ -158,9 +168,9 @@ func TestAFriendOnAnotherNodeIsInvitedJoinsByCodeAndPlaysTheCustomMatch(t *testi
 			t.Fatalf("members after the cross-node join %v", state)
 		}
 	}
-	ben.send(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ACT, Action: "idle"})
-	if relay := ana.until(func(f *pb.Envelope) bool { return f.GetLobbyRelay() != nil }).GetLobbyRelay(); relay.GetAccountId() != "ben" || relay.GetAction() != "idle" {
-		t.Fatalf("relayed action %v", relay)
+	ben.emoji("emoji.laugh")
+	if relay := ana.until(func(f *pb.Envelope) bool { return f.GetLobbyRelay() != nil }).GetLobbyRelay(); relay.GetAccountId() != "ben" || relay.GetItemId() != "emoji.laugh" {
+		t.Fatalf("relayed emoji %v", relay)
 	}
 	ana.send(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_TEAMS, Mode: pb.Mode_MODE_1V1})
 	ana.send(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_PLACE, AccountId: "ana", Seat: pb.Seat_SEAT_X})

@@ -37,7 +37,7 @@ func newLobbyTable(t *testing.T) (*table, *custom.Lobby) {
 		return r, nil
 	})
 	members := func(ctx context.Context, account string) (custom.Member, error) {
-		return custom.Member{Clips: []string{"idle"}, Emoji: []string{"emoji.laugh"}}, nil
+		return custom.Member{Emoji: []string{"emoji.laugh"}}, nil
 	}
 	manager.Host(lobby, members, friendList{"ana": {"ben"}})
 	config := gateway.DefaultConfig()
@@ -100,13 +100,12 @@ func TestFriendsFormALobbySplitTeamsAndStartACustomMatch(t *testing.T) {
 			t.Fatalf("members %v", state.GetMemberAccountIds())
 		}
 	}
-	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ACT, Action: "dance"})
-	ben.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_ACTION)
-	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ACT, Action: "idle"})
+	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_ACT})
+	ben.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_UNAVAILABLE)
 	ben.write(&pb.Envelope{ProtocolVersion: gateway.ProtocolVersion, Payload: &pb.Envelope_EmojiIntent{EmojiIntent: &pb.EmojiIntent{ItemId: "emoji.laugh"}}})
 	for _, p := range []*player{ana, ben} {
-		if action, emoji := p.relay(), p.relay(); action.GetAccountId() != "ben" || action.GetAction() != "idle" || emoji.GetItemId() != "emoji.laugh" {
-			t.Fatalf("relayed %v %v", action, emoji)
+		if emoji := p.relay(); emoji.GetAccountId() != "ben" || emoji.GetItemId() != "emoji.laugh" {
+			t.Fatalf("relayed %v", emoji)
 		}
 	}
 	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_TEAMS, Mode: pb.Mode_MODE_1V1})

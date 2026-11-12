@@ -80,7 +80,7 @@ func TestSupportGrantsAMissedRewardUnderASourceItsItemsList(t *testing.T) {
 	status, body = a.call("POST", path, content, grant(springCup(300, "avatar.comet_fox"), "event", "event.spring_cup", "r-1", "ticket"))
 	expect(t, status, body, http.StatusForbidden, "forbidden")
 
-	request := grant(springCup(300, "avatar.comet_fox", "action.victory_dance"), "event", "event.spring_cup", "r-1", "missed spring cup reward")
+	request := grant(springCup(300, "avatar.comet_fox", "emoji.victory_dance"), "event", "event.spring_cup", "r-1", "missed spring cup reward")
 	request["ref"] = "SUP-9"
 	status, body = a.call("POST", path, support, request)
 	report, _ := body["report"].(map[string]any)
@@ -100,7 +100,7 @@ func TestSupportGrantsAMissedRewardUnderASourceItsItemsList(t *testing.T) {
 	}
 
 	owned := a.owned(id)
-	if len(owned) != 2 || owned["avatar.comet_fox"] != "event:event.spring_cup" || owned["action.victory_dance"] != "event:event.spring_cup" {
+	if len(owned) != 2 || owned["avatar.comet_fox"] != "event:event.spring_cup" || owned["emoji.victory_dance"] != "event:event.spring_cup" {
 		t.Fatalf("owned %v", owned)
 	}
 	if got := a.balance(id); got != 600 {
