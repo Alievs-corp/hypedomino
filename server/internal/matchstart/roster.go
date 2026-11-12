@@ -54,7 +54,7 @@ func ProfileRoster(profiles *profile.Store, freeze FreezeFunc, rankLabel RankLab
 			if err != nil {
 				return nil, err
 			}
-			roster = append(roster, room.Player{Seat: seat.Seat, Nickname: p.Nickname, Character: loadout.Character, Frame: loadout.Frame, Avatar: loadout.Avatar, RankLabel: label, Emblems: emblems, Emoji: loadout.Emojis, Muted: silenced})
+			roster = append(roster, room.Player{Seat: seat.Seat, Nickname: p.Nickname, Character: loadout.Character, Frame: loadout.Frame, Avatar: loadout.Avatar, Tile: loadout.Tile, RankLabel: label, Emblems: emblems, Emoji: loadout.Emojis, Muted: silenced})
 		}
 		return roster, nil
 	}

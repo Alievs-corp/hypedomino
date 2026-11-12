@@ -470,3 +470,10 @@ func TestAQuickMessageReachesTheOtherSeatOverWebSocket(t *testing.T) {
 		}
 	}
 }
+
+func TestTheRosterCarriesEachSeatsTileSkin(t *testing.T) {
+	roster := rosterMessage([]room.Player{{Seat: rules.SeatX, Nickname: "Ayla", Tile: "tile.storm_sapphire"}, {Seat: rules.SeatY, Bot: true}})
+	if len(roster) != 2 || roster[0].GetTile() != "tile.storm_sapphire" || roster[1].GetTile() != "" || !roster[1].GetBot() {
+		t.Fatalf("roster %v", roster)
+	}
+}

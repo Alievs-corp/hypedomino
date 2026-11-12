@@ -36,7 +36,8 @@ This document stores references to these decisions and never their values.
 Adding a type is a schema change (section 7.2) and a change to this table.
 
 - A `tile` skin changes only the back face. The face side, pips and the divider are the same for every player, so a skin never affects how a tile's value reads (`docs/art-direction.md` section 3). Boneyard tiles (R-3) belong to no seat and use the first `live` `default` tile item.
-- An animated `tile` plays one animation per seat: every face-down tile of that seat draws from the same atlas entry on the same animation clock, so a seat costs the same whether it holds 1 or 14 tiles (#572).
+- An animated `tile` plays one animation per seat: every face-down tile of that seat draws from the same atlas entry on the same animation clock, so a seat costs the same whether it holds 1 or 14 tiles.
+- The match view sends each seat's equipped skin as `RosterEntry.tile`, taken from the loadout frozen at match start and stored with the match. A bot seat sends none and shows the default. The client draws a seat's face-down tiles with `UI/Cosmetics/TileBackView`: the first tile loads the skin and holds its one animation slot, and the others show the same frame. All of them use one texture, so they batch into one draw call.
 - Owner decision 2026-11-12: these proposed types are not added before launch: player title, profile banner, chat bubble, tile-place effect, win effect and sound pack. Each is a schema change with its own art and performance work. The tile-place and win effects come first after launch, because every player sees them in every match.
 
 ## 3. Shared fields

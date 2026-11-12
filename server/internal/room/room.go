@@ -99,6 +99,7 @@ type Player struct {
 	Character string
 	Frame     string
 	Avatar    string
+	Tile      string
 	RankLabel string
 	Emblems   []string
 	Emoji     []string
