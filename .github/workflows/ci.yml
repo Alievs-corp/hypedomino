@@ -27,6 +27,7 @@ jobs:
       proto_breaking: ${{ steps.areas.outputs.proto_breaking }}
       deploy: ${{ steps.areas.outputs.deploy }}
       backup: ${{ steps.areas.outputs.backup }}
+      assets: ${{ steps.areas.outputs.assets }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +44,12 @@ jobs:
               - '.github/workflows/ci.yml'
             client:
               - 'client/**'
+              - '.github/workflows/ci.yml'
+            assets:
+              - 'assets-src/**'
+              - 'tools/asset-export/**'
+              - 'tools/asset-naming/**'
+              - 'tools/cosmetics-schema/**'
               - '.github/workflows/ci.yml'
             deploy:
               - 'server/**'
@@ -68,6 +75,7 @@ jobs:
           PROTO_CHANGED: ${{ steps.filter.outputs.proto }}
           DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy }}
           BACKUP_CHANGED: ${{ steps.filter.outputs.backup }}
+          ASSETS_CHANGED: ${{ steps.filter.outputs.assets }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           emit() {
@@ -79,6 +87,7 @@ jobs:
           emit proto "$PROTO_CHANGED" proto/buf.yaml
           emit deploy "$DEPLOY_CHANGED" server/Dockerfile
           emit backup "$BACKUP_CHANGED" tools/backup-drill/drill.sh
+          emit assets "$ASSETS_CHANGED" tools/asset-export/asset-export.mjs
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:proto/buf.yaml" 2>/dev/null; then
             echo "proto_breaking=true" >> "$GITHUB_OUTPUT"
           else
@@ -284,6 +293,40 @@ jobs:
           testMode: all
           githubToken: ''
 
+  assets:
+    needs: changes
+    if: needs.changes.outputs.assets == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Naming of assets-src
+        run: node tools/asset-naming/asset-naming.mjs
+      - name: Export and size budget of new and changed items
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            changed=$(git diff --name-only "$BASE_SHA" HEAD -- assets-src)
+          else
+            changed=$(git ls-files assets-src)
+          fi
+          mapfile -t items < <(printf '%s\n' "$changed" | node tools/asset-export/asset-export.mjs items)
+          if [ "${#items[@]}" -eq 0 ]; then
+            echo "No cosmetic item with an export changed" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          include=$(printf '%s/export/**,' "${items[@]}")
+          git lfs install --local
+          git lfs pull --include="${include%,}"
+          { echo '## Asset size budget'; echo; } >> "$GITHUB_STEP_SUMMARY"
+          node tools/asset-export/asset-export.mjs check "${items[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+
   proto:
     needs: changes
     if: needs.changes.outputs.proto == 'true'
@@ -315,7 +358,7 @@ jobs:
   ci-complete:
     name: CI complete
     if: always()
-    needs: [changes, lint, secret-scan, pr-meta, server, image, backup-drill, admin, client, proto]
+    needs: [changes, lint, secret-scan, pr-meta, server, image, backup-drill, admin, client, assets, proto]
     runs-on: ubuntu-latest
     steps:
       - env:
