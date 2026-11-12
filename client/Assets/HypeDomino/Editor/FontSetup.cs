@@ -21,7 +21,7 @@ namespace HypeDomino.Editor
         const string TypeSetPath = ResourcesFolder + "/" + TypeSet.ResourceName + ".asset";
         const string EssentialsPackage = "TMP Essential Resources.unitypackage";
         const string MobileDistanceField = "TextMeshPro/Mobile/Distance Field";
-        const string StockFontName = "LiberationSans";
+        static readonly string[] LeftOutEssentials = { "LiberationSans", "EmojiOne" };
         const string TextMeshProFolder = "Assets/TextMesh Pro";
 
         [Serializable]
@@ -138,10 +138,27 @@ namespace HypeDomino.Editor
             if (package == null) throw new InvalidOperationException("TextMeshPro is not part of a package");
             var found = Directory.GetFiles(package.resolvedPath, EssentialsPackage, SearchOption.AllDirectories);
             if (found.Length == 0) throw new FileNotFoundException($"{EssentialsPackage} not found under {package.resolvedPath}");
-            AssetDatabase.ImportPackage(found[0], false);
+            var written = UnityPackageFiles.Extract(found[0], IsKeptEssential);
+            RemoveEmptyFolders(TextMeshProFolder);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            if (Shader.Find(MobileDistanceField) == null) throw new InvalidOperationException($"{MobileDistanceField} is missing after importing {found[0]}");
-            Debug.Log($"Imported {found[0]}");
+            if (Shader.Find(MobileDistanceField) == null) throw new InvalidOperationException($"{MobileDistanceField} is missing after extracting {found[0]}");
+            Debug.Log($"Extracted {written} entries of {found[0]}");
+        }
+
+        static bool IsKeptEssential(string path)
+        {
+            if (path != TextMeshProFolder && !path.StartsWith(TextMeshProFolder + "/", StringComparison.Ordinal)) return false;
+            foreach (var name in LeftOutEssentials)
+                if (path.Contains(name)) return false;
+            return true;
+        }
+
+        static void RemoveEmptyFolders(string folder)
+        {
+            foreach (var child in Directory.GetDirectories(folder)) RemoveEmptyFolders(child);
+            if (Directory.GetFileSystemEntries(folder).Length > 0) return;
+            Directory.Delete(folder);
+            File.Delete(folder + ".meta");
         }
 
         static Family FamilyOf(Manifest manifest, string token)
@@ -238,10 +255,9 @@ namespace HypeDomino.Editor
             var serialized = new SerializedObject(settings);
             serialized.FindProperty("m_defaultFontAsset").objectReferenceValue = font;
             serialized.FindProperty("m_fallbackFontAssets").ClearArray();
+            serialized.FindProperty("m_defaultSpriteAsset").objectReferenceValue = null;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(settings);
-            foreach (var guid in AssetDatabase.FindAssets(StockFontName, new[] { TextMeshProFolder }))
-                AssetDatabase.DeleteAsset(AssetDatabase.GUIDToAssetPath(guid));
         }
     }
 }
