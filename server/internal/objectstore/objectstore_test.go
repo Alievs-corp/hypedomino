@@ -123,6 +123,20 @@ func TestAFilePutThroughASignedURLReadsBackFromARealStore(t *testing.T) {
 		t.Fatalf("after delete %v", err)
 	}
 
+	const cached = "addressables/Android/tiles_0123456789abcdef0123456789abcdef.bundle"
+	cachedObject := objectstore.Object{ContentType: "application/octet-stream", CacheControl: "public, max-age=31536000, immutable", Body: []byte("bundle")}
+	if err := store.PutObject(ctx, cached, cachedObject, now); err != nil {
+		t.Fatal(err)
+	}
+	served, err := http.Get(store.SignedGet(cached, now))
+	if err != nil {
+		t.Fatal(err)
+	}
+	served.Body.Close()
+	if got := served.Header.Get("Cache-Control"); got != cachedObject.CacheControl {
+		t.Fatalf("cache control %q", got)
+	}
+
 	otherObject := strings.Replace(store.SignedPut(key, now), "first%20upload", "other", 1)
 	if status, detail := send(t, otherObject, []byte("forged")); status != http.StatusForbidden {
 		t.Fatalf("a url signed for one object wrote another: %d %s", status, detail)

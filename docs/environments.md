@@ -217,6 +217,11 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `ANDROID_KEYALIAS_NAME` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-alias>` | Yes | Repository secret |
 | `ANDROID_KEYALIAS_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-password>` | Yes | Repository secret |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Yes, for a `client-v*` tag | `Release build` workflow, Play internal testing upload | `<play-publisher-service-account-json>` | Yes | Repository secret |
+| `CONTENT_STORE_URL` | No: without it a tag build skips the CDN upload | `Release build` workflow, `content-publish` | `https://<object-store-host>/hypedomino-content-<environment>` | No | Repository variable |
+| `CONTENT_STORE_REGION` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<store-region>` | No | Repository variable |
+| `CONTENT_ENVIRONMENT` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `staging` | No | Repository variable |
+| `CONTENT_STORE_ACCESS_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-access-key>` | Yes | Repository secret |
+| `CONTENT_STORE_SECRET_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-secret-key>` | Yes | Repository secret |
 
 ### 2.4 Not read yet
 
