@@ -97,6 +97,37 @@ namespace HypeDomino.UI.Tokens
         public const int Hint = 46;
     }
 
+    public enum TokenFontFamily
+    {
+        Numeral,
+        Display,
+        Hint,
+        Ui,
+        UiCyrillic,
+    }
+
+    public enum TokenTextStyle
+    {
+        Caption,
+        Body,
+        Label,
+        Counter,
+        Title,
+        Heading,
+        Display,
+        Score,
+        Name,
+        Hint,
+    }
+
+    public static class TokenTypography
+    {
+        public static readonly TokenFontFamily[] FamilyOfStyle = { TokenFontFamily.Ui, TokenFontFamily.Ui, TokenFontFamily.Ui, TokenFontFamily.Numeral, TokenFontFamily.Display, TokenFontFamily.Display, TokenFontFamily.Display, TokenFontFamily.Numeral, TokenFontFamily.Display, TokenFontFamily.Hint };
+        public static readonly int[] WeightOfStyle = { 400, 400, 300, 900, 700, 900, 900, 900, 900, 700 };
+        public static readonly int[] SizeOfStyle = { 30, 38, 44, 56, 54, 68, 86, 108, 38, 46 };
+        public static readonly float[] LineHeightOfStyle = { 1.3f, 1.35f, 1.2f, 1f, 1.15f, 1.1f, 1.05f, 1f, 1f, 1.2f };
+    }
+
     public static class TokenDurationMs
     {
         public const int Instant = 0;

@@ -5,10 +5,12 @@
         "HypeDomino.Bench",
         "HypeDomino.Content",
         "HypeDomino.Core",
+        "HypeDomino.UI",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.TextMeshPro",
         "Unity.ResourceManager"
     ],
     "includePlatforms": [

@@ -457,6 +457,20 @@ function scoreCascadeMembers(tokens) {
   ];
 }
 
+function csharpEnum(name, keys) {
+  return [`    public enum ${name}`, "    {", ...keys.map((key) => `        ${pascal(key)},`), "    }"].join("\n");
+}
+
+function typographyMembers(typography) {
+  const styles = Object.entries(typography.scale);
+  return [
+    `public static readonly TokenFontFamily[] FamilyOfStyle = { ${styles.map(([, style]) => `TokenFontFamily.${pascal(style.family)}`).join(", ")} };`,
+    intArray("WeightOfStyle", styles.map(([name, style]) => intLiteral(["typography", "scale", name, "weight"], style.weight))),
+    intArray("SizeOfStyle", styles.map(([name, style]) => intLiteral(["typography", "scale", name, "size"], style.size))),
+    floatArray("LineHeightOfStyle", styles.map(([, style]) => style.lineHeight)),
+  ];
+}
+
 export function csharpTokens(tokens) {
   const { motion } = tokens;
   const classes = [
@@ -466,6 +480,9 @@ export function csharpTokens(tokens) {
     csharpClass("TokenRadius", constants(tokens.radius, "int", intLiteral)),
     csharpClass("TokenSize", constants(tokens.size, "int", intLiteral)),
     csharpClass("TokenTextSize", Object.entries(tokens.typography.scale).map(([name, style]) => `public const int ${pascal(name)} = ${intLiteral(["typography", "scale", name, "size"], style.size)};`)),
+    csharpEnum("TokenFontFamily", Object.keys(tokens.typography.family)),
+    csharpEnum("TokenTextStyle", Object.keys(tokens.typography.scale)),
+    csharpClass("TokenTypography", typographyMembers(tokens.typography)),
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
     csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`]),

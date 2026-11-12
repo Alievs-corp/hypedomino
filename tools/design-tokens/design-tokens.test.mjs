@@ -53,6 +53,21 @@ test("C# text size tokens carry each type style's size", () => {
   assert.ok(source.includes("public const int Score = 108;"));
 });
 
+test("C# typography tokens give each text style its family, weight, size and line height", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public enum TokenFontFamily"));
+  assert.ok(source.includes("        UiCyrillic,"));
+  assert.ok(source.includes("public enum TokenTextStyle"));
+  const styles = Object.keys(tokens.typography.scale);
+  const score = styles.indexOf("score");
+  const families = source.match(/FamilyOfStyle = \{ ([^}]*) \}/)[1].split(", ");
+  const weights = source.match(/WeightOfStyle = \{ ([^}]*) \}/)[1].split(", ");
+  assert.equal(families.length, styles.length);
+  assert.equal(families[score], "TokenFontFamily.Numeral");
+  assert.equal(weights[score], "900");
+  assert.ok(source.includes("public static readonly float[] LineHeightOfStyle = { 1.3f, 1.35f,"));
+});
+
 test("a GPU pattern that is not a regular expression is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.graphics.deviceClass.lowGpuPatterns.push("^Mali-(G52"); }), "^Mali-(G52 is not a regular expression");
 });
