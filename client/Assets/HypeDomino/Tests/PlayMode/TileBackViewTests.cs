@@ -5,8 +5,6 @@ using HypeDomino.UI.Rarity;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 using UnityEngine.UI;
 
 namespace HypeDomino.Tests.PlayMode
@@ -177,7 +175,7 @@ namespace HypeDomino.Tests.PlayMode
             }
 
             Step();
-            Assert.That(Step, Is.Not.AllocatingGCMemory());
+            Assert.That(Step, Allocates.Nothing);
         }
     }
 }

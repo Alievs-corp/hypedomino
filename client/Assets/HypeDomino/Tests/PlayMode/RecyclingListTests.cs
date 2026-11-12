@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using HypeDomino.UI.Lists;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -144,7 +142,7 @@ namespace HypeDomino.Tests.PlayMode
             Assert.That(() =>
             {
                 for (var offset = 0f; offset < 60_000f; offset += 37f) ScrollTo(offset);
-            }, Is.Not.AllocatingGCMemory());
+            }, Allocates.Nothing);
         }
     }
 }

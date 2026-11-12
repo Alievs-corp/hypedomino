@@ -1,8 +1,6 @@
 using HypeDomino.UI.Match;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -66,7 +64,7 @@ namespace HypeDomino.Tests.EditMode
             };
             frame();
 
-            Assert.That(frame, Is.Not.AllocatingGCMemory());
+            Assert.That(frame, Allocates.Nothing);
         }
     }
 }
