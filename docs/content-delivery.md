@@ -75,8 +75,25 @@ Remote bundles are kept in Unity's AssetBundle cache under the app's data folder
 
 The limit and the 30 days were set by the owner on 2026-11-08. They protect the device's storage and are not design values, so they are constants in the client.
 
-## 8. Not here
+## 8. Bucket, upload and CDN
 
-- Uploading a built catalog and its bundles to the CDN and activating a version: #135.
+| Id | Rule |
+|---|---|
+| CD-27 | Each environment has its own bucket (`docs/environments.md` E-1), named `hypedomino-content-<environment>` with `<environment>` one of `dev`, `staging`, `production`. Its CDN host is the `content_base_url` of that environment. The key layout inside the bucket is section 2 without any prefix: `addressables/<platform>/catalog_<catalog_version>.bin` per version, and the content-hashed bundles beside it. |
+| CD-28 | A catalog version is one catalog file with its `.hash` and `.json` companions. Bundles are shared by every version that references them and are never overwritten, so a client on an older catalog keeps resolving every bundle it needs. A bundle is deleted only when no catalog version that a supported app version can load references it (`HD_MIN_APP_VERSION`). |
+| CD-29 | Cache-Control is set on upload. A content-hashed bundle (`<name>_<32 hex>.bundle`) gets `public, max-age=31536000, immutable`. Everything that is not content-addressed, the catalog and its companions, gets `public, max-age=300`, so a re-announced or rolled-back version is seen within minutes. A `.bundle` file without a content hash in its name is refused (CD-3). |
+| CD-30 | Compression: bundles and the catalog are already compressed by the build (LZ4 chunks, ASTC textures), so they are uploaded as they are with no `Content-Encoding`. The CDN compresses text types only (`.json`, `.hash`) with Brotli and falls back to Gzip. |
+| CD-31 | The CDN serves HTTP/2 and HTTP/3 with TLS 1.2 or newer, honours the `Cache-Control` of the origin without overriding it, caches by path ignoring the query string, and leaves `.bundle` and `.bin` unmodified (no image optimisation, no minify, no Brotli on binary types). A second request for a hashed bundle must be a CDN hit (`CF-Cache-Status: HIT` or the equivalent header of the provider); this is checked after every CDN change. |
+| CD-32 | The upload tool is `server/cmd/content-publish`. It uploads bundles first and the catalog last, so no catalog is visible before its bundles; it skips a hashed bundle that already exists; it refuses a catalog version that already exists (a version is never replaced, a fix is a new version); and it refuses an `-environment` that does not appear in the store URL, or a store URL that names another environment. It signs requests with `server/internal/objectstore`, the package the admin asset upload uses for signed URLs. |
+
+```
+content-publish -dir client/ServerData/Android -environment staging -platform Android -catalog-version <catalog_version> [-dry-run]
+```
+
+The tool reads `HD_CONTENT_STORE_URL`, `HD_CONTENT_STORE_REGION`, `HD_CONTENT_STORE_ACCESS_KEY` and `HD_CONTENT_STORE_SECRET_KEY`. The `Release build` workflow runs it for a `client-v*` tag after the build when the repository variable `CONTENT_STORE_URL` is set; without it the step only warns. The names the owner provides are in `docs/environments.md` 2.3.
+
+## 9. Not here
+
+- Activating an uploaded catalog version (`HD_CATALOG_VERSION`): `docs/launch-runbook.md` 5.4.
 - The iOS release build and its App Thinning Size Report: with the iOS pipeline.
 - The settings row that shows the cache size and the clear button: #157 (`ContentBoot.Cache`).

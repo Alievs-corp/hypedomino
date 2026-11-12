@@ -86,12 +86,25 @@ func (s *Store) Open(ctx context.Context, key string, now time.Time) (io.ReadClo
 	return nil, fmt.Errorf("%w: status %d", ErrUnavailable, response.StatusCode)
 }
 
+type Object struct {
+	ContentType  string
+	CacheControl string
+	Body         []byte
+}
+
 func (s *Store) Put(ctx context.Context, key, contentType string, body []byte, now time.Time) error {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPut, s.SignedPut(key, now), bytes.NewReader(body))
+	return s.PutObject(ctx, key, Object{ContentType: contentType, Body: body}, now)
+}
+
+func (s *Store) PutObject(ctx context.Context, key string, object Object, now time.Time) error {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, s.SignedPut(key, now), bytes.NewReader(object.Body))
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Content-Type", contentType)
+	request.Header.Set("Content-Type", object.ContentType)
+	if object.CacheControl != "" {
+		request.Header.Set("Cache-Control", object.CacheControl)
+	}
 	return s.send(request)
 }
 
