@@ -331,7 +331,7 @@ Release manager owns the list and records its evidence in the release issue; it 
 | ST-14 | Audience declarations from 6.3 | Release manager | Console screenshot |
 | ST-15 | Data safety and App Privacy from `docs/privacy.md` 10.1 and 10.2 | Product owner | `docs/privacy.md` L-24, L-25 |
 | ST-16 | Declarations of section 7; the in-game help view cannot browse outside our FAQ pages (AR-13) | Release manager, Client lead | Console screenshots, device test |
-| ST-17 | In-app products created with the ids of `docs/economy.md` 7 and matching the admin shop; Azerbaijan and Turkey country prices set per `docs/economy.md` 7.4; product names and descriptions localized in four languages | Live-ops lead | GN-22 evidence |
+| ST-17 | In-app products created with the ids of `docs/economy.md` 7 and matching the admin shop; country prices set from the CSV export of the published `store_prices` table per `docs/economy.md` 7.4, Azerbaijan and Turkey among them; product names and descriptions localized in four languages | Live-ops lead | GN-22 evidence |
 | ST-18 | Category and tags set (SF-16, SF-17) | Release manager | Console screenshot |
 | ST-19 | Countries: every store country except Russia, or the soft launch subset of #196 | Release manager | Console screenshot; `docs/privacy.md` 9.3 |
 | ST-20 | Review notes entered (DC-3); `CasualBotFillSeconds` above 0 in the production config | Release manager, Live-ops lead | Notes text, config version |

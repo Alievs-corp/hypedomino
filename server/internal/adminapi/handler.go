@@ -43,6 +43,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
@@ -180,6 +181,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/config/shop/history", h.allowed(rbac.ShopOffers, rbac.View, h.domainHistory(shop.Domain)))
 	h.mux.HandleFunc("POST /admin/config/shop/rollback", h.allowed(rbac.ShopOffers, rbac.Publish, h.rollbackShop))
 	h.mux.HandleFunc("POST /admin/config/shop/preview", h.allowed(rbac.ShopOffers, rbac.View, h.previewShop))
+	h.mux.HandleFunc("GET /admin/config/store-prices", h.allowed(rbac.StoreProducts, rbac.View, h.storePrices))
+	h.mux.HandleFunc("PUT /admin/config/store-prices", h.allowed(rbac.StoreProducts, rbac.Publish, h.publishDomain(storePricesDomain)))
+	h.mux.HandleFunc("GET /admin/config/store-prices/history", h.allowed(rbac.StoreProducts, rbac.View, h.domainHistory(storeprice.Domain)))
+	h.mux.HandleFunc("POST /admin/config/store-prices/rollback", h.allowed(rbac.StoreProducts, rbac.Publish, h.rollbackDomain(storePricesDomain)))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
 	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, publisher) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
@@ -542,7 +547,7 @@ func classify(err error) (int, string) {
 	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
 		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
-		errors.Is(err, dailylogin.ErrInvalidCalendar),
+		errors.Is(err, dailylogin.ErrInvalidCalendar), errors.Is(err, storeprice.ErrInvalid),
 		errors.Is(err, medal.ErrInvalidCatalog), errors.Is(err, errMedalRemoved),
 		errors.Is(err, pass.ErrInvalidConfig), errors.Is(err, errSeasonRemoved),
 		errors.Is(err, rating.ErrInvalidConfig), errors.Is(err, livecontrol.ErrInvalid), errors.Is(err, quickmessage.ErrInvalid), errors.Is(err, profile.ErrInvalidModeration), errors.Is(err, matchmaking.ErrInvalidConfig), errors.Is(err, penalties.ErrInvalidConfig),

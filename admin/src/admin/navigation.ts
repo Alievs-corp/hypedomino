@@ -9,6 +9,7 @@ export const screens: readonly Screen[] = [
   { href: "/assets", labelKey: "nav.assets", object: "assets" },
   { href: "/rewards", labelKey: "nav.rewards", object: "reward_bundles" },
   { href: "/shop", labelKey: "nav.shop", object: "shop_offers" },
+  { href: "/store-prices", labelKey: "nav.store_prices", object: "store_products" },
   { href: "/promo", labelKey: "nav.promo", object: "promo_codes" },
   { href: "/pass", labelKey: "nav.pass", object: "pass_seasons" },
   { href: "/missions", labelKey: "nav.missions", object: "missions" },
