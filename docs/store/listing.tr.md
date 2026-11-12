@@ -66,14 +66,14 @@ BİRLİKTE OYNAYIN
 Maç sırasında emojiler ve hazır mesajlarla tepki ver. Arkadaş ekle, kimlerin çevrimiçi olduğunu gör ve onları odana çağır.
 
 SEZONLAR VE İLERLEME
-Oynadıkça coin kazan. Günlük ve haftalık görevleri tamamla, sezon kartının ödüllerini aç ve madalya topla.
+Oynadıkça coin kazan. Günlük ve haftalık görevleri tamamla, Hype Pass ödüllerini aç ve madalya topla.
 
 BİLMEN GEREKENLER
 • İnternet bağlantısı gerekir.
 • Reklam yok.
 • Türkçe, İngilizce, Azerbaycan Türkçesi ve Rusça olarak oynanabilir.
 • Hesaplar 13 yaş ve üzeri oyuncular içindir.
-• İsteğe bağlı uygulama içi satın alımlar: kristal paketleri, premium sezon kartı ve teklifler. Coin'lerin ve kristallerin nakit değeri yoktur ve paraya çevrilemez.
+• İsteğe bağlı uygulama içi satın alımlar: kristal paketleri, premium Hype Pass ve teklifler. Coin'lerin ve kristallerin nakit değeri yoktur ve paraya çevrilemez.
 ```
 
 ## caption.S-1
@@ -115,7 +115,7 @@ Karakter ve masa topla
 ## caption.S-7
 
 ```text
-Sezon kartında ilerle
+Hype Pass'te ilerle
 ```
 
 ## caption.S-8

@@ -66,14 +66,14 @@ BİRLİKDƏ OYNA
 Matç zamanı emoji və hazır mesajlarla reaksiya ver. Dost əlavə et, kimin onlayn olduğunu gör və onları otağına dəvət et.
 
 MÖVSÜMLƏR VƏ İRƏLİLƏYİŞ
-Oynadıqca sikkə qazan. Gündəlik və həftəlik tapşırıqları yerinə yetir, mövsüm biletinin mükafatlarını aç və medallar topla.
+Oynadıqca sikkə qazan. Gündəlik və həftəlik tapşırıqları yerinə yetir, Hype Pass mükafatlarını aç və medallar topla.
 
 VACİB MƏLUMAT
 • İnternet bağlantısı tələb olunur.
 • Reklam yoxdur.
 • Oyun Azərbaycan, ingilis, türk və rus dillərindədir.
 • Hesablar 13 yaş və yuxarı oyunçular üçündür.
-• İxtiyari tətbiqdaxili alışlar: kristal paketləri, premium mövsüm bileti və təkliflər. Sikkələrin və kristalların pul dəyəri yoxdur və nağdlaşdırıla bilməz.
+• İxtiyari tətbiqdaxili alışlar: kristal paketləri, premium Hype Pass və təkliflər. Sikkələrin və kristalların pul dəyəri yoxdur və nağdlaşdırıla bilməz.
 ```
 
 ## caption.S-1
@@ -115,7 +115,7 @@ Personaj və masalar topla
 ## caption.S-7
 
 ```text
-Mövsüm biletində irəlilə
+Hype Pass-da irəlilə
 ```
 
 ## caption.S-8

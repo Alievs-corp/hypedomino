@@ -66,14 +66,14 @@ PLAY TOGETHER
 React with emoji and quick messages during the match. Add friends, see who is online and invite them to your room.
 
 SEASONS AND PROGRESS
-Earn coins by playing. Complete daily and weekly missions, unlock the rewards of the season pass and collect medals.
+Earn coins by playing. Complete daily and weekly missions, unlock the rewards of the Hype Pass and collect medals.
 
 GOOD TO KNOW
 • An internet connection is required.
 • No ads.
 • Available in English, Azerbaijani, Turkish and Russian.
 • Accounts are for players aged 13 and older.
-• Optional in-app purchases: crystal packs, the premium season pass and offers. Coins and crystals have no cash value and cannot be withdrawn.
+• Optional in-app purchases: crystal packs, the premium Hype Pass and offers. Coins and crystals have no cash value and cannot be withdrawn.
 ```
 
 ## caption.S-1
@@ -115,7 +115,7 @@ Collect characters and tables
 ## caption.S-7
 
 ```text
-Climb the season pass
+Climb the Hype Pass
 ```
 
 ## caption.S-8
