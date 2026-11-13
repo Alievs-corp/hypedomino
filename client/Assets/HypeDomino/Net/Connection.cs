@@ -61,6 +61,14 @@ namespace HypeDomino.Net
             Enter(ConnectionState.Stopped);
         }
 
+        public bool Rejoin()
+        {
+            if (State != ConnectionState.Online) return false;
+            CloseTransport();
+            Dial();
+            return true;
+        }
+
         public ulong Send(Envelope.PayloadOneofCase intent, IMessage message)
         {
             var sequence = Session.Send(intent, message);

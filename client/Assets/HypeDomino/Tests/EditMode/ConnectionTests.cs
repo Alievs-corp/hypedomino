@@ -331,6 +331,36 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(NetworkNotice.None, ConnectionNotices.Network(connection, now));
         }
 
+        [Test]
+        public void RejoinDropsTheSocketAndResumesAtOnce()
+        {
+            GoOnline();
+            Socket.Deliver(PlayingView(5));
+            connection.Tick();
+
+            Assert.IsTrue(connection.Rejoin());
+
+            Assert.AreEqual(2, sockets.Count);
+            Assert.IsTrue(sockets[0].Disposed);
+            Assert.AreEqual(ConnectionState.Connecting, connection.State);
+            Assert.AreEqual(NetworkNotice.Reconnecting, ConnectionNotices.Network(connection, now));
+            Assert.AreEqual(5UL, Envelope.Parser.ParseFrom(Socket.Sent[0]).ClientHello.LastAckedSequence);
+
+            Socket.Deliver(AcceptedHello(5));
+            connection.Tick();
+            Assert.AreEqual(ConnectionState.Online, connection.State);
+        }
+
+        [Test]
+        public void RejoinWorksOnlyWhileOnline()
+        {
+            connection.Start(ServerUri);
+
+            Assert.IsFalse(connection.Rejoin());
+            Assert.AreEqual(1, sockets.Count);
+            Assert.AreEqual(ConnectionState.Connecting, connection.State);
+        }
+
         [TestCase(0.25, NetworkNotice.None)]
         [TestCase(0.35, NetworkNotice.Weak)]
         public void ASlowRoundTripIsWeak(double ackAfterSeconds, NetworkNotice expected)

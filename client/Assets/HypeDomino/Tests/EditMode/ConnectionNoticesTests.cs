@@ -70,6 +70,35 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(ConnectionNotices.OneTimeoutFromBot(Snapshot(view)));
         }
 
+        [TestCase(Controller.Bot, MatchState.Playing, true)]
+        [TestCase(Controller.Bot, MatchState.Opening, true)]
+        [TestCase(Controller.Player, MatchState.Playing, false)]
+        [TestCase(Controller.Bot, MatchState.Finished, false)]
+        public void TheOwnSeatPlayedByTheBotCanBeTakenBackUntilTheMatchEnds(Controller controller, MatchState state, bool offered)
+        {
+            var view = TwoSeats(new SeatView { Controller = controller, ConsecutiveTimeouts = 3 }, new SeatView { Controller = Controller.Player });
+            view.State = state;
+
+            Assert.AreEqual(offered, ConnectionNotices.CanTakeBack(Snapshot(view)));
+        }
+
+        [Test]
+        public void AnotherSeatPlayedByTheBotIsNotOffered()
+        {
+            var view = TwoSeats(new SeatView { Controller = Controller.Player }, new SeatView { Controller = Controller.Bot, Disconnected = true });
+
+            Assert.IsFalse(ConnectionNotices.CanTakeBack(Snapshot(view)));
+        }
+
+        [Test]
+        public void AViewerWithoutASeatIsNotOffered()
+        {
+            var view = TwoSeats(new SeatView { Controller = Controller.Bot }, new SeatView { Controller = Controller.Bot });
+            view.Seat = Seat.Unspecified;
+
+            Assert.IsFalse(ConnectionNotices.CanTakeBack(Snapshot(view)));
+        }
+
         [Test]
         public void OnlyTheOwnSeatCountsForTheWarning()
         {

@@ -52,6 +52,16 @@ namespace HypeDomino.Net
             return false;
         }
 
+        public static bool CanTakeBack(MatchSnapshot view)
+        {
+            if (view.State == MatchState.Finished) return false;
+            foreach (var seat in view.Seats)
+            {
+                if (seat.Seat == view.Seat) return Seat(view, seat) == SeatNotice.BotPlaying;
+            }
+            return false;
+        }
+
         static bool IsWeak(RoundTrip roundTrip, double nowSeconds) =>
             (roundTrip.HasSample && roundTrip.SmoothedMs > WeakRoundTripMs) ||
             (roundTrip.HasPending && nowSeconds - roundTrip.OldestPendingSentSeconds > WeakUnackedSeconds);
