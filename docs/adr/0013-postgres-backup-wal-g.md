@@ -16,7 +16,7 @@ Constraints:
 - Continuous WAL archiving plus a daily base backup, using WAL-G (`archive_command = 'wal-g wal-push %p'`, `restore_command = 'wal-g wal-fetch %f %p'`), stored in an S3-compatible bucket reserved for backups.
 - WAL-G encrypts client-side with libsodium; the key lives outside the backup bucket and outside the cluster the database runs in.
 - Point-in-time recovery uses PostgreSQL's native `recovery_target_time`; WAL-G only moves files.
-- The release binary is pinned by version and SHA-256 in `tools/backup-drill/Dockerfile`; the same image runs the CronJobs in `deploy/k8s/backup` and the CI restore drill, so what is rehearsed is what runs.
+- The release binary is pinned by version and SHA-256 in `tools/backup-drill/Dockerfile`; the same image runs PostgreSQL itself (`deploy/k8s/postgres`), the CronJobs in `deploy/k8s/backup` and the CI restore drill, so what is rehearsed is what runs. It is published as `ghcr.io/alievs-corp/hypedomino-postgres-walg` (`docs/backup-restore.md` 3.6).
 
 ## Alternatives considered and why rejected
 - pgBackRest: equally mature and has parallel restore and a repo host, but its S3 support is repository-centric and its operation model (stanzas, `pgbackrest.conf` on every host, optional SSH repo host) is heavier than a small team needs. Reconsidered if the database moves to multiple replicas with a dedicated backup host.

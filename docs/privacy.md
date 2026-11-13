@@ -522,7 +522,7 @@ Every item must be checked, or waived by an owner comment on #187, before releas
 | L-16 | Export as 8.3, including sanctions and signal categories (OQ-9) | Eng | #63 | Open |
 | L-17 | Sign in with Apple token revocation on deletion | Eng | #57, #63 | Open |
 | L-18 | Deletion propagated to the analytics store and Sentry | Eng | #181, #182 | Open |
-| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188 | Open |
+| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188, #601 | Open |
 | L-20 | Breach response in the runbook: assess, notify the authority within 72 hours (GDPR, KVKK), inform players where required | Owner | #197 | Open |
 | L-21 | Rights request handling in support tools with a 30-day clock | Eng | #144 | Open |
 | L-22 | PII access limited to support and super admin roles; analyst sees pseudonymous data only | Eng | #134, #148 | Open |
