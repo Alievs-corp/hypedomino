@@ -15,6 +15,7 @@ namespace HypeDomino.Game
         {
             Flow = new AppFlow();
             Flow.Changed += OnChanged;
+            new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
         public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog)
