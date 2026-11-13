@@ -303,7 +303,7 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	view.Board = room.BoardView{Line: board.Line(), Top: board.Top(), Bottom: board.Bottom(), OpenEnds: board.OpenEnds()}
+	view.Board = room.BoardView{Line: board.Line(), Opening: board.OpeningIndex(), Top: board.Top(), Bottom: board.Bottom(), OpenEnds: board.OpenEnds()}
 	view.Board.Spinner, view.Board.HasSpinner = board.Spinner()
 	got := ViewMessage(view, true, true)
 	want := &pb.Envelope{}
