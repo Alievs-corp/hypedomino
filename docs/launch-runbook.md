@@ -4,7 +4,7 @@ How a release goes from candidate to players, and what happens when it goes wron
 
 Scope boundaries: `docs/roadmap.md` section 4 is the release gate and is not restated here; this document adds the operational evidence needed to pass it. Budgets are in `docs/performance.md`. Kill switches, the build allowlist and ban responses are in `docs/anti-cheat.md` and #210. Architecture is ADR 0002 to 0006.
 
-Infrastructure does not exist yet. Procedures are written against the planned architecture; every concrete command, URL and tool name is marked `{filled by #N}` and is added by that issue. Numbers marked *default* are starting values: operational ones change by PR to this file, game ones are admin config (ADR 0006). Roles, never names; one person may hold several roles, except where a section forbids it.
+The repository holds the tooling; the hosted environments do not exist yet. In the repository: the server image and the `deploy/k8s` base manifests with the drain-aware rolling deploy and rollback measured by the `image` CI job (ADR 0010, #25), the backup manifests and the local restore drill of the `backup-drill` CI job (#188), the Android `Release build` workflow (#27), the content upload tool `content-publish` (#26), structured logs and Prometheus metrics (#28) and the admin support tools (#144). Not yet: the staging and production clusters, their overlays and OpenTofu code, the content bucket and CDN, dashboards, alerting, pager, status page, crash reporting, the iOS pipeline and the store accounts. A step that needs one of these names it as owner input `OI-<n>` (section 10); engineering work still missing is in section 11. Numbers marked *default* are starting values: operational ones change by PR to this file, game ones are admin config (ADR 0006). Roles, never names; one person may hold several roles, except where a section forbids it.
 
 ## 1. Roles
 
@@ -46,12 +46,12 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 
 | Id | Item | Owner | Evidence | Link |
 |---|---|---|---|---|
-| GN-8 | Production environment separate from staging (`docs/environments.md` E-1 to E-6); secrets only in the `production` environment secrets (section 3 there); secret scan green | Server lead | IaC apply log `{filled by #25}`, `secret-scan` job green in the `CI complete` run of the release commit | #24, `docs/environments.md` |
-| GN-9 | Server deploy drill on staging: matches in progress finish or move during a deploy; rollback measured under 5 minutes | Server lead | Drill record with timings | #25, #43 |
-| GN-10 | Catalog switch drill: previous Addressables catalog re-activated; an older client still loads with its catalog | Live-ops lead | Drill record | #26, ADR 0002 |
-| GN-11 | Release builds are produced and signed by the pipeline from the tag; version and build numbers recorded; symbols and mapping files uploaded | Client lead | Pipeline run, build numbers in the release issue | #27, #182 |
-| GN-12 | Dashboards live in production; alerts route to the on-call pager; one test alert reached the primary | Server lead | Screenshot of the test page and its acknowledgement | #28 |
-| GN-13 | Crash reporting shows release health per app version; a test crash from the release build is visible | Client lead | Dashboard link | #182 |
+| GN-8 | Production environment separate from staging (`docs/environments.md` E-1 to E-6); secrets only in the `production` environment secrets (section 3 there); secret scan green | Server lead | OpenTofu apply log of the production environment (ADR 0010), owner input OI-1; `secret-scan` job green in the `CI complete` run of the release commit | #24, `docs/environments.md` |
+| GN-9 | Server deploy drill on staging: matches in progress finish or move during a deploy; rollback measured under 5 minutes | Server lead | Drill record with timings; needs owner input OI-1. Until then the `image` CI job measures drain and rollback on kind (`tools/deploy/kind-rollout.sh`) without live matches | #25, #43 |
+| GN-10 | Catalog switch drill: previous Addressables catalog re-activated; an older client still loads with its catalog | Live-ops lead | Drill record on staging with timings: two catalog versions uploaded with `content-publish` (5.3), the newer one active, then the older one re-activated with the content step of 5.4; the `catalog_version` an older client build loads afterwards. Needs owner inputs OI-1 and OI-3 | #26, ADR 0002, `docs/content-delivery.md` 8 |
+| GN-11 | Release builds are produced and signed by the pipeline from the tag; version and build numbers recorded; symbols and mapping files uploaded | Client lead | Run of the `Release build` workflow (`.github/workflows/release-build.yml`) for the tag `client-v<major>.<minor>.<patch>`: version from the tag, build number is the run number, catalog version `<version>-<run number>` in the run summary, `android-release-<catalog version>` artifact with the AAB and the install size report, signed AAB on the Play internal testing track; build numbers copied into the release issue. Needs owner input OI-4. The iOS build and TestFlight upload (OI-5) and the symbol and mapping upload (OI-6) are not built yet | #27, #182, `client/README.md` Release build |
+| GN-12 | Dashboards live in production; alerts route to the on-call pager; one test alert reached the primary | Server lead | Screenshot of the test page and its acknowledgement; needs owner inputs OI-7, OI-8 and OI-9 | #28, #566 |
+| GN-13 | Crash reporting shows release health per app version; a test crash from the release build is visible | Client lead | Dashboard link; needs owner input OI-6 | #182 |
 | GN-14 | Funnel events (install, login, first match, purchase) visible on the launch dashboard | Analyst | Dashboard link | #181, #147, #196 |
 | GN-15 | Backup restore drill done; RTO and RPO recorded | Server lead | Drill record | #188 |
 | GN-16 | Rate limits and WebSocket abuse protection active in production | Server lead | Config dump and a test against staging | #184 |
@@ -59,13 +59,13 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-18 | Maintenance mode and an in-game banner shown on a device in all four launch languages | Live-ops lead | Screen recordings | #146, `docs/localization.md` |
 | GN-19 | Production config reviewed and published, including every value in `docs/anti-cheat.md` section 7; config rollback drill (publish the previous version) applies to new matches | Live-ops lead, Security lead | Config version id, audit log entries | #145, ADR 0006 |
 | GN-20 | Admin accounts least privilege; audit log on; hardening passed | Security lead | Account and role list, #148 report | #134, #148 |
-| GN-21 | Support tools work in production: player lookup, grant with reason, ban and mute; moderation and appeal queue staffed | Support lead | Audit log entries of test actions on a staff account | #144, #186 |
+| GN-21 | Support tools work in production: player lookup, grant with reason, ban and mute; moderation and appeal queue staffed | Support lead | Audit log entries of test actions on a staff account: lookup at `/players`, grant, coin adjustment, ban and mute from `/players/{id}`, the second approval at `/approvals` (`docs/admin.md` 6.1, 6.2, section 8) | #144, #186 |
 | GN-22 | Store products match admin shop config, and the country prices in both stores match the published `store_prices` table: the push plan of the Store prices page shows no `change`, `error` or `failed` row for either store, or, without store credentials, the consoles match the CSV export (`docs/economy.md` 7.4, `docs/admin.md` 5.6), Azerbaijan and Turkey at the `mid` tier; a licensed test purchase on the release build is granted once and restores | Live-ops lead | Ledger entry, restore record, store push plan | #106, #107, #139, #204, #581, #585 |
 | GN-23 | Store listings complete, age ratings and data safety forms submitted, release approved and held for manual release | Release manager | Console screenshots; pre-submission checklist ST-1 to ST-23 of `docs/store-listing.md` section 9 checked | #194, #187 |
 | GN-24 | Release candidate regression passed; smoke passed on every device tier | QA lead | Test run report per `docs/test-strategy.md` section 8 | #190, #191 |
 | GN-25 | On-call schedule published from T-1d to T+14d; contact sheet complete; escalation path tested end to end | Release manager | Schedule link, test page record | section 7 |
 | GN-26 | Support channel live; FAQ and templates published in all four languages | Support lead | Links, translation review | sections 8, 9 |
-| GN-27 | Status page live with incident and maintenance components | Support lead | Link `{filled by #28}` | section 8 |
+| GN-27 | Status page live with incident and maintenance components | Support lead | Link; owner input OI-11 | section 8 |
 | GN-28 | At least two people hold release, halt and pause rights in both store consoles | Release manager | Console user lists | section 5 |
 
 ## 4. Launch timeline
@@ -95,9 +95,10 @@ T-0 is the moment the release is made available in the stores. Server and config
 | Signal | Source | Threshold |
 |---|---|---|
 | Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level, `docs/closed-beta.md` BX-1) and not below the previous version |
-| Move round-trip p99 | #28 | Under 100 ms (`docs/performance.md`) |
-| Login success, matchmaking wait, error rate, database connections | #28 | Alert thresholds `{filled by #28}` |
-| Receipt validation success per store | #106, #28 | Alert thresholds `{filled by #28}` |
+| Move round-trip p99 | `move_roundtrip_seconds` on the server's `/metrics` (#28) | Under 100 ms (`docs/performance.md`) |
+| Error rate, database connections | `hd_http_responses_total{class}`, `hd_db_connections_*` and `hd_db_acquire_*` on `/metrics` (`server/README.md`, #28) | Alert thresholds: owner input OI-8 |
+| Login success, matchmaking wait | No metric exported yet (section 11) | Alert thresholds: owner input OI-8, once the metric exists |
+| Receipt validation success per store | No metric exported yet (section 11); #106 | Alert thresholds: owner input OI-8, once the metric exists |
 | Android vitals crash and ANR rates | Play Console | Below the console's bad behaviour thresholds |
 | Support tickets per symptom | Support tool | Section 9.3 escalation rule |
 
@@ -134,7 +135,9 @@ Advance a step only when, for the new version: crash-free sessions meet section 
 ### 5.3 Config and content publish
 
 - Admin config is published as a new version; matches started after the publish use it and every match records its version (ADR 0005, ADR 0006). Publishing is audited (#134).
-- Content goes live by activating a new Addressables catalog version (ADR 0002, #26).
+- Content goes live by activating a new Addressables catalog version (ADR 0002, #26), in two steps (`docs/content-delivery.md` 8):
+  1. Upload. The `Release build` workflow runs `content-publish` for a `client-v*` tag when the repository variable `CONTENT_STORE_URL` is set (owner input OI-3). By hand, from `server/` with the `HD_CONTENT_STORE_*` variables of the target environment set: `go run ./cmd/content-publish -dir ../client/ServerData/Android -environment <environment> -platform Android -catalog-version <catalog_version> -dry-run`, then the same without `-dry-run`. It uploads bundles before the catalog and refuses a version that already exists.
+  2. Activate. Set `HD_CATALOG_VERSION` to the uploaded version as in the content step of 5.4. Clients load it after their next `ServerHello` (`docs/content-delivery.md` CD-5).
 - During the config freeze (section 4) every publish is approved by the release manager and noted in the release issue.
 
 ### 5.4 Rollback
@@ -146,7 +149,7 @@ Mitigate first, find the root cause after. Pick the fastest step that stops the 
 | Server release | `kubectl rollout undo deployment/server`, or deploy the previous SHA through 5.1; same drain as 5.1 (ADR 0010) | Under 5 minutes, measured by the `image` CI job and drill GN-9 (#25) | Works because migrations are expand only during a release. Never roll back below the version a live client needs; fix forward instead |
 | Database data | Restore from point-in-time recovery | RTO and RPO from #188 | Only for corruption or loss, decided by the incident commander with the product owner. Ledger mistakes are corrected with ledger entries, never by restore or direct SQL (#101, #144) |
 | Config | Publish the previous config version in admin | Under 5 minutes | Applies to new matches; matches in progress finish on their recorded version |
-| Content | Re-activate the previous catalog version | Under 5 minutes | Old content URLs stay valid because files are immutable (ADR 0002) |
+| Content | Re-activate the previous catalog version: `kubectl patch secret server-env --type merge -p '{"stringData":{"HD_CATALOG_VERSION":"<previous catalog_version>"}}'`, then `kubectl rollout restart deployment/server` and `kubectl rollout status deployment/server`; the same value goes into the environment's secret source (`docs/environments.md` section 3) so the next deploy keeps it | Under 5 minutes, measured by drill GN-10 | Old content URLs stay valid because files are immutable (ADR 0002). The restart drains like 5.1; a client on a draining pod gets the version on its next connection (`docs/content-delivery.md` CD-8) |
 | Client feature | Turn off its feature flag or kill switch (5.5) | Under 5 minutes (#210) | First choice for any client-side defect |
 | Client build | Halt the Play rollout and pause the App Store phased release | Immediate in the consoles | Players who already updated keep the version |
 | Client build, no flag helps | Ship a hotfix with a higher version and build number, request expedited App Store review; then raise the minimum version once the fix is available in both stores | Hours to days, store dependent | Raising the minimum version before a fixed build exists locks those players out |
@@ -205,7 +208,7 @@ In SEV1 the incident commander, comms lead and scribe are three different people
 ### 6.4 Flow
 
 1. Detect: alert (#28), crash spike (#182), ticket pattern (9.3), store reviews, internal report.
-2. Declare: anyone may declare. Open the incident channel `{filled by #28}` and set the severity.
+2. Declare: anyone may declare. Open the incident channel (owner input OI-10) and set the severity.
 3. Assign roles (6.3).
 4. Mitigate with section 5.4 and 5.5 before the root cause is known.
 5. Communicate on the cadence in 6.2 (section 8).
@@ -224,16 +227,16 @@ In SEV1 the incident commander, comms lead and scribe are three different people
 | Item | Rule |
 |---|---|
 | Rotation | Weekly, a primary and a secondary, handoff on a fixed weekday with a written note of open issues |
-| Coverage | Production server, data, admin config and release consoles. The primary carries the pager `{filled by #28}` |
+| Coverage | Production server, data, admin config and release consoles. The primary carries the pager (owner input OI-9) |
 | Launch window | T-1d to T+72h: primary and secondary both on shift, release manager reachable, shifts no longer than 12 hours (*default*) |
 | Acknowledge | Within the section 6.2 target; no acknowledgement in 10 minutes (*default*) pages the secondary |
 | Escalation | Primary, then secondary, then the server or client lead for the area, then the product owner. The product owner is told of every SEV1. The security lead joins every security or economy incident |
 | Access | Every person on the rotation has production read access, admin roles for 5.5 and the runbook; store console rights per GN-28 |
-| Contact sheet | Pager, phone and backup channel for every role, kept outside the systems it is needed to repair `{filled by #28}` |
+| Contact sheet | Pager, phone and backup channel for every role, kept outside the systems it is needed to repair (owner input OI-12) |
 
 ## 8. Communication
 
-Channels: status page `{filled by #28}`, in-game banner and maintenance screen (#146), store review replies, push only for SEV1 lasting more than an hour (*default*, #132). English is the source; every template is published in all four launch languages (`docs/localization.md`) before T-3d. Times are given in UTC.
+Channels: status page (owner input OI-11), in-game banner and maintenance screen (#146), store review replies, push only for SEV1 lasting more than an hour (*default*, #132). English is the source; every template is published in all four launch languages (`docs/localization.md`) before T-3d. Times are given in UTC.
 
 Rules: state what players see and what to do, not internal causes. No blame on vendors or stores. No time we cannot hold: give the next update time instead. No compensation before the product owner decides. No detection detail.
 
@@ -275,7 +278,7 @@ Rules: state what players see and what to do, not internal causes. No blame on v
 | Channel | Use |
 |---|---|
 | In-game support form (Settings > Support) | Primary channel. Attaches player id, app version, build, platform, OS, device model, language and last match id automatically; nothing more personal than #187 allows |
-| Support email `{filled by #144}` | Players who cannot open the game |
+| Support email (owner input OI-13) | Players who cannot open the game |
 | Store review replies | Public answers with section 8.3; move the case to the form |
 
 All actions on accounts go through admin tools with a reason in the audit log (#144). Refunds are handled by the stores; revoked purchases are reversed through the ledger (#204).
@@ -314,8 +317,28 @@ Hosting (decided 2026-10-28): the FAQ is one set of web pages, and the game show
 | Privacy and data | Data use, analytics opt-out, account deletion | #187, #63 |
 | Languages | Changing the language | `docs/localization.md` |
 
-## 10. Open items
+## 10. Owner inputs before launch
 
-- Every `{filled by #N}` placeholder: the IaC apply log (#25), catalog activation (#26), build and upload pipeline (#27), dashboards, alerting, pager, incident channel, status page and contact sheet (#28), support email and tooling (#144).
+Accounts, addresses, vendors and decisions only the owner can provide. A step above that needs one names it as `owner input OI-<n>`. Credentials are stored as `docs/environments.md` section 3 says, never in this file or an issue; this table names them only.
+
+| Id | Input | Owner role | Issue | Unblocks |
+|---|---|---|---|---|
+| OI-1 | Hetzner Cloud project and API token per environment (`staging`, `production`) and the game domain; then the OpenTofu code, the `staging` and `production` overlays of `deploy/k8s`, ingress and TLS are written against them (ADR 0010) | Server lead, Product owner | #25, #24 | GN-8, GN-9, GN-10, GN-15 to GN-21 on staging and production, the staging step-up check of #144 |
+| OI-2 | GitHub environments `staging` and `production` with protection rules and their secrets (`docs/environments.md` section 3, section 7) | Server lead | #24, #25 | Every deploy of section 5.1, secret rotation |
+| OI-3 | Content bucket `hypedomino-content-<environment>`, CDN and DNS per environment (`docs/content-delivery.md` CD-27, CD-31); repository variables `CONTENT_STORE_URL`, `CONTENT_STORE_REGION`, `CONTENT_ENVIRONMENT`; secrets `CONTENT_STORE_ACCESS_KEY`, `CONTENT_STORE_SECRET_KEY`; server `HD_CONTENT_BASE_URL` per environment | Server lead | #26 | 5.3, the content step of 5.4, GN-10 |
+| OI-4 | Play Console app created by hand; repository variable `ANDROID_APPLICATION_ID`; secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASS`, `ANDROID_KEYALIAS_NAME`, `ANDROID_KEYALIAS_PASS`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` (`docs/environments.md` 2.3). The tag path has not run with real secrets yet | Client lead, Release manager | #27 | GN-11 (Android), GN-22, GN-23 |
+| OI-5 | Apple developer account: distribution certificate, provisioning profile, App Store Connect API key and a macOS runner for the iOS build and TestFlight upload | Client lead, Release manager | #27 | GN-11 (iOS), GN-22, GN-23 |
+| OI-6 | Crash reporting account (EU region), its DSN and a CI token for symbol and mapping upload | Client lead | #182, #566 | GN-11 (symbols), GN-13, section 4.1 crash-free sessions |
+| OI-7 | Prometheus scrape of the server debug listener (`HD_DEBUG_ADDR`, private only) and Grafana dashboards in production | Server lead | #28, #566 | GN-12, section 4.1 |
+| OI-8 | Alert thresholds for error rate and database connections, then for login success, matchmaking wait and receipt validation once those metrics exist (section 11) | Server lead, Product owner | #28, #566 | Section 4.1, GN-12 |
+| OI-9 | Pager service and alert routing to it, economy alerts (`docs/economy.md` 10) and the backup alerts (`docs/backup-restore.md` 3.3) included; one test alert to the primary | Server lead | #28, #110, #566 | GN-12, GN-25, section 7 |
+| OI-10 | Incident channel and launch war room channel | Release manager | #28 | Section 6.4, section 4 T-1d |
+| OI-11 | Status page with incident and maintenance components, and its URL | Support lead | #28 | GN-27, section 8, store review replies (8.3) |
+| OI-12 | Contact sheet location, outside the systems it is needed to repair | Release manager | #28 | GN-25, section 7 |
+| OI-13 | Support email address and a monitored inbox | Support lead | #144 | Section 9.1, `docs/store-listing.md` SF-10 and ST-8, `docs/closed-beta.md` FB-3 |
+
+## 11. Open items
+
+- Not built yet, no owner input needed: the workflow that builds the server image once and pushes `ghcr.io/alievs-corp/hypedomino-server:<sha>` (ADR 0010, #25, #27); the migration `Job` manifest that runs before the rollout (ADR 0010, `docs/environments.md` M-5; #55 closed without it, so #25); `HD_DEBUG_ADDR` in the server manifests for the scrape of OI-7; metrics for login success, matchmaking wait and receipt validation per store (section 4.1; #28 is closed, so they need a new issue); the bundle garbage collector of `docs/content-delivery.md` CD-28 (#26).
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.
