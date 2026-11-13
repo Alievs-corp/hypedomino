@@ -104,6 +104,7 @@ message BoardView {
   repeated OrientedTile top = 3;
   repeated OrientedTile bottom = 4;
   repeated OpenEnd open_ends = 5;
+  uint32 opening_index = 6;
 }
 
 message SeatView {

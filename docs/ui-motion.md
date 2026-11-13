@@ -247,7 +247,7 @@ The hand offers only what the server allows. The client never works out a legal 
 The chain is laid out from the board the server sends (`BoardView`: the line, the spinner, its top and bottom arms) and fitted to the board area. The layout decides only where tiles are drawn; which ends are open and what they count is the server's.
 
 - Length unit: the short side of a tile. A tile is 2 by 1; a double is 1 along its arm and 2 across it (R-19). The spinner lies across the line.
-- The anchor sits at the center: the spinner when there is one (R-17), otherwise the opening tile. Line tiles right of the anchor grow east, those left of it grow west, the top arm north and the bottom arm south (R-18). Each tile shows its touching half nearest the tile it is attached to.
+- The anchor sits at the center: the spinner when there is one (R-17), otherwise the opening tile. The client finds the spinner in the line and reads the opening tile's place from `opening_index` (`proto/README.md`), so the chain keeps its anchor across a reconnect. `Game/Match/BoardChain` feeds the layout from the latest `MatchView`. Line tiles right of the anchor grow east, those left of it grow west, the top arm north and the bottom arm south (R-18). Each tile shows its touching half nearest the tile it is attached to.
 - Folding: every arm runs straight inside a fold box with the board area's aspect. When an arm's next tile that is not a double would cross the box, that tile turns the arm right (east to south, south to west, west to north, north to east). The turning tile lies along the new heading, beside the end it touches. A double never turns an arm.
 - Fit: the layout tries fold boxes from one no arm reaches down to a half width of 1, in steps of 1, and drops any where two tiles overlap. The scale of a layout is the largest that fits its bounds in the board area, capped by the largest tile size. It keeps the layout with the highest scale; on a tie, the one with the larger box, so a chain folds only when that makes its tiles larger. The camera centers on the bounds.
 - A board of every tile of the set fits on every board shape without overlap (`ChainLayoutTests`).
@@ -519,4 +519,4 @@ The results screen opens on the first `MatchView` whose `state` is `MATCH_STATE_
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
 - The long-press hold time that opens the seat menu (section 7, Seat mute), and the quick message panel with its key list and team choice (section 7, Quick message), are not decided; they belong to the match HUD.
 - Sound per step is not part of this spec.
-- The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
+- The largest tile size on the board (the board layout's scale cap) is not decided; the board area is the match layout's board region.
