@@ -257,6 +257,35 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(string.Empty, bare.Text("nope"));
         }
 
+        [Test]
+        public void TheShippedBuiltinBundleLoadsWithoutErrors()
+        {
+            var strings = BuiltinStrings.Load();
+            LogAssert.NoUnexpectedReceived();
+            Assert.AreEqual("Coin", strings.Value("currency.coin.name", "en"));
+            Assert.AreEqual("Кристалл", strings.Value("currency.crystal.name", "ru"));
+        }
+
+        [Test]
+        public void GameStringsOverTheShippedBundleFollowTheChosenLanguage()
+        {
+            var choice = Choice("az");
+            var strings = new GameStrings(BuiltinStrings.Load(), choice, false);
+            Assert.AreEqual("Sikkə", strings.Text("currency.coin.name"));
+            choice.Choose("ru");
+            Assert.AreEqual("Монета", strings.Text("currency.coin.name"));
+        }
+
+        [Test]
+        public void ABuiltinLookupAllocatesNothing()
+        {
+            var strings = BuiltinStrings.Load();
+            TestDelegate lookup = () => strings.Value("currency.coin.name", "az");
+            lookup();
+
+            Assert.That(lookup, Allocates.Nothing);
+        }
+
         static LanguageChoice Choice(string language) => LanguageChoice.Load(language, () => NoLocales);
 
         static GameStrings Strings(string language) => Strings(Choice(language));

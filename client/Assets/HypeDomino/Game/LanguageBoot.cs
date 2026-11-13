@@ -12,6 +12,8 @@ namespace HypeDomino.Game
 
         public static LanguageChoice Choice { get; private set; }
 
+        public static GameStrings Strings { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
@@ -20,6 +22,7 @@ namespace HypeDomino.Game
             Choice.Changed += Save;
             if (Choice.Language != saved) Save();
             else Log();
+            Strings = new GameStrings(BuiltinStrings.Load(), Choice, Debug.isDebugBuild);
         }
 
         static void Save()

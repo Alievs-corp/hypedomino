@@ -98,14 +98,14 @@ The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` Edi
 
 `UI/Shop` turns server replies into what the shop shows, without computing anything (`docs/economy.md` 3.4, 6.1). `WalletReply`, `ShopReply` and `PurchaseReply` read `GET /wallet`, `GET /shop` and `POST /shop/buy` with `JsonUtility`. `Balances` keeps coins and crystals apart and takes the new balance of a purchase's `currency` from the reply. `ChestCard` copies a `chest` offer's pool, owned items, odds (`[{"rarity","percent"}]`), opens left to the pity, price and refusal reason as sent. `ChestReveal` holds only the granted item, its rarity key and the opens left to the pity, so a reveal can show nothing but the result: no reels, wheels, slot sounds or near-miss effects (`docs/localization.md` section 6). Names are keys: `currency.coin.name`, `currency.crystal.name`, `rarity.<id>.name`.
 
-`UI/Localization/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings` gives the built-in value of a key in one language. The `ShopTests` EditMode tests cover these types.
+`UI/Localization/Resources/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings.Load` reads it from `Resources`; `BuiltinStrings` gives the built-in value of a key in one language. The `ShopTests` EditMode tests cover these types.
 
 ## Localization
 
 `UI/Localization` is the client side of `docs/localization.md` (section 2.4).
 - **`GameLanguage`:** picks the language.
 - **`LanguageChoice`:** holds the language in use. `Game/LanguageBoot` loads it before the first scene from the saved `language.choice`. Only when nothing is saved does it read the device locales (Android `LocaleList`, iOS through `Plugins/iOS/HypeDominoLocale.mm`). It saves the first pick and every change.
-- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match.
+- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match. `Game/LanguageBoot` builds the app's one instance, `LanguageBoot.Strings`, over the built-in bundle and the saved choice.
 - **`StringBundle`:** reads a published bundle after its hash check.
 - **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects.
 

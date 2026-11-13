@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 
 export const fontsFolder = "client/Assets/HypeDomino/UI/Fonts";
 export const manifestPath = `${fontsFolder}/fonts.json`;
-export const builtinStringsPath = "client/Assets/HypeDomino/UI/Localization/builtin-strings.json";
+export const builtinStringsPath = "client/Assets/HypeDomino/UI/Localization/Resources/builtin-strings.json";
 export const tokensPath = "docs/design-tokens.json";
 export const nicknameCharactersPath = "server/internal/profile/nickname-characters.json";
 const nicknameStyle = "name";
