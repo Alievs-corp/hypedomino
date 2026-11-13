@@ -8,22 +8,25 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 
 ## Layout
 
-| Path | Assembly | References |
-|---|---|---|
-| `Assets/HypeDomino/Core` | `HypeDomino.Core` | none |
-| `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto |
-| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core, `UnityEngine.UI` |
-| `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core |
-| `Assets/HypeDomino/Content` | `HypeDomino.Content` | UI, Addressables |
-| `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics, Content |
-| `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | `Google.Protobuf.dll` only; output of `npm run proto:gen`, never edited |
-| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Editor only; references Core, UI, Game, Proto and Content |
-| `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | References Core, UI, Content, Game, Proto and `UnityEngine.UI` |
-| `Assets/HypeDomino/Settings` | | URP asset, Universal Renderer, texture preset |
-| `Assets/HypeDomino/Scenes` | | `Boot.unity`, the first build scene |
-| `Assets/Plugins/Google.Protobuf` | | Google.Protobuf 3.36.2 (`netstandard2.0`), the runtime matching the `protocolbuffers/csharp:v36.2` plugin in `proto/buf.gen.yaml`, and its dependency System.Runtime.CompilerServices.Unsafe 4.5.3 (`netstandard2.0`, assembly 4.0.4.1), which the player profile lacks; `System.Memory` comes from the .NET Standard 2.1 profile |
+| Path | Assembly | References | Also uses |
+|---|---|---|---|
+| `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | none | `Google.Protobuf.dll` only, no engine references; output of `npm run proto:gen`, never edited |
+| `Assets/HypeDomino/Core` | `HypeDomino.Core` | none | nothing |
+| `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto | |
+| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core | `UnityEngine.UI`, TextMeshPro |
+| `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core | |
+| `Assets/HypeDomino/Content` | `HypeDomino.Content` | UI | Addressables |
+| `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics, Content | URP |
+| `Assets/HypeDomino/Bench` | `HypeDomino.Bench` | Core, UI | `UnityEngine.UI`; device benches only |
+| `Assets/HypeDomino/Editor` | `HypeDomino.Editor` | Bench, Content, Core, UI | Editor only; Addressables, URP, TextMeshPro |
+| `Assets/HypeDomino/Tests/Support` | `HypeDomino.Tests.Support` | none | NUnit; `Allocates.Nothing` |
+| `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Tests.Support, Core, UI, Game, Net, Proto, Content, Editor | Editor only; NUnit, `Google.Protobuf.dll`, Addressables, URP, TextMeshPro |
+| `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | Tests.Support, Core, UI, Content, Game, Proto | NUnit, `Google.Protobuf.dll`, `UnityEngine.UI` |
+| `Assets/HypeDomino/Settings` | | | URP asset, Universal Renderer, texture preset |
+| `Assets/HypeDomino/Scenes` | | | `Boot.unity`, the first build scene |
+| `Assets/Plugins/Google.Protobuf` | | | Google.Protobuf 3.36.2 (`netstandard2.0`), the runtime matching the `protocolbuffers/csharp:v36.2` plugin in `proto/buf.gen.yaml`, and its dependency System.Runtime.CompilerServices.Unsafe 4.5.3 (`netstandard2.0`, assembly 4.0.4.1), which the player profile lacks; `System.Memory` comes from the .NET Standard 2.1 profile |
 
-References only point down this table; Core depends on nothing. `Assets/link.xml` keeps the protobuf assemblies from high managed stripping, because message descriptors are read by reflection.
+References name the project assemblies an asmdef references, and they only point up this table; Core references nothing at all, not even a package or a dll. `tools/assembly-layout` checks every asmdef under `Assets/` against this table in the `lint` job (`npm run test:tools`): an asmdef missing from the table, a reference the table does not list or one that points down fails it.
 
 ## Settings
 
