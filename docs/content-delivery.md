@@ -92,6 +92,31 @@ content-publish -dir client/ServerData/Android -environment staging -platform An
 
 The tool reads `HD_CONTENT_STORE_URL`, `HD_CONTENT_STORE_REGION`, `HD_CONTENT_STORE_ACCESS_KEY` and `HD_CONTENT_STORE_SECRET_KEY`. The `Release build` workflow runs it for a `client-v*` tag after the build when the repository variable `CONTENT_STORE_URL` is set; without it the step only warns. The names the owner provides are in `docs/environments.md` 2.3.
 
+### 8.1 Bundle garbage collection
+
+| Id | Rule |
+|---|---|
+| CD-33 | The bundle garbage collector is `server/cmd/content-gc`. It applies CD-28 to one platform of one environment. A catalog version is in scope when it is the active one (`HD_CATALOG_VERSION`), when its app version is at least the minimum app version, or when its name carries no app version. The app version of a catalog is the `<major>.<minor>.<patch>` of a release catalog version `<major>.<minor>.<patch>-<build number>` (section 6). A content-hashed bundle that no catalog in scope references and that is older than the grace period is unreferenced. |
+| CD-34 | It deletes nothing unless `-delete` is given. It never deletes a catalog file or its companions, nor any object other than a content-hashed bundle directly under `addressables/<platform>/`. It refuses to run when a catalog in scope cannot be read, names no content-hashed bundle, or has an invalid version in its file name, and when the active catalog is not in the store: a read error never counts as "nothing references it". It checks the environment against the store URL as CD-32 does. |
+| CD-35 | References are read from the binary catalog (`catalog_<catalog_version>.bin`): every length-prefixed string that is a content-hashed bundle file name. A bundle a catalog in scope references but the store does not hold is reported as missing. |
+
+```
+content-gc -environment staging -platform Android -active-catalog-version <catalog_version> -min-app-version <version> [-grace 24h] [-delete]
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `-environment` | none | `dev`, `staging` or `production`; must match the store URL |
+| `-platform` | `Android` | `Android` or `iOS` |
+| `-active-catalog-version` | `HD_CATALOG_VERSION` | The catalog version the server announces now |
+| `-min-app-version` | `HD_MIN_APP_VERSION` | The oldest supported app version: the `minimum_app_version` of the published `live_controls` snapshot (`docs/anti-cheat.md` 5.2), or `HD_MIN_APP_VERSION` until one is published |
+| `-grace` | `24h` | An unreferenced bundle younger than this, by the store's last-modified time, is kept, so a bundle that a publish in progress just uploaded is never deleted. Operational setting, not game config |
+| `-delete` | off | Delete the unreferenced bundles. Without it the run is a dry run |
+
+It reads the same `HD_CONTENT_STORE_*` variables as `content-publish`; a dry run needs them too, because it lists and reads the bucket. It prints every catalog with its scope and reason, every bundle it keeps (referenced or young), every missing bundle and every unreferenced bundle, then the counts.
+
+When to run it: after the minimum app version rises (`docs/launch-runbook.md` 5.2, 5.4), first as a dry run whose output is checked, then with `-delete`, once per platform. Never while `content-publish` runs for the same bucket: a publish skips a bundle that already exists (CD-32), and that bundle can still look unreferenced until the new catalog lands. After a run, a catalog version below the minimum app version may have lost bundles, so it is no longer a rollback target (`docs/launch-runbook.md` 5.4). Scheduling it and purging deleted files from the CDN cache are not part of the tool; a deleted bundle is one no supported client asks for.
+
 ## 9. Not here
 
 - Activating an uploaded catalog version (`HD_CATALOG_VERSION`): `docs/launch-runbook.md` 5.4.
