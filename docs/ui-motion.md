@@ -517,6 +517,6 @@ The results screen opens on the first `MatchView` whose `state` is `MATCH_STATE_
 ## 9. Open items
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
-- Sound per step is not part of this spec.
-- The largest tile size on the board (the board layout's scale cap) is not decided; the board area is the match layout's board region.
 - The long-press hold time that opens the seat menu (section 7, Seat mute), and the quick message panel with its key list and team choice (section 7, Quick message), are not decided; they belong to the match HUD.
+- Sound per step is not part of this spec.
+- The largest tile size on the board (the board layout's scale cap) and the board area are not decided; they belong to the match screen layout.
