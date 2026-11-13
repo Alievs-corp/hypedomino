@@ -351,6 +351,15 @@ func TestViewMessageShowsDisconnectsAndTimeouts(t *testing.T) {
 	}
 }
 
+func TestViewMessageCarriesTheTurnLengthAndWarningInEveryState(t *testing.T) {
+	for _, state := range []room.State{room.StateWaiting, room.StateLoading, room.StatePlaying} {
+		got := ViewMessage(room.View{State: state, Seat: rules.SeatX, Mode: rules.Mode1v1, TurnSeconds: 20, TurnWarning: 5}, false, false)
+		if got.GetTurnSeconds() != 20 || got.GetTurnWarningSeconds() != 5 {
+			t.Fatalf("state %v: turn length %d, warning %d", state, got.GetTurnSeconds(), got.GetTurnWarningSeconds())
+		}
+	}
+}
+
 func TestDecodeIntentRefusesBadTiles(t *testing.T) {
 	bad := []*pb.Envelope{
 		intentFrame(1, &pb.Envelope{Payload: &pb.Envelope_PlaceTileIntent{PlaceTileIntent: &pb.PlaceTileIntent{}}}),
