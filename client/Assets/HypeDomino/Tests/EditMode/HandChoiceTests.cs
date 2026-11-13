@@ -2,6 +2,7 @@ using System;
 using Google.Protobuf;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
+using HypeDomino.UI.Board;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace HypeDomino.Tests.EditMode
     {
         readonly MatchSnapshot snapshot = new();
         readonly HandChoice choice = new();
+        readonly ChainLayout board = new(MatchSnapshot.MaxTiles);
+        readonly Vector2[] places = new Vector2[HandChoice.MaxEnds];
 
         static Tile T(uint low, uint high) => new() { Low = low, High = high };
 
@@ -148,6 +151,51 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsTrue(choice.TryDrop(tile, endPositions, new Vector2(400 - HandChoice.SnapDistance + 1, 0), out var placement));
             Assert.AreEqual(BoardEnd.Right, placement.End);
             Assert.IsTrue(choice.AwaitingView);
+        }
+
+        [Test]
+        public void EachLegalEndIsPlacedOnItsOpenHalfOfTheBoard()
+        {
+            Read(Playing(Seat.South, Seat.South, Move(4, 6, BoardEnd.Left), Move(4, 6, BoardEnd.Top), Move(1, 2, BoardEnd.Right)));
+            ArrangeSpinnerBoard();
+            var tile = IndexOf(4, 6);
+
+            Assert.AreEqual(2, choice.EndPlacesOf(tile, board, places));
+            Assert.AreEqual(new Vector2(-20f, -10f), places[0]);
+            Assert.AreEqual(new Vector2(0f, 15f), places[1]);
+            Assert.AreEqual(0, choice.EndPlacesOf(IndexOf(3, 3), board, places));
+
+            Assert.IsTrue(choice.TryDrop(tile, places.AsSpan(0, 2), new Vector2(50f, 15f), out var placement));
+            Assert.AreEqual(BoardEnd.Top, placement.End);
+        }
+
+        [Test]
+        public void TheOpeningIsPlacedAtTheBoardCenter()
+        {
+            var view = new MatchView { State = MatchState.Opening, Seat = Seat.South, Mode = Mode._2V2, OpeningTeam = Team.A, HandsPlayed = 2 };
+            view.Hand.Add(new[] { T(1, 2), T(6, 6) });
+            Read(view);
+            places[0] = Vector2.one;
+
+            Assert.AreEqual(1, choice.EndPlacesOf(0, board, places));
+            Assert.AreEqual(Vector2.zero, places[0]);
+        }
+
+        [Test]
+        public void PlacingTheEndsAllocatesNothing()
+        {
+            Read(Playing(Seat.South, Seat.South, Move(4, 6, BoardEnd.Left), Move(4, 6, BoardEnd.Top)));
+            ArrangeSpinnerBoard();
+            var tile = IndexOf(4, 6);
+            TestDelegate step = () => choice.EndPlacesOf(tile, board, places);
+            step();
+            Assert.That(step, Allocates.Nothing);
+        }
+
+        void ArrangeSpinnerBoard()
+        {
+            var line = new[] { new Domino(6, 3), new Domino(3, 3), new Domino(3, 1) };
+            board.Arrange(line, 1, new[] { new Domino(3, 4) }, new Domino[0], new Vector2(100f, 100f), 10f);
         }
 
         [Test]

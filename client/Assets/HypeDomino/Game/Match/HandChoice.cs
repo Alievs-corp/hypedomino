@@ -1,5 +1,6 @@
 using System;
 using HypeDomino.Net;
+using HypeDomino.UI.Board;
 using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using UnityEngine;
@@ -86,6 +87,14 @@ namespace HypeDomino.Game.Match
                 if (!Same(moves[i].Tile, hand[index]) || Contains(ends[..count], moves[i].End)) continue;
                 ends[count++] = moves[i].End;
             }
+            return count;
+        }
+
+        public int EndPlacesOf(int index, ChainLayout board, Span<Vector2> places)
+        {
+            Span<BoardEnd> ends = stackalloc BoardEnd[MaxEnds];
+            var count = Math.Min(EndsOf(index, ends), places.Length);
+            for (var i = 0; i < count; i++) places[i] = PlaceOf(ends[i], board);
             return count;
         }
 
@@ -213,6 +222,20 @@ namespace HypeDomino.Game.Match
             AwaitingView = true;
             return true;
         }
+
+        static Vector2 PlaceOf(BoardEnd end, ChainLayout board)
+        {
+            if (end == BoardEnd.Unspecified || !board.TryGetEnd(ChainEndOf(end), out var area)) return Vector2.zero;
+            return board.OnBoard(area.center);
+        }
+
+        static ChainEnd ChainEndOf(BoardEnd end) => end switch
+        {
+            BoardEnd.Left => ChainEnd.West,
+            BoardEnd.Right => ChainEnd.East,
+            BoardEnd.Top => ChainEnd.North,
+            _ => ChainEnd.South,
+        };
 
         static bool Same(TileFace a, TileFace b) =>
             (a.Low == b.Low && a.High == b.High) || (a.Low == b.High && a.High == b.Low);
