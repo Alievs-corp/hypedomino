@@ -41,6 +41,7 @@ namespace HypeDomino.UI.Cosmetics
     {
         public const int KnownSchemaVersion = 1;
         public const string Live = "live";
+        public const string Retired = "retired";
         const string DefaultSource = "default";
 
         static readonly string[] KnownTypes = { CosmeticAddresses.Avatar, CosmeticAddresses.Frame, CosmeticAddresses.Table, CosmeticAddresses.Tile, CosmeticAddresses.Emoji };
