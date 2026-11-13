@@ -40,12 +40,18 @@ spec:
           containers:
             - name: backup-push
               image: hypedomino-postgres-walg
-              command: ["wal-g", "backup-push", "/var/lib/postgresql/data"]
+              command: ["wal-g", "backup-push", "/var/lib/postgresql/data/pgdata"]
               envFrom:
                 - configMapRef:
                     name: walg-config
                 - secretRef:
                     name: walg-credentials
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: walg-credentials
+                      key: PG_WALG_PASSWORD
               resources:
                 requests:
                   cpu: 250m

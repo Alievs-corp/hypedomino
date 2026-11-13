@@ -9,3 +9,4 @@ resources:
 images:
   - name: hypedomino-postgres-walg
     newName: ghcr.io/alievs-corp/hypedomino-postgres-walg
+    newTag: 16-walg-v3.0.9
