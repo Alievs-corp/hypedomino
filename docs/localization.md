@@ -96,7 +96,7 @@ Implemented in `client/Assets/HypeDomino/UI/Localization` (#70) as plain C#, cov
 Not built yet:
 - **Downloader and storage:** the CDN path of a language bundle is not defined (#214).
 - **Account sync:** syncing the choice with the account (`docs/privacy.md` D-11) needs a server endpoint that does not exist yet.
-- **Wiring:** no screen calls `ApplyStaged` on load or listens to `Changed`; nothing downloads the bundles `FollowStrings` returns, and a language chosen after the hello is not checked against the announced bundles until the next connection; Settings has no language list.
+- **Wiring:** no screen calls `ApplyStaged` on load or listens to `Changed`; nothing downloads the bundles `FollowStrings` returns, and a language chosen after the hello is not checked against the announced bundles until the next connection; Settings has no screen yet; `GameLanguage.LaunchCount`, `LaunchAt` and `OwnName` give its list of the four languages by their own name, and `Game/SettingsModel` holds the choice for it.
 - **Remaining formatting:** decimal, timestamp and duration formatting.
 
 ## 3. Server-originated text

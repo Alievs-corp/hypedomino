@@ -31,6 +31,15 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void WithoutLocalesTheLanguageIsEnglish() => Assert.AreEqual("en", GameLanguage.Pick(null, NoLocales));
 
+        [Test]
+        public void SettingsListsTheLaunchLanguagesByTheirOwnName()
+        {
+            var listed = new List<string>();
+            for (var i = 0; i < GameLanguage.LaunchCount; i++) listed.Add(GameLanguage.OwnName(GameLanguage.LaunchAt(i)));
+            CollectionAssert.AreEqual(new[] { "Azərbaycanca", "English", "Türkçe", "Русский" }, listed);
+            Assert.AreEqual(string.Empty, GameLanguage.OwnName("de"));
+        }
+
         [TestCase("az-AZ,en-US", new[] { "az-AZ", "en-US" })]
         [TestCase("ru-RU", new[] { "ru-RU" })]
         [TestCase("tr-TR,,en", new[] { "tr-TR", "en" })]
