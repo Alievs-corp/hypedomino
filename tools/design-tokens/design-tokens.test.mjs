@@ -194,6 +194,20 @@ test("C# tokens carry each effect's duration and pool size", () => {
   assert.ok(source.includes("public const int ScorePopupPooled = 6;"));
 });
 
+test("C# tokens carry each effect's particles per level by kind and each level's particle cap", () => {
+  const source = csharpTokens(tokens);
+  const kinds = Object.keys(tokens.effects.budgets);
+  assert.ok(source.includes("public enum TokenEffectKind"));
+  assert.ok(source.includes(`public static readonly string[] NameOfKind = { ${kinds.map((name) => `@"${name}"`).join(", ")} };`));
+  for (const level of ["low", "medium", "high"]) {
+    const particles = kinds.map((name) => tokens.effects.budgets[name][level].particles);
+    const name = level[0].toUpperCase() + level.slice(1);
+    assert.ok(source.includes(`public static readonly int[] ${name}ParticlesOfKind = { ${particles.join(", ")} };`), level);
+    assert.ok(source.includes(`public const int ${name}MaxParticles = ${tokens.effects.levels[level].maxParticles};`), level);
+  }
+  assert.ok(source.includes("public static readonly int[] PooledOfKind = { 4, 6, 2, 1, 1, 1, 1, 1, 4 };"));
+});
+
 test("the built-in rarity defaults of the client match the tokens", () => {
   const committed = readFileSync(fileURLToPath(new URL(rarityDefaultsPath, repoRoot)), "utf8");
   assert.equal(committed, rarityDefaults(tokens), "run npm run tokens:gen and commit the result");

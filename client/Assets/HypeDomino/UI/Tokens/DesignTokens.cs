@@ -159,12 +159,28 @@ namespace HypeDomino.UI.Tokens
         public const int LowMaxAnimatedCosmetics = 0;
         public const float LowWorkTimeP95Ms = 28f;
         public const int LowMaxTweens = 32;
+        public const int LowMaxParticles = 150;
         public const int MediumMaxAnimatedCosmetics = 10;
         public const float MediumWorkTimeP95Ms = 14f;
         public const int MediumMaxTweens = 64;
+        public const int MediumMaxParticles = 400;
         public const int HighMaxAnimatedCosmetics = 10;
         public const float HighWorkTimeP95Ms = 7f;
         public const int HighMaxTweens = 96;
+        public const int HighMaxParticles = 800;
+    }
+
+    public enum TokenEffectKind
+    {
+        TilePlace,
+        ScorePopup,
+        ScoreCascade,
+        SpinnerFormation,
+        Domino,
+        Block,
+        MatchWin,
+        RankUp,
+        Emoji,
     }
 
     public static class TokenEffect
@@ -187,6 +203,12 @@ namespace HypeDomino.UI.Tokens
         public const int RankUpPooled = 1;
         public const int EmojiDurationMs = 1800;
         public const int EmojiPooled = 4;
+        public static readonly string[] NameOfKind = { @"tilePlace", @"scorePopup", @"scoreCascade", @"spinnerFormation", @"domino", @"block", @"matchWin", @"rankUp", @"emoji" };
+        public static readonly int[] DurationMsOfKind = { 300, 1160, 1000, 600, 1200, 900, 2400, 2000, 1800 };
+        public static readonly int[] PooledOfKind = { 4, 6, 2, 1, 1, 1, 1, 1, 4 };
+        public static readonly int[] LowParticlesOfKind = { 4, 0, 30, 10, 40, 12, 60, 50, 0 };
+        public static readonly int[] MediumParticlesOfKind = { 12, 0, 90, 30, 120, 40, 200, 160, 32 };
+        public static readonly int[] HighParticlesOfKind = { 24, 8, 180, 60, 240, 80, 400, 320, 64 };
     }
 
     public static class TokenGraphics
