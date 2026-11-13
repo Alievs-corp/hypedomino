@@ -476,6 +476,15 @@ The panel and the summary only present values from the latest `MatchView` (`prot
 - **Hand summary.** When a new `last_result` arrives it shows how the hand ended (`ending`), the tiles each seat had left (`left`), each team's pips, and how the award was made: the counted pips of the other team, the hand points they rounded up to (`awarded` minus `carried_in`), and the carry-over added (`carried_in`, R-39). A locked winner (`hand_points_locked`) shows the lock instead of hand points. A block with equal totals (no winner) shows the pips kept as `carry_over` for the next hand (R-38).
 - `left` comes only in the first view of a connection after a hand ends, so the summary opens on a view that carries `left` for a hand it has not shown yet, keeps those tiles until the next hand end, and stays closed after a reconnect during play.
 
+### Match result
+
+The results screen opens on the first `MatchView` whose `state` is `MATCH_STATE_FINISHED` and shows only what that view carries; the client works out no winner, reward or rank. `Game/Match/MatchResult` holds it.
+
+- **Outcome.** Won when `winner` is the local player's team, lost when it is the other team. A viewer without a seat, or a finished view without a `winner`, gets no outcome and sees only the winning team.
+- **Final scores.** The local team's score first (team A for a viewer without a seat), then the other team's, with `hands_played` and the `mode`.
+- It opens once per match end: later finished views of the same match, a reconnect included, do not open it again, and the next view that is not finished closes it.
+- Coins, pass XP, the rank and LP change and new medals are not shown yet. The server grants them after the match through its outbox consumers (`docs/matchmaking.md` section 4, `docs/pass-missions-medals.md` section 6), and no server-to-client message or player endpoint carries them for a match yet. The screen shows none of them, and never an estimate, until the proto carries them.
+
 ## 9. Open items
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
