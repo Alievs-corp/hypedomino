@@ -140,10 +140,10 @@ namespace HypeDomino.Tests.PlayMode
         }
 
         [Test]
-        public void ANewViewAllocatesNothing()
+        public void AViewWithUnchangedScoresAllocatesNothing()
         {
-            var first = Snapshot(Seat.West, 100, 120, 365);
-            var second = Snapshot(Seat.West, 105, 145, 365, Team.A);
+            var first = Snapshot(Seat.West, 305, 120, 365);
+            var second = Snapshot(Seat.West, 305, 120, 365, Team.A, Team.B);
             Show(first);
             Show(second);
             Show(first);
