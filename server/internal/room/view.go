@@ -33,6 +33,8 @@ type View struct {
 	HasForced       bool
 	TurnPlacements  int
 	TurnDeadline    time.Time
+	TurnSeconds     int
+	TurnWarning     int
 	Controllers     [6]rules.Controller
 	Disconnected    [6]bool
 	Timeouts        [6]int
@@ -56,7 +58,7 @@ type View struct {
 
 func (r *Room) view(seat rules.Seat) View {
 	config := r.options.Config
-	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked, AfkTimeouts: config.AfkConsecutiveTimeouts, TargetScore: config.TargetScore, LockThreshold: config.HandPointsLockThreshold}
+	v := View{State: r.state, Seat: seat, Mode: r.options.Mode, Acked: r.seats[seat].acked, AfkTimeouts: config.AfkConsecutiveTimeouts, TargetScore: config.TargetScore, LockThreshold: config.HandPointsLockThreshold, TurnSeconds: config.TurnSeconds, TurnWarning: config.TurnWarningSeconds}
 	for _, s := range r.options.Mode.Seats() {
 		v.Controllers[s] = r.presence.Controller(s)
 		v.Presence[s] = r.presence.Report(s)

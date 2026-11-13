@@ -61,6 +61,8 @@ namespace HypeDomino.Net
         public uint AfkConsecutiveTimeouts { get; private set; }
         public uint TargetScore { get; private set; }
         public uint HandPointsLockThreshold { get; private set; }
+        public uint TurnSeconds { get; private set; }
+        public uint TurnWarningSeconds { get; private set; }
         public string Table { get; private set; } = string.Empty;
 
         public ReadOnlySpan<TileFace> Hand => new(hand, 0, handCount);
@@ -113,6 +115,8 @@ namespace HypeDomino.Net
             AfkConsecutiveTimeouts = 0;
             TargetScore = 0;
             HandPointsLockThreshold = 0;
+            TurnSeconds = 0;
+            TurnWarningSeconds = 0;
             lockedA = lockedB = false;
             handCount = seatCount = lineCount = topCount = bottomCount = openEndCount = legalMoveCount = leftSeatCount = leftTileCount = 0;
             rosterRead = false;
@@ -217,6 +221,14 @@ namespace HypeDomino.Net
                 case (24 << 3) | Varint:
                     if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
                     HandPointsLockThreshold = (uint)value;
+                    return true;
+                case (26 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    TurnSeconds = (uint)value;
+                    return true;
+                case (27 << 3) | Varint:
+                    if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
+                    TurnWarningSeconds = (uint)value;
                     return true;
                 case (25 << 3) | Varint:
                     if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;

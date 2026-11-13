@@ -99,7 +99,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `store_prices` | Reference USD price of every real-money product, price tiers, country tiers and per-country overrides (`docs/economy.md` 7.4) | Never; pushed to the stores, or exported as CSV for the store consoles (5.6) |
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
-| `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
+| `rules` | `TurnSeconds`, `TurnWarningSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
 | `matchmaking` | `docs/matchmaking.md` section 3, including the bot level of ranked and casual matches | From the server |
 | `penalties` | `docs/penalties.md` section 8 | From the server |
 | `anticheat` | `docs/anti-cheat.md` section 7 except live controls | Never |

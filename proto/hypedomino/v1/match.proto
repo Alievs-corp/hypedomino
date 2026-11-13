@@ -194,4 +194,6 @@ message MatchView {
   uint32 target_score = 23;
   uint32 hand_points_lock_threshold = 24;
   repeated Team locked_teams = 25;
+  uint32 turn_seconds = 26;
+  uint32 turn_warning_seconds = 27;
 }
