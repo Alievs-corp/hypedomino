@@ -457,6 +457,21 @@ function scoreCascadeMembers(tokens) {
   ];
 }
 
+function effectMembers(budgets) {
+  const effects = Object.entries(budgets);
+  const pooled = (effect) => Math.max(...levels.map((level) => effect[level].pooled));
+  return [
+    ...effects.flatMap(([name, effect]) => [
+      `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
+      `public const int ${pascal(name)}Pooled = ${pooled(effect)};`,
+    ]),
+    stringArray("NameOfKind", effects.map(([name]) => name)),
+    intArray("DurationMsOfKind", effects.map(([name, effect]) => intLiteral([name, "durationMs"], effect.durationMs))),
+    intArray("PooledOfKind", effects.map(([, effect]) => pooled(effect))),
+    ...levels.map((level) => intArray(`${pascal(level)}ParticlesOfKind`, effects.map(([name, effect]) => intLiteral([name, level, "particles"], effect[level].particles)))),
+  ];
+}
+
 function csharpEnum(name, keys) {
   return [`    public enum ${name}`, "    {", ...keys.map((key) => `        ${pascal(key)},`), "    }"].join("\n");
 }
@@ -490,11 +505,10 @@ export function csharpTokens(tokens) {
       `public const int ${pascal(name)}MaxAnimatedCosmetics = ${intLiteral(["effects", "levels", name, "maxAnimatedCosmetics"], tokens.effects.levels[name].maxAnimatedCosmetics)};`,
       `public const float ${pascal(name)}WorkTimeP95Ms = ${floatLiteral(tokens.effects.levels[name].workTimeP95Ms)};`,
       `public const int ${pascal(name)}MaxTweens = ${intLiteral(["effects", "levels", name, "maxTweens"], tokens.effects.levels[name].maxTweens)};`,
+      `public const int ${pascal(name)}MaxParticles = ${intLiteral(["effects", "levels", name, "maxParticles"], tokens.effects.levels[name].maxParticles)};`,
     ])),
-    csharpClass("TokenEffect", Object.entries(tokens.effects.budgets).flatMap(([name, effect]) => [
-      `public const int ${pascal(name)}DurationMs = ${intLiteral([name, "durationMs"], effect.durationMs)};`,
-      `public const int ${pascal(name)}Pooled = ${Math.max(...levels.map((level) => effect[level].pooled))};`,
-    ])),
+    csharpEnum("TokenEffectKind", Object.keys(tokens.effects.budgets)),
+    csharpClass("TokenEffect", effectMembers(tokens.effects.budgets)),
     csharpClass("TokenGraphics", graphicsMembers(tokens.effects.graphics, tokens.effects.levels)),
     csharpClass("TokenScoreCascade", scoreCascadeMembers(tokens)),
   ];

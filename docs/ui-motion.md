@@ -377,6 +377,11 @@ Base scene plus effects stays within the p95 work-time gate; the checker enforce
 
 Values are low / medium / high. Pooled objects are pre-warmed when the match scene loads; `Instantiate` count during a match is 0. When a pool is exhausted, its oldest instance jumps to its end.
 
+In the client, `UI/Motion/EffectPool` holds an effect's `pooled` instances, and one `UI/Motion/ParticleBudget` per scene holds the live particles of all effects:
+- An instance ends at the effect's max ms.
+- Each instance's particles are capped twice: by the effect's max particles at the level, and by what is left of the level's live particles (section 7). An effect that gets fewer particles keeps its timing and meaning (`docs/art-direction.md` 6).
+- With reduce motion, both caps use the low level.
+
 | Effect | Max ms | Max particles | Max extra draw calls | Max overdraw layers | Pooled | CPU ms | GPU ms |
 |---|---|---|---|---|---|---|---|
 | `tilePlace` | 300 | 4 / 12 / 24 | 1 / 2 / 2 | 1 / 2 / 2 | 4 / 4 / 4 | 0.25 / 0.2 / 0.1 | 0.35 / 0.3 / 0.15 |
