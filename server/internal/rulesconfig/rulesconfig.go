@@ -23,6 +23,7 @@ type Key struct {
 
 var keys = []Key{
 	{Name: "TurnSeconds", Unit: "seconds", Min: 10, Max: 60, field: func(c *rules.Config) *int { return &c.TurnSeconds }},
+	{Name: "TurnWarningSeconds", Unit: "seconds", Min: 1, Max: 10, field: func(c *rules.Config) *int { return &c.TurnWarningSeconds }},
 	{Name: "AfkConsecutiveTimeouts", Unit: "timeouts", Min: 1, Max: 10, field: func(c *rules.Config) *int { return &c.AfkConsecutiveTimeouts }},
 	{Name: "MatchLoadingSeconds", Unit: "seconds", Min: 5, Max: 60, field: func(c *rules.Config) *int { return &c.MatchLoadingSeconds }},
 }
