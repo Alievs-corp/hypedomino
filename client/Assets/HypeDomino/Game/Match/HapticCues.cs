@@ -19,6 +19,8 @@ namespace HypeDomino.Game.Match
         int boardTiles;
         uint teamScore;
 
+        public void StartConnection() => seen = false;
+
         public HapticCue Read(MatchSnapshot view)
         {
             var tiles = view.Line.Length + view.Top.Length + view.Bottom.Length;

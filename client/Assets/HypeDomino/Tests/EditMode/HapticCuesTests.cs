@@ -54,6 +54,15 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ANewConnectionPlaysNothingOnItsFirstView()
+        {
+            Read(View(Seat.South, Seat.South, 1));
+            cues.StartConnection();
+            Assert.AreEqual(HapticCue.None, Read(Finished(Seat.South, Team.A, 370, 0)));
+            Assert.AreEqual(HapticCue.None, Read(Finished(Seat.South, Team.A, 370, 0)));
+        }
+
+        [Test]
         public void OnlyTheLocalPlayersOwnPlacementTaps()
         {
             Read(View(Seat.South, Seat.South, 1));
