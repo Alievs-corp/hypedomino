@@ -138,7 +138,7 @@ Outcomes:
 
 ## Avatars
 
-`UI/Cosmetics` holds `AvatarView` and the rules for choosing static or animated art (`docs/cosmetics.md` 8.3). It takes art through `ICosmeticArtSource`, which has no Addressables implementation until #68.
+`UI/Cosmetics` holds `AvatarView`, `TableView` (the match table: built-in, then the flattened static, then the composed layers of an animated table once every layer has loaded; `TableViewTests`) and the rules for choosing static or animated art (`docs/cosmetics.md` 8.3). It takes art through `ICosmeticArtSource`, which has no Addressables implementation until #68.
 
 ## Rarity marks
 
