@@ -309,6 +309,16 @@ Deal, draw and pass are tweens from the pool (rule 3), with no particles and no 
 | Draw | A tile is drawn in 1v1 (R-22) | The tile travels from the boneyard to the hand in `base` with `enter` | `fast` with `standard` |
 | Pass | A seat passes (R-21, R-23) | A localised "pass" label at the seat panel pops in (`fast`, `overshoot`), holds `slow`, and leaves (`base`, `exit`); 840 ms in total | Opacity fade in `fast` with `standard` instead of the pop; the hold and the exit are unchanged |
 
+### Tile place
+
+The motion of `tilePlace` (section 7) for every placement, the local player's and the other seats' alike. `UI/Board/TilePlaceLayer` runs it on its own tween pool of `maxTweens` for the effect level (rule 3).
+
+- Placements play in the order their views arrive. A placement that arrives while an earlier one is still moving waits where it was shown before (the hand or the seat) and starts when that one has settled, so views that arrive together play one after another.
+- If the new placement would settle more than `motion.maxPresentationLagMs` (600) after its view arrived, every tile jumps to its final state and the new tile shows on its slot at once (rule 5). Two placements arriving together fit (2 × 300 ms); a third jumps. With reduce motion a placement takes `fast` (140 ms), so four fit and a fifth jumps.
+- The time the last placement settles is kept, so the hand-end banners (Concurrency) can start after it.
+- The effect level changes only the pool size here; timing never depends on the level (`docs/art-direction.md` section 6). A level change lands every moving tile first.
+- The update runs inside the `Effect.tilePlace` profiler marker (section 7, Measurement).
+
 ### Haptics
 
 Haptics use the platform's own feedback patterns, so the game sets no duration or strength and the player's system haptics setting applies on top of the game's. A settings toggle turns them off (on by default); it is a device setting (`docs/anti-cheat.md`, Device storage). Haptics follow server views, never input, and at most one cue plays per view: the strongest of win, score and tile place.
