@@ -54,9 +54,10 @@ func TestSnapshotsAreCheckedAgainstTheBounds(t *testing.T) {
 		raw  string
 		want Tuning
 	}{
-		{"every key", `{"TurnSeconds": 25, "AfkConsecutiveTimeouts": 2, "MatchLoadingSeconds": 15}`, Tuning{"TurnSeconds": 25, "AfkConsecutiveTimeouts": 2, "MatchLoadingSeconds": 15}},
+		{"every key", `{"TurnSeconds": 25, "TurnWarningSeconds": 6, "AfkConsecutiveTimeouts": 2, "MatchLoadingSeconds": 15}`, Tuning{"TurnSeconds": 25, "TurnWarningSeconds": 6, "AfkConsecutiveTimeouts": 2, "MatchLoadingSeconds": 15}},
 		{"one key", `{"TurnSeconds": 30}`, Tuning{"TurnSeconds": 30}},
-		{"at the bounds", `{"TurnSeconds": 10, "MatchLoadingSeconds": 60}`, Tuning{"TurnSeconds": 10, "MatchLoadingSeconds": 60}},
+		{"at the bounds", `{"TurnSeconds": 10, "TurnWarningSeconds": 10, "MatchLoadingSeconds": 60}`, Tuning{"TurnSeconds": 10, "TurnWarningSeconds": 10, "MatchLoadingSeconds": 60}},
+		{"lowest warning", `{"TurnWarningSeconds": 1}`, Tuning{"TurnWarningSeconds": 1}},
 		{"no keys", `{}`, Tuning{}},
 	}
 	for _, test := range tests {
@@ -69,6 +70,8 @@ func TestSnapshotsAreCheckedAgainstTheBounds(t *testing.T) {
 		"unknown key": `{"HandSize": 5}`,
 		"below min":   `{"TurnSeconds": 9}`,
 		"above max":   `{"AfkConsecutiveTimeouts": 11}`,
+		"no warning":  `{"TurnWarningSeconds": 0}`,
+		"warn at 11":  `{"TurnWarningSeconds": 11}`,
 		"fraction":    `{"TurnSeconds": 20.5}`,
 		"string":      `{"TurnSeconds": "20"}`,
 		"null value":  `{"TurnSeconds": null}`,
@@ -89,7 +92,8 @@ func TestATuningChangesOnlyTheKeysItSets(t *testing.T) {
 	}
 	want := base
 	want.TurnSeconds = 30
-	if got := (Tuning{"TurnSeconds": 30}).Apply(base); got != want {
+	want.TurnWarningSeconds = 8
+	if got := (Tuning{"TurnSeconds": 30, "TurnWarningSeconds": 8}).Apply(base); got != want {
 		t.Fatalf("tuned %+v", got)
 	}
 }

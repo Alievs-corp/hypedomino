@@ -542,6 +542,28 @@ func snapshotOf(r *Room, seat rules.Seat) View {
 	return <-reply
 }
 
+func TestTheViewCarriesTheTurnLengthAndWarningOfTheMatchConfig(t *testing.T) {
+	clock := newFakeClock()
+	config := rules.DefaultConfig()
+	config.TurnSeconds = 30
+	config.TurnWarningSeconds = 7
+	room := New(Options{Mode: rules.Mode1v1, Config: config, Bot: bot.DefaultConfig(), Seed: 9, Clock: clock})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go room.Run(ctx)
+	for _, seat := range rules.Mode1v1.Seats() {
+		room.Join(seat, make(chanSink, 64))
+		room.Loading(seat, 100, true)
+	}
+	v := snapshotOf(room, rules.SeatX)
+	if v.State != StateOpening || v.TurnSeconds != 30 || v.TurnWarning != 7 {
+		t.Fatalf("view turn length %d and warning %d in state %v", v.TurnSeconds, v.TurnWarning, v.State)
+	}
+	if !v.TurnDeadline.Equal(clock.Now().Add(30 * time.Second)) {
+		t.Fatalf("deadline %v is not one turn length after %v", v.TurnDeadline, clock.Now())
+	}
+}
+
 func TestLoadingShowsTheRosterProgressAndDeadline(t *testing.T) {
 	clock := newFakeClock()
 	roster := []Player{{Seat: rules.SeatX, Nickname: "ayla", Avatar: "avatar.nar", RankLabel: "Silver II"}, {Seat: rules.SeatY, Nickname: "bot", Bot: true}}

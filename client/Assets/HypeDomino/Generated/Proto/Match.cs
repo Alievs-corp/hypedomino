@@ -78,7 +78,7 @@ namespace Hypedomino.V1 {
             "QgIYAVIJY2hhcmFjdGVyEhQKBWZyYW1lGAUgASgJUgVmcmFtZRIWCgZhdmF0",
             "YXIYBiABKAlSBmF2YXRhchIdCgpyYW5rX2xhYmVsGAcgASgJUglyYW5rTGFi",
             "ZWwSGAoHZW1ibGVtcxgIIAMoCVIHZW1ibGVtcxIQCgNib3QYCSABKAhSA2Jv",
-            "dBISCgR0aWxlGAogASgJUgR0aWxlIqsJCglNYXRjaFZpZXcSLwoFc3RhdGUY",
+            "dBISCgR0aWxlGAogASgJUgR0aWxlIoAKCglNYXRjaFZpZXcSLwoFc3RhdGUY",
             "ASABKA4yGS5oeXBlZG9taW5vLnYxLk1hdGNoU3RhdGVSBXN0YXRlEicKBHNl",
             "YXQYAiABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXRSBHNlYXQSJwoEbW9kZRgD",
             "IAEoDjITLmh5cGVkb21pbm8udjEuTW9kZVIEbW9kZRIhCgxoYW5kc19wbGF5",
@@ -105,27 +105,29 @@ namespace Hypedomino.V1 {
             "b3JlGBcgASgNUgt0YXJnZXRTY29yZRI7ChpoYW5kX3BvaW50c19sb2NrX3Ro",
             "cmVzaG9sZBgYIAEoDVIXaGFuZFBvaW50c0xvY2tUaHJlc2hvbGQSNgoMbG9j",
             "a2VkX3RlYW1zGBkgAygOMhMuaHlwZWRvbWluby52MS5UZWFtUgtsb2NrZWRU",
-            "ZWFtcyp3CghCb2FyZEVuZBIZChVCT0FSRF9FTkRfVU5TUEVDSUZJRUQQABIS",
-            "Cg5CT0FSRF9FTkRfTEVGVBABEhMKD0JPQVJEX0VORF9SSUdIVBACEhEKDUJP",
-            "QVJEX0VORF9UT1AQAxIUChBCT0FSRF9FTkRfQk9UVE9NEAQqcgoEU2VhdBIU",
-            "ChBTRUFUX1VOU1BFQ0lGSUVEEAASDgoKU0VBVF9OT1JUSBABEg0KCVNFQVRf",
-            "RUFTVBACEg4KClNFQVRfU09VVEgQAxINCglTRUFUX1dFU1QQBBIKCgZTRUFU",
-            "X1gQBRIKCgZTRUFUX1kQBio0CgRUZWFtEhQKEFRFQU1fVU5TUEVDSUZJRUQQ",
-            "ABIKCgZURUFNX0EQARIKCgZURUFNX0IQAio4CgRNb2RlEhQKEE1PREVfVU5T",
-            "UEVDSUZJRUQQABIMCghNT0RFXzFWMRABEgwKCE1PREVfMlYyEAIqUwoKQ29u",
-            "dHJvbGxlchIaChZDT05UUk9MTEVSX1VOU1BFQ0lGSUVEEAASFQoRQ09OVFJP",
-            "TExFUl9QTEFZRVIQARISCg5DT05UUk9MTEVSX0JPVBACKqcBCgpNYXRjaFN0",
-            "YXRlEhsKF01BVENIX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTTUFUQ0hfU1RB",
-            "VEVfV0FJVElORxABEhcKE01BVENIX1NUQVRFX09QRU5JTkcQAhIXChNNQVRD",
-            "SF9TVEFURV9QTEFZSU5HEAMSGAoUTUFUQ0hfU1RBVEVfRklOSVNIRUQQBBIX",
-            "ChNNQVRDSF9TVEFURV9MT0FESU5HEAUqWAoKSGFuZEVuZGluZxIbChdIQU5E",
-            "X0VORElOR19VTlNQRUNJRklFRBAAEhYKEkhBTkRfRU5ESU5HX0RPTUlOTxAB",
-            "EhUKEUhBTkRfRU5ESU5HX0JMT0NLEAJCxQEKEWNvbS5oeXBlZG9taW5vLnYx",
-            "QgpNYXRjaFByb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRv",
-            "bWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9t",
-            "aW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeIC",
-            "GUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIG",
-            "cHJvdG8z"));
+            "ZWFtcxIhCgx0dXJuX3NlY29uZHMYGiABKA1SC3R1cm5TZWNvbmRzEjAKFHR1",
+            "cm5fd2FybmluZ19zZWNvbmRzGBsgASgNUhJ0dXJuV2FybmluZ1NlY29uZHMq",
+            "dwoIQm9hcmRFbmQSGQoVQk9BUkRfRU5EX1VOU1BFQ0lGSUVEEAASEgoOQk9B",
+            "UkRfRU5EX0xFRlQQARITCg9CT0FSRF9FTkRfUklHSFQQAhIRCg1CT0FSRF9F",
+            "TkRfVE9QEAMSFAoQQk9BUkRfRU5EX0JPVFRPTRAEKnIKBFNlYXQSFAoQU0VB",
+            "VF9VTlNQRUNJRklFRBAAEg4KClNFQVRfTk9SVEgQARINCglTRUFUX0VBU1QQ",
+            "AhIOCgpTRUFUX1NPVVRIEAMSDQoJU0VBVF9XRVNUEAQSCgoGU0VBVF9YEAUS",
+            "CgoGU0VBVF9ZEAYqNAoEVGVhbRIUChBURUFNX1VOU1BFQ0lGSUVEEAASCgoG",
+            "VEVBTV9BEAESCgoGVEVBTV9CEAIqOAoETW9kZRIUChBNT0RFX1VOU1BFQ0lG",
+            "SUVEEAASDAoITU9ERV8xVjEQARIMCghNT0RFXzJWMhACKlMKCkNvbnRyb2xs",
+            "ZXISGgoWQ09OVFJPTExFUl9VTlNQRUNJRklFRBAAEhUKEUNPTlRST0xMRVJf",
+            "UExBWUVSEAESEgoOQ09OVFJPTExFUl9CT1QQAiqnAQoKTWF0Y2hTdGF0ZRIb",
+            "ChdNQVRDSF9TVEFURV9VTlNQRUNJRklFRBAAEhcKE01BVENIX1NUQVRFX1dB",
+            "SVRJTkcQARIXChNNQVRDSF9TVEFURV9PUEVOSU5HEAISFwoTTUFUQ0hfU1RB",
+            "VEVfUExBWUlORxADEhgKFE1BVENIX1NUQVRFX0ZJTklTSEVEEAQSFwoTTUFU",
+            "Q0hfU1RBVEVfTE9BRElORxAFKlgKCkhhbmRFbmRpbmcSGwoXSEFORF9FTkRJ",
+            "TkdfVU5TUEVDSUZJRUQQABIWChJIQU5EX0VORElOR19ET01JTk8QARIVChFI",
+            "QU5EX0VORElOR19CTE9DSxACQsUBChFjb20uaHlwZWRvbWluby52MUIKTWF0",
+            "Y2hQcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8v",
+            "c2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3Yx",
+            "ogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBl",
+            "ZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3Rv",
+            "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.BoardEnd), typeof(global::Hypedomino.V1.Seat), typeof(global::Hypedomino.V1.Team), typeof(global::Hypedomino.V1.Mode), typeof(global::Hypedomino.V1.Controller), typeof(global::Hypedomino.V1.MatchState), typeof(global::Hypedomino.V1.HandEnding), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -149,7 +151,7 @@ namespace Hypedomino.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.SeatTiles), global::Hypedomino.V1.SeatTiles.Parser, new[]{ "Seat", "Tiles" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.HandResult), global::Hypedomino.V1.HandResult.Parser, new[]{ "Pips", "Winner", "Awarded", "CarryOver", "Scores", "NextOpener", "Ending", "HandPointsLocked", "CarriedIn", "Left" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RosterEntry), global::Hypedomino.V1.RosterEntry.Parser, new[]{ "Seat", "Team", "Nickname", "Character", "Frame", "Avatar", "RankLabel", "Emblems", "Bot", "Tile" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner", "Roster", "LoadingDeadlineUnixMs", "Table", "AfkConsecutiveTimeouts", "TargetScore", "HandPointsLockThreshold", "LockedTeams" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner", "Roster", "LoadingDeadlineUnixMs", "Table", "AfkConsecutiveTimeouts", "TargetScore", "HandPointsLockThreshold", "LockedTeams", "TurnSeconds", "TurnWarningSeconds" }, null, null, null, null)
           }));
     }
     #endregion
@@ -5660,6 +5662,8 @@ namespace Hypedomino.V1 {
       targetScore_ = other.targetScore_;
       handPointsLockThreshold_ = other.handPointsLockThreshold_;
       lockedTeams_ = other.lockedTeams_.Clone();
+      turnSeconds_ = other.turnSeconds_;
+      turnWarningSeconds_ = other.turnWarningSeconds_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -5964,6 +5968,30 @@ namespace Hypedomino.V1 {
       get { return lockedTeams_; }
     }
 
+    /// <summary>Field number for the "turn_seconds" field.</summary>
+    public const int TurnSecondsFieldNumber = 26;
+    private uint turnSeconds_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint TurnSeconds {
+      get { return turnSeconds_; }
+      set {
+        turnSeconds_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "turn_warning_seconds" field.</summary>
+    public const int TurnWarningSecondsFieldNumber = 27;
+    private uint turnWarningSeconds_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint TurnWarningSeconds {
+      get { return turnWarningSeconds_; }
+      set {
+        turnWarningSeconds_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -6004,6 +6032,8 @@ namespace Hypedomino.V1 {
       if (TargetScore != other.TargetScore) return false;
       if (HandPointsLockThreshold != other.HandPointsLockThreshold) return false;
       if(!lockedTeams_.Equals(other.lockedTeams_)) return false;
+      if (TurnSeconds != other.TurnSeconds) return false;
+      if (TurnWarningSeconds != other.TurnWarningSeconds) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -6036,6 +6066,8 @@ namespace Hypedomino.V1 {
       if (TargetScore != 0) hash ^= TargetScore.GetHashCode();
       if (HandPointsLockThreshold != 0) hash ^= HandPointsLockThreshold.GetHashCode();
       hash ^= lockedTeams_.GetHashCode();
+      if (TurnSeconds != 0) hash ^= TurnSeconds.GetHashCode();
+      if (TurnWarningSeconds != 0) hash ^= TurnWarningSeconds.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -6139,6 +6171,14 @@ namespace Hypedomino.V1 {
         output.WriteUInt32(HandPointsLockThreshold);
       }
       lockedTeams_.WriteTo(output, _repeated_lockedTeams_codec);
+      if (TurnSeconds != 0) {
+        output.WriteRawTag(208, 1);
+        output.WriteUInt32(TurnSeconds);
+      }
+      if (TurnWarningSeconds != 0) {
+        output.WriteRawTag(216, 1);
+        output.WriteUInt32(TurnWarningSeconds);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -6234,6 +6274,14 @@ namespace Hypedomino.V1 {
         output.WriteUInt32(HandPointsLockThreshold);
       }
       lockedTeams_.WriteTo(ref output, _repeated_lockedTeams_codec);
+      if (TurnSeconds != 0) {
+        output.WriteRawTag(208, 1);
+        output.WriteUInt32(TurnSeconds);
+      }
+      if (TurnWarningSeconds != 0) {
+        output.WriteRawTag(216, 1);
+        output.WriteUInt32(TurnWarningSeconds);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -6309,6 +6357,12 @@ namespace Hypedomino.V1 {
         size += 2 + pb::CodedOutputStream.ComputeUInt32Size(HandPointsLockThreshold);
       }
       size += lockedTeams_.CalculateSize(_repeated_lockedTeams_codec);
+      if (TurnSeconds != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeUInt32Size(TurnSeconds);
+      }
+      if (TurnWarningSeconds != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeUInt32Size(TurnWarningSeconds);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -6398,6 +6452,12 @@ namespace Hypedomino.V1 {
         HandPointsLockThreshold = other.HandPointsLockThreshold;
       }
       lockedTeams_.Add(other.lockedTeams_);
+      if (other.TurnSeconds != 0) {
+        TurnSeconds = other.TurnSeconds;
+      }
+      if (other.TurnWarningSeconds != 0) {
+        TurnWarningSeconds = other.TurnWarningSeconds;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -6530,6 +6590,14 @@ namespace Hypedomino.V1 {
             lockedTeams_.AddEntriesFrom(input, _repeated_lockedTeams_codec);
             break;
           }
+          case 208: {
+            TurnSeconds = input.ReadUInt32();
+            break;
+          }
+          case 216: {
+            TurnWarningSeconds = input.ReadUInt32();
+            break;
+          }
         }
       }
     #endif
@@ -6660,6 +6728,14 @@ namespace Hypedomino.V1 {
           case 202:
           case 200: {
             lockedTeams_.AddEntriesFrom(ref input, _repeated_lockedTeams_codec);
+            break;
+          }
+          case 208: {
+            TurnSeconds = input.ReadUInt32();
+            break;
+          }
+          case 216: {
+            TurnWarningSeconds = input.ReadUInt32();
             break;
           }
         }
