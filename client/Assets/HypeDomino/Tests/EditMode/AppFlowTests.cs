@@ -8,7 +8,6 @@ namespace HypeDomino.Tests.EditMode
     public sealed class AppFlowTests
     {
         static ServerHello Accepted(bool inMatch) => new ServerHello { Status = HelloStatus.Accepted, InMatch = inMatch };
-        static MatchView View(MatchState state) => new MatchView { State = state };
 
         [Test]
         public void StartsInBootAndGoesToLoginWithoutASession()
@@ -64,9 +63,9 @@ namespace HypeDomino.Tests.EditMode
         {
             var flow = new AppFlow();
             flow.Hello(Accepted(false));
-            flow.View(View(MatchState.Finished));
+            flow.View(MatchState.Finished);
             Assert.AreEqual(AppState.Lobby, flow.State);
-            flow.View(View(MatchState.Loading));
+            flow.View(MatchState.Loading);
             Assert.AreEqual(AppState.Match, flow.State);
         }
 
@@ -76,10 +75,10 @@ namespace HypeDomino.Tests.EditMode
             var flow = new AppFlow();
             flow.Hello(Accepted(true));
             Assert.IsFalse(flow.LeaveMatch());
-            flow.View(View(MatchState.Playing));
+            flow.View(MatchState.Playing);
             Assert.IsFalse(flow.LeaveMatch());
             Assert.AreEqual(AppState.Match, flow.State);
-            flow.View(View(MatchState.Finished));
+            flow.View(MatchState.Finished);
             Assert.IsTrue(flow.LeaveMatch());
             Assert.AreEqual(AppState.Lobby, flow.State);
         }
@@ -92,8 +91,8 @@ namespace HypeDomino.Tests.EditMode
             flow.Changed += seen.Add;
             flow.Hello(Accepted(false));
             flow.Hello(Accepted(false));
-            flow.View(View(MatchState.Opening));
-            flow.View(View(MatchState.Playing));
+            flow.View(MatchState.Opening);
+            flow.View(MatchState.Playing);
             CollectionAssert.AreEqual(new[] { AppState.Lobby, AppState.Match }, seen);
         }
     }
