@@ -274,6 +274,8 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `Game/Match/MatchResult` opens once per match end, on the first view whose `state` is finished, and reads the results screen of `docs/ui-motion.md` (Match result) from server values only: won or lost from `winner` against the local team (no outcome without a seat or a winner), the local team's final score first, `hands_played` and the mode. Rewards and the rank change are not in the proto yet, so it holds none. Reading a view allocates nothing; `MatchResultTests` cover it.
 
+`Game/Ranking/RankBadge.TryRead(label, out badge)` reads a roster entry's `rank_label` into the `RankTier` and division of a rank badge (`docs/ranking.md` section 3): division 4 to 1 for Iron IV to Diamond I, no division for the apex tiers, not placed for an empty label. It refuses any other label and allocates nothing; `RankBadgeTests` cover it.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
