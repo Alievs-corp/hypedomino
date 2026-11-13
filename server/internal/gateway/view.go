@@ -147,6 +147,8 @@ func ViewMessage(view room.View, withStatic, withLeft bool) *pb.MatchView {
 		AfkConsecutiveTimeouts:  uint32(view.AfkTimeouts),
 		TargetScore:             uint32(view.TargetScore),
 		HandPointsLockThreshold: uint32(view.LockThreshold),
+		TurnSeconds:             uint32(view.TurnSeconds),
+		TurnWarningSeconds:      uint32(view.TurnWarning),
 	}
 	for _, seat := range view.Mode.Seats() {
 		out.Seats = append(out.Seats, &pb.SeatView{

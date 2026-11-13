@@ -1612,6 +1612,8 @@ type MatchView struct {
 	TargetScore             uint32                 `protobuf:"varint,23,opt,name=target_score,json=targetScore,proto3" json:"target_score,omitempty"`
 	HandPointsLockThreshold uint32                 `protobuf:"varint,24,opt,name=hand_points_lock_threshold,json=handPointsLockThreshold,proto3" json:"hand_points_lock_threshold,omitempty"`
 	LockedTeams             []Team                 `protobuf:"varint,25,rep,packed,name=locked_teams,json=lockedTeams,proto3,enum=hypedomino.v1.Team" json:"locked_teams,omitempty"`
+	TurnSeconds             uint32                 `protobuf:"varint,26,opt,name=turn_seconds,json=turnSeconds,proto3" json:"turn_seconds,omitempty"`
+	TurnWarningSeconds      uint32                 `protobuf:"varint,27,opt,name=turn_warning_seconds,json=turnWarningSeconds,proto3" json:"turn_warning_seconds,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -1821,6 +1823,20 @@ func (x *MatchView) GetLockedTeams() []Team {
 	return nil
 }
 
+func (x *MatchView) GetTurnSeconds() uint32 {
+	if x != nil {
+		return x.TurnSeconds
+	}
+	return 0
+}
+
+func (x *MatchView) GetTurnWarningSeconds() uint32 {
+	if x != nil {
+		return x.TurnWarningSeconds
+	}
+	return 0
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1917,7 +1933,8 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
 	"\x03bot\x18\t \x01(\bR\x03bot\x12\x12\n" +
 	"\x04tile\x18\n" +
-	" \x01(\tR\x04tile\"\xab\t\n" +
+	" \x01(\tR\x04tile\"\x80\n" +
+	"\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
@@ -1947,7 +1964,9 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x18afk_consecutive_timeouts\x18\x16 \x01(\rR\x16afkConsecutiveTimeouts\x12!\n" +
 	"\ftarget_score\x18\x17 \x01(\rR\vtargetScore\x12;\n" +
 	"\x1ahand_points_lock_threshold\x18\x18 \x01(\rR\x17handPointsLockThreshold\x126\n" +
-	"\flocked_teams\x18\x19 \x03(\x0e2\x13.hypedomino.v1.TeamR\vlockedTeams*w\n" +
+	"\flocked_teams\x18\x19 \x03(\x0e2\x13.hypedomino.v1.TeamR\vlockedTeams\x12!\n" +
+	"\fturn_seconds\x18\x1a \x01(\rR\vturnSeconds\x120\n" +
+	"\x14turn_warning_seconds\x18\x1b \x01(\rR\x12turnWarningSeconds*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +
