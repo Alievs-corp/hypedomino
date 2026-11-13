@@ -159,7 +159,7 @@ Outcomes:
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenFontFamily`, `TokenTextStyle` and `TokenTypography` (family, weight, size and line height per style, read by `UI/Typography/TypeSet`), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenFontFamily`, `TokenTextStyle` and `TokenTypography` (family, weight, size and line height per style, read by `UI/Typography/TypeSet`), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`, `MaxParticles`), `TokenEffectKind` (the effects of `docs/ui-motion.md` 7, in budget order) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels, and the same values, its name and its particles per level as arrays indexed by `TokenEffectKind`), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 
@@ -189,6 +189,18 @@ Outcomes:
 - `RollMs(points)` gives the meter roll time, and `ChainStartMs` and `CarryOverStartMs` give the gaps.
 
 `ScorePopup.At(elapsedMs, holdMs, reduceMotion, out popup)` gives the popup's scale and opacity at a time. The values come from `TokenScoreCascade`, generated from `scoreCascade` in `docs/design-tokens.json`. The `ScoreCascadeTests` EditMode tests check every step against the spec table and the worked examples, and that a frame allocates 0 B.
+
+## Effect pools
+
+`UI/Motion/EffectPool` and `UI/Motion/ParticleBudget` hold the effect instances and particles of `docs/ui-motion.md` 7, Budgets per effect.
+
+- **`ParticleBudget`:** create one per scene with the effect level and reduce motion, and call `Configure` when either changes. `Take(kind, wanted)` grants at most the effect's particles at the level and at most what is left of the level's `MaxParticles`. With reduce motion both caps use the low level. `Return(count)` gives particles back.
+- **`EffectPool`:** create one per effect when the match scene loads. It has `TokenEffect.PooledOfKind` slots and nothing is created later.
+  - `Begin(nowMs, wantedParticles)` takes a free slot. When every slot is live, it ends the oldest one and reuses it. It returns the slot and grants its particles from the shared budget.
+  - `Tick(nowMs)` ends instances that reached the effect's `DurationMsOfKind`. It runs inside the `Effect.<name>` profiler marker (`MarkerNameOf(kind)`, also `Marker`), so a component that draws the effect does its per-frame work in that marker.
+  - `End(slot)` ends one instance early and `EndAll` is the jump to the final state of `docs/ui-motion.md` 6 rule 5. Both give the particles back.
+
+The `EffectPoolTests` EditMode tests check every effect's particles and pool size against the budget table, the level caps, reduce motion, eviction, expiry, the `turn` set and 0 B per frame. Drawing the particles waits for the effect art (#176).
 
 ## Canvas bench
 
