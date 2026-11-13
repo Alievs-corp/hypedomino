@@ -10,8 +10,15 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class LoadingCardsTests
     {
-        readonly MatchSnapshot snapshot = new();
-        readonly LoadingCards cards = new();
+        MatchSnapshot snapshot;
+        LoadingCards cards;
+
+        [SetUp]
+        public void CreateCards()
+        {
+            snapshot = new MatchSnapshot();
+            cards = new LoadingCards();
+        }
 
         static MatchView Loading(Mode mode, Seat seat, params SeatView[] seats)
         {

@@ -7,7 +7,10 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class LoadingReportTests
     {
-        readonly LoadingReport report = new();
+        LoadingReport report;
+
+        [SetUp]
+        public void CreateReport() => report = new LoadingReport();
 
         [Test]
         public void TheFirstReportIsSentAtOnce()
