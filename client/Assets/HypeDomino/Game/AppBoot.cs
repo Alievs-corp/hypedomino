@@ -13,6 +13,7 @@ namespace HypeDomino.Game
         {
             Flow = new AppFlow();
             Flow.Changed += OnChanged;
+            new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
         public static void FollowMatch(AppState state, FrameRatePolicy frameRate, CatalogUpdater catalog)
