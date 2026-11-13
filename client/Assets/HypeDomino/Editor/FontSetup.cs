@@ -15,7 +15,7 @@ namespace HypeDomino.Editor
     {
         public const string FontsFolder = "Assets/HypeDomino/UI/Fonts";
         public const string ManifestPath = FontsFolder + "/fonts.json";
-        public const string BuiltinStringsPath = "Assets/HypeDomino/UI/Localization/builtin-strings.json";
+        public const string BuiltinStringsPath = "Assets/HypeDomino/UI/Localization/Resources/builtin-strings.json";
         const string SourceFolder = FontsFolder + "/Source";
         const string ResourcesFolder = FontsFolder + "/Resources";
         const string TypeSetPath = ResourcesFolder + "/" + TypeSet.ResourceName + ".asset";
