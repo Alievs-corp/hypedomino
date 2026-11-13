@@ -14,26 +14,29 @@ namespace HypeDomino.Game
         const int AndroidConfirm = 16;
         const int FirstSdkWithConfirm = 30;
 
-        static bool? enabled;
+        static HapticsPreference preference;
         static AndroidView androidView;
 
-        public static bool Enabled
-        {
-            get => enabled ??= PlayerPrefs.GetInt(EnabledKey, 1) == 1;
-            set
-            {
-                if (Enabled == value) return;
-                enabled = value;
-                PlayerPrefs.SetInt(EnabledKey, value ? 1 : 0);
-                PlayerPrefs.Save();
-            }
-        }
+        public static HapticsPreference Preference => preference ??= Load();
 
         public static void Play(HapticCue cue)
         {
-            if (cue == HapticCue.None || !Enabled || Application.isEditor) return;
+            if (cue == HapticCue.None || !Preference.Enabled || Application.isEditor) return;
             if (Application.platform == RuntimePlatform.Android) PlayAndroid(cue);
             if (Application.platform == RuntimePlatform.IPhonePlayer) PlayIos(cue);
+        }
+
+        static HapticsPreference Load()
+        {
+            var loaded = new HapticsPreference(PlayerPrefs.GetInt(EnabledKey, 1) == 1);
+            loaded.Changed += Save;
+            return loaded;
+        }
+
+        static void Save()
+        {
+            PlayerPrefs.SetInt(EnabledKey, preference.Enabled ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         static void PlayAndroid(HapticCue cue)
