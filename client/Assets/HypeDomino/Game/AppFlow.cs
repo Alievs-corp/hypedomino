@@ -34,9 +34,9 @@ namespace HypeDomino.Game
             }
         }
 
-        public void View(MatchView view)
+        public void View(MatchState state)
         {
-            var finished = view.State == MatchState.Finished;
+            var finished = state == MatchState.Finished;
             if (State == AppState.Match)
             {
                 matchFinished = finished;

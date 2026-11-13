@@ -18,7 +18,7 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(GraphicsBoot.FrameRate.InMatch);
             Assert.AreEqual(GraphicsBoot.FrameRate.Target, Application.targetFrameRate);
 
-            flow.View(new MatchView { State = MatchState.Finished });
+            flow.View(MatchState.Finished);
             Assert.IsTrue(flow.LeaveMatch());
             Assert.AreEqual(AppState.Lobby, flow.State);
             Assert.IsFalse(GraphicsBoot.FrameRate.InMatch);
