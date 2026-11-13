@@ -29,6 +29,16 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ItSaysWhetherSeveralSlotsAreFree()
+        {
+            var budget = new AnimationBudget(3);
+            budget.TryAcquire();
+            Assert.IsTrue(budget.HasRoomFor(2));
+            Assert.IsFalse(budget.HasRoomFor(3));
+            Assert.AreEqual(1, budget.Active);
+        }
+
+        [Test]
         public void ReleasingAnEmptyBudgetAddsNoSlot()
         {
             var budget = new AnimationBudget(1);

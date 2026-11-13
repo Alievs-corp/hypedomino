@@ -6,6 +6,7 @@ namespace HypeDomino.UI.Cosmetics
         public const string Frame = "frame";
         public const string Tile = "tile";
         public const string Table = "table";
+        public const string Emoji = "emoji";
 
         const string Root = "cosmetic/";
         const string StaticTail = "/static";

@@ -44,6 +44,8 @@ jobs:
               - '.github/workflows/ci.yml'
             client:
               - 'client/**'
+              - 'server/internal/cosmetics/builtin.json'
+              - 'docs/cosmetics/examples/**'
               - '.github/workflows/ci.yml'
             assets:
               - 'assets-src/**'
