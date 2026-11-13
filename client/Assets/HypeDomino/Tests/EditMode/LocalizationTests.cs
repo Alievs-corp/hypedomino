@@ -31,6 +31,58 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void WithoutLocalesTheLanguageIsEnglish() => Assert.AreEqual("en", GameLanguage.Pick(null, NoLocales));
 
+        [TestCase("az-AZ,en-US", new[] { "az-AZ", "en-US" })]
+        [TestCase("ru-RU", new[] { "ru-RU" })]
+        [TestCase("tr-TR,,en", new[] { "tr-TR", "en" })]
+        [TestCase("", new string[0])]
+        [TestCase(null, new string[0])]
+        public void DeviceLocaleListsSplitAtCommas(string joined, string[] locales) =>
+            CollectionAssert.AreEqual(locales, GameLanguage.SplitLocales(joined));
+
+        [Test]
+        public void ASavedLanguageIsKeptWithoutReadingTheDevice()
+        {
+            var reads = 0;
+            var choice = LanguageChoice.Load("ru", () =>
+            {
+                reads++;
+                return new[] { "az-AZ" };
+            });
+            Assert.AreEqual("ru", choice.Language);
+            Assert.AreEqual(0, reads);
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("de")]
+        public void WithoutASavedLanguageTheDeviceLocalesPick(string saved) =>
+            Assert.AreEqual("tr", LanguageChoice.Load(saved, () => new[] { "fr-FR", "tr-TR", "en-US" }).Language);
+
+        [Test]
+        public void ChoosingALanguageRaisesChangedOnce()
+        {
+            var choice = LanguageChoice.Load("en", () => NoLocales);
+            var changes = 0;
+            choice.Changed += () => changes++;
+            Assert.IsTrue(choice.Choose("az"));
+            Assert.IsTrue(choice.Choose("az"));
+            Assert.AreEqual("az", choice.Language);
+            Assert.AreEqual(1, changes);
+        }
+
+        [TestCase("de")]
+        [TestCase("AZ")]
+        [TestCase(null)]
+        public void ALanguageOutsideTheLaunchSetIsRefused(string language)
+        {
+            var choice = LanguageChoice.Load("en", () => NoLocales);
+            var changes = 0;
+            choice.Changed += () => changes++;
+            Assert.IsFalse(choice.Choose(language));
+            Assert.AreEqual("en", choice.Language);
+            Assert.AreEqual(0, changes);
+        }
+
         [TestCase("ru", 1, "one")]
         [TestCase("ru", 21, "one")]
         [TestCase("ru", 11, "many")]
