@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using Google.Protobuf;
 using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Net;
 using HypeDomino.UI.Graphics;
+using HypeDomino.UI.Localization;
 using Hypedomino.V1;
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using AnnouncedBundle = Hypedomino.V1.StringBundle;
+using DownloadedBundle = HypeDomino.UI.Localization.StringBundle;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -17,6 +24,13 @@ namespace HypeDomino.Tests.EditMode
         const string Cdn = "https://cdn.example.com";
         const string Version = "2026.10.26-1";
         const ulong Nonce = 0x5EED_CAFE_F00D_0001;
+        const string Builtin = @"{""entries"":[{""key"":""k"",""en"":""E"",""tr"":""T""}]}";
+        const string AzContent = @"{""language"":""az"",""strings"":{""k"":""A""}}";
+        const string EnHash = "e0";
+        const string RuHash = "r0";
+
+        static readonly string[] NoLocales = { };
+        static readonly Regex MissingK = new Regex("^Strings missing key=k language=az version=0$");
 
         sealed class IdleCatalogSource : ICatalogSource
         {
@@ -63,13 +77,14 @@ namespace HypeDomino.Tests.EditMode
             public readonly AppFlow Flow = new();
             public readonly IdleCatalogSource Source = new();
             public readonly FrameRatePolicy FrameRate = AppBootTests.FrameRate();
+            public readonly GameStrings Strings = AppBootTests.Strings("az");
             public readonly CatalogUpdater Catalog;
 
             public Listened()
             {
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
-                AppBoot.Listen(Session, Flow, Catalog);
+                AppBoot.Listen(Session, Flow, Catalog, Strings);
                 Session.Hello(Server, new ClientHello());
             }
 
@@ -94,6 +109,35 @@ namespace HypeDomino.Tests.EditMode
             new FrameRatePolicy(new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false), new[] { 60, 120 }, ChosenRate, false);
 
         static CatalogUpdater Catalog() => new CatalogUpdater(new IdleCatalogSource(), "Android");
+
+        static GameStrings Strings(string language) =>
+            new GameStrings(BuiltinStrings.Parse(Builtin), LanguageChoice.Load(language, () => NoLocales), false);
+
+        static string AzHash => DownloadedBundle.Sha256Hex(Encoding.UTF8.GetBytes(AzContent));
+
+        static ServerHello Announcing(HelloStatus status, params FallbackChain[] chains)
+        {
+            var hello = Hello(status, false);
+            hello.StringBundles.Add(new AnnouncedBundle { Language = "az", Version = 3, Hash = AzHash });
+            hello.StringBundles.Add(new AnnouncedBundle { Language = "en", Version = 4, Hash = EnHash });
+            hello.StringBundles.Add(new AnnouncedBundle { Language = "ru", Version = 2, Hash = RuHash });
+            hello.FallbackChains.Add(chains);
+            return hello;
+        }
+
+        static FallbackChain Chain(string language, params string[] languages)
+        {
+            var chain = new FallbackChain { Language = language };
+            chain.Languages.Add(languages);
+            return chain;
+        }
+
+        static string[] LanguagesOf(List<AnnouncedBundle> bundles)
+        {
+            var languages = new string[bundles.Count];
+            for (var i = 0; i < languages.Length; i++) languages[i] = bundles[i].Language;
+            return languages;
+        }
 
         [TestCase(AppState.Boot, false)]
         [TestCase(AppState.Login, false)]
@@ -182,11 +226,80 @@ namespace HypeDomino.Tests.EditMode
             var session = new Session();
             var flow = new AppFlow();
             var server = new ServerFrames();
-            AppBoot.Listen(session, flow, null);
+            AppBoot.Listen(session, flow, null, Strings("az"));
             session.Hello(server, new ClientHello());
             server.Deliver(FrameOf(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false)));
             session.Poll();
             Assert.AreEqual(AppState.Lobby, flow.State);
+        }
+
+        [Test]
+        public void TheBundlesToFetchAreTheChosenLanguageAndEnglishNotYetHeld()
+        {
+            var fetch = AppBoot.FollowStrings(Announcing(HelloStatus.Accepted), Strings("az"));
+            CollectionAssert.AreEqual(new[] { "az", "en" }, LanguagesOf(fetch));
+            Assert.AreEqual(3u, fetch[0].Version);
+            Assert.AreEqual(AzHash, fetch[0].Hash);
+            Assert.AreEqual(4u, fetch[1].Version);
+            Assert.AreEqual(EnHash, fetch[1].Hash);
+        }
+
+        [Test]
+        public void EnglishAloneIsFetchedWhenEnglishIsChosen() =>
+            CollectionAssert.AreEqual(new[] { "en" }, LanguagesOf(AppBoot.FollowStrings(Announcing(HelloStatus.Accepted), Strings("en"))));
+
+        [Test]
+        public void ABundleWhoseHashIsAlreadyHeldIsNotFetchedAgain()
+        {
+            var strings = Strings("az");
+            Assert.IsTrue(strings.Stage("az", 3, AzHash, Encoding.UTF8.GetBytes(AzContent)));
+            CollectionAssert.AreEqual(new[] { "en" }, LanguagesOf(AppBoot.FollowStrings(Announcing(HelloStatus.Accepted), strings)));
+            Assert.IsTrue(strings.ApplyStaged(false));
+            CollectionAssert.AreEqual(new[] { "en" }, LanguagesOf(AppBoot.FollowStrings(Announcing(HelloStatus.Accepted), strings)));
+        }
+
+        [Test]
+        public void AHelloWithoutBundlesFetchesNothing() =>
+            CollectionAssert.IsEmpty(AppBoot.FollowStrings(Hello(HelloStatus.Accepted, false), Strings("az")));
+
+        [Test]
+        public void TheAnnouncedChainsReplaceTheDefaultOnes()
+        {
+            var strings = Strings("az");
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("T", strings.Text("k"));
+            AppBoot.FollowStrings(Announcing(HelloStatus.Accepted, Chain("az", "az", "en")), strings);
+            Assert.AreEqual("E", strings.Text("k"));
+        }
+
+        [Test]
+        public void AChainNotEndingInEnglishIsRefusedAndLogged()
+        {
+            var strings = Strings("az");
+            LogAssert.Expect(LogType.Warning, new Regex("^Strings chain refused language=az$"));
+            AppBoot.FollowStrings(Announcing(HelloStatus.Accepted, Chain("az", "az", "ru")), strings);
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("T", strings.Text("k"));
+        }
+
+        [Test]
+        public void AnAcceptedHelloFromTheSessionFollowsTheAnnouncedStrings()
+        {
+            var app = new Listened();
+            LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=az version=3$"));
+            LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=en version=4$"));
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted, Chain("az", "az", "en")));
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("E", app.Strings.Text("k"));
+        }
+
+        [Test]
+        public void AHelloThatBlocksPlayLeavesTheStringsAlone()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Maintenance, Chain("az", "az", "en")));
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("T", app.Strings.Text("k"));
         }
 
         [Test]
