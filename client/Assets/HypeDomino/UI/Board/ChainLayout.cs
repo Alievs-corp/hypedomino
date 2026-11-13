@@ -3,12 +3,25 @@ using UnityEngine;
 
 namespace HypeDomino.UI.Board
 {
+    public enum ChainEnd
+    {
+        West,
+        East,
+        North,
+        South,
+    }
+
     public sealed class ChainLayout
     {
         const float Tolerance = 0.01f;
+        const int NoTile = -1;
 
+        static readonly Vector2[] Outward = { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
+
+        readonly int[] endTiles = new int[4];
         PlacedDomino[] placed;
         PlacedDomino[] candidate;
+        int anchor;
 
         public ChainLayout(int capacity)
         {
@@ -26,12 +39,25 @@ namespace HypeDomino.UI.Board
 
         public PlacedDomino this[int index] => placed[index];
 
+        public Vector2 OnBoard(Vector2 point) => (point - Focus) * Scale;
+
+        public bool TryGetEnd(ChainEnd end, out Rect area)
+        {
+            area = default;
+            if (Count == 0) return false;
+            var last = endTiles[(int)end];
+            var tile = placed[last == NoTile ? anchor : last];
+            area = HalfToward(tile.Area, last == NoTile ? Outward[(int)end] : tile.Facing);
+            return true;
+        }
+
         public void Arrange(IReadOnlyList<Domino> line, int anchorIndex, IReadOnlyList<Domino> top, IReadOnlyList<Domino> bottom, Vector2 board, float maxScale)
         {
             Count = line.Count + top.Count + bottom.Count;
             Scale = 0f;
             Bounds = default;
             if (line.Count == 0) return;
+            MarkEnds(line.Count, anchorIndex, top.Count, bottom.Count);
 
             var aspect = board.y / board.x;
             var straight = Length(line) + Length(top) + Length(bottom) + 2f;
@@ -46,6 +72,25 @@ namespace HypeDomino.UI.Board
                 Bounds = bounds;
                 (placed, candidate) = (candidate, placed);
             }
+        }
+
+        void MarkEnds(int lineCount, int anchorIndex, int topCount, int bottomCount)
+        {
+            anchor = anchorIndex;
+            endTiles[(int)ChainEnd.West] = anchorIndex > 0 ? 0 : NoTile;
+            endTiles[(int)ChainEnd.East] = anchorIndex < lineCount - 1 ? lineCount - 1 : NoTile;
+            endTiles[(int)ChainEnd.North] = topCount > 0 ? lineCount + topCount - 1 : NoTile;
+            endTiles[(int)ChainEnd.South] = bottomCount > 0 ? lineCount + topCount + bottomCount - 1 : NoTile;
+        }
+
+        static Rect HalfToward(Rect area, Vector2 heading)
+        {
+            var center = area.center;
+            if (heading.x > 0f) area.xMin = center.x;
+            else if (heading.x < 0f) area.xMax = center.x;
+            else if (heading.y > 0f) area.yMin = center.y;
+            else area.yMax = center.y;
+            return area;
         }
 
         static float Length(IReadOnlyList<Domino> tiles)

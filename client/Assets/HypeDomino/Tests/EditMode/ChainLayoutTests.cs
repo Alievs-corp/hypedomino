@@ -94,6 +94,94 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0f, layout.Scale);
         }
 
+        [Test]
+        public void TheOpeningTileHasItsTwoHalvesAsEnds()
+        {
+            layout.Arrange(new[] { D(2, 3) }, 0, None, None, new Vector2(10f, 10f), 100f);
+
+            AssertEnd(ChainEnd.West, new Rect(-1f, -0.5f, 1f, 1f));
+            AssertEnd(ChainEnd.East, new Rect(0f, -0.5f, 1f, 1f));
+        }
+
+        [Test]
+        public void ALoneDoubleHasItsWestAndEastSidesAsEnds()
+        {
+            layout.Arrange(new[] { D(3, 3) }, 0, None, None, new Vector2(10f, 10f), 100f);
+
+            AssertEnd(ChainEnd.West, new Rect(-0.5f, -1f, 0.5f, 2f));
+            AssertEnd(ChainEnd.East, new Rect(0f, -1f, 0.5f, 2f));
+        }
+
+        [Test]
+        public void AnArmEndsOnTheOpenHalfOfItsLastTile()
+        {
+            layout.Arrange(new[] { D(1, 3), D(3, 3), D(3, 5) }, 1, new[] { D(3, 4) }, new[] { D(3, 6) }, new Vector2(100f, 100f), 10f);
+
+            AssertEnd(ChainEnd.West, new Rect(-2.5f, -0.5f, 1f, 1f));
+            AssertEnd(ChainEnd.East, new Rect(1.5f, -0.5f, 1f, 1f));
+            AssertEnd(ChainEnd.North, new Rect(-0.5f, 2f, 1f, 1f));
+            AssertEnd(ChainEnd.South, new Rect(-0.5f, -3f, 1f, 1f));
+        }
+
+        [Test]
+        public void AnEmptySpinnerArmEndsOnTheSpinnerHalf()
+        {
+            layout.Arrange(new[] { D(1, 3), D(3, 3), D(3, 5) }, 1, None, None, new Vector2(100f, 100f), 10f);
+
+            AssertEnd(ChainEnd.North, new Rect(-0.5f, 0f, 1f, 1f));
+            AssertEnd(ChainEnd.South, new Rect(-0.5f, -1f, 1f, 1f));
+        }
+
+        [Test]
+        public void ADoubleAtTheEndOfTheLineEndsOnItsOuterSide()
+        {
+            layout.Arrange(new[] { D(1, 3), D(3, 3) }, 0, None, None, new Vector2(100f, 10f), 100f);
+
+            AssertEnd(ChainEnd.East, new Rect(1.5f, -1f, 0.5f, 2f));
+        }
+
+        [Test]
+        public void AFoldedArmEndsAlongItsLastHeading()
+        {
+            layout.Arrange(new[] { D(0, 1), D(1, 2), D(2, 3), D(3, 4) }, 0, None, None, new Vector2(8f, 8f), 100f);
+
+            AssertEnd(ChainEnd.East, new Rect(-1f, -1.5f, 1f, 1f));
+            AssertEnd(ChainEnd.West, new Rect(-1f, -0.5f, 1f, 1f));
+        }
+
+        [Test]
+        public void BoardPointsAreScaledAroundTheFocus()
+        {
+            layout.Arrange(new[] { D(0, 1), D(1, 2), D(2, 3), D(3, 4) }, 0, None, None, new Vector2(8f, 8f), 100f);
+
+            Assert.AreEqual(Vector2.zero, layout.OnBoard(layout.Focus));
+            var corner = layout.OnBoard(new Vector2(2f, 0.5f));
+            Assert.AreEqual(4f, corner.x, 1e-4f);
+            Assert.AreEqual(4f, corner.y, 1e-4f);
+        }
+
+        [Test]
+        public void AnEmptyBoardHasNoEnds()
+        {
+            layout.Arrange(new[] { D(2, 3) }, 0, None, None, new Vector2(10f, 10f), 100f);
+            layout.Arrange(None, 0, None, None, new Vector2(10f, 10f), 100f);
+
+            Assert.IsFalse(layout.TryGetEnd(ChainEnd.East, out _));
+        }
+
+        [Test]
+        public void ReadingEndsAllocatesNothing()
+        {
+            layout.Arrange(new[] { D(1, 3), D(3, 3), D(3, 5) }, 1, new[] { D(3, 4) }, None, new Vector2(100f, 100f), 10f);
+            TestDelegate step = () =>
+            {
+                for (var end = ChainEnd.West; end <= ChainEnd.South; end++)
+                    if (layout.TryGetEnd(end, out var area)) layout.OnBoard(area.center);
+            };
+            step();
+            Assert.That(step, Allocates.Nothing);
+        }
+
         [TestCase(1080f, 1080f)]
         [TestCase(1920f, 1080f)]
         [TestCase(1080f, 1920f)]
@@ -131,6 +219,12 @@ namespace HypeDomino.Tests.EditMode
             Assert.LessOrEqual(layout.Bounds.width * layout.Scale, width + 0.01f);
             Assert.LessOrEqual(layout.Bounds.height * layout.Scale, height + 0.01f);
             Assert.Greater(layout.Scale, Mathf.Min(width / StraightLength(line), height / 2f));
+        }
+
+        void AssertEnd(ChainEnd end, Rect expected)
+        {
+            Assert.IsTrue(layout.TryGetEnd(end, out var area), $"{end} end");
+            Assert.AreEqual(expected, area, $"{end} end");
         }
 
         static Domino[] FullSet(int skip, int take)
