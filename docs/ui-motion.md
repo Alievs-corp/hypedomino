@@ -405,7 +405,7 @@ An effect is within budget when the replay harness (`docs/performance.md` sectio
 
 | Budget | Method |
 |---|---|
-| CPU ms | A `ProfilerMarker` around the effect's update, read per frame with `ProfilerRecorder`; worst frame |
+| CPU ms | A `ProfilerMarker` named `Effect.<effect>` (the effect's name in the table above, such as `Effect.emoji`) around the effect's update, read per frame with `ProfilerRecorder`; worst frame |
 | GPU ms | Worst frame captured with the effect on and off (Android GPU Inspector, Xcode Metal System Trace); difference |
 | Particles | Sum of live particle counts per frame; maximum |
 | Draw calls | Batches with the effect on minus off, in the worst frame (`docs/performance.md` draw call row) |
