@@ -8,6 +8,7 @@ import (
 
 type BoardView struct {
 	Line       []rules.Oriented
+	Opening    int
 	Spinner    rules.Tile
 	HasSpinner bool
 	Top        []rules.Oriented
@@ -103,6 +104,7 @@ func (r *Room) view(seat rules.Seat) View {
 		board := m.Board()
 		v.Board = BoardView{
 			Line:     append([]rules.Oriented(nil), board.Line()...),
+			Opening:  board.OpeningIndex(),
 			Top:      append([]rules.Oriented(nil), board.Top()...),
 			Bottom:   append([]rules.Oriented(nil), board.Bottom()...),
 			OpenEnds: board.OpenEnds(),

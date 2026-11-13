@@ -974,6 +974,7 @@ type BoardView struct {
 	Top           []*OrientedTile        `protobuf:"bytes,3,rep,name=top,proto3" json:"top,omitempty"`
 	Bottom        []*OrientedTile        `protobuf:"bytes,4,rep,name=bottom,proto3" json:"bottom,omitempty"`
 	OpenEnds      []*OpenEnd             `protobuf:"bytes,5,rep,name=open_ends,json=openEnds,proto3" json:"open_ends,omitempty"`
+	OpeningIndex  uint32                 `protobuf:"varint,6,opt,name=opening_index,json=openingIndex,proto3" json:"opening_index,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1041,6 +1042,13 @@ func (x *BoardView) GetOpenEnds() []*OpenEnd {
 		return x.OpenEnds
 	}
 	return nil
+}
+
+func (x *BoardView) GetOpeningIndex() uint32 {
+	if x != nil {
+		return x.OpeningIndex
+	}
+	return 0
 }
 
 type SeatView struct {
@@ -1866,13 +1874,14 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x06second\x18\x02 \x01(\rR\x06second\"J\n" +
 	"\aOpenEnd\x12)\n" +
 	"\x03end\x18\x01 \x01(\x0e2\x17.hypedomino.v1.BoardEndR\x03end\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value\"\x84\x02\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value\"\xa9\x02\n" +
 	"\tBoardView\x12/\n" +
 	"\x04line\x18\x01 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x04line\x12-\n" +
 	"\aspinner\x18\x02 \x01(\v2\x13.hypedomino.v1.TileR\aspinner\x12-\n" +
 	"\x03top\x18\x03 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x03top\x123\n" +
 	"\x06bottom\x18\x04 \x03(\v2\x1b.hypedomino.v1.OrientedTileR\x06bottom\x123\n" +
-	"\topen_ends\x18\x05 \x03(\v2\x16.hypedomino.v1.OpenEndR\bopenEnds\"\xa3\x02\n" +
+	"\topen_ends\x18\x05 \x03(\v2\x16.hypedomino.v1.OpenEndR\bopenEnds\x12#\n" +
+	"\ropening_index\x18\x06 \x01(\rR\fopeningIndex\"\xa3\x02\n" +
 	"\bSeatView\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1b\n" +
 	"\thand_size\x18\x02 \x01(\rR\bhandSize\x129\n" +

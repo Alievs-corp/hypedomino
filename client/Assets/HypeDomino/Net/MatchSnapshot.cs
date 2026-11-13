@@ -46,6 +46,7 @@ namespace HypeDomino.Net
         public TeamPointsValue Scores { get; private set; }
         public uint CarryOver { get; private set; }
         public uint BoneyardSize { get; private set; }
+        public int OpeningIndex { get; private set; }
         public bool HasSpinner { get; private set; }
         public TileFace Spinner { get; private set; }
         public Seat Current { get; private set; }
@@ -88,7 +89,7 @@ namespace HypeDomino.Net
                 if (!TryReadTag(view, ref at, out var tag)) return false;
                 if (!TryReadField(view, ref at, tag)) return false;
             }
-            return true;
+            return OpeningIndex == 0 || OpeningIndex < lineCount;
         }
 
         void Reset()
@@ -100,6 +101,7 @@ namespace HypeDomino.Net
             Scores = default;
             CarryOver = 0;
             BoneyardSize = 0;
+            OpeningIndex = 0;
             HasSpinner = false;
             Spinner = default;
             Current = default;
@@ -274,6 +276,10 @@ namespace HypeDomino.Net
                     case (5 << 3) | Bytes:
                         if (!WireFormat.TryReadBytes(board, ref at, out bytes) || openEndCount == MaxOpenEnds || !TryReadOpenEnd(bytes, out var end)) return false;
                         openEnds[openEndCount++] = end;
+                        break;
+                    case (6 << 3) | Varint:
+                        if (!WireFormat.TryReadVarint(board, ref at, out var opening) || opening >= MaxTiles) return false;
+                        OpeningIndex = (int)opening;
                         break;
                     default:
                         if (!WireFormat.TrySkip(board, ref at, tag & 7)) return false;

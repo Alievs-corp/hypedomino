@@ -84,6 +84,7 @@ namespace HypeDomino.Tests.EditMode
 
             var board = expected.Board ?? new BoardView();
             AssertOriented(board.Line, actual.Line, name + " line");
+            Assert.AreEqual(board.OpeningIndex, actual.OpeningIndex, name + " opening index");
             AssertOriented(board.Top, actual.Top, name + " top");
             AssertOriented(board.Bottom, actual.Bottom, name + " bottom");
             Assert.AreEqual(board.Spinner != null, actual.HasSpinner, name + " spinner");
@@ -230,6 +231,15 @@ namespace HypeDomino.Tests.EditMode
             Read(smaller, snapshot);
 
             AssertSame(smaller, snapshot, "smaller");
+        }
+
+        [Test]
+        public void AnOpeningIndexOutsideTheLineIsRefused()
+        {
+            var view = GoldenView("match_view");
+            view.Board.OpeningIndex = (uint)view.Board.Line.Count;
+
+            Assert.IsFalse(new MatchSnapshot().TryRead(view.ToByteArray()));
         }
 
         [Test]
