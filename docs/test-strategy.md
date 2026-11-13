@@ -95,6 +95,7 @@ Unity Test Framework, one test assembly per runtime assembly (#65 assembly defin
 | Allocation, per frame | Play-mode replay of a recorded 2v2 match reads `ProfilerRecorder` "GC Allocated In Frame" each frame from first deal to result screen and requires 0 B, with `GC.CollectionCount(0)` unchanged | #72 |
 | Performance capture | Unity Performance Testing package records frame time and markers during the same replay; results are trend data only | #72, #161 |
 | Build checks | Build size report per PR with a warning when the budget would be exceeded | #76 |
+| Assembly layout | Every asmdef is in the Layout table of `client/README.md` with exactly the project references it lists, references point only up the table, and Core references nothing. Runs in the `lint` job (section 2.7), so it needs no Unity license | #76 |
 
 Editor numbers do not represent devices (ADR 0008). The CI allocation test catches code-path regressions early; the gates in `docs/performance.md` section 3 are passed only by device runs (#191, #161).
 
@@ -113,7 +114,7 @@ Unit and component tests run with `pnpm test`, browser e2e as a separate suite. 
 
 ### 2.7 Spec tooling (exists)
 
-`npm run lint` runs the comment lint; `npm run test:tools` runs `node --test "tools/**/*.test.mjs"`: comment lint, rules vectors, economy balance sheet, pass sample season, design tokens, art direction and cosmetics schema validators. They run in the `lint` CI job on every PR and keep the spec fixtures that server tests consume (vectors, balance CSV, manifests) valid before the code exists.
+`npm run lint` runs the comment lint; `npm run test:tools` runs `node --test "tools/**/*.test.mjs"`: comment lint, rules vectors, economy balance sheet, pass sample season, design tokens, art direction and cosmetics schema validators, and the client assembly layout (`tools/assembly-layout`: every asmdef under `client/Assets` matches the Layout table of `client/README.md`, and references point only up it). They run in the `lint` CI job on every PR and keep the spec fixtures that server tests consume (vectors, balance CSV, manifests) valid before the code exists.
 
 ## 3. End-to-end bot clients
 
