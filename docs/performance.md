@@ -76,7 +76,7 @@ The player picks Auto (the default) or a frame rate in settings (#157). Values a
 
 A saved rate above the highest one offered counts as the highest. The level in use decides the cap, so a thermal drop (1.1) lowers the rate too, and it comes back with the level.
 
-The client sets `QualitySettings.vSyncCount` to 0 and `Application.targetFrameRate` to the rate in use, on every platform. On Android, Optimized Frame Pacing (Swappy, on in Player Settings) paces frames and asks the display for a matching refresh rate. The match scene tells the client when a match starts and ends. The system saver is read at start and each time the app regains focus, because the quick settings shade and Control Center take focus; it is not polled during a match, so a JNI or native call never allocates in a match frame. On iOS it is read through `Plugins/iOS/HypeDominoPower.mm`.
+The client sets `QualitySettings.vSyncCount` to 0 and `Application.targetFrameRate` to the rate in use, on every platform. On Android, Optimized Frame Pacing (Swappy, on in Player Settings) paces frames and asks the display for a matching refresh rate. The app flow tells the client when a match starts and ends: the chosen rate applies from entering the `Match` state until the app leaves it (`client/README.md`, App flow). The system saver is read at start and each time the app regains focus, because the quick settings shade and Control Center take focus; it is not polled during a match, so a JNI or native call never allocates in a match frame. On iOS it is read through `Plugins/iOS/HypeDominoPower.mm`.
 
 ## 2. Test conditions (all device measurements)
 
