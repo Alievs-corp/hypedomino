@@ -1,4 +1,3 @@
-using System.IO;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Shop;
 using NUnit.Framework;
@@ -73,7 +72,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase("currency.crystal.name", "ru", "Кристалл")]
         public void CurrencyNamesComeFromTheBuiltinBundle(string key, string language, string text)
         {
-            var strings = BuiltinStrings.Parse(File.ReadAllText("Assets/HypeDomino/UI/Localization/builtin-strings.json"));
+            var strings = BuiltinStrings.Load();
             Assert.AreEqual(text, strings.Value(key, language));
         }
     }
