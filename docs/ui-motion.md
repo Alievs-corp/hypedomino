@@ -253,6 +253,23 @@ The chain is laid out from the board the server sends (`BoardView`: the line, th
 - A board of every tile of the set fits on every board shape without overlap (`ChainLayoutTests`).
 - Faces: the shared face art is one sprite per tile of the set (R-1), 28 in all, upright with the lower value on the top half, as the B-3 prototype renders them (`docs/art-direction.md` section 9). `UI/Board/TileFaceSet` holds them in set order (0-0 to 0-6, 1-1 to 1-6, up to 6-6) and is complete only with all 28. `UI/Board/TileFaces` gives a tile's index in that order and the angle that turns its face so the lower value lies on its own half of the laid tile; a double stands across its arm. The angle is the end angle of the tile's travel (`TilePlaceLayer`). The 28 faces go into one atlas and draw with the default UI material, so the faces on the board batch together. The final art, its proportions and that atlas are #169; until they exist no face set asset is shipped.
 
+### Connection notices
+
+What the match screen says about the connection (#87). `Net/ConnectionNotices` decides which notice applies from the `Connection` and the latest `MatchView` (`client/README.md`); `Game/Match/ConnectionNoticeKeys` names the game string key of each. The rules below are owner decisions of 2026-11-14.
+
+| Notice | When | Key | `az` | `en` |
+|---|---|---|---|---|
+| `Reconnecting` | A session that was online waits or dials again | `match.connection.reconnecting` | Yenidən qoşulur… | Reconnecting… |
+| `Weak` | Online, with a slow round trip or a turn intent waiting for its ack | `match.connection.weak` | Zəif bağlantı | Weak connection |
+| `Dropped` seat badge | A human seat whose player lost the connection but still holds the seat | `match.seat.dropped` | Bağlantı kəsildi | Disconnected |
+| `BotPlaying` seat badge | A human seat the bot plays (R-51, R-52); a roster bot has none | `match.seat.bot_playing` | Bot oynayır | Bot playing |
+| `OneTimeoutFromBot` AFK warning | The player's own next timeout hands the seat to the bot (R-51) | `match.afk.warning` | Vaxt yenə bitsə, bot sənin yerinə oynayacaq | If time runs out again, the bot plays for you |
+| Take-back banner | The player's own seat is played by the bot and the match has not finished (`CanTakeBack`) | `match.afk.take_back` | Bot sənin yerinə oynayır — qayıt | The bot is playing for you — come back |
+
+- **Texts.** The keys follow `docs/localization.md` 2.1. `az` and `en` ship in the built-in bundle; `tr` and `ru` are left to the translator and fall back along the chain of `docs/localization.md` 1.2 and 2.3 until they are approved.
+- **Take-back banner.** While the player's own seat is played by the bot, a banner sits above the hand with the `match.afk.take_back` text. A tap anywhere on the banner calls `Connection.Rejoin`, which resumes the session so the server hands the seat back (R-51, R-52, R-58). A tap on the hand never takes back. `Game/Match/TakeBackBanner` holds the rule: it shows from each `MatchView` read, a tap rejoins once, and further taps are ignored until the next `MatchView` arrives. A tap while the connection is not online sends nothing and is not counted, as the reconnect schedule is already dialling. The banner's size, colour and motion are not decided; they come with the match scene (#78).
+- **Weak network.** A weak connection shows only the `Weak` notice. It does not change the effect level (section 7), the graphics level or any other quality setting.
+
 ## 6. Motion
 
 | Duration | ms | Use |

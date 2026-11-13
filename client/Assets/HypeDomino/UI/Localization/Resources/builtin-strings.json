@@ -1,6 +1,12 @@
 {
   "entries": [
     { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
-    { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" }
+    { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" },
+    { "key": "match.connection.reconnecting", "en": "Reconnecting…", "az": "Yenidən qoşulur…" },
+    { "key": "match.connection.weak", "en": "Weak connection", "az": "Zəif bağlantı" },
+    { "key": "match.seat.dropped", "en": "Disconnected", "az": "Bağlantı kəsildi" },
+    { "key": "match.seat.bot_playing", "en": "Bot playing", "az": "Bot oynayır" },
+    { "key": "match.afk.warning", "en": "If time runs out again, the bot plays for you", "az": "Vaxt yenə bitsə, bot sənin yerinə oynayacaq" },
+    { "key": "match.afk.take_back", "en": "The bot is playing for you — come back", "az": "Bot sənin yerinə oynayır — qayıt" }
   ]
 }
