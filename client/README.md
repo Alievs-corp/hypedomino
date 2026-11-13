@@ -74,7 +74,7 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` EditMode tests which states count as in a match, and the `AppBootTests` PlayMode test that the running flow moves the frame rate in and out of a match. Scenes, DI beyond this root and the network wiring that feeds the flow are not built yet.
 
-`Game/StartupMarker` writes the cold start marker of `docs/performance.md` section 3. Built with the `AppFlow`, a clock and a log, it logs one `Startup state=<first state after Boot> ms=<seconds since startup x 1000>` line at the first state change and then stops listening. The app passes `Time.realtimeSinceStartupAsDouble` and `Debug.Log`. A run that reaches the lobby directly logs `state=Lobby`; a run that shows sign-in, an update, maintenance or a running match first logs that state instead, so it is not counted as a lobby start. The `StartupMarkerTests` EditMode tests cover it. The composition root (#66) creates it with the `AppFlow`.
+`Game/StartupMarker` writes the cold start marker of `docs/performance.md` section 3. Built with the `AppFlow`, a clock and a log, it logs one `Startup state=<first state after Boot> ms=<seconds since startup x 1000>` line at the first state change and then stops listening. `AppBoot` creates it with `AppBoot.Flow`, `Time.realtimeSinceStartupAsDouble` and `Debug.Log`. A run that reaches the lobby directly logs `state=Lobby`; a run that shows sign-in, an update, maintenance or a running match first logs that state instead, so it is not counted as a lobby start. The `StartupMarkerTests` EditMode tests cover it.
 
 ## Network frames
 
