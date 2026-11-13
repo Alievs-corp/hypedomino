@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using HypeDomino.Content;
+using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
@@ -21,10 +23,19 @@ namespace HypeDomino.Game
             new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
-        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings)
+        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, Action<HapticCue> playHaptic)
         {
-            session.HelloReceived += hello => Hello(hello, flow, catalog, strings);
-            session.ViewReceived += view => flow.View(view.State);
+            var cues = new HapticCues();
+            session.HelloReceived += hello =>
+            {
+                cues.StartConnection();
+                Hello(hello, flow, catalog, strings);
+            };
+            session.ViewReceived += view =>
+            {
+                flow.View(view.State);
+                playHaptic(cues.Read(view));
+            };
         }
 
         public static void FollowMatch(AppState state, FrameRatePolicy frameRate, CatalogUpdater catalog)
