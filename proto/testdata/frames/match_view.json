@@ -32,7 +32,8 @@
         { "end": "BOARD_END_LEFT", "value": 4 },
         { "end": "BOARD_END_RIGHT", "value": 1 },
         { "end": "BOARD_END_TOP", "value": 3 }
-      ]
+      ],
+      "openingIndex": 1
     },
     "current": "SEAT_X",
     "openingTeam": "TEAM_B",
