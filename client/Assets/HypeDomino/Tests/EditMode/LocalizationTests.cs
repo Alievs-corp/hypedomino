@@ -164,10 +164,28 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ALookupFollowsTheDefaultChain()
         {
-            var strings = Strings("az");
+            var choice = Choice("az");
+            var strings = Strings(choice);
             Assert.AreEqual("T", strings.Text("k"));
-            strings.Language = "ru";
+            choice.Choose("ru");
             Assert.AreEqual("E", strings.Text("k"));
+        }
+
+        [Test]
+        public void AChosenLanguageAppliesAtOnceAndAsksLiveScreensToRenderAgain()
+        {
+            var choice = Choice("az");
+            var strings = Strings(choice);
+            var renders = 0;
+            strings.Changed += () => renders++;
+            Assert.AreEqual("az", strings.Language);
+            Assert.IsTrue(choice.Choose("ru"));
+            Assert.AreEqual("ru", strings.Language);
+            Assert.AreEqual("E", strings.Text("k"));
+            Assert.AreEqual(1, renders);
+            Assert.IsTrue(choice.Choose("ru"));
+            Assert.IsFalse(choice.Choose("de"));
+            Assert.AreEqual(1, renders);
         }
 
         [Test]
@@ -183,10 +201,11 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void PluralsUseTheValueLanguageAndNumbersTheSelectedOne()
         {
-            var strings = Strings("az");
+            var choice = Choice("az");
+            var strings = Strings(choice);
             var args = new Dictionary<string, object> { ["count"] = 1500L };
             Assert.AreEqual("1.500 sikkə", strings.Text("coins", args));
-            strings.Language = "ru";
+            choice.Choose("ru");
             Assert.AreEqual("1\u00A0500 coins", strings.Text("coins", args));
         }
 
@@ -201,6 +220,8 @@ namespace HypeDomino.Tests.EditMode
         public void ADownloadedBundleIsUsedFromTheNextScreenOutsideAMatch()
         {
             var strings = Strings("ru");
+            var renders = 0;
+            strings.Changed += () => renders++;
             var content = Encoding.UTF8.GetBytes(@"{""language"":""ru"",""strings"":{""k"":""К""}}");
             var hash = StringBundle.Sha256Hex(content);
             Assert.IsFalse(strings.Holds("ru", hash));
@@ -211,29 +232,36 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual("E", strings.Text("k"));
             Assert.IsFalse(strings.ApplyStaged(true));
             Assert.AreEqual("E", strings.Text("k"));
+            Assert.AreEqual(0, renders);
             Assert.IsTrue(strings.ApplyStaged(false));
             Assert.AreEqual("К", strings.Text("k"));
+            Assert.AreEqual(1, renders);
             Assert.IsTrue(strings.Holds("ru", hash));
             Assert.IsFalse(strings.ApplyStaged(false));
+            Assert.AreEqual(1, renders);
         }
 
         [Test]
         public void AMissingKeyIsLoggedOnceAndNeverShownRawInARelease()
         {
-            var release = new GameStrings(BuiltinStrings.Parse(Builtin), "az", false);
+            var release = new GameStrings(BuiltinStrings.Parse(Builtin), Choice("az"), false);
             LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=nope language=az version=0$"));
             Assert.AreEqual("Unavailable", release.Text("nope"));
             Assert.AreEqual("Unavailable", release.Text("nope"));
             LogAssert.NoUnexpectedReceived();
-            var debug = new GameStrings(BuiltinStrings.Parse(Builtin), "az", true);
+            var debug = new GameStrings(BuiltinStrings.Parse(Builtin), Choice("az"), true);
             LogAssert.Expect(LogType.Warning, new Regex("key=nope"));
             Assert.AreEqual("[!nope]", debug.Text("nope"));
-            var bare = new GameStrings(BuiltinStrings.Parse(@"{""entries"":[]}"), "en", false);
+            var bare = new GameStrings(BuiltinStrings.Parse(@"{""entries"":[]}"), Choice("en"), false);
             LogAssert.Expect(LogType.Warning, new Regex("key=nope"));
             Assert.AreEqual(string.Empty, bare.Text("nope"));
         }
 
-        static GameStrings Strings(string language) => new(BuiltinStrings.Parse(Builtin), language, false);
+        static LanguageChoice Choice(string language) => LanguageChoice.Load(language, () => NoLocales);
+
+        static GameStrings Strings(string language) => Strings(Choice(language));
+
+        static GameStrings Strings(LanguageChoice choice) => new(BuiltinStrings.Parse(Builtin), choice, false);
 
         static string Format(string pattern, string language, IReadOnlyDictionary<string, object> args)
         {
