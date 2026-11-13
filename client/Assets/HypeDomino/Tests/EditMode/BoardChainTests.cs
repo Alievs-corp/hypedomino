@@ -4,8 +4,6 @@ using HypeDomino.Net;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -98,7 +96,7 @@ namespace HypeDomino.Tests.EditMode
             TestDelegate arrange = () => chain.Arrange(view, WideBoard, 1f);
             arrange();
 
-            Assert.That(arrange, Is.Not.AllocatingGCMemory());
+            Assert.That(arrange, Allocates.Nothing);
         }
     }
 }
