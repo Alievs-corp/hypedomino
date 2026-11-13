@@ -42,7 +42,7 @@ namespace HypeDomino.Tests.EditMode
             flow.SignInNeeded();
             seconds = 9d;
             flow.Hello(new ServerHello { Status = HelloStatus.Accepted, InMatch = true });
-            flow.View(new MatchView { State = MatchState.Finished });
+            flow.View(MatchState.Finished);
             flow.LeaveMatch();
             CollectionAssert.AreEqual(new[] { "Startup state=Login ms=750" }, lines);
         }
