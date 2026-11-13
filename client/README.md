@@ -131,7 +131,9 @@ Outcomes:
 - `Rejected` for a refused sign-in, `Banned`, `Deleted` and `DeletionPending` with `DeleteAt`. A refresh refused this way forgets the stored token; a refused refresh token answers `SignInRequired`.
 - `Busy` while another call runs, `Unsupported` when the platform has no such provider.
 
-`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet.
+`SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows.
+
+`Net/Auth/SignInOptions` is the list of sign-in buttons the login screen shows, in order: Google on Android; Google, then Sign in with Apple next to it on iOS (`docs/store-listing.md` DC-5); none on platforms without a native sign-in, such as the editor and desktop. `Current` reads `Application.platform`. The `SignInOptionsTests` EditMode tests cover each platform. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet.
 
 `Net/Api/ApiClient` sends every other player HTTP request (leaderboard, profile, push settings, shop and the rest) with the session of `AuthSession`:
 - Each request carries `Authorization: Bearer <access token>`. Each POST, PUT, PATCH or DELETE also carries `X-HD-Mac`, the request MAC of `docs/anti-cheat.md` V-4 (`Net/Api/RequestMac`), so every write is signed whether or not its route checks it yet.
