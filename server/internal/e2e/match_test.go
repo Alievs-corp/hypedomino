@@ -113,8 +113,8 @@ func fullRoster(mode rules.Mode) []room.Player {
 	var roster []room.Player
 	for _, seat := range mode.Seats() {
 		roster = append(roster, room.Player{
-			Seat: seat, Nickname: strings.Repeat("ş", 16), Character: "character.tile_wizard_legendary", Frame: "frame.golden_dragon_mythic",
-			Avatar: "avatar.neon_tiger_legendary", RankLabel: "Grandmaster 1000 LP",
+			Seat: seat, Nickname: strings.Repeat("ş", 16), Frame: "frame.golden_dragon_mythic",
+			Avatar: "avatar.neon_tiger_legendary", Tile: "tile.storm_sapphire_legendary", RankLabel: "Grandmaster 1000 LP",
 			Emblems: []string{"emblem.season_1_challenger", "emblem.season_2_challenger", "emblem.season_3_challenger"},
 		})
 	}

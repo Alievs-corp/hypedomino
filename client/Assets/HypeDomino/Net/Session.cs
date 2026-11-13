@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Google.Protobuf;
 using Hypedomino.V1;
 
@@ -14,6 +15,7 @@ namespace HypeDomino.Net
         ulong lastSentSequence;
 
         public MatchSnapshot View { get; } = new();
+        public List<string> DeviceRiskSignals { get; } = new(4);
         public bool Accepted { get; private set; }
         public bool Broken { get; private set; }
         public ulong SessionNonce { get; private set; }
@@ -33,6 +35,8 @@ namespace HypeDomino.Net
             Broken = false;
             SessionNonce = 0;
             hello.LastAckedSequence = AckedSequence;
+            hello.DeviceRiskSignals.Clear();
+            hello.DeviceRiskSignals.Add(DeviceRiskSignals);
             transport.Send(writer.Write(new FrameHeader(ProtocolVersion, AckedSequence + 1, 0, 0), Envelope.PayloadOneofCase.ClientHello, hello));
         }
 

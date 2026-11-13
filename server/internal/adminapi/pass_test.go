@@ -27,7 +27,7 @@ func passWithListedCosmetics(t *testing.T) map[string]any {
 			}
 		}
 	}
-	premiumLevel(config, 0, "30")["cosmetics"] = []string{"character.tile_wizard"}
+	premiumLevel(config, 0, "30")["cosmetics"] = []string{"avatar.tile_wizard"}
 	return config
 }
 
@@ -130,7 +130,7 @@ func TestPassSeasonsArePublishedWithListedTrackItemsAndFrozenWhileRunning(t *tes
 		t.Fatalf("unlisted track items: %d %v", status, body)
 	}
 	for name, edit := range map[string]func(map[string]any){
-		"an item listing another level": func(c map[string]any) { premiumLevel(c, 0, "31")["cosmetics"] = []string{"character.tile_wizard"} },
+		"an item listing another level": func(c map[string]any) { premiumLevel(c, 0, "31")["cosmetics"] = []string{"avatar.tile_wizard"} },
 		"a mythic item":                 func(c map[string]any) { premiumLevel(c, 0, "30")["cosmetics"] = []string{"table.night_market"} },
 		"a premium level without bundle": func(c map[string]any) {
 			delete(c["seasons"].([]any)[0].(map[string]any)["premium"].(map[string]any), "7")

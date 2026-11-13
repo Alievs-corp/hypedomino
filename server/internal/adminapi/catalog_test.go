@@ -216,7 +216,7 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	}
 	status, body = a.call("GET", "/admin/cosmetics/items", liveOps, nil)
 	items := body["items"].([]any)
-	if status != http.StatusOK || len(items) != 15 {
+	if status != http.StatusOK || len(items) != 16 {
 		t.Fatalf("published items %d %v", status, body)
 	}
 	kite := items[6].(map[string]any)

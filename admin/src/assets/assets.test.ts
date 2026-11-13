@@ -21,10 +21,10 @@ const asset: Asset = {
 };
 
 test("an item id names a known type and a slug", () => {
-  for (const id of ["avatar.fox", "character.ayla_2", "frame.gold", "table.night", "emoji.wow", "action.dance"]) {
+  for (const id of ["avatar.fox_2", "frame.gold", "table.night", "tile.storm", "emoji.wow"]) {
     assert.equal(itemIdValid(id), true, id);
   }
-  for (const id of ["", "fox", "pet.fox", "avatar.", "avatar.Fox", "../avatar.fox", "avatar.fox/static", "avatar.fox\n"]) {
+  for (const id of ["", "fox", "pet.fox", "character.ayla", "action.dance", "avatar.", "avatar.Fox", "../avatar.fox", "avatar.fox/static", "avatar.fox\n"]) {
     assert.equal(itemIdValid(id), false, id);
   }
 });

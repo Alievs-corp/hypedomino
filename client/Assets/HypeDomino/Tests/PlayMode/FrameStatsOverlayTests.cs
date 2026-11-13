@@ -3,8 +3,6 @@ using HypeDomino.UI.Diagnostics;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -70,7 +68,7 @@ namespace HypeDomino.Tests.PlayMode
             }
             ShowBoth();
 
-            Assert.That(ShowBoth, Is.Not.AllocatingGCMemory());
+            Assert.That(ShowBoth, Allocates.Nothing);
         }
     }
 }

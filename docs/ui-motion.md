@@ -19,30 +19,40 @@ On a 6.5-inch 20:9 phone the short side is about 2.67 in, so 1 in is about 405 u
 
 ## 2. Colour
 
-The game is drawn on dark, layered backgrounds so vivid fills, glows and particles read at full saturation. Vivid fills carry dark ink text (`on`); white on these fills is only 1.31:1 to 3.31:1, under AA. Coloured text on a dark layer uses the role's `text` shade, never its `fill`.
+The look is the aristocratic premium direction of `docs/art-direction.md` (owner decision 2026-11-12): dark ink and lacquer grounds, gold as the house metal, team blue and orange as the only cool and warm accents. Every value below is taken from the approved prototype (art-direction section 9, B-1), except the `success`, `warning` and `danger` fills and `text` shades and the team `text` shades, which the prototype does not show and which are kept from the previous proposal. Light fills carry dark ink text (`on`); white on these fills is only 1.47:1 to 3.31:1, under AA. Coloured text on a dark layer uses the role's `text` shade, never its `fill`.
 
 | Token | Value | Use |
 |---|---|---|
-| `color.background.base` | `#0D0B24` | Screen background, lowest layer |
-| `color.background.raised` | `#17143A` | Bars, trays, the hand area |
-| `color.surface.default` | `#221D52` | Panels, cards |
-| `color.surface.raised` | `#2D2768` | Panel inside panel, list rows, inputs |
-| `color.scrim` | `#06051A` | Behind modals, at `opacity.scrim` |
-| `color.shadow` | `#05030F` | Baked elevation shadows |
-| `color.text.primary` | `#FFFFFF` | Main text |
-| `color.text.secondary` | `#D4CFF7` | Supporting text |
-| `color.text.muted` | `#A49DDB` | Hints, timestamps |
+| `color.background.base` | `#0B0605` | Screen background, lowest layer (ink) |
+| `color.background.raised` | `#1A0C0A` | Bars, trays, the hand area (lacquer) |
+| `color.surface.default` | `#2C1510` | Panels, cards (raised lacquer) |
+| `color.surface.raised` | `#4B1D0F` | Panel inside panel, list rows, inputs |
+| `color.scrim` | `#0A0302` | Behind modals at `opacity.scrim`, and the backdrop behind seat names and hints |
+| `color.shadow` | `#050203` | Baked elevation shadows |
+| `color.text.primary` | `#FBE9C2` | Main text |
+| `color.text.secondary` | `#E8D3A5` | Supporting text |
+| `color.text.muted` | `#CDB37C` | Hints, timestamps, small caps labels |
 
 | Role | `fill` | `on` | `text` | Use |
 |---|---|---|---|---|
-| `primary` | `#FF3D9A` | `#120A2C` | `#FF8CC4` | The one main action per screen (play, confirm) |
-| `secondary` | `#26D4FF` | `#120A2C` | `#7FE6FF` | Other actions, links, selection |
-| `success` | `#35E07A` | `#120A2C` | `#7DF0AB` | Reward received, win, positive delta |
-| `warning` | `#FFB020` | `#120A2C` | `#FFCB6B` | Turn timer low, connection unstable |
-| `danger` | `#FF4D5E` | `#120A2C` | `#FF95A0` | Leave match, destructive confirm, loss, negative delta |
-| `score` | `#FFE03D` | `#120A2C` | `#FFE97A` | Score popups, score meter, points |
-| `teamA` | `#3D8BFF` | `#120A2C` | `#94C0FF` | Team A seats, names, meter |
-| `teamB` | `#FF7A2E` | `#120A2C` | `#FFAD80` | Team B seats, names, meter |
+| `primary` | `#E6C068` | `#0B0605` | `#FFF4C2` | The one main action per screen (play, confirm) |
+| `secondary` | `#F3D17A` | `#0B0605` | `#F3D17A` | Other actions, links, selection ring, legal-end outline |
+| `success` | `#35E07A` | `#0B0605` | `#7DF0AB` | Reward received, win, positive delta |
+| `warning` | `#FFB020` | `#0B0605` | `#FFCB6B` | Turn timer low, connection unstable |
+| `danger` | `#FF4D5E` | `#0B0605` | `#FF95A0` | Leave match, destructive confirm, loss, negative delta |
+| `score` | `#F3CF72` | `#0B0605` | `#FFF6D0` | Score popups, score meter, points |
+| `teamA` | `#3D8BFF` | `#0B0605` | `#94C0FF` | Team A seats, names, meter |
+| `teamB` | `#FF7A2E` | `#0B0605` | `#FFAD80` | Team B seats, names, meter |
+
+| Token | Value | Use |
+|---|---|---|
+| `color.gold.hi` | `#FFF4C2` | Gold highlight: the bright stop of rims, dividers and icon gradients |
+| `color.gold.default` | `#E6C068` | Gold base: icons, inlay lines, the turn timer ring |
+| `color.gold.mid` | `#C99A3C` | Gold shade: dividers, the score crown ring |
+| `color.gold.lo` | `#7A5418` | Gold low stop: the dark end of rim gradients |
+| `color.wood.hi` | `#5A2414` | Lit edge of the table rim and the hand tray |
+| `color.wood.default` | `#3A150B` | Table rim and hand tray body |
+| `color.wood.lo` | `#240C06` | Shaded edge of the table rim and the hand tray |
 
 | Token | Value | Use |
 |---|---|---|
@@ -51,67 +61,85 @@ The game is drawn on dark, layered backgrounds so vivid fills, glows and particl
 | `opacity.pressedTint` | 0.85 | Vertex-colour multiplier on a pressed fill |
 
 Rules:
-- Colour is never the only cue. Team identity also shows as seat position and the team badge; `success`, `warning` and `danger` always come with an icon. Team A blue and team B orange stay distinct under protan and deutan simulation (Viénot 1999); `primary` and `danger` are close under it, which is why danger carries an icon.
+- Colour is never the only cue. Team identity also shows as seat position and the team gem; `success`, `warning` and `danger` always come with an icon. Team A blue and team B orange stay distinct under protan and deutan simulation (Viénot 1999).
+- `primary`, `secondary` and `score` are all golds, because gold is the house metal. Their meaning rides on shape and motion: the primary action is the only pill with `glow.soft`, selection and legal ends are a pulsing outline ring, score is numerals in the `score` and `counter` styles (`docs/art-direction.md` section 2).
+- A gold gradient (rims, icons, the timer ring) runs from `color.gold.hi` through `color.gold.default` or `color.gold.mid` to `color.gold.lo`, as vertex colours on the sprite's mesh; it needs no material instance.
 - Rarity colours, marks and glow levels are defined in `docs/rarity.md`, which explains the `rarity` token group.
-- UI, effect, team, score and role colours come only from these tokens. Cosmetic illustration art (avatars, characters, tables, frames, emoji) uses its own palette per asset, reviewed on the reference board (`docs/art-direction.md` section 9); it is never dominated by a team or role hue and never evokes a flag or political side (`docs/localization.md` 6).
+- UI, effect, team, score and role colours come only from these tokens. Cosmetic illustration art (avatars, tables, frames, tile skins, emoji) and the shared tile face use their own palette per asset, reviewed on the reference board (`docs/art-direction.md` section 9); it is never dominated by a team or role hue and never evokes a flag or political side (`docs/localization.md` 6).
 
 ### Contrast
 
-Checked to WCAG 2.2: text 4.5:1 for every size (SC 1.4.3, stricter than the 3:1 allowed for large text), fills 3:1 against `background.base` as non-text UI (SC 1.4.11). Disabled controls are exempt. Ratios are truncated to two decimals, so a listed value never overstates. Generated by `node tools/design-tokens/design-tokens.mjs --table`; the test fails if this table is stale.
+Checked to WCAG 2.2: text 4.5:1 for every size (SC 1.4.3, stricter than the 3:1 allowed for large text), fills 3:1 against `background.base` as non-text UI (SC 1.4.11). Disabled controls are exempt. Ratios are truncated to two decimals, so a listed value never overstates. Generated by `node tools/design-tokens/design-tokens.mjs --table`; the test fails if this table is stale. The `gold` and `wood` groups are ornament and material, never text or a control's only fill, so they have no rows.
 
 | Foreground | `background.base` | `background.raised` | `surface.default` | `surface.raised` | `on` on `fill` | `fill` on `background.base` |
 |---|---|---|---|---|---|---|
-| `text.primary` | 19.25 | 17.53 | 15.37 | 13.11 | - | - |
-| `text.secondary` | 12.90 | 11.74 | 10.30 | 8.78 | - | - |
-| `text.muted` | 7.72 | 7.03 | 6.16 | 5.25 | - | - |
-| `role.primary` | 8.98 | 8.18 | 7.17 | 6.11 | 5.77 | 5.85 |
-| `role.secondary` | 13.44 | 12.24 | 10.73 | 9.15 | 10.80 | 10.95 |
-| `role.success` | 13.68 | 12.46 | 10.92 | 9.31 | 10.94 | 11.09 |
-| `role.warning` | 12.84 | 11.69 | 10.25 | 8.74 | 10.38 | 10.53 |
-| `role.danger` | 9.22 | 8.39 | 7.36 | 6.28 | 5.85 | 5.93 |
-| `role.score` | 15.76 | 14.35 | 12.58 | 10.73 | 14.45 | 14.65 |
-| `role.teamA` | 10.31 | 9.38 | 8.23 | 7.01 | 5.73 | 5.80 |
-| `role.teamB` | 10.58 | 9.63 | 8.45 | 7.20 | 7.30 | 7.40 |
+| `text.primary` | 16.82 | 15.92 | 14.35 | 11.83 | - | - |
+| `text.secondary` | 13.70 | 12.98 | 11.69 | 9.64 | - | - |
+| `text.muted` | 9.91 | 9.38 | 8.45 | 6.97 | - | - |
+| `role.primary` | 18.19 | 17.23 | 15.52 | 12.80 | 11.61 | 11.61 |
+| `role.secondary` | 13.63 | 12.90 | 11.63 | 9.59 | 13.63 | 13.63 |
+| `role.success` | 14.31 | 13.55 | 12.21 | 10.07 | 11.60 | 11.60 |
+| `role.warning` | 13.43 | 12.72 | 11.46 | 9.45 | 11.01 | 11.01 |
+| `role.danger` | 9.64 | 9.13 | 8.23 | 6.78 | 6.21 | 6.21 |
+| `role.score` | 18.55 | 17.57 | 15.83 | 13.05 | 13.40 | 13.40 |
+| `role.teamA` | 10.78 | 10.21 | 9.20 | 7.58 | 6.07 | 6.07 |
+| `role.teamB` | 11.07 | 10.48 | 9.44 | 7.78 | 7.74 | 7.74 |
 
 Role rows: the four background columns are the role's `text` shade.
 
 ## 3. Typography
 
-| Family | Licence | Weights | Use |
+The font set is chosen by role (owner decision 2026-11-12, `docs/art-direction.md` section 5.6). All five families are from Google Fonts under the SIL Open Font License 1.1, which allows embedding them in a commercial game; each file's `name` table carries the OFL notice, and the licence text ships with the fonts.
+
+| Family (token) | Licence | Style, weights | Use |
 |---|---|---|---|
-| Unbounded (display) | SIL OFL 1.1 | 700, 900 | Titles, banners, score popups |
-| Nunito (ui) | SIL OFL 1.1 | 600, 800, 900 | Body, labels, buttons, any number that changes while visible |
+| Cinzel (`numeral`) | SIL OFL 1.1 | Upright 700, 900 | Numerals only: score, counters, the turn timer, the target score. Never words: it has no Ə or ə |
+| Playfair Display (`display`) | SIL OFL 1.1 | Italic 700, 900 | Player names, titles, headings, banners |
+| Cormorant Garamond (`hint`) | SIL OFL 1.1 | Italic 500, 700 | Turn hints and short guidance lines over the board |
+| Josefin Sans (`ui`) | SIL OFL 1.1 | Upright 300, 400, 600 | Labels, body, buttons, prices and anything with a currency sign |
+| Montserrat (`uiCyrillic`) | SIL OFL 1.1 | Upright 300, 400, 600 | Per-script fallback of `ui` for Cyrillic (`docs/localization.md` 4.5) |
 
-Launch languages are AZ, EN, TR and RU. Coverage was verified on the variable font files `ofl/unbounded/Unbounded[wght].ttf` and `ofl/nunito/Nunito[wght].ttf` from the `google/fonts` repository at commit `e7db6ca`, by reading each file's `cmap` table with fontTools 4.63 and checking every code point below. Both families cover all of them.
+Launch languages are AZ, EN, TR and RU. Coverage was verified on the font files the approved prototype used, downloaded from Google Fonts (font revisions: Cinzel 2.000, Playfair Display Italic 1.203, Cormorant Garamond Italic 4.001, Josefin Sans 2.001, Montserrat 9.000), by reading each file's `cmap` table with fontTools 4.63 and checking every code point below.
 
-| Set | Code points | Unbounded | Nunito |
-|---|---|---|---|
-| Basic Latin | U+0020 to U+007E | 95/95 | 95/95 |
-| Azerbaijani and Turkish letters | ƏəĞğIıİiŞşÇçÖöÜü | 16/16 | 16/16 |
-| Turkish circumflex | ÂâÎîÛû | 6/6 | 6/6 |
-| Russian Cyrillic | U+0410 to U+044F, Ё, ё | 66/66 | 66/66 |
-| Currency | ₼ ₺ ₽ € $ | 5/5 | 5/5 |
-| Punctuation | « » — – … № ’ “ ” • · × | 12/12 | 12/12 |
+| Set | Code points | Cinzel | Playfair Display Italic | Cormorant Garamond Italic | Josefin Sans | Montserrat |
+|---|---|---|---|---|---|---|
+| Basic Latin | U+0020 to U+007E | 95/95 | 95/95 | 95/95 | 95/95 | 95/95 |
+| Azerbaijani and Turkish letters | ƏəĞğIıİiŞşÇçÖöÜü | 14/16, no Ə ə | 16/16 | 16/16 | 16/16 | 16/16 |
+| Turkish circumflex | ÂâÎîÛû | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 |
+| Russian Cyrillic | U+0410 to U+044F, Ё, ё | 0/66 | 66/66 | 66/66 | 0/66 | 66/66 |
+| Currency | ₼ ₺ ₽ € $ | 2/5, no ₼ ₺ ₽ | 2/5, no ₼ ₺ ₽ | 4/5, no ₼ | 5/5 | 5/5 |
+| Punctuation | « » — – … № ’ “ ” • · × | 11/12, no № | 12/12 | 12/12 | 12/12 | 12/12 |
 
-Rubik was checked the same way and rejected: it has no Ə, ə, ₼ or ₺. Nunito's ten digits share one advance width (600 units), so counters do not jitter; Unbounded's digits have nine different widths, so it is used only for numbers that do not change while visible.
+What follows from the table:
+- Cinzel sets digits and the signs around a score only. Every word, in any language, uses another family.
+- Currency signs are set only in `ui` (or `uiCyrillic`); a price never uses `numeral`, `display` or `hint`.
+- Josefin Sans has no Cyrillic, so Russian text in `ui` styles falls back to Montserrat per glyph. Playfair Display and Cormorant Garamond cover Russian themselves.
+- Italiana and Marcellus were checked the same way during the prototype and rejected: Italiana has no Ə, ə, Ğ, ğ, İ, Ş or ş; Marcellus has no Ə or ə. Unbounded, Nunito and Rubik belonged to the previous direction.
+- No family has digits of one width (Cinzel has nine different digit advances, Playfair Display Italic and Josefin Sans ten). A number that changes while visible (timer, counters, the score roll) is set with one fixed advance per digit, TextMeshPro's monospace spacing at the widest digit of the style, so it never jitters.
 
 | Style | Family | Weight | Size | Line height |
 |---|---|---|---|---|
-| `caption` | ui | 600 | 30 | 1.3 |
-| `body` | ui | 600 | 38 | 1.35 |
-| `label` | ui | 800 | 44 | 1.2 |
-| `counter` | ui | 900 | 56 | 1.0 |
+| `caption` | ui | 400 | 30 | 1.3 |
+| `body` | ui | 400 | 38 | 1.35 |
+| `label` | ui | 300 | 44 | 1.2 |
+| `counter` | numeral | 900 | 56 | 1.0 |
 | `title` | display | 700 | 54 | 1.15 |
 | `heading` | display | 900 | 68 | 1.1 |
 | `display` | display | 900 | 86 | 1.05 |
-| `score` | display | 900 | 108 | 1.0 |
+| `score` | numeral | 900 | 108 | 1.0 |
+| `name` | display | 900 | 38 | 1.0 |
+| `hint` | hint | 700 | 46 | 1.2 |
 
 Rules:
 - No text under 30 units (`typography.minimumSize`).
 - Each family ships as a static SDF atlas holding the sets above plus every glyph in the localisation tables. No dynamic atlas in the match scene: adding a glyph at runtime allocates and stalls a frame.
-- At most three material presets per family (plain, outline, glow); each preset costs a draw call.
+- At most three material presets per family (plain, outline, glow); each preset costs a draw call. The name letter effects of `docs/art-direction.md` section 5.6 are an open item there until their cost is measured.
 - No runtime case conversion. Turkish and Azerbaijani map i to İ and ı to I, which culture-invariant upper-casing breaks; strings arrive from localisation already in their final case.
 - Text size never animates. A text pop scales its transform.
+
+In the client (#592): text is TextMeshPro, which ships inside the Unity UI package. `client/Assets/HypeDomino/UI/Fonts/fonts.json` lists the faces the scale uses (Cinzel 900, Playfair Display Italic 700 and 900, Cormorant Garamond Italic 700, Josefin Sans 300 and 400, Montserrat 300 and 400), the pinned google/fonts commit and the character sets of the table above. Each face is a static SDF atlas (sampling size 56, padding 7, the smallest listed atlas that fits) holding the listed characters it has plus every character of the built-in strings. Fallback chains: `ui` falls back to `uiCyrillic` of the same weight; `numeral`, `display` and `hint` fall back to `ui` 400, then `uiCyrillic` 400, so no role draws a box for an AZ, EN, TR or RU letter. ₼ ₺ ₽ are left out of the `numeral`, `display` and `hint` atlases, so they always come from `ui`. `TypeSet` (`Resources/TypeSet`) maps each style of the table above to its font asset; `TypeSet.Apply` or the `TokenText` component sets the font, size and line height from `TokenTypography`. `node tools/fonts/fonts.mjs` checks (in CI through `npm run test:tools`) every chain against the font files and the generated font assets, and checks that every nickname character the server allows (`server/internal/profile/nickname-characters.json`, `docs/localization.md` 5.1) is drawn by the `name` style chain.
+
+Nicknames hold only letters of the sets above (owner decision 2026-11-12, #597): the atlases are not grown for other letters, so `é`, `ß`, `і` and the like are refused by the server instead of drawing a box in the `name` style.
 
 ## 4. Shape, space, elevation and glow
 
@@ -120,7 +148,7 @@ Rules:
 | `radius` | sm 8, md 16, lg 24, xl 36, pill 999 |
 | `spacing` | xxs 4, xs 8, sm 12, md 16, lg 24, xl 32, xxl 48, xxxl 64 |
 | `size.touchTargetMin` | 120 (about 48 dp) |
-| `size.seatPanelWidth`, `size.seatPanelHeight` | 264, 216: one seat panel of the match screen (Match layout) |
+| `size.seatPanelWidth`, `size.seatPanelHeight` | 264, 216: the layout box of one seat on the match screen (Match layout); the seat draws no panel in it |
 | `size.handHeight` | 224: the hand strip of the match screen (Match layout) |
 | `elevation` | e0 none; e1 offset 4, alpha 0.35; e2 offset 8, alpha 0.45; e3 offset 16, alpha 0.55 |
 | `glow` | none; soft alpha 0.35, scale 1.15; strong alpha 0.55, scale 1.3; intense alpha 0.8, scale 1.5 |
@@ -198,7 +226,7 @@ The match screen places its regions inside the safe area with the same rules in 
 - The local player always sits at the bottom. The other seats follow the turn order of R-7: turns pass clockwise, so in 2v2 the next seat is on the left, the partner (R-6) at the top and the last seat on the right. In 1v1 the opponent sits at the top and the sides stay empty.
 - The seat order is North, East, South, West in 2v2 and X, Y in 1v1 (`docs/rules.md` Examples). A viewer without a seat is placed as South or X.
 - Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
-- A seat panel holds the avatar with its frame, the name, the tile count and the turn timer. Their places inside the panel come with the panel art.
+- A seat box holds the avatar with its animated frame, the name and, on the seat whose turn it is, the turn timer ring. It draws no panel background and no tile count number (`docs/art-direction.md` section 5.5): a seat's hidden tiles show as face-down tiles in its tile skin, so their number reads from the tiles. Places inside the box and of the face-down row come with the seat art (#168, #169).
 
 ### Hand
 
@@ -310,7 +338,6 @@ The effect level follows the graphics level (`docs/performance.md` 1.1): Low use
 | `maxTweens` | 32 | 64 | 96 |
 | Animated cosmetics (avatars, emoji) | Static fallback (ADR 0002) | Animated | Animated |
 | `maxAnimatedCosmetics` per screen (ADR 0012) | 0 | 10 | 10 |
-| Characters (ADR 0009) | Static fallback (ADR 0002) | 3D, `modelAddress` | 3D, `modelHqAddress` where the item has one |
 
 Base scene plus effects stays within the p95 work-time gate; the checker enforces it. The high level is budgeted at 120 fps, so it also holds at 60.
 

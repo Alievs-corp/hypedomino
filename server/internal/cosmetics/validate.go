@@ -19,13 +19,6 @@ var (
 	layerNamePattern = regexp.MustCompile(`^[a-z0-9_]+$`)
 )
 
-type strictClips struct {
-	Idle     string `json:"idle"`
-	Win      string `json:"win"`
-	Lose     string `json:"lose"`
-	Reaction string `json:"reaction"`
-}
-
 type strictLayer struct {
 	Name     string `json:"name"`
 	Address  string `json:"address"`
@@ -45,9 +38,6 @@ type strictItem struct {
 	ArtSource        string        `json:"artSource"`
 	CulturalReview   string        `json:"culturalReview"`
 	AnimationAddress string        `json:"animationAddress"`
-	Clips            *strictClips  `json:"clips"`
-	ModelAddress     string        `json:"modelAddress"`
-	ModelHqAddress   string        `json:"modelHqAddress"`
 	Layers           []strictLayer `json:"layers"`
 	Group            string        `json:"group"`
 }
@@ -117,31 +107,16 @@ func (i strictItem) checkShared(rarities Rarities) error {
 
 func (i strictItem) checkTypeFields() error {
 	animated := *i.Animated
-	hasClipsOrModel := i.Clips != nil || i.ModelAddress != "" || i.ModelHqAddress != ""
 	switch i.Type {
-	case TypeAvatar, TypeFrame, TypeEmoji:
-		if hasClipsOrModel || len(i.Layers) > 0 || animated != (i.AnimationAddress != "") {
+	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
+		if len(i.Layers) > 0 || animated != (i.AnimationAddress != "") {
 			return fmt.Errorf("V-3 fields do not match a %s with animated %t", i.Type, animated)
 		}
-	case TypeCharacter:
-		if i.AnimationAddress != "" || len(i.Layers) > 0 || (!animated && hasClipsOrModel) {
-			return fmt.Errorf("V-3 fields do not match a character with animated %t", animated)
-		}
-		if animated && (i.Clips == nil || i.ModelAddress == "") {
-			return fmt.Errorf("V-4 an animated character needs all four clips and modelAddress")
-		}
 	case TypeTable:
-		if i.AnimationAddress != "" || hasClipsOrModel || animated != (len(i.Layers) > 0) {
+		if i.AnimationAddress != "" || animated != (len(i.Layers) > 0) {
 			return fmt.Errorf("V-3 fields do not match a table with animated %t", animated)
 		}
 		return i.checkLayers()
-	case TypeAction:
-		if !animated || i.AnimationAddress == "" || hasClipsOrModel || len(i.Layers) > 0 {
-			return fmt.Errorf("V-3 an action is animated and has only animationAddress")
-		}
-		if slices.ContainsFunc(i.Sources, func(s Source) bool { return s.Type == SourceDefault }) {
-			return fmt.Errorf("V-11 an action has no default source")
-		}
 	}
 	return nil
 }
@@ -166,18 +141,6 @@ func (i strictItem) checkAddresses() error {
 	expected := map[string]string{AddressOf(i.ID, "static"): i.StaticAddress}
 	if i.AnimationAddress != "" {
 		expected[AddressOf(i.ID, "anim")] = i.AnimationAddress
-	}
-	if i.ModelAddress != "" {
-		expected[AddressOf(i.ID, "model")] = i.ModelAddress
-	}
-	if i.ModelHqAddress != "" {
-		expected[AddressOf(i.ID, "model_hq")] = i.ModelHqAddress
-	}
-	if i.Clips != nil {
-		expected[AddressOf(i.ID, "clip/idle")] = i.Clips.Idle
-		expected[AddressOf(i.ID, "clip/win")] = i.Clips.Win
-		expected[AddressOf(i.ID, "clip/lose")] = i.Clips.Lose
-		expected[AddressOf(i.ID, "clip/reaction")] = i.Clips.Reaction
 	}
 	for _, layer := range i.Layers {
 		expected[AddressOf(i.ID, "layer/"+layer.Name)] = layer.Address
@@ -251,32 +214,12 @@ func deriveFields(fields map[string]any, id string) {
 	fields["staticAddress"] = AddressOf(id, "static")
 	animated, _ := fields["animated"].(bool)
 	switch TypeOf(id) {
-	case TypeAvatar, TypeFrame, TypeEmoji:
+	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
 		if animated {
 			fields["animationAddress"] = AddressOf(id, "anim")
 		}
-	case TypeAction:
-		fields["animationAddress"] = AddressOf(id, "anim")
-	case TypeCharacter:
-		deriveCharacter(fields, id, animated)
 	case TypeTable:
 		deriveLayers(fields, id)
-	}
-}
-
-func deriveCharacter(fields map[string]any, id string, animated bool) {
-	if !animated {
-		return
-	}
-	fields["modelAddress"] = AddressOf(id, "model")
-	fields["clips"] = map[string]any{
-		"idle":     AddressOf(id, "clip/idle"),
-		"win":      AddressOf(id, "clip/win"),
-		"lose":     AddressOf(id, "clip/lose"),
-		"reaction": AddressOf(id, "clip/reaction"),
-	}
-	if _, hasHq := fields["modelHqAddress"]; hasHq {
-		fields["modelHqAddress"] = AddressOf(id, "model_hq")
 	}
 }
 

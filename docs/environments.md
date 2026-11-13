@@ -2,7 +2,7 @@
 
 The environments the game runs in, every environment variable the code reads, where secrets live and how they are rotated, the secret scan, and how database schema changes reach each environment (#24).
 
-Scope boundaries: deploy, rollback and orchestration are #25 and `docs/launch-runbook.md` section 5. Backups and restore are #188. Observability is #28. Admin config (every number a designer tunes) is never an environment variable; it is versioned in admin (ADR 0006).
+Scope boundaries: deploy, rollback and orchestration are #25 and `docs/launch-runbook.md` section 5. Backups and restore are #188 and `docs/backup-restore.md`. Observability is #28. Admin config (every number a designer tunes) is never an environment variable; it is versioned in admin (ADR 0006).
 
 ## 1. Environments
 
@@ -125,6 +125,12 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_COUNTRY_HEADER` | No | server | empty (no IP country fallback) | `CF-IPCountry` | No | from #117; only a header the edge overwrites on every request |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | No | server | `4320h` | `4320h` | No | from #117 |
 | `HD_ACCOUNT_DELETION_GRACE` | No | server | `720h` | `720h` | No | from #63; `AccountDeletionGraceDays` of `docs/privacy.md` section 4 |
+| `HD_EXPORT_STORE_URL` | No | server | none: `POST /account/export` is not served | `https://<object-store-host>/<private-export-bucket>` | No | from #63; a private bucket, never the public asset bucket |
+| `HD_EXPORT_STORE_REGION` | With `HD_EXPORT_STORE_URL` | server | none | `<store-region>` | No | from #63 |
+| `HD_EXPORT_STORE_ACCESS_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-access-key>` | Yes | from #63 |
+| `HD_EXPORT_STORE_SECRET_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-secret-key>` | Yes | from #63 |
+| `HD_EXPORT_LINK_TTL` | No | server | `72h`, at most `168h` | `72h` | No | from #63; `ExportLinkTtlHours` of `docs/privacy.md` section 4 |
+| `HD_DATA_EXPORT_COOLDOWN` | No | server | `168h` | `168h` | No | from #63; `DataExportCooldownDays` of `docs/privacy.md` section 11 |
 | `HD_DUPLICATE_COMPENSATION_PERCENT` | No | server | `20` | `20` | No | from #104 |
 | `HD_PLAY_PACKAGE` | No | server | empty (Google purchases off) | `com.example.hypedomino` | No | from #106 |
 | `HD_PLAY_SERVICE_ACCOUNT` | With `HD_PLAY_PACKAGE` | server | empty | `/run/secrets/play-service-account.json` | Yes, the file it names | from #106 |
@@ -159,7 +165,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. For the store price push (`docs/economy.md` 7.4, #585) it reads `HD_PLAY_PACKAGE` and `HD_PLAY_SERVICE_ACCOUNT` as the server does, and the App Store Connect API key below; a store without its variables is shown as not configured and nothing is pushed to it. The Play service account needs the Play Console permission to manage store presence and pricing of the app; the App Store Connect key needs the App Manager role. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
@@ -181,6 +187,12 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
+| `HD_PLAY_PACKAGE` | No | admin-api | empty (store price push to Google Play not configured) | `com.example.hypedomino` | No | from #585 |
+| `HD_PLAY_SERVICE_ACCOUNT` | With `HD_PLAY_PACKAGE` | admin-api | empty | `/run/secrets/play-service-account.json` | Yes, the file it names | from #585 |
+| `HD_ASC_ISSUER_ID` | With the other `HD_ASC_*` | admin-api | empty (store price push to the App Store not configured) | `<app-store-connect-issuer-id>` | No | from #585 |
+| `HD_ASC_KEY_ID` | With the other `HD_ASC_*` | admin-api | empty | `<app-store-connect-key-id>` | No | from #585 |
+| `HD_ASC_PRIVATE_KEY` | With the other `HD_ASC_*` | admin-api | empty | `/run/secrets/app-store-connect-key.p8` | Yes, the file it names (the `.p8` API key) | from #585 |
+| `HD_ASC_APP_ID` | With the other `HD_ASC_*` | admin-api | empty | `<numeric-apple-app-id>` | No | from #585 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
 | `HD_MUTE_HOURS` | No | admin-api | 24 (`ModerationMuteHours`) | `<mute-hours>` | No | from #144 |
 
@@ -205,6 +217,11 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `ANDROID_KEYALIAS_NAME` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-alias>` | Yes | Repository secret |
 | `ANDROID_KEYALIAS_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<upload-key-password>` | Yes | Repository secret |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Yes, for a `client-v*` tag | `Release build` workflow, Play internal testing upload | `<play-publisher-service-account-json>` | Yes | Repository secret |
+| `CONTENT_STORE_URL` | No: without it a tag build skips the CDN upload | `Release build` workflow, `content-publish` | `https://<object-store-host>/hypedomino-content-<environment>` | No | Repository variable |
+| `CONTENT_STORE_REGION` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<store-region>` | No | Repository variable |
+| `CONTENT_ENVIRONMENT` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `staging` | No | Repository variable |
+| `CONTENT_STORE_ACCESS_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-access-key>` | Yes | Repository secret |
+| `CONTENT_STORE_SECRET_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-secret-key>` | Yes | Repository secret |
 
 ### 2.4 Not read yet
 
@@ -220,6 +237,7 @@ The client reads no environment variable. Crash reporting (#182) adds its variab
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 | Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
+| PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
 Rules:

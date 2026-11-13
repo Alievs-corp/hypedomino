@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { batchLeads, bundleOf, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+import { batchLeads, bundleOf, codeGrants, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
 
 const draft: PromoDraft = {
   ...emptyDraft,
@@ -48,6 +48,12 @@ test("single_use, targeted and batch requests leave out what the server sets", (
   assert.equal(batch.code, undefined);
 });
 
+test("a premium Hype Pass draft asks for the premium track on every kind", () => {
+  assert.equal("passPremium" in promoRequest(draft, false), false);
+  assert.equal(promoRequest({ ...draft, passPremium: true }, false).passPremium, true);
+  assert.equal(promoRequest({ ...draft, passPremium: true, count: 500 }, true).passPremium, true);
+});
+
 test("a draft is ready with a grant, an ordered window and its kind's fields", () => {
   assert.equal(draftReady(draft, false), true);
   assert.equal(draftReady({ ...draft, coins: 0, cosmetics: "" }, false), false);
@@ -67,6 +73,12 @@ test("an active code past its end shows as expired", () => {
   assert.equal(shownState(code, new Date("2026-11-06T00:00:00Z")), "active");
   assert.equal(shownState(code, new Date("2026-11-12T09:00:00Z")), "expired");
   assert.equal(shownState({ ...code, state: "disabled" }, new Date("2026-12-01T00:00:00Z")), "disabled");
+});
+
+test("a premium Hype Pass code names the premium track beside its bundle", () => {
+  assert.equal(codeGrants(code, "premium Hype Pass"), "300 coins");
+  assert.equal(codeGrants({ ...code, passPremium: true }, "premium Hype Pass"), "300 coins + premium Hype Pass");
+  assert.equal(promoChangeSummary({ count: 1, code: { ...code, passPremium: true } }), "multi_use; campaign.launch_week; 300 coins + premium Hype Pass; 2026-11-05T09:00:00Z to 2026-11-12T09:00:00Z");
 });
 
 test("paths encode the campaign and the id", () => {

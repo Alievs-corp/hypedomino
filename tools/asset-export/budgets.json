@@ -1,0 +1,8 @@
+{
+  "astcBlock": "6x6",
+  "astcBlockSource": "SpriteFormat in client/Assets/HypeDomino/Editor/ProjectSetup.cs, the format of the project sprite preset; a block size per asset class is open (docs/asset-workflow.md O-5)",
+  "types": {
+    "avatar": { "maxBytes": 300000, "animatedOnly": true, "source": "#171, animated avatars under 300 KB each" },
+    "emoji": { "maxBytes": 100000, "animatedOnly": false, "source": "#175, emoji under 100 KB each" }
+  }
+}

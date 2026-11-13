@@ -33,7 +33,7 @@ func DefaultConfig() Config {
 	return Config{
 		DuplicateCompensationPercent: 20,
 		GuidePriceCoins:              map[string]int64{"common": 400, "rare": 1500, "epic": 3500, "legendary": 12000, "mythic": 30000},
-		GuidePriceTypePercent:        map[string]int{cosmetics.TypeAvatar: 100, cosmetics.TypeCharacter: 150, cosmetics.TypeFrame: 100, cosmetics.TypeTable: 150, cosmetics.TypeEmoji: 50, cosmetics.TypeAction: 50},
+		GuidePriceTypePercent:        map[string]int{cosmetics.TypeAvatar: 100, cosmetics.TypeFrame: 100, cosmetics.TypeTable: 150, cosmetics.TypeTile: 125, cosmetics.TypeEmoji: 50},
 	}
 }
 

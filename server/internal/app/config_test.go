@@ -78,7 +78,6 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		"HD_COSMETICS_MANIFEST":                "/etc/hypedomino/cosmetics.json",
 		"HD_RARITY_ORDINALS":                   "common:1,rare:2,epic:3,legendary:4,mythic:5,cosmic:6",
 		"HD_EMOJI_SLOTS":                       "8",
-		"HD_ACTION_SLOTS":                      "2",
 		"HD_EMOJI_BURST":                       "4",
 		"HD_EMOJI_REFILL":                      "3s",
 		"HD_SHOP_CATALOG":                      "/etc/hypedomino/shop.json",
@@ -153,7 +152,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 	if p.NicknameMinLength != 2 || p.NicknameMaxLength != 12 || !p.NicknameAllowMixedScript || p.NicknameRenameCooldown != 168*time.Hour || p.NicknameRelease != 48*time.Hour {
 		t.Fatalf("profile config %+v", p)
 	}
-	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 || config.Inventory.ActionSlots != 2 {
+	if config.Cosmetics != "/etc/hypedomino/cosmetics.json" || config.Inventory.EmojiSlots != 8 {
 		t.Fatalf("inventory config %q %+v", config.Cosmetics, config.Inventory)
 	}
 	if config.Emoji != (room.EmojiLimit{Burst: 4, Refill: 3 * time.Second}) {
@@ -208,11 +207,13 @@ func TestConfigReportsEveryBadValueAtOnce(t *testing.T) {
 		"HD_PROMO_KEY":                      "short",
 		"HD_PROMO_LOCK_MINUTES":             "0",
 		"HD_RATE_SPEND_BURST":               "0",
+		"HD_DATA_EXPORT_COOLDOWN":           "0s",
+		"HD_EXPORT_STORE_URL":               "https://exports.example/bucket",
 	}))
 	if err == nil {
 		t.Fatal("bad values were accepted")
 	}
-	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_EMOJI_REFILL", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_OUTBOX_POLL", "HD_MATCHMAKING_TICK and HD_MATCHMAKING_LEADER_TTL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_ACCOUNT_DELETION_GRACE", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*"} {
+	for _, name := range []string{"HD_LOG_LEVEL", "HD_DRAIN_TIMEOUT", "HD_WRITE_QUEUE", "HD_INTENT_BURST", "HD_HELLO_TIMEOUT", "HD_SCALE_OUT_AT", "capacity", "HD_NICKNAME_ALLOW_MIXED_SCRIPT", "HD_NICKNAME_MAX_LENGTH", "HD_EMOJI_SLOTS", "HD_EMOJI_REFILL", "HD_RARITY_ORDINALS", "HD_SHOP_RESET_HOUR_UTC", "HD_CONFIG_POLL", "HD_SEASON_POLL", "HD_OUTBOX_POLL", "HD_MATCHMAKING_TICK and HD_MATCHMAKING_LEADER_TTL", "HD_COUNTRY_CHANGE_COOLDOWN", "HD_ACCOUNT_DELETION_GRACE", "HD_DUPLICATE_COMPENSATION_PERCENT", "HD_PLAY_PACKAGE", "HD_REFUND_WINDOW_DAYS", "HD_PROMO_KEY", "HD_PROMO_*", "HD_RATE_*", "HD_DATA_EXPORT_COOLDOWN", "HD_EXPORT_STORE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}

@@ -4,7 +4,7 @@ import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
-import { batchLeads, bundleSummary, promoApiPath, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoTemplate } from "@/promo/codes";
+import { batchLeads, bundleSummary, codeGrants, promoApiPath, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoTemplate } from "@/promo/codes";
 import { Notice } from "../players/Notice";
 import { DisableCode } from "./DisableCode";
 import { PromoCreator } from "./PromoCreator";
@@ -153,7 +153,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                   </td>
                   <td className="py-2 pr-4">{code.kind}</td>
                   <td className="py-2 pr-4">{shownState(code, now)}</td>
-                  <td className="py-2 pr-4">{bundleSummary(code.bundle)}</td>
+                  <td className="py-2 pr-4">{codeGrants(code, t("promo.pass_premium"))}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">
                     {t.when(code.start)} → {t.when(code.end)}
                   </td>

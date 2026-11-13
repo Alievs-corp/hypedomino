@@ -12,6 +12,7 @@ namespace HypeDomino.Editor
 {
     public static class ProjectSetup
     {
+        public const TextureImporterFormat SpriteFormat = TextureImporterFormat.ASTC_6x6;
         const string SettingsFolder = "Assets/HypeDomino/Settings";
         const string ScenesFolder = "Assets/HypeDomino/Scenes";
         const string RendererPath = SettingsFolder + "/UniversalRenderer.asset";
@@ -113,7 +114,7 @@ namespace HypeDomino.Editor
             {
                 var settings = importer.GetPlatformTextureSettings(platform);
                 settings.overridden = true;
-                settings.format = TextureImporterFormat.ASTC_6x6;
+                settings.format = SpriteFormat;
                 importer.SetPlatformTextureSettings(settings);
             }
 

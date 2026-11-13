@@ -4,7 +4,7 @@ Status: Proposed. The format follows from constraints checked below. A first dev
 Date: 2026-11-06
 Issue: #93
 
-Characters are real-time 3D and stay under ADR 0009. This ADR covers the other animated cosmetics: avatars, frames, emoji and table layers.
+This ADR covers the animated cosmetics: avatars, frames, emoji and table layers. The game has no characters (ADR 0009 is superseded).
 
 ## Context
 
@@ -12,7 +12,7 @@ Animated avatars appear in lists, the shop and the profile as well as at the sea
 
 ## Decision
 
-- An animated 2D item is a loop of whole frames in the item's one atlas (`docs/cosmetics.md` 8.2), compressed with ASTC, without mipmaps, with its static sprite in the same group.
+- An animated 2D item is a loop of whole frames in one atlas in the item's group (one atlas per loop, so one per table layer; `docs/cosmetics.md` 8.2), compressed with ASTC, without mipmaps, with its static sprite in the same group.
 - Frames keep the class canvas and pivot untrimmed, so swapping a frame or the static shows no jump (`docs/art-direction.md` section 7).
 - `AnimatedImage` plays the loop on a UI `Image`. It sets the sprite only when the frame changes and allocates nothing while playing.
 - It shows the static on the low effect level, with reduce motion, for an item with no loop, and when the screen's budget is spent (`docs/cosmetics.md` 8.3). A row that is disabled frees its slot and rests on the static.
@@ -29,7 +29,7 @@ ASTC stores 16 bytes per block, so the texture size follows from the atlas and t
 | 768 x 768 | 6x6 | 262,144 | Yes |
 | 1024 x 1024 | 8x8 | 262,144 | Yes |
 
-As an illustration, 768 x 768 holds 16 frames of 192 x 192. The canvas per class, the block size per class and the frame rate stay open (`docs/asset-workflow.md` O-5, O-6). 8x8 may not hold the outline of `docs/art-direction.md` section 4; that needs a look at real art on the reference panel.
+As an illustration, 768 x 768 holds 16 frames of 192 x 192. The canvas per class, the block size per class and the frame rate stay open (`docs/asset-workflow.md` O-5, O-6). 8x8 may blur the fine ornament and the pip edges of `docs/art-direction.md` section 4; that needs a look at real art on the reference panel.
 
 ## Alternatives considered and why rejected
 

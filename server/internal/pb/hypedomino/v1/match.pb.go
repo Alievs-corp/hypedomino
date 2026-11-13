@@ -1460,16 +1460,18 @@ func (x *HandResult) GetLeft() []*SeatTiles {
 }
 
 type RosterEntry struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Seat          Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
-	Team          Team                   `protobuf:"varint,2,opt,name=team,proto3,enum=hypedomino.v1.Team" json:"team,omitempty"`
-	Nickname      string                 `protobuf:"bytes,3,opt,name=nickname,proto3" json:"nickname,omitempty"`
-	Character     string                 `protobuf:"bytes,4,opt,name=character,proto3" json:"character,omitempty"`
-	Frame         string                 `protobuf:"bytes,5,opt,name=frame,proto3" json:"frame,omitempty"`
-	Avatar        string                 `protobuf:"bytes,6,opt,name=avatar,proto3" json:"avatar,omitempty"`
-	RankLabel     string                 `protobuf:"bytes,7,opt,name=rank_label,json=rankLabel,proto3" json:"rank_label,omitempty"`
-	Emblems       []string               `protobuf:"bytes,8,rep,name=emblems,proto3" json:"emblems,omitempty"`
-	Bot           bool                   `protobuf:"varint,9,opt,name=bot,proto3" json:"bot,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Seat     Seat                   `protobuf:"varint,1,opt,name=seat,proto3,enum=hypedomino.v1.Seat" json:"seat,omitempty"`
+	Team     Team                   `protobuf:"varint,2,opt,name=team,proto3,enum=hypedomino.v1.Team" json:"team,omitempty"`
+	Nickname string                 `protobuf:"bytes,3,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	// Deprecated: Marked as deprecated in hypedomino/v1/match.proto.
+	Character     string   `protobuf:"bytes,4,opt,name=character,proto3" json:"character,omitempty"`
+	Frame         string   `protobuf:"bytes,5,opt,name=frame,proto3" json:"frame,omitempty"`
+	Avatar        string   `protobuf:"bytes,6,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	RankLabel     string   `protobuf:"bytes,7,opt,name=rank_label,json=rankLabel,proto3" json:"rank_label,omitempty"`
+	Emblems       []string `protobuf:"bytes,8,rep,name=emblems,proto3" json:"emblems,omitempty"`
+	Bot           bool     `protobuf:"varint,9,opt,name=bot,proto3" json:"bot,omitempty"`
+	Tile          string   `protobuf:"bytes,10,opt,name=tile,proto3" json:"tile,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1525,6 +1527,7 @@ func (x *RosterEntry) GetNickname() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in hypedomino/v1/match.proto.
 func (x *RosterEntry) GetCharacter() string {
 	if x != nil {
 		return x.Character
@@ -1565,6 +1568,13 @@ func (x *RosterEntry) GetBot() bool {
 		return x.Bot
 	}
 	return false
+}
+
+func (x *RosterEntry) GetTile() string {
+	if x != nil {
+		return x.Tile
+	}
+	return ""
 }
 
 type MatchView struct {
@@ -1885,18 +1895,20 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\n" +
 	"carried_in\x18\t \x01(\rR\tcarriedIn\x12,\n" +
 	"\x04left\x18\n" +
-	" \x03(\v2\x18.hypedomino.v1.SeatTilesR\x04left\"\x92\x02\n" +
+	" \x03(\v2\x18.hypedomino.v1.SeatTilesR\x04left\"\xaa\x02\n" +
 	"\vRosterEntry\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +
 	"\x04team\x18\x02 \x01(\x0e2\x13.hypedomino.v1.TeamR\x04team\x12\x1a\n" +
-	"\bnickname\x18\x03 \x01(\tR\bnickname\x12\x1c\n" +
-	"\tcharacter\x18\x04 \x01(\tR\tcharacter\x12\x14\n" +
+	"\bnickname\x18\x03 \x01(\tR\bnickname\x12 \n" +
+	"\tcharacter\x18\x04 \x01(\tB\x02\x18\x01R\tcharacter\x12\x14\n" +
 	"\x05frame\x18\x05 \x01(\tR\x05frame\x12\x16\n" +
 	"\x06avatar\x18\x06 \x01(\tR\x06avatar\x12\x1d\n" +
 	"\n" +
 	"rank_label\x18\a \x01(\tR\trankLabel\x12\x18\n" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
-	"\x03bot\x18\t \x01(\bR\x03bot\"\xab\t\n" +
+	"\x03bot\x18\t \x01(\bR\x03bot\x12\x12\n" +
+	"\x04tile\x18\n" +
+	" \x01(\tR\x04tile\"\xab\t\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12'\n" +

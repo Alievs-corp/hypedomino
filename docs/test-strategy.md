@@ -91,7 +91,7 @@ Unity Test Framework, one test assembly per runtime assembly (#65 assembly defin
 |---|---|---|
 | Edit-mode | Pure C# logic: chain layout geometry for line, spinner arms and auto-scale (#80); applying a server snapshot or event to the view state; reconnect state machine (#67); localization key coverage (#70); golden frame decoding (section 2.4) | #65, #67, #80 |
 | Play-mode | Scene flows driven by a fake transport replaying recorded server frames (section 7.3): deal, place, draw, pass, hand end, match end, reconnect, `UPDATE_REQUIRED` screen. Asserts what is shown equals what the frames say; the client never shows a value it did not receive | #66, #78 to #87, #73 |
-| Allocation, per call | `Assert.That(() => step(), Is.Not.AllocatingGCMemory())` on every per-frame and per-input method after warm-up | #72 |
+| Allocation, per call | `Assert.That(() => step(), Allocates.Nothing)` on every per-frame and per-input method after warm-up. `Allocates.Nothing` (`client/Assets/HypeDomino/Tests/Support`) counts `GC.Alloc` samples with a `ProfilerRecorder` that collects only on the calling thread and requires 0. The engine's `Is.Not.AllocatingGCMemory()` is not used: its shared recorder sometimes reports one allocation for an empty step (#593) | #72, #593 |
 | Allocation, per frame | Play-mode replay of a recorded 2v2 match reads `ProfilerRecorder` "GC Allocated In Frame" each frame from first deal to result screen and requires 0 B, with `GC.CollectionCount(0)` unchanged | #72 |
 | Performance capture | Unity Performance Testing package records frame time and markers during the same replay; results are trend data only | #72, #161 |
 | Build checks | Build size report per PR with a warning when the budget would be exceeded | #76 |

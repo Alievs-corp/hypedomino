@@ -22,6 +22,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
+	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
@@ -36,6 +37,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
@@ -124,6 +126,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signals := risk.NewStore(pool)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
+	sessions.ObserveDevices(integrity.NewDeviceReports(config.IntegrityPolicy, risk.NewIntegrity(signals, systemClock{}, logger)))
 	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)
 	critical := func(next http.Handler) http.Handler { return token.RequireMac(tokens, macFailures, next) }
 	limiter.Authenticate(tokens)
@@ -267,13 +270,25 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "account deletions", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		accounts.RunDeletions(ctx, logger, every, config.DeletionGrace, time.Now)
 	})
+	if config.ExportStore.BaseURL != "" {
+		exportFiles, err := objectstore.New(config.ExportStore)
+		if err != nil {
+			pool.Close()
+			return nil, nil, fmt.Errorf("HD_EXPORT_STORE_*: %w", err)
+		}
+		exports := dataexport.NewStore(pool)
+		a.Handle("POST /account/export", dataexport.NewHandler(tokens, exports, accounts, exportFiles, config.Export, logger, time.Now))
+		go panics.Supervise(ctx, "data export purge", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+			exports.RunPurge(ctx, exportFiles, logger, every, time.Now)
+		})
+	}
 	ratingResults := matchstore.NewRelay(matchstore.New(pool), ratings, matchstore.TopicRating, 0, time.Now)
 	go panics.Supervise(ctx, "outbox rating", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
 		ratingResults.Run(ctx, every, func(err error) { logger.Error("rating relay failed", "error", err) })
 	})
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
 	if members != nil {
-		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, rankedOpen: func() bool {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})
@@ -342,7 +357,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("POST /shop/complete", critical(guarded(gate, tokens, integrity.PurposePurchase, receipts)))
 	a.Handle("GET /purchases", receipts)
 	a.Handle("POST /store/", receipts)
-	promos, err := promos(pool, engine, catalog, config)
+	promos, err := promos(pool, engine, catalog, passes, config)
 	if err != nil {
 		pool.Close()
 		return nil, nil, err
@@ -410,7 +425,7 @@ func stores(config app.Config) (map[purchase.Platform]purchase.Validator, purcha
 	return validators, google, apple, nil
 }
 
-func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, config app.Config) (promo.Promos, error) {
+func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalog, passes promo.Pass, config app.Config) (promo.Promos, error) {
 	if config.PromoKey == "" {
 		return nil, nil
 	}
@@ -418,7 +433,9 @@ func promos(pool *pgxpool.Pool, engine *reward.Engine, catalog *cosmetics.Catalo
 	if err != nil {
 		return nil, fmt.Errorf("HD_PROMO_KEY: %w", err)
 	}
-	return promo.NewStore(pool, engine, catalog, hasher, config.Promo), nil
+	store := promo.NewStore(pool, engine, catalog, hasher, config.Promo)
+	store.WithPass(passes)
+	return store, nil
 }
 
 func loadCatalog(path string) (*cosmetics.Catalog, error) {

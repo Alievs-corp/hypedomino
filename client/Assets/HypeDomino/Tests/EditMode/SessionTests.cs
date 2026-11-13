@@ -6,8 +6,6 @@ using HypeDomino.Net;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -82,6 +80,21 @@ namespace HypeDomino.Tests.EditMode
             session.Hello(transport, Envelope.Parser.ParseFrom(golden).ClientHello);
 
             CollectionAssert.AreEqual(golden, transport.Sent[0]);
+        }
+
+        [Test]
+        public void EveryHelloCarriesTheDeviceRiskSignalsOnce()
+        {
+            session.DeviceRiskSignals.Add(HypeDomino.Core.DeviceRisk.DeviceRiskSignals.Root);
+            session.DeviceRiskSignals.Add(HypeDomino.Core.DeviceRisk.DeviceRiskSignals.Emulator);
+            var hello = new ClientHello();
+
+            session.Hello(transport, hello);
+            session.Hello(transport, hello);
+
+            var expected = new[] { "root", "emulator" };
+            CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[0]).ClientHello.DeviceRiskSignals);
+            CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[1]).ClientHello.DeviceRiskSignals);
         }
 
         [Test]
@@ -279,7 +292,7 @@ namespace HypeDomino.Tests.EditMode
             };
             step();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
 
         [Test]
@@ -291,7 +304,7 @@ namespace HypeDomino.Tests.EditMode
             TestDelegate step = () => session.Send(Envelope.PayloadOneofCase.PlaceTileIntent, intent);
             step();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
     }
 }

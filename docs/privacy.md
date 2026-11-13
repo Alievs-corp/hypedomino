@@ -106,7 +106,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 | `PurchaseRecordRetentionYears` | 10, counted from the end of the purchase's calendar year (OQ-7) | D-17 | Delete |
 | `ConsentRecordRetentionYears` | 3, counted from the end of the calendar year of the account's deletion (OQ-7) | D-23 after deletion | Delete |
 | `PermanentBanEvasionRetentionDays` | 1095 after the account's deletion (OQ-10) | D-28 hash for a permanent ban | Delete |
-| `BackupRetentionDays` | set in #188 | D-30, D-28 tombstone | Backup rotated out |
+| `BackupRetentionDays` | 35 (`docs/backup-restore.md` section 3.2) | D-30, D-28 tombstone | Backup rotated out |
 
 - Inactive accounts are never deleted automatically (owner decision, #187). There is no inactivity deletion and no config key for it at launch.
 - A temporary ban's ban-evasion hash expires when the ban would have ended.
@@ -159,6 +159,8 @@ The privacy policy states this table. A deleted account appears in past matches 
 
 One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server timestamp, source (first launch or settings), app version. Choices made before sign-in are held on the device and written at step 5 with their original order. Rows are append-only.
 
+- Implementation: table `consent_records` (migration `00051_consent_records.sql`). Today only `PUT /push/settings` writes it, for `promotional_push` (`docs/push.md` PN-9); the policy and app versions come from the client, the timestamp from the server. On account deletion the rows move to the tombstone id (8.2). Not yet built: the sign-in write of choices made before sign-in (step 5), the `analytics` and `diagnostics` writes (#157, #181), and the purge after `ConsentRecordRetentionYears`.
+
 ### 6.4 Analytics rules (#181)
 
 - No event is sent, queued or written to disk before `analytics` is on. Events from before consent are dropped, not held.
@@ -173,7 +175,7 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 
 - Content target is PEGI 3, IARC lowest tier, App Store 4+ (`docs/localization.md` 7). A content rating says the content suits all ages; it does not declare who the game targets. The target audience declared to the stores is 13 and older (7.3).
 - The game has accounts, purchases, public nicknames, leaderboards and moderated user names; it has no free-text or voice chat.
-- Bright cartoon visuals make the stores likely to treat the game as appealing to children even if not targeted at them, so the store listing and the age gate must be consistent with option A.
+- Animated, effect-heavy visuals can make the stores treat the game as appealing to children even if not targeted at them, even with the premium look of `docs/art-direction.md`, so the store listing and the age gate must be consistent with option A.
 
 ### 7.2 Thresholds (KVKK and Azerbaijan open, OQ-14)
 
@@ -238,6 +240,7 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 | D-8, D-10, D-16 | Delete |
 | D-12, D-15 | Anonymize: opponents' and partners' history stays correct, the player is shown as a placeholder |
 | D-13, D-18, D-19, D-20 | Kept to their own retention, linked to the tombstone id only; deleted when it ends |
+| D-29 | The request record moves to the tombstone id so the purge job still deletes a file that has not expired; files expire by `ExportLinkTtlHours` |
 | D-17 | Kept for `PurchaseRecordRetentionYears`, linked to the tombstone id, without contact data |
 | D-23 | Kept for `ConsentRecordRetentionYears` as proof, linked to the tombstone id |
 | D-24 | Delete raw events for the analytics id in the analytics store |
@@ -255,6 +258,11 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 - In-app request in Settings, Account. The server builds one JSON file with a versioned schema and offers it as a download through a signed URL valid for `ExportLinkTtlHours`. One request per `DataExportCooldownDays` (proposed default 7).
 - Contents: D-1, D-3, D-8 to D-11, D-12 (own seats only), D-15, D-16, D-17 without purchase tokens or receipts, D-18, D-21 (friends and blocks as nicknames), D-23, D-24 for the player's analytics ids, and from D-19 every sanction, active or past, including a shadowban, with its reason category, start and end, plus the signals that led to it as signal category and time (OQ-9).
 - Never included: other players' account ids or hidden tiles, reporter identities, the risk score, signal weights, thresholds, which detector fired and raw evidence that shows how detection works (Art. 15(4), OQ-9), receipts and tokens, logs.
+- Implemented in `server/internal/account/export.go` and `server/internal/dataexport` (#63). `POST /account/export` with the access token reserves a request row in `data_exports`, builds the document, writes it to the private export bucket as `exports/<random id>.json` and answers 201 with the signed URL and `expires_at`. Inside the cooldown it answers 429 `export_cooldown` with `retry_at`; if the build or upload fails the row is released and it answers 503 `export_unavailable`, so a failure does not start the cooldown. A purge job, run every `HD_SEASON_POLL`, deletes each file once `expires_at` passes and marks the row. Without `HD_EXPORT_STORE_URL` the endpoint is not served (`docs/environments.md` 2.1).
+- Document: `schema_version` (1), `generated_at` and `sections`, each a list of rows. Every table that references an account is either exported with an explicit column list or withheld, and a test fails when a new table is neither. Withheld: `auth_sessions` (D-4), `app_attest_keys` (D-19 device keys), `push_devices` (D-22), `rating_signals` and `risk_reviews` (detection internals, other players' account ids), `player_reports` (D-20, reporter identities), `data_exports`. D-2 is left out; the email (D-3) is included.
+- Anti-cheat content: `sanctions` lists each ban-wave action with its time; the `account` section holds the current `banned_until`, `shadowbanned_at` and `muted_until`; `sanction_signals` lists the category (the signal kind) and time of each signal recorded at or before the latest sanction. Signals after the latest sanction, weights, scores, dedupe keys and evidence are withheld.
+- D-23: the `consents` section lists every `consent_records` row (purpose, choice, policy and app version, source, time). The age gate result is not stored yet, so it is not in the document.
+- Not yet in the document, because the data is not stored yet: D-24 analytics events, and the history of past admin bans and mutes, which today lives only in the admin audit log (D-27).
 - A support answer to an access request (8.1) gives the same anti-cheat content and states, with the reason, what was withheld and that the player may complain to a supervisory authority (GDPR Art. 12(4)).
 
 ## 9. Regulation mapping
@@ -514,7 +522,7 @@ Every item must be checked, or waived by an owner comment on #187, before releas
 | L-16 | Export as 8.3, including sanctions and signal categories (OQ-9) | Eng | #63 | Open |
 | L-17 | Sign in with Apple token revocation on deletion | Eng | #57, #63 | Open |
 | L-18 | Deletion propagated to the analytics store and Sentry | Eng | #181, #182 | Open |
-| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188 | Open |
+| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188, #601 | Open |
 | L-20 | Breach response in the runbook: assess, notify the authority within 72 hours (GDPR, KVKK), inform players where required | Owner | #197 | Open |
 | L-21 | Rights request handling in support tools with a 30-day clock | Eng | #144 | Open |
 | L-22 | PII access limited to support and super admin roles; analyst sees pseudonymous data only | Eng | #134, #148 | Open |

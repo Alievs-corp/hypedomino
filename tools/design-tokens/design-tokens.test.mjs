@@ -53,6 +53,21 @@ test("C# text size tokens carry each type style's size", () => {
   assert.ok(source.includes("public const int Score = 108;"));
 });
 
+test("C# typography tokens give each text style its family, weight, size and line height", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public enum TokenFontFamily"));
+  assert.ok(source.includes("        UiCyrillic,"));
+  assert.ok(source.includes("public enum TokenTextStyle"));
+  const styles = Object.keys(tokens.typography.scale);
+  const score = styles.indexOf("score");
+  const families = source.match(/FamilyOfStyle = \{ ([^}]*) \}/)[1].split(", ");
+  const weights = source.match(/WeightOfStyle = \{ ([^}]*) \}/)[1].split(", ");
+  assert.equal(families.length, styles.length);
+  assert.equal(families[score], "TokenFontFamily.Numeral");
+  assert.equal(weights[score], "900");
+  assert.ok(source.includes("public static readonly float[] LineHeightOfStyle = { 1.3f, 1.35f,"));
+});
+
 test("a GPU pattern that is not a regular expression is reported", () => {
   assertReported(errorsAfter((copy) => { copy.effects.graphics.deviceClass.lowGpuPatterns.push("^Mali-(G52"); }), "^Mali-(G52 is not a regular expression");
 });
@@ -165,7 +180,7 @@ test("the committed C# tokens match the JSON", () => {
 
 test("C# tokens carry hex colours, nested names and float easing points", () => {
   const source = csharpTokens(tokens);
-  assert.ok(source.includes("public static readonly Color32 BackgroundBase = new Color32(0x0D, 0x0B, 0x24, 0xFF);"));
+  assert.ok(source.includes("public static readonly Color32 BackgroundBase = new Color32(0x0B, 0x06, 0x05, 0xFF);"));
   assert.ok(source.includes("public static readonly Color32 RoleTeamAFill = new Color32(0x3D, 0x8B, 0xFF, 0xFF);"));
   assert.ok(source.includes("public const int Md = 16;"));
   assert.ok(source.includes("public static readonly Vector4 Overshoot = new Vector4(0.34f, 1.56f, 0.64f, 1f);"));

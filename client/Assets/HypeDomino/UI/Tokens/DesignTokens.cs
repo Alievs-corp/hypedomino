@@ -5,39 +5,46 @@ namespace HypeDomino.UI.Tokens
 {
     public static class TokenColor
     {
-        public static readonly Color32 BackgroundBase = new Color32(0x0D, 0x0B, 0x24, 0xFF);
-        public static readonly Color32 BackgroundRaised = new Color32(0x17, 0x14, 0x3A, 0xFF);
-        public static readonly Color32 SurfaceDefault = new Color32(0x22, 0x1D, 0x52, 0xFF);
-        public static readonly Color32 SurfaceRaised = new Color32(0x2D, 0x27, 0x68, 0xFF);
-        public static readonly Color32 Scrim = new Color32(0x06, 0x05, 0x1A, 0xFF);
-        public static readonly Color32 Shadow = new Color32(0x05, 0x03, 0x0F, 0xFF);
-        public static readonly Color32 TextPrimary = new Color32(0xFF, 0xFF, 0xFF, 0xFF);
-        public static readonly Color32 TextSecondary = new Color32(0xD4, 0xCF, 0xF7, 0xFF);
-        public static readonly Color32 TextMuted = new Color32(0xA4, 0x9D, 0xDB, 0xFF);
-        public static readonly Color32 RolePrimaryFill = new Color32(0xFF, 0x3D, 0x9A, 0xFF);
-        public static readonly Color32 RolePrimaryOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
-        public static readonly Color32 RolePrimaryText = new Color32(0xFF, 0x8C, 0xC4, 0xFF);
-        public static readonly Color32 RoleSecondaryFill = new Color32(0x26, 0xD4, 0xFF, 0xFF);
-        public static readonly Color32 RoleSecondaryOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
-        public static readonly Color32 RoleSecondaryText = new Color32(0x7F, 0xE6, 0xFF, 0xFF);
+        public static readonly Color32 BackgroundBase = new Color32(0x0B, 0x06, 0x05, 0xFF);
+        public static readonly Color32 BackgroundRaised = new Color32(0x1A, 0x0C, 0x0A, 0xFF);
+        public static readonly Color32 SurfaceDefault = new Color32(0x2C, 0x15, 0x10, 0xFF);
+        public static readonly Color32 SurfaceRaised = new Color32(0x4B, 0x1D, 0x0F, 0xFF);
+        public static readonly Color32 Scrim = new Color32(0x0A, 0x03, 0x02, 0xFF);
+        public static readonly Color32 Shadow = new Color32(0x05, 0x02, 0x03, 0xFF);
+        public static readonly Color32 TextPrimary = new Color32(0xFB, 0xE9, 0xC2, 0xFF);
+        public static readonly Color32 TextSecondary = new Color32(0xE8, 0xD3, 0xA5, 0xFF);
+        public static readonly Color32 TextMuted = new Color32(0xCD, 0xB3, 0x7C, 0xFF);
+        public static readonly Color32 RolePrimaryFill = new Color32(0xE6, 0xC0, 0x68, 0xFF);
+        public static readonly Color32 RolePrimaryOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
+        public static readonly Color32 RolePrimaryText = new Color32(0xFF, 0xF4, 0xC2, 0xFF);
+        public static readonly Color32 RoleSecondaryFill = new Color32(0xF3, 0xD1, 0x7A, 0xFF);
+        public static readonly Color32 RoleSecondaryOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
+        public static readonly Color32 RoleSecondaryText = new Color32(0xF3, 0xD1, 0x7A, 0xFF);
         public static readonly Color32 RoleSuccessFill = new Color32(0x35, 0xE0, 0x7A, 0xFF);
-        public static readonly Color32 RoleSuccessOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
+        public static readonly Color32 RoleSuccessOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
         public static readonly Color32 RoleSuccessText = new Color32(0x7D, 0xF0, 0xAB, 0xFF);
         public static readonly Color32 RoleWarningFill = new Color32(0xFF, 0xB0, 0x20, 0xFF);
-        public static readonly Color32 RoleWarningOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
+        public static readonly Color32 RoleWarningOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
         public static readonly Color32 RoleWarningText = new Color32(0xFF, 0xCB, 0x6B, 0xFF);
         public static readonly Color32 RoleDangerFill = new Color32(0xFF, 0x4D, 0x5E, 0xFF);
-        public static readonly Color32 RoleDangerOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
+        public static readonly Color32 RoleDangerOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
         public static readonly Color32 RoleDangerText = new Color32(0xFF, 0x95, 0xA0, 0xFF);
-        public static readonly Color32 RoleScoreFill = new Color32(0xFF, 0xE0, 0x3D, 0xFF);
-        public static readonly Color32 RoleScoreOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
-        public static readonly Color32 RoleScoreText = new Color32(0xFF, 0xE9, 0x7A, 0xFF);
+        public static readonly Color32 RoleScoreFill = new Color32(0xF3, 0xCF, 0x72, 0xFF);
+        public static readonly Color32 RoleScoreOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
+        public static readonly Color32 RoleScoreText = new Color32(0xFF, 0xF6, 0xD0, 0xFF);
         public static readonly Color32 RoleTeamAFill = new Color32(0x3D, 0x8B, 0xFF, 0xFF);
-        public static readonly Color32 RoleTeamAOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
+        public static readonly Color32 RoleTeamAOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
         public static readonly Color32 RoleTeamAText = new Color32(0x94, 0xC0, 0xFF, 0xFF);
         public static readonly Color32 RoleTeamBFill = new Color32(0xFF, 0x7A, 0x2E, 0xFF);
-        public static readonly Color32 RoleTeamBOn = new Color32(0x12, 0x0A, 0x2C, 0xFF);
+        public static readonly Color32 RoleTeamBOn = new Color32(0x0B, 0x06, 0x05, 0xFF);
         public static readonly Color32 RoleTeamBText = new Color32(0xFF, 0xAD, 0x80, 0xFF);
+        public static readonly Color32 GoldHi = new Color32(0xFF, 0xF4, 0xC2, 0xFF);
+        public static readonly Color32 GoldDefault = new Color32(0xE6, 0xC0, 0x68, 0xFF);
+        public static readonly Color32 GoldMid = new Color32(0xC9, 0x9A, 0x3C, 0xFF);
+        public static readonly Color32 GoldLo = new Color32(0x7A, 0x54, 0x18, 0xFF);
+        public static readonly Color32 WoodHi = new Color32(0x5A, 0x24, 0x14, 0xFF);
+        public static readonly Color32 WoodDefault = new Color32(0x3A, 0x15, 0x0B, 0xFF);
+        public static readonly Color32 WoodLo = new Color32(0x24, 0x0C, 0x06, 0xFF);
     }
 
     public static class TokenOpacity
@@ -86,6 +93,39 @@ namespace HypeDomino.UI.Tokens
         public const int Heading = 68;
         public const int Display = 86;
         public const int Score = 108;
+        public const int Name = 38;
+        public const int Hint = 46;
+    }
+
+    public enum TokenFontFamily
+    {
+        Numeral,
+        Display,
+        Hint,
+        Ui,
+        UiCyrillic,
+    }
+
+    public enum TokenTextStyle
+    {
+        Caption,
+        Body,
+        Label,
+        Counter,
+        Title,
+        Heading,
+        Display,
+        Score,
+        Name,
+        Hint,
+    }
+
+    public static class TokenTypography
+    {
+        public static readonly TokenFontFamily[] FamilyOfStyle = { TokenFontFamily.Ui, TokenFontFamily.Ui, TokenFontFamily.Ui, TokenFontFamily.Numeral, TokenFontFamily.Display, TokenFontFamily.Display, TokenFontFamily.Display, TokenFontFamily.Numeral, TokenFontFamily.Display, TokenFontFamily.Hint };
+        public static readonly int[] WeightOfStyle = { 400, 400, 300, 900, 700, 900, 900, 900, 900, 700 };
+        public static readonly int[] SizeOfStyle = { 30, 38, 44, 56, 54, 68, 86, 108, 38, 46 };
+        public static readonly float[] LineHeightOfStyle = { 1.3f, 1.35f, 1.2f, 1f, 1.15f, 1.1f, 1.05f, 1f, 1f, 1.2f };
     }
 
     public static class TokenDurationMs

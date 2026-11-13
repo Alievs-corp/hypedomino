@@ -3,9 +3,7 @@ using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
 using UnityEngine.UI;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.PlayMode
 {
@@ -106,7 +104,7 @@ namespace HypeDomino.Tests.PlayMode
                     layer.Tick(now += 0.1f);
                     layer.Tick(now += Duration);
                 }
-            }, Is.Not.AllocatingGCMemory());
+            }, Allocates.Nothing);
         }
     }
 }

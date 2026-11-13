@@ -25,7 +25,6 @@ var (
 	ErrInMatch        = errors.New("custom: account is in a running match")
 	ErrWrongPhase     = errors.New("custom: not allowed in this phase")
 	ErrBlocked        = errors.New("custom: a block stands between the accounts")
-	ErrUnknownAction  = errors.New("custom: action not available to the member")
 	ErrUnknownEmoji   = errors.New("custom: emoji not equipped by the member")
 	ErrMuted          = errors.New("custom: the member is muted")
 	ErrEmojiThrottled = errors.New("custom: emoji sent too fast")
@@ -46,8 +45,9 @@ type Sink interface {
 type Event struct {
 	State   *State
 	Account string
-	Action  string
 	Emoji   string
+	Request bool
+	Seat    rules.Seat
 }
 
 type Phase uint8
@@ -70,16 +70,22 @@ type Random interface {
 	Uint64() uint64
 }
 
-type Opener func(options room.Options) (*room.Room, error)
+type Opener func(options room.Options, seats []SeatState) (*room.Room, error)
+
+type Directory interface {
+	Claim(ctx context.Context, code string) error
+	Release(ctx context.Context, code string) error
+}
 
 type Lobby struct {
-	random Random
-	opener Opener
-	gate   Gate
-	blocks Blocks
-	emoji  room.EmojiLimit
-	mu     sync.Mutex
-	rooms  map[string]*Room
+	random    Random
+	opener    Opener
+	gate      Gate
+	blocks    Blocks
+	emoji     room.EmojiLimit
+	directory Directory
+	mu        sync.Mutex
+	rooms     map[string]*Room
 }
 
 func NewLobby(random Random, opener Opener) *Lobby {
@@ -98,6 +104,10 @@ func (l *Lobby) LimitEmoji(limit room.EmojiLimit) {
 	l.emoji = limit
 }
 
+func (l *Lobby) Route(directory Directory) {
+	l.directory = directory
+}
+
 func (l *Lobby) busy(account string) bool {
 	return l.gate != nil && l.gate.InMatch(account)
 }
@@ -111,6 +121,11 @@ func (l *Lobby) Create(creator Member) (*Room, error) {
 	code := l.code()
 	for l.rooms[code] != nil {
 		code = l.code()
+	}
+	if l.directory != nil {
+		if err := l.directory.Claim(context.Background(), code); err != nil {
+			return nil, err
+		}
 	}
 	r := &Room{lobby: l, code: code, phase: PhaseLobby, members: []*member{{Member: creator}}}
 	l.rooms[code] = r
@@ -145,14 +160,15 @@ func (l *Lobby) Len() int {
 
 func (l *Lobby) close(code string) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	delete(l.rooms, code)
+	l.mu.Unlock()
+	if l.directory != nil {
+		l.directory.Release(context.Background(), code)
+	}
 }
 
 type Member struct {
 	Account string
-	Clips   []string
-	Actions []string
 	Emoji   []string
 	Muted   bool
 	Sink    Sink
@@ -490,7 +506,7 @@ func (r *Room) Start(leader string, options room.Options) (*room.Room, error) {
 		}
 	}
 	options.Kind, options.Mode = room.KindCustom, r.mode
-	table, err := r.lobby.opener(options)
+	table, err := r.lobby.opener(options, r.state().Seats)
 	if err != nil {
 		return nil, err
 	}
@@ -519,17 +535,20 @@ func (r *Room) await(table *room.Room) {
 	r.changed()
 }
 
-func (r *Room) Act(account, action string) error {
+func (r *Room) Request(account string, seat rules.Seat) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	m, err := r.inLobby(account)
-	if err != nil {
-		return err
+	switch {
+	case r.find(account) == nil:
+		return ErrNotInRoom
+	case r.phase != PhaseTeams:
+		return ErrWrongPhase
+	case !r.valid(seat):
+		return ErrInvalidSeat
 	}
-	if !slices.Contains(m.Clips, action) && !slices.Contains(m.Actions, action) {
-		return ErrUnknownAction
+	if leader := r.members[0]; leader.Sink != nil {
+		leader.Sink.Deliver(Event{Account: account, Request: true, Seat: seat})
 	}
-	r.deliver(Event{Account: account, Action: action})
 	return nil
 }
 

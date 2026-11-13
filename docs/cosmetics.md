@@ -16,7 +16,7 @@ This document stores references to these decisions and never their values.
 | Prices, currencies, discounts, offers | `docs/economy.md` (#7) | A `shop` or `promo` source holds an offer or campaign id, never a price |
 | Pass, mission and medal rewards | `docs/pass-missions-medals.md` (#9) | A `pass` or `mission` source holds a reward or mission id |
 | Ranked season rewards | #8 | A `rank_reward` source holds a season reward id |
-| Animated asset format and player, active animation budget per screen | #93, ADR 0012 | An address; the asset behind it is a sprite sheet loop, or a 3D model for a character (ADR 0009) |
+| Animated asset format and player, active animation budget per screen | #93, ADR 0012 | An address; the asset behind it is a sprite sheet loop |
 | Emoji groups and equipped emoji slot count | #150 | `group` id; slot count is admin config there |
 | Download and prefetch policy | #68 | Addresses and labels in section 8 |
 | Grant engine and duplicate grants | #102 | Every grant goes through the reward bundle engine |
@@ -26,13 +26,18 @@ This document stores references to these decisions and never their values.
 | `type` | What it is | Where it shows |
 |---|---|---|
 | `avatar` | Player portrait | Profile, seat, lists, shop, collection |
-| `character` | Full-body figure that reacts to match events | Match seat, loading screen, friend lobby (its clips are the lobby actions, `docs/friend-lobby.md`), profile, shop, collection |
 | `frame` | Border around the avatar | Everywhere the avatar shows |
 | `table` | Match table background | Match scene, collection, shop |
+| `tile` | Back face of the player's domino tiles | Match scene: the player's face-down tiles as the other seats see them, including the deal (`docs/ui-motion.md` Hand motion); collection, shop |
 | `emoji` | Reaction sent by id in a match or a friend lobby (`docs/localization.md` 5.7) | Match seat, friend lobby, emoji wheel, collection |
-| `action` | Full-body motion the equipped character plays in the friend lobby, on demand (`docs/friend-lobby.md`) | Friend lobby action wheel, collection, shop |
 
 Adding a type is a schema change (section 7.2) and a change to this table.
+
+- A `tile` skin changes only the back face. The face side, pips and the divider are the same for every player, so a skin never affects how a tile's value reads (`docs/art-direction.md` section 3). Boneyard tiles (R-3) belong to no seat and use the first `live` `default` tile item.
+- An animated `tile` plays one animation per seat: every face-down tile of that seat draws from the same atlas entry on the same animation clock, so a seat costs the same whether it holds 1 or 14 tiles.
+- The match view sends each seat's equipped skin as `RosterEntry.tile`, taken from the loadout frozen at match start and stored with the match. A bot seat sends none and shows the default. The client draws a seat's face-down tiles with `UI/Cosmetics/TileBackView`: the first tile loads the skin and holds its one animation slot, and the others show the same frame. All of them use one texture, so they batch into one draw call.
+- Owner decision 2026-11-12: the game has no 3D characters anywhere, so the `character` type (a full-body figure at the seat and in the friend lobby) and the `action` type (lobby motions for that figure) are removed. A seat shows the avatar, its animated frame and the nickname; the friend lobby shows avatars and frames (`docs/friend-lobby.md`).
+- Owner decision 2026-11-12: these proposed types are not added before launch: player title, profile banner, chat bubble, tile-place effect, win effect and sound pack. Each is a schema change with its own art and performance work. The tile-place and win effects come first after launch, because every player sees them in every match.
 
 ## 3. Shared fields
 
@@ -56,14 +61,9 @@ All required on every item.
 
 | Type | Field | When | Rule |
 |---|---|---|---|
-| `avatar`, `frame`, `emoji` | `animationAddress` | Required if `animated`, forbidden otherwise | One looping animation |
-| `character` | `clips` | Required if `animated`, forbidden otherwise | Object with exactly `idle`, `win`, `lose`, `reaction`, each an address of an animation clip on the shared humanoid skeleton (ADR 0009). A static character shows `staticAddress` in every state |
-| `character` | `modelAddress` | Required if `animated`, forbidden otherwise | The real-time 3D model at medium detail: seat level of detail and base colour texture (ADR 0009) |
-| `character` | `modelHqAddress` | Optional if `animated`, forbidden otherwise | The high-detail model: hero level of detail, larger textures and normal map. Without it the high level shows `modelAddress` |
+| `avatar`, `frame`, `tile`, `emoji` | `animationAddress` | Required if `animated`, forbidden otherwise | One looping animation |
 | `table` | `layers` | Required if `animated`, forbidden otherwise | Back-to-front list of `{ name, address, animated }`, at least 1, names unique, at least one layer animated. Count at most `TableMaxLayers` (admin config; its value comes from the measured base-scene cost in #97, ADR 0008) |
 | `emoji` | `group` | Required on emoji, forbidden on other types | Emoji group id (#150) |
-| `action` | `animated` | Always `true` | An action is motion by definition; its `staticAddress` is its icon, shown in the action wheel and played as a pop-up over a static character |
-| `action` | `animationAddress` | Required | One clip on the shared humanoid skeleton (ADR 0009), so every character can play every action |
 
 A field of another type is invalid. Frames carry no effect field: the rarity glow around a frame is drawn from `rarityId` as `docs/rarity.md` section 2 defines.
 
@@ -88,7 +88,7 @@ A source is `{ "type": ..., "ref": ... }`. `ref` is the id of a record owned by 
 Rules:
 - `sources` is the complete list of ways an item can be granted. The admin rejects publishing an offer, reward, mission, campaign or event that grants an item whose `sources` does not list it, and the server's grant path (#102) refuses such a grant. This is what the collection screen shows as the way to earn an item (#99) and what abuse checks (#211) compare against.
 - A source listed on an item does not mean it is active now; whether a shop offer is on sale or an event is running is decided by the referenced record and server time.
-- Every type except `action` has at least one `live` item with a `default` source, so a new account has something equipped in every slot and a disabled item has a replacement (section 6). An `action` never has a `default` source: it is always animated, and the friend lobby already offers the equipped character's own clips without any owned action.
+- Every type has at least one `live` item with a `default` source, so a new account has something equipped in every slot and a disabled item has a replacement (section 6).
 - The `default` source and the built-in install of default items (8.2) are owner-confirmed (#6, 2026-10-26). Default items are static (`animated: false`) to protect the install size budget (V-19).
 
 ## 6. Availability
@@ -129,6 +129,7 @@ Rules:
 - The client is lenient so older builds survive additive changes: it ignores unknown fields and skips items whose `type`, or sources whose `type`, it does not know.
 - An additive change (new optional field, new type, new source type) edits the schema and this document without changing `schemaVersion`.
 - A breaking change (removing or renaming a field, changing a field's meaning, making a field required) increments `schemaVersion` and needs a minimum client version that understands it. The client keeps its current manifest when it sees a `schemaVersion` it does not know.
+- Exception, 2026-11-12: removing the `character` and `action` types with the `clips`, `modelAddress` and `modelHqAddress` fields keeps `schemaVersion` 1. No item of those types was published outside development and no released client reads them. A development database whose cosmetics snapshot still lists such items fails the new checks (V-1, V-8); reset its `cosmetics` config domain and publish the examples again (`tools/dev/publish-configs.sh`). A stored loadout that still names a `character` or `actions` is read without them.
 
 ### 7.3 Delivery
 
@@ -149,10 +150,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Asset | Address |
 |---|---|
 | Static sprite | `cosmetic/<type>/<slug>/static` |
-| Animation (avatar, frame, emoji), action clip | `cosmetic/<type>/<slug>/anim` |
-| Character clip | `cosmetic/character/<slug>/clip/<idle\|win\|lose\|reaction>` |
-| Character model | `cosmetic/character/<slug>/model` |
-| Character high-detail model | `cosmetic/character/<slug>/model_hq` |
+| Animation (avatar, frame, tile, emoji) | `cosmetic/<type>/<slug>/anim` |
 | Table layer | `cosmetic/table/<slug>/layer/<layer name>` |
 
 `<type>/<slug>` is the `id` with the dot replaced by `/`. Any other address is invalid.
@@ -162,7 +160,7 @@ Every asset address is derived from the item id; the manifest stores the full st
 | Item | Rule |
 |---|---|
 | Group | One Addressables group per item, `cosmetic-<type>-<slug>`, holding the static sprite and every animation asset of the item (ADR 0002). Bundle mode packs each entry separately, so the static sprite downloads on its own and before the animation |
-| Atlas | Sprites of one item share one atlas inside its group |
+| Atlas | The frames of one loop (the animation, or one table layer) share one atlas inside the item's group. The static sprite is not packed, so it downloads on its own (`docs/asset-workflow.md` 5.4) |
 | Built-in group | Every asset of a `default` item is in the install-time group `cosmetic-builtin` instead of an item group, so offline start and fallbacks render without a download. Default items are static (V-19), so the group holds one static sprite per default item and stays within the install size budget (`docs/performance.md`) |
 | Labels | `cosmetic`, `cosmetic-<type>`, and `cosmetic-static` on static sprites. Which labels are prefetched and when is #68's decision |
 | Source art | Lives in `assets-src/` and never ships directly |
@@ -175,8 +173,6 @@ The client plays an item's animation only when all of these hold; otherwise it s
 3. The animation assets are loaded. A missing or failed download is a static, not a wait.
 4. The screen's active animation budget is not exhausted (`maxAnimatedCosmetics` in `docs/design-tokens.json`, ADR 0012).
 5. Reduce motion is off.
-
-When a character plays animated, the high effect level loads `modelHqAddress` if the item has one and `modelAddress` otherwise; the medium level loads only `modelAddress`, so a medium device never downloads the high-detail bundle (ADR 0009). The effect level follows the graphics setting (`docs/ui-motion.md` section 7).
 
 Until `staticAddress` itself is loaded, the client shows the built-in static of the first `live` `default` item of the same type. Input never waits for a cosmetic to load.
 
@@ -198,14 +194,14 @@ Single-manifest rules, checked by the admin at publish, by the server when it lo
 | V-1 | The manifest conforms to `docs/cosmetics/schema.json`, including: required shared fields, no undeclared field (a price on an item or source is invalid), known types and source types, `culturalReview` is `approved`, `schemaVersion` is known |
 | V-2 | Every item has `staticAddress`. An animated item without a static fallback is invalid |
 | V-3 | Animation fields match `animated` and `type` (section 4): required when animated, forbidden when static, forbidden on other types |
-| V-4 | An animated character has all four clips and `modelAddress` |
+| V-4 | Removed 2026-11-12 with the `character` type (it required the clips and model of an animated character) |
 | V-5 | An animated table has unique layer names and at least one animated layer |
 | V-6 | An emoji has a `group`; other types do not |
 | V-7 | Sources are non-empty and unique; `default` has no `ref`, every other source has one |
 | V-8 | Ids are unique and their prefix equals `type` |
 | V-9 | `nameKey` is `cosmetic.<id>.name` |
 | V-10 | Every address follows section 8.1 for its item and slot |
-| V-11 | An item with a `default` source is `live`, and every type except `action` has at least one such item; an `action` has no `default` source |
+| V-11 | An item with a `default` source is `live`, and every type has at least one such item |
 | V-19 | An item with a `default` source is static: `animated` is false |
 
 Rules that need more than one manifest or other admin data, checked by the admin at publish only:
@@ -226,7 +222,7 @@ Implemented in `server/internal/cosmetics` (#136):
 - **Publish check.** A publish must follow the previous manifest. Its `manifestVersion` is exactly one higher (7.1). V-12 holds: every earlier item is still present and keeps its type. V-13 holds: no revision goes down, and an item whose content changed has a higher revision. Content means every field except `revision`.
 - **Rollback** (`docs/admin.md` 3.7). It builds the next manifest from the current one. An item whose content differs from the target version gets the target's content under the next revision. Unchanged items, and items added after the target, stay as they are. The result passes the publish check.
 - **Delivery to the game server.** The manifest is the `cosmetics` config domain. `config-publish -domain cosmetics` runs the single-manifest checks and then the publish check against the newest published manifest. Every node polls the domain (`HD_CONFIG_POLL`) and switches its inventory to the new catalog without a restart. A snapshot that fails the checks is logged, and the previous catalog stays.
-- **Admin publish** (`docs/admin.md`, Cosmetics manifest note). `cosmetics.ValidateManifest` adds the strict schema, V-2 to V-6, V-9, V-10 and V-14 at the admin API; a game server still loads with the lenient `Parse` (7.2). V-15 holds from record to item: a publish that drops a source a published record grants from is refused.
+- **Admin publish** (`docs/admin.md`, Cosmetics manifest note). `cosmetics.ValidateManifest` adds the strict schema, V-2, V-3, V-5, V-6, V-9, V-10 and V-14 at the admin API; a game server still loads with the lenient `Parse` (7.2). V-15 holds from record to item: a publish that drops a source a published record grants from is refused.
 - **Not yet.** V-15 from `ref` to record: an item lists its source before the record exists, so this needs one change set. V-16 waits for the string editor (#214), V-17 for the asset pipeline (#135), and V-18 for the `TableMaxLayers` value (#97).
 
 ## 10. Server authority

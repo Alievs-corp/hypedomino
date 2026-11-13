@@ -1,6 +1,6 @@
 # client
 
-Unity 6 LTS game client (URP Universal Renderer with 2D sprites and real-time 3D characters, ADR 0009; C#, Addressables). It renders state and sends player intents only; the server decides every rule, score and reward.
+Unity 6 LTS game client (URP Universal Renderer with 2D sprites, kept from the superseded ADR 0009; C#, Addressables). It renders state and sends player intents only; the server decides every rule, score and reward.
 
 ## Editor
 
@@ -33,15 +33,15 @@ The `ProjectSettingsTests` EditMode tests guard the scripting, Android architect
 | Scripting | IL2CPP, high managed stripping, engine code stripping, .NET Standard 2.1 on Android and iOS | ADR 0001; install size |
 | Android | ARM64 only; Vulkan, then OpenGL ES 3 | Install size; no 32-bit devices in the matrix (`docs/performance.md` 1) |
 | iOS | Metal | Only API on target devices |
-| Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | ADR 0009, `docs/ui-motion.md` 4 |
+| Rendering | URP Universal Renderer, Forward path; no HDR, MSAA, depth or opaque texture, post-processing, shadows or additional lights | Kept from ADR 0009 (superseded 2026-11-12: no 3D characters), `docs/ui-motion.md` 4 |
 | Quality levels | No per-level pipeline; every level uses the default URP asset; `vSyncCount` 0 | One renderer; graphics levels set only its render scale (`docs/performance.md` 1.1); `Application.targetFrameRate` alone sets the rate (1.2) |
 | Profiling | Frame Timing Stats on | `FrameTimingManager` measurements, `docs/performance.md` 2 |
-| Color space | Linear | Lit 3D characters, ADR 0009 |
+| Color space | Linear | Kept from ADR 0009 (superseded); changing it is its own measured change |
 
 ## Textures and atlases
 
 - Android texture compression is ASTC only; the build subtarget is ASTC (ADR 0002).
-- `Settings/SpriteTextureASTC.preset` is the default preset for every new texture: Sprite, no mipmaps, ASTC 6x6 on Android and iOS. ASTC 6x6 is the base-colour block size of ADR 0009. Per-class block and maximum sizes are open item O-5 in `docs/asset-workflow.md` (#93, #135); a class that needs other values adds a preset with a folder filter above this one in the Preset Manager.
+- `Settings/SpriteTextureASTC.preset` is the default preset for every new texture: Sprite, no mipmaps, ASTC 6x6 on Android and iOS. Per-class block and maximum sizes are open item O-5 in `docs/asset-workflow.md` (#93, #135); a class that needs other values adds a preset with a folder filter above this one in the Preset Manager.
 - Sprite Atlas V2 is the packer. One atlas per cosmetic item inside its Addressables group and effect sprites only in the shared effects atlas (`docs/cosmetics.md` 8.2, `docs/art-direction.md` 6).
 
 ## Measuring the empty build
@@ -103,6 +103,10 @@ The `AppFlowTests` EditMode tests cover every transition. Scenes, DI and the net
 
 The `LocalizationTests` EditMode tests cover them. Format a string when a screen opens or a value changes, never per frame.
 
+## Fonts
+
+`UI/Fonts` holds the type set of `docs/ui-motion.md` section 3. `Source/<Family>/` has each static face (`<family>-<weight>.ttf`) and the family's `OFL.txt`; `python tools/fonts/build_fonts.py` (fontTools at the version pinned in `fonts.json`) rebuilds them from the pinned google/fonts commit. `Editor/FontSetup.GenerateAndExit` (menu HypeDomino > Generate Font Assets, or the `Unity editor method` workflow) imports the TextMeshPro essentials if they are missing, writes one static TextMeshPro font asset per face with its fallbacks, `Resources/TypeSet.asset`, and makes `ui-400` the TextMeshPro default font. Regenerating replaces the font assets, so views pick fonts through `TypeSet.Apply` or `TokenText`, never by referencing a font asset. `TypeSetTests` and `node tools/fonts/fonts.mjs` check the coverage.
+
 ## Sign-in
 
 `Net/Auth/AuthSession` is the client side of `POST /auth/nonce`, `/auth/signin`, `/auth/refresh` and `/auth/logout` (`server/internal/auth`). It is plain C# behind three seams:
@@ -142,7 +146,7 @@ Outcomes:
 
 ## Design tokens
 
-`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
+`UI/Tokens/DesignTokens.cs` is generated from `docs/design-tokens.json` by `npm run tokens:gen`; edit the JSON and regenerate, never the file. It holds `TokenColor` (`Color32`), `TokenOpacity`, `TokenSpacing`, `TokenRadius` and `TokenSize` (UI units on the 1080-unit short side), `TokenTextSize` (the font size of each type style), `TokenFontFamily`, `TokenTextStyle` and `TokenTypography` (family, weight, size and line height per style, read by `UI/Typography/TypeSet`), `TokenDurationMs`, `TokenEasing` (cubic-bezier points as `Vector4`), `TokenMotion`, `TokenEffectLevel` (per effect level: `MaxAnimatedCosmetics`, `WorkTimeP95Ms`, `MaxTweens`) and `TokenEffect` (each effect's `DurationMs` and `Pooled` count, the largest over the levels), `TokenScoreCascade` (score steps, chain boost, roll and gaps). `UI/Motion/Easing` evaluates a `TokenEasing` curve. Rarity colours are not constants: they arrive with the admin-published rarity config (`docs/admin.md`). `npm run test:tools` fails when the file is stale, and `RuntimeCodeRulesTests` fails on `new Color(...)`, `new Color32(...)` or a named `Color` such as `Color.white` in runtime code outside it.
 
 ## Screens
 
@@ -249,7 +253,7 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 ## Device risk signals
 
-`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device. The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
+`Core/DeviceRisk/DeviceRiskSignals` turns Android `Build` fields and known root, emulator and jailbreak paths into signal names (`docs/anti-cheat.md` 5.4, #185). `Game/DeviceRiskProbe.Collect` reads them on the device into `Net/Session.DeviceRiskSignals`, and every `ClientHello` carries them in `device_risk_signals` (`SessionTests`). The client only reports them; the server decides. The `DeviceRiskSignalsTests` EditMode tests cover retail devices, root, test keys, three emulators and a jailbreak path. `HookSignals` names instrumentation, hook framework and debugger signals from the process's mapped libraries (#206); `DeviceRiskProbe.CollectHooks` reads `/proc/self/maps` on Android, and the `HookSignalsTests` EditMode tests cover Frida, Xposed, LSPosed, Substrate and a debugger.
 
 ## Error reports
 
@@ -267,4 +271,4 @@ Anything that spawns more than once is pooled; a match frame allocates 0 B (`doc
 - Scene objects use `Core/Pooling/PrefabPool<T>`: it instantiates `prewarm` inactive copies under one parent at load time, activates on `Get`, deactivates on `Release` and destroys only what exceeds `maxSize`. Size it for the worst case of the scene so a frame never instantiates.
 - Runtime assemblies do not use `System.Linq`; iterate arrays and `List<T>` with `for`. `RuntimeCodeRulesTests` fails on any `System.Linq` outside `Editor`, `Generated` and `Tests`.
 - No string concatenation, interpolation or `ToString()` in `Update`, input or animation code; text changes only when its value changes.
-- The `PoolingTests` PlayMode tests assert with `Is.Not.AllocatingGCMemory()` that warmed pools cycle without allocating. Every new per-frame path adds the same assertion.
+- The `PoolingTests` PlayMode tests assert with `Allocates.Nothing` (`Tests/Support`, see `docs/test-strategy.md`) that warmed pools cycle without allocating. Every new per-frame path adds the same assertion.

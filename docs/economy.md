@@ -10,7 +10,7 @@ Related: ADR 0005 (ledger, unique transaction ids), ADR 0006 (admin config), `do
 
 | Id | Rule |
 |---|---|
-| EP-1 | Two currencies. The **coin** (`coin`) is earned by play and never sold. The **crystal** (`crystal`) comes only from real-money purchases and what they unlock (crystal packs, offers, the premium pass track). One integer balance per currency per account. Neither converts into the other, and nothing bought with real money or crystals grants coins. |
+| EP-1 | Two currencies. The **coin** (`coin`) is earned by play and never sold. The **crystal** (`crystal`) comes only from real-money purchases and what they unlock (crystal packs, offers, the premium pass track). The premium pass track is unlocked by the `pass_premium` and `pass_premium_plus` products (7.2) or by a `passPremium` promo code approved by a second admin (section 8, OQ-18). One integer balance per currency per account. Neither converts into the other, and nothing bought with real money or crystals grants coins. |
 | EP-2 | No pay-to-win. Coins, crystals and real money buy cosmetics, chests (coins only), pass levels, the premium pass track and a nickname rename, nothing else. Nothing for sale changes rating, MMR, LP, placement, matchmaking, turn time, penalties, hidden information or any rule in `docs/rules.md`. No rank protection, queue-delay skip or penalty removal is sold. |
 | EP-3 | No paid randomised items. Random contents exist only in chests (3.4), bought with coins only. Coins cannot be bought (EP-1), so a chest is never paid for with real money, directly or through crystals. A chest shows its pool and the odds of every rarity before purchase. Every other offer and reward shows exactly what it grants. This keeps the IARC lowest tier, PEGI 3 and App Store 4+ targets and the gambling imagery rule (`docs/localization.md` sections 6 and 7). |
 | EP-4 | No wagers. No coin entry fee for a match, room or event whose prize is coins or items. Coins are never staked on a result. |
@@ -112,9 +112,10 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 ```
 
 - `GuidePriceCoins` per rarity id of #5 in order `common`, `rare`, `epic`, `legendary`, `mythic`: 400, 1500, 3500, 12000, 30000. Rarities are referenced by id only.
-- `GuidePriceCrystals` per rarity, same order: 80, 300, 700, 2400, 6000, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`.
-- `GuidePriceTypePercent` per type in order `avatar`, `character`, `frame`, `table`, `emoji`, `action`: 100, 150, 100, 150, 50, 50. A character carries four clips and a table fills the match scene; an emoji is a small, frequent item, and a lobby action is one clip seen only by friends in the lobby (owner decision 2026-10-28: action prices follow rarity like every other type and stay admin config).
+- `GuidePriceCrystals` per rarity, same order: 60, 200, 500, 1200, 2500, the crystal price the offer form fills in for an offer paid in crystals. Duplicate compensation is always in coins from `GuidePriceCoins`. Owner decision 2026-11-12 (OQ-15): lowered from 80, 300, 700, 2400, 6000 so that a `legendary` item costs about the price of two premium passes and a `mythic` one stays under 25 USD in the Azerbaijan and Turkey markets. Coin prices are unchanged, so play time per item is unchanged.
+- `GuidePriceTypePercent` per type in order `avatar`, `frame`, `table`, `tile`, `emoji`: 100, 100, 150, 125, 50. A table fills the match scene; a tile skin is on every face-down tile of its seat in every match, more visible than a frame and smaller than the table (OQ-16); an emoji is a small, frequent item. The `character` and `action` types were removed by owner decision 2026-11-12 (no 3D characters, no lobby actions).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer.
+- An animated item is priced by its rarity like a static one. The admin may set an animated `epic` offer up to half above its guide price; a `legendary` or `mythic` item is expected to be animated, so its guide price already includes the animation.
 - The full table and the play time each price takes are in section 11.
 
 ### 3.2 Pass levels
@@ -256,17 +257,68 @@ Products `crystals_tier1` to `crystals_tier5`. USD prices `CrystalPackUsd` (0.99
 
 ### 7.3 Starter and first-purchase offers
 
-- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCrystals` (300) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 900 crystals at crystal guide prices, about 4.5 times its price at the reference rate.
+- `offer_starter`, `StarterOfferUsd` (1.99): `StarterOfferCrystals` (300) plus one `rare` avatar and one `rare` frame chosen by the admin. Offered for `StarterOfferWindowHours` (168) from account creation, server time; once per account. Worth 700 crystals at crystal guide prices, about 3.5 times its price at the reference rate.
 - First-purchase bonus: the first validated real-money purchase of an account grants `bundle.first_purchase` once: `FirstPurchaseBonusCrystals` (100) plus one `epic` frame. Any product counts, including the starter offer.
 - A refund revokes the bonus with its purchase (section 9). A later purchase does not become "first" again.
 
 ### 7.4 Regional pricing
 
-- Local prices come only from the stores: App Store price equalisation from the base storefront, Google Play pricing templates and automatic conversion. A market-specific override is made in the store console, noted on the admin offer, and needs owner approval.
-- The game holds no exchange rates and computes no local price. The client shows the localized price string from the billing SDK.
-- The crystal amount of a product is the same in every market.
+The store price of each real-money product is set per country by purchasing power (owner decision 2026-11-12, OQ-8). The table that sets it is admin config: the `store_prices` domain, edited on the Store prices page (`docs/admin.md` 5.6), published and rolled back like every other domain.
+
+- **Reference prices.** `referenceUsd` holds the USD reference price of every real-money product: `CrystalPackUsd`, `PassPremiumUsd`, `PassPremiumPlusUsd` and `StarterOfferUsd` (7.1 to 7.3). A publish without one of the eight products, or with another product, is refused.
+- **Tiers.** `tiers` names a percent of the reference price, a whole number from 1 to 100. The defaults are `full` 100, `high` 80, `mid` 60 and `low` 45.
+- **Countries.** `countries` maps an ISO 3166-1 alpha-2 code to a tier. A country that is not listed has no target and keeps store equalisation: App Store price equalisation from the base storefront, Google Play automatic conversion. `full` is kept for a country that must be listed at the reference price on purpose. Russia (`RU`) is not a store country (`docs/privacy.md` 9.3), and a table that lists it is refused.
+- **Overrides.** `overrides` sets an exact USD-equivalent target for one product in one country, for example `{"pass_premium": {"AZ": 2.99}}`. It must be above zero and not above the reference price.
+- **Target.** The target of a product in a country is its override if there is one, otherwise its reference price times its tier percent / 100, rounded to the cent. It is a store-console target and nothing more.
+- The table changes only the store price. The crystal amount of a product, every coin and crystal price in the game, and the content of every offer are the same in every market (EP-8).
+- The game holds no exchange rates and computes no local price; the game servers never read `store_prices`. The client shows the localized price string from the billing SDK.
+- A new real-money product is added to the table (server `storeprice.Products` and its reference price) in the same PR that adds the product. From then on every listed country has a target for it.
 - Taxes are the stores' as merchant of record (`docs/privacy.md` section 2).
 - Where a store cannot charge in a country, the shop hides real-money products there. No other payment path is added (EP-7).
+
+Targets of each tier at the default reference prices, USD equivalent:
+
+| Product | USD reference (`full`) | `high` 80% | `mid` 60% | `low` 45% |
+|---|---|---|---|---|
+| `crystals_tier1` | 0.99 | 0.79 | 0.59 | 0.45 |
+| `crystals_tier2` | 4.99 | 3.99 | 2.99 | 2.25 |
+| `crystals_tier3` | 9.99 | 7.99 | 5.99 | 4.50 |
+| `crystals_tier4` | 19.99 | 15.99 | 11.99 | 9.00 |
+| `crystals_tier5` | 49.99 | 39.99 | 29.99 | 22.50 |
+| `pass_premium` | 4.99 | 3.99 | 2.99 | 2.25 |
+| `pass_premium_plus` | 9.99 | 7.99 | 5.99 | 4.50 |
+| `offer_starter` | 1.99 | 1.59 | 1.19 | 0.90 |
+
+Default countries, shipped as the server's built-in default and in `docs/economy/examples/store_prices.json` (80 countries):
+
+| Tier | Countries |
+|---|---|
+| `high` 80% | PT GR CY MT SI CZ SK EE LV LT PL HU HR CL UY PA BN |
+| `mid` 60% | AZ TR GE AM KZ UZ KG TJ TM BY UA MD RO BG RS BA ME MK AL MX BR AR CO PE EC CR DO MY TH CN ZA MA TN JO LB IQ MN |
+| `low` 45% | IN PK BD LK NP ID PH VN KH LA MM EG NG KE GH TZ UG ET DZ BO PY VE HN NI GT SV |
+
+Azerbaijan and Turkey are in `mid`, so every product costs about 60% of its reference there, the level first decided for these two launch markets. For orientation: a `legendary` set of avatar, frame and tile skin (3900 crystals) costs about 66 AZN at the reference price and about 40 AZN at 60%; Hype Pass about 8.5 AZN becomes about 5 AZN (1 USD = 1.70 AZN). This document holds no other local-currency figure: the price set is the store's own price point.
+
+Applying a published table to the stores is a push from the Store prices page (`docs/admin.md` 5.6, #585), in two steps:
+
+1. **Plan.** Anyone who can view store prices runs the plan. The admin API reads both stores and writes nothing. For every product and every country with a target it shows the store's current price (local currency and amount as the store reports it), the new price and a status: `change`, `unchanged`, `not_in_store` (the product, the region or the territory does not exist in that store) or `error`. A store without credentials in the environment is shown as not configured.
+2. **Apply.** Only `super_admin` applies, with a reason and a recent sign-in. The admin API runs the plan again on the published version, writes only the `change` rows and records one audit entry per store with the counts and the config version. A second apply right after writes nothing. Calls are sequential; a rate limit (429) or a server error (5xx) is retried with a growing pause a few times, and a product that still fails is reported (`error` or `failed`) while the other products go on.
+
+How each store sets the price:
+
+- **Google Play.** The USD target is converted with the Play pricing conversion (`monetization.convertRegionPrices`), and the converted price of the country's region becomes the product's price for that region. Every other region, the default USD price and every other field of the product stay as they were. Play converts with its own exchange rates and local price patterns, and the rates move, so a later plan can show small changes for an unchanged table.
+- **App Store.** The USA price point nearest the target (a tie takes the lower point) is equalized to the country's territory, and that equalized point becomes a manual price in the product's price schedule. The base territory price (USA at the reference) and every other manual price are kept. App Store prices are fixed price points, so the store price can differ slightly from the USD-equivalent target.
+- A country without a target keeps store equalisation and is not touched; Russia is never touched. A manual price for a country that no longer has a target stays until it is removed in the console.
+
+Then:
+
+1. Verify on a licensed test account (Play) and a sandbox account (App Store) in Azerbaijan, Turkey and one country of each other tier: the shop shows the localized price from the billing SDK at the new level, and a test purchase grants the same crystal amount as in any other country.
+2. A manually set country price no longer follows later store-wide price or tax adjustments. When a store announces one, run the plan again.
+
+Fallback when the push cannot be used (no credentials, a store API outage): the CSV for the consoles on the same page, one file per store with the rows `product_id,country_code,target_usd` and the store and config version in the file name.
+
+1. Google Play Console: the app, Monetize, the product, Prices; for each row, set the country price at the store price point closest to the target; leave countries without a row on automatic conversion; save and activate.
+2. App Store Connect: the app, In-App Purchases, the product, Price Schedule; for each row, add a manual price for the storefront at the price point closest to the target; keep the United States base price at the USD reference; remove a manual price whose country no longer has a row.
 
 ### 7.5 Purchase flow
 
@@ -302,12 +354,13 @@ A code has an id, a campaign id (what cosmetic `promo` sources reference), a bun
 
 - Case-insensitive; letters and digits without look-alikes (`0`, `O`, `1`, `I`, `L`). Generated codes are `PromoCodeLength` (12) characters from a cryptographic random source. Admin-chosen codes are allowed for `multi_use` only. Codes are stored as keyed hashes; the admin sees a generated code once, at creation.
 - Every code ends at most `PromoMaxValidityDays` (90) after its start.
-- A code granting more than `PromoCoinsApprovalThreshold` (2000) coins, or any `mythic` item, is active only after a second admin approves it (ADR 0006: admin compromise is economy compromise).
+- A code granting more than `PromoCoinsApprovalThreshold` (2000) coins, any `mythic` item, or the premium Hype Pass track (`passPremium`) is active only after a second admin approves it (ADR 0006: admin compromise is economy compromise).
 - Redemption is one transaction: the redemption row, unique per code and account, the cap check and the grant. Parallel redemptions never exceed the cap or redeem twice (#108).
 - Abuse limits: `PromoAttemptsPerHour` (10) attempts per account; `PromoFailedAttemptsBeforeLock` (5) failed attempts lock redemption for `PromoLockMinutes` (60). The same limits apply per device and IP (#184). Locks and redemption spikes are signals for #209 (V-11): each lock records a `promo_lock` risk signal of weight `PromoLockSignalWeight` (5) with the failed count as evidence, and a `multi_use` code whose redemptions within `PromoSpikeWindowMinutes` (60) reach `PromoSpikePercent` (50) of its cap is marked once with `spike_at`, shown on the code in the admin API, and logged as `promo redemption spike` for alerting (#28). A marked code keeps redeeming until an admin disables it. `single_use` and `targeted` codes are never marked.
 - A leaked code is disabled in admin (`docs/launch-runbook.md` 5.5). Rewards already granted stay.
-- A code grants coins, cosmetics, medals and pass XP, never crystals or a chest. It never grants a store product or an item whose `sources` lack its campaign. Codes are never sold.
-- Implemented in `server/internal/promo` (#108): `cmd/promo` and the admin API (`docs/admin.md` 9.1, #142) create, batch, approve and disable codes; `POST /promo/redeem` redeems them. The per-account attempt limits and lock are enforced; the per-device and per-IP limits are #184.
+- A `passPremium` code also unlocks the premium Hype Pass track of the pass season active at redemption, in the same transaction, with premium ref `promo:<codeId>`; the premium rewards of the levels already reached are granted at once (`docs/pass-missions-medals.md` 2.5). With no active season the redemption is refused with `promo.no_pass_season`, and when the account already has premium in that season with `promo.pass_premium_owned`. Either refusal grants nothing, does not use up the code, so it can be redeemed later, and is not a failed attempt toward the lock, since the code was right. This is how crowdfunding backers receive the pass in their rewards (OQ-18, #577).
+- A code grants coins, cosmetics and pass XP, never crystals directly, a medal or a chest; a `passPremium` code unlocks the premium track, whose levels pay crystals (OQ-18). It never grants a store product or an item whose `sources` lack its campaign. Codes are never sold.
+- Implemented in `server/internal/promo` (#108): `cmd/promo` and the admin API (`docs/admin.md` 9.1, #142) create, batch, approve and disable codes (`passPremium` through the `-pass-premium` flag and the `passPremium` field); `POST /promo/redeem` redeems them. The per-account attempt limits and lock are enforced; the per-device and per-IP limits are #184.
 
 ## 9. Refunds and chargebacks
 
@@ -392,23 +445,23 @@ Every profile is assumed to claim the daily login and one first win each day. Th
 
 #### Guide prices by rarity and type (coins)
 
-| Rarity | `avatar` | `character` | `frame` | `table` | `emoji` | `action` |
-|---|---|---|---|---|---|---|
-| `common` | 400 | 600 | 400 | 600 | 200 | 200 |
-| `rare` | 1500 | 2250 | 1500 | 2250 | 750 | 750 |
-| `epic` | 3500 | 5250 | 3500 | 5250 | 1750 | 1750 |
-| `legendary` | 12000 | 18000 | 12000 | 18000 | 6000 | 6000 |
-| `mythic` | 30000 | 45000 | 30000 | 45000 | 15000 | 15000 |
+| Rarity | `avatar` | `frame` | `table` | `tile` | `emoji` |
+|---|---|---|---|---|---|
+| `common` | 400 | 400 | 600 | 500 | 200 |
+| `rare` | 1500 | 1500 | 2250 | 1875 | 750 |
+| `epic` | 3500 | 3500 | 5250 | 4375 | 1750 |
+| `legendary` | 12000 | 12000 | 18000 | 15000 | 6000 |
+| `mythic` | 30000 | 30000 | 45000 | 37500 | 15000 |
 
 #### Price against earn rate
 
 | Rarity | Guide price in coins (avatar, frame) | Days at 0.5 h/day | Days at 1 h/day | Days at 3 h/day | Guide price in crystals | USD for the crystals (best to smallest pack) |
 |---|---|---|---|---|---|---|
-| `common` | 400 | 1.2 | 0.8 | 0.6 | 80 | 0.57 to 0.79 |
-| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 300 | 2.14 to 2.97 |
-| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 700 | 5.00 to 6.93 |
-| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 2400 | 17.14 to 23.76 |
-| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 6000 | 42.85 to 59.40 |
+| `common` | 400 | 1.2 | 0.8 | 0.6 | 60 | 0.43 to 0.59 |
+| `rare` | 1500 | 4.5 | 3.0 | 2.1 | 200 | 1.43 to 1.98 |
+| `epic` | 3500 | 10.6 | 7.1 | 4.9 | 500 | 3.57 to 4.95 |
+| `legendary` | 12000 | 36.4 | 24.2 | 16.8 | 1200 | 8.57 to 11.88 |
+| `mythic` | 30000 | 90.9 | 60.5 | 42.0 | 2500 | 17.85 to 24.75 |
 
 #### Pass and offer value
 
@@ -426,7 +479,7 @@ Reading the sheet:
 
 ## 12. Config
 
-Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind `config` are admin config (ADR 0006); `model` keys are never read by the server. Used here and defined elsewhere: `RefundWeight` (`docs/anti-cheat.md`), `NicknameRenameCooldownDays` (`docs/localization.md`), the purchase kill switch (#210).
+Every key and its proposed value is in `docs/economy/balance.csv`. Keys of kind `config` are admin config (ADR 0006); `model` keys are never read by the server. The per-country store price table is the `store_prices` domain (7.4, `docs/economy/examples/store_prices.json`), not a key of the sheet; its default reference prices are the `*Usd` keys of the sheet, and a server test keeps the two equal. Used here and defined elsewhere: `RefundWeight` (`docs/anti-cheat.md`), `NicknameRenameCooldownDays` (`docs/localization.md`), the purchase kill switch (#210).
 
 ## 13. Owner decisions
 
@@ -441,10 +494,14 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-5 | Premium pass for coins | No, real money only (3.2) |
 | OQ-6 | `mythic` items in the shop | Yes, time-limited offers only (3.1) |
 | OQ-7 | Starter offer and first-purchase bonus | Both (7.3) |
-| OQ-8 | Market-specific price overrides, for example a lower Turkey price | None at launch; store equalisation only (7.4) |
+| OQ-8 | Market-specific store prices, for example a lower Turkey price (2026-11-12) | Every real-money product is priced per country by purchasing power from an admin-managed table (`store_prices`): tiers `high` 80%, `mid` 60% (Azerbaijan and Turkey among them), `low` 45% of the USD reference price, optional exact overrides, countries not listed at store equalisation, Russia never listed; set in the store consoles from the table's CSV export; crystal amounts and in-game prices unchanged (7.4) |
 | OQ-9 | Answer App Store consumption requests during refund review (sends play data to Apple) | Not at launch; sending it later needs a consent purpose first (`docs/privacy.md` 12.2, OQ-13) |
 | OQ-10 | Missed daily login day | Pauses the cycle, no reset (2.3) |
 | OQ-11 | Currencies (2026-11-01) | Two: the coin, earned by play and never sold, and the crystal, from real money only; no conversion either way (EP-1) |
 | OQ-12 | Chests (2026-11-01) | Bought with coins only; `common` and `rare` items, `rare` being the middle tier; odds and pity shown before purchase (3.4) |
 | OQ-13 | Currency names (2026-11-01) | Coin (AZ Sikkə, TR Coin, RU Монета) and Crystal (AZ, TR Kristal, RU Кристалл). Not "gem": its Azerbaijani and Turkish word (`daş`, `taş`) is also the domino tile |
 | OQ-14 | Daily login reward and economy day (2026-11-01) | Coins only; 00:00 UTC for every player, no per-player reset time zone (2.3) |
+| OQ-15 | Crystal guide prices (2026-11-12) | Lowered to 60, 200, 500, 1200, 2500 for the launch markets; coin prices unchanged (3.1) |
+| OQ-16 | Tile skin type (2026-11-12) | Added: `tile` (`docs/cosmetics.md` section 2), `GuidePriceTypePercent` 125 (3.1) |
+| OQ-17 | Other proposed cosmetic types (2026-11-12) | Player title, profile banner, chat bubble, tile-place effect, win effect and sound pack are not added before launch; the tile-place and win effects come first after launch (`docs/cosmetics.md` section 2) |
+| OQ-18 | Premium Hype Pass by promo code (2026-11-12) | Yes: a `passPremium` code unlocks the premium track of the season active at redemption, only after a second admin approves it, so crowdfunding backers on IdeyaNest receive the pass of their reward in game. A code still never grants crystals directly; the premium track it unlocks pays crystals (section 8, #577) |

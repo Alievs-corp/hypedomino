@@ -9,6 +9,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
@@ -52,6 +53,7 @@ type Session struct {
 	active     *connection
 	generation uint64
 	routed     bool
+	lobby      *custom.Room
 }
 
 type Router interface {
@@ -67,8 +69,13 @@ type Manager struct {
 	auth     Authenticator
 	clocks   ClockObserver
 	replays  ReplayObserver
+	devices  DeviceObserver
 	checker  IntegrityChecker
 	queue    Queue
+	lobby    *custom.Lobby
+	members  LobbyMembers
+	friends  Friends
+	remote   RemoteLobby
 	mu       sync.Mutex
 	sessions map[string]*Session
 	accounts map[string]map[string]*Session
@@ -94,6 +101,10 @@ type ReplayObserver interface {
 	Observe(ctx context.Context, account string)
 }
 
+type DeviceObserver interface {
+	Observe(ctx context.Context, account string, signals []string)
+}
+
 type IntegrityChecker interface {
 	SessionStart(ctx context.Context, account, session string, proof *pb.IntegrityProof) bool
 	MatchStart(ctx context.Context, account, session string, queue pb.QueueKind, proof *pb.IntegrityProof) pb.QueueRefusal
@@ -105,6 +116,10 @@ func (m *Manager) CheckIntegrity(checker IntegrityChecker) {
 
 func (m *Manager) ObserveClocks(observer ClockObserver) {
 	m.clocks = observer
+}
+
+func (m *Manager) ObserveDevices(observer DeviceObserver) {
+	m.devices = observer
 }
 
 func (m *Manager) ObserveReplays(observer ReplayObserver) {
@@ -190,10 +205,13 @@ func (m *Manager) finish(s *Session, r *room.Room) {
 		return
 	}
 	s.room, s.joined, s.acked = nil, false, 0
-	routed := s.routed
-	s.routed = false
+	m.unroute(s)
 	m.mu.Unlock()
-	if routed {
+}
+
+func (m *Manager) unroute(s *Session) {
+	if s.routed && s.room == nil && s.lobby == nil {
+		s.routed = false
 		m.release(s.token)
 	}
 }
@@ -226,6 +244,7 @@ func (m *Manager) Revoke(token string) {
 	routed := ok && s.routed
 	if ok {
 		s.routed = false
+		m.dropLobby(s)
 		delete(m.accounts[s.account], token)
 		if len(m.accounts[s.account]) == 0 {
 			delete(m.accounts, s.account)
@@ -265,6 +284,9 @@ func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 	}
 	if m.clocks != nil {
 		m.clocks.Observe(ctx, c.session.account, hello.GetClientTimeUnixMs())
+	}
+	if m.devices != nil {
+		m.devices.Observe(ctx, c.session.account, hello.GetDeviceRiskSignals())
 	}
 	return c, nil
 }
@@ -327,6 +349,10 @@ func (c *connection) Emoji(item string) {
 	c.mu.Unlock()
 	if seat != nil {
 		seat.Emoji(item)
+		return
+	}
+	if r := c.manager.lobbyOf(c.session); r != nil {
+		r.Emote(c.session.account, item, c.manager.clock.Now())
 	}
 }
 
@@ -341,9 +367,13 @@ func (c *connection) QuickMessage(key string, teamOnly bool) {
 
 func (c *connection) Attach() {
 	c.manager.mu.Lock()
-	defer c.manager.mu.Unlock()
 	if c.session.room != nil {
 		c.attach(c.session)
+	}
+	lobby := c.session.lobby
+	c.manager.mu.Unlock()
+	if lobby != nil {
+		c.sendLobby(stateMessage(lobby.State()))
 	}
 }
 
@@ -388,9 +418,11 @@ func (c *connection) Close() {
 	if seat != nil {
 		s.acked = seat.Acked()
 	}
-	if s.room != nil {
-		go c.manager.expire(s, s.generation, c.manager.clock.After(c.manager.config.ReconnectGrace))
+	if s.room == nil {
+		c.manager.dropLobby(s)
+		return
 	}
+	go c.manager.expire(s, s.generation, c.manager.clock.After(c.manager.config.ReconnectGrace))
 }
 
 func (m *Manager) Connected(token string) bool {
@@ -404,7 +436,11 @@ func (m *Manager) expire(s *Session, generation uint64, due <-chan time.Time) {
 	<-due
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if s.generation != generation || s.active != nil || s.room == nil {
+	if s.generation != generation || s.active != nil {
+		return
+	}
+	m.dropLobby(s)
+	if s.room == nil {
 		return
 	}
 	s.room.Leave(s.seat)

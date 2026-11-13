@@ -5,7 +5,7 @@ Date: 2026-10-25
 Issue: #10
 
 ## Context
-Install must stay under 150 MB while the game ships many cosmetic assets, each with a rarity, a status colour and a manifest entry managed from the admin panel (CLAUDE.md). Animated assets (characters, avatars) are expensive in bytes and GPU time. Low-end devices must still render something correct.
+Install must stay under 150 MB while the game ships many cosmetic assets, each with a rarity, a status colour and a manifest entry managed from the admin panel (CLAUDE.md). Animated assets (avatars, frames, emoji) are expensive in bytes and GPU time. Low-end devices must still render something correct.
 
 ## Decision
 - The install package holds only the boot path, the match scene essentials and the default tile set. Everything else is an Addressables group fetched on demand from a CDN.

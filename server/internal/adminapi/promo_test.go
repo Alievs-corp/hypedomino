@@ -155,6 +155,39 @@ func TestAPromoAboveTheThresholdWaitsForASecondLiveOps(t *testing.T) {
 	}
 }
 
+func TestAPassPremiumPromoWaitsForASecondLiveOpsAndShowsItsFlag(t *testing.T) {
+	a := newPromoAPI(t)
+	proposer, second := a.signIn("leyla"), a.signIn("vusal")
+
+	status, body := a.call("POST", "/admin/promo-codes", proposer, promoBody("promo.backer", 300, map[string]any{"passPremium": true}))
+	if status != http.StatusCreated || body["approval_id"] == nil {
+		t.Fatalf("create %d %v", status, body)
+	}
+	if code := body["code"].(map[string]any); code["state"] != "pending_approval" || code["passPremium"] != true {
+		t.Fatalf("code %v", code)
+	}
+	id := strconv.FormatFloat(body["approval_id"].(float64), 'f', 0, 64)
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", proposer, map[string]any{})
+	expect(t, status, body, http.StatusForbidden, "self_decision")
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"reason": "backer rewards"})
+	if status != http.StatusOK || body["state"] != "approved" {
+		t.Fatalf("approve %d %v", status, body)
+	}
+	status, body = a.call("GET", "/admin/promo-codes/promo.backer", second, nil)
+	if code := body["code"].(map[string]any); status != http.StatusOK || code["state"] != "active" || code["passPremium"] != true {
+		t.Fatalf("detail %d %v", status, body)
+	}
+	listed := a.promoCodes(second, "")["codes"].([]any)
+	if len(listed) != 1 || listed[0].(map[string]any)["passPremium"] != true {
+		t.Fatalf("listed %v", listed)
+	}
+
+	response := a.batch(proposer, promoBody("promo.backers", 300, map[string]any{"count": 2, "cap": 0, "passPremium": true}))
+	if response.Code != http.StatusCreated || response.Header().Get("Hd-Promo-State") != "pending_approval" || response.Header().Get("Hd-Approval-Id") == "" {
+		t.Fatalf("batch %d %v", response.Code, response.Header())
+	}
+}
+
 func TestABatchIsHandedOutOnceAndDecidedAsOne(t *testing.T) {
 	a := newPromoAPI(t)
 	proposer, second := a.signIn("leyla"), a.signIn("vusal")

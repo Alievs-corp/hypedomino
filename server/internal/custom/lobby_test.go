@@ -45,7 +45,7 @@ type opened struct {
 func opener(t *testing.T) (Opener, *[]opened) {
 	t.Helper()
 	var tables []opened
-	return func(options room.Options) (*room.Room, error) {
+	return func(options room.Options, _ []SeatState) (*room.Room, error) {
 		options.Config, options.Bot, options.BotLevel, options.Clock = rules.DefaultConfig(), bot.DefaultConfig(), bot.Hard, realClock{}
 		r := room.New(options)
 		ctx, cancel := context.WithCancel(context.Background())
@@ -194,7 +194,7 @@ func TestTheLeaderSplitsTeamsStartsAndEveryoneReturnsToTheLobby(t *testing.T) {
 	refused(t, err, ErrStarted)
 	refused(t, r.Join(player("dan")), ErrStarted)
 	refused(t, r.Teams("ana", rules.Mode1v1), ErrStarted)
-	refused(t, r.Act("cem", "idle"), ErrWrongPhase)
+	refused(t, r.Emote("cem", "emoji.laugh", time.Now()), ErrWrongPhase)
 	must(t, r.Leave("ben"))
 	(*tables)[0].cancel()
 	waitPhase(t, r, PhaseLobby)
@@ -277,21 +277,28 @@ func TestTheLeaderRemovesAndAddsPlayersDuringTheMatch(t *testing.T) {
 	}
 }
 
-func TestActionsRelayOnlyTheCharacterClipsAndEquippedActions(t *testing.T) {
+func TestASeatRequestReachesOnlyTheLeaderDuringTeamSetup(t *testing.T) {
 	open, _ := opener(t)
 	lobby := NewLobby(&counter{}, open)
 	anaSink, benSink := make(eventSink, 16), make(eventSink, 16)
-	r, _ := lobby.Create(Member{Account: "ana", Clips: []string{"idle", "win", "lose", "reaction"}, Actions: []string{"action.wave"}, Sink: anaSink})
+	r, _ := lobby.Create(Member{Account: "ana", Sink: anaSink})
 	must(t, r.Join(Member{Account: "ben", Sink: benSink}))
-	must(t, r.Act("ana", "reaction"))
-	must(t, r.Act("ana", "action.wave"))
-	refused(t, r.Act("ana", "action.dance"), ErrUnknownAction)
-	refused(t, r.Act("ben", "idle"), ErrUnknownAction)
-	refused(t, r.Act("zed", "idle"), ErrNotInRoom)
-	for _, sink := range []eventSink{anaSink, benSink} {
-		if got := relayed(sink, func(e Event) string { return e.Action }); !slices.Equal(got, []string{"ana:reaction", "ana:action.wave"}) {
-			t.Fatalf("relayed actions %v", got)
+	refused(t, r.Request("ben", rules.SeatY), ErrWrongPhase)
+	must(t, r.Teams("ana", rules.Mode1v1))
+	refused(t, r.Request("ben", rules.SeatNorth), ErrInvalidSeat)
+	refused(t, r.Request("zed", rules.SeatY), ErrNotInRoom)
+	must(t, r.Request("ben", rules.SeatY))
+	seat := func(e Event) string {
+		if !e.Request {
+			return ""
 		}
+		return e.Seat.String()
+	}
+	if got := relayed(anaSink, seat); !slices.Equal(got, []string{"ben:" + rules.SeatY.String()}) {
+		t.Fatalf("leader got %v", got)
+	}
+	if got := relayed(benSink, seat); len(got) != 0 {
+		t.Fatalf("member got %v", got)
 	}
 }
 
@@ -394,4 +401,44 @@ func TestAnAccountInARunningMatchCannotEnterALobby(t *testing.T) {
 	must(t, r.Teams("ana", rules.Mode2v2))
 	refused(t, r.Add("ana", player("playing"), rules.SeatEast), ErrInMatch)
 	must(t, r.Join(player("ben")))
+}
+
+type directory struct {
+	claimed map[string]bool
+	fail    error
+}
+
+func (d *directory) Claim(ctx context.Context, code string) error {
+	if d.fail != nil {
+		return d.fail
+	}
+	d.claimed[code] = true
+	return nil
+}
+
+func (d *directory) Release(ctx context.Context, code string) error {
+	delete(d.claimed, code)
+	return nil
+}
+
+func TestARoomCodeIsClaimedInTheDirectoryUntilTheRoomCloses(t *testing.T) {
+	open, _ := opener(t)
+	lobby := NewLobby(&counter{}, open)
+	codes := &directory{claimed: map[string]bool{}}
+	lobby.Route(codes)
+	r, err := lobby.Create(player("ana"))
+	must(t, err)
+	if !codes.claimed[r.Code()] {
+		t.Fatalf("code %s not claimed", r.Code())
+	}
+	must(t, r.Leave("ana"))
+	if len(codes.claimed) != 0 || lobby.Len() != 0 {
+		t.Fatalf("closed room left claims %v and %d rooms", codes.claimed, lobby.Len())
+	}
+	codes.fail = errors.New("directory down")
+	_, err = lobby.Create(player("ana"))
+	refused(t, err, codes.fail)
+	if lobby.Len() != 0 {
+		t.Fatal("a room whose code was not claimed was kept")
+	}
 }

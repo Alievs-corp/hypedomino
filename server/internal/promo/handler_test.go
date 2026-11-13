@@ -38,6 +38,7 @@ var outcomes = map[string]error{
 	"UNKNWN22": promo.ErrUnknown, "PENDNG22": promo.ErrNotActive, "DSABED22": promo.ErrDisabled, "EARY2345": promo.ErrNotStarted,
 	"ATE23456": promo.ErrExpired, "GNE23456": promo.ErrExhausted, "AGAN2345": promo.ErrAlreadyRedeemed, "VP234567": promo.ErrNotEligible,
 	"FAST2345": promo.ErrRateLimited, "CKED2345": promo.ErrLocked, "UNSTED22": inventory.ErrSourceNotListed, "BRKEN234": errors.New("database down"),
+	"NSEASN22": promo.ErrNoPassSeason, "WNED2345": promo.ErrPassOwned,
 }
 
 func (f *fakePromos) Redeem(_ context.Context, account, code string, at time.Time) (promo.Redemption, error) {
@@ -94,6 +95,8 @@ func TestTheHandlerRedeemsAndMapsEveryRefusal(t *testing.T) {
 		{"access:acc-1", `{"code":"GNE23456"}`, http.StatusConflict, "promo.exhausted"},
 		{"access:acc-1", `{"code":"AGAN2345"}`, http.StatusConflict, "promo.already_redeemed"},
 		{"access:acc-1", `{"code":"UNSTED22"}`, http.StatusConflict, "item.source_not_listed"},
+		{"access:acc-1", `{"code":"NSEASN22"}`, http.StatusConflict, "promo.no_pass_season"},
+		{"access:acc-1", `{"code":"WNED2345"}`, http.StatusConflict, "promo.pass_premium_owned"},
 		{"access:acc-1", `{"code":"VP234567"}`, http.StatusForbidden, "promo.not_eligible"},
 		{"access:acc-1", `{"code":"FAST2345"}`, http.StatusTooManyRequests, "promo.rate_limited"},
 		{"access:acc-1", `{"code":"CKED2345"}`, http.StatusTooManyRequests, "promo.locked"},

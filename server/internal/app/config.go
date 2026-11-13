@@ -12,12 +12,14 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
 	"github.com/Alievs-corp/hypedomino/server/internal/economy"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
@@ -63,6 +65,8 @@ type Config struct {
 	CountryHeader   string
 	CountryCooldown time.Duration
 	DeletionGrace   time.Duration
+	Export          dataexport.Settings
+	ExportStore     objectstore.Config
 	Reward          reward.Config
 	Purchase        purchase.Config
 	Play            purchase.GoogleConfig
@@ -106,6 +110,7 @@ func DefaultConfig() Config {
 		MatchmakingTTL:  5 * time.Second,
 		CountryCooldown: 180 * 24 * time.Hour,
 		DeletionGrace:   30 * 24 * time.Hour,
+		Export:          dataexport.Settings{LinkTTL: 72 * time.Hour, Cooldown: 7 * 24 * time.Hour},
 		Reward:          reward.DefaultConfig(),
 		Purchase:        purchase.DefaultConfig(),
 		Promo:           promo.DefaultConfig(),
@@ -264,7 +269,6 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 		config.Rarities = parsed
 	}
 	r.integer("HD_EMOJI_SLOTS", &config.Inventory.EmojiSlots)
-	r.integer("HD_ACTION_SLOTS", &config.Inventory.ActionSlots)
 	r.integer("HD_FRIENDS_MAX", &config.Friends.MaxFriends)
 	r.integer("HD_FRIEND_REQUESTS_MAX", &config.Friends.MaxRequests)
 	r.integer("HD_REPORT_AUTO_RENAME_THRESHOLD", &config.Reports.AutoRenameThreshold)
@@ -320,6 +324,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	if config.DeletionGrace <= 0 {
 		r.errs = append(r.errs, errors.New("HD_ACCOUNT_DELETION_GRACE: positive"))
 	}
+	r.export(&config)
 	if config.Reward.DuplicateCompensationPercent < 0 || config.Reward.DuplicateCompensationPercent > 100 {
 		r.errs = append(r.errs, errors.New("HD_DUPLICATE_COMPENSATION_PERCENT: between 0 and 100"))
 	}
@@ -399,8 +404,8 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	if err := config.Friends.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_FRIENDS_MAX and HD_FRIEND_REQUESTS_MAX: %w", err))
 	}
-	if config.Inventory.EmojiSlots < 1 || config.Inventory.ActionSlots < 1 {
-		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS and HD_ACTION_SLOTS: at least 1"))
+	if config.Inventory.EmojiSlots < 1 {
+		r.errs = append(r.errs, errors.New("HD_EMOJI_SLOTS: at least 1"))
 	}
 	if config.Emoji.Burst < 1 || config.Emoji.Refill <= 0 {
 		r.errs = append(r.errs, errors.New("HD_EMOJI_BURST and HD_EMOJI_REFILL: a burst of at least 1 and a positive refill"))
@@ -444,6 +449,25 @@ func checkContentBaseURL(raw string) error {
 		return fmt.Errorf("%q is not an https URL without a trailing slash, query or fragment", raw)
 	}
 	return nil
+}
+
+func (r *envReader) export(config *Config) {
+	r.duration("HD_EXPORT_LINK_TTL", &config.Export.LinkTTL)
+	r.duration("HD_DATA_EXPORT_COOLDOWN", &config.Export.Cooldown)
+	if err := config.Export.Validate(); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_EXPORT_LINK_TTL and HD_DATA_EXPORT_COOLDOWN: %w", err))
+	}
+	r.text("HD_EXPORT_STORE_URL", &config.ExportStore.BaseURL)
+	if config.ExportStore.BaseURL == "" {
+		return
+	}
+	r.text("HD_EXPORT_STORE_REGION", &config.ExportStore.Region)
+	r.text("HD_EXPORT_STORE_ACCESS_KEY", &config.ExportStore.AccessKey)
+	r.text("HD_EXPORT_STORE_SECRET_KEY", &config.ExportStore.SecretKey)
+	config.ExportStore.URLTTL = config.Export.LinkTTL
+	if _, err := objectstore.New(config.ExportStore); err != nil {
+		r.errs = append(r.errs, fmt.Errorf("HD_EXPORT_STORE_*: %w", err))
+	}
 }
 
 func (r *envReader) integrity(config *Config) {

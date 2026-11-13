@@ -13,15 +13,14 @@ import (
 const SchemaVersion = 1
 
 const (
-	TypeAvatar    = "avatar"
-	TypeCharacter = "character"
-	TypeFrame     = "frame"
-	TypeTable     = "table"
-	TypeEmoji     = "emoji"
-	TypeAction    = "action"
+	TypeAvatar = "avatar"
+	TypeFrame  = "frame"
+	TypeTable  = "table"
+	TypeTile   = "tile"
+	TypeEmoji  = "emoji"
 )
 
-var Types = []string{TypeAvatar, TypeCharacter, TypeFrame, TypeTable, TypeEmoji, TypeAction}
+var Types = []string{TypeAvatar, TypeFrame, TypeTable, TypeTile, TypeEmoji}
 
 const (
 	Live     = "live"
@@ -88,7 +87,7 @@ type manifest struct {
 	Items           []Item `json:"items"`
 }
 
-var idPattern = regexp.MustCompile(`^(avatar|character|frame|table|emoji|action)\.[a-z0-9_]+$`)
+var idPattern = regexp.MustCompile(`^(avatar|frame|table|tile|emoji)\.[a-z0-9_]+$`)
 
 func Builtin() *Catalog {
 	catalog, err := Parse(builtin)
@@ -129,7 +128,7 @@ func Parse(raw []byte) (*Catalog, error) {
 		c.order = append(c.order, item.ID)
 	}
 	for _, t := range Types {
-		if _, ok := c.Default(t); !ok && t != TypeAction {
+		if _, ok := c.Default(t); !ok {
 			return nil, fmt.Errorf("%w: no live default %s", ErrInvalid, t)
 		}
 	}
@@ -161,8 +160,8 @@ func check(item Item) error {
 		}
 		seen[s] = true
 	}
-	if item.Default() && (item.Availability != Live || item.Animated || item.Type == TypeAction) {
-		return fmt.Errorf("%w: default item %s must be live, static and not an action", ErrInvalid, item.ID)
+	if item.Default() && (item.Availability != Live || item.Animated) {
+		return fmt.Errorf("%w: default item %s must be live and static", ErrInvalid, item.ID)
 	}
 	return nil
 }

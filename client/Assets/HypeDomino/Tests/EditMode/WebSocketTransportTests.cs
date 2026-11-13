@@ -11,8 +11,6 @@ using System.Threading;
 using HypeDomino.Net;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools.Constraints;
-using Is = UnityEngine.TestTools.Constraints.Is;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -272,7 +270,7 @@ namespace HypeDomino.Tests.EditMode
             step();
             server.ReadFrame();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
             CollectionAssert.AreEqual(frame, server.ReadFrame());
         }
     }

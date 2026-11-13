@@ -36,7 +36,7 @@ func storeKind(queue matchmaking.Queue) string {
 func started(match matchmaking.Match, roster []room.Player, seed uint64, now time.Time) matchstore.Started {
 	loadouts := map[rules.Seat]profile.Loadout{}
 	for _, p := range roster {
-		loadouts[p.Seat] = profile.Loadout{Avatar: p.Avatar, Frame: p.Frame, Character: p.Character, Emojis: p.Emoji}
+		loadouts[p.Seat] = profile.Loadout{Avatar: p.Avatar, Frame: p.Frame, Tile: p.Tile, Emojis: p.Emoji}
 	}
 	s := matchstore.Started{ID: uuid.NewString(), StartedAt: now, Mode: match.Mode, Kind: storeKind(match.Queue), Region: match.Region, Seed: seed}
 	for _, seat := range match.Seats {

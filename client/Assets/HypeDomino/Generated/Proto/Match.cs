@@ -70,60 +70,61 @@ namespace Hypedomino.V1 {
             "ZW5lchIxCgZlbmRpbmcYByABKA4yGS5oeXBlZG9taW5vLnYxLkhhbmRFbmRp",
             "bmdSBmVuZGluZxIsChJoYW5kX3BvaW50c19sb2NrZWQYCCABKAhSEGhhbmRQ",
             "b2ludHNMb2NrZWQSHQoKY2FycmllZF9pbhgJIAEoDVIJY2FycmllZEluEiwK",
-            "BGxlZnQYCiADKAsyGC5oeXBlZG9taW5vLnYxLlNlYXRUaWxlc1IEbGVmdCKS",
+            "BGxlZnQYCiADKAsyGC5oeXBlZG9taW5vLnYxLlNlYXRUaWxlc1IEbGVmdCKq",
             "AgoLUm9zdGVyRW50cnkSJwoEc2VhdBgBIAEoDjITLmh5cGVkb21pbm8udjEu",
             "U2VhdFIEc2VhdBInCgR0ZWFtGAIgASgOMhMuaHlwZWRvbWluby52MS5UZWFt",
-            "UgR0ZWFtEhoKCG5pY2tuYW1lGAMgASgJUghuaWNrbmFtZRIcCgljaGFyYWN0",
-            "ZXIYBCABKAlSCWNoYXJhY3RlchIUCgVmcmFtZRgFIAEoCVIFZnJhbWUSFgoG",
-            "YXZhdGFyGAYgASgJUgZhdmF0YXISHQoKcmFua19sYWJlbBgHIAEoCVIJcmFu",
-            "a0xhYmVsEhgKB2VtYmxlbXMYCCADKAlSB2VtYmxlbXMSEAoDYm90GAkgASgI",
-            "UgNib3QiqwkKCU1hdGNoVmlldxIvCgVzdGF0ZRgBIAEoDjIZLmh5cGVkb21p",
-            "bm8udjEuTWF0Y2hTdGF0ZVIFc3RhdGUSJwoEc2VhdBgCIAEoDjITLmh5cGVk",
-            "b21pbm8udjEuU2VhdFIEc2VhdBInCgRtb2RlGAMgASgOMhMuaHlwZWRvbWlu",
-            "by52MS5Nb2RlUgRtb2RlEiEKDGhhbmRzX3BsYXllZBgEIAEoDVILaGFuZHNQ",
-            "bGF5ZWQSMQoGc2NvcmVzGAUgASgLMhkuaHlwZWRvbWluby52MS5UZWFtUG9p",
-            "bnRzUgZzY29yZXMSHQoKY2Fycnlfb3ZlchgGIAEoDVIJY2FycnlPdmVyEicK",
-            "BGhhbmQYByADKAsyEy5oeXBlZG9taW5vLnYxLlRpbGVSBGhhbmQSLQoFc2Vh",
-            "dHMYCCADKAsyFy5oeXBlZG9taW5vLnYxLlNlYXRWaWV3UgVzZWF0cxIjCg1i",
-            "b25leWFyZF9zaXplGAkgASgNUgxib25leWFyZFNpemUSLgoFYm9hcmQYCiAB",
-            "KAsyGC5oeXBlZG9taW5vLnYxLkJvYXJkVmlld1IFYm9hcmQSLQoHY3VycmVu",
-            "dBgLIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdFIHY3VycmVudBI2CgxvcGVu",
-            "aW5nX3RlYW0YDCABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW1SC29wZW5pbmdU",
-            "ZWFtEj0KDmZvcmNlZF9vcGVuaW5nGA0gASgLMhYuaHlwZWRvbWluby52MS5P",
-            "cGVuaW5nUg1mb3JjZWRPcGVuaW5nEicKD3R1cm5fcGxhY2VtZW50cxgOIAEo",
-            "DVIOdHVyblBsYWNlbWVudHMSMQoVdHVybl9kZWFkbGluZV91bml4X21zGA8g",
-            "ASgEUhJ0dXJuRGVhZGxpbmVVbml4TXMSOQoLbGVnYWxfbW92ZXMYECADKAsy",
-            "GC5oeXBlZG9taW5vLnYxLkxlZ2FsTW92ZVIKbGVnYWxNb3ZlcxI6CgtsYXN0",
-            "X3Jlc3VsdBgRIAEoCzIZLmh5cGVkb21pbm8udjEuSGFuZFJlc3VsdFIKbGFz",
-            "dFJlc3VsdBIrCgZ3aW5uZXIYEiABKA4yEy5oeXBlZG9taW5vLnYxLlRlYW1S",
-            "Bndpbm5lchIyCgZyb3N0ZXIYEyADKAsyGi5oeXBlZG9taW5vLnYxLlJvc3Rl",
-            "ckVudHJ5UgZyb3N0ZXISNwoYbG9hZGluZ19kZWFkbGluZV91bml4X21zGBQg",
-            "ASgEUhVsb2FkaW5nRGVhZGxpbmVVbml4TXMSFAoFdGFibGUYFSABKAlSBXRh",
-            "YmxlEjgKGGFma19jb25zZWN1dGl2ZV90aW1lb3V0cxgWIAEoDVIWYWZrQ29u",
-            "c2VjdXRpdmVUaW1lb3V0cxIhCgx0YXJnZXRfc2NvcmUYFyABKA1SC3Rhcmdl",
-            "dFNjb3JlEjsKGmhhbmRfcG9pbnRzX2xvY2tfdGhyZXNob2xkGBggASgNUhdo",
-            "YW5kUG9pbnRzTG9ja1RocmVzaG9sZBI2Cgxsb2NrZWRfdGVhbXMYGSADKA4y",
-            "Ey5oeXBlZG9taW5vLnYxLlRlYW1SC2xvY2tlZFRlYW1zKncKCEJvYXJkRW5k",
-            "EhkKFUJPQVJEX0VORF9VTlNQRUNJRklFRBAAEhIKDkJPQVJEX0VORF9MRUZU",
-            "EAESEwoPQk9BUkRfRU5EX1JJR0hUEAISEQoNQk9BUkRfRU5EX1RPUBADEhQK",
-            "EEJPQVJEX0VORF9CT1RUT00QBCpyCgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJ",
-            "RUQQABIOCgpTRUFUX05PUlRIEAESDQoJU0VBVF9FQVNUEAISDgoKU0VBVF9T",
-            "T1VUSBADEg0KCVNFQVRfV0VTVBAEEgoKBlNFQVRfWBAFEgoKBlNFQVRfWRAG",
-            "KjQKBFRlYW0SFAoQVEVBTV9VTlNQRUNJRklFRBAAEgoKBlRFQU1fQRABEgoK",
-            "BlRFQU1fQhACKjgKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEgwKCE1P",
-            "REVfMVYxEAESDAoITU9ERV8yVjIQAipTCgpDb250cm9sbGVyEhoKFkNPTlRS",
-            "T0xMRVJfVU5TUEVDSUZJRUQQABIVChFDT05UUk9MTEVSX1BMQVlFUhABEhIK",
-            "DkNPTlRST0xMRVJfQk9UEAIqpwEKCk1hdGNoU3RhdGUSGwoXTUFUQ0hfU1RB",
-            "VEVfVU5TUEVDSUZJRUQQABIXChNNQVRDSF9TVEFURV9XQUlUSU5HEAESFwoT",
-            "TUFUQ0hfU1RBVEVfT1BFTklORxACEhcKE01BVENIX1NUQVRFX1BMQVlJTkcQ",
-            "AxIYChRNQVRDSF9TVEFURV9GSU5JU0hFRBAEEhcKE01BVENIX1NUQVRFX0xP",
-            "QURJTkcQBSpYCgpIYW5kRW5kaW5nEhsKF0hBTkRfRU5ESU5HX1VOU1BFQ0lG",
-            "SUVEEAASFgoSSEFORF9FTkRJTkdfRE9NSU5PEAESFQoRSEFORF9FTkRJTkdf",
-            "QkxPQ0sQAkLFAQoRY29tLmh5cGVkb21pbm8udjFCCk1hdGNoUHJvdG9QAVpP",
-            "Z2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRl",
-            "cm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5",
-            "cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxH",
-            "UEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "UgR0ZWFtEhoKCG5pY2tuYW1lGAMgASgJUghuaWNrbmFtZRIgCgljaGFyYWN0",
+            "ZXIYBCABKAlCAhgBUgljaGFyYWN0ZXISFAoFZnJhbWUYBSABKAlSBWZyYW1l",
+            "EhYKBmF2YXRhchgGIAEoCVIGYXZhdGFyEh0KCnJhbmtfbGFiZWwYByABKAlS",
+            "CXJhbmtMYWJlbBIYCgdlbWJsZW1zGAggAygJUgdlbWJsZW1zEhAKA2JvdBgJ",
+            "IAEoCFIDYm90EhIKBHRpbGUYCiABKAlSBHRpbGUiqwkKCU1hdGNoVmlldxIv",
+            "CgVzdGF0ZRgBIAEoDjIZLmh5cGVkb21pbm8udjEuTWF0Y2hTdGF0ZVIFc3Rh",
+            "dGUSJwoEc2VhdBgCIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdFIEc2VhdBIn",
+            "CgRtb2RlGAMgASgOMhMuaHlwZWRvbWluby52MS5Nb2RlUgRtb2RlEiEKDGhh",
+            "bmRzX3BsYXllZBgEIAEoDVILaGFuZHNQbGF5ZWQSMQoGc2NvcmVzGAUgASgL",
+            "MhkuaHlwZWRvbWluby52MS5UZWFtUG9pbnRzUgZzY29yZXMSHQoKY2Fycnlf",
+            "b3ZlchgGIAEoDVIJY2FycnlPdmVyEicKBGhhbmQYByADKAsyEy5oeXBlZG9t",
+            "aW5vLnYxLlRpbGVSBGhhbmQSLQoFc2VhdHMYCCADKAsyFy5oeXBlZG9taW5v",
+            "LnYxLlNlYXRWaWV3UgVzZWF0cxIjCg1ib25leWFyZF9zaXplGAkgASgNUgxi",
+            "b25leWFyZFNpemUSLgoFYm9hcmQYCiABKAsyGC5oeXBlZG9taW5vLnYxLkJv",
+            "YXJkVmlld1IFYm9hcmQSLQoHY3VycmVudBgLIAEoDjITLmh5cGVkb21pbm8u",
+            "djEuU2VhdFIHY3VycmVudBI2CgxvcGVuaW5nX3RlYW0YDCABKA4yEy5oeXBl",
+            "ZG9taW5vLnYxLlRlYW1SC29wZW5pbmdUZWFtEj0KDmZvcmNlZF9vcGVuaW5n",
+            "GA0gASgLMhYuaHlwZWRvbWluby52MS5PcGVuaW5nUg1mb3JjZWRPcGVuaW5n",
+            "EicKD3R1cm5fcGxhY2VtZW50cxgOIAEoDVIOdHVyblBsYWNlbWVudHMSMQoV",
+            "dHVybl9kZWFkbGluZV91bml4X21zGA8gASgEUhJ0dXJuRGVhZGxpbmVVbml4",
+            "TXMSOQoLbGVnYWxfbW92ZXMYECADKAsyGC5oeXBlZG9taW5vLnYxLkxlZ2Fs",
+            "TW92ZVIKbGVnYWxNb3ZlcxI6CgtsYXN0X3Jlc3VsdBgRIAEoCzIZLmh5cGVk",
+            "b21pbm8udjEuSGFuZFJlc3VsdFIKbGFzdFJlc3VsdBIrCgZ3aW5uZXIYEiAB",
+            "KA4yEy5oeXBlZG9taW5vLnYxLlRlYW1SBndpbm5lchIyCgZyb3N0ZXIYEyAD",
+            "KAsyGi5oeXBlZG9taW5vLnYxLlJvc3RlckVudHJ5UgZyb3N0ZXISNwoYbG9h",
+            "ZGluZ19kZWFkbGluZV91bml4X21zGBQgASgEUhVsb2FkaW5nRGVhZGxpbmVV",
+            "bml4TXMSFAoFdGFibGUYFSABKAlSBXRhYmxlEjgKGGFma19jb25zZWN1dGl2",
+            "ZV90aW1lb3V0cxgWIAEoDVIWYWZrQ29uc2VjdXRpdmVUaW1lb3V0cxIhCgx0",
+            "YXJnZXRfc2NvcmUYFyABKA1SC3RhcmdldFNjb3JlEjsKGmhhbmRfcG9pbnRz",
+            "X2xvY2tfdGhyZXNob2xkGBggASgNUhdoYW5kUG9pbnRzTG9ja1RocmVzaG9s",
+            "ZBI2Cgxsb2NrZWRfdGVhbXMYGSADKA4yEy5oeXBlZG9taW5vLnYxLlRlYW1S",
+            "C2xvY2tlZFRlYW1zKncKCEJvYXJkRW5kEhkKFUJPQVJEX0VORF9VTlNQRUNJ",
+            "RklFRBAAEhIKDkJPQVJEX0VORF9MRUZUEAESEwoPQk9BUkRfRU5EX1JJR0hU",
+            "EAISEQoNQk9BUkRfRU5EX1RPUBADEhQKEEJPQVJEX0VORF9CT1RUT00QBCpy",
+            "CgRTZWF0EhQKEFNFQVRfVU5TUEVDSUZJRUQQABIOCgpTRUFUX05PUlRIEAES",
+            "DQoJU0VBVF9FQVNUEAISDgoKU0VBVF9TT1VUSBADEg0KCVNFQVRfV0VTVBAE",
+            "EgoKBlNFQVRfWBAFEgoKBlNFQVRfWRAGKjQKBFRlYW0SFAoQVEVBTV9VTlNQ",
+            "RUNJRklFRBAAEgoKBlRFQU1fQRABEgoKBlRFQU1fQhACKjgKBE1vZGUSFAoQ",
+            "TU9ERV9VTlNQRUNJRklFRBAAEgwKCE1PREVfMVYxEAESDAoITU9ERV8yVjIQ",
+            "AipTCgpDb250cm9sbGVyEhoKFkNPTlRST0xMRVJfVU5TUEVDSUZJRUQQABIV",
+            "ChFDT05UUk9MTEVSX1BMQVlFUhABEhIKDkNPTlRST0xMRVJfQk9UEAIqpwEK",
+            "Ck1hdGNoU3RhdGUSGwoXTUFUQ0hfU1RBVEVfVU5TUEVDSUZJRUQQABIXChNN",
+            "QVRDSF9TVEFURV9XQUlUSU5HEAESFwoTTUFUQ0hfU1RBVEVfT1BFTklORxAC",
+            "EhcKE01BVENIX1NUQVRFX1BMQVlJTkcQAxIYChRNQVRDSF9TVEFURV9GSU5J",
+            "U0hFRBAEEhcKE01BVENIX1NUQVRFX0xPQURJTkcQBSpYCgpIYW5kRW5kaW5n",
+            "EhsKF0hBTkRfRU5ESU5HX1VOU1BFQ0lGSUVEEAASFgoSSEFORF9FTkRJTkdf",
+            "RE9NSU5PEAESFQoRSEFORF9FTkRJTkdfQkxPQ0sQAkLFAQoRY29tLmh5cGVk",
+            "b21pbm8udjFCCk1hdGNoUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29y",
+            "cC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3Yx",
+            "O2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9t",
+            "aW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21p",
+            "bm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.BoardEnd), typeof(global::Hypedomino.V1.Seat), typeof(global::Hypedomino.V1.Team), typeof(global::Hypedomino.V1.Mode), typeof(global::Hypedomino.V1.Controller), typeof(global::Hypedomino.V1.MatchState), typeof(global::Hypedomino.V1.HandEnding), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -146,7 +147,7 @@ namespace Hypedomino.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.TeamPoints), global::Hypedomino.V1.TeamPoints.Parser, new[]{ "TeamA", "TeamB" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.SeatTiles), global::Hypedomino.V1.SeatTiles.Parser, new[]{ "Seat", "Tiles" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.HandResult), global::Hypedomino.V1.HandResult.Parser, new[]{ "Pips", "Winner", "Awarded", "CarryOver", "Scores", "NextOpener", "Ending", "HandPointsLocked", "CarriedIn", "Left" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RosterEntry), global::Hypedomino.V1.RosterEntry.Parser, new[]{ "Seat", "Team", "Nickname", "Character", "Frame", "Avatar", "RankLabel", "Emblems", "Bot" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RosterEntry), global::Hypedomino.V1.RosterEntry.Parser, new[]{ "Seat", "Team", "Nickname", "Character", "Frame", "Avatar", "RankLabel", "Emblems", "Bot", "Tile" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.MatchView), global::Hypedomino.V1.MatchView.Parser, new[]{ "State", "Seat", "Mode", "HandsPlayed", "Scores", "CarryOver", "Hand", "Seats", "BoneyardSize", "Board", "Current", "OpeningTeam", "ForcedOpening", "TurnPlacements", "TurnDeadlineUnixMs", "LegalMoves", "LastResult", "Winner", "Roster", "LoadingDeadlineUnixMs", "Table", "AfkConsecutiveTimeouts", "TargetScore", "HandPointsLockThreshold", "LockedTeams" }, null, null, null, null)
           }));
     }
@@ -5084,6 +5085,7 @@ namespace Hypedomino.V1 {
       rankLabel_ = other.rankLabel_;
       emblems_ = other.emblems_.Clone();
       bot_ = other.bot_;
+      tile_ = other.tile_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -5132,6 +5134,7 @@ namespace Hypedomino.V1 {
     /// <summary>Field number for the "character" field.</summary>
     public const int CharacterFieldNumber = 4;
     private string character_ = "";
+    [global::System.ObsoleteAttribute]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Character {
@@ -5200,6 +5203,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "tile" field.</summary>
+    public const int TileFieldNumber = 10;
+    private string tile_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Tile {
+      get { return tile_; }
+      set {
+        tile_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -5224,6 +5239,7 @@ namespace Hypedomino.V1 {
       if (RankLabel != other.RankLabel) return false;
       if(!emblems_.Equals(other.emblems_)) return false;
       if (Bot != other.Bot) return false;
+      if (Tile != other.Tile) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -5240,6 +5256,7 @@ namespace Hypedomino.V1 {
       if (RankLabel.Length != 0) hash ^= RankLabel.GetHashCode();
       hash ^= emblems_.GetHashCode();
       if (Bot != false) hash ^= Bot.GetHashCode();
+      if (Tile.Length != 0) hash ^= Tile.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -5291,6 +5308,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(72);
         output.WriteBool(Bot);
       }
+      if (Tile.Length != 0) {
+        output.WriteRawTag(82);
+        output.WriteString(Tile);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -5334,6 +5355,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(72);
         output.WriteBool(Bot);
       }
+      if (Tile.Length != 0) {
+        output.WriteRawTag(82);
+        output.WriteString(Tile);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -5368,6 +5393,9 @@ namespace Hypedomino.V1 {
       size += emblems_.CalculateSize(_repeated_emblems_codec);
       if (Bot != false) {
         size += 1 + 1;
+      }
+      if (Tile.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Tile);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -5405,6 +5433,9 @@ namespace Hypedomino.V1 {
       emblems_.Add(other.emblems_);
       if (other.Bot != false) {
         Bot = other.Bot;
+      }
+      if (other.Tile.Length != 0) {
+        Tile = other.Tile;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -5461,6 +5492,10 @@ namespace Hypedomino.V1 {
             Bot = input.ReadBool();
             break;
           }
+          case 82: {
+            Tile = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -5514,6 +5549,10 @@ namespace Hypedomino.V1 {
           }
           case 72: {
             Bot = input.ReadBool();
+            break;
+          }
+          case 82: {
+            Tile = input.ReadString();
             break;
           }
         }

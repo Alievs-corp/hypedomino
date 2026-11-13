@@ -28,7 +28,7 @@ func TestTheExampleCatalogParsesWithItsAvailabilityAndSources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if catalog.Version < 1 || len(catalog.Items()) != 15 {
+	if catalog.Version < 1 || len(catalog.Items()) != 16 {
 		t.Fatalf("catalog %d %d", catalog.Version, len(catalog.Items()))
 	}
 	fox, ok := catalog.Item("avatar.comet_fox")
@@ -43,9 +43,6 @@ func TestTheExampleCatalogParsesWithItsAvailabilityAndSources(t *testing.T) {
 	}
 	if def, ok := catalog.Default(TypeAvatar); !ok || def.ID != "avatar.starter" {
 		t.Fatalf("default avatar %+v %v", def, ok)
-	}
-	if _, ok := catalog.Default(TypeAction); ok {
-		t.Fatal("actions have no default")
 	}
 	if _, ok := catalog.Item("avatar.nope"); ok {
 		t.Fatal("unknown item found")

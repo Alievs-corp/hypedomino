@@ -1,6 +1,6 @@
 # Pass, missions and medals
 
-The seasonal pass with a free and a premium track, daily, weekly, achievement and event missions, and the medal collection. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
+The seasonal pass, named **Hype Pass**, with a free and a premium track, daily, weekly, achievement and event missions, and the medal collection. The server alone computes and stores everything here (ADR 0003, ADR 0007); the client sends intents and shows what the server sends (`docs/anti-cheat.md` NT-1 to NT-12).
 
 **Status: approved by the owner on 2026-10-26 (section 11).** Every number is a launch default to be tuned with closed-beta data (#193). Values marked *economy* are defined in `docs/economy.md` and only repeated here. Every number is admin config (ADR 0006): read from the published config snapshot, recorded with the config version each match and grant used, and changed without a release. Names in `CamelCase` code font are config keys (section 9).
 
@@ -84,6 +84,8 @@ Defaults `PassXpBase` 300, `PassXpStep` 50, `PassXpMax` 1000: early levels are f
 ### 2.5 Premium and late purchase
 
 Products, *economy* (`docs/economy.md` 7.2): `pass_premium` (`PassPremiumUsd` 4.99) unlocks the premium track of the current season; `pass_premium_plus` (`PassPremiumPlusUsd` 9.99) unlocks it and adds `PassPremiumPlusLevels` (20) levels. The premium track is never sold for coins.
+
+The premium track is unlocked by `pass_premium`, by `pass_premium_plus`, or by a `passPremium` promo code approved by a second admin (`docs/economy.md` section 8, OQ-18). The code unlocks the season active at redemption with premium ref `promo:<codeId>`, and the late-purchase rule below applies to it the same way. It is refused, and stays redeemable, when no season is active or the account already has premium in it. A promo unlock is not a store transaction, so the refund rules below do not apply to it.
 
 - Purchase flow, receipt validation and binding to the season active at the store's purchase time: `docs/economy.md` 7.5 and #125. A second premium purchase in the same season is rejected before the store flow starts.
 - **Late purchase.** When premium unlocks at level `L`, the server grants the premium bundle of every level 1 to `L` at once, then continues normally. Each level is its own grant with key `pass:<seasonId>:premium:<level>`, so an interrupted batch resumes and a repeated one grants nothing twice.
@@ -297,7 +299,7 @@ Uses existing tokens of `docs/ui-motion.md` and `docs/rarity.md`; no new duratio
 | Record | Holds | Unique on |
 |---|---|---|
 | Pass season | Id, window, `PassLevels`, curve values, the level-to-bundle table per track, config version | Season id |
-| Pass progress | Account, season, XP total, premium flag with its purchase ref | Account, season |
+| Pass progress | Account, season, XP total, premium flag with its purchase or promo ref | Account, season |
 | XP event | Account, season, amount, source type, source ref, idempotency key, server time | Account, key |
 | Mission assignment | Account, mission, period, slot, progress, completed time | Account, mission, period |
 | Medal ownership | Account, medal, server time, source type and ref, grant key | Account, medal |
@@ -329,7 +331,7 @@ Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level.
 
 | Level | XP total to reach | Free | Premium |
 |---|---|---|---|
-| 1 | 0 | 30 coins | 6 crystals + `character.s1_navigator` (`epic`) |
+| 1 | 0 | 30 coins | 6 crystals + `avatar.s1_navigator` (`epic`) |
 | 2 | 300 | - | 6 crystals |
 | 3 | 650 | 30 coins | 6 crystals |
 | 4 | 1050 | - | 6 crystals |
@@ -428,7 +430,7 @@ Free track: 30 coins on every odd level (1500), a cosmetic on every tenth level.
 | 97 | 90750 | 30 coins | 6 crystals |
 | 98 | 91750 | - | 6 crystals |
 | 99 | 92750 | 30 coins | 6 crystals |
-| 100 | 93750 | `frame.s1_compass` (`epic`) | 6 crystals + `character.s1_sea_queen` (`legendary`) |
+| 100 | 93750 | `frame.s1_compass` (`epic`) | 6 crystals + `avatar.s1_sea_queen` (`legendary`) |
 
 ### 8.3 Missions
 
@@ -564,3 +566,4 @@ Decided by the owner on 2026-10-26. Values stay admin config and are tuned with 
 | OQ-8 | Medals and emblems | Separate systems with their own profile showcase: `ProfileEmblemSlots` (3) emblems and `ProfileMedalSlots` (3) medals; emblems have their own section of the medal collection (5.4, 5.5) |
 | OQ-9 | Catch-up for players who join late in a season | None at launch; level purchase and premium plus cover it |
 | OQ-10 | `mythic` items on pass tracks | None; the sample tops out at one `legendary` per track season (8.2) |
+| OQ-11 | Name of the pass (2026-11-12) | **Hype Pass** in every language and every player-facing text, never translated. Code, config keys, ledger reasons and store product ids keep `pass` |

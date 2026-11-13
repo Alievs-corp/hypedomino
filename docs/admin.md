@@ -25,7 +25,7 @@ Owned elsewhere and only referenced here: item shape (`docs/cosmetics.md`, `docs
 |---|---|---|---|
 | `super_admin` | Admin accounts and roles, retention and privacy config, anti-cheat config, audit log, every permission of the other roles | Every row any admin role can see, plus D-2, D-27, D-28 | Product owner, security lead |
 | `content` | Cosmetics, assets, rarity, medals, emblem art, game strings and their translations, cultural review | None | Art and content team |
-| `live_ops` | Economy config, reward bundles, shop, chests, crystal packs, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
+| `live_ops` | Economy config, reward bundles, shop, chests, crystal packs, store prices, pass, missions, daily login, promo codes, ranked seasons and ranking config, penalty and rules config, events, banners, push campaigns, feature flags, live controls | None | Live-ops lead, release manager, client lead for version gates |
 | `support` | Player lookup and support actions, sanctions, review, report and appeal queues, moderation lists, rights request records, targeted promo account lists | D-1, D-3, D-5, D-6, D-8 to D-10, D-12, D-13, D-15 to D-21, D-23 | Support lead, support agents, moderators |
 | `analyst` | Dashboards, KPI and economy monitors, aggregate exports, pseudonymous analytics events | D-24 only; every other number as an aggregate without ids | Analyst |
 
@@ -56,7 +56,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 | Rarity table (5.3) | VCEP | VCEP | V | V | V |
 | Reward bundles (5.4) | VCEPRD | V | VCEPRD | V | V |
 | Shop offers and rotations (5.5) | VCEPRD | V | VCEPRD | V | V |
-| Store products and crystal packs (5.6) | VCEPR | | VCEPR | V | V |
+| Store products and crystal packs (5.6) | VCEPR, S: push to stores | | VCEPR | V | V |
 | Pass seasons (5.7) | VCEPRD | V | VCEPRD | V | V |
 | Missions (5.8) | VCEPRD | V | VCEPRD | V | V |
 | Medals (5.9) | VCEPRD | VCEPRD | V | V | V |
@@ -93,9 +93,10 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 
 | Domain | Content | Delivered to the client |
 |---|---|---|
-| `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3); `LobbyActionSlots` (`docs/friend-lobby.md` section 5) | Manifest file on the CDN; slot count with client config |
+| `cosmetics` | Cosmetics manifest (`manifestVersion`, `docs/cosmetics.md` 7.3) | Manifest file on the CDN |
 | `rarity` | Rarity table (`docs/rarity.md` section 7) | With client config |
 | `economy` | `docs/economy/balance.csv` keys of kind `config`, reward bundles, shop offers and rotations, store product mapping, daily login | Shop and reward views from the server |
+| `store_prices` | Reference USD price of every real-money product, price tiers, country tiers and per-country overrides (`docs/economy.md` 7.4) | Never; pushed to the stores, or exported as CSV for the store consoles (5.6) |
 | `progression` | Pass seasons, missions, medals | From the server |
 | `ranking` | `docs/ranking.md` section 10 keys per mode, ranked seasons, reset tables, rank reward mapping, emblem definitions | From the server |
 | `rules` | `TurnSeconds`, `AfkConsecutiveTimeouts`, `MatchLoadingSeconds` (`docs/rules.md` section 13). The other `rules.Config` fields change only with `docs/rules.md` and code | Rule values from the server |
@@ -191,7 +192,7 @@ Controls that must act within minutes and must not be undone by a config rollbac
 
 Each table lists the fields the admin edits. Fields marked "server" are set by the admin API and shown read-only. Every object also carries `createdBy`, `createdAt`, `updatedBy`, `updatedAt` and its published revision. Ids are set at creation and immutable (AP-5). Unless a spec fixes another form (store products, rarity tiers, string keys), an id is `<prefix>.<slug>` with slug `[a-z0-9_]+`.
 
-### 5.1 Cosmetic items: avatar, character, frame, table, emoji, action
+### 5.1 Cosmetic items: avatar, frame, table, tile, emoji
 
 One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields per type (#137).
 
@@ -208,8 +209,7 @@ One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields p
 | `sources` | All | Picker of `default` and existing offers, pass rewards, missions, campaigns, season rewards, events. A form that grants an item offers to add its source to the item in the same change set |
 | `artSource` | All | `handmade` or `ai_assisted` |
 | `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3). The publish that adds an item is the review: it is refused (`own_upload`) when the publishing account uploaded one of the item's assets |
-| `animationAddress` | `avatar`, `frame`, `emoji`, `action` | Server: derived; upload required when animated, always for an action |
-| `clips` | `character` | `idle`, `win`, `lose`, `reaction` uploads, all four when animated |
+| `animationAddress` | `avatar`, `frame`, `tile`, `emoji` | Server: derived; upload required when animated |
 | `layers` | `table` | Ordered list of name and upload with an animated flag, at most `TableMaxLayers` |
 | `group` | `emoji` | Emoji group id (#150) |
 
@@ -266,7 +266,7 @@ Today a bundle is stored inside each object that grants it, not in a catalog of 
 | `eligibility` | Optional hours since account creation, first purchase only |
 | `nameKey` | Game string for the offer title |
 | `referencePrice` | Optional struck-through price in the currency of the price (`referencePriceCoins` or `referencePriceCrystals`), validated by `docs/economy.md` 6.3 |
-| `regionalOverrideNote` | Text; a store-console override needs owner approval (`docs/economy.md` 7.4) |
+| `regionalOverrideNote` | Optional text about the offer. It records no country price: those live only in `store_prices` (5.6, `docs/economy.md` 7.4) |
 | `pool` | Chests only: the `common` and `rare` items of the chest, stored as its bundle cosmetics; the editor offers only published `common` and `rare` items (`docs/economy.md` 3.4) |
 | `chests` | Catalog-wide: `rarityPercent` (`ChestRarityPercent`) and `rarePityCount` (`ChestRarePityCount`) |
 
@@ -278,11 +278,20 @@ A rotation is a schedule entry: period (`daily` or `weekly`), period start in UT
 |---|---|
 | `productId` | `crystals_tier1` to `crystals_tier5`, `pass_premium`, `pass_premium_plus`, `offer_starter` (`docs/economy.md` section 7). Created in both store consoles first |
 | `crystals` | For crystal packs, entry of `CrystalPackCrystals` |
-| `usdReference` | The store price point, recorded for checks; the price itself is set only in the store consoles |
+| `usdReference` | The store base price point, held as `referenceUsd` in `store_prices` (below); the price itself is set only in the store consoles |
 | `offer` | The offer that sells it |
 | `storeStatus` | Server: product found and active in each store |
 
-The admin never sets a local price (`docs/economy.md` 7.4). Store products must match admin config before launch (`docs/launch-runbook.md` GN-22).
+Store prices (`/store-prices`, the `store_prices` domain, `docs/economy.md` 7.4) are edited under the store products permissions:
+
+| Field | Rule |
+|---|---|
+| `referenceUsd` | The USD reference price of each of the eight products above, a positive amount with at most two decimals; defaults from `docs/economy/balance.csv` |
+| `tiers` | Tier name (lowercase letters, digits, underscore) to a whole percent from 1 to 100 |
+| `countries` | ISO 3166-1 alpha-2 code to a tier; `RU` is refused (`docs/privacy.md` 9.3); a country not listed keeps store equalisation |
+| `overrides` | Product to country to an exact USD-equivalent target, above zero and not above the reference price |
+
+The page edits tier percents, the tier of each country (searchable table of every store country, named in the panel language), overrides per product and country, and the reference prices. A live preview shows the target of every product in every priced country next to the reference price, computed in the browser as the server does. Publish takes a reason; rollback is in the version history. The "Push to stores" section sends the published version to Google Play and App Store Connect (`docs/economy.md` 7.4): Plan shows, per store, product and country, the store's current price, the new price and the status (`change`, `unchanged`, `not_in_store`, `error`), filtered to the rows that need attention by default, and writes nothing; a store without credentials shows as not configured. Apply (`super_admin`, S: push to stores, with a reason, a confirmation and a recent sign-in) runs the plan again on the server, writes only the changes and shows the result (`written`, `failed`). The published version also exports one CSV per store, Google Play Console and App Store Connect, with the columns `product_id`, `country_code` and `target_usd` and the config version in the file name, the fallback for setting the console prices by hand; the targets come from the server. The admin never sets a price in the game: the table is a store target, the stores set the local price and the client shows it. Store products and the store prices must match admin config before launch (`docs/launch-runbook.md` GN-22).
 
 ### 5.7 Pass seasons
 
@@ -361,13 +370,14 @@ Awards come only from the season-end job. Revoking an awarded emblem is a suppor
 | `window` | Start and end, UTC, at most `PromoMaxValidityDays` |
 | `cap` | Required for `multi_use`; server for the other types |
 | `code` | Generated (`PromoCodeLength`, cryptographic source) or admin-chosen for `multi_use` only; stored as a keyed hash |
+| `passPremium` | True unlocks the premium Hype Pass track of the season active at redemption (`docs/economy.md` section 8); such a code always waits for a second admin |
 | `accounts` | `targeted` only: account ids, entered by `support` after the code is created; the code is created without them and redeems for nobody until they are listed |
 | `template` | True for a template (`docs/launch-content-gate.md` 3.6): it stays `draft`, cannot be submitted or redeemed, and has no window, cap, code or accounts. Cloning it creates a record with `template` false |
 | `state` | Server: `draft`, `pending_approval`, `active`, `disabled`, `expired` |
 | `creator`, `approver` | Server |
 | `redemptions` | Server: count; per-account list visible to `support` only |
 
-Rules are `docs/economy.md` section 8. Batch generation creates `single_use` codes and offers their plaintext once, as a CSV download that is never stored (#142: 10,000 codes in under 10 seconds). A code above `PromoCoinsApprovalThreshold` or with a `mythic` item is active only after a second admin approves it. Disable is immediate (section 4).
+Rules are `docs/economy.md` section 8. Batch generation creates `single_use` codes and offers their plaintext once, as a CSV download that is never stored (#142: 10,000 codes in under 10 seconds). A code above `PromoCoinsApprovalThreshold`, with a `mythic` item or with `passPremium` is active only after a second admin approves it. Disable is immediate (section 4).
 
 ### 5.12 Ranked seasons
 
@@ -535,7 +545,7 @@ Records of objections and other requests handled through support (`docs/privacy.
 | `time` | Server UTC |
 | `actor` | Admin account and the roles it used |
 | `environment` | `staging` or `production` |
-| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, a section 4 control or a section 6.2 action |
+| `action` | `create`, `edit`, `submit`, `approve`, `reject`, `publish`, `schedule`, `cancel`, `rollback`, `retire`, `delete`, `view`, `export`, `push` (store prices to a store, object `store_products` with the store as id), a section 4 control or a section 6.2 action |
 | `object` | Type and id; for player actions the account id |
 | `before`, `after` | Field values of the affected record; secrets (promo plaintext, tokens) never |
 | `reason` | Text; mandatory for every `S` action of 2.3, every section 4 and 6.2 action and every rollback |
@@ -556,7 +566,7 @@ Owner decision (2026-10-26, O-1): the rule covers the high-risk actions below; o
 | Action | Proposer | Approver |
 |---|---|---|
 | Grant or adjust above `AdminGrantApprovalCoins`, or with a `mythic` item | `support` | Another `support` or `super_admin` |
-| Promo code above `PromoCoinsApprovalThreshold` or with a `mythic` item | `live_ops` | Another `live_ops` or `super_admin` (`docs/economy.md` section 8) |
+| Promo code above `PromoCoinsApprovalThreshold`, with a `mythic` item or with `passPremium` | `live_ops` | Another `live_ops` or `super_admin` (`docs/economy.md` section 8) |
 | Permanent ban and its lift | `support` | Another `support` or `super_admin` |
 | Section 4 control in production, except promo code disable | `live_ops` or `super_admin` | Another `live_ops` or `super_admin` |
 | Granting `super_admin` | `super_admin` | Another `super_admin` |
@@ -621,6 +631,12 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/cosmetics/items` | V on cosmetic items | The published cosmetic items (`id`, `type`, `rarity`, `availability`, `sources`), the built-in ones before the first publish; the chest pool editor picks from them |
 | `GET /admin/config/shop/history` | V on shop offers | The last 50 `shop` snapshots, newest first |
 | `POST /admin/config/shop/rollback` `{"version"}` | P on shop offers and S: rollback on snapshots | Publishes the content of an earlier `shop` snapshot as the next version |
+| `GET /admin/config/store-prices` | V on store products | The published `store_prices` table (5.6), its `config_version` (0 and `null` before the first publish) and `rules`: `default`, `products`, store `countries` (ISO 3166-1 alpha-2 without `RU`) and the `targets` (`product`, `country`, `tier` or `override`, `cents`) of the published table, or of the default before the first publish |
+| `PUT /admin/config/store-prices` `{"catalog","reason"}` | P on store products | Publishes the next `store_prices` snapshot through `storeprice.Parse`; an unknown key or product, a bad country code, `RU`, an unknown tier, a percent outside 1 to 100 or an override above its reference gets 400 `invalid` |
+| `GET /admin/config/store-prices/history` | V on store products | The last 50 `store_prices` snapshots, newest first |
+| `POST /admin/config/store-prices/rollback` `{"version","reason"}` | P on store products and S: rollback on snapshots | Publishes the content of an earlier table as the next version |
+| `POST /admin/config/store-prices/sync/plan` | V on store products | Reads Google Play and App Store Connect for the targets of the published table (`server/internal/storesync`, `docs/economy.md` 7.4) and writes nothing. Answers `config_version` and `stores`: per store (`google_play`, `app_store`) `configured`, `counts` per status and `rows` (`product`, `country`, `target_cents`, `current` and `next` as `{"currency","amount"}`, `status` `change`, `unchanged`, `not_in_store` or `error`, `detail`). A store without credentials is `configured: false` with no rows; before the first publish 409 `not_published` |
+| `POST /admin/config/store-prices/sync/apply` `{"reason","ref"}` | S: push to stores on store products | Runs the plan again and writes only the `change` rows, each becoming `written` or `failed`; answers like the plan. One `push` audit entry per configured store with the counts in `after` and the config version. The run finishes even if the admin web drops the request. Needs a reason (400 `reason_required`) and a recent sign-in (403 `step_up_required`) |
 | `POST /admin/config/shop/preview` `{"catalog","at"}` | V on shop offers | Checks a draft catalog like the game servers and answers `{"at","sections":[{"section","ends_at","offers"}]}`: the offer ids each shop section shows at `at` (server time when omitted), computed by the game server's section logic. Writes nothing |
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
 | `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
@@ -668,7 +684,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/matches/{id}/replay` | V on players | The match (mode, kind, window, scores, winner, config version), its seats with account, nickname, bot and result, and the replay record (D-13) played back hand by hand: the tiles dealt to each seat, every intent with its tile, end, points or drawn tile, and each hand's outcome; `timeline` is null when no record was stored |
 | `GET /admin/matches/suspicious` | V on players | The newest 50 matches played by a pair with a `win_trade`, `feeding` or `partner_fit` signal inside that signal's window (`docs/anti-cheat.md` V-9): match id, start, mode, kind, signal kinds and the accounts of the flagged pairs |
 | `GET /admin/promo-codes?campaign=` | V on promo codes | Usage per campaign (`campaigns`: codes, active, pending, disabled, cap, redemptions, earliest start, latest end) and the newest 200 codes (`codes`), of one campaign when `campaign` is given; never a code's plaintext |
-| `POST /admin/promo-codes` `{"id","campaign","kind","bundle","start","end","cap","code","accounts"}` | C on promo codes | Creates one code (5.11) and answers 201 with the code and its `plaintext`, shown this once; a code that needs a second admin also carries `approval_id` |
+| `POST /admin/promo-codes` `{"id","campaign","kind","bundle","start","end","cap","code","accounts","passPremium"}` | C on promo codes | Creates one code (5.11) and answers 201 with the code and its `plaintext`, shown this once; a code that needs a second admin also carries `approval_id` |
 | `POST /admin/promo-codes/batch` `{...,"count"}` | C on promo codes | Creates `count` (1 to 10,000) `single_use` codes `<id>_<n>` and answers 201 with a CSV of `promo_id,code`, never stored; headers `Hd-Promo-State` and, when a second admin must approve, `Hd-Approval-Id` |
 | `GET /admin/promo-codes/{id}` | V on promo codes | The code; for `support` (S: targeted account list) also `personal`: the listed accounts and the redemptions (`account_id`, `redeemed_at`) |
 | `PUT /admin/promo-codes/{id}/accounts` `{"accounts"}` | S on promo codes: targeted account list | Replaces the account list of a `targeted` code; its cap becomes the number listed |
@@ -709,7 +725,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
   The panel edits missions on `/missions` and medals on `/medals` (`admin/README.md`).
 
   A publish or rollback writes a `publish` or `rollback` entry on `missions` `missions` or `medals` `medals` with both snapshots, under a lock on the domain. The body may be up to 1 MiB. Game servers pick up the version within `HD_CONFIG_POLL`; rotation stays automatic per player and slot (5.8).
-- **Cosmetics manifest (#136).** The panel is `/cosmetics` (A-5, A-6). The client sends the items; the server sets `manifestVersion`, each `revision`, `nameKey` and the addresses that follow from the id, the type and `animated` (`docs/cosmetics.md` 8.1), so a character's `clips` and models and a table's layer addresses are never typed. A revision rises once against the published item, only if its content changed. The first publish follows the built-in manifest. The manifest is checked by `cosmetics.ValidateManifest` (V-1 to V-11, V-14, V-19, strict: an undeclared field fails) and against the previous one (V-12, V-13), and each failure names its rule in `detail` with 400 `invalid`. A publish or rollback that drops a source a published mission, pass level, rank reward or chest pool grants from is refused the same way, so a grant never loses its listing (V-15, the record-to-item direction). A publish or rollback writes a `publish` or `rollback` entry on `cosmetic_items` `cosmetics` with both manifests.
+- **Cosmetics manifest (#136).** The panel is `/cosmetics` (A-5, A-6). The client sends the items; the server sets `manifestVersion`, each `revision`, `nameKey` and the addresses that follow from the id, the type and `animated` (`docs/cosmetics.md` 8.1), so animation and table layer addresses are never typed. A revision rises once against the published item, only if its content changed. The first publish follows the built-in manifest. The manifest is checked by `cosmetics.ValidateManifest` (V-1 to V-3, V-5 to V-11, V-14, V-19, strict: an undeclared field fails) and against the previous one (V-12, V-13), and each failure names its rule in `detail` with 400 `invalid`. A publish or rollback that drops a source a published mission, pass level, rank reward or chest pool grants from is refused the same way, so a grant never loses its listing (V-15, the record-to-item direction). A publish or rollback writes a `publish` or `rollback` entry on `cosmetic_items` `cosmetics` with both manifests.
 - **Ranking config (#143).** The config is checked by the same `rating.Parse` as the game servers, so an invalid one gets 400 `invalid` with the reason. While a ranked season is open (started, and not yet closed in both modes, so also while its end runs), a change to a structural key of `docs/ranking.md` 7.1 in either mode gets 409 `frozen` with the mode and keys in `detail`: `divisionLp`, `demotionLp`, `apexRecalcHourUtc`, the apex slots and minimum LP, `placementMatches`, and the reset table (`resetTierDrop`, `resetFloor`, `resetCeiling` and the effective `seasonResetTable`). MMR and LP coefficients and the other keys may change at any time. Every medal and cosmetic of a `rankRewards` bundle must list the source `rank_reward` with that bundle's id in the published medals and cosmetics, and a medal publish keeps the sources the published ranking config needs. A publish or rollback writes a `publish` or `rollback` entry on `ranked_seasons` `rating` with both snapshots, under a lock on the domain. Creating and moving seasons is a separate step (#143). The panel is `/ranked` (A-19).
 - **Ranked seasons (#143).** Seasons are rows of `ranked_seasons` (`docs/ranking.md` 7.1) and stay contiguous: a new season gets an id `season.<slug>`, the name key `<id>.name`, a start in the future equal to `next_start`, and an end after it; any other start gets 400 `invalid` with the reason. A season that has not started may change its end, its `no_rewards` flag and, if no season ends at its start, its start; once started it gets 409 `season_started`. Only the live season may be extended (409 `season_not_live` otherwise), and only later. Moving an end shifts every following season by the same amount, so the next season always starts at the end of the previous one. Only the last season can be removed, and only before it starts. Each change runs in one transaction under a lock on the season and writes a `create_season`, `reschedule_season`, `extend_season` or `delete_season` entry on `ranked_seasons` with the season id and the season before and after; a reason is required.
 - **Pass seasons (#140).** The config is checked by the same `pass.Parse` as the game servers, so an invalid one gets 400 `invalid` with the reason and nothing is stored: windows never overlap, every premium level 1 to `levels` has a bundle, track bundles grant only their track's currency and cosmetics, and each track stays within `freeTrackCoins` or `premiumTrackCrystals`. Every track cosmetic must list the source `pass` with ref `pass.<seasonId>.<track>.level_<n>` in the published cosmetics, and none may be `mythic` (`docs/pass-missions-medals.md` 2.4). A season that has started stays in the config; a planned one may be dropped until its start. While a season runs on server time, a change to its curve or to any of its track bundles gets 409 `frozen`; catalog-wide values such as match XP may change at any time. A rollback restores the earlier content and keeps a started season the target version lacks. A publish or rollback writes a `publish` or `rollback` entry on `pass_seasons` `pass` with both snapshots, under a lock on the domain. Replacing a `disabled` cosmetic in a running track is not offered yet; it is refused as a frozen change. The panel edits the config on `/pass` (`admin/README.md`).
@@ -721,7 +737,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 - **Force rename (#144).** An `S` action: a reason and a fresh sign-in. It sets `rename_required` on the profile and writes a `force_rename` entry with the nickname; an account already flagged answers the same view and writes nothing, and an account without a nickname gets 409 `no_profile`. The player sees `rename_required` in `GET /profile/me`, may rename at once whatever the cooldown, and cannot keep the reported name; that rename clears the flag and does not start the cooldown. Keeping a flagged player out of ranked matches and custom rooms is checked where those entries are served, which the game server does not expose yet.
 - **Grant (#144).** An `S` action: a reason and a fresh sign-in. The bundle follows the bundle rules (`docs/economy.md` 4) and `source` is `{"type","ref"}` of a type of `docs/cosmetics.md` 5 other than `default`. Every cosmetic and medal of the bundle must list that source, so a grant never adds a way to obtain an item; otherwise it gets 400 `invalid` and nothing is stored. The engine applies it in one transaction under the key `admin-grant:<admin id>:<request_id>`: coins and crystals as `admin_adjust` ledger entries with source `admin:<admin id>` like a coin adjustment, cosmetics and medals with the chosen source, a duplicate cosmetic as its compensation (`docs/economy.md` 2.7), and pass XP to the active season, or dropped when none runs. A repeated request answers the first grant with `"repeated":true`; a request id reused for another bundle gets 400 `invalid`. Above `AdminGrantApprovalCoins` coins or with a `mythic` item it is a `player_grant` proposal that only `support` may submit, like a coin adjustment; approving it applies the grant and writes `approve` and `grant_reward` entries. An applied grant writes a `grant_reward` entry on `players` with the engine's report (coins, cosmetics, duplicates, medals, pass XP).
 - **Replay view (#144).** Opening a replay writes a `view_replay` entry on `players` with the match id in the same transaction as the read, like a player record. The stored record is decoded and run through the rules engine (`server/internal/replay`), so the view shows what the server decided, including the hidden hands and the boneyard draws needed for collusion review (`docs/anti-cheat.md` V-9). A record that does not decode, an intent the engine refuses, or a played-back result that differs from the stored one is shown with `problem` and the hands up to that point, never hidden. An unknown or malformed match id gets 404 `not_found`.
-- **Promo codes (#142).** The admin API runs the same `promo.Store` checks as `cmd/promo` (`docs/economy.md` section 8), so a bad id, campaign, window, cap, code or bundle gets 400 `invalid` and an id or code already used 409 `duplicate`. Creating needs a reason; the creator is the admin. A `create_promo` or `create_promo_batch` entry holds the code fields and, for a batch, the count, never a plaintext. A code or batch above `PromoCoinsApprovalThreshold` or with a `mythic` item is stored as `pending_approval` with a `promo_code` proposal (section 8) that only `live_ops` may submit. One proposal covers a whole batch. Approving it activates the code or every pending code of the batch in the same transaction and writes `approve` and `activate_promo` entries. Rejecting it disables them with a `discard_promo` entry, so a rejected code never redeems. Disabling is an `S` action without a second admin: a reason and a fresh sign-in, a `disable_promo` entry with the number of codes, and nothing when they are already disabled. 10,000 codes take about 0.3 s against a local database (`TestTenThousandCodesComeOutInUnderTenSeconds`). Without `HD_PROMO_KEY` every promo route answers 409 `not_configured`.
+- **Promo codes (#142).** The admin API runs the same `promo.Store` checks as `cmd/promo` (`docs/economy.md` section 8), so a bad id, campaign, window, cap, code or bundle gets 400 `invalid` and an id or code already used 409 `duplicate`. Creating needs a reason; the creator is the admin. A `create_promo` or `create_promo_batch` entry holds the code fields and, for a batch, the count, never a plaintext. A code or batch above `PromoCoinsApprovalThreshold`, with a `mythic` item or with `passPremium` is stored as `pending_approval` with a `promo_code` proposal (section 8) that only `live_ops` may submit. One proposal covers a whole batch. Approving it activates the code or every pending code of the batch in the same transaction and writes `approve` and `activate_promo` entries. Rejecting it disables them with a `discard_promo` entry, so a rejected code never redeems. Disabling is an `S` action without a second admin: a reason and a fresh sign-in, a `disable_promo` entry with the number of codes, and nothing when they are already disabled. 10,000 codes take about 0.3 s against a local database (`TestTenThousandCodesComeOutInUnderTenSeconds`). Without `HD_PROMO_KEY` every promo route answers 409 `not_configured`.
 - **Targeted account list (#142).** Only `support` lists accounts (2.1: `live_ops` holds no personal data), so `POST /admin/promo-codes` refuses `accounts` with 400 `invalid`. A `targeted` code starts with cap 0. Setting the list is an `S` action: a reason and a fresh sign-in, a body of up to 256 KiB, unique existing account ids, and every account that already redeemed stays listed. A disabled code gets 409 `disabled`. It writes a `set_promo_targets` entry on the code with the counts before and after, and one `add_promo_target` or `remove_promo_target` entry per account on `players`, so the ids reach `super_admin` only (section 7). The per-account redemptions are served to `support` only.
 - **Promo templates (#142).** A template is kept in `promo_templates`, apart from the codes, so it never redeems and never shows in usage or the code list. Saving one needs a reason and runs the code checks on id, campaign, kind and bundle; the bundle may be left out, as for the compensation template (`docs/launch-content-gate.md` 3.6). A bad field gets 400 `invalid`, an id already used 409 `duplicate`, an unknown id on edit 404 `not_found`. It writes a `create_promo_template` or `edit_promo_template` entry on `promo_codes` with the template before and after. Cloning sends the template's fields with a window, cap or code to `POST /admin/promo-codes`, so the clone follows every code rule.
 - **Account guards.** An admin cannot change or disable their own account (`own_account`). A new account never starts as `super_admin` (`grant_by_approval`): it is created with other roles, and the role is granted afterwards.
@@ -735,7 +751,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ## 10. Screens and navigation
 
-The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price.
+The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner decision 2026-10-31). Every text comes from a message key in `admin/src/i18n/messages`; `en` is the reference, and a key missing from or extra in another language fails `pnpm typecheck` in CI. The chosen language is kept on the admin account (`admin_accounts.locale`, set by `PUT /admin/me/locale` `{"locale"}`, 400 `unknown_locale` for another value) and wins over the browser cookie once signed in; an account that never chose one uses the cookie, then `az`. Navigation shows only groups and screens the account's roles allow. Times are shown in UTC and numbers grouped in the chosen language through the translator (`t.when`, `t.number`, `t.signed` in `admin/src/i18n/translate.ts`); the panel shows coins and crystals, never a real-money price, except the USD-equivalent store-console targets of the Store prices page (5.6).
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
@@ -750,7 +766,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-9 Medals; A-10 Emblems | `super_admin`, `content`; others view | 5.9, 5.10 |
 | Economy | A-11 Reward bundles with usage | `super_admin`, `live_ops`; others view | 5.4 |
 | | A-12 Shop offers; A-13 Rotations | `super_admin`, `live_ops`; others view | 5.5 |
-| | A-14 Store products | `super_admin`, `live_ops`; `support`, `analyst` view | 5.6 |
+| | A-14 Store products; store prices per country, push to the stores and CSV export (`/store-prices`) | `super_admin`, `live_ops`; `support`, `analyst` view and plan; push `super_admin` | 5.6 |
 | | A-15 Promo codes and campaigns | `super_admin`, `live_ops`; `support` targeted lists | 5.11 |
 | Progression | A-16 Pass seasons; A-17 Missions; A-18 Daily login | `super_admin`, `live_ops`; others view | 5.7, 5.8 |
 | Ranked | A-19 Seasons and reset table; A-20 Leaderboards (public data) | `super_admin`, `live_ops`; others view | 5.12 |
@@ -787,7 +803,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 
 Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6).
 
-Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
+Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `CrystalPackUsd`, `PassPremiumUsd`, `PassPremiumPlusUsd`, `StarterOfferUsd`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`).
 
 ## 12. Implementation
 
@@ -799,6 +815,7 @@ Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength
 | #137 Forms per cosmetic type | 5.1 |
 | #138 Reward bundles | 5.4 |
 | #139 Shop offers and rotations | 5.5, 5.6 |
+| #581 Store prices per country | 5.6, 9.1 |
 | #140 Pass seasons | 5.7 |
 | #141 Missions and medals | 5.8, 5.9 |
 | #142 Promo codes | 5.11 |

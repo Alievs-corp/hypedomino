@@ -17,12 +17,11 @@ import (
 var ErrUnknownAccount = errors.New("profile: unknown account")
 
 type Loadout struct {
-	Avatar    string   `json:"avatar,omitempty"`
-	Frame     string   `json:"frame,omitempty"`
-	Character string   `json:"character,omitempty"`
-	Table     string   `json:"table,omitempty"`
-	Emojis    []string `json:"emojis,omitempty"`
-	Actions   []string `json:"actions,omitempty"`
+	Avatar string   `json:"avatar,omitempty"`
+	Frame  string   `json:"frame,omitempty"`
+	Table  string   `json:"table,omitempty"`
+	Tile   string   `json:"tile,omitempty"`
+	Emojis []string `json:"emojis,omitempty"`
 }
 
 type ModeStats struct {
