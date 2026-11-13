@@ -229,6 +229,15 @@ The match screen places its regions inside the safe area with the same rules in 
 - Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
 - A seat box holds the avatar with its animated frame, the name and, on the seat whose turn it is, the turn timer ring. It draws no panel background and no tile count number (`docs/art-direction.md` section 5.5): a seat's hidden tiles show as face-down tiles in its tile skin, so their number reads from the tiles. Places inside the box and of the face-down row come with the seat art (#168, #169).
 
+### Turn timer
+
+Owner decision 2026-11-14 (#87). The ring shows R-49 and decides nothing; the server ends the turn.
+
+- The ring is filled to the time left over the turn length: `turn_deadline_unix_ms` minus server time (`ServerClock`), over `turn_seconds`, both from the latest `MatchView`. Device time never drives it.
+- It turns from gold to the `warning` role once the time left is `turn_warning_seconds` or less, and goes back to gold on the next turn. The threshold is `TurnWarningSeconds` of the rules config (`docs/rules.md` section 13, default 5 seconds), so designers tune it without a release; the client has no constant for it.
+- Colour is never the only cue (section 2); the non-colour cue of the warning comes with the ring art of #78.
+- `Game/Match/TurnTimer` computes the fill, the time left and the warning flag from those fields; the ring art and its animation belong to #78.
+
 ### Hand
 
 The hand offers only what the server allows. The client never works out a legal move; it reads `legal_moves`, the opening fields and `turn_placements` of the latest `MatchView` (`proto/README.md`). `Game/Match/HandChoice` holds the rules below.
