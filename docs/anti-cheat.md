@@ -50,6 +50,7 @@ The client keeps only device settings and content bookkeeping on the device. Eve
 | `motion.reduce` | Reduce motion chosen in settings, or follow the system (`docs/ui-motion.md`, Reduce motion) | Device settings |
 | `haptics.enabled` | Haptics turned on or off in settings (`docs/ui-motion.md`, Haptics) | Device settings |
 | `audio.musicVolume`, `audio.sfxVolume`, `audio.uiVolume` | Volume level of each sound group chosen in settings (`docs/ui-motion.md`, Sound) | Device settings |
+| `language.choice` | Game language, picked from the device locales at first launch or chosen in settings (`docs/localization.md` 1.1) | Display setting only; the server never trusts it for game logic |
 
 - The client has no offline mode and grants nothing on its own: rewards, balances, inventory, scores and ratings come only from server messages and are never written to the device.
 - A new key, file or cache is added to this table in the same pull request, with why editing it gains nothing. A display cache of server values (for example the last balance shown) may only be shown until the server answers and is replaced by it; it never feeds an intent.
