@@ -9,6 +9,7 @@ namespace HypeDomino.UI.Localization
 
         static readonly string[] Launch = { "az", English, "tr", "ru" };
         static readonly char[] SubtagSeparators = { '-', '_' };
+        static readonly char[] LocaleListSeparator = { ',' };
         static readonly string[] EnglishChain = { English };
 
         static readonly Dictionary<string, string[]> DefaultChains = new()
@@ -31,6 +32,9 @@ namespace HypeDomino.UI.Localization
             }
             return English;
         }
+
+        public static string[] SplitLocales(string joined) =>
+            string.IsNullOrEmpty(joined) ? Array.Empty<string>() : joined.Split(LocaleListSeparator, StringSplitOptions.RemoveEmptyEntries);
 
         public static string[] DefaultChain(string language) =>
             DefaultChains.TryGetValue(language ?? string.Empty, out var chain) ? chain : EnglishChain;
