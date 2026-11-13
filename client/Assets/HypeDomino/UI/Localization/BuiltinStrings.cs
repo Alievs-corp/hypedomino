@@ -6,6 +6,8 @@ namespace HypeDomino.UI.Localization
 {
     public sealed class BuiltinStrings
     {
+        public const string ResourceName = "builtin-strings";
+
         [Serializable]
         sealed class Entry
         {
@@ -33,6 +35,19 @@ namespace HypeDomino.UI.Localization
         }
 
         public static BuiltinStrings Parse(string json) => new(JsonUtility.FromJson<File>(json));
+
+        public static BuiltinStrings Load()
+        {
+            var asset = Resources.Load<TextAsset>(ResourceName);
+            if (asset == null)
+            {
+                Debug.LogError($"Strings builtin missing resource={ResourceName}");
+                return new BuiltinStrings(new File());
+            }
+            var strings = Parse(asset.text);
+            Resources.UnloadAsset(asset);
+            return strings;
+        }
 
         public string Value(string key, string language)
         {
