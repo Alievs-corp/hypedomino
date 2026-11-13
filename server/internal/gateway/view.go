@@ -69,9 +69,10 @@ func orientedMessages(tiles []rules.Oriented) []*pb.OrientedTile {
 
 func boardMessage(board room.BoardView) *pb.BoardView {
 	out := &pb.BoardView{
-		Line:   orientedMessages(board.Line),
-		Top:    orientedMessages(board.Top),
-		Bottom: orientedMessages(board.Bottom),
+		Line:         orientedMessages(board.Line),
+		Top:          orientedMessages(board.Top),
+		Bottom:       orientedMessages(board.Bottom),
+		OpeningIndex: uint32(board.Opening),
 	}
 	if board.HasSpinner {
 		out.Spinner = tileMessage(board.Spinner)
