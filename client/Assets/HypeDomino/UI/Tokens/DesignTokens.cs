@@ -152,6 +152,7 @@ namespace HypeDomino.UI.Tokens
     {
         public const float PressScale = 0.94f;
         public const float PanelEnterScale = 0.92f;
+        public const int MaxPresentationLagMs = 600;
     }
 
     public static class TokenEffectLevel

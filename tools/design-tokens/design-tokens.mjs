@@ -500,7 +500,7 @@ export function csharpTokens(tokens) {
     csharpClass("TokenTypography", typographyMembers(tokens.typography)),
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
-    csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`]),
+    csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`, `public const int MaxPresentationLagMs = ${intLiteral(["motion", "maxPresentationLagMs"], motion.maxPresentationLagMs)};`]),
     csharpClass("TokenEffectLevel", levels.flatMap((name) => [
       `public const int ${pascal(name)}MaxAnimatedCosmetics = ${intLiteral(["effects", "levels", name, "maxAnimatedCosmetics"], tokens.effects.levels[name].maxAnimatedCosmetics)};`,
       `public const float ${pascal(name)}WorkTimeP95Ms = ${floatLiteral(tokens.effects.levels[name].workTimeP95Ms)};`,
