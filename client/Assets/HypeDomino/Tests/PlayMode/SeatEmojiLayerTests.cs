@@ -2,6 +2,7 @@ using HypeDomino.UI.Emoji;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,8 @@ namespace HypeDomino.Tests.PlayMode
     public sealed class SeatEmojiLayerTests
     {
         const float Duration = TokenEffect.EmojiDurationMs / 1000f;
+        const int MarkedTicks = 3;
+        const int RecordedSamplesCap = 64;
 
         GameObject root;
         SeatEmojiLayer layer;
@@ -105,6 +108,26 @@ namespace HypeDomino.Tests.PlayMode
                     layer.Tick(now += Duration);
                 }
             }, Allocates.Nothing);
+        }
+
+        [Test]
+        public void EveryTickIsOneSampleOfTheEmojiEffectMarker()
+        {
+            layer.Show(0, art, 0f);
+            layer.Tick(0f);
+            var recorder = new ProfilerRecorder(SeatEmojiLayer.ProfilerMarkerName, RecordedSamplesCap, ProfilerRecorderOptions.CollectOnlyOnCurrentThread);
+            try
+            {
+                Assert.IsTrue(recorder.Valid);
+                recorder.Start();
+                for (var tick = 1; tick <= MarkedTicks; tick++) layer.Tick(tick * Duration / MarkedTicks);
+                recorder.Stop();
+                Assert.AreEqual(MarkedTicks, recorder.Count);
+            }
+            finally
+            {
+                recorder.Dispose();
+            }
         }
     }
 }

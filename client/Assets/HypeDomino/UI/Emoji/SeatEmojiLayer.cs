@@ -1,12 +1,17 @@
 using HypeDomino.Core.Pooling;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace HypeDomino.UI.Emoji
 {
     public sealed class SeatEmojiLayer : MonoBehaviour
     {
+        public const string ProfilerMarkerName = "Effect.emoji";
+
+        static readonly ProfilerMarker TickMarker = new(ProfilerMarkerName);
+
         PrefabPool<EmojiPopup> pool;
         RectTransform[] seats;
         EmojiPopup[] live;
@@ -45,12 +50,15 @@ namespace HypeDomino.UI.Emoji
 
         public void Tick(float now)
         {
-            for (var seat = 0; seat < live.Length; seat++)
+            using (TickMarker.Auto())
             {
-                var popup = live[seat];
-                if (popup == null || popup.Advance(now)) continue;
-                pool.Release(popup);
-                live[seat] = null;
+                for (var seat = 0; seat < live.Length; seat++)
+                {
+                    var popup = live[seat];
+                    if (popup == null || popup.Advance(now)) continue;
+                    pool.Release(popup);
+                    live[seat] = null;
+                }
             }
         }
 
