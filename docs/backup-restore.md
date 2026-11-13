@@ -30,7 +30,7 @@ Targets are reviewed after every drill. A drill result worse than the target is 
 
 ### 3.1 Mechanism
 - WAL archiving: `archive_mode = on`, `archive_timeout = 60`, `archive_command = 'wal-g wal-push %p'` (`deploy/k8s/backup/walg-config.yaml`, ConfigMap `postgres-archive-config`).
-- Base backup: CronJob `walg-base-backup`, daily 02:17 UTC, `wal-g backup-push`. It only reads the data volume and is pinned to the node of the PostgreSQL pod with pod affinity.
+- Base backup: CronJob `walg-base-backup`, daily 02:17 UTC, `wal-g backup-push /var/lib/postgresql/data/pgdata` as role `walg` over TLS. It only reads the data volume and is pinned to the node of the PostgreSQL pod with pod affinity.
 - Compression `zstd`. Encryption on the client with libsodium (`WALG_LIBSODIUM_KEY`, 32 bytes, hex).
 - Storage: an S3-compatible bucket used for backups only, in a different Hetzner location than the database, with its own access key that the game servers and the admin API never hold.
 
@@ -45,9 +45,28 @@ Targets are reviewed after every drill. A drill result worse than the target is 
 - `wal-g backup-list` (printed by the retention job) is the weekly human check; the T-1d runbook line "Backups verified fresh" is this list.
 
 ### 3.4 Keys and access
-- Names only, never values: Secret `walg-credentials` (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_LIBSODIUM_KEY`) and Secret `content-mirror-credentials`.
+- Names only, never values: Secret `walg-credentials` (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WALG_LIBSODIUM_KEY`, `PG_WALG_PASSWORD`), Secret `postgres-superuser` (`POSTGRES_PASSWORD`, used only to initialize an empty volume and for break-glass access), Secret `postgres-tls` (`tls.crt`, `tls.key`, type `kubernetes.io/tls`) and Secret `content-mirror-credentials`.
+- `PG_WALG_PASSWORD` is the password of role `walg`. The initdb script sets it once; rotating it is `ALTER ROLE walg PASSWORD` first, then the Secret.
 - The encryption key is also escrowed offline (the owner's and the server lead's password vaults). Without it every backup is unreadable; losing every copy equals losing the backups.
-- The PostgreSQL role `walg` has only what `backup-push` needs; this is verified on staging (section 9). The drill uses the superuser because its database is throwaway.
+- The PostgreSQL role `walg` has only what `backup-push` needs (section 3.5). The local drill uses the superuser because its database is throwaway; the CI cluster test of section 8.1 uses role `walg`.
+
+### 3.5 The PostgreSQL workload
+Manifests: `deploy/k8s/postgres`, applied with `kubectl apply -k` together with `deploy/k8s/backup`, which holds the WAL-G and archive ConfigMaps it reads.
+
+- StatefulSet `postgres`, one replica, pod label `app.kubernetes.io/name: postgres` (the label the base backup's pod affinity selects). A StatefulSet, not a Deployment, because it never starts a second pod while the old one may still run, so two servers can never write the same data directory, even when a node stops responding. ADR 0010's reasons against a StatefulSet apply to the game servers, not to a single database.
+- PVC `postgres-data` is a standalone claim, not a `volumeClaimTemplate`, so it keeps the name the CronJobs mount, survives deleting the StatefulSet, and a restore (section 7) swaps in a new volume by creating one object of that name. Storage class: the cluster default (Hetzner volumes, encrypted at rest by the IaC of #25). `PGDATA` is the `pgdata` directory inside the volume, because a fresh volume's root is not empty.
+- Service `postgres` on port 5432: `postgres.hypedomino.svc`, the host in `HD_DATABASE_URL` and in `walg-config`.
+- Settings: an initdb script (`deploy/k8s/postgres/initdb/10-hypedomino.sh`, ConfigMap `postgres-initdb`) adds `include_dir = '/etc/postgresql/conf.d'` to `postgresql.conf` on the first start, and the pod mounts ConfigMaps `postgres-archive-config` (section 3.1) and `postgres-config` (TLS) there. The line lives in the data directory, so a restored data directory keeps it. TLS uses the key pair in Secret `postgres-tls`; clients connect with `sslmode=require`.
+- The same script creates role `walg` with `pg_read_all_settings` and `EXECUTE` on `pg_backup_start` and `pg_backup_stop`, which is all `backup-push` needs (proved by the CI job of section 8.1). It runs only on an empty volume; the runtime and migration roles of `docs/environments.md` M-7 are created by the provisioning of #25.
+- Runs as UID 999 with a read-only root filesystem, no privilege escalation, all capabilities dropped and the `RuntimeDefault` seccomp profile; the socket, `/tmp` and `/dev/shm` are `emptyDir` volumes.
+- Probes use `pg_isready` over TCP, so the init process (socket only) never counts as ready. The startup probe allows 1 hour, the RTO of section 2, for WAL replay after a restore. `preStop` runs `pg_ctl stop -m fast`, because Kubernetes sends `SIGTERM`, which in PostgreSQL waits for every client to disconnect.
+- Requests 500m CPU and 1 GiB, limit 2 GiB memory, volume 20 GiB: starting values, set from the load test (#192) and the measured WAL volume (section 8.2). No `PodDisruptionBudget`: with one replica it would block every node drain; maintenance of the database node is a planned short outage.
+
+### 3.6 The image
+- `ghcr.io/alievs-corp/hypedomino-postgres-walg`, built from `tools/backup-drill/Dockerfile` by workflow `.github/workflows/postgres-walg-image.yml` on every push to `main` that changes the Dockerfile, and on demand (`workflow_dispatch` on `main`). It uses `GITHUB_TOKEN` with `packages: write`; nothing is pushed from a pull request or a laptop. linux/amd64 only, like the WAL-G release binary.
+- Two tags per build: the commit SHA (immutable) and the stable tag `<PostgreSQL major>-walg-<WAL-G version>`, today `16-walg-v3.0.9`, printed by `tools/backup-drill/image-tag.sh`.
+- The manifests in `deploy/k8s/postgres` and `deploy/k8s/backup` reference the stable tag. CI fails if they reference anything else, so changing the PostgreSQL major or the WAL-G version changes the Dockerfile and both kustomizations in one PR.
+- A rebuild with the same versions (a base image security update) moves the stable tag; a running pod keeps its image until it restarts. An environment overlay that must not move pins the digest printed in the workflow summary (`images[].digest` in its kustomization), and a rollback uses the previous SHA tag.
 
 ## 4. Redis persistence policy
 
@@ -126,7 +145,7 @@ Point the CDN origin at the mirror bucket; re-upload anything newer from the rel
 4. destroys the database and restores into a fresh volume from the base backup and WAL with `recovery_target_time` set to the recorded time;
 5. fails unless exactly the 1000 base rows and the 500 replayed rows exist, none of the 250 later rows exist, and the database accepts writes after promotion.
 
-It prints the restore time. CI job `backup-drill` runs it on every change to `tools/backup-drill`, `deploy/k8s/backup` or the workflow, and checks that the manifests render. First run on 2026-11-12: 1500 rows restored, 0 after the target, fetch, replay and promote in about 6 seconds for the toy database, about 35 seconds end to end.
+It prints the restore time. CI job `backup-drill` runs it on every change to `tools/backup-drill`, `deploy/k8s/backup`, `deploy/k8s/postgres` or the workflow. The same job renders both kustomizations and validates them against the Kubernetes schema (kubeconform), checks that they reference the image tag of section 3.6, and runs `tools/backup-drill/kind-postgres.sh` on a kind cluster: it applies both kustomizations with test Secrets and an in-cluster object store, waits for the StatefulSet to be ready, checks that the archive and TLS settings are active, runs Jobs created from `walg-base-backup` and `walg-retention`, and fails unless WAL was archived and the base backup is listed. First run on 2026-11-12: 1500 rows restored, 0 after the target, fetch, replay and promote in about 6 seconds for the toy database, about 35 seconds end to end.
 
 ### 8.2 Staging drill (open)
 Not possible until staging exists (#25). Procedure to run then, recorded as GN-15 evidence:
@@ -143,8 +162,8 @@ Not possible until staging exists (#25). Procedure to run then, recorded as GN-1
 
 ## 9. Open items
 - Staging restore drill and measured RTO (needs staging, #25). Part of #188.
-- A deletion log that survives a restore, so 7.3 step 1 can be executed. Today a deletion is a state change in PostgreSQL (`server/internal/account/deletion.go`) and is lost with the data it was written to. Proposal: append each completed deletion (tombstone id, time) to an object in the backup bucket. Needs its own issue; L-19 stays open until then.
-- Publishing the image `ghcr.io/alievs-corp/hypedomino-postgres-walg` from `tools/backup-drill/Dockerfile`, and the PostgreSQL manifests the CronJobs assume (a `postgres` pod, PVC `postgres-data`, Service `postgres`), which are not in `deploy/k8s` yet.
-- Real bucket, endpoint, credentials, encryption key and mirror bucket (owner provides, section 3.4).
-- Least-privilege `walg` role verified against the real database.
+- A deletion log that survives a restore, so 7.3 step 1 can be executed. Today a deletion is a state change in PostgreSQL (`server/internal/account/deletion.go`) and is lost with the data it was written to. Proposal: append each completed deletion (tombstone id, time) to an object in the backup bucket. Tracked in #601; L-19 stays open until then.
+- Real bucket, endpoint, credentials, encryption key, TLS key pair, superuser and `walg` passwords, and mirror bucket (owner provides, section 3.4).
+- The first push of the image happens when the workflow of section 3.6 first runs on `main`. If the package stays private, the clusters need an image pull secret for `ghcr.io` (#25).
+- Storage class, volume size and resource values confirmed on staging (#25, #192).
 - Alerts of section 3.3 (#28).

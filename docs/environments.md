@@ -237,6 +237,7 @@ The client reads no environment variable. Crash reporting (#182) adds its variab
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 | Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
+| PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
 Rules:
