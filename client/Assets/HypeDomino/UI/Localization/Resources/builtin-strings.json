@@ -1,6 +1,8 @@
 {
   "entries": [
     { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
-    { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" }
+    { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" },
+    { "key": "match.seat.mute", "en": "Mute", "az": "Susdur" },
+    { "key": "match.seat.unmute", "en": "Unmute", "az": "Səsini aç" }
   ]
 }
