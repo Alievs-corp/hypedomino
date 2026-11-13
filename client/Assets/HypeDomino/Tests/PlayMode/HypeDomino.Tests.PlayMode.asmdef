@@ -9,8 +9,10 @@
         "HypeDomino.UI",
         "HypeDomino.Content",
         "HypeDomino.Game",
+        "HypeDomino.Net",
         "HypeDomino.Proto",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
