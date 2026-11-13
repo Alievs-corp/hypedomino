@@ -8,6 +8,7 @@ namespace HypeDomino.UI.Localization
         public const string English = "en";
 
         static readonly string[] Launch = { "az", English, "tr", "ru" };
+        static readonly string[] OwnNames = { "Azərbaycanca", "English", "Türkçe", "Русский" };
         static readonly char[] SubtagSeparators = { '-', '_' };
         static readonly char[] LocaleListSeparator = { ',' };
         static readonly string[] EnglishChain = { English };
@@ -19,6 +20,16 @@ namespace HypeDomino.UI.Localization
             ["ru"] = new[] { "ru", English },
             [English] = EnglishChain,
         };
+
+        public static int LaunchCount => Launch.Length;
+
+        public static string LaunchAt(int index) => Launch[index];
+
+        public static string OwnName(string language)
+        {
+            var index = Array.IndexOf(Launch, language);
+            return index < 0 ? string.Empty : OwnNames[index];
+        }
 
         public static bool IsLaunch(string language) => Array.IndexOf(Launch, language) >= 0;
 
