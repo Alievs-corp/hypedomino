@@ -201,6 +201,16 @@ A list that can hold more rows than fit on screen (shop, inventory, friends, lea
 - The scrolling content is its own sub-canvas without a layout group or content size fitter. Rows are placed directly, so scrolling re-batches only the list and never rebuilds layout (section 6 rule 2).
 - A row is rebound only when it starts to show another item, or when its item changed. Rows past the last item are hidden.
 
+### Match loading
+
+Every match opens with the loading screen of the loading phase (R-57, #85). It shows only what the server sends: the `roster`, each seat's `loading_progress` and `ready`, and the state.
+
+- One card per seat. In 2v2 the first row is the local player and their partner (R-6), and the second row is the opponents: the next seat in turn order (R-7), then the last one. In 1v1 the local player is first and the opponent second. A viewer without a seat sees the cards from the default side (South, or X in 1v1).
+- A card shows its seat's progress from 0 to 100 and turns ready when the server says the seat is ready. A roster bot is always ready. When the phase is over, a seat that never became ready shows that the bot plays for it (R-52, R-57).
+- The bar under the cards is the mean of the cards' progress.
+- The client reports its own progress with `LoadingIntent` only when it reaches a new step of 10, the step the server keeps. Loading everything sends 90; `ready` with 100 is sent once, only when the match scene can be shown, and nothing is sent after it.
+- The screen closes when the server leaves the loading state: as soon as every seat is ready, or when `MatchLoadingSeconds` have passed. The client never closes it on its own timer.
+
 ### Match layout
 
 The match screen places its regions inside the safe area with the same rules in either orientation, from 16:9 to 21:9 phones, on 4:3 tablets and on nearly square displays. `UI/Match/MatchLayout` computes them; nothing here depends on art.
