@@ -209,6 +209,7 @@ Every match opens with the loading screen of the loading phase (R-57, #85). It s
 - A card shows its seat's progress from 0 to 100 and turns ready when the server says the seat is ready. A roster bot is always ready. When the phase is over, a seat that never became ready shows that the bot plays for it (R-52, R-57).
 - The bar under the cards is the mean of the cards' progress.
 - The client reports its own progress with `LoadingIntent` only when it reaches a new step of 10, the step the server keeps. Loading everything sends 90; `ready` with 100 is sent once, only when the match scene can be shown, and nothing is sent after it.
+- While the screen is up the client prefetches the static sprite of the table the server chose and of every roster entry's avatar, frame and tile skin, each address once (`docs/cosmetics.md` 8.1). A failed load counts as done, as a missing cosmetic shows its static or built-in fallback and never holds the match. The client's own progress is the share of those loads that are done, and it sends `ready` only when all of them are done and the match scene can be shown. The prefetch keeps the art until the match scene's views hold it.
 - The screen closes when the server leaves the loading state: as soon as every seat is ready, or when `MatchLoadingSeconds` have passed. The client never closes it on its own timer.
 
 ### Match layout
