@@ -32,6 +32,8 @@ namespace HypeDomino.UI.Cosmetics
 
         public bool IsLive => Availability == CosmeticManifest.Live;
 
+        public bool IsRendered => IsLive || Availability == CosmeticManifest.Retired;
+
         public CosmeticArt Art { get; }
 
         public TableLook Table { get; }
@@ -105,6 +107,12 @@ namespace HypeDomino.UI.Cosmetics
             foreach (var item in items)
                 if (item.Type == type && item.IsDefault && item.IsLive) return item;
             return null;
+        }
+
+        public CosmeticItem ShownOf(string type, string id)
+        {
+            if (TryGet(id, out var item) && item.Type == type && item.IsRendered) return item;
+            return DefaultOf(type);
         }
 
         public static bool TryParse(string json, out CosmeticManifest manifest)

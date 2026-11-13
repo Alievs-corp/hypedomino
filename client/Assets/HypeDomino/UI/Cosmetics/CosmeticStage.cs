@@ -35,6 +35,13 @@ namespace HypeDomino.UI.Cosmetics
         public CosmeticArt Frame { get; }
 
         public string MarkRarityId { get; }
+
+        public static AvatarLook Of(CosmeticManifest manifest, string avatarId, string frameId)
+        {
+            var avatar = manifest.ShownOf(CosmeticAddresses.Avatar, avatarId);
+            var frame = manifest.ShownOf(CosmeticAddresses.Frame, frameId);
+            return new AvatarLook(avatar?.Art ?? default(CosmeticArt), frame?.Art ?? default(CosmeticArt), frame?.RarityId);
+        }
     }
 
     public sealed class CosmeticStage
