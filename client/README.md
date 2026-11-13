@@ -166,6 +166,8 @@ Outcomes:
 
 `UI/Motion/MotionPreference` holds reduce motion (`docs/ui-motion.md` 6, Reduce motion): the player's choice when there is one, otherwise the system setting, with `Changed` raised whenever the value in use may have changed. `Game/MotionBoot` creates it before the first scene from the saved `motion.reduce` choice and the system setting (Android `Settings.Global` animator duration scale 0, iOS `UIAccessibilityIsReduceMotionEnabled` through `Plugins/iOS/HypeDominoAccessibility.mm`), rereads the system setting whenever the app regains focus, saves a new choice and logs one `Motion reduce=...` line per change. `MotionPreferenceTests` cover the rules.
 
+`UI/Audio/AudioVolumes` holds the volume level of the music, sfx and ui groups (`docs/ui-motion.md` 6, Sound), each kept between 0 (off) and `Full` (1); a missing or broken value reads as 0 or 1, never outside. `Audible(group)` tells a player whether to start a sound of that group, `Silent` is true while every group is off, and `Changed` is raised only when a level really changes. `Game/AudioBoot` creates it before the first scene from `audio.musicVolume`, `audio.sfxVolume` and `audio.uiVolume` (full when unset), saves every change, logs one `Audio music=...` line per change, and on a device stops the audio output while `Silent` and starts it again otherwise, checked again whenever the app regains focus. `AudioVolumesTests` cover the rules.
+
 ## Score cascade
 
 `UI/Motion/ScoreCascade` turns a score value into the presentation of `docs/ui-motion.md` 8:
