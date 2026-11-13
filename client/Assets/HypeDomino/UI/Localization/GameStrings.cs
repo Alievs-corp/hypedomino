@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,20 +9,24 @@ namespace HypeDomino.UI.Localization
         const string UnavailableKey = "common.text.unavailable";
 
         readonly BuiltinStrings builtin;
+        readonly LanguageChoice choice;
         readonly bool showMissingKeys;
         readonly Dictionary<string, string[]> chains = new();
         readonly Dictionary<string, StringBundle> active = new();
         readonly Dictionary<string, StringBundle> staged = new();
         readonly HashSet<string> reported = new();
 
-        public GameStrings(BuiltinStrings builtin, string language, bool showMissingKeys)
+        public GameStrings(BuiltinStrings builtin, LanguageChoice choice, bool showMissingKeys)
         {
             this.builtin = builtin;
+            this.choice = choice;
             this.showMissingKeys = showMissingKeys;
-            Language = language;
+            choice.Changed += OnLanguageChosen;
         }
 
-        public string Language { get; set; }
+        public event Action Changed;
+
+        public string Language => choice.Language;
 
         public bool SetChain(string language, IReadOnlyList<string> chain)
         {
@@ -50,6 +55,7 @@ namespace HypeDomino.UI.Localization
             if (inMatch || staged.Count == 0) return false;
             foreach (var pair in staged) active[pair.Key] = pair.Value;
             staged.Clear();
+            Changed?.Invoke();
             return true;
         }
 
@@ -66,6 +72,8 @@ namespace HypeDomino.UI.Localization
             if (showMissingKeys) return "[!" + key + "]";
             return builtin.Value(UnavailableKey, GameLanguage.English) ?? string.Empty;
         }
+
+        void OnLanguageChosen() => Changed?.Invoke();
 
         string[] Chain(string language) =>
             language != null && chains.TryGetValue(language, out var chain) ? chain : GameLanguage.DefaultChain(language);
