@@ -122,7 +122,7 @@ namespace HypeDomino.Tests.EditMode
             };
             step();
 
-            Assert.That(step, Is.Not.AllocatingGCMemory());
+            Assert.That(step, Allocates.Nothing);
         }
     }
 }
