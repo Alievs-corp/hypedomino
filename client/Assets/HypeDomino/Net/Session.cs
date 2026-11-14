@@ -27,6 +27,9 @@ namespace HypeDomino.Net
         public event Action<QueueState> QueueStateReceived;
         public event Action<EmojiShown> EmojiReceived;
         public event Action<QuickMessageShown> QuickMessageReceived;
+        public event Action<LobbyState> LobbyStateReceived;
+        public event Action<LobbyRelay> LobbyRelayReceived;
+        public event Action<LobbyInvite> LobbyInviteReceived;
 
         public void Hello(IFrameTransport transport, ClientHello hello)
         {
@@ -95,6 +98,15 @@ namespace HypeDomino.Net
                     return true;
                 case Envelope.PayloadOneofCase.QuickMessageShown:
                     QuickMessageReceived?.Invoke(QuickMessageShown.Parser.ParseFrom(frame.PayloadBytes));
+                    return true;
+                case Envelope.PayloadOneofCase.LobbyState:
+                    LobbyStateReceived?.Invoke(LobbyState.Parser.ParseFrom(frame.PayloadBytes));
+                    return true;
+                case Envelope.PayloadOneofCase.LobbyRelay:
+                    LobbyRelayReceived?.Invoke(LobbyRelay.Parser.ParseFrom(frame.PayloadBytes));
+                    return true;
+                case Envelope.PayloadOneofCase.LobbyInvite:
+                    LobbyInviteReceived?.Invoke(LobbyInvite.Parser.ParseFrom(frame.PayloadBytes));
                     return true;
                 case Envelope.PayloadOneofCase.None:
                     return true;
