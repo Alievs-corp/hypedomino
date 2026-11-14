@@ -52,7 +52,7 @@ A square standing on one corner. Its pips use the layout of a domino half (`docs
 - `RarityTable` holds the tiers by id. Ids are data, not an enum, because the table is admin config and may grow to a sixth tier. An invalid tier is left out, so it draws no mark.
 - `UI/Rarity/rarity-defaults.json` is the built-in table. `npm run tokens:gen` generates it from `docs/design-tokens.json`, and a test fails if it is stale. The active table from config (section 7) has the same shape; delivery waits for the client config (#145).
 - `RarityDiamond` draws the diamond and picks the pip overlay by tier, and hides itself when its box is under `diamondMinSize`, also after a resize.
-- `RarityHalo` draws the halo or flow halo with the tier's tint, alpha and scale. It turns the flow halo in `Update` by transform only, with no allocation. The tween pool of `docs/ui-motion.md` section 6 does not exist in the client yet, so this turn is not counted against `maxTweens`.
+- `RarityHalo` draws the halo or flow halo with the tier's tint, alpha and scale. Around an avatar, `AvatarView` gives it the frame's square and centre, so the scale counts from the frame (`docs/cosmetics.md` 8.3). It turns the flow halo in `Update` by transform only, with no allocation. The tween pool of `docs/ui-motion.md` section 6 does not exist in the client yet, so this turn is not counted against `maxTweens`.
 - A seat or profile avatar takes its tier from the frame it shows: `AvatarLook.Of` resolves it from the manifest (`docs/cosmetics.md` 8.3), so a frame that cannot be shown and gives way to the default frame shows the default frame's tier.
 - The sprites come from the art of #168. A screen sets them, and the additive material of the halo, on its prefab.
 
