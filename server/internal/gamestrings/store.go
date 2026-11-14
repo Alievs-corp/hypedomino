@@ -27,6 +27,10 @@ type Published struct {
 	At       time.Time
 }
 
+func (p Published) File() string {
+	return "strings/" + string(p.Language) + "/" + p.Hash + ".json"
+}
+
 type database interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)

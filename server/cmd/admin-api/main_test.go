@@ -88,6 +88,45 @@ func TestTheAssetStoreIsOptionalButACompleteOneIsRequiredOnceNamed(t *testing.T)
 	}
 }
 
+func TestTheContentStoreIsOptionalButMustBeCompleteAndOfThisEnvironment(t *testing.T) {
+	complete := map[string]string{"HD_CONTENT_STORE_REGION": "auto", "HD_CONTENT_STORE_ACCESS_KEY": "<access>", "HD_CONTENT_STORE_SECRET_KEY": "<secret>"}
+	cases := []struct {
+		name    string
+		extra   map[string]string
+		store   bool
+		refused string
+	}{
+		{"none", nil, false, ""},
+		{"complete", merged(complete, map[string]string{"HD_CONTENT_STORE_URL": "https://store.example/hypedomino-content-staging"}), true, ""},
+		{"incomplete", map[string]string{"HD_CONTENT_STORE_URL": "https://store.example/hypedomino-content-staging"}, false, "HD_CONTENT_STORE_*"},
+		{"another environment", merged(complete, map[string]string{"HD_CONTENT_STORE_URL": "https://store.example/hypedomino-content-production"}), false, "HD_CONTENT_STORE_URL"},
+		{"no environment", merged(complete, map[string]string{"HD_CONTENT_STORE_URL": "https://store.example/hypedomino-content"}), false, "HD_CONTENT_STORE_URL"},
+	}
+	for _, c := range cases {
+		base := merged(map[string]string{"HD_DATABASE_URL": "postgres://admin", "HD_ADMIN_ENVIRONMENT": "staging", "HD_ADMIN_GOOGLE_DOMAIN": "example.com", "HD_ADMIN_GOOGLE_AUDIENCES": "web"}, c.extra)
+		got, err := configFromEnv(env(base))
+		if c.refused != "" {
+			if err == nil || !strings.Contains(err.Error(), c.refused) {
+				t.Errorf("%s: %v, want an error naming %s", c.name, err, c.refused)
+			}
+			continue
+		}
+		if err != nil || (got.api.Content != nil) != c.store {
+			t.Errorf("%s: store %v, error %v", c.name, got.api.Content, err)
+		}
+	}
+}
+
+func merged(maps ...map[string]string) map[string]string {
+	all := map[string]string{}
+	for _, m := range maps {
+		for key, value := range m {
+			all[key] = value
+		}
+	}
+	return all
+}
+
 func TestConfigNamesEveryMissingOrInvalidValue(t *testing.T) {
 	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_ADMIN_GRANT_APPROVAL_COINS": "0", "HD_TEMP_BAN_HOURS": "-1", "HD_MUTE_HOURS": "0", "HD_ADMIN_RATE_SIGNIN_BURST": "0"}))
 	if err == nil {
