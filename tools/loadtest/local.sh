@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage="usage: local.sh <run dir> <rooms>... ; env: NODE_CPUS NODE_MEMORY NODE_CPUSET BOT_CPUSET RAMP HOLD BOT_FLAGS PROFILE_AT"
+usage="usage: local.sh <run dir> <rooms>... ; env: NODE_CPUS NODE_MEMORY NODE_CPUSET BOT_CPUSET RAMP HOLD BOT_FLAGS PROFILE_AT PREBUILT"
 run_root="${1:?$usage}"
 shift
 [ $# -gt 0 ] || { echo "$usage" >&2; exit 2; }
@@ -15,7 +15,7 @@ bot_pinning=()
 [ -z "${BOT_CPUSET:-}" ] || bot_pinning=(--cpuset-cpus "$BOT_CPUSET")
 ramp="${RAMP:-1m}"
 hold="${HOLD:-4m}"
-bot_flags="${BOT_FLAGS:-}"
+read -ra bot_flags <<< "${BOT_FLAGS:-}"
 profile_at="${PROFILE_AT:-150}"
 image=gcr.io/distroless/static-debian12:nonroot
 network=hd-load
@@ -32,6 +32,11 @@ host_path() {
 
 build() {
   mkdir -p "$run_root/bin"
+  if [ -n "${PREBUILT:-}" ]; then
+    cp "$PREBUILT/loadbot" "$PREBUILT/migrate" "$run_root/bin/"
+    cp "$PREBUILT/commit" "$run_root/commit" 2>/dev/null || echo "prebuilt $PREBUILT" > "$run_root/commit"
+    return
+  fi
   (cd "$repo/server" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o "$run_root/bin/" ./cmd/loadbot ./cmd/migrate)
   git -C "$repo" rev-parse HEAD > "$run_root/commit"
 }
@@ -134,12 +139,11 @@ step() {
   local profiler=$!
   docker rm -f "$prefix-bot" >/dev/null 2>&1 || true
   set +e
-  # shellcheck disable=SC2086
   docker run --name "$prefix-bot" --network "$network" --ulimit nofile=262144:262144 "${bot_pinning[@]}" \
     --sysctl net.ipv4.ip_local_port_range="1024 65000" -e HD_LOG_LEVEL=info \
     -v "$(host_path "$run_root/bin"):/work:ro" -v "$(host_path "$dir"):/out" \
     "$image" /work/loadbot run -target "ws://$prefix-node:8080/ws" -metrics "http://$prefix-node:6060/metrics" \
-    -rooms "$rooms" -ramp "$ramp" -hold "$hold" -out /out/report.json $bot_flags > "$dir/report.txt" 2> "$dir/bot.log"
+    -rooms "$rooms" -ramp "$ramp" -hold "$hold" -out /out/report.json "${bot_flags[@]}" > "$dir/report.txt" 2> "$dir/bot.log"
   local status=$?
   set -e
   kill "$sampler" "$profiler" 2>/dev/null || true
@@ -163,7 +167,7 @@ stores_up
 {
   date -u +%FT%TZ
   docker info --format 'docker {{.ServerVersion}}, VM {{.NCPU}} CPUs, {{.MemTotal}} bytes'
-  echo "node: --cpus $node_cpus --memory $node_memory ${node_pinning[*]}; bot: ${bot_pinning[*]}; ramp $ramp hold $hold; bot flags: $bot_flags"
+  echo "node: --cpus $node_cpus --memory $node_memory ${node_pinning[*]}; bot: ${bot_pinning[*]}; ramp $ramp hold $hold; bot flags: ${bot_flags[*]}"
 } > "$run_root/machine.txt"
 for rooms in "$@"; do
   step "$rooms"
