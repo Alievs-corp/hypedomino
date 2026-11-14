@@ -105,7 +105,7 @@ run() {
   on stores "docker exec postgres psql -U hypedomino -qc 'select pg_stat_statements_reset()' >/dev/null; docker exec redis redis-cli -a $(secret) --no-auth-warning config resetstat >/dev/null"
   on node "pkill -x loadbot || true; sleep 2; HD_DATABASE_URL='$(database_url)' HD_REDIS_URL='$(redis_url)' HD_NODE_ID=load-1 setsid nohup ./node.sh $node_ip node-$name >/dev/null 2>&1 < /dev/null &"
   until on bot "curl -fsS -o /dev/null http://$node_ip:6060/metrics" 2>/dev/null; do sleep 2; done
-  on bot "sleep $(( profile_at_min * 60 )); mkdir -p bot-$name; curl -fsS http://$node_ip:6061/debug/pprof/profile?seconds=30 > bot-$name/cpu.pprof 2>/dev/null || curl -fsS http://$node_ip:6060/debug/pprof/profile?seconds=30 > bot-$name/cpu.pprof" &
+  on bot "sleep $(( profile_at_min * 60 )); mkdir -p bot-$name; curl -fsS http://$node_ip:6061/debug/pprof/profile?seconds=30 > bot-$name/cpu.pprof" &
   local profiler=$!
   set +e
   on bot "./bot.sh $node_ip bot-$name -ramp ${ramp_min}m -hold ${hold_min}m $*"

@@ -89,7 +89,7 @@ node_up() {
 }
 
 pprof() {
-  curl -fsS "http://127.0.0.1:16061/debug/pprof/$1" 2>/dev/null || curl -fsS "http://127.0.0.1:16060/debug/pprof/$1"
+  curl -fsS "http://127.0.0.1:16061/debug/pprof/$1"
 }
 
 stores_snapshot() {
