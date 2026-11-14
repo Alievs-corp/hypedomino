@@ -220,23 +220,36 @@ jobs:
     if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     env:
+      KUBECONFORM_VERSION: v0.8.0
+      KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
       KIND_VERSION: v0.33.0
       KIND_SHA256: aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d
     steps:
       - uses: actions/checkout@v4
-      - name: Build the server image
-        run: docker build -t hypedomino-server:ci server
-      - name: Container health, bad config exit and SIGTERM drain
-        run: bash tools/deploy/container-smoke.sh hypedomino-server:ci
-      - name: Install kind
+      - name: Install kubeconform and kind
         run: |
+          curl -sSfL -o "$RUNNER_TEMP/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "$KUBECONFORM_SHA256  $RUNNER_TEMP/kubeconform.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/kubeconform.tar.gz" -C "$RUNNER_TEMP" kubeconform
           curl -sSfL -o "$RUNNER_TEMP/kind" "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
           echo "$KIND_SHA256  $RUNNER_TEMP/kind" | sha256sum -c -
           chmod +x "$RUNNER_TEMP/kind"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Server manifests render and match the Kubernetes schema
+        run: |
+          for dir in deploy/k8s/base deploy/k8s/overlays/ci; do
+            kubectl kustomize "$dir" | kubeconform -strict -summary -
+          done
+          kubeconform -strict -summary tools/deploy/ci-postgres.yaml
+      - name: Build the server image
+        run: docker build -t hypedomino-server:ci server
+      - name: Image size
+        run: docker image inspect -f 'hypedomino-server:ci {{.Size}} bytes' hypedomino-server:ci | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Container health, bad config exit and SIGTERM drain
+        run: bash tools/deploy/container-smoke.sh hypedomino-server:ci
       - name: Create the cluster
         run: kind create cluster --name hd --wait 120s
-      - name: Rolling deploy drains old pods, rollback under 5 minutes
+      - name: Migration job before the rollout, rolling deploy drains old pods, rollback under 5 minutes
         run: bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
 
   backup-drill:

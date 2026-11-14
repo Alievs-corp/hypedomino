@@ -236,7 +236,7 @@ The client reads no environment variable. Crash reporting (#182) adds its variab
 | `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from protected refs | Environment variables injected by the production deploy (#25) |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
-| Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is a separate secret of the migration runner | Environment variable of the server pods |
+| Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is the `HD_DATABASE_URL` of the separate `migrate-env` secret of each cluster | Environment variable of the server pods; `migrate-env` only of the `migrate` Job pods |
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
@@ -296,7 +296,7 @@ Rules:
 - M-2 Expand, then contract (`docs/launch-runbook.md` 5.1). A migration never breaks the server version currently deployed, so the binary rolls back without touching the schema. A contract step ships in a later release, after the previous version is no longer deployed anywhere.
 - M-3 A migration is never edited after it merged; its version number is unique and ordered.
 - M-4 Every migration PR passes the migrations suite of `docs/test-strategy.md` 2.3 in CI: up from empty to head on a fresh database, and the previous server version working on the new schema. Before a release the expand step is drilled on a staging copy (`docs/test-strategy.md` RG-6).
-- M-5 Migrations run once per deploy, from one runner holding the tool's lock, before nodes of the new version take traffic; server nodes never migrate on start concurrently (#25).
+- M-5 Migrations run once per deploy, from one runner holding the tool's lock, before nodes of the new version take traffic; server nodes never migrate on start concurrently (#25). The runner is the `migrate` Job of `deploy/k8s/base/migrate.yaml`, started from the release image by `tools/deploy/apply-release.sh` before the rollout (`docs/launch-runbook.md` 5.1).
 - M-6 Order per release: `staging` first, a deploy drill on it, then `production` with the same migration files.
 - M-7 The migration role may change the schema; the server's runtime role may not. Each has its own secret per environment.
 - M-8 Ledger, purchase and inventory rows are never corrected by a migration or direct SQL; corrections are ledger entries through admin tools (`docs/launch-runbook.md` 5.4, #144).
