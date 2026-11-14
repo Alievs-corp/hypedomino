@@ -202,7 +202,7 @@ Load runs on staging sized like production, never on CI runners. It is re-run at
 
 ## 6. Security regression
 
-The red team (#212) attacks the release candidate with the `docs/anti-cheat.md` vectors V-1 to V-11. Its automatable part becomes permanent tests:
+The red team (#212) attacks the release candidate with the `docs/anti-cheat.md` vectors V-1 to V-11; the plan, results and findings are `docs/red-team.md`. Its automatable part becomes permanent tests, among them the red team harness `server/cmd/server/redteam_*_test.go`, which attacks the server as `cmd/server` wires it over real frames and requests in the `server` job:
 
 | Vector | Permanent test |
 |---|---|
