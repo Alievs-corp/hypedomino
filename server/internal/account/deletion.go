@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +12,16 @@ import (
 )
 
 var ErrNoDeletionPending = errors.New("account: no deletion pending")
+
+type Deletion struct {
+	Account   string
+	Tombstone string
+	At        time.Time
+}
+
+type DeletionLog interface {
+	Append(ctx context.Context, d Deletion) error
+}
 
 type erasure int
 
@@ -106,7 +115,7 @@ func (s *Store) CancelDeletion(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Store) DeleteDue(ctx context.Context, requestedBefore, now time.Time) (int, error) {
+func (s *Store) DeleteDue(ctx context.Context, log DeletionLog, requestedBefore, now time.Time) (int, error) {
 	rows, err := s.pool.Query(ctx, `select id::text from accounts where state = $1 and deletion_requested_at <= $2 order by deletion_requested_at`, StateDeleting, requestedBefore.UTC())
 	if err != nil {
 		return 0, err
@@ -115,73 +124,115 @@ func (s *Store) DeleteDue(ctx context.Context, requestedBefore, now time.Time) (
 	if err != nil {
 		return 0, err
 	}
-	deleted := 0
+	var eraseErr error
 	for _, id := range due {
-		done, err := s.erase(ctx, id, requestedBefore, now)
-		if err != nil {
-			return deleted, fmt.Errorf("erase %s: %w", id, err)
-		}
-		if done {
-			deleted++
+		if err := s.eraseDue(ctx, id, requestedBefore, now); err != nil {
+			eraseErr = fmt.Errorf("erase %s: %w", id, err)
+			break
 		}
 	}
-	return deleted, nil
+	logged, err := s.LogDeletions(ctx, log)
+	return logged, errors.Join(eraseErr, err)
 }
 
-func (s *Store) RunDeletions(ctx context.Context, logger *slog.Logger, every, grace time.Duration, now func() time.Time) {
-	ticker := time.NewTicker(every)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
+func (s *Store) LogDeletions(ctx context.Context, log DeletionLog) (int, error) {
+	pending, err := s.UnloggedDeletions(ctx)
+	if err != nil {
+		return 0, err
+	}
+	for logged, d := range pending {
+		if err := log.Append(ctx, d); err != nil {
+			return logged, fmt.Errorf("log deletion of %s: %w", d.Account, err)
 		}
-		at := now()
-		deleted, err := s.DeleteDue(ctx, at.Add(-grace), at)
-		if err != nil {
-			logger.Error("account deletion failed", "error", err)
-		}
-		if deleted > 0 {
-			logger.Info("accounts deleted", "count", deleted)
+		if _, err := s.pool.Exec(ctx, `delete from deletion_log_pending where account_id = $1`, d.Account); err != nil {
+			return logged, err
 		}
 	}
+	return len(pending), nil
 }
 
-func (s *Store) erase(ctx context.Context, id string, requestedBefore, now time.Time) (bool, error) {
+func (s *Store) UnloggedDeletions(ctx context.Context) ([]Deletion, error) {
+	rows, err := s.pool.Query(ctx, `select account_id::text, tombstone_id::text, deleted_at from deletion_log_pending order by deleted_at, account_id`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Deletion, error) {
+		var d Deletion
+		err := row.Scan(&d.Account, &d.Tombstone, &d.At)
+		d.At = d.At.UTC()
+		return d, err
+	})
+}
+
+func (s *Store) Reapply(ctx context.Context, d Deletion) (bool, error) {
+	if d.Account == "" || d.Tombstone == "" {
+		return false, fmt.Errorf("account: deletion %+v has no account or tombstone id", d)
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer tx.Rollback(ctx)
-	var due bool
-	err = tx.QueryRow(ctx, `select state = $2 and deletion_requested_at <= $3 from accounts where id = $1 for update`, id, StateDeleting, requestedBefore.UTC()).Scan(&due)
-	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !due) {
+	var present bool
+	err = tx.QueryRow(ctx, `select true from accounts where id = $1 and state <> $2 for update`, d.Account, StateDeleted).Scan(&present)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
-	references, err := accountReferences(ctx, tx)
-	if err != nil {
-		return false, err
-	}
-	var tombstone string
-	if err := tx.QueryRow(ctx, `insert into accounts (state, created_at, deleted_at) values ($1, $2, $2) returning id::text`, StateDeleted, now.UTC()).Scan(&tombstone); err != nil {
-		return false, err
-	}
-	if err := holdNickname(ctx, tx, id, tombstone, now); err != nil {
-		return false, err
-	}
-	for _, r := range references {
-		if err := apply(ctx, tx, r, id, tombstone); err != nil {
-			return false, err
-		}
-	}
-	if _, err := tx.Exec(ctx, `delete from accounts where id = $1`, id); err != nil {
+	if _, err := erase(ctx, tx, d); err != nil {
 		return false, err
 	}
 	return true, tx.Commit(ctx)
+}
+
+func (s *Store) eraseDue(ctx context.Context, id string, requestedBefore, now time.Time) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	var due bool
+	err = tx.QueryRow(ctx, `select state = $2 and deletion_requested_at <= $3 from accounts where id = $1 for update`, id, StateDeleting, requestedBefore.UTC()).Scan(&due)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && !due) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	d, err := erase(ctx, tx, Deletion{Account: id, At: now})
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `insert into deletion_log_pending (account_id, tombstone_id, deleted_at) values ($1, $2, $3)`, d.Account, d.Tombstone, d.At); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func erase(ctx context.Context, tx pgx.Tx, d Deletion) (Deletion, error) {
+	references, err := accountReferences(ctx, tx)
+	if err != nil {
+		return Deletion{}, err
+	}
+	d.At = d.At.UTC().Truncate(time.Microsecond)
+	if err := tx.QueryRow(ctx, `insert into accounts (id, state, created_at, deleted_at) values (coalesce(nullif($1, '')::uuid, gen_random_uuid()), $2, $3, $3) returning id::text`,
+		d.Tombstone, StateDeleted, d.At).Scan(&d.Tombstone); err != nil {
+		return Deletion{}, err
+	}
+	if err := holdNickname(ctx, tx, d.Account, d.Tombstone, d.At); err != nil {
+		return Deletion{}, err
+	}
+	for _, r := range references {
+		if err := apply(ctx, tx, r, d.Account, d.Tombstone); err != nil {
+			return Deletion{}, err
+		}
+	}
+	if _, err := tx.Exec(ctx, `delete from accounts where id = $1`, d.Account); err != nil {
+		return Deletion{}, err
+	}
+	return d, nil
 }
 
 func holdNickname(ctx context.Context, tx pgx.Tx, id, tombstone string, now time.Time) error {
