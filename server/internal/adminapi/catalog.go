@@ -13,6 +13,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
+	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
 const MaxCatalogBytes = 1 << 20
@@ -39,10 +40,14 @@ type publishCatalogRequest struct {
 	changeNote
 }
 
-func (h *Handler) catalogDomain(keepOffers bool) configDomain {
-	return configDomain{name: shop.Domain, object: rbac.ShopOffers, prepare: h.offerSourcesListed, accept: func(before, after []byte) error {
+func (h *Handler) catalogDomain(publish bool) configDomain {
+	prepare := h.offerSourcesListed
+	if publish {
+		prepare = h.publishableCatalog
+	}
+	return configDomain{name: shop.Domain, object: rbac.ShopOffers, prepare: prepare, accept: func(before, after []byte) error {
 		next, err := shop.Parse(after, h.config.Shop)
-		if err != nil || !keepOffers || before == nil {
+		if err != nil || !publish || before == nil {
 			return err
 		}
 		var current shop.Catalog
@@ -73,7 +78,8 @@ type rotationRulesView struct {
 
 type shopCatalogView struct {
 	catalogView
-	Rotation rotationRulesView `json:"rotation"`
+	Rotation           rotationRulesView `json:"rotation"`
+	ReferencePriceDays int               `json:"reference_price_days"`
 }
 
 func (h *Handler) shopCatalog(w http.ResponseWriter, r *http.Request, p principal) {
@@ -83,7 +89,7 @@ func (h *Handler) shopCatalog(w http.ResponseWriter, r *http.Request, p principa
 		return
 	}
 	rules := rotationRulesView{DailySlots: h.config.Shop.DailySlots, WeeklySlots: h.config.Shop.WeeklySlots, ResetHourUTC: h.config.Shop.ResetHourUTC}
-	reply(w, http.StatusOK, shopCatalogView{catalogView: viewCatalog(version, raw), Rotation: rules})
+	reply(w, http.StatusOK, shopCatalogView{catalogView: viewCatalog(version, raw), Rotation: rules, ReferencePriceDays: h.config.Shop.ReferencePriceDays})
 }
 
 func (h *Handler) publishShop(w http.ResponseWriter, r *http.Request, p principal) {
@@ -122,7 +128,24 @@ func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p princip
 }
 
 func (h *Handler) offerSourcesListed(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
-	catalog, err := shop.Parse(after, h.config.Shop)
+	_, err := h.sourcesListedCatalog(ctx, tx, after)
+	return after, err
+}
+
+func (h *Handler) publishableCatalog(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
+	catalog, err := h.sourcesListedCatalog(ctx, tx, after)
+	if err != nil {
+		return nil, err
+	}
+	inEffect, err := snapshot.InEffectWithinDays(ctx, tx, shop.Domain, h.config.Shop.ReferencePriceDays)
+	if err != nil {
+		return nil, err
+	}
+	return after, catalog.CheckReferencePrices(inEffect)
+}
+
+func (h *Handler) sourcesListedCatalog(ctx context.Context, tx pgx.Tx, raw []byte) (*shop.Catalog, error) {
+	catalog, err := shop.Parse(raw, h.config.Shop)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +153,7 @@ func (h *Handler) offerSourcesListed(ctx context.Context, tx pgx.Tx, _, after []
 	if err != nil {
 		return nil, err
 	}
-	return after, catalog.CheckSources(items)
+	return catalog, catalog.CheckSources(items)
 }
 
 type cosmeticItemView struct {
