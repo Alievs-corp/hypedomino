@@ -23,6 +23,6 @@ set +e
 status=$?
 set -e
 curl -fsS "http://$node:6060/metrics" > "$run_dir/final.prom" || true
-curl -fsS "http://$node:6060/debug/pprof/heap" > "$run_dir/heap.pprof" || true
+curl -fsS "http://$node:6061/debug/pprof/heap" > "$run_dir/heap.pprof" || true
 cat "$run_dir/report.txt"
 exit "$status"
