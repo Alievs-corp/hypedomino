@@ -185,6 +185,65 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(ShopShowcase.TryRead(json, out _));
         }
 
+        static string OwnedOffer(string compensation) =>
+            @"{""version"":1,""sections"":[{""section"":""featured"",""offers"":[{""id"":""offer.x"",""kind"":""bundle"",""name_key"":""shop.offer.x"",""price_coins"":10,""cosmetics"":[""avatar.x""],""owned"":[""avatar.x""],""compensation"":" + compensation + @",""purchasable"":true}]}]}";
+
+        [Test]
+        public void OwnedItemsShowTheCompensationTheServerSent()
+        {
+            var showcase = Read(ShopJson);
+
+            var fox = showcase.Sections[1].Offers[0];
+            Assert.IsTrue(fox.TryCompensationCoins("avatar.comet_fox", out var coins));
+            Assert.AreEqual(80, coins);
+            Assert.AreEqual(1, fox.CompensationCoins.Count);
+            var starter = showcase.Sections[0].Offers[0];
+            Assert.IsFalse(starter.TryCompensationCoins("avatar.comet_fox", out _));
+            Assert.AreEqual(0, starter.CompensationCoins.Count);
+            Assert.AreEqual(0, showcase.Sections[3].Offers[0].CompensationCoins.Count);
+        }
+
+        [Test]
+        public void EachOfferKeepsItsOwnCompensation()
+        {
+            var json = @"{""version"":3,""sections"":[
+{""section"":""featured"",""offers"":[]},
+{""section"":""daily_rotation"",""ends_at"":""2026-11-15T00:00:00Z"",""offers"":[
+{""id"":""offer.a"",""kind"":""bundle"",""name_key"":""shop.offer.a"",""price_coins"":900,""coins"":100,""cosmetics"":[""avatar.comet_fox"",""emoji.wave""],""limit"":1,""bought"":0,""owned"":[],""compensation"":{},""purchasable"":true},
+{""id"":""offer.b"",""kind"":""bundle"",""name_key"":""shop.offer.b"",""price_crystals"":200,""crystals"":20,""cosmetics"":[""avatar.comet_fox"",""table.night_market""],""bought"":0,""owned"":[""avatar.comet_fox"",""table.night_market""],""compensation"":{""avatar.comet_fox"":80,""table.night_market"":0},""purchasable"":true}]}]}";
+            var offers = Read(json).Sections[0].Offers;
+
+            Assert.AreEqual(0, offers[0].CompensationCoins.Count);
+            Assert.IsTrue(offers[1].TryCompensationCoins("avatar.comet_fox", out var fox));
+            Assert.AreEqual(80, fox);
+            Assert.IsTrue(offers[1].TryCompensationCoins("table.night_market", out var table));
+            Assert.AreEqual(0, table);
+        }
+
+        [TestCase("{}")]
+        [TestCase("null")]
+        public void NoCompensationIsAnEmptyMap(string compensation)
+        {
+            var card = Read(OwnedOffer(compensation)).Sections[0].Offers[0];
+
+            Assert.AreEqual(0, card.CompensationCoins.Count);
+            Assert.IsTrue(card.IsOwned("avatar.x"));
+        }
+
+        [TestCase(@"{""avatar.x"":-1}")]
+        [TestCase(@"{""avatar.x"":1.5}")]
+        [TestCase(@"{""avatar.x"":""80""}")]
+        [TestCase(@"{""avatar.x"":null}")]
+        [TestCase(@"{""avatar.y"":10}")]
+        [TestCase(@"{"""":10}")]
+        [TestCase("[]")]
+        [TestCase("80")]
+        public void CompensationThatIsNotACoinAmountPerOwnedItemRefusesTheReply(string compensation)
+        {
+            Assert.IsFalse(ShopShowcase.TryRead(OwnedOffer(compensation), out var showcase));
+            Assert.IsNull(showcase);
+        }
+
         [Test]
         public void TickingEveryCountdownAllocatesNothing()
         {
