@@ -223,6 +223,28 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void LobbyPayloadsReachTheirEvents()
+        {
+            Accept();
+            LobbyState state = null;
+            LobbyRelay relay = null;
+            LobbyInvite invite = null;
+            session.LobbyStateReceived += value => state = value;
+            session.LobbyRelayReceived += value => relay = value;
+            session.LobbyInviteReceived += value => invite = value;
+            foreach (var name in new[] { "lobby_state", "lobby_relay", "lobby_invite" })
+                transport.Deliver(Golden(name));
+
+            session.Poll();
+
+            Assert.AreEqual("K7QM3X", state.Code);
+            Assert.AreEqual(LobbyRefusal.SeatsOpen, state.Refusal);
+            Assert.AreEqual("emoji.laugh", relay.ItemId);
+            Assert.AreEqual("K7QM3X", invite.Code);
+            Assert.IsFalse(session.Broken);
+        }
+
+        [Test]
         public void AFrameWithoutAProtocolVersionIsRead()
         {
             Accept();
