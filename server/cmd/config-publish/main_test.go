@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -28,6 +29,53 @@ import (
 
 func TestMain(m *testing.M) {
 	os.Exit(dbtest.Main(m))
+}
+
+func TestAShopReferencePriceIsTheLowestPublishedPriceOfItsWindow(t *testing.T) {
+	url, _ := dbtest.Fresh(t)
+	ctx := context.Background()
+	var out bytes.Buffer
+	if err := run(ctx, url, cosmetics.Domain, "../../../docs/cosmetics/examples/catalog.json", &out); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile("../../../docs/economy/examples/shop.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	table := `"priceCoins": 3000,`
+	discounted := func(price, reference int) string {
+		path := filepath.Join(t.TempDir(), "shop.json")
+		priced := fmt.Sprintf(`"priceCoins": %d, "referencePriceCoins": %d,`, price, reference)
+		if err := os.WriteFile(path, []byte(strings.Replace(string(raw), table, priced, 1)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	if err := run(ctx, url, shop.Domain, discounted(2500, 3000), &out); !errors.Is(err, shop.ErrInvalid) || !strings.Contains(err.Error(), "has no earlier price") {
+		t.Fatalf("reference before any published price: %v", err)
+	}
+	if err := run(ctx, url, shop.Domain, "../../../docs/economy/examples/shop.json", &out); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name             string
+		price, reference int
+		refusal          string
+	}{
+		{"above the published price", 2500, 3500, "reference price 3500 is not its lowest price 3000"},
+		{"the published price", 2500, 3000, ""},
+		{"the running discount again", 2500, 3000, ""},
+		{"lowered again under the same reference", 2000, 3000, "reference price 3000 is not its lowest price 2500"},
+	}
+	for _, tc := range cases {
+		err := run(ctx, url, shop.Domain, discounted(tc.price, tc.reference), &out)
+		switch {
+		case tc.refusal == "" && err != nil:
+			t.Fatalf("%s: refused: %v", tc.name, err)
+		case tc.refusal != "" && (!errors.Is(err, shop.ErrInvalid) || !strings.Contains(err.Error(), tc.refusal)):
+			t.Fatalf("%s: got %v, want %q", tc.name, err, tc.refusal)
+		}
+	}
 }
 
 func TestPublishValidatesAndStoresTheSnapshot(t *testing.T) {

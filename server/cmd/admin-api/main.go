@@ -133,8 +133,9 @@ func configFromEnv(env lookup) (config, error) {
 	integer("HD_SHOP_DAILY_SLOTS", &c.api.Shop.DailySlots)
 	integer("HD_SHOP_WEEKLY_SLOTS", &c.api.Shop.WeeklySlots)
 	integer("HD_SHOP_RESET_HOUR_UTC", &c.api.Shop.ResetHourUTC)
+	integer("HD_SHOP_REFERENCE_PRICE_DAYS", &c.api.Shop.ReferencePriceDays)
 	if err := c.api.Shop.Validate(); err != nil {
-		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
+		errs = append(errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS, HD_SHOP_RESET_HOUR_UTC and HD_SHOP_REFERENCE_PRICE_DAYS: %w", err))
 	}
 	errs = append(errs, promoFromEnv(&c.api, text, integer)...)
 	integer("HD_SINK_RATIO_ALERT_LOW_PERCENT", &c.api.Economy.SinkRatioLowPercent)

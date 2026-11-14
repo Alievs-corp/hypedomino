@@ -4,7 +4,7 @@ import { canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedOffers, type CosmeticItem, type RotationRules, type ShopCatalog } from "@/shop/catalog";
+import { changedOffers, inEffectWithinDays, type CosmeticItem, type PublishedCatalog, type RotationRules, type ShopCatalog } from "@/shop/catalog";
 import { Rollback } from "../config/Rollback";
 import { rollbackCatalog } from "./actions";
 import { ShopEditor } from "./ShopEditor";
@@ -21,9 +21,9 @@ export default async function ShopPage() {
     return <Notice text={t("auth.forbidden")} />;
   }
   const [shop, items, history] = await Promise.all([
-    adminApi<{ config_version: number; catalog: ShopCatalog | null; rotation: RotationRules }>("GET", "/admin/config/shop"),
+    adminApi<{ config_version: number; catalog: ShopCatalog | null; rotation: RotationRules; reference_price_days: number }>("GET", "/admin/config/shop"),
     adminApi<{ items: CosmeticItem[] }>("GET", "/admin/cosmetics/items"),
-    adminApi<{ versions: CatalogVersion[] }>("GET", "/admin/config/shop/history"),
+    adminApi<{ versions: PublishedCatalog[] }>("GET", "/admin/config/shop/history"),
   ]);
   if (shop.status !== 200 || items.status !== 200 || history.status !== 200) {
     return <Notice text={t("shop.load_failed")} />;
@@ -34,16 +34,20 @@ export default async function ShopPage() {
       {shop.body.catalog === null ? (
         <p className="text-text-secondary">{t("shop.empty")}</p>
       ) : (
-        <ShopEditor initialCatalog={shop.body.catalog} version={shop.body.config_version} items={items.body.items} rules={shop.body.rotation} />
+        <ShopEditor
+          initialCatalog={shop.body.catalog}
+          version={shop.body.config_version}
+          items={items.body.items}
+          rules={shop.body.rotation}
+          referencePrices={{ days: shop.body.reference_price_days, inEffect: inEffectWithinDays(history.body.versions, shop.body.reference_price_days, new Date()) }}
+        />
       )}
       <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "shop_offers") ? googleClientId() : null} t={t} />
     </main>
   );
 }
 
-type CatalogVersion = { config_version: number; published_at: string; catalog: ShopCatalog };
-
-function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollback: string | null; t: Translate }) {
+function History({ versions, rollback, t }: { versions: PublishedCatalog[]; rollback: string | null; t: Translate }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">{t("shop.history")}</h2>

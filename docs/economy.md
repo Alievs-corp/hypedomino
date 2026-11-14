@@ -239,6 +239,7 @@ At least one field among `coins`, `crystals`, `cosmetics`, `medals` and `passXp`
 
 - A discount is a separate offer with its own price and window, never a percentage the client applies.
 - A struck-through earlier price is shown only if it is the lowest price of the same content in the last `ReferencePriceDays` (30) days. Admin publish rejects one that is not.
+- The check compares the offer's `referencePriceCoins` or `referencePriceCrystals` with the prices the same offer id had, in the same currency, in every `shop` version in effect during the last `ReferencePriceDays` days: the versions published in that window and the one in effect at its start. The reference must equal the lowest of them; an offer with no earlier price in the window takes no reference price, so neither does the first catalog ever published. A discount whose price and reference are unchanged from the current version is not checked again, so a running discount survives later publishes of other offers. `PUT /admin/config/shop`, a reward bundle edit and `config-publish -domain shop` run it; a rollback restores an earlier version as it was.
 - A countdown shows only the real end of the offer's window.
 
 ## 7. Real-money products
