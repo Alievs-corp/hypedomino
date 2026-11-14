@@ -126,7 +126,7 @@ The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its orig
 - **Keys:** search over keys, notes and texts, and a filter to the keys a language is missing. Languages sit side by side. A new key, a note, the max length and the placeholders (`name:type`, comma separated) are saved with `PUT /admin/strings/{key}`; ticking deprecated retires the key.
 - **Values:** each cell saves its text with status `draft`, or `approved` for roles with edit and publish on game strings.
 - **Import and export:** a language as `csv` or `json` for an external translator. The panel sends a file through a server action, so it takes files up to 1 MB; larger ones go straight to `POST /admin/strings/import`. A blocked import lists each failing key.
-- **Bundles:** publish builds the next bundle of a language; a blocked publish lists each failing key. Activating a newer bundle publishes the next `localization` snapshot with a reason. Activating an older one is a rollback and needs rollback on snapshots and a fresh sign-in.
+- **Bundles:** publish builds the next bundle of a language and uploads it to the CDN; a blocked publish lists each failing key, and `content_store_off` or `content_store_unavailable` means the admin API has no content store or the store refused the file, so nothing was published. Activating a newer bundle publishes the next `localization` snapshot with a reason. Activating an older one is a rollback and needs rollback on snapshots and a fresh sign-in.
 
 ## Players
 

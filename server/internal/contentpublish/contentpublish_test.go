@@ -118,6 +118,24 @@ func TestPlanRefusesABadBuildOrTarget(t *testing.T) {
 	}
 }
 
+func TestAStoreURLMustNameItsOwnEnvironmentOnly(t *testing.T) {
+	cases := []struct {
+		environment, url string
+		want             error
+	}{
+		{"staging", "https://store.example/hypedomino-content-staging", nil},
+		{"production", "https://hypedomino-content-PRODUCTION.store.example", nil},
+		{"staging", "https://store.example/hypedomino-content-production", contentpublish.ErrEnvironment},
+		{"production", "https://store.example/hypedomino-content", contentpublish.ErrEnvironment},
+		{"staging", "https://staging.store.example/hypedomino-content-dev", contentpublish.ErrEnvironment},
+	}
+	for _, c := range cases {
+		if err := contentpublish.CheckStoreURL(c.environment, c.url); !errors.Is(err, c.want) {
+			t.Errorf("%s %s: %v, want %v", c.environment, c.url, err, c.want)
+		}
+	}
+}
+
 func TestPublishKeepsOlderCatalogsWorkingAndRefusesARepublish(t *testing.T) {
 	ctx := context.Background()
 	fake, store := newFakeStore()
