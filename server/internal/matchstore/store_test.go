@@ -311,3 +311,37 @@ func TestFinishKeepsThePartnerFitOfEverySeat(t *testing.T) {
 		t.Fatalf("%d seats without a measurement, want 2", n)
 	}
 }
+
+func TestRunningSeesAnUnfinishedMatchUntilItEndsOrGoesStale(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	store := matchstore.New(pool)
+	players := accounts(t, pool, 3)
+	id := uuid.NewString()
+	if err := store.Begin(ctx, started(id, matchstore.KindRanked, players[:2])); err != nil {
+		t.Fatal(err)
+	}
+	running := func(account string, startedAfter time.Time) bool {
+		t.Helper()
+		got, err := store.Running(ctx, account, startedAfter)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	if !running(players[0], start.Add(-2*time.Hour)) {
+		t.Fatal("a seated player of an unfinished match is not running")
+	}
+	if running(players[2], start.Add(-2*time.Hour)) {
+		t.Fatal("a player outside the match is running")
+	}
+	if running(players[0], start.Add(time.Minute)) {
+		t.Fatal("a match started before the stale bound still counts")
+	}
+	if err := store.Finish(ctx, finished(id, matchstore.KindRanked)); err != nil {
+		t.Fatal(err)
+	}
+	if running(players[0], start.Add(-2*time.Hour)) {
+		t.Fatal("a finished match still counts")
+	}
+}
