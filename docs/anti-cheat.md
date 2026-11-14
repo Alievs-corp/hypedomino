@@ -73,7 +73,7 @@ The client keeps only device settings and content bookkeeping on the device. Eve
 
 ## 4. Attack vectors
 
-Risk is the impact if the countermeasures did not exist. Every vector is verified by the red team before release (#212).
+Risk is the impact if the countermeasures did not exist. Every vector is verified by the red team before release (#212, `docs/red-team.md`).
 
 ### V-1. Memory editor
 

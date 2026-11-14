@@ -22,7 +22,7 @@ func newMoveRoundTrip() *metrics.Histogram {
 	return metrics.NewHistogram("move_roundtrip_seconds", "Accepted move intent from receive to the resulting broadcast queued for every seat.", moveBounds)
 }
 
-func (a *App) debugHandler() http.Handler {
+func (a *App) metricsHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
@@ -34,6 +34,11 @@ func (a *App) debugHandler() http.Handler {
 			exposed.WriteTo(w)
 		}
 	})
+	return mux
+}
+
+func pprofHandler() http.Handler {
+	mux := http.NewServeMux()
 	mux.HandleFunc("/debug/pprof/", pprof.Index)
 	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -43,16 +48,32 @@ func (a *App) debugHandler() http.Handler {
 }
 
 func (a *App) serveDebug() (func(), error) {
-	if a.config.DebugAddr == "" {
-		return func() {}, nil
-	}
-	listener, err := net.Listen("tcp", a.config.DebugAddr)
+	stopMetrics, err := a.serveSide("debug", a.config.DebugAddr, a.metricsHandler())
 	if err != nil {
 		return nil, err
 	}
-	server := &http.Server{Handler: a.debugHandler(), ReadHeaderTimeout: 10 * time.Second}
+	stopPprof, err := a.serveSide("pprof", a.config.PprofAddr, pprofHandler())
+	if err != nil {
+		stopMetrics()
+		return nil, err
+	}
+	return func() {
+		stopMetrics()
+		stopPprof()
+	}, nil
+}
+
+func (a *App) serveSide(name, addr string, handler http.Handler) (func(), error) {
+	if addr == "" {
+		return func() {}, nil
+	}
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	server := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 	go server.Serve(listener)
-	a.logger.Info("debug listening", "addr", listener.Addr().String())
+	a.logger.Info(name+" listening", "addr", listener.Addr().String())
 	return func() { server.Close() }, nil
 }
 

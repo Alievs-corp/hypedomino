@@ -18,5 +18,5 @@ vmstat -n -t 10 > "$run_dir/vmstat.log" &
 sampler=$!
 trap 'kill "$sampler" 2>/dev/null || true' EXIT
 
-HD_LISTEN_ADDR="$private_addr:8080" HD_DEBUG_ADDR="$private_addr:6060" HD_LOG_LEVEL="${HD_LOG_LEVEL:-warn}" \
+HD_LISTEN_ADDR="$private_addr:8080" HD_DEBUG_ADDR="$private_addr:6060" HD_PPROF_ADDR="$private_addr:6061" HD_LOG_LEVEL="${HD_LOG_LEVEL:-warn}" \
   ./loadbot serve > "$run_dir/server.log" 2>&1

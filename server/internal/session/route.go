@@ -17,7 +17,7 @@ func (m *Manager) routedElsewhere(ctx context.Context, token string) (string, bo
 		return "", false
 	}
 	key := token
-	if m.auth != nil && !m.known(token) {
+	if m.auth != nil {
 		_, id, err := m.auth.Authenticate(token)
 		if err != nil || id == "" {
 			return "", false
