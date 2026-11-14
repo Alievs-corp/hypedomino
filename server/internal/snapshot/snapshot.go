@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,6 +27,7 @@ type Watcher[T any] struct {
 	value   T
 	loaded  bool
 	applied func()
+	synced  atomic.Bool
 }
 
 func New[T any](pool *pgxpool.Pool, domain string, parse Parse[T], logger *slog.Logger) *Watcher[T] {
@@ -75,8 +77,15 @@ func Latest(ctx context.Context, pool Querier, domain string) (int64, []byte, er
 	return version, raw, err
 }
 
+func (w *Watcher[T]) Synced() bool {
+	return w.synced.Load()
+}
+
 func (w *Watcher[T]) Load(ctx context.Context) (bool, error) {
 	version, raw, err := Latest(ctx, w.pool, w.domain)
+	if err == nil || errors.Is(err, ErrNone) {
+		w.synced.Store(true)
+	}
 	if err != nil {
 		return false, err
 	}
