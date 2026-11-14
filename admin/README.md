@@ -48,7 +48,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 ## Shop offers
 
 `/shop` (A-17, `docs/admin.md` 5.5) edits the published catalog of `GET /admin/config/shop`.
-- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish. A store product price also takes an optional note about the offer; switching to coins or crystals drops it. Country prices are not noted here: they live on the Store prices page.
+- **Offers:** for the selected offer, its price in the currencies its kind and section allow, and its window. The window opens and optionally closes, shown and entered in UTC (AP-8). A window that closes before it opens blocks the publish, and so does a `mythic` item in an offer that is not time-limited: only a rotation offer, or a featured or event offer whose window closes, may sell one (`docs/economy.md` 3.1). A store product price also takes an optional note about the offer; switching to coins or crystals drops it. Country prices are not noted here: they live on the Store prices page.
 - **Catalog-wide:** crystal pack amounts, and chest pools and odds.
 - **Rotations:** plan the offers of a daily or weekly period ahead. The slot counts and reset hour come from the server (`rotation` in `GET /admin/config/shop`). A daily period starts at the reset hour, a weekly one on a Monday at the reset hour. Candidates are the offers of the period's rotation section; checked offers take the slots in the order they were checked. A rotation with no offers or more offers than slots blocks the publish.
 - **Preview:** shows the offer ids each section of the draft would show at a chosen UTC moment, or now (`POST /admin/config/shop/preview`). Nothing is published.
@@ -126,7 +126,7 @@ The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its orig
 - **Keys:** search over keys, notes and texts, and a filter to the keys a language is missing. Languages sit side by side. A new key, a note, the max length and the placeholders (`name:type`, comma separated) are saved with `PUT /admin/strings/{key}`; ticking deprecated retires the key.
 - **Values:** each cell saves its text with status `draft`, or `approved` for roles with edit and publish on game strings.
 - **Import and export:** a language as `csv` or `json` for an external translator. The panel sends a file through a server action, so it takes files up to 1 MB; larger ones go straight to `POST /admin/strings/import`. A blocked import lists each failing key.
-- **Bundles:** publish builds the next bundle of a language; a blocked publish lists each failing key. Activating a newer bundle publishes the next `localization` snapshot with a reason. Activating an older one is a rollback and needs rollback on snapshots and a fresh sign-in.
+- **Bundles:** publish builds the next bundle of a language and uploads it to the CDN; a blocked publish lists each failing key, and `content_store_off` or `content_store_unavailable` means the admin API has no content store or the store refused the file, so nothing was published. Activating a newer bundle publishes the next `localization` snapshot with a reason. Activating an older one is a rollback and needs rollback on snapshots and a fresh sign-in.
 
 ## Players
 

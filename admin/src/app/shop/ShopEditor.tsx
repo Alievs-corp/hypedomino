@@ -11,6 +11,7 @@ import {
   crystalPacks,
   listsChest,
   oddsTotal,
+  permanentMythics,
   priceOf,
   replaceOffer,
   withPackCrystals,
@@ -68,7 +69,7 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
           ))}
         </select>
         {offer && <OfferPrice offer={offer} onChange={update} />}
-        {offer && <OfferWindow offer={offer} onChange={update} />}
+        {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
       <Chests catalog={catalog} items={items} onChange={update} onRules={(chests) => setCatalog((current) => ({ ...current, chests }))} />
@@ -81,7 +82,11 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
         </label>
         <button
           type="button"
-          disabled={pending || catalog.offers.some(windowEndsBeforeStart) || catalog.rotations.some((rotation) => !rotationFits(rotation, rules))}
+          disabled={
+            pending ||
+            catalog.offers.some((candidate) => windowEndsBeforeStart(candidate) || permanentMythics(candidate, items).length > 0) ||
+            catalog.rotations.some((rotation) => !rotationFits(rotation, rules))
+          }
           onClick={() => startTransition(async () => setResult(await publishCatalog(catalog, reason)))}
           className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40"
         >
@@ -245,7 +250,7 @@ function RotationRow({
   );
 }
 
-function OfferWindow({ offer, onChange }: { offer: Offer; onChange: (offer: Offer) => void }) {
+function OfferWindow({ offer, mythics, onChange }: { offer: Offer; mythics: string[]; onChange: (offer: Offer) => void }) {
   const t = useTranslator();
   const start = windowMinute(offer.window.start);
   const end = windowMinute(offer.window.end);
@@ -265,6 +270,11 @@ function OfferWindow({ offer, onChange }: { offer: Offer; onChange: (offer: Offe
       {windowEndsBeforeStart(offer) && (
         <p role="alert" className="text-sm text-danger-text">
           {t("shop.window_end_before_start")}
+        </p>
+      )}
+      {mythics.length > 0 && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.mythic_time_limited")}: <span className="font-mono">{mythics.join(", ")}</span>
         </p>
       )}
     </fieldset>
