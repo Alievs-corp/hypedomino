@@ -28,7 +28,15 @@ namespace HypeDomino.UI.Shop
         public long price_coins;
         public long price_crystals;
         public string product_id;
+        public long reference_price_coins;
+        public long reference_price_crystals;
+        public long coins;
+        public long crystals;
         public string[] cosmetics;
+        public int pass_xp;
+        public string ends_at;
+        public int limit;
+        public int bought;
         public string[] owned;
         public bool purchasable;
         public string reason;
