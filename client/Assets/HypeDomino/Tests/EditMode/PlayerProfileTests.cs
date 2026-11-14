@@ -8,11 +8,15 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class PlayerProfileTests
     {
+        const string OwnModes = @"{""1v1"":{""games"":30,""wins"":17,""losses"":13},""2v2"":{""games"":10,""wins"":5,""losses"":5}}";
+
+        const string PublicRanks = @"{""1v1"":""Gold II"",""2v2"":""Master""}";
+
         const string OwnJson = @"{""account_id"":""8d1f0c52-5a4e-4f7b-9a43-0c7d2b1e6f10"",""nickname"":""Leyla"",""setup_required"":false,""rename_required"":false,
 ""rename_available_at"":""2026-12-01T10:00:00Z"",""level"":7,""xp"":1250,
 ""loadout"":{""avatar"":""avatar.comet_fox"",""frame"":""frame.season_1_top"",""table"":""table.starter"",""tile"":""tile.starter"",""emojis"":[""emoji.smile""]},
 ""stats"":{""games"":40,""wins"":22,""losses"":18,""win_rate_percent"":55,""streak"":3,""best_streak"":6,
-""modes"":{""1v1"":{""games"":30,""wins"":17,""losses"":13},""2v2"":{""games"":10,""wins"":5,""losses"":5}}}}";
+""modes"":" + OwnModes + "}}";
 
         const string SetupJson = @"{""account_id"":""8d1f0c52-5a4e-4f7b-9a43-0c7d2b1e6f10"",""nickname"":"""",""setup_required"":true,""rename_required"":false,
 ""suggested_nickname"":""Player4821"",""level"":1,""xp"":0,""loadout"":{},""stats"":{""games"":0,""wins"":0,""losses"":0,""win_rate_percent"":0,""streak"":0,""best_streak"":0,""modes"":{}}}";
@@ -20,7 +24,7 @@ namespace HypeDomino.Tests.EditMode
         const string PublicJson = @"{""account_id"":""3b6a9e21-7c0d-4e55-8f12-9a0b4c3d2e1f"",""nickname"":""Rauf"",""level"":12,
 ""loadout"":{""avatar"":""avatar.moon_owl"",""frame"":""frame.starter""},
 ""stats"":{""games"":80,""win_rate_percent"":61,""best_streak"":9},
-""ranked"":{""ranks"":{""1v1"":""Gold II"",""2v2"":""Master""},""emblems"":[
+""ranked"":{""ranks"":" + PublicRanks + @",""emblems"":[
 {""id"":""1v1:season_1:global"",""season"":""season_1"",""mode"":""1v1"",""board"":""global"",""bracket"":100,""position"":57,""awarded_at"":""2026-10-01T00:00:00Z""},
 {""id"":""2v2:season_1:country:AZ"",""season"":""season_1"",""mode"":""2v2"",""board"":""country:AZ"",""bracket"":10,""position"":4,""awarded_at"":""2026-10-01T00:00:00Z""}]},
 ""medals"":[
@@ -31,13 +35,13 @@ namespace HypeDomino.Tests.EditMode
 
         static PlayerProfile Own(string json = OwnJson)
         {
-            Assert.IsTrue(PlayerProfile.TryFromOwn(OwnProfileReply.FromJson(json), out var profile));
+            Assert.IsTrue(PlayerProfile.TryFromOwn(json, out var profile));
             return profile;
         }
 
         static PlayerProfile Public(string json = PublicJson)
         {
-            Assert.IsTrue(PlayerProfile.TryFromPublic(PublicProfileReply.FromJson(json), out var profile));
+            Assert.IsTrue(PlayerProfile.TryFromPublic(json, out var profile));
             return profile;
         }
 
@@ -81,10 +85,103 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AnOwnReplyWithoutAProfileIsNotShown()
         {
-            Assert.IsFalse(PlayerProfile.TryFromOwn(OwnProfileReply.FromJson(SetupJson), out var setup));
+            Assert.IsFalse(PlayerProfile.TryFromOwn(SetupJson, out var setup));
             Assert.IsNull(setup);
             Assert.IsFalse(PlayerProfile.TryFromOwn(null, out _));
-            Assert.IsFalse(PlayerProfile.TryFromOwn(OwnProfileReply.FromJson(OwnJson.Replace(@"""nickname"":""Leyla""", @"""nickname"":""""")), out _));
+            Assert.IsFalse(PlayerProfile.TryFromOwn(OwnJson.Replace(@"""nickname"":""Leyla""", @"""nickname"":"""""), out _));
+        }
+
+        [Test]
+        public void TheOwnProfileShowsTheServersCountersOfEachModeInTheServersOrder()
+        {
+            var profile = Own();
+
+            Assert.AreEqual(2, profile.ModeStatsCount);
+            Assert.AreEqual("1v1", profile.ModeStats(0).Mode);
+            Assert.AreEqual(30, profile.ModeStats(0).Games);
+            Assert.AreEqual(17, profile.ModeStats(0).Wins);
+            Assert.AreEqual(13, profile.ModeStats(0).Losses);
+            Assert.AreEqual("2v2", profile.ModeStats(1).Mode);
+            Assert.AreEqual(10, profile.ModeStats(1).Games);
+            Assert.AreEqual(5, profile.ModeStats(1).Wins);
+            Assert.AreEqual(5, profile.ModeStats(1).Losses);
+            Assert.AreEqual(0, profile.RankCount);
+        }
+
+        [TestCase(@"{}")]
+        [TestCase(@"null")]
+        public void AnOwnProfileWithoutModeCountersShowsNone(string modes)
+        {
+            Assert.AreEqual(0, Own(OwnJson.Replace(OwnModes, modes)).ModeStatsCount);
+        }
+
+        [TestCase(@"[]")]
+        [TestCase(@"{""1v1"":[]}")]
+        [TestCase(@"{""1v1"":30}")]
+        [TestCase(@"{"""":{""games"":1,""wins"":1,""losses"":0}}")]
+        [TestCase(@"{""1v1"":{""wins"":17,""losses"":13}}")]
+        [TestCase(@"{""1v1"":{""games"":30,""losses"":13}}")]
+        [TestCase(@"{""1v1"":{""games"":30,""wins"":17}}")]
+        [TestCase(@"{""1v1"":{""games"":-1,""wins"":0,""losses"":0}}")]
+        [TestCase(@"{""1v1"":{""games"":1.5,""wins"":1,""losses"":0}}")]
+        [TestCase(@"{""1v1"":{""games"":""30"",""wins"":17,""losses"":13}}")]
+        [TestCase(@"{""1v1"":{""games"":2147483648,""wins"":0,""losses"":0}}")]
+        public void AnOwnReplyWithUnreadableModeCountersIsNotShown(string modes)
+        {
+            Assert.IsFalse(PlayerProfile.TryFromOwn(OwnJson.Replace(OwnModes, modes), out var profile));
+            Assert.IsNull(profile);
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("{")]
+        [TestCase("[]")]
+        public void AReplyThatIsNotAJsonObjectIsNotShown(string json)
+        {
+            Assert.IsFalse(PlayerProfile.TryFromOwn(json, out var own));
+            Assert.IsNull(own);
+            Assert.IsFalse(PlayerProfile.TryFromPublic(json, out var other));
+            Assert.IsNull(other);
+        }
+
+        [Test]
+        public void AnotherPlayersProfileShowsTheRankOfEachPlacedModeInTheServersOrder()
+        {
+            var profile = Public();
+
+            Assert.AreEqual(2, profile.RankCount);
+            Assert.AreEqual("1v1", profile.Rank(0).Mode);
+            Assert.AreEqual("Gold II", profile.Rank(0).Label);
+            Assert.AreEqual("2v2", profile.Rank(1).Mode);
+            Assert.AreEqual("Master", profile.Rank(1).Label);
+            Assert.AreEqual(0, profile.ModeStatsCount);
+        }
+
+        [Test]
+        public void AProfileWithoutAPlacedModeShowsNoRank()
+        {
+            var unplaced = Public(BarePublicJson.Replace(@"}}", @"},""ranked"":{""ranks"":{},""emblems"":null}}"));
+
+            Assert.AreEqual(0, unplaced.RankCount);
+            Assert.AreEqual(0, unplaced.EmblemCount);
+            Assert.AreEqual(0, Public(BarePublicJson).RankCount);
+        }
+
+        [TestCase(@"[]")]
+        [TestCase(@"{""1v1"":7}")]
+        [TestCase(@"{""1v1"":""""}")]
+        [TestCase(@"{""1v1"":null}")]
+        [TestCase(@"{"""":""Gold II""}")]
+        public void APublicReplyWithUnreadableRanksIsNotShown(string ranks)
+        {
+            Assert.IsFalse(PlayerProfile.TryFromPublic(PublicJson.Replace(PublicRanks, ranks), out var profile));
+            Assert.IsNull(profile);
+        }
+
+        [Test]
+        public void APublicReplyWhoseRankedSectionIsNotAnObjectIsNotShown()
+        {
+            Assert.IsFalse(PlayerProfile.TryFromPublic(BarePublicJson.Replace(@"}}", @"},""ranked"":[]}"), out _));
         }
 
         [Test]
@@ -151,7 +248,7 @@ namespace HypeDomino.Tests.EditMode
         {
             Assert.IsFalse(PlayerProfile.TryFromPublic(null, out var missing));
             Assert.IsNull(missing);
-            Assert.IsFalse(PlayerProfile.TryFromPublic(PublicProfileReply.FromJson(@"{""error"":""profile.unknown""}"), out _));
+            Assert.IsFalse(PlayerProfile.TryFromPublic(@"{""error"":""profile.unknown""}", out _));
         }
 
         [Test]
@@ -179,10 +276,13 @@ namespace HypeDomino.Tests.EditMode
         public void ReadingTheProfileAllocatesNothing()
         {
             var profile = Public();
+            var own = Own();
             var sink = 0;
             TestDelegate read = () =>
             {
                 for (var i = 0; i < profile.StatCount; i++) sink += profile.Stat(i).Value;
+                for (var i = 0; i < profile.RankCount; i++) sink += profile.Rank(i).Label.Length;
+                for (var i = 0; i < own.ModeStatsCount; i++) sink += own.ModeStats(i).Games;
                 for (var i = 0; i < profile.MedalCount; i++) sink += profile.Medal(i).NameKey.Length;
                 for (var i = 0; i < profile.EmblemCount; i++) sink += profile.Emblem(i).Position;
                 sink += profile.Level + profile.Nickname.Length;
