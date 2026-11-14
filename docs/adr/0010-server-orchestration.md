@@ -19,7 +19,7 @@ Constraints:
 ### Platform
 - Kubernetes, as k3s on Hetzner Cloud servers in Germany (Falkenstein `fsn1` and Nuremberg `nbg1`), one cluster per environment (`staging`, `production`, E-1).
 - Infrastructure as code with OpenTofu and the `hcloud` provider; state in a Hetzner Object Storage bucket per environment with versioning on. Cluster, load balancer, firewall, volumes and DNS are all created by it; nothing is clicked in the console (GN-8 evidence is the apply log).
-- Images: `ghcr.io/alievs-corp/hypedomino-server`, tagged with the commit SHA by the release workflow (#27). Manifests reference the tag, never `latest`.
+- Images: `ghcr.io/alievs-corp/hypedomino-server`, tagged with the full commit SHA by `.github/workflows/server-image.yml` (#25). Manifests reference the tag, never `latest`.
 - Manifests live in `deploy/k8s`: `base` holds the shape every environment shares, an overlay per environment sets the image tag, replicas, resources and the `server-env` secret source. Environments differ only by overlay values and secrets (E-4).
 
 ### Image

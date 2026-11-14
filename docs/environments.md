@@ -306,7 +306,7 @@ Rules:
 ## 7. Open items
 
 - Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
-- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above and the release workflow that pushes the image (#27).
+- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above; the image it deploys is pushed by `.github/workflows/server-image.yml` (`docs/launch-runbook.md` 5.1).
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
