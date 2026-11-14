@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - server.yaml
   - migrate.yaml
+  - account-deletion.yaml
 images:
   - name: hypedomino-server
     newName: ghcr.io/alievs-corp/hypedomino-server
