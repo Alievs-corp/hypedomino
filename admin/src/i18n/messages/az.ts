@@ -389,6 +389,7 @@ export const az: Messages = {
   "shop.window_start": "Açılır",
   "shop.window_end": "Bağlanır (boş: açıq qalır)",
   "shop.window_end_before_start": "Pəncərə açıldıqdan sonra bağlanmalıdır.",
+  "shop.mythic_time_limited": "Mythic item-lər yalnız rotasiyada, ya da pəncərəsi bağlanan featured və ya event təklifində satılır",
   "shop.history": "Nəşr olunmuş versiyalar",
   "shop.history_empty": "Hələ heç bir kataloq nəşr olunmayıb.",
   "shop.published_at": "Nəşr vaxtı",
