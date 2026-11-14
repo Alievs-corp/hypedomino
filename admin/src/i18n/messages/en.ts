@@ -401,6 +401,7 @@ export const en = {
   "shop.window_start": "Opens",
   "shop.window_end": "Closes (empty: stays open)",
   "shop.window_end_before_start": "The window must close after it opens.",
+  "shop.mythic_time_limited": "Mythic items are sold only in a rotation, or in a featured or event offer whose window closes",
   "shop.history": "Published versions",
   "shop.history_empty": "No catalog has been published yet.",
   "shop.published_at": "Published",
