@@ -267,9 +267,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
 	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
-	go panics.Supervise(ctx, "account deletions", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
-		accounts.RunDeletions(ctx, logger, every, config.DeletionGrace, time.Now)
-	})
 	if config.ExportStore.BaseURL != "" {
 		exportFiles, err := objectstore.New(config.ExportStore)
 		if err != nil {
