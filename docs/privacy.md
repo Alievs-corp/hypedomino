@@ -122,6 +122,8 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 | Friends | Online presence (#153) |
 | Nobody | Email, auth identity, MMR, install id, IP, purchases, offenses, anti-cheat data, reports |
 
+On the client, `UI/Profile/PlayerProfile` (#75) reads `GET /profile/me` and `GET /profile/{account}` and shows only what the server sent: the own profile shows level, XP and games, wins, losses, win rate, streak and best streak; another player's profile shows level, games, win rate and best streak with the medal and emblem showcases in the server's order. Every value, the win rate included, is the server's; the client works none of them out.
+
 The privacy policy states this table. A deleted account appears in past matches and season snapshots as a neutral localized placeholder name, never its nickname.
 
 ## 6. Consent and analytics opt-out
