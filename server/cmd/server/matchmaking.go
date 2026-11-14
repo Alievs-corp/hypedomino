@@ -34,6 +34,7 @@ var errNoHost = errors.New("matchmaking: no node can host a room")
 
 type matchmakingDeps struct {
 	metrics    *matchqueue.Metrics
+	await      func(func() bool)
 	pool       *pgxpool.Pool
 	client     *redis.Client
 	members    *cluster.Cluster
@@ -56,7 +57,7 @@ func seeded() *rand.Rand {
 func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logger, deps matchmakingDeps) {
 	configs := snapshot.New(deps.pool, matchmaking.Domain, matchmaking.Parse, logger)
 	configs.Seed(matchmaking.DefaultConfig(), 0)
-	go panics.Supervise(ctx, "config matchmaking", config.ConfigPoll, configs.Run)
+	watchConfig(ctx, deps.await, "matchmaking", config.ConfigPoll, configs)
 	current := func() matchmaking.Config {
 		value, _, _ := configs.Current()
 		return value
@@ -129,12 +130,22 @@ func listenLobbies(ctx context.Context, lobbies *lobbynet.Net, sessions *session
 	}
 }
 
-func penaltyStore(ctx context.Context, config app.Config, pool *pgxpool.Pool, logger *slog.Logger) *penalties.Store {
+func penaltyStore(ctx context.Context, config app.Config, pool *pgxpool.Pool, logger *slog.Logger, await func(func() bool)) *penalties.Store {
 	configs := snapshot.New(pool, penalties.Domain, penalties.Parse, logger)
 	configs.Seed(penalties.DefaultConfig(), 0)
-	go panics.Supervise(ctx, "config penalties", config.ConfigPoll, configs.Run)
+	watchConfig(ctx, await, "penalties", config.ConfigPoll, configs)
 	return penalties.NewStore(pool, func() (penalties.Config, int) {
 		value, version, _ := configs.Current()
 		return value, int(version)
 	})
+}
+
+type configWatcher interface {
+	Run(ctx context.Context, every time.Duration)
+	Synced() bool
+}
+
+func watchConfig(ctx context.Context, await func(func() bool), name string, every time.Duration, watcher configWatcher) {
+	await(watcher.Synced)
+	go panics.Supervise(ctx, "config "+name, every, watcher.Run)
 }
