@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.UI.Cosmetics;
+using HypeDomino.UI.Medals;
 
 namespace HypeDomino.UI.Profile
 {
@@ -28,7 +29,7 @@ namespace HypeDomino.UI.Profile
 
     public readonly struct ShowcaseMedal
     {
-        public ShowcaseMedal(ShowcaseMedalReply reply)
+        public ShowcaseMedal(MedalReply reply)
         {
             Id = reply.id;
             NameKey = reply.nameKey;
@@ -150,10 +151,10 @@ namespace HypeDomino.UI.Profile
             new ProfileStatValue(ProfileStat.BestStreak, reply.best_streak),
         };
 
-        static ShowcaseMedal[] Medals(ShowcaseMedalReply[] replies)
+        static ShowcaseMedal[] Medals(MedalReply[] replies)
         {
             var shown = new List<ShowcaseMedal>();
-            foreach (var reply in replies ?? Array.Empty<ShowcaseMedalReply>())
+            foreach (var reply in replies ?? Array.Empty<MedalReply>())
             {
                 if (!string.IsNullOrEmpty(reply?.id))
                 {

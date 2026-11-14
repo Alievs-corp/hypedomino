@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.UI.Medals;
 using UnityEngine;
 
 namespace HypeDomino.UI.Profile
@@ -44,15 +45,6 @@ namespace HypeDomino.UI.Profile
     }
 
     [Serializable]
-    public sealed class ShowcaseMedalReply
-    {
-        public string id;
-        public string nameKey;
-        public string rarityId;
-        public string staticAddress;
-    }
-
-    [Serializable]
     public sealed class ShowcaseEmblemReply
     {
         public string id;
@@ -78,7 +70,7 @@ namespace HypeDomino.UI.Profile
         public LoadoutReply loadout;
         public PublicStatsReply stats;
         public PublicRankedReply ranked;
-        public ShowcaseMedalReply[] medals;
+        public MedalReply[] medals;
 
         public static PublicProfileReply FromJson(string json) => JsonUtility.FromJson<PublicProfileReply>(json);
     }
