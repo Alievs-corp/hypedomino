@@ -141,7 +141,10 @@ func TestRunPlaysMatchesDropsConnectionsAndReports(t *testing.T) {
 	config.ReportEvery = time.Second
 	config.Budget = time.Second
 	heap := uint64(0)
-	config.Heap = func() uint64 { heap += 1 << 20; return heap }
+	config.Node = func() (NodeSample, error) {
+		heap += 1 << 20
+		return NodeSample{HeapBytes: heap, Goroutines: 100}, nil
+	}
 	logs := &bytes.Buffer{}
 	report, err := New(config, app.NewLogger(logs, "debug")).Run(context.Background())
 	if err != nil {
@@ -172,7 +175,10 @@ func TestRunPlaysMatchesDropsConnectionsAndReports(t *testing.T) {
 	if handler.Opened() < 4 {
 		t.Fatalf("opened %d rooms", handler.Opened())
 	}
-	if !strings.Contains(logs.String(), `"msg":"load"`) || !strings.Contains(logs.String(), "heap_bytes") {
+	if report.GoroutineDriftPct != 0 || strings.Contains(strings.Join(report.Failures, ";"), "goroutines grew") {
+		t.Fatalf("flat goroutines failed the run: drift %.1f%% failures %v", report.GoroutineDriftPct, report.Failures)
+	}
+	if !strings.Contains(logs.String(), `"msg":"load"`) || !strings.Contains(logs.String(), "heap_bytes") || !strings.Contains(logs.String(), "goroutines") {
 		t.Fatal("progress log missing")
 	}
 }
@@ -193,11 +199,20 @@ func TestJudgeAppliesTheBudgetAndRates(t *testing.T) {
 	if rep.Pass || rep.Failures[0] != "no move was measured" {
 		t.Fatalf("failures %v", rep.Failures)
 	}
-	if drift := heapDrift([]HeapSample{{0, 100}, {time.Minute, 200}, {2 * time.Minute, 210}}, time.Minute); drift != 5 {
-		t.Fatalf("drift %.1f", drift)
+	samples := []NodeSample{{0, 100, 10}, {time.Minute, 200, 1000}, {2 * time.Minute, 210, 1100}}
+	if got := drift(samples, time.Minute, heapOf); got != 5 {
+		t.Fatalf("heap drift %.1f", got)
 	}
-	if drift := heapDrift([]HeapSample{{0, 100}}, 0); drift != 0 {
-		t.Fatalf("one sample drift %.1f", drift)
+	if got := drift(samples, time.Minute, goroutinesOf); got != 10 {
+		t.Fatalf("goroutine drift %.1f", got)
+	}
+	if got := drift(samples[:1], 0, heapOf); got != 0 {
+		t.Fatalf("one sample drift %.1f", got)
+	}
+	leaking := &Report{Moves: 10, P99: time.Millisecond, Budget: 100 * time.Millisecond, GoroutineDriftPct: 6}
+	leaking.judge()
+	if leaking.Pass || leaking.Failures[0] != "goroutines grew 6.0% during the steady state" {
+		t.Fatalf("goroutine leak failures %v", leaking.Failures)
 	}
 	text := rep.Text()
 	if !strings.Contains(text, "FAIL: no move was measured") {
