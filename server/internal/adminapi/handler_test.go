@@ -22,6 +22,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -57,6 +58,7 @@ type api struct {
 	pool     *pgxpool.Pool
 	handler  http.Handler
 	accounts *adminaccount.Store
+	content  *contentStore
 	now      time.Time
 }
 
@@ -80,8 +82,8 @@ func newAPIWith(t *testing.T, adjust func(*adminapi.Config)) *api {
 		"elsewhere":  {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "other.com"},
 		"mixed":      {Email: "ayla@other.com", EmailVerified: true, HostedDomain: "example.com"},
 	}
-	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), now: start}
-	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour, Mute: adminapi.DefaultMuteHours * time.Hour, Limits: unthrottled}
+	a := &api{t: t, pool: pool, accounts: adminaccount.NewStore(pool), content: &contentStore{files: map[string]objectstore.Object{}}, now: start}
+	config := adminapi.Config{Environment: "staging", GoogleDomain: "Example.com", Session: adminsession.DefaultConfig(), ApprovalTTL: 24 * time.Hour, Shop: shop.DefaultConfig(), GrantApprovalCoins: adminapi.DefaultGrantApprovalCoins, TempBan: 72 * time.Hour, Mute: adminapi.DefaultMuteHours * time.Hour, Limits: unthrottled, Content: a.content}
 	adjust(&config)
 	a.handler = adminapi.New(config, verifier, ratelimit.NewMemory(), pool, func() time.Time { return a.now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	a.create("root@example.com", rbac.SuperAdmin)
