@@ -88,7 +88,7 @@ up() {
       postgres:16 -c listen_addresses=$stores_ip -c max_connections=200 -c shared_preload_libraries=pg_stat_statements &&
     docker run -d --name redis --network host --restart unless-stopped redis:7 redis-server --bind $stores_ip --requirepass $password &&
     until docker exec postgres pg_isready -h $stores_ip -U hypedomino >/dev/null 2>&1; do sleep 1; done &&
-    docker exec postgres psql -h $stores_ip -U hypedomino -qc 'create extension if not exists pg_stat_statements'"
+    docker exec postgres psql -U hypedomino -qc 'create extension if not exists pg_stat_statements'"
   for host in node bot; do
     copy_to "$host" "$work/bin/loadbot" "$work/bin/migrate" "$here/node.sh" "$here/bot.sh" "$here/check.sh"
     on "$host" "cloud-init status --wait >/dev/null; sysctl -qw net.ipv4.ip_local_port_range='1024 65000' net.core.somaxconn=65535"
@@ -102,8 +102,8 @@ run() {
   shift
   local node_ip
   node_ip=$(private_ip node)
-  on stores "docker exec postgres psql -h $(private_ip stores) -U hypedomino -qc 'select pg_stat_statements_reset()' >/dev/null; docker exec redis redis-cli -a $(secret) --no-auth-warning config resetstat >/dev/null"
-  on node "pkill -f 'loadbot serve' || true; sleep 2; HD_DATABASE_URL='$(database_url)' HD_REDIS_URL='$(redis_url)' HD_NODE_ID=load-1 setsid nohup ./node.sh $node_ip node-$name >/dev/null 2>&1 < /dev/null &"
+  on stores "docker exec postgres psql -U hypedomino -qc 'select pg_stat_statements_reset()' >/dev/null; docker exec redis redis-cli -a $(secret) --no-auth-warning config resetstat >/dev/null"
+  on node "pkill -x loadbot || true; sleep 2; HD_DATABASE_URL='$(database_url)' HD_REDIS_URL='$(redis_url)' HD_NODE_ID=load-1 setsid nohup ./node.sh $node_ip node-$name >/dev/null 2>&1 < /dev/null &"
   until on bot "curl -fsS -o /dev/null http://$node_ip:6060/metrics" 2>/dev/null; do sleep 2; done
   on bot "sleep $(( profile_at_min * 60 )); mkdir -p bot-$name; curl -fsS http://$node_ip:6061/debug/pprof/profile?seconds=30 > bot-$name/cpu.pprof 2>/dev/null || curl -fsS http://$node_ip:6060/debug/pprof/profile?seconds=30 > bot-$name/cpu.pprof" &
   local profiler=$!
@@ -112,8 +112,8 @@ run() {
   local status=$?
   set -e
   wait "$profiler" || true
-  on node "pkill -INT -f 'loadbot serve' || true; sleep 5"
-  on stores "docker exec postgres psql -h $(private_ip stores) -U hypedomino -At -F ' | ' -c \"select calls, round(total_exec_time::numeric, 1), round(mean_exec_time::numeric, 3), left(regexp_replace(query, '\\s+', ' ', 'g'), 120) from pg_stat_statements order by total_exec_time desc limit 10\"; docker exec redis redis-cli -a $(secret) --no-auth-warning info commandstats" > "$work/stores-$name.txt" || true
+  on node "pkill -INT -x loadbot || true; sleep 5"
+  on stores "docker exec postgres psql -U hypedomino -At -F ' | ' -c \"select calls, round(total_exec_time::numeric, 1), round(mean_exec_time::numeric, 3), left(regexp_replace(query, '\\s+', ' ', 'g'), 120) from pg_stat_statements order by total_exec_time desc limit 10\"; docker exec redis redis-cli -a $(secret) --no-auth-warning info commandstats" > "$work/stores-$name.txt" || true
   fetch "$name"
   set +e
   (cd "$work/$name" && bash "$here/check.sh" "bot-$name" "$ramp_min" "$hold_min")
