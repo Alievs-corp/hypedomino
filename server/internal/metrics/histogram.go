@@ -33,27 +33,39 @@ func (h *Histogram) Observe(elapsed time.Duration) {
 }
 
 func (h *Histogram) WriteTo(w io.Writer) (int64, error) {
-	var written int64
-	write := func(format string, args ...any) error {
-		n, err := fmt.Fprintf(w, format, args...)
-		written += int64(n)
-		return err
-	}
-	if err := write("# HELP %s %s\n# TYPE %s histogram\n", h.name, h.help, h.name); err != nil {
-		return written, err
-	}
+	out := &countingWriter{w: w}
+	out.printf("# HELP %s %s\n# TYPE %s histogram\n", h.name, h.help, h.name)
+	h.writeSeries(out, "")
+	return out.written, out.err
+}
+
+func (h *Histogram) writeSeries(out *countingWriter, labels string) {
 	var cumulative uint64
 	for i, bound := range h.bounds {
 		cumulative += h.buckets[i].Load()
-		if err := write("%s_bucket{le=\"%s\"} %d\n", h.name, seconds(bound), cumulative); err != nil {
-			return written, err
-		}
+		out.printf("%s_bucket{%sle=\"%s\"} %d\n", h.name, labels, seconds(bound), cumulative)
 	}
 	count := h.count.Load()
-	if err := write("%s_bucket{le=\"+Inf\"} %d\n%s_sum %s\n%s_count %d\n", h.name, count, h.name, seconds(time.Duration(h.sum.Load())), h.name, count); err != nil {
-		return written, err
+	selector := ""
+	if labels != "" {
+		selector = "{" + labels[:len(labels)-1] + "}"
 	}
-	return written, nil
+	out.printf("%s_bucket{%sle=\"+Inf\"} %d\n%s_sum%s %s\n%s_count%s %d\n", h.name, labels, count, h.name, selector, seconds(time.Duration(h.sum.Load())), h.name, selector, count)
+}
+
+type countingWriter struct {
+	w       io.Writer
+	written int64
+	err     error
+}
+
+func (c *countingWriter) printf(format string, args ...any) {
+	if c.err != nil {
+		return
+	}
+	n, err := fmt.Fprintf(c.w, format, args...)
+	c.written += int64(n)
+	c.err = err
 }
 
 func seconds(d time.Duration) string {
