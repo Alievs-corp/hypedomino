@@ -69,6 +69,7 @@ type Config struct {
 	Promo     promo.Config
 	Cosmetics *cosmetics.Catalog
 	Assets    AssetStore
+	Content   ContentStore
 	Economy   economy.Config
 	Stores    storesync.Stores
 }
@@ -520,6 +521,10 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "season_not_live"
 	case errors.Is(err, errAssetStoreOff):
 		return http.StatusServiceUnavailable, "asset_store_off"
+	case errors.Is(err, errContentStoreOff):
+		return http.StatusServiceUnavailable, "content_store_off"
+	case errors.Is(err, errContentUpload):
+		return http.StatusServiceUnavailable, "content_store_unavailable"
 	case errors.Is(err, objectstore.ErrUnavailable):
 		return http.StatusServiceUnavailable, "asset_store_unavailable"
 	case errors.Is(err, objectstore.ErrNotFound):

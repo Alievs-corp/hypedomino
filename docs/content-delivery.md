@@ -18,8 +18,9 @@ The server announces two values in an accepted `ServerHello` (`proto/README.md`)
 |---|---|
 | `addressables/<platform>/catalog_<catalog_version>.bin` | The catalog of one version |
 | `addressables/<platform>/<bundle file>` | Every remote bundle of every version, by its content-hashed name (CD-3) |
+| `strings/<language>/<hash>.json` | Every published language bundle, by the SHA-256 hex of its content (`docs/localization.md` 2.2) |
 
-`<platform>` is `Android` or `iOS`. `content_base_url` is an `https` URL without a trailing slash, query or fragment. `catalog_version` is 1 to 64 letters, digits, `.`, `_` or `-`, starting with a letter or digit, because it is part of a file name and a URL; the server refuses any other value at start. Language bundles share the same root (`docs/localization.md` 2.2); their path is #214's.
+`<platform>` is `Android` or `iOS`. `content_base_url` is an `https` URL without a trailing slash, query or fragment. `catalog_version` is 1 to 64 letters, digits, `.`, `_` or `-`, starting with a letter or digit, because it is part of a file name and a URL; the server refuses any other value at start. Language bundles share the same root (`docs/localization.md` 2.2). The admin API uploads each one when it is published, with `Content-Type: application/json` and the immutable `Cache-Control` of CD-29, to the content bucket of its environment (CD-27) named by `HD_CONTENT_STORE_*` (`docs/environments.md` 2.2). `content-gc` never touches them (CD-34).
 
 ## 3. Catalog version
 
