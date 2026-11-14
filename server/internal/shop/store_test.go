@@ -84,8 +84,23 @@ func section(t *testing.T, view shop.View, name string) shop.SectionView {
 	return shop.SectionView{}
 }
 
+func discountedTable(t *testing.T) *shop.Catalog {
+	t.Helper()
+	raw, err := os.ReadFile("../../../docs/economy/examples/shop.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	named := `"nameKey": "shop.offer.table_night_market"`
+	catalog, err := shop.Parse([]byte(strings.Replace(string(raw), named, named+`, "referencePriceCoins": 3500`, 1)), shop.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return catalog
+}
+
 func TestTheViewShowsEverySectionForTheAccount(t *testing.T) {
-	f := newFixture(t, true)
+	f := newFixture(t, false)
+	f.watcher.Seed(discountedTable(t), 0)
 	ctx := context.Background()
 	account := f.account(t, 0)
 	view, err := f.store.View(ctx, account, now)
