@@ -2,28 +2,28 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { changedKeys, invalidKeys, publishedValues, type RuleKey, type RuleValues } from "@/config/rules";
+import { changedKeys, invalidKeys, publishedValues, type ConfigKey, type KeyValues } from "@/config/keys";
+import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { publishRules, type PublishResult } from "./actions";
 
-const unitLabels: Readonly<Record<string, MessageKey>> = { seconds: "rules.unit.seconds", timeouts: "rules.unit.timeouts" };
+const unitLabels: Readonly<Record<string, MessageKey>> = { seconds: "config.unit.seconds", timeouts: "config.unit.timeouts" };
 
 const fieldClass = "w-24 rounded-md bg-surface px-3 py-1 text-text-primary";
 
-export function RulesEditor({ keys, canPublish }: { keys: RuleKey[]; canPublish: boolean }) {
+export function KeyEditor({ keys, canPublish, publish }: { keys: ConfigKey[]; canPublish: boolean; publish: (values: KeyValues, reason: string) => Promise<ConfigResult> }) {
   const t = useTranslator();
   const router = useRouter();
-  const [values, setValues] = useState<RuleValues>({});
+  const [values, setValues] = useState<KeyValues>({});
   const [reason, setReason] = useState("");
-  const [result, setResult] = useState<PublishResult | null>(null);
+  const [result, setResult] = useState<ConfigResult | null>(null);
   const [pending, startTransition] = useTransition();
   const invalid = invalidKeys(keys, values);
   const changed = changedKeys(keys, values);
 
-  function publish() {
+  function publishChanges() {
     startTransition(async () => {
-      const outcome = await publishRules(publishedValues(keys, values), reason);
+      const outcome = await publish(publishedValues(keys, values), reason);
       setResult(outcome);
       if (outcome.ok) {
         setValues({});
@@ -37,10 +37,10 @@ export function RulesEditor({ keys, canPublish }: { keys: RuleKey[]; canPublish:
       <table className="text-sm">
         <thead className="text-left text-text-muted">
           <tr>
-            <th className="py-2 pr-4">{t("rules.key")}</th>
-            <th className="py-2 pr-4">{t("rules.value")}</th>
-            <th className="py-2 pr-4">{t("rules.bounds")}</th>
-            <th className="py-2 pr-4">{t("rules.default")}</th>
+            <th className="py-2 pr-4">{t("config.key")}</th>
+            <th className="py-2 pr-4">{t("config.value")}</th>
+            <th className="py-2 pr-4">{t("config.bounds")}</th>
+            <th className="py-2 pr-4">{t("config.default")}</th>
           </tr>
         </thead>
         <tbody>
@@ -62,9 +62,7 @@ export function RulesEditor({ keys, canPublish }: { keys: RuleKey[]; canPublish:
                 />{" "}
                 <span className="text-text-muted">{unitLabels[key.unit] ? t(unitLabels[key.unit]) : key.unit}</span>
               </td>
-              <td className="py-2 pr-4 text-text-secondary">
-                {key.min} – {key.max}
-              </td>
+              <td className="py-2 pr-4 text-text-secondary">{key.max === undefined ? `≥ ${key.min}` : `${key.min} – ${key.max}`}</td>
               <td className="py-2 pr-4 text-text-secondary">{key.default}</td>
             </tr>
           ))}
@@ -72,26 +70,26 @@ export function RulesEditor({ keys, canPublish }: { keys: RuleKey[]; canPublish:
       </table>
       {invalid.length > 0 && (
         <p role="alert" className="text-sm text-danger-text">
-          {t("rules.out_of_bounds")}: {invalid.join(", ")}
+          {t("config.out_of_bounds")}: {invalid.join(", ")}
         </p>
       )}
       {canPublish && (
         <section className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm text-text-secondary">
-            {t("rules.reason")}
+            {t("config.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
           </label>
           <button
             type="button"
             disabled={pending || changed.length === 0 || invalid.length > 0}
-            onClick={publish}
+            onClick={publishChanges}
             className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40"
           >
-            {t("rules.publish")}
+            {t("config.publish")}
           </button>
           {result && (
             <p role="status" className="text-sm text-text-secondary">
-              {result.ok ? `${t("rules.published")}: ${result.version}` : `${t("rules.refused")}: ${result.error} ${result.detail}`}
+              {result.ok ? `${t("config.published")}: ${result.version}` : `${t("config.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
         </section>

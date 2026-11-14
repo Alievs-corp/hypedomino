@@ -15,6 +15,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
@@ -209,6 +210,23 @@ func TestMissionRewardsMustBePublishedWithTheMissionAsSource(t *testing.T) {
 	}
 	if err := run(ctx, url, mission.Domain, missions, &out); err != nil {
 		t.Fatalf("missions after their medals = %v", err)
+	}
+}
+
+func TestLiveopsSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want error
+	}{
+		{`{"ContentGateMinMedals": 45}`, nil},
+		{`{}`, nil},
+		{`{"ContentGateMinMedals": -1}`, liveops.ErrInvalid},
+		{`{"FeatureFlag": 1}`, liveops.ErrInvalid},
+	}
+	for _, test := range tests {
+		if err := validate(liveops.Domain, []byte(test.raw)); !errors.Is(err, test.want) {
+			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
+		}
 	}
 }
 

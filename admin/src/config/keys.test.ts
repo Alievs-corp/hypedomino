@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { changedKeys, invalidKeys, publishedValues, withinBounds, type RuleKey } from "./rules.ts";
+import { changedKeys, invalidKeys, publishedValues, withinBounds, type ConfigKey } from "./keys.ts";
 
-const turn: RuleKey = { key: "TurnSeconds", type: "integer", unit: "seconds", min: 10, max: 60, default: 20, value: 25, set: true };
-const afk: RuleKey = { key: "AfkConsecutiveTimeouts", type: "integer", unit: "timeouts", min: 1, max: 10, default: 3, value: 3, set: false };
+const turn: ConfigKey = { key: "TurnSeconds", type: "integer", unit: "seconds", min: 10, max: 60, default: 20, value: 25, set: true };
+const afk: ConfigKey = { key: "AfkConsecutiveTimeouts", type: "integer", unit: "timeouts", min: 1, max: 10, default: 3, value: 3, set: false };
+const frames: ConfigKey = { key: "ContentGateMinFrames", type: "integer", unit: "", min: 0, default: 20, value: 20, set: false };
 const keys = [turn, afk];
 
 test("a value is valid only as an integer inside the key's bounds", () => {
@@ -13,6 +14,16 @@ test("a value is valid only as an integer inside the key's bounds", () => {
   assert.ok(!withinBounds(turn, 61));
   assert.ok(!withinBounds(turn, 20.5));
   assert.ok(!withinBounds(turn, Number.NaN));
+});
+
+test("a key without a maximum takes any whole number from its minimum", () => {
+  for (const value of [0, 20, 1_000_000]) {
+    assert.ok(withinBounds(frames, value), String(value));
+  }
+  for (const value of [-1, 0.5, Number.NaN]) {
+    assert.ok(!withinBounds(frames, value), String(value));
+  }
+  assert.deepEqual(invalidKeys([frames], { ContentGateMinFrames: -1 }), ["ContentGateMinFrames"]);
 });
 
 test("untouched keys keep their current value and are neither changed nor invalid", () => {
