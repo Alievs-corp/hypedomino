@@ -189,6 +189,22 @@ func TestTheEncodedBundleIsStableAndHashed(t *testing.T) {
 	}
 }
 
+func TestAPublishedBundleLivesAtItsLanguageAndContentHash(t *testing.T) {
+	hash := strings.Repeat("ab", 32)
+	cases := []struct {
+		bundle Published
+		want   string
+	}{
+		{Published{Language: Russian, Version: 3, Hash: hash}, "strings/ru/" + hash + ".json"},
+		{Published{Language: English, Version: 1, Hash: "00ff"}, "strings/en/00ff.json"},
+	}
+	for _, c := range cases {
+		if got := c.bundle.File(); got != c.want {
+			t.Errorf("%s v%d: %q, want %q", c.bundle.Language, c.bundle.Version, got, c.want)
+		}
+	}
+}
+
 func TestTheReportListsMissingKeysPerLanguage(t *testing.T) {
 	report := Report(catalog())
 	want := []Coverage{

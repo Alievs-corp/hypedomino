@@ -192,6 +192,10 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
+| `HD_CONTENT_STORE_URL` | No | admin-api | none: publishing a language bundle answers `content_store_off` | `https://<object-store-host>/hypedomino-content-<environment>`; it must name `HD_ADMIN_ENVIRONMENT` and no other environment | No | from #214, `docs/content-delivery.md` CD-27 |
+| `HD_CONTENT_STORE_REGION` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<store-region>` | No | from #214 |
+| `HD_CONTENT_STORE_ACCESS_KEY` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<content-store-access-key>` | Yes | from #214 |
+| `HD_CONTENT_STORE_SECRET_KEY` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<content-store-secret-key>` | Yes | from #214 |
 | `HD_PLAY_PACKAGE` | No | admin-api | empty (store price push to Google Play not configured) | `com.example.hypedomino` | No | from #585 |
 | `HD_PLAY_SERVICE_ACCOUNT` | With `HD_PLAY_PACKAGE` | admin-api | empty | `/run/secrets/play-service-account.json` | Yes, the file it names | from #585 |
 | `HD_ASC_ISSUER_ID` | With the other `HD_ASC_*` | admin-api | empty (store price push to the App Store not configured) | `<app-store-connect-issuer-id>` | No | from #585 |
