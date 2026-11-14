@@ -71,8 +71,8 @@ Remote bundles are kept in Unity's AssetBundle cache under the app's data folder
 | CD-22 | The cache holds at most 1,000,000,000 bytes. When a new bundle does not fit, Unity first removes the bundles unused the longest. |
 | CD-23 | A bundle unused for 30 days is removed. |
 | CD-24 | After a remote catalog loads, at start or after a new version (CD-5), every cached bundle that no loaded catalog references is removed, so old versions of an item do not stay on disk. Nothing is removed when the stored catalog failed to load. |
-| CD-25 | The cache size shown to the player is the cached bundles plus the stored catalog files. |
-| CD-26 | The player may clear the cache outside a match only. A clear removes every cached bundle and keeps the stored catalog. A bundle in use blocks it, so the clear runs at the next start instead, before any content loads, and the player is told so. Art needed afterwards downloads again the first time a view asks for it (CD-10). |
+| CD-25 | The cache size shown to the player is the cached bundles plus the files in the content folder: the stored catalog and the kept language bundles (`docs/localization.md` 2.4). |
+| CD-26 | The player may clear the cache outside a match only. A clear removes every cached bundle and keeps the stored catalog and the kept language bundles. A bundle in use blocks it, so the clear runs at the next start instead, before any content loads, and the player is told so. Art needed afterwards downloads again the first time a view asks for it (CD-10). |
 
 The limit and the 30 days were set by the owner on 2026-11-08. They protect the device's storage and are not design values, so they are constants in the client.
 

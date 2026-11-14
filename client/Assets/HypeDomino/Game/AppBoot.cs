@@ -23,13 +23,13 @@ namespace HypeDomino.Game
             new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
-        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, Action<HapticCue> playHaptic)
+        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, Action<HapticCue> playHaptic)
         {
             var cues = new HapticCues();
             session.HelloReceived += hello =>
             {
                 cues.StartConnection();
-                Hello(hello, flow, catalog, strings);
+                Hello(hello, flow, catalog, strings, bundles);
             };
             session.ViewReceived += view =>
             {
@@ -59,13 +59,17 @@ namespace HypeDomino.Game
 
         static bool IsWanted(string language, string selected) => language == selected || language == GameLanguage.English;
 
-        static void Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings)
+        static void Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles)
         {
             flow.Hello(hello);
             if (hello.Status != HelloStatus.Accepted) return;
             catalog?.Announce(hello.CatalogVersion, hello.ContentBaseUrl);
             var missing = FollowStrings(hello, strings);
-            for (var i = 0; i < missing.Count; i++) Debug.Log($"Strings fetch language={missing[i].Language} version={missing[i].Version}");
+            for (var i = 0; i < missing.Count; i++)
+            {
+                Debug.Log($"Strings fetch language={missing[i].Language} version={missing[i].Version}");
+                bundles?.Fetch(hello.ContentBaseUrl, missing[i].Language, (int)missing[i].Version, missing[i].Hash);
+            }
         }
 
         static void OnChanged(AppState state)
