@@ -24,7 +24,10 @@ export type PlayerRecord = {
   purchases: { platform: string; transaction_id: string; offer_id: string; product_id: string; environment: string; state: string; purchased_at: string; refunded_at: string | null }[];
   matches: { match_id: string; started_at: string; ended_at: string | null; mode: string; kind: string; team: number; result: string; score_a: number; score_b: number; cancelled: boolean; suspicious: string[] }[];
   pair_signals: { kind: string; counterpart: string; mode: string; matches: number; wins: number; offenses: number; window_hours: number; first_seen: string; updated_at: string }[];
+  missions: MissionAssignment[];
 };
+
+export type MissionAssignment = { mission_id: string; type: string; slot: number; period: string; progress: number; target: number; assigned_at: string; completed_at: string | null; replaced_at: string | null };
 
 export type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
 
@@ -71,4 +74,12 @@ export function muteActive(account: PlayerAccount, now: Date): boolean {
 
 export function validAdjustment(amount: number): boolean {
   return Number.isSafeInteger(amount) && amount !== 0;
+}
+
+export function missionProgress(assignment: Pick<MissionAssignment, "progress" | "target">): string {
+  return assignment.target > 0 ? `${assignment.progress}/${assignment.target}` : String(assignment.progress);
+}
+
+export function missionPlace(assignment: Pick<MissionAssignment, "type" | "slot">): string {
+  return assignment.slot > 0 ? `${assignment.type} ${assignment.slot}` : assignment.type;
 }

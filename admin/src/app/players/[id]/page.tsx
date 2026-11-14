@@ -7,7 +7,7 @@ import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
-import { banActive, muteActive, playerApiPath, type PlayerRecord } from "@/players/record";
+import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, type PlayerRecord } from "@/players/record";
 import { ladders, type PenaltyView } from "@/players/penalties";
 import { Notice } from "../Notice";
 import { PlayerActions } from "./PlayerActions";
@@ -77,6 +77,15 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         { label: "player.penalty_weight", cell: (row) => row.weight },
         { label: "player.at", cell: (row) => when(row.at) },
         { label: "player.penalty_expires", cell: (row) => when(row.expires_at) },
+      ]} />
+      <Rows title="player.missions" t={t} rows={record.missions} columns={[
+        { label: "player.assigned_at", cell: (row) => when(row.assigned_at) },
+        { label: "player.mission", cell: (row) => <span className="font-mono">{row.mission_id}</span> },
+        { label: "player.mission_place", cell: (row) => missionPlace(row) },
+        { label: "player.mission_period", cell: (row) => row.period },
+        { label: "player.mission_progress", cell: (row) => missionProgress(row) },
+        { label: "player.completed_at", cell: (row) => when(row.completed_at) },
+        { label: "player.replaced_at", cell: (row) => when(row.replaced_at) },
       ]} />
       <Rows title="player.nickname_history" t={t} rows={record.nickname_history} columns={[
         { label: "players.nickname", cell: (row) => row.nickname },
