@@ -33,6 +33,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
@@ -134,6 +135,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
 	signIn.SetCountryHeader(config.CountryHeader)
 	a.Handle("POST /auth/", signIn)
+	a.Expose(signIn.SignIns())
 	profileStore := profile.NewStore(pool, config.Profile)
 	moderation := snapshot.New(pool, profile.ModerationDomain, profile.ParseModeration, logger)
 	go panics.Supervise(ctx, "config moderation", config.ConfigPoll, moderation.Run)
@@ -267,9 +269,6 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
 	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
-	go panics.Supervise(ctx, "account deletions", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
-		accounts.RunDeletions(ctx, logger, every, config.DeletionGrace, time.Now)
-	})
 	if config.ExportStore.BaseURL != "" {
 		exportFiles, err := objectstore.New(config.ExportStore)
 		if err != nil {
@@ -288,7 +287,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	a.Handle("/penalties", critical(penalties.NewHandler(tokens, penaltyRecords, logger, time.Now)))
 	if members != nil {
-		startMatchmaking(ctx, config, logger, matchmakingDeps{pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
+		queueMetrics := matchqueue.NewMetrics()
+		a.Expose(queueMetrics)
+		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})
@@ -329,6 +330,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		pool.Close()
 		return nil, nil, err
 	}
+	receiptMetrics := purchase.NewReceiptMetrics(time.Now)
+	for platform, validator := range validators {
+		validators[platform] = receiptMetrics.Measure(platform, validator)
+	}
+	a.Expose(receiptMetrics.Results())
+	a.Expose(receiptMetrics.Durations())
 	purchases := purchase.NewStore(pool, walletStore, engine, offers, validators, config.Purchase, logger)
 	shopStore.Guard(purchases)
 	shopStore.WithPass(passes)

@@ -33,6 +33,7 @@ import (
 var errNoHost = errors.New("matchmaking: no node can host a room")
 
 type matchmakingDeps struct {
+	metrics    *matchqueue.Metrics
 	pool       *pgxpool.Pool
 	client     *redis.Client
 	members    *cluster.Cluster
@@ -63,7 +64,9 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	prefix, node := config.Cluster.KeyPrefix, deps.members.NodeID()
 	store := matchqueue.NewStore(deps.client, prefix)
 	penaltyRecords := deps.penalties
-	deps.sessions.Queue(matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger))
+	gate := matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
+	gate.Measure(deps.metrics)
+	deps.sessions.Queue(gate)
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
 	muted := matchstart.Muted(deps.pool, time.Now)
 	roster := matchstart.ProfileRoster(deps.profiles, deps.inventory.Freeze, deps.ratings.Label, deps.ratings.Showcase, muted)
@@ -89,7 +92,11 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 		case !ok:
 			return errNoHost
 		}
-		return dispatcher.Place(ctx, target.ID, placement)
+		if err := dispatcher.Place(ctx, target.ID, placement); err != nil {
+			return err
+		}
+		deps.metrics.Placed(placement, time.Now())
+		return nil
 	}
 	leader := matchqueue.NewLeader(deps.client, prefix, "", node, config.MatchmakingTTL)
 	matcher := matchqueue.NewMatcher(store, current, seeded())

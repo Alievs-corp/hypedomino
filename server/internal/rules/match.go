@@ -147,6 +147,9 @@ func (m *Match) dealHand() {
 		deal := NewDeal(m.mode, m.config, m.random)
 		m.hands = deal.Hands
 		m.boneyard = deal.Boneyard
+		if NeedsDoublesRedeal(m.mode, m.config, m.hands) {
+			continue
+		}
 		if m.handsPlayed > 0 {
 			break
 		}

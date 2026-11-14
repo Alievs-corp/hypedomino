@@ -97,8 +97,9 @@ T-0 is the moment the release is made available in the stores. Server and config
 | Crash-free sessions per app version | #182 | At least 99.5% (the #193 beta exit level, `docs/closed-beta.md` BX-1) and not below the previous version |
 | Move round-trip p99 | `move_roundtrip_seconds` on the server's `/metrics` (#28) | Under 100 ms (`docs/performance.md`) |
 | Error rate, database connections | `hd_http_responses_total{class}`, `hd_db_connections_*` and `hd_db_acquire_*` on `/metrics` (`server/README.md`, #28) | Alert thresholds: owner input OI-8 |
-| Login success, matchmaking wait | No metric exported yet (section 11) | Alert thresholds: owner input OI-8, once the metric exists |
-| Receipt validation success per store | No metric exported yet (section 11); #106 | Alert thresholds: owner input OI-8, once the metric exists |
+| Login success | `hd_signins_total{provider,result}` on `/metrics` (`server/README.md`, #643); success rate per provider is `result="ok"` over all results | Alert thresholds: owner input OI-8 |
+| Matchmaking wait | `hd_matchmaking_wait_seconds{queue,mode}` and `hd_matchmaking_left_total` on `/metrics` (#643). The server has no matchmaking timeout (`docs/matchmaking.md`), so players who give up show as queue leaves | Alert thresholds: owner input OI-8 |
+| Receipt validation success per store | `hd_receipt_validations_total{store,result}` and `hd_receipt_validation_seconds{store}` on `/metrics` (#106, #643) | Alert thresholds: owner input OI-8 |
 | Android vitals crash and ANR rates | Play Console | Below the console's bad behaviour thresholds |
 | Support tickets per symptom | Support tool | Section 9.3 escalation rule |
 
@@ -341,15 +342,16 @@ Accounts, addresses, vendors and decisions only the owner can provide. A step ab
 | OI-5 | Apple developer account: distribution certificate, provisioning profile, App Store Connect API key and a macOS runner for the iOS build and TestFlight upload | Client lead, Release manager | #27 | GN-11 (iOS), GN-22, GN-23 |
 | OI-6 | Crash reporting account (EU region), its DSN and a CI token for symbol and mapping upload | Client lead | #182, #566 | GN-11 (symbols), GN-13, section 4.1 crash-free sessions |
 | OI-7 | Prometheus scrape of the server debug listener (`HD_DEBUG_ADDR`, private only) and Grafana dashboards in production | Server lead | #28, #566 | GN-12, section 4.1 |
-| OI-8 | Alert thresholds for error rate and database connections, then for login success, matchmaking wait and receipt validation once those metrics exist (section 11) | Server lead, Product owner | #28, #566 | Section 4.1, GN-12 |
+| OI-8 | Alert thresholds for error rate, database connections, login success, matchmaking wait and receipt validation per store (section 4.1) | Server lead, Product owner | #28, #566 | Section 4.1, GN-12 |
 | OI-9 | Pager service and alert routing to it, economy alerts (`docs/economy.md` 10) and the backup alerts (`docs/backup-restore.md` 3.3) included; one test alert to the primary | Server lead | #28, #110, #566 | GN-12, GN-25, section 7 |
 | OI-10 | Incident channel and launch war room channel | Release manager | #28 | Section 6.4, section 4 T-1d |
 | OI-11 | Status page with incident and maintenance components, and its URL | Support lead | #28 | GN-27, section 8, store review replies (8.3) |
 | OI-12 | Contact sheet location, outside the systems it is needed to repair | Release manager | #28 | GN-25, section 7 |
 | OI-13 | Support email address and a monitored inbox | Support lead | #144 | Section 9.1, `docs/store-listing.md` SF-10 and ST-8, `docs/closed-beta.md` FB-3 |
+| OI-14 | Deletion log bucket per environment in the backup location, an access key limited to it, and Secret `account-deletion-env` with `HD_DATABASE_URL`, `HD_DELETION_LOG_URL`, `HD_DELETION_LOG_REGION`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY` (`docs/backup-restore.md` 3.7). Until it exists the `account-deletion` CronJob fails and no account past its grace is erased | Server lead | #601, #25 | GN-15, `docs/privacy.md` L-15 and L-19 |
 
 ## 11. Open items
 
-- Not built yet, no owner input needed: `HD_DEBUG_ADDR` in the server manifests for the scrape of OI-7; metrics for login success, matchmaking wait and receipt validation per store (section 4.1; #28 is closed, so they need a new issue).
+- Not built yet, no owner input needed: `HD_DEBUG_ADDR` in the server manifests for the scrape of OI-7 (#642).
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.

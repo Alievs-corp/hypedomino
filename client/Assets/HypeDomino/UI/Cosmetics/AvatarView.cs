@@ -1,10 +1,14 @@
 using HypeDomino.UI.Rarity;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace HypeDomino.UI.Cosmetics
 {
+    [RequireComponent(typeof(RectTransform))]
     public sealed class AvatarView : MonoBehaviour
     {
+        static readonly Vector2 Centre = new Vector2(0.5f, 0.5f);
+
         [SerializeField] CosmeticImage avatar;
         [SerializeField] CosmeticImage frame;
         [SerializeField] RarityHalo halo;
@@ -23,6 +27,7 @@ namespace HypeDomino.UI.Cosmetics
             frame = frameImage;
             halo = haloMark;
             diamond = diamondMark;
+            FitArt();
         }
 
         public void Show(CosmeticStage onStage, AvatarLook look)
@@ -40,6 +45,31 @@ namespace HypeDomino.UI.Cosmetics
             avatar.Refresh();
             frame.Refresh();
             ShowMarks();
+        }
+
+        void OnEnable() => FitArt();
+
+        void OnRectTransformDimensionsChange() => FitArt();
+
+        void FitArt()
+        {
+            var box = ((RectTransform)transform).rect;
+            var side = Mathf.Max(0f, Mathf.Min(box.width, box.height));
+            FitSquare(avatar, side);
+            FitSquare(frame, side);
+            FitSquare(halo, side);
+        }
+
+        static void FitSquare(Component art, float side)
+        {
+            if (art == null) return;
+            var rect = (RectTransform)art.transform;
+            rect.anchorMin = Centre;
+            rect.anchorMax = Centre;
+            rect.pivot = Centre;
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(side, side);
+            if (art.TryGetComponent<Image>(out var image)) image.preserveAspect = true;
         }
 
         void ShowMarks()
