@@ -1,13 +1,37 @@
 package adminapi_test
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
+	"github.com/Alievs-corp/hypedomino/server/internal/contentpublish"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
+
+type contentStore struct {
+	files   map[string]objectstore.Object
+	puts    int
+	offline bool
+}
+
+func (c *contentStore) PutObject(_ context.Context, key string, object objectstore.Object, _ time.Time) error {
+	if c.offline {
+		return objectstore.ErrUnavailable
+	}
+	c.files[key] = object
+	c.puts++
+	return nil
+}
 
 var winKey = map[string]any{"note": "Match end title.", "max_length": 12}
 
@@ -202,5 +226,73 @@ func TestPublishingIsAuditedAndBlockedByFailingValues(t *testing.T) {
 	entries := a.entries(content, "object_type=game_strings&action=publish")
 	if len(entries) != 1 || entries[0]["object_id"] != "bundle:en" || entries[0]["reason"] != "launch" || entries[0]["after"].(map[string]any)["version"] != float64(1) {
 		t.Fatalf("publish entries %v", entries)
+	}
+}
+
+func (a *api) approveEnglishWin(token string) {
+	a.t.Helper()
+	a.call("PUT", "/admin/strings/match.result.win", token, winKey)
+	a.call("PUT", "/admin/strings/match.result.win/values/en", token, map[string]any{"text": "Victory!", "status": "approved"})
+}
+
+func TestPublishingUploadsTheBundleToTheContentStoreUnderItsHash(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	a.approveEnglishWin(content)
+	status, body := a.call("POST", "/admin/strings/bundles/en", content, map[string]any{})
+	if status != http.StatusOK {
+		t.Fatalf("publish %d %v", status, body)
+	}
+	hash := body["hash"].(string)
+	file, ok := a.content.files["strings/en/"+hash+".json"]
+	if !ok || len(a.content.files) != 1 {
+		t.Fatalf("uploaded %v", a.content.files)
+	}
+	sum := sha256.Sum256(file.Body)
+	if hex.EncodeToString(sum[:]) != hash || file.ContentType != "application/json" || file.CacheControl != contentpublish.ImmutableCacheControl {
+		t.Fatalf("file %s %s %s", file.ContentType, file.CacheControl, file.Body)
+	}
+	var bundle struct {
+		Language string            `json:"language"`
+		Strings  map[string]string `json:"strings"`
+	}
+	if err := json.Unmarshal(file.Body, &bundle); err != nil || bundle.Language != "en" || !reflect.DeepEqual(bundle.Strings, map[string]string{"match.result.win": "Victory!"}) {
+		t.Fatalf("bundle %+v %v", bundle, err)
+	}
+
+	status, body = a.call("POST", "/admin/strings/bundles/en", content, map[string]any{})
+	if status != http.StatusOK || body["version"] != float64(1) || body["hash"] != hash || a.content.puts != 2 || len(a.content.files) != 1 {
+		t.Fatalf("unchanged republish %d %v, %d puts", status, body, a.content.puts)
+	}
+}
+
+func TestABundleTheContentStoreRefusesIsNotPublished(t *testing.T) {
+	cases := map[string]struct {
+		adjust func(*adminapi.Config, *contentStore)
+		want   string
+	}{
+		"no content store":      {func(c *adminapi.Config, _ *contentStore) { c.Content = nil }, "content_store_off"},
+		"content store offline": {func(_ *adminapi.Config, store *contentStore) { store.offline = true }, "content_store_unavailable"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			store := &contentStore{files: map[string]objectstore.Object{}}
+			a := newAPIWith(t, func(config *adminapi.Config) {
+				config.Content = store
+				c.adjust(config, store)
+			})
+			content := a.signIn("ayla")
+			a.approveEnglishWin(content)
+			status, body := a.call("POST", "/admin/strings/bundles/en", content, map[string]any{})
+			if status != http.StatusServiceUnavailable || body["error"] != c.want {
+				t.Fatalf("publish %d %v", status, body)
+			}
+			if _, body := a.call("GET", "/admin/strings/bundles", content, nil); len(body["bundles"].([]any)) != 0 {
+				t.Fatalf("bundles %v", body)
+			}
+			if entries := a.entries(content, "object_type=game_strings&action=publish"); len(entries) != 0 {
+				t.Fatalf("publish entries %v", entries)
+			}
+		})
 	}
 }
