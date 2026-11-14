@@ -31,6 +31,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
+	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
@@ -164,10 +165,31 @@ func startRedTeam(t *testing.T) *redTeam {
 			t.Errorf("the server recovered a panic under attack:\n%s", logs)
 		}
 	})
+	h.awaitConfigs(t)
 	if h.tokens, err = token.NewService(config.Token, token.NewStore(pool), time.Now); err != nil {
 		t.Fatal(err)
 	}
 	return h
+}
+
+func (h *redTeam) awaitConfigs(t *testing.T) {
+	t.Helper()
+	domains := []string{pass.Domain}
+	for domain := range seededConfigs {
+		if domain != storeprice.Domain {
+			domains = append(domains, domain)
+		}
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for _, domain := range domains {
+		applied := fmt.Sprintf(`"msg":"config snapshot applied","domain":%q`, domain)
+		for !strings.Contains(h.logs.String(), applied) {
+			if time.Now().After(deadline) {
+				t.Fatalf("the server did not load the seeded %s config:\n%s", domain, h.logs.String())
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
 }
 
 func seedConfigs(t *testing.T, pool *pgxpool.Pool) {
