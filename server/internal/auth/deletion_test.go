@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -48,6 +49,7 @@ func TestDeletionNeedsAFreshSignInRevokesSessionsAndCanBeCancelled(t *testing.T)
 	f.verifier.identities["nobody"] = idtoken.Identity{Subject: "nobody"}
 	f.verifier.identities["banned"] = idtoken.Identity{Subject: "banned"}
 	f.verifier.identities["playing"] = idtoken.Identity{Subject: "playing"}
+	f.verifier.identities["unreachable"] = idtoken.Identity{Subject: "unreachable"}
 	deletions := &fakeDeletions{requested: map[string]time.Time{}, banned: map[string]bool{"google-banned": true}}
 	now := time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC)
 	var hidden []string
@@ -55,7 +57,12 @@ func TestDeletionNeedsAFreshSignInRevokesSessionsAndCanBeCancelled(t *testing.T)
 	handler.EnableDeletion(auth.Deletion{
 		Accounts: deletions,
 		Grace:    30 * 24 * time.Hour,
-		InMatch:  func(id string) bool { return id == "google-playing" },
+		InMatch: func(_ context.Context, id string) (bool, error) {
+			if id == "google-unreachable" {
+				return false, errors.New("database down")
+			}
+			return id == "google-playing", nil
+		},
 		Hide: func(_ context.Context, id string) error {
 			hidden = append(hidden, id)
 			return nil
@@ -77,6 +84,7 @@ func TestDeletionNeedsAFreshSignInRevokesSessionsAndCanBeCancelled(t *testing.T)
 		{"/auth/deletion", `{"provider":"google","id_token":"nobody","nonce":"n"}`, http.StatusNotFound, "account_unknown"},
 		{"/auth/deletion", `{"provider":"google","id_token":"banned","nonce":"n"}`, http.StatusForbidden, "banned"},
 		{"/auth/deletion", `{"provider":"google","id_token":"playing","nonce":"n"}`, http.StatusConflict, "in_match"},
+		{"/auth/deletion", `{"provider":"google","id_token":"unreachable","nonce":"n"}`, http.StatusInternalServerError, "internal"},
 		{"/auth/deletion/cancel", `{"provider":"google","id_token":"good","nonce":"n"}`, http.StatusConflict, "no_deletion_pending"},
 	}
 	for _, c := range refusals {

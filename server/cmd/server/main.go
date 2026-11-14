@@ -268,7 +268,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "rating season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		ratings.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
-	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
+	matches := matchstore.New(pool)
+	inMatch := func(ctx context.Context, account string) (bool, error) {
+		if sessions.InMatch(account) {
+			return true, nil
+		}
+		return matches.Running(ctx, account, time.Now().Add(-config.StaleMatchAfter))
+	}
+	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: inMatch, Hide: ratings.HideFromBoards, Now: time.Now})
 	if config.ExportStore.BaseURL != "" {
 		exportFiles, err := objectstore.New(config.ExportStore)
 		if err != nil {
