@@ -272,11 +272,39 @@ func TestAShopPreviewShowsTheSectionsOfADraftAtAGivenTime(t *testing.T) {
 }
 
 func TestTheShopCatalogCarriesTheRotationRulesOfTheServer(t *testing.T) {
-	a := newAPIWith(t, func(c *adminapi.Config) { c.Shop = shop.Config{DailySlots: 6, WeeklySlots: 3, ResetHourUTC: 4} })
+	a := newAPIWith(t, func(c *adminapi.Config) {
+		c.Shop = shop.Config{DailySlots: 6, WeeklySlots: 3, ResetHourUTC: 4, ReferencePriceDays: 14}
+	})
 	a.create("leyla@example.com", rbac.LiveOps)
 	status, body := a.call("GET", "/admin/config/shop", a.signIn("leyla"), nil)
 	want := map[string]any{"daily_slots": float64(6), "weekly_slots": float64(3), "reset_hour_utc": float64(4)}
-	if status != http.StatusOK || !reflect.DeepEqual(body["rotation"], want) {
-		t.Fatalf("got %d %v, want rotation %v", status, body["rotation"], want)
+	if status != http.StatusOK || !reflect.DeepEqual(body["rotation"], want) || body["reference_price_days"] != float64(14) {
+		t.Fatalf("got %d %v %v, want rotation %v and 14 reference price days", status, body["rotation"], body["reference_price_days"], want)
+	}
+}
+
+func TestPublishRefusesAReferencePriceThatIsNotTheLowestEarlierPrice(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	a.publishShopItems()
+	discounted := func(price, reference int) map[string]any {
+		offer := cometFox()
+		offer["priceCoins"], offer["referencePriceCoins"] = price, reference
+		return catalog(offer)
+	}
+	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": discounted(300, 400)})
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "offer.avatar_comet_fox has no earlier price") {
+		t.Fatalf("reference before any published price %d %v", status, body)
+	}
+	if status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox())}); status != http.StatusOK {
+		t.Fatalf("full price %d %v", status, body)
+	}
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": discounted(300, 500)})
+	if status != http.StatusBadRequest || !strings.Contains(body["detail"].(string), "reference price 500 is not its lowest price 400") {
+		t.Fatalf("invented reference %d %v", status, body)
+	}
+	if status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": discounted(300, 400)}); status != http.StatusOK {
+		t.Fatalf("honest reference %d %v", status, body)
 	}
 }

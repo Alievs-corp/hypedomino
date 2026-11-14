@@ -40,6 +40,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 		"HD_ADMIN_APPROVAL_TTL":           "48h",
 		"HD_SHOP_DAILY_SLOTS":             "6",
 		"HD_SHOP_RESET_HOUR_UTC":          "4",
+		"HD_SHOP_REFERENCE_PRICE_DAYS":    "14",
 		"HD_ADMIN_GRANT_APPROVAL_COINS":   "5000",
 		"HD_TEMP_BAN_HOURS":               "72",
 		"HD_READ_TIMEOUT":                 "30s",
@@ -56,7 +57,7 @@ func TestConfigReadsTheAdminEnvironment(t *testing.T) {
 			Environment: "staging", GoogleDomain: "example.com",
 			Session:            adminsession.Config{Idle: 20 * time.Minute, Max: 12 * time.Hour, StepUp: 5 * time.Minute},
 			ApprovalTTL:        48 * time.Hour,
-			Shop:               shop.Config{DailySlots: 6, WeeklySlots: 2, ResetHourUTC: 4},
+			Shop:               shop.Config{DailySlots: 6, WeeklySlots: 2, ResetHourUTC: 4, ReferencePriceDays: 14},
 			GrantApprovalCoins: 5000,
 			TempBan:            72 * time.Hour,
 			Mute:               adminapi.DefaultMuteHours * time.Hour,
@@ -128,11 +129,11 @@ func merged(maps ...map[string]string) map[string]string {
 }
 
 func TestConfigNamesEveryMissingOrInvalidValue(t *testing.T) {
-	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_ADMIN_GRANT_APPROVAL_COINS": "0", "HD_TEMP_BAN_HOURS": "-1", "HD_MUTE_HOURS": "0", "HD_ADMIN_RATE_SIGNIN_BURST": "0"}))
+	_, err := configFromEnv(env(map[string]string{"HD_ADMIN_ENVIRONMENT": "prod", "HD_ADMIN_SESSION_MAX": "0s", "HD_SHOP_WEEKLY_SLOTS": "two", "HD_SHOP_RESET_HOUR_UTC": "24", "HD_SHOP_REFERENCE_PRICE_DAYS": "0", "HD_ADMIN_GRANT_APPROVAL_COINS": "0", "HD_TEMP_BAN_HOURS": "-1", "HD_MUTE_HOURS": "0", "HD_ADMIN_RATE_SIGNIN_BURST": "0"}))
 	if err == nil {
 		t.Fatal("empty environment accepted")
 	}
-	for _, name := range []string{"HD_DATABASE_URL", "HD_ADMIN_ENVIRONMENT", "HD_ADMIN_GOOGLE_DOMAIN", "HD_ADMIN_GOOGLE_AUDIENCES", "HD_ADMIN_SESSION_MAX", "HD_SHOP_WEEKLY_SLOTS", "HD_SHOP_RESET_HOUR_UTC", "HD_ADMIN_GRANT_APPROVAL_COINS", "HD_TEMP_BAN_HOURS", "HD_MUTE_HOURS", "HD_ADMIN_RATE_*"} {
+	for _, name := range []string{"HD_DATABASE_URL", "HD_ADMIN_ENVIRONMENT", "HD_ADMIN_GOOGLE_DOMAIN", "HD_ADMIN_GOOGLE_AUDIENCES", "HD_ADMIN_SESSION_MAX", "HD_SHOP_WEEKLY_SLOTS", "HD_SHOP_RESET_HOUR_UTC", "HD_SHOP_REFERENCE_PRICE_DAYS", "HD_ADMIN_GRANT_APPROVAL_COINS", "HD_TEMP_BAN_HOURS", "HD_MUTE_HOURS", "HD_ADMIN_RATE_*"} {
 		if !strings.Contains(err.Error(), name) {
 			t.Errorf("error %q does not name %s", err, name)
 		}

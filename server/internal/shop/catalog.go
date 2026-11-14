@@ -60,13 +60,14 @@ var (
 )
 
 type Config struct {
-	DailySlots   int
-	WeeklySlots  int
-	ResetHourUTC int
+	DailySlots         int
+	WeeklySlots        int
+	ResetHourUTC       int
+	ReferencePriceDays int
 }
 
 func DefaultConfig() Config {
-	return Config{DailySlots: 4, WeeklySlots: 2}
+	return Config{DailySlots: 4, WeeklySlots: 2, ReferencePriceDays: 30}
 }
 
 func (c Config) Validate() error {
@@ -75,6 +76,9 @@ func (c Config) Validate() error {
 	}
 	if c.ResetHourUTC < 0 || c.ResetHourUTC > 23 {
 		return fmt.Errorf("%w: reset hour must be between 0 and 23", ErrInvalidConfig)
+	}
+	if c.ReferencePriceDays < 1 {
+		return fmt.Errorf("%w: the reference price window must be at least 1 day", ErrInvalidConfig)
 	}
 	return nil
 }
