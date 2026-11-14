@@ -6,8 +6,10 @@ namespace HypeDomino.Content
 {
     public static class ContentBoot
     {
-        const string Folder = "content";
+        const string FolderName = "content";
         const float MillisecondsPerSecond = 1000f;
+
+        public static string Folder => Path.Combine(Application.persistentDataPath, FolderName);
 
         public static CatalogUpdater Catalog { get; private set; }
 
@@ -17,7 +19,7 @@ namespace HypeDomino.Content
         static void Start()
         {
             if (Application.isEditor) return;
-            var folder = Path.Combine(Application.persistentDataPath, Folder);
+            var folder = Folder;
             Catalog = new CatalogUpdater(new AddressablesCatalogSource(folder), Platform());
             Cache = new ContentCache(new UnityCacheStore(folder), () => Catalog.InMatch);
             Cache.Start();

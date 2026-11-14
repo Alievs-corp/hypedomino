@@ -39,7 +39,7 @@ NT-1 is checked automatically (#202). `tools/proto-lint` refuses a value field (
 
 ### Device storage (NT-3, #203)
 
-The client keeps only device settings and content bookkeeping on the device. Every PlayerPrefs key the client uses is listed here; `RuntimeCodeRulesTests` in the client fails when runtime code uses a key that is not in this table, when a key here is no longer used, when a key names a server value (the word list of `tools/proto-lint`), or when runtime code outside the files named here writes a file. Content bundles are written only by Addressables into its cache; `Content/AddressablesCatalogSource.cs` is the one runtime file that writes files itself, moving each downloaded content catalog into its version folder (`docs/content-delivery.md`). A catalog lists art and its addresses, never what an account owns.
+The client keeps only device settings and content bookkeeping on the device. Every PlayerPrefs key the client uses is listed here; `RuntimeCodeRulesTests` in the client fails when runtime code uses a key that is not in this table, when a key here is no longer used, when a key names a server value (the word list of `tools/proto-lint`), or when runtime code outside the files named here writes a file. Content bundles are written only by Addressables into its cache. Two runtime files write files themselves: `Content/AddressablesCatalogSource.cs` moves each downloaded content catalog into its version folder (`docs/content-delivery.md`), and `Content/UnityStringBundleSource.cs` keeps the last downloaded language bundle of each language in `content/strings/<language>/<version>_<hash>.json` (`docs/localization.md` 2.4). A catalog lists art and its addresses, never what an account owns; a language bundle holds display text only.
 
 | Key | Holds | Why editing it gains nothing |
 |---|---|---|
@@ -51,6 +51,7 @@ The client keeps only device settings and content bookkeeping on the device. Eve
 | `haptics.enabled` | Haptics turned on or off in settings (`docs/ui-motion.md`, Haptics) | Device settings |
 | `audio.musicVolume`, `audio.sfxVolume`, `audio.uiVolume` | Volume level of each sound group chosen in settings (`docs/ui-motion.md`, Sound) | Device settings |
 | `language.choice` | Game language, picked from the device locales at first launch or chosen in settings (`docs/localization.md` 1.1) | Display setting only; the server never trusts it for game logic |
+| `content/strings/<language>/<version>_<hash>.json` (file) | The last downloaded language bundle of the selected language and `en` (`docs/localization.md` 2.4) | Display text only; it is refused unless its SHA-256 matches the hash in its name, the next hello replaces it when the server announces another hash, and the server never reads it |
 
 - The client has no offline mode and grants nothing on its own: rewards, balances, inventory, scores and ratings come only from server messages and are never written to the device.
 - A new key, file or cache is added to this table in the same pull request, with why editing it gains nothing. A display cache of server values (for example the last balance shown) may only be shown until the server answers and is replaced by it; it never feeds an intent.

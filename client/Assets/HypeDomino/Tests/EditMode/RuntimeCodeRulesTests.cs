@@ -11,7 +11,7 @@ namespace HypeDomino.Tests.EditMode
     {
         const string DesignTokensFile = "DesignTokens.cs";
         static readonly string[] NonRuntimeFolders = { "Editor", "Generated", "Tests" };
-        static readonly string[] FileWriters = { "AddressablesCatalogSource.cs" };
+        static readonly string[] FileWriters = { "AddressablesCatalogSource.cs", "UnityStringBundleSource.cs" };
         static readonly Regex HandWrittenColour = new Regex(@"\bnew\s+Color(32)?\s*\(|\bColor\.(black|blue|cyan|gray|green|grey|magenta|red|white|yellow)\b");
         static readonly Regex PlayerPrefsKey = new Regex(@"\bPlayerPrefs\.(?:Get|Set|Has|Delete)\w*\(\s*(?:""(?<literal>[^""]*)""|(?<name>[A-Za-z_]\w*))");
         static readonly Regex FileWrite = new Regex(@"\bFile\.(?:Write|Append|Create|Copy|Move|Replace)\w*\s*\(|\bnew\s+(?:FileStream|StreamWriter|BinaryWriter)\s*\(");

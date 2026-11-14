@@ -48,6 +48,23 @@ namespace HypeDomino.Tests.EditMode
             public void Commit(string version, string baseUrl, Action<bool> done) { }
         }
 
+        sealed class IdleStringSource : IStringBundleSource
+        {
+            public List<string> Downloads { get; } = new();
+
+            public void Download(string url, Action<byte[]> done) => Downloads.Add(url);
+
+            public bool TryLoadStored(string language, out int version, out string hash, out byte[] content)
+            {
+                version = 0;
+                hash = null;
+                content = null;
+                return false;
+            }
+
+            public void Store(string language, int version, string hash, byte[] content) { }
+        }
+
         sealed class ServerFrames : IFrameTransport
         {
             readonly List<byte[]> incoming = new(4);
@@ -79,6 +96,7 @@ namespace HypeDomino.Tests.EditMode
             public readonly IdleCatalogSource Source = new();
             public readonly FrameRatePolicy FrameRate = AppBootTests.FrameRate();
             public readonly GameStrings Strings = AppBootTests.Strings("az");
+            public readonly IdleStringSource StringSource = new();
             public readonly CatalogUpdater Catalog;
             public HapticCue Felt;
 
@@ -86,7 +104,7 @@ namespace HypeDomino.Tests.EditMode
             {
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
-                AppBoot.Listen(Session, Flow, Catalog, Strings, cue => Felt = cue);
+                AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), cue => Felt = cue);
                 Session.Hello(Server, new ClientHello());
             }
 
@@ -235,7 +253,7 @@ namespace HypeDomino.Tests.EditMode
             var session = new Session();
             var flow = new AppFlow();
             var server = new ServerFrames();
-            AppBoot.Listen(session, flow, null, Strings("az"), _ => { });
+            AppBoot.Listen(session, flow, null, Strings("az"), null, _ => { });
             session.Hello(server, new ClientHello());
             server.Deliver(FrameOf(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false)));
             session.Poll();
@@ -298,6 +316,7 @@ namespace HypeDomino.Tests.EditMode
             LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=az version=3$"));
             LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=en version=4$"));
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted, Chain("az", "az", "en")));
+            CollectionAssert.AreEqual(new[] { ContentUrls.Strings(Cdn, "az", AzHash), ContentUrls.Strings(Cdn, "en", EnHash) }, app.StringSource.Downloads);
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("E", app.Strings.Text("k"));
         }
@@ -307,6 +326,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var app = new Listened();
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Maintenance, Chain("az", "az", "en")));
+            CollectionAssert.IsEmpty(app.StringSource.Downloads);
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("T", app.Strings.Text("k"));
         }
