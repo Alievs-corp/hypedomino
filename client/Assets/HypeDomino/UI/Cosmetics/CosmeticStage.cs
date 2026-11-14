@@ -36,6 +36,8 @@ namespace HypeDomino.UI.Cosmetics
 
         public string MarkRarityId { get; }
 
+        public bool IsSameAs(AvatarLook other) => Avatar.IsSameAs(other.Avatar) && Frame.IsSameAs(other.Frame) && MarkRarityId == other.MarkRarityId;
+
         public static AvatarLook Of(CosmeticManifest manifest, string avatarId, string frameId)
         {
             var avatar = manifest.ShownOf(CosmeticAddresses.Avatar, avatarId);
