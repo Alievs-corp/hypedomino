@@ -138,7 +138,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Expose(signIn.SignIns())
 	profileStore := profile.NewStore(pool, config.Profile)
 	moderation := snapshot.New(pool, profile.ModerationDomain, profile.ParseModeration, logger)
-	go panics.Supervise(ctx, "config moderation", config.ConfigPoll, moderation.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "moderation", config.ConfigPoll, moderation)
 	profileStore.Moderate(func() profile.Moderation {
 		current, _, _ := moderation.Current()
 		return current
@@ -153,7 +153,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	inventoryStore := inventory.NewStore(pool, catalog, config.Inventory)
 	manifests := snapshot.New(pool, cosmetics.Domain, cosmetics.Parse, logger)
-	go panics.Supervise(ctx, "config cosmetics", config.ConfigPoll, manifests.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "cosmetics", config.ConfigPoll, manifests)
 	inventoryStore.Follow(manifests.Current)
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
@@ -177,23 +177,23 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
 	passConfigs := pass.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config pass", config.ConfigPoll, passConfigs.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "pass", config.ConfigPoll, passConfigs)
 	passes := pass.NewStore(pool, passConfigs)
 	profiles.SetStanding(passes.Standing)
 	medalCatalog := medal.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config medals", config.ConfigPoll, medalCatalog.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "medals", config.ConfigPoll, medalCatalog)
 	medals := medal.NewStore(pool, medalCatalog)
 	profiles.SetMedals(func(ctx context.Context, account string) (any, error) { return medals.Public(ctx, account) })
 	engine := reward.NewEngine(pool, walletStore, inventoryStore, medals, passes, config.Reward)
 	passes.SetRewards(engine)
 	passes.SetWallet(walletStore)
 	missionCatalog := mission.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config missions", config.ConfigPoll, missionCatalog.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "missions", config.ConfigPoll, missionCatalog)
 	missions := mission.NewStore(pool, missionCatalog, engine)
 	calendar := dailylogin.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config daily login", config.ConfigPoll, calendar.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "daily login", config.ConfigPoll, calendar)
 	matchRewardConfigs := matchreward.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config match rewards", config.ConfigPoll, matchRewardConfigs.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "match rewards", config.ConfigPoll, matchRewardConfigs)
 	matchRewards := matchstore.NewRelay(matchstore.New(pool), matchreward.NewStore(pool, matchRewardConfigs, walletStore), matchstore.TopicEconomy, 0, time.Now)
 	go panics.Supervise(ctx, "outbox economy", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
 		matchRewards.Run(ctx, every, func(err error) { logger.Error("match reward relay failed", "error", err) })
@@ -216,7 +216,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 			return nil, nil, fmt.Errorf("HD_SHOP_CATALOG: %w", err)
 		}
 	}
-	go panics.Supervise(ctx, "config shop", config.ConfigPoll, offers.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "shop", config.ConfigPoll, offers)
 	controls := snapshot.New(pool, livecontrol.Domain, livecontrol.Parse, logger)
 	controls.Seed(livecontrol.Controls{MinimumAppVersion: config.Gateway.MinimumAppVersion}, 0)
 	if _, err := controls.Load(ctx); err != nil && !errors.Is(err, snapshot.ErrNone) {
@@ -224,35 +224,35 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		return nil, nil, fmt.Errorf("live controls: %w", err)
 	}
 	controls.OnApplied(a.EnforceAdmission)
-	go panics.Supervise(ctx, "config live controls", config.ConfigPoll, controls.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "live controls", config.ConfigPoll, controls)
 	a.Admit(func() gateway.Admission {
 		current, _, _ := controls.Current()
 		return current.Admission()
 	})
 	activeStrings := snapshot.New(pool, gamestrings.Domain, gamestrings.NewStore(pool).ActiveParser(ctx), logger)
-	go panics.Supervise(ctx, "config game strings", config.ConfigPoll, activeStrings.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "game strings", config.ConfigPoll, activeStrings)
 	a.Localize(func() gateway.Strings {
 		active, _, _ := activeStrings.Current()
 		bundles, chains := active.Hello()
 		return gateway.Strings{Bundles: bundles, Chains: chains}
 	})
 	quickMessages := snapshot.New(pool, quickmessage.Domain, quickmessage.Parse, logger)
-	go panics.Supervise(ctx, "config quick messages", config.ConfigPoll, quickMessages.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "quick messages", config.ConfigPoll, quickMessages)
 	a.Rooms().AllowQuickMessages(func(key string) bool {
 		catalog, _, _ := quickMessages.Current()
 		return catalog.Contains(key)
 	})
 	tuning := snapshot.New(pool, rulesconfig.Domain, rulesconfig.Parse, logger)
-	go panics.Supervise(ctx, "config rules", config.ConfigPoll, tuning.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "rules", config.ConfigPoll, tuning)
 	a.Rooms().Tune(func(base rules.Config) rules.Config {
 		current, _, _ := tuning.Current()
 		return current.Apply(base)
 	})
 	ratingConfigs := rating.NewWatcher(pool, logger)
-	go panics.Supervise(ctx, "config rating", config.ConfigPoll, ratingConfigs.Run)
+	watchConfig(ctx, a.AwaitBeforeReady, "rating", config.ConfigPoll, ratingConfigs)
 	ratings := rating.NewStore(pool, ratingConfigs)
 	profiles.SetRanked(func(ctx context.Context, account string) (any, error) { return ratings.Public(ctx, account) })
-	penaltyRecords := penaltyStore(ctx, config, pool, logger)
+	penaltyRecords := penaltyStore(ctx, config, pool, logger, a.AwaitBeforeReady)
 	ratings.UseOffensePenalties(func() (int, int) {
 		current, _ := penaltyRecords.Config()
 		return current.OffenseRatingPenalty, current.PartnerLossReductionPercent
@@ -268,7 +268,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "rating season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		ratings.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
-	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: sessions.InMatch, Hide: ratings.HideFromBoards, Now: time.Now})
+	matches := matchstore.New(pool)
+	inMatch := func(ctx context.Context, account string) (bool, error) {
+		if sessions.InMatch(account) {
+			return true, nil
+		}
+		return matches.Running(ctx, account, time.Now().Add(-config.StaleMatchAfter))
+	}
+	signIn.EnableDeletion(auth.Deletion{Accounts: accounts, Grace: config.DeletionGrace, InMatch: inMatch, Hide: ratings.HideFromBoards, Now: time.Now})
 	if config.ExportStore.BaseURL != "" {
 		exportFiles, err := objectstore.New(config.ExportStore)
 		if err != nil {
@@ -289,7 +296,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if members != nil {
 		queueMetrics := matchqueue.NewMetrics()
 		a.Expose(queueMetrics)
-		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, await: a.AwaitBeforeReady, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})

@@ -195,3 +195,21 @@ func TestTheWatcherReportsEveryAppliedVersion(t *testing.T) {
 		t.Fatal("no applied report")
 	}
 }
+
+func TestTheWatcherIsSyncedOnceTheDatabaseAnswered(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	w := snapshot.New(pool, "shop", parse, logger)
+	w.Seed(settings{Slots: 1}, 0)
+	if w.Synced() {
+		t.Fatal("a seeded watcher counted as synced before it asked the database")
+	}
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := w.Load(cancelled); err == nil || w.Synced() {
+		t.Fatalf("a failed query synced the watcher: %v", err)
+	}
+	if _, err := w.Load(context.Background()); !errors.Is(err, snapshot.ErrNone) || !w.Synced() {
+		t.Fatalf("no published version must still sync the watcher: %v %v", err, w.Synced())
+	}
+}

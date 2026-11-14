@@ -2,8 +2,10 @@ package gateway
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -151,7 +153,7 @@ func (s *recordingSession) awaitIntents(t *testing.T, count int) {
 }
 
 type harness struct {
-	t        *testing.T
+	t        testing.TB
 	server   *httptest.Server
 	clock    *fakeClock
 	config   Config
@@ -159,7 +161,7 @@ type harness struct {
 	sessions map[string]*recordingSession
 }
 
-func newHarness(t *testing.T, config Config) *harness {
+func newHarness(t testing.TB, config Config) *harness {
 	t.Helper()
 	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, config: config, sessions: map[string]*recordingSession{}}
 	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings})
@@ -195,7 +197,7 @@ func (h *harness) session(token string) *recordingSession {
 }
 
 type client struct {
-	t      *testing.T
+	t      testing.TB
 	socket *websocket.Conn
 	ctx    context.Context
 	nonce  uint64
@@ -770,5 +772,53 @@ func TestAQueueIntentToASessionWithoutMatchmakingIsRefusedAsUnavailable(t *testi
 	state := c.recv().GetQueueState()
 	if state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_REFUSED || state.GetRefusal() != pb.QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE {
 		t.Fatalf("queue state %v", state)
+	}
+}
+
+func TestAStalledWriteClosesTheConnectionAfterTheWriteTimeout(t *testing.T) {
+	config := testConfig()
+	config.WriteQueue = 1024
+	config.WriteTimeout = 300 * time.Millisecond
+	h := newHarness(t, config)
+	c := h.dial()
+	c.handshake("ok-stalled")
+	session := h.session("ok-stalled")
+	noise := make([]byte, 256<<10)
+	rand.NewChaCha8([32]byte{}).Read(noise)
+	large := hex.EncodeToString(noise)
+	stalledAt := time.Now()
+	for range 128 {
+		if err := session.conn.Send(&pb.Envelope{Payload: &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{ItemId: large}}}); err != nil {
+			t.Fatalf("a queued frame was refused before the write stalled: %v", err)
+		}
+	}
+	select {
+	case <-session.closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a client that stopped reading kept its connection past the write timeout")
+	}
+	if elapsed := time.Since(stalledAt); elapsed < config.WriteTimeout {
+		t.Fatalf("closed after %s, before the write timeout %s", elapsed, config.WriteTimeout)
+	}
+	select {
+	case <-session.conn.Done():
+	default:
+		t.Fatal("the connection is not closed")
+	}
+}
+
+func BenchmarkSendToAReadingClient(b *testing.B) {
+	h := newHarness(b, testConfig())
+	c := h.dial()
+	c.handshake("ok-bench")
+	conn := h.session("ok-bench").conn
+	b.ReportAllocs()
+	for b.Loop() {
+		if err := conn.Send(&pb.Envelope{AckedSequence: 1, Payload: &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{ItemId: "emoji"}}}); err != nil {
+			b.Fatal(err)
+		}
+		if _, _, err := c.socket.Read(c.ctx); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

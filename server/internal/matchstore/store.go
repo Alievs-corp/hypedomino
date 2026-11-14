@@ -221,6 +221,15 @@ func (s *Store) Finish(ctx context.Context, f Finished) error {
 	return tx.Commit(ctx)
 }
 
+func (s *Store) Running(ctx context.Context, account string, startedAfter time.Time) (bool, error) {
+	var running bool
+	err := s.pool.QueryRow(ctx, `select exists (
+		select 1 from match_participants p
+		join matches m on m.id = p.match_id and m.started_at = p.started_at
+		where p.account_id = $1 and p.started_at > $2 and m.started_at > $2 and m.ended_at is null)`, account, startedAfter).Scan(&running)
+	return running, err
+}
+
 func (s *Store) Pending(ctx context.Context, topic string, limit int) ([]Pending, error) {
 	rows, err := s.pool.Query(ctx, `select id, topic, key, payload, attempts from outbox
 		where published_at is null and ($1 = '' or topic = $1) order by id limit $2`, topic, limit)
