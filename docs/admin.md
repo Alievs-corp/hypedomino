@@ -438,6 +438,8 @@ Remote config (#145) is one editor over every key of the domains in 3.1. The `ru
 
 Feature flags are boolean or enum keys of the `liveops` domain with an optional audience filter by platform and app version. Who edits which domain is the matrix in 2.3; anti-cheat values are hidden from every role but `super_admin` because they describe detection (`docs/privacy.md` 8.3).
 
+Built so far (#145): `rules` at `/config/rules`, `matchmaking` and `penalties` at their screens, and of `liveops` only the content gate minimums at `/config/liveops` (9.1). No feature flag key is defined yet, so the `liveops` domain has no flags and nothing of it reaches the client.
+
 ### 5.15 Game strings
 
 Fields and rules are `docs/localization.md` section 2.1 (#214).
@@ -624,6 +626,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/config/rules` `{"values"}` | P on config values | Publishes the next `rules` snapshot. A key left out keeps its default |
 | `GET /admin/config/rules/history` | V on config values | The last 50 `rules` snapshots, newest first |
 | `POST /admin/config/rules/rollback` `{"version"}` | P on config values and S: rollback on snapshots | Publishes the content of an earlier `rules` snapshot as the next version |
+| `GET`, `PUT /admin/config/liveops` `{"values"}`, `GET /admin/config/liveops/history`, `POST /admin/config/liveops/rollback` `{"version"}` | V or P on config values; rollback also S | The `liveops` domain like the four `rules` routes. So far only the content gate minimums (`docs/launch-content-gate.md` section 5): integers from 0 with no `max` in the key view; an unknown key, a negative value or a non-integer gets 400 `invalid`. Screen: `/config/liveops` |
 | `GET`, `PUT /admin/config/matchmaking`, `GET /admin/config/matchmaking/history`, `POST /admin/config/matchmaking/rollback` | V or P on config values; rollback also S | The `matchmaking` domain (`docs/matchmaking.md` section 3) as a whole JSON object; keys left out keep their default; an unknown key or a value out of range gets 400 `invalid`. Screen: `/config/matchmaking` (empty field = server default, bot levels `easy`, `medium`, `hard`) |
 | `GET`, `PUT /admin/config/penalties`, `GET /admin/config/penalties/history`, `POST /admin/config/penalties/rollback` | V or P on config values; rollback also S | The `penalties` domain (`docs/penalties.md` section 8) as a whole JSON object; keys left out keep their default; an unknown key or a broken ladder gets 400 `invalid`. Screen: `/config/penalties` (empty field = server default, lists comma separated) |
 | `GET /admin/config/shop` | V on shop offers | The published shop catalog (offers and rotations of 5.5), its `config_version`, and the server's `rotation` rules (`daily_slots`, `weekly_slots`, `reset_hour_utc`); `catalog` is null before the first publish |
