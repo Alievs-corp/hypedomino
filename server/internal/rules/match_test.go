@@ -179,9 +179,38 @@ func checkHandEnd(t *testing.T, m *Match, mode Mode, seed uint64, seen *handEnds
 	}
 }
 
+func checkNoSeatHoldsRedealDoubles(t *testing.T, m *Match, seed uint64) {
+	t.Helper()
+	for _, seat := range m.Mode().Seats() {
+		doubles := 0
+		for _, tile := range m.Hand(seat) {
+			if tile.Low == tile.High {
+				doubles++
+			}
+		}
+		if doubles >= m.Config().RedealDoublesThreshold {
+			t.Fatalf("%s seed %d hand %d: seat %s opens with %d doubles", m.Mode(), seed, m.HandsPlayed(), seat, doubles)
+		}
+	}
+}
+
+func TestEveryHandIsRedealtWhileASeatHoldsTooManyDoubles(t *testing.T) {
+	config := DefaultConfig()
+	config.RedealDoublesThreshold = 3
+	for _, mode := range []Mode{Mode1v1, Mode2v2} {
+		for seed := uint64(1); seed <= 100; seed++ {
+			simulateMatchWith(t, mode, config, seed, &handEndsSeen{})
+		}
+	}
+}
+
 func simulateMatch(t *testing.T, mode Mode, seed uint64, seen *handEndsSeen) int {
 	t.Helper()
-	config := DefaultConfig()
+	return simulateMatchWith(t, mode, DefaultConfig(), seed, seen)
+}
+
+func simulateMatchWith(t *testing.T, mode Mode, config Config, seed uint64, seen *handEndsSeen) int {
+	t.Helper()
 	random := seeded(seed)
 	m := NewMatch(mode, config, random)
 	var buffer [4 * SetSize]Move
@@ -193,6 +222,7 @@ func simulateMatch(t *testing.T, mode Mode, seed uint64, seen *handEndsSeen) int
 		checkTileConservation(t, m, mode, seed)
 		played := m.HandsPlayed()
 		if m.Phase() == PhaseOpening {
+			checkNoSeatHoldsRedealDoubles(t, m, seed)
 			for _, team := range []Team{TeamA, TeamB} {
 				if m.HandPointsLocked(team) != (m.Scores()[team] >= config.HandPointsLockThreshold) {
 					t.Fatalf("%s seed %d: team %s locked %v with %v at hand start", mode, seed, team, m.HandPointsLocked(team), m.Scores())
