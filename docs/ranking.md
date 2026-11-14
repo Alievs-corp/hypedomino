@@ -46,6 +46,8 @@ Rounding everywhere in this document is to the nearest integer, halves away from
 
 The tier list and the division count are fixed by this document; changing them is a spec change.
 
+- Client (#119): `Game/Ranking/RankBadge.TryRead` reads the server's rank label (the `rank_label` of a match roster entry, `docs/matchmaking.md` section 4) into the tier and the division a rank badge shows: `Gold II` is Gold, division 2; `Master`, `Grandmaster` and `Challenger` have no division; an empty label is a player in placement, who shows no badge. A label in any other form is refused and shows no badge. The client never works out a rank, a tier or LP itself.
+
 ### 3.1 Divisions (Iron IV to Diamond I)
 
 - LP runs from 0 to `DivisionLp` (default 100).

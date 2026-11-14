@@ -469,6 +469,22 @@ In-match emoji (#151) and the `emoji` effect:
 - **Art.** On the low effect level the emoji shows its static art (`staticAddress`). On medium and high it plays its one looping animation (`animationAddress`) at the frame rate stored with that animation, and falls back to the static art until the animation is loaded (ADR 0002).
 - **Pooling.** The `pooled` count of the `emoji` budget (4) is prewarmed when the match scene loads, so no instance is created during the match. A match has at most four seats with one live emoji each, so the pool never runs out.
 
+### Quick message
+
+In-match quick messages (#152, carried by #151; `docs/localization.md` 5.7):
+
+- **Send.** A quick message is sent as `QuickMessageIntent` with its `key` and `team_only` at once, only on an accepted session, like an emoji. The client shows nothing on its own: the message appears when `QuickMessageShown` arrives. The panel that lists the keys is not specified yet.
+- **Route.** `QuickMessageShown` goes to the table side of its `seat` exactly as `EmojiShown` does (Emoji wheel, Route). A seat that does not belong to the match's mode is dropped. A quick message does not start the emoji wheel's calm.
+- **Bubble (owner decision 2026-11-14).** The bubble appears at the same seat anchor where that seat's emoji appears, and stays for the emoji `durationMs` (`TokenEffect.EmojiDurationMs`, 1800); quick messages have no duration of their own. Each seat shows one live message; a new one replaces it from the start. The text is the key's value in the viewer's language, looked up when the message arrives (`docs/localization.md` 2.3 for a missing value). The bubble's size, colours and motion come with the match HUD and are not decided here.
+
+### Seat mute
+
+Muting another player's emoji and quick messages on this device (#155, carried by #151):
+
+- **Menu (owner decision 2026-11-14).** A long press on another player's seat avatar opens a menu with the mute toggle, labelled `match.seat.mute` or, while the seat is muted, `match.seat.unmute`. The own seat has no such menu; a viewer without a seat may mute any seat. The long-press hold time and the menu's look come with the match HUD and are not decided here.
+- **Effect.** A muted seat's incoming `EmojiShown` and `QuickMessageShown` are dropped on this device only; the server and the other players are not involved. An emoji or message already on screen finishes as usual. Unmuting shows the seat's next ones again.
+- **Lifetime (owner decision 2026-11-14).** A mute lasts for the current match only. It is cleared when the match ends or a new match starts, and it is never stored on the device (no PlayerPrefs key, `docs/anti-cheat.md` Device storage).
+
 ## 8. Score cascade
 
 Board points are multiples of 5 (R-25); a score event's step comes from its value:
@@ -528,5 +544,6 @@ The results screen opens on the first `MatchView` whose `state` is `MATCH_STATE_
 ## 9. Open items
 
 - Screen orientation is not decided; units follow the short side so the tokens hold either way.
+- The long-press hold time that opens the seat menu (section 7, Seat mute), and the quick message panel with its key list and team choice (section 7, Quick message), are not decided; they belong to the match HUD.
 - Sound per step is not part of this spec.
 - The largest tile size on the board (the board layout's scale cap) is not decided; the board area is the match layout's board region.

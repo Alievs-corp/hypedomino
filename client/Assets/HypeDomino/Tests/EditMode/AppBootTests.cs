@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Google.Protobuf;
 using HypeDomino.Content;
 using HypeDomino.Game;
+using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
@@ -79,12 +80,13 @@ namespace HypeDomino.Tests.EditMode
             public readonly FrameRatePolicy FrameRate = AppBootTests.FrameRate();
             public readonly GameStrings Strings = AppBootTests.Strings("az");
             public readonly CatalogUpdater Catalog;
+            public HapticCue Felt;
 
             public Listened()
             {
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
-                AppBoot.Listen(Session, Flow, Catalog, Strings);
+                AppBoot.Listen(Session, Flow, Catalog, Strings, cue => Felt = cue);
                 Session.Hello(Server, new ClientHello());
             }
 
@@ -102,6 +104,13 @@ namespace HypeDomino.Tests.EditMode
             new ServerHello { Status = status, InMatch = inMatch, SessionNonce = Nonce, CatalogVersion = Version, ContentBaseUrl = Cdn };
 
         static MatchView View(MatchState state) => new MatchView { State = state };
+
+        static MatchView Seated(Seat current, int boardTiles)
+        {
+            var view = new MatchView { State = MatchState.Playing, Seat = Seat.South, Mode = Mode._2V2, Current = current, Board = new BoardView() };
+            for (uint tile = 0; tile < boardTiles; tile++) view.Board.Line.Add(new OrientedTile { First = tile, Second = tile });
+            return view;
+        }
 
         static string CatalogUrl => ContentUrls.Catalog(Cdn, "Android", Version);
 
@@ -226,7 +235,7 @@ namespace HypeDomino.Tests.EditMode
             var session = new Session();
             var flow = new AppFlow();
             var server = new ServerFrames();
-            AppBoot.Listen(session, flow, null, Strings("az"));
+            AppBoot.Listen(session, flow, null, Strings("az"), _ => { });
             session.Hello(server, new ClientHello());
             server.Deliver(FrameOf(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false)));
             session.Poll();
@@ -300,6 +309,30 @@ namespace HypeDomino.Tests.EditMode
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Maintenance, Chain("az", "az", "en")));
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("T", app.Strings.Text("k"));
+        }
+
+        [Test]
+        public void TheLocalPlayersPlacementInAViewFromTheSessionPlaysTheTileCue()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.South, 1));
+            Assert.AreEqual(HapticCue.None, app.Felt);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.West, 2));
+            Assert.AreEqual(HapticCue.TilePlace, app.Felt);
+        }
+
+        [Test]
+        public void TheFirstViewAfterAReconnectPlaysNothing()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.South, 1));
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.West, 2));
+            Assert.AreEqual(HapticCue.None, app.Felt);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.South, 3));
+            Assert.AreEqual(HapticCue.None, app.Felt, "West placed");
         }
 
         [Test]
