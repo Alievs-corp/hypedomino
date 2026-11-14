@@ -119,6 +119,7 @@ type fixture struct {
 	accounts    *fakeAccounts
 	tokens      *fakeTokens
 	connections *fakeConnections
+	handler     *auth.Handler
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -130,9 +131,9 @@ func newFixture(t *testing.T) *fixture {
 		tokens:      &fakeTokens{refreshes: map[string]error{}},
 		connections: &fakeConnections{},
 	}
-	handler := auth.New(f.verifier, f.accounts, f.tokens, f.connections, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	f.handler = auth.New(f.verifier, f.accounts, f.tokens, f.connections, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mux := http.NewServeMux()
-	mux.Handle("POST /auth/", handler)
+	mux.Handle("POST /auth/", f.handler)
 	f.server = httptest.NewServer(mux)
 	t.Cleanup(f.server.Close)
 	return f
@@ -238,6 +239,32 @@ func TestSignInRefusalsCarryAStatusAndAReason(t *testing.T) {
 	}
 	if len(f.tokens.issued) != 0 {
 		t.Fatalf("a refused sign-in issued tokens: %v", f.tokens.issued)
+	}
+}
+
+func TestSignInsAreCountedByProviderAndResult(t *testing.T) {
+	f := newFixture(t)
+	f.verifier.errs["expired"] = idtoken.ErrExpired
+	for _, body := range []string{
+		`{"provider":"google","id_token":"good","nonce":"n","device_id":"d"}`,
+		`{"provider":"google","id_token":"good","nonce":"n","device_id":"d"}`,
+		`{"provider":"apple","id_token":"expired","nonce":"n","device_id":"d"}`,
+		`{"provider":"facebook","id_token":"good","nonce":"n","device_id":"d"}`,
+		`{"provider":"google"`,
+	} {
+		f.post("/auth/signin", body)
+	}
+	var out strings.Builder
+	f.handler.SignIns().WriteTo(&out)
+	want := `# HELP hd_signins_total Sign-in attempts by identity provider and result: ok or the refusal reason sent to the client.
+# TYPE hd_signins_total counter
+hd_signins_total{provider="apple",result="token_expired"} 1
+hd_signins_total{provider="google",result="ok"} 2
+hd_signins_total{provider="unknown",result="malformed"} 1
+hd_signins_total{provider="unknown",result="unknown_provider"} 1
+`
+	if out.String() != want {
+		t.Fatalf("got\n%s", out.String())
 	}
 }
 
