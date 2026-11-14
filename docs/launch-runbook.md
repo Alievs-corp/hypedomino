@@ -347,6 +347,7 @@ Accounts, addresses, vendors and decisions only the owner can provide. A step ab
 | OI-11 | Status page with incident and maintenance components, and its URL | Support lead | #28 | GN-27, section 8, store review replies (8.3) |
 | OI-12 | Contact sheet location, outside the systems it is needed to repair | Release manager | #28 | GN-25, section 7 |
 | OI-13 | Support email address and a monitored inbox | Support lead | #144 | Section 9.1, `docs/store-listing.md` SF-10 and ST-8, `docs/closed-beta.md` FB-3 |
+| OI-14 | Deletion log bucket per environment in the backup location, an access key limited to it, and Secret `account-deletion-env` with `HD_DATABASE_URL`, `HD_DELETION_LOG_URL`, `HD_DELETION_LOG_REGION`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY` (`docs/backup-restore.md` 3.7). Until it exists the `account-deletion` CronJob fails and no account past its grace is erased | Server lead | #601, #25 | GN-15, `docs/privacy.md` L-15 and L-19 |
 
 ## 11. Open items
 

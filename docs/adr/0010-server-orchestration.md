@@ -23,7 +23,7 @@ Constraints:
 - Manifests live in `deploy/k8s`: `base` holds the shape every environment shares, an overlay per environment sets the image tag, replicas, resources and the `server-env` secret source. Environments differ only by overlay values and secrets (E-4).
 
 ### Image
-- `server/Dockerfile`: static `CGO_ENABLED=0` build on the Go version of `server/go.mod`, runtime `gcr.io/distroless/static-debian12:nonroot` (no shell, no package manager), numeric user `65532`, read-only root filesystem, every capability dropped.
+- `server/Dockerfile`: static `CGO_ENABLED=0` build on the Go version of `server/go.mod`, runtime `gcr.io/distroless/static-debian12:nonroot` (no shell, no package manager), numeric user `65532`, read-only root filesystem, every capability dropped. The image carries `/server` (the entrypoint), `/migrate` and `/account-deletion`, so the migration runner and the deletion CronJob run the same promoted build (#601).
 - Health is checked by the orchestrator over HTTP (`/healthz` liveness, `/readyz` readiness), not by a command inside the image.
 
 ### Rolling deploy with drain
