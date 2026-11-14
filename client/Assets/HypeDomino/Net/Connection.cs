@@ -140,7 +140,7 @@ namespace HypeDomino.Net
                 case ErrorCode.UnsupportedProtocol:
                     Stop();
                     return;
-                case ErrorCode.IllegalIntent:
+                default:
                     RoundTrip.Rejected(error.RejectedSequence);
                     return;
             }
