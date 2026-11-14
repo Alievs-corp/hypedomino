@@ -137,18 +137,31 @@ type PairSignal struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type MissionAssignment struct {
+	MissionID   string     `json:"mission_id"`
+	Type        string     `json:"type"`
+	Slot        int        `json:"slot"`
+	Period      string     `json:"period"`
+	Progress    int64      `json:"progress"`
+	Target      int64      `json:"target"`
+	AssignedAt  time.Time  `json:"assigned_at"`
+	CompletedAt *time.Time `json:"completed_at"`
+	ReplacedAt  *time.Time `json:"replaced_at"`
+}
+
 type Record struct {
-	Account         Account          `json:"account"`
-	Profile         *Profile         `json:"profile"`
-	NicknameHistory []FormerNickname `json:"nickname_history"`
-	Inventory       []Item           `json:"inventory"`
-	Coins           int64            `json:"coins"`
-	Crystals        int64            `json:"crystals"`
-	Ledger          []LedgerEntry    `json:"ledger"`
-	Grants          []Grant          `json:"grants"`
-	Purchases       []Purchase       `json:"purchases"`
-	Matches         []Match          `json:"matches"`
-	PairSignals     []PairSignal     `json:"pair_signals"`
+	Account         Account             `json:"account"`
+	Profile         *Profile            `json:"profile"`
+	NicknameHistory []FormerNickname    `json:"nickname_history"`
+	Inventory       []Item              `json:"inventory"`
+	Coins           int64               `json:"coins"`
+	Crystals        int64               `json:"crystals"`
+	Ledger          []LedgerEntry       `json:"ledger"`
+	Grants          []Grant             `json:"grants"`
+	Purchases       []Purchase          `json:"purchases"`
+	Matches         []Match             `json:"matches"`
+	PairSignals     []PairSignal        `json:"pair_signals"`
+	Missions        []MissionAssignment `json:"missions"`
 }
 
 const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
@@ -238,7 +251,7 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	if err := loadIdentities(ctx, db, &r, withIdentities); err != nil {
 		return Record{}, err
 	}
-	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals} {
+	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals, loadMissions} {
 		if err := load(ctx, db, &r); err != nil {
 			return Record{}, err
 		}
@@ -351,5 +364,13 @@ func loadPairSignals(ctx context.Context, db Querier, r *Record) error {
 		from rating_signals where account_id = $1::uuid order by updated_at desc, kind, counterpart limit $2`,
 		func(row pgx.CollectableRow, s *PairSignal) error {
 			return row.Scan(&s.Kind, &s.Counterpart, &s.Mode, &s.Matches, &s.Wins, &s.Offenses, &s.WindowHours, &s.FirstSeen, &s.UpdatedAt)
+		}, r.Account.ID, ListLimit)
+}
+
+func loadMissions(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Missions, `select mission_id, mission_type, slot, period, progress, assigned_at, completed_at, replaced_at
+		from mission_assignments where account_id = $1::uuid order by assigned_at desc, mission_type, slot, mission_id limit $2`,
+		func(row pgx.CollectableRow, m *MissionAssignment) error {
+			return row.Scan(&m.MissionID, &m.Type, &m.Slot, &m.Period, &m.Progress, &m.AssignedAt, &m.CompletedAt, &m.ReplacedAt)
 		}, r.Account.ID, ListLimit)
 }
