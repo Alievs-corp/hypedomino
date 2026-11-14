@@ -18,6 +18,7 @@ import {
   crystalPacks,
   listsChest,
   oddsTotal,
+  permanentMythics,
   priceOf,
   replaceOffer,
   withPackCrystals,
@@ -117,6 +118,28 @@ test("a window must end after it starts", () => {
   assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z" } })), false);
   assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z", end: "2026-11-10T09:00:00Z" } })), false);
   assert.equal(windowEndsBeforeStart(offer({ window: { start: "2026-11-10T08:00:00Z", end: "2026-11-10T08:00:00Z" } })), true);
+});
+
+test("a mythic item is flagged unless its offer rotates or its featured or event window ends", () => {
+  const items: CosmeticItem[] = [
+    { id: "table.night_market", type: "table", rarity: "mythic", availability: "live", sources: [] },
+    { id: "avatar.moon_owl", type: "avatar", rarity: "rare", availability: "live", sources: [] },
+  ];
+  const bundle = { id: "bundle.night", revision: 1, cosmetics: ["avatar.moon_owl", "table.night_market"] };
+  const end = "2027-01-01T00:00:00Z";
+  const cases: [Partial<Offer>, string[]][] = [
+    [{ section: "weekly_rotation" }, []],
+    [{ section: "daily_rotation" }, []],
+    [{ section: "featured", window: { start: "2026-01-01T00:00:00Z", end } }, []],
+    [{ section: "event", window: { start: "2026-01-01T00:00:00Z", end } }, []],
+    [{ section: "featured" }, ["table.night_market"]],
+    [{ section: "event" }, ["table.night_market"]],
+    [{ kind: "pass", section: "pass", window: { start: "2026-01-01T00:00:00Z", end } }, ["table.night_market"]],
+  ];
+  for (const [fields, want] of cases) {
+    assert.deepEqual(permanentMythics(offer({ kind: "bundle", bundle, ...fields }), items), want, JSON.stringify(fields));
+  }
+  assert.deepEqual(permanentMythics(offer({ section: "featured", bundle: { id: "bundle.owl", revision: 1, cosmetics: ["avatar.moon_owl"] } }), items), []);
 });
 
 test("a version lists the offers it added or changed against the one before", () => {
