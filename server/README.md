@@ -92,7 +92,10 @@ docker build -t hypedomino-server:ci server
 bash tools/deploy/container-smoke.sh hypedomino-server:ci
 kind create cluster --name hd
 bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
+bash tools/deploy/kind-metrics.sh hd-ci
 ```
+
+The debug listener (`/metrics`, `/debug/pprof/`) runs in every server pod on `HD_DEBUG_ADDR=:6060`, container port `debug`. It is not in the `server` Service, so no load balancer or ingress reaches it. The `server` NetworkPolicy (`deploy/k8s/base/network-policy.yaml`) admits the game port `http` from anywhere and the `debug` port only from pods in the namespace named `monitoring`; the cluster's Prometheus must run there. Pods carry the `prometheus.io/scrape`, `prometheus.io/port` and `prometheus.io/path` annotations, so a Prometheus with the usual `kubernetes_sd_configs` pod role finds them without a CRD; a Prometheus Operator setup needs a `PodMonitor` on port `debug` instead. `tools/deploy/kind-metrics.sh` proves on kind that `monitoring` scrapes the port and another namespace cannot (kindnet and k3s both enforce NetworkPolicy).
 
 `terminationGracePeriodSeconds` in `deploy/k8s/base/server.yaml` must stay above the 10 s `preStop` plus `HD_DRAIN_TIMEOUT` plus `HD_SHUTDOWN_TIMEOUT`; change them together.
 
