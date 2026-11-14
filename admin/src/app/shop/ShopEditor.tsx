@@ -13,6 +13,7 @@ import {
   oddsTotal,
   permanentMythics,
   priceOf,
+  referencePriceProblem,
   replaceOffer,
   withPackCrystals,
   withPoolItem,
@@ -46,7 +47,21 @@ const currencyLabel: Record<PriceCurrency, MessageKey> = {
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 
-export function ShopEditor({ initialCatalog, version, items, rules }: { initialCatalog: ShopCatalog; version: number; items: CosmeticItem[]; rules: RotationRules }) {
+type ReferencePrices = { days: number; inEffect: ShopCatalog[] };
+
+export function ShopEditor({
+  initialCatalog,
+  version,
+  items,
+  rules,
+  referencePrices,
+}: {
+  initialCatalog: ShopCatalog;
+  version: number;
+  items: CosmeticItem[];
+  rules: RotationRules;
+  referencePrices: ReferencePrices;
+}) {
   const t = useTranslator();
   const [catalog, setCatalog] = useState(initialCatalog);
   const [selected, setSelected] = useState(initialCatalog.offers[0]?.id ?? "");
@@ -68,7 +83,7 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
             </option>
           ))}
         </select>
-        {offer && <OfferPrice offer={offer} onChange={update} />}
+        {offer && <OfferPrice offer={offer} referencePrices={referencePrices} onChange={update} />}
         {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
@@ -84,7 +99,12 @@ export function ShopEditor({ initialCatalog, version, items, rules }: { initialC
           type="button"
           disabled={
             pending ||
-            catalog.offers.some((candidate) => windowEndsBeforeStart(candidate) || permanentMythics(candidate, items).length > 0) ||
+            catalog.offers.some(
+              (candidate) =>
+                windowEndsBeforeStart(candidate) ||
+                permanentMythics(candidate, items).length > 0 ||
+                referencePriceProblem(candidate, referencePrices.inEffect) !== null,
+            ) ||
             catalog.rotations.some((rotation) => !rotationFits(rotation, rules))
           }
           onClick={() => startTransition(async () => setResult(await publishCatalog(catalog, reason)))}
@@ -281,9 +301,10 @@ function OfferWindow({ offer, mythics, onChange }: { offer: Offer; mythics: stri
   );
 }
 
-function OfferPrice({ offer, onChange }: { offer: Offer; onChange: (offer: Offer) => void }) {
+function OfferPrice({ offer, referencePrices, onChange }: { offer: Offer; referencePrices: ReferencePrices; onChange: (offer: Offer) => void }) {
   const t = useTranslator();
   const price = priceOf(offer);
+  const problem = referencePriceProblem(offer, referencePrices.inEffect);
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="text-sm text-text-secondary">{t("shop.price")}</legend>
@@ -313,6 +334,12 @@ function OfferPrice({ offer, onChange }: { offer: Offer; onChange: (offer: Offer
           onChange={(event) => onChange(withPrice(offer, { ...price, amount: Number(event.target.value) }))}
           className={fieldClass}
         />
+      )}
+      {problem && (
+        <p role="alert" className="text-sm text-danger-text">
+          {t("shop.reference_price")} {t.number(problem.reference)} {t("shop.reference_price_not_lowest")} ({t("shop.reference_price_days")}: {t.number(referencePrices.days)}).{" "}
+          {problem.lowest === null ? t("shop.reference_price_no_earlier") : `${t("shop.reference_price_lowest")}: ${t.number(problem.lowest)}`}
+        </p>
       )}
     </fieldset>
   );

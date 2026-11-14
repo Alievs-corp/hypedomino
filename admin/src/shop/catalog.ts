@@ -175,6 +175,36 @@ export function permanentMythics(offer: Offer, items: CosmeticItem[]): string[] 
   return (offer.bundle?.cosmetics ?? []).filter((id) => mythics.has(id));
 }
 
+export type PublishedCatalog = { config_version: number; published_at: string; catalog: ShopCatalog };
+
+export type ReferencePriceProblem = { reference: number; lowest: number | null };
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+export function inEffectWithinDays(newestFirst: PublishedCatalog[], days: number, now: Date): ShopCatalog[] {
+  const windowStart = now.getTime() - days * dayMs;
+  const startsBefore = newestFirst.findIndex((version) => new Date(version.published_at).getTime() <= windowStart);
+  const inEffect = startsBefore === -1 ? newestFirst : newestFirst.slice(0, startsBefore + 1);
+  return inEffect.map((version) => version.catalog);
+}
+
+function samePricing(offer: Offer, earlier: Offer | undefined): boolean {
+  const fields = ["priceCoins", "priceCrystals", "referencePriceCoins", "referencePriceCrystals"] as const;
+  return earlier !== undefined && fields.every((field) => (offer[field] ?? 0) === (earlier[field] ?? 0));
+}
+
+export function referencePriceProblem(offer: Offer, inEffect: ShopCatalog[]): ReferencePriceProblem | null {
+  const reference = (offer.referencePriceCoins ?? 0) + (offer.referencePriceCrystals ?? 0);
+  const find = (catalog: ShopCatalog) => catalog.offers.find((candidate) => candidate.id === offer.id);
+  if (reference === 0 || (inEffect.length > 0 && samePricing(offer, find(inEffect[0])))) {
+    return null;
+  }
+  const field = offer.referencePriceCoins ? "priceCoins" : "priceCrystals";
+  const earlier = inEffect.map((catalog) => find(catalog)?.[field] ?? 0).filter((price) => price > 0);
+  const lowest = earlier.length > 0 ? Math.min(...earlier) : null;
+  return lowest === reference ? null : { reference, lowest };
+}
+
 export function rotationCandidates(catalog: ShopCatalog, period: RotationPeriod): string[] {
   return catalog.offers.filter((offer) => offer.section === rotationSections[period]).map((offer) => offer.id);
 }
