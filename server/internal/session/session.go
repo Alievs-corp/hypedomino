@@ -294,14 +294,7 @@ func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 func (m *Manager) connect(conn *gateway.Conn, hello *pb.ClientHello) (*connection, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	s, ok := m.sessions[hello.GetSessionToken()]
-	if !ok && m.auth != nil {
-		account, id, err := m.auth.Authenticate(hello.GetSessionToken())
-		if err != nil || id == "" || account == "" {
-			return nil, gateway.ErrUnauthenticated
-		}
-		s, ok = m.ensure(id, account), true
-	}
+	s, ok := m.sessionFor(hello.GetSessionToken())
 	if !ok {
 		return nil, gateway.ErrUnauthenticated
 	}
@@ -312,6 +305,18 @@ func (m *Manager) connect(conn *gateway.Conn, hello *pb.ClientHello) (*connectio
 	c := &connection{manager: m, session: s, conn: conn}
 	s.active = c
 	return c, nil
+}
+
+func (m *Manager) sessionFor(token string) (*Session, bool) {
+	if m.auth == nil {
+		s, ok := m.sessions[token]
+		return s, ok
+	}
+	account, id, err := m.auth.Authenticate(token)
+	if err != nil || id == "" || account == "" {
+		return nil, false
+	}
+	return m.ensure(id, account), true
 }
 
 type connection struct {

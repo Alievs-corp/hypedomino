@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
@@ -247,4 +248,16 @@ func (c *Client) Close() error {
 
 func (c *Client) Drop() {
 	c.socket.CloseNow()
+}
+
+func (c *Client) Nonce() uint64 {
+	return c.nonce
+}
+
+func (c *Client) LastSent() []byte {
+	return slices.Clone(c.buffer)
+}
+
+func (c *Client) WriteRaw(kind websocket.MessageType, data []byte) error {
+	return c.socket.Write(c.ctx, kind, data)
 }

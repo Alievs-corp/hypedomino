@@ -524,6 +524,24 @@ func TestAccessTokensOpenSessionsKeyedByTheirSessionIdAndLogoutAllClosesThem(t *
 	}
 }
 
+func TestTheBareSessionIdOfAnAuthenticatedSessionIsNotACredential(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	tab.manager.Authenticate(fakeAuthenticator{"jwt-1": {"ayla", "sid-1"}})
+	first := tab.connect("jwt-1", true)
+	if err := tab.manager.Seat("sid-1", tab.room, rules.SeatX); err != nil {
+		t.Fatal(err)
+	}
+	first.socket.CloseNow()
+	for tab.manager.Connected("sid-1") {
+		time.Sleep(time.Millisecond)
+	}
+	refused := tab.connect("sid-1", false)
+	if refused.hello.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_UNAUTHENTICATED || tab.manager.Connected("sid-1") {
+		t.Fatalf("the bare session id answered %v", refused.hello)
+	}
+	tab.connect("jwt-1", true)
+}
+
 type observedClock struct {
 	account string
 	client  uint64

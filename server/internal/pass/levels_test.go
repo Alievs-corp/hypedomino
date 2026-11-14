@@ -3,6 +3,7 @@ package pass_test
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
@@ -41,6 +42,8 @@ func TestBoughtLevelsKeepProgressInsideTheLevelAndChargeOnce(t *testing.T) {
 	}{
 		{"zero levels", 0, "request-2", pass.ErrLevelCount},
 		{"past the last level", 27, "request-3", pass.ErrLevelCount},
+		{"a count that overflows the level", math.MaxInt, "request-5", pass.ErrLevelCount},
+		{"a count that wraps the price to a credit", math.MaxInt - 1, "request-6", pass.ErrLevelCount},
 		{"not enough coins", 3, "request-4", wallet.ErrInsufficient},
 		{"no request id", 1, "", pass.ErrRequest},
 	}
