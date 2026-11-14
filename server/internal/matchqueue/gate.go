@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
+	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
@@ -24,10 +25,15 @@ type Gate struct {
 	accepting  func() bool
 	now        func() time.Time
 	logger     *slog.Logger
+	metrics    *Metrics
 }
 
 func NewGate(store *Store, node, region string, entry EntryFunc, rankedOpen, accepting func() bool, now func() time.Time, logger *slog.Logger) *Gate {
 	return &Gate{store: store, node: node, region: region, entry: entry, rankedOpen: rankedOpen, accepting: accepting, now: now, logger: logger}
+}
+
+func (g *Gate) Measure(m *Metrics) {
+	g.metrics = m
 }
 
 func refused(intent *pb.JoinQueueIntent, refusal pb.QueueRefusal) *pb.QueueState {
@@ -89,8 +95,12 @@ func (g *Gate) Join(ctx context.Context, account, session string, intent *pb.Joi
 }
 
 func (g *Gate) Leave(ctx context.Context, account string) *pb.QueueState {
-	if _, err := g.store.Leave(ctx, account); err != nil {
+	removed, err := g.store.Leave(ctx, account)
+	if err != nil {
 		g.logger.Error("queue leave failed", "account", account, "error", err)
+	}
+	if removed && g.metrics != nil {
+		g.metrics.left.Inc(metrics.Labels{})
 	}
 	return &pb.QueueState{Status: pb.QueueStatus_QUEUE_STATUS_LEFT}
 }

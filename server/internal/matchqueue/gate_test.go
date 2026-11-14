@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,6 +25,8 @@ func TestTheGateQueuesAnAccountUnlessRankedIsClosedOrTheNodeDrains(t *testing.T)
 		return matchmaking.Entry{Mmr: 1300, SearchFrom: at.Add(30 * time.Second)}, nil
 	}
 	gate := matchqueue.NewGate(store, "node-a", "eu", entry, func() bool { return rankedOpen }, func() bool { return accepting }, func() time.Time { return now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	queueMetrics := matchqueue.NewMetrics()
+	gate.Measure(queueMetrics)
 	ranked := &pb.JoinQueueIntent{Mode: pb.Mode_MODE_2V2, Queue: pb.QueueKind_QUEUE_KIND_RANKED}
 
 	state := gate.Join(ctx, "kamal", "session-1", ranked)
@@ -36,6 +39,12 @@ func TestTheGateQueuesAnAccountUnlessRankedIsClosedOrTheNodeDrains(t *testing.T)
 	}
 	if state := gate.Leave(ctx, "kamal"); state.GetStatus() != pb.QueueStatus_QUEUE_STATUS_LEFT {
 		t.Fatalf("leave %v", state)
+	}
+	gate.Leave(ctx, "kamal")
+	var written strings.Builder
+	queueMetrics.WriteTo(&written)
+	if !strings.Contains(written.String(), "\nhd_matchmaking_left_total 1\n") {
+		t.Fatalf("a leave counted once, a second leave of no ticket not at all:\n%s", written.String())
 	}
 
 	rankedOpen = false
