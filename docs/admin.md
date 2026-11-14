@@ -329,7 +329,7 @@ Rules: `docs/pass-missions-medals.md` section 4.
 
 The daily login calendar is edited at `/daily-login` (`docs/economy.md` 2.3): the coins of each existing day, under the missions permissions. Until one is published the server has no calendar and refuses claims.
 
-Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` only (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141).
+Rotation and reroll are automatic per player and slot; there is no per-mission schedule. Which matches count, including that custom rooms never do: `docs/pass-missions-medals.md` section 3. Daily login: one entry per day of the 7-day cycle, coins from `DailyLoginCoins` only (`docs/economy.md` 2.3). Before publish a mission is tried on a staff test account in staging (#141); the account's player record shows its mission assignments and progress (9.1).
 
 ### 5.9 Medals
 
@@ -668,7 +668,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/config/pass/history` | V on pass seasons | The last 50 `pass` snapshots, newest first |
 | `POST /admin/config/pass/rollback` `{"version"}` | P on pass seasons and S: rollback on snapshots | Publishes the content of an earlier `pass` snapshot as the next version |
 | `GET /admin/players?q=` | V on players | With `provider` and `subject` instead of `q`, the account of that auth identity, for `super_admin` only (D-2). Otherwise search (6.1): an account id, an email (exact, any case) or a nickname prefix (folded as for uniqueness, `docs/localization.md` 5.2); at most 20, by nickname |
-| `GET /admin/players/{id}` | V on players | The player record of 6.1 that exists so far: account (state, country, emails; auth identities for `super_admin` only, D-2), profile, nickname history, inventory with revoked items, balance, and the newest 50 ledger entries, reward grants, purchases and matches |
+| `GET /admin/players/{id}` | V on players | The player record of 6.1 that exists so far: account (state, country, emails; auth identities for `super_admin` only, D-2), profile, nickname history, inventory with revoked items, balance, and the newest 50 ledger entries, reward grants, purchases, matches and mission assignments (mission, type, slot, period, progress, the target in the published mission catalog or 0 when it is not there, assigned, completed and rerolled times) |
 | `POST /admin/players/{id}/coins` `{"amount","request_id"}` | S on players: adjust coins | An `admin_adjust` ledger entry, positive or negative (6.2); above `AdminGrantApprovalCoins` it answers 202 with a `player_grant` proposal instead (section 8) |
 | `POST /admin/players/{id}/temporary-ban` | S on players: temporary ban | Bans sign-in for `TempBanHours` (`HD_TEMP_BAN_HOURS`) from now and revokes every refresh session of the account (6.2) |
 | `DELETE /admin/players/{id}/temporary-ban` | S on players: lift a ban | Ends a running temporary ban |
