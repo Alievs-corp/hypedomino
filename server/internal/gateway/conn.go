@@ -31,6 +31,7 @@ type Conn struct {
 	stop    context.CancelFunc
 	served  chan struct{}
 	build   atomic.Pointer[clientBuild]
+	stalled *time.Timer
 }
 
 func newConn(socket *websocket.Conn, options Options) *Conn {
@@ -80,11 +81,15 @@ func (c *Conn) serve(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	c.stop = cancel
+	c.stalled = time.AfterFunc(time.Hour, c.abortWrite)
+	c.stalled.Stop()
+	stopAbort := context.AfterFunc(ctx, c.abortWrite)
+	defer stopAbort()
 	var writer sync.WaitGroup
 	writer.Add(1)
 	go func() {
 		defer writer.Done()
-		c.writeLoop(ctx)
+		c.writeLoop()
 	}()
 	socketClosed := make(chan struct{})
 	go func() {
@@ -115,16 +120,16 @@ func (c *Conn) closeSocket() {
 	}
 }
 
-func (c *Conn) writeLoop(ctx context.Context) {
+func (c *Conn) writeLoop() {
 	defer c.recovered("gateway write")
 	var buffer []byte
 	for {
 		select {
 		case <-c.closed:
-			c.flush(ctx, buffer)
+			c.flush(buffer)
 			return
 		case frame := <-c.queue:
-			data, ok := c.writeFrame(ctx, buffer, frame)
+			data, ok := c.writeFrame(buffer, frame)
 			if !ok {
 				return
 			}
@@ -133,11 +138,11 @@ func (c *Conn) writeLoop(ctx context.Context) {
 	}
 }
 
-func (c *Conn) flush(ctx context.Context, buffer []byte) {
+func (c *Conn) flush(buffer []byte) {
 	for {
 		select {
 		case frame := <-c.queue:
-			data, ok := c.writeFrame(ctx, buffer, frame)
+			data, ok := c.writeFrame(buffer, frame)
 			if !ok {
 				return
 			}
@@ -148,23 +153,28 @@ func (c *Conn) flush(ctx context.Context, buffer []byte) {
 	}
 }
 
-func (c *Conn) writeFrame(ctx context.Context, buffer []byte, frame *pb.Envelope) ([]byte, bool) {
+func (c *Conn) writeFrame(buffer []byte, frame *pb.Envelope) ([]byte, bool) {
 	data, err := proto.MarshalOptions{}.MarshalAppend(buffer[:0], frame)
 	if err != nil {
 		c.Close(websocket.StatusInternalError, "encode")
 		return buffer, false
 	}
-	if err := c.write(ctx, data); err != nil {
+	if err := c.write(data); err != nil {
 		c.Close(websocket.StatusAbnormalClosure, "write")
 		return data, false
 	}
 	return data, true
 }
 
-func (c *Conn) write(ctx context.Context, data []byte) error {
-	ctx, cancel := context.WithTimeout(ctx, c.options.Config.WriteTimeout)
-	defer cancel()
-	return c.socket.Write(ctx, websocket.MessageBinary, data)
+func (c *Conn) write(data []byte) error {
+	c.stalled.Reset(c.options.Config.WriteTimeout)
+	err := c.socket.Write(context.Background(), websocket.MessageBinary, data)
+	c.stalled.Stop()
+	return err
+}
+
+func (c *Conn) abortWrite() {
+	c.socket.CloseNow()
 }
 
 func (c *Conn) recovered(where string) {

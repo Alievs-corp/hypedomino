@@ -53,6 +53,7 @@ type App struct {
 	moves        *metrics.Histogram
 	responses    responseCounts
 	exposed      []io.WriterTo
+	awaited      []func() bool
 }
 
 func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
@@ -84,6 +85,19 @@ func (a *App) Limit(limiter *ratelimit.Limiter) {
 
 func (a *App) Expose(source io.WriterTo) {
 	a.exposed = append(a.exposed, source)
+}
+
+func (a *App) AwaitBeforeReady(done func() bool) {
+	a.awaited = append(a.awaited, done)
+}
+
+func (a *App) loading() bool {
+	for _, done := range a.awaited {
+		if !done() {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *App) Localize(current func() gateway.Strings) {
@@ -159,6 +173,11 @@ func (a *App) readyz(w http.ResponseWriter, r *http.Request) {
 	if !a.ready.Load() {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		io.WriteString(w, "draining\n")
+		return
+	}
+	if a.loading() {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		io.WriteString(w, "loading config\n")
 		return
 	}
 	io.WriteString(w, "ready\n")

@@ -185,6 +185,8 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 | `ContentGateMinEmoji` | 40 | 2 |
 | `ContentGateMinMedals` | 40 | 2 |
 
+Implemented in `server/internal/liveops` (#145): the admin API edits, publishes and rolls back these keys at `/config/liveops` (`docs/admin.md` 9.1), and `config-publish -domain liveops` checks a snapshot the same way. A snapshot with an unknown key, a value that is not an integer or a value below 0 is refused; a key it leaves out keeps its default.
+
 Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `DailyMissionRerolls`, `WeeklyMissionRerolls`, `PassLevels` (`docs/pass-missions-medals.md`), `PromoCoinsApprovalThreshold` (`docs/economy.md`), `LeaderboardRegions` (`docs/ranking.md`).
 
 ## 6. Implementation and open items

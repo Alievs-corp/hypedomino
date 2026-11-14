@@ -19,7 +19,7 @@ type Deletions interface {
 type Deletion struct {
 	Accounts Deletions
 	Grace    time.Duration
-	InMatch  func(account string) bool
+	InMatch  func(ctx context.Context, account string) (bool, error)
 	Hide     func(ctx context.Context, account string) error
 	Now      func() time.Time
 }
@@ -79,9 +79,17 @@ func (h *Handler) requestDeletion(w http.ResponseWriter, r *http.Request) {
 	case pending:
 		reply(w, http.StatusAccepted, deletionResponse{DeleteAt: h.deleteAt(a)})
 		return
-	case h.deletion.InMatch != nil && h.deletion.InMatch(a.ID):
-		reply(w, http.StatusConflict, errorResponse{Error: "in_match"})
-		return
+	}
+	if h.deletion.InMatch != nil {
+		playing, err := h.deletion.InMatch(r.Context(), a.ID)
+		if err != nil {
+			h.refuse(w, err)
+			return
+		}
+		if playing {
+			reply(w, http.StatusConflict, errorResponse{Error: "in_match"})
+			return
+		}
 	}
 	requested, err := h.deletion.Accounts.RequestDeletion(r.Context(), a.ID, h.deletion.Now())
 	if err != nil {
