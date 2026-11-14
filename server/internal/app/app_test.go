@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -313,5 +314,30 @@ func TestMountedHandlersServeNextToTheBuiltInRoutes(t *testing.T) {
 	}
 	if resp, err := http.Get(server.URL + "/healthz"); err != nil || resp.StatusCode != http.StatusOK {
 		t.Fatalf("healthz next to the mount: %v %v", resp, err)
+	}
+}
+
+func TestReadyzWaitsForEveryAwaitedLoad(t *testing.T) {
+	a := New(DefaultConfig(), NewLogger(&bytes.Buffer{}, "info"), &seatHandler{})
+	var pass, shop atomic.Bool
+	a.AwaitBeforeReady(pass.Load)
+	a.AwaitBeforeReady(shop.Load)
+	a.ready.Store(true)
+	readyz := func() (int, string) {
+		recorder := httptest.NewRecorder()
+		a.Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+		return recorder.Code, recorder.Body.String()
+	}
+	pass.Store(true)
+	if status, body := readyz(); status != http.StatusServiceUnavailable || body != "loading config\n" {
+		t.Fatalf("readyz with one config still loading: %d %q", status, body)
+	}
+	shop.Store(true)
+	if status, body := readyz(); status != http.StatusOK || body != "ready\n" {
+		t.Fatalf("readyz after every config loaded: %d %q", status, body)
+	}
+	a.ready.Store(false)
+	if status, body := readyz(); status != http.StatusServiceUnavailable || body != "draining\n" {
+		t.Fatalf("readyz while draining: %d %q", status, body)
 	}
 }
