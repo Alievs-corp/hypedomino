@@ -1,8 +1,10 @@
 package adminapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -10,11 +12,22 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/contentpublish"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
 const MaxImportBytes = 4 << 20
+
+var (
+	errContentStoreOff = errors.New("adminapi: no content store is configured")
+	errContentUpload   = errors.New("adminapi: the content store did not take the bundle")
+)
+
+type ContentStore interface {
+	PutObject(ctx context.Context, key string, object objectstore.Object, now time.Time) error
+}
 
 type valueView struct {
 	Text   string             `json:"text"`
@@ -338,6 +351,10 @@ func (h *Handler) publishBundle(w http.ResponseWriter, r *http.Request, p princi
 	if !decode(w, r, &request) {
 		return
 	}
+	if h.config.Content == nil {
+		h.refuse(w, errContentStoreOff)
+		return
+	}
 	language := gamestrings.Language(r.PathValue("language"))
 	var published gamestrings.Published
 	var problems []gamestrings.Problem
@@ -345,6 +362,9 @@ func (h *Handler) publishBundle(w http.ResponseWriter, r *http.Request, p princi
 		var err error
 		published, problems, err = h.strings.In(tx).Publish(r.Context(), language, p.account.ID, now)
 		if err != nil {
+			return nil, err
+		}
+		if err := h.uploadBundle(r.Context(), published, now); err != nil {
 			return nil, err
 		}
 		return []audit.Entry{{
@@ -357,4 +377,12 @@ func (h *Handler) publishBundle(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	reply(w, http.StatusOK, viewBundle(published))
+}
+
+func (h *Handler) uploadBundle(ctx context.Context, bundle gamestrings.Published, now time.Time) error {
+	object := objectstore.Object{ContentType: "application/json", CacheControl: contentpublish.ImmutableCacheControl, Body: bundle.Content}
+	if err := h.config.Content.PutObject(ctx, bundle.File(), object, now); err != nil {
+		return fmt.Errorf("%w: %s: %v", errContentUpload, bundle.File(), err)
+	}
+	return nil
 }
