@@ -150,6 +150,55 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsNull(manifest.DefaultOf(CosmeticAddresses.Frame));
         }
 
+        [Test]
+        public void ASeatShowsItsItemsAndTheFramesTier()
+        {
+            var manifest = Parse(RepoFile("docs", "cosmetics", "examples", "catalog.json"));
+
+            var look = AvatarLook.Of(manifest, "avatar.comet_fox", "frame.season_1_top");
+
+            Assert.AreEqual("cosmetic/avatar/comet_fox/anim", look.Avatar.AnimationAddress);
+            Assert.AreEqual("cosmetic/frame/season_1_top/static", look.Frame.StaticAddress);
+            Assert.IsTrue(look.Frame.IsAnimated);
+            Assert.AreEqual("epic", look.MarkRarityId);
+        }
+
+        [Test]
+        public void ARetiredItemIsStillShown()
+        {
+            var manifest = Parse(RepoFile("docs", "cosmetics", "examples", "catalog.json"));
+
+            Assert.AreEqual("avatar.old_logo", manifest.ShownOf(CosmeticAddresses.Avatar, "avatar.old_logo").Id);
+        }
+
+        [TestCase("frame.withdrawn")]
+        [TestCase("frame.missing")]
+        [TestCase("avatar.comet_fox")]
+        [TestCase("")]
+        [TestCase(null)]
+        public void AFrameThatCannotBeShownGivesWayToTheDefaultAndItsTier(string frameId)
+        {
+            var manifest = Parse(RepoFile("docs", "cosmetics", "examples", "catalog.json"));
+
+            var look = AvatarLook.Of(manifest, "avatar.moon_owl", frameId);
+
+            Assert.AreEqual("cosmetic/frame/starter/static", look.Frame.StaticAddress);
+            Assert.AreEqual("common", look.MarkRarityId);
+            Assert.AreEqual("cosmetic/avatar/moon_owl/static", look.Avatar.StaticAddress);
+        }
+
+        [Test]
+        public void WithoutADefaultTheBuiltInArtShowsWithoutAMark()
+        {
+            var manifest = Parse(Manifest(Item("avatar.a", "avatar", availability: "disabled")));
+
+            var look = AvatarLook.Of(manifest, "avatar.a", "frame.a");
+
+            Assert.IsNull(look.Avatar.StaticAddress);
+            Assert.IsNull(look.Frame.StaticAddress);
+            Assert.IsNull(look.MarkRarityId);
+        }
+
         [TestCase(null)]
         [TestCase("")]
         [TestCase("avatar.missing")]
