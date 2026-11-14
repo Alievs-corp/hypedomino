@@ -2,6 +2,7 @@ package rules
 
 type Config struct {
 	HandSize                int
+	RedealDoublesThreshold  int
 	TargetScore             int
 	ScoringMultiple         int
 	HandPointsLockThreshold int
@@ -17,6 +18,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		HandSize:                7,
+		RedealDoublesThreshold:  6,
 		TargetScore:             365,
 		ScoringMultiple:         5,
 		HandPointsLockThreshold: 300,
