@@ -226,9 +226,68 @@ Not affected and why:
 - One WebSocket per session carries the queue and the match; a reconnect resumes the same seat (`proto/README.md`). Frames above `HD_COMPRESSION_THRESHOLD` (256 bytes) are compressed. Client frames are capped by `MaxFrameBytes` (1 KiB) and the hello by `MaxHelloBytes` (8 KiB).
 - `MatchView` is the whole visible state of a seat. The roster and table never change in a match and go only in the first view of a connection: with a full roster they were about 75% of the bytes (2v2 seed 1: 201,785 bytes per seat before, 37,797 after). Measured after the change, before compression: 1v1 30,824 to 45,050 bytes per seat, 2v2 28,788 to 37,797. A finer delta of the play state is not needed for the budget.
 - Weak network (3G) behavior is a device run with the client and is not covered here.
+- The client's `ClientWebSocket` does not offer permessage-deflate, so no frame is compressed today whatever the threshold; the load bot does not offer it either, so the load runs match the client.
+
+### 6.4 Local run, 2026-11-14 (not prod-near)
+
+The Hetzner hosts of 6.1 do not exist yet, so this run shows the shape of the curve and where the time goes on one machine. Its numbers are not the node's capacity and do not pass or fail 6.2.
+
+Why not prod-near: node, bot, PostgreSQL and Redis share one laptop (Intel i7-10870H, 8 cores, 16 threads, 16 GB) through the Docker Desktop WSL2 VM (16 vCPU, 7.7 GB). The node is held to 4 CPUs by a cgroup quota (`--cpus 4`, `GOMAXPROCS` 4), which are time slices of shared hyperthreads, not 4 dedicated cores; the bot needs 1.1 to 1.6 times the node's CPU and takes it from the same cores; turbo and heat change the speed during a run (the Redis script time, which no server change touches, varied by up to two times between runs of the same load, and the soak below shows the laptop throttling); every frame crosses a Docker bridge, so a socket write also runs the receiver's TCP path and costs more than through a NIC; there is no TLS and no load balancer; PostgreSQL and Redis run with default settings on the laptop disk. Windows, the IDE and the browser stayed open.
+
+Command, from the repository root (the per-step files land in `<dir>/rooms-<n>/`):
+
+```bash
+bash tools/loadtest/local.sh <dir> 1000 2000 4000 6000 8000 10000 12000
+bash tools/loadtest/curve.sh <dir>
+```
+
+Each step: a fresh node with `HD_DATABASE_URL` and `HD_REDIS_URL`, 50% 2v2, 1 min ramp, 4 min hold, bot defaults (think 1 to 3 s, 0.02 drops per connection per minute), 2 min warm-up, 1 min windows; `local.sh` waits until no other container runs and the VM load is under 1.5 before each step. Node CPU is the `docker stats` mean during the hold, where 400% is the quota; GC from `runtime.MemStats` at the end; stores from `pg_stat_database` and Redis `INFO` deltas over the step; begin and claim are the `match_begin_seconds` and `route_claim_seconds` p99 bucket. Server code of `main` at 8a924fc with the load bot changes of #192, before the write timer change below.
+
+| Rooms | Peak conns | Moves/s | p50 / p95 / p99 ms | Steady p99 / worst window ms | Errors % | Server p99 ms | Node CPU % / peak MiB | Bot CPU % | Peak live heap MiB | Peak goroutines | GC cycles / GC CPU % | PG commits/s, rows/s | Redis cmds/s, script µs | Begin / claim p99 ms | Result |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1000 | 3,012 | 1,786 | 1 / 1 / 2 | 2 / 2 | 0 | ≤5 | 46 / 288 | 73 | 76 | 15,051 | 75 / 0.25 | 11, 28 | 99, 17 | 10 / 1 | pass |
+| 2000 | 6,018 | 3,571 | 1 / 1 / 2 | 3 / 24 | 0 | ≤5 | 92 / 560 | 130 | 150 | 30,083 | 81 / 0.88 | 22, 56 | 194, 18 | 25 / 1 | pass |
+| 4000 | 11,968 | 7,075 | 1 / 16 / 92 | 100 / 110 | 0 | ≤5 | 171 / 974 | 222 | 296 | 59,835 | 86 / 3.16 | 44, 111 | 385, 20 | 50 / 2 | fail |
+| 6000 | 17,918 | 10,437 | 1 / 95 / 210 | 220 / 258 | 0 | ≤5 | 263 / 1,616 | 345 | 442 | 89,685 | 86 / 5.02 | 65, 166 | 568, 21 | 250 / 10 | fail |
+| 8000 | 23,930 | 13,528 | 2 / 195 / 326 | 342 / 348 | 0 | ≤5 | 366 / 2,164 | 438 | 589 | 119,731 | 84 / 6.54 | 85, 218 | 745, 22 | 500 / 25 | fail |
+| 10000 | 29,917 | 15,681 | 36 / 311 / 484 | 502 / 529 | 0 | ≤10 | 412 / 3,019 | 454 | 884 | 152,119 | 76 / 7.30 | 101, 267 | 908, 22 | >1000 / 100 | fail |
+| 12000 | 35,850 | 15,979 | 128 / 501 / 773 | 815 / 961 | 0 | ≤25 | 412 / 4,070 | 561 | 1,290 | 186,316 | 66 / 7.65 | 70, 218 | 722, 23 | >1000 / 250 | fail |
+
+The 24 ms worst window at 2000 is the last, partial window of 13 moves while the bot shuts down.
+
+Findings:
+
+- **Knee.** The bot-measured p99 stays at 2 to 3 ms up to 2000 rooms (6,000 connections, 3,600 moves/s), reaches the 100 ms budget at 4000 and grows with load after it. Throughput stops growing at about 16,000 moves/s, where the node uses its whole quota (10,000 rooms). Nothing failed at any step: no rejected intent, no dial or read failure, no store failure, 35,850 connections at 12,000 rooms.
+- **Where the tail is.** The server's own share (`move_roundtrip_seconds`, receive to broadcast queued) stays at or under 5 ms for 99% of moves up to 8000 rooms; the rest of the bot's round trip is after the broadcast is queued. A 5 s execution trace at 6000 rooms (`go tool trace -pprof=sched`) shows on average about 190 goroutines runnable and waiting for one of the 4 Ps, and 28% of that wait on the write goroutines woken by `Room.intent` through `RoomSession.Deliver` and `Conn.Send`. The write goroutines wait for a P well before the quota shows as used, most likely because each P stays with its goroutine through the write syscall and the VM's vCPUs are shared with the bot. The cgroup throttled the node in 40 of 3,138 periods at 4000 rooms, so the quota itself is not the cause.
+- **CPU.** One `write` syscall per frame per seat is 38% of the node's CPU at 1000 and 4000 rooms and 42% at 10,000 (`internal/poll.(*FD).Write` under `gateway.(*Conn).writeLoop`); the scheduler 2 to 14%, `mallocgc` 4 to 8%, reads 3 to 5%, GC 2.6 to 6%, protobuf encode about 8%. The write timeout cost 5 to 9% (`context.WithDeadlineCause` per frame plus the WebSocket library's `context.AfterFunc` on it) and is fixed in this change (below).
+- **Memory.** About 100 KB per connection in the container (3,019 MiB at 29,917 connections), of which about 30 KB live heap; 12,000 rooms reached 4,070 of the 4,096 MiB limit. Every connection keeps 4 goroutines (`readLoop` in the HTTP handler, `writeLoop`, the close waiter in `serve` and `pingLoop`), every room 2 (`Room.Run`, `Rooms.run`; `loadbot serve` adds one per room for its store writes); 4 KB `bufio` reader and writer buffers kept from the HTTP hijack are the largest heap items per connection.
+- **PostgreSQL.** Statement time was 0.6% of one core at 1000 rooms and 8.2% at 10,000 (67 match rows written and 34 finished per second). `match_participants` is inserted one row per statement inside the begin transaction and is 68 to 70% of that time; each finish also updates one participant row per seat. Mean statement time stayed at 0.1 to 0.3 ms. `match_begin_seconds` p99 rose from 10 ms to over 1 s only when the node ran out of CPU: the store goroutines waited for the node, not for PostgreSQL.
+- **Redis.** About 90 commands per second per 1000 rooms; the route claim and release Lua scripts (`EVALSHA`) take 17 to 23 µs each against 2 to 4 µs for `GET` and `SET`, under 1% of one core at 10,000 rooms.
+
+Write timeout change, before (the build of the table) and after, alternated on the same machine at 4000 rooms with `PREBUILT` (B, A, B, A; same step settings as the table):
+
+| Run | Steady p99 / worst window ms | Node CPU % | Timeout plumbing, s of 30 s profile | `mallocgc`, s | Redis script µs |
+|---|---|---|---|---|---|
+| Before 1 | 196 / 237 | 228 | 5.19 | 6.46 | 28 |
+| After 1 | 47 / 62 | 186 | 0.36 | 2.70 | 22 |
+| Before 2 | 113 / 120 | 206 | 3.74 | 4.59 | 21 |
+| After 2 | 133 / 144 | 252 | 0.57 | 3.70 | 28 |
+
+Timeout plumbing is `context.WithDeadlineCause` in the CPU profile; what remains after the change is the read and ping path. The cut in timeout and allocation work repeats in both pairs; the p99 and the node CPU move with the machine more than with the change (the Redis script time, which the change does not touch, shows the machine 30% slower during Before 1 and After 2), so this run claims no p99 gain. In process, `BenchmarkSendToAReadingClient` (`server/internal/gateway`) fell from 23 to 12 allocations and from 1,778 to 985 bytes per frame sent and read. The first curve, an hour earlier, measured a steady p99 of 100 ms at 4000 rooms with the before build: runs taken at different times are not comparable on this machine.
+
+Reconnect storm, after the change (`RAMP=1m HOLD=6m BOT_FLAGS="-storm 3m" bash tools/loadtest/local.sh <dir> 2000 4000`): at minute 3 every live connection drops at once and every seat dials again at once, which is also what the client does after a mass disconnect (`ReconnectSchedule`: the first attempt has no delay and no jitter).
+
+| Rooms | Dropped | Back in their match | Not back by the end | Connections back to the pre-storm count | Slowest return | Storm window p99 ms (neighbours) | Errors |
+|---|---|---|---|---|---|---|---|
+| 2000 | 5,856 | 5,854 | 2 | by the next 10 s sample | 1 min 45 s | 3 (3, 3) | 0 |
+| 4000 | 11,726 | 11,684 | 42 | by the next 10 s sample | 2 min 13 s | 166 (115, 154) | 0 |
+
+The storm cost the move round-trip almost nothing at 2000 rooms and about 20 ms of window p99 at 4000, where the steady state was already over budget on this machine. The slow tail is the kernel, not the server: the node's listen queue holds `net.core.somaxconn` = 4096 pending connections, and the 4000-room storm overflowed it 5,420 times (`ListenOverflows` in the node's network namespace, 0 before the storm). Linux retries a dropped SYN 1, 3, 7, 15, 31 and 63 s after the first, which matches returns of up to about 2 minutes. Why 2 and 42 seats had still not received a view 4 minutes after the storm is not established; a seat whose match ended while it was away reopens a fresh `loadbot serve` room alone, which production does not do, and is the first suspect. Every reconnect that got through resumed with no error.
+
+Soak, after the change (`RAMP=1m HOLD=50m bash tools/loadtest/local.sh <dir> 2000`): 2000 rooms (6,033 connections, 3,962 moves/s) for 50 minutes, 36,731 matches finished and 12.1 million moves, with PostgreSQL and Redis writes on. It passed. The node's live heap read 156 to 159 MiB at minutes 5, 10, 20, 30, 40 and 50 (bot gate: +2.0% from minute 3 to the end) and its goroutines 29,558 to 29,927 (+0.5%); container memory was 567 MiB at minute 5 and 565 MiB at minute 30, `runtime.MemStats.Sys` 610 MB at minute 25 and at the end; 596 GC cycles took 2.1% of the node's CPU; no error and no store failure. The window p99 held at 3 ms for 22 minutes and was 42 to 79 ms from minute 23 to the end at the same move rate: at that minute the node's and the bot's CPU for the same work rose together by about 45% (node 143% to 212%), the Redis script time doubled to 36 µs, and Windows read `% Processor Performance` at 86% of the base clock against 168% earlier in the day. The laptop throttled; the server did not drift. A flat heap and goroutine count over 50 minutes is what this run shows; the 12-hour soak needs the reference hosts.
 
 ## 9. Open items
 
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
-- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` on the debug listener (`HD_DEBUG_ADDR`) and pprof at `/debug/pprof/` on the profiling listener (`HD_PPROF_ADDR`); each is off when empty (`server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
+- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap and goroutine drift are the server gates above; `tools/loadtest/local.sh` runs it on one machine (6.4) and `tools/loadtest/hetzner.sh` on the reference hosts (6.1). The `move_roundtrip_seconds` histogram is served at `/metrics` on the debug listener (`HD_DEBUG_ADDR`) and pprof at `/debug/pprof/` on the profiling listener (`HD_PPROF_ADDR`); each is off when empty (`server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
 - Thermal status on iOS (1.1): reading `ProcessInfo.thermalState` needs a native plugin, added when the first iOS build exists (#159). Until then an iOS device never drops for heat.
