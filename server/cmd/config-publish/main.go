@@ -18,6 +18,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
@@ -53,7 +54,7 @@ func main() {
 	}
 }
 
-var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
+var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, liveops.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
 
 var errDomain = errors.New("unknown config domain")
 
@@ -109,6 +110,9 @@ func validate(domain string, raw []byte) error {
 		return err
 	case rulesconfig.Domain:
 		_, err := rulesconfig.Parse(raw)
+		return err
+	case liveops.Domain:
+		_, err := liveops.Parse(raw)
 		return err
 	case cosmetics.Domain:
 		_, err := cosmetics.ParseManifest(raw)

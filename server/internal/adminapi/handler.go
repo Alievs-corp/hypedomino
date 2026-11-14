@@ -25,6 +25,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
@@ -135,10 +136,12 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/approvals", h.signedIn(h.pendingApprovals))
 	h.mux.HandleFunc("POST /admin/approvals/{id}/approve", h.signedIn(h.approve))
 	h.mux.HandleFunc("POST /admin/approvals/{id}/reject", h.signedIn(h.reject))
-	h.mux.HandleFunc("GET /admin/config/rules", h.allowed(rbac.GameConfig, rbac.View, h.rules))
-	h.mux.HandleFunc("PUT /admin/config/rules", h.allowed(rbac.GameConfig, rbac.Publish, h.publishRules))
-	h.mux.HandleFunc("GET /admin/config/rules/history", h.allowed(rbac.GameConfig, rbac.View, h.rulesHistory))
-	h.mux.HandleFunc("POST /admin/config/rules/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackRules))
+	for path, domain := range map[string]keyedDomain{"/admin/config/rules": rulesDomain(), "/admin/config/liveops": liveopsDomain()} {
+		h.mux.HandleFunc("GET "+path, h.allowed(rbac.GameConfig, rbac.View, h.configKeys(domain)))
+		h.mux.HandleFunc("PUT "+path, h.allowed(rbac.GameConfig, rbac.Publish, h.publishConfigValues(domain)))
+		h.mux.HandleFunc("GET "+path+"/history", h.allowed(rbac.GameConfig, rbac.View, h.configValuesHistory(domain)))
+		h.mux.HandleFunc("POST "+path+"/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackConfigValues(domain)))
+	}
 	h.mux.HandleFunc("GET /admin/config/matchmaking", h.allowed(rbac.GameConfig, rbac.View, h.domainCatalog(matchmaking.Domain)))
 	h.mux.HandleFunc("PUT /admin/config/matchmaking", h.allowed(rbac.GameConfig, rbac.Publish, h.publishDomain(matchmakingDomain)))
 	h.mux.HandleFunc("GET /admin/config/matchmaking/history", h.allowed(rbac.GameConfig, rbac.View, h.domainHistory(matchmaking.Domain)))
@@ -555,7 +558,7 @@ func classify(err error) (int, string) {
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
-	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid),
+	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid), errors.Is(err, liveops.ErrInvalid),
 		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
 		errors.Is(err, dailylogin.ErrInvalidCalendar), errors.Is(err, storeprice.ErrInvalid),

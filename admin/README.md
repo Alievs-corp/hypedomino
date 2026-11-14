@@ -173,6 +173,10 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 
 `/config/rules` is the `rules` part of A-26 (`docs/admin.md` 5.14). It lists the keys of `GET /admin/config/rules` with their unit, allowed range, default and current value. Roles with publish on config values may edit them; a value outside the range or not a whole number blocks the publish before the API sees it, and the API checks the bounds again. A publish (`PUT /admin/config/rules`) sends only the values that differ from their defaults, with the reason, and the page then shows the new `config_version`. Below, the last 50 published versions show their non-default values. A value applies to matches that open after the game servers pick it up (`HD_CONFIG_POLL`). Each earlier version has a rollback for roles with publish on config values and rollback on snapshots. It needs a reason and a fresh sign-in, and it publishes that version's values as the next version (`POST /admin/config/rules/rollback`).
 
+## Live-ops config
+
+`/config/liveops` is the `liveops` part of A-26 (`docs/admin.md` 5.14) and works exactly like `/config/rules`, on `/admin/config/liveops`. So far it holds only the content gate minimums (`docs/launch-content-gate.md` section 5): whole numbers from 0 with no upper bound, shown as `≥ 0`. They stay in the admin API and are never sent to the client.
+
 ## Economy monitors
 
 `/analytics` is the economy sink and source part of A-36 (#147, `docs/economy.md` section 10). Every role with view on dashboards sees it. It shows `GET /admin/economy/monitors` with the alerts raised on top: the 7-day window, coins created and spent, the sink ratio and the median balance, then the economy day with the accounts above the daily earn alert and the coins created per reason. A config version in the form adds the same monitors for the 7 days before and after its publish (`GET /admin/economy/monitors/compare`) as two more columns. Only aggregates are shown, never an account id.
