@@ -182,20 +182,24 @@ func run(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet("run", flag.ExitOnError)
 	config := loadbot.DefaultConfig()
 	flags.StringVar(&config.Target, "target", "ws://127.0.0.1:8080/ws", "WebSocket URL of a loadbot serve node")
+	metricsURL := flags.String("metrics", "", "URL of the node's /metrics, sampled for heap and goroutine drift; empty turns it off")
 	out := loadFlags(flags, &config)
 	flags.Parse(args)
+	if *metricsURL != "" {
+		config.Node = loadbot.ScrapeNode(*metricsURL)
+	}
 	level, _ := os.LookupEnv("HD_LOG_LEVEL")
 	return execute(ctx, config, *out, level)
 }
 
-func heapBytes() uint64 {
+func localNode() (loadbot.NodeSample, error) {
 	runtime.GC()
 	samples := []metrics.Sample{{Name: "/gc/heap/live:bytes"}}
 	metrics.Read(samples)
 	if samples[0].Value.Kind() != metrics.KindUint64 {
-		return 0
+		return loadbot.NodeSample{}, fmt.Errorf("loadbot: no live heap metric")
 	}
-	return samples[0].Value.Uint64()
+	return loadbot.NodeSample{HeapBytes: samples[0].Value.Uint64(), Goroutines: uint64(runtime.NumGoroutine())}, nil
 }
 
 func local(ctx context.Context, args []string) error {
@@ -218,7 +222,7 @@ func local(ctx context.Context, args []string) error {
 		return err
 	}
 	config.Target = "ws://" + addr + "/ws"
-	config.Heap = heapBytes
+	config.Node = localNode
 	runErr := execute(ctx, config, *out, serverCfg.LogLevel)
 	stopServer()
 	select {

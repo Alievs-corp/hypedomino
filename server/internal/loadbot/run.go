@@ -31,7 +31,7 @@ type Config struct {
 	AppVersion      string
 	Seed            uint64
 	Budget          time.Duration
-	Heap            func() uint64
+	Node            func() (NodeSample, error)
 }
 
 func DefaultConfig() Config {
@@ -69,9 +69,10 @@ type Counters struct {
 	Recovered    atomic.Uint64
 }
 
-type HeapSample struct {
-	At    time.Duration
-	Bytes uint64
+type NodeSample struct {
+	At         time.Duration
+	HeapBytes  uint64
+	Goroutines uint64
 }
 
 type Runner struct {
@@ -82,8 +83,8 @@ type Runner struct {
 	steady   *Histogram
 	windows  *Windows
 	counters Counters
-	heapMu   sync.Mutex
-	heap     []HeapSample
+	nodeMu   sync.Mutex
+	node     []NodeSample
 	nextRoom atomic.Uint64
 	storm    chan struct{}
 	stormed  time.Time
@@ -427,16 +428,24 @@ func (r *Runner) sample() {
 		"drops", r.counters.Drops.Load(),
 		"errors", r.counters.Rejected.Load() + r.counters.DialFailures.Load() + r.counters.ReadFailures.Load(),
 	}
-	if r.config.Heap != nil {
-		bytes := r.config.Heap()
-		r.heapMu.Lock()
-		r.heap = append(r.heap, HeapSample{At: elapsed, Bytes: bytes})
-		r.heapMu.Unlock()
-		attrs = append(attrs, "heap_bytes", bytes)
+	if r.config.Node != nil {
+		attrs = append(attrs, r.sampleNode(elapsed)...)
 	}
 	if r.logger != nil {
 		r.logger.Info("load", attrs...)
 	}
+}
+
+func (r *Runner) sampleNode(elapsed time.Duration) []any {
+	sample, err := r.config.Node()
+	if err != nil {
+		return []any{"node_error", err.Error()}
+	}
+	sample.At = elapsed
+	r.nodeMu.Lock()
+	r.node = append(r.node, sample)
+	r.nodeMu.Unlock()
+	return []any{"heap_bytes", sample.HeapBytes, "goroutines", sample.Goroutines}
 }
 
 func (r *Runner) debug(msg string, args ...any) {

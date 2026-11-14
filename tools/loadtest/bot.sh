@@ -19,7 +19,7 @@ trap 'kill "$sampler" 2>/dev/null || true' EXIT
 
 date -u +%s > "$run_dir/started"
 set +e
-./loadbot run -target "ws://$node:8080/ws" -rooms 10000 -2v2 50 -ramp 5m -hold 30m -out "$run_dir/report.json" "$@" > "$run_dir/report.txt" 2> "$run_dir/bot.log"
+./loadbot run -target "ws://$node:8080/ws" -metrics "http://$node:6060/metrics" -rooms 10000 -2v2 50 -ramp 5m -hold 30m -out "$run_dir/report.json" "$@" > "$run_dir/report.txt" 2> "$run_dir/bot.log"
 status=$?
 set -e
 curl -fsS "http://$node:6060/metrics" > "$run_dir/final.prom" || true

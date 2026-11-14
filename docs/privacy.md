@@ -228,7 +228,7 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 
 | Step | What happens |
 |---|---|
-| 1. Request | Settings, Account, Delete account; or the web page (Google Play requires one reachable outside the app). Requires a fresh sign-in. Not available during a match. The screen states that coins, items and pass progress are lost and that store purchases are not refunded by deletion |
+| 1. Request | Settings, Account, Delete account; or the web page (Google Play requires one reachable outside the app). Requires a fresh sign-in. Not available during a match on any server node; a match with no end that started more than `HD_STALE_MATCH_AFTER` (2 hours) ago counts as abandoned by a crashed node and no longer blocks the request. The screen states that coins, items and pass progress are lost and that store purchases are not refunded by deletion |
 | 2. Pending | State `pending_deletion`. All sessions and refresh tokens revoked (#58); removed from matchmaking, presence, friends lists and current leaderboards; push tokens deleted |
 | 3. Grace | `AccountDeletionGraceDays`. Signing in during the grace shows only the pending state and a cancel button; cancel restores the account unchanged |
 | 4. Deletion job | Runs after the grace, idempotent, per the table below. Revokes Sign in with Apple tokens through Apple's REST API. Deletes raw events for the analytics id in the analytics store and sends a deletion request for user keys to Sentry |
