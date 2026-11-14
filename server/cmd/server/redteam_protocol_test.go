@@ -249,15 +249,18 @@ func TestRedTeamFramesAreBoundToTheirSessionAndShape(t *testing.T) {
 		for range 60 {
 			flood = append(flood, h.frame(c, pass()))
 		}
-		answers := make(chan map[pb.ErrorCode]int, 1)
+		answers := make(chan floodAnswer, 1)
 		go func() { answers <- countErrors(c, len(flood)) }()
 		for _, data := range flood {
-			send(t, c, data)
+			if err := c.WriteRaw(websocket.MessageBinary, data); err != nil {
+				break
+			}
 		}
-		counts := <-answers
+		answer := <-answers
 		burst := gateway.DefaultConfig().IntentBurst
-		if counts[pb.ErrorCode_ERROR_CODE_UNSPECIFIED] > 0 || counts[pb.ErrorCode_ERROR_CODE_RATE_LIMITED] == 0 || counts[pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT] > 2*burst {
-			t.Fatalf("a flood of 60 intents was answered %v", counts)
+		limited := answer.counts[pb.ErrorCode_ERROR_CODE_RATE_LIMITED] > 0 || answer.closed == websocket.StatusPolicyViolation
+		if answer.err != nil && answer.closed != websocket.StatusPolicyViolation || !limited || answer.counts[pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT] > 2*burst {
+			t.Fatalf("a flood of 60 intents was answered %v, closed %v (%v)", answer.counts, answer.closed, answer.err)
 		}
 	})
 }
@@ -274,20 +277,26 @@ func oversizedFrame(t *testing.T, size int) []byte {
 	return data
 }
 
-func countErrors(c *botclient.Client, want int) map[pb.ErrorCode]int {
-	counts := map[pb.ErrorCode]int{}
+type floodAnswer struct {
+	counts map[pb.ErrorCode]int
+	closed websocket.StatusCode
+	err    error
+}
+
+func countErrors(c *botclient.Client, want int) floodAnswer {
+	answer := floodAnswer{counts: map[pb.ErrorCode]int{}, closed: -1}
 	for seen := 0; seen < want; {
 		frame, err := c.Receive()
 		if err != nil {
-			counts[pb.ErrorCode_ERROR_CODE_UNSPECIFIED]++
-			return counts
+			answer.closed, answer.err = websocket.CloseStatus(err), err
+			return answer
 		}
 		if refusal := frame.GetError(); refusal != nil {
-			counts[refusal.GetCode()]++
+			answer.counts[refusal.GetCode()]++
 			seen++
 		}
 	}
-	return counts
+	return answer
 }
 
 func lobby(command pb.LobbyCommand) *pb.Envelope {
