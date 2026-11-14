@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
@@ -45,6 +46,9 @@ func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p princip
 			return nil, err
 		}
 		if err = passStanding(r.Context(), tx, &record, now); err != nil {
+			return nil, err
+		}
+		if err = missionTargets(r.Context(), tx, &record); err != nil {
 			return nil, err
 		}
 		return []audit.Entry{{Action: "view", Object: audit.Object{Type: rbac.Players, ID: record.Account.ID}}}, nil
@@ -85,6 +89,26 @@ func passStanding(ctx context.Context, tx pgx.Tx, record *playerrecord.Record, n
 	}
 	record.Profile.Level, record.Profile.XP, err = config.Standing(ctx, tx, record.Account.ID, now)
 	return err
+}
+
+func missionTargets(ctx context.Context, tx pgx.Tx, record *playerrecord.Record) error {
+	if len(record.Missions) == 0 {
+		return nil
+	}
+	_, raw, err := latestSnapshot(ctx, tx, mission.Domain)
+	if err != nil || raw == nil {
+		return err
+	}
+	catalog, err := mission.Parse(raw)
+	if err != nil {
+		return err
+	}
+	for i := range record.Missions {
+		if published, ok := catalog.Mission(record.Missions[i].MissionID); ok {
+			record.Missions[i].Target = published.Target
+		}
+	}
+	return nil
 }
 
 func (h *Handler) matchReplay(w http.ResponseWriter, r *http.Request, p principal) {
