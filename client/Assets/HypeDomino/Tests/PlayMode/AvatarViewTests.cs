@@ -1,8 +1,10 @@
+using System.Collections;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Rarity;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 
 namespace HypeDomino.Tests.PlayMode
@@ -10,6 +12,7 @@ namespace HypeDomino.Tests.PlayMode
     public sealed class AvatarViewTests
     {
         const float FramesPerSecond = 10f;
+        const float Tolerance = 0.01f;
         const string AvatarStatic = "cosmetic/avatar/a/static";
         const string AvatarAnim = "cosmetic/avatar/a/anim";
         const string OtherStatic = "cosmetic/avatar/b/static";
@@ -30,6 +33,7 @@ namespace HypeDomino.Tests.PlayMode
 
         static readonly CosmeticArt AnimatedAvatar = new CosmeticArt(AvatarStatic, AvatarAnim);
         static readonly CosmeticArt StaticFrame = new CosmeticArt(FrameStatic, null);
+        static readonly Vector2[] BoxSizes = { new Vector2(300f, 300f), new Vector2(48f, 48f), new Vector2(200f, 100f), new Vector2(100f, 200f) };
 
         [SetUp]
         public void Build()
@@ -53,10 +57,10 @@ namespace HypeDomino.Tests.PlayMode
         CosmeticStage NewStage(EffectLevel level, bool reduceMotion = false) =>
             new CosmeticStage(stills, loops, table, builtInAvatar, builtInFrame, level, reduceMotion);
 
-        CosmeticImage NewImage(string name)
+        static CosmeticImage NewImage(string name, Transform parent)
         {
             var image = new GameObject(name, typeof(RectTransform), typeof(Image)).AddComponent<AnimatedImage>().gameObject.AddComponent<CosmeticImage>();
-            image.transform.SetParent(root.transform, false);
+            image.transform.SetParent(parent, false);
             return image;
         }
 
@@ -64,8 +68,25 @@ namespace HypeDomino.Tests.PlayMode
         {
             var view = new GameObject("Avatar", typeof(RectTransform)).AddComponent<AvatarView>();
             view.transform.SetParent(root.transform, false);
-            view.Configure(NewImage("Art"), NewImage("Frame"), halo, null);
+            view.Configure(NewImage("Art", view.transform), NewImage("Frame", view.transform), halo, null);
             return view;
+        }
+
+        RarityHalo NewHalo(Transform parent)
+        {
+            var halo = new GameObject("Halo", typeof(RectTransform), typeof(Image)).AddComponent<RarityHalo>();
+            halo.transform.SetParent(parent, false);
+            halo.Configure(NewSprite(), NewSprite());
+            return halo;
+        }
+
+        static Vector3 WorldCentreOf(RectTransform rect) => rect.TransformPoint(rect.rect.center);
+
+        static void AssertSquareAtCentre(RectTransform art, float side, Vector3 centre)
+        {
+            Assert.AreEqual(side, art.rect.width, Tolerance);
+            Assert.AreEqual(side, art.rect.height, Tolerance);
+            Assert.That(Vector3.Distance(centre, WorldCentreOf(art)), Is.LessThan(Tolerance));
         }
 
         static AvatarLook Look(CosmeticArt avatar) => new AvatarLook(avatar, StaticFrame, "top");
@@ -247,9 +268,7 @@ namespace HypeDomino.Tests.PlayMode
         [Test]
         public void TheHaloFollowsTheLooksRarityAndTheEffectLevel()
         {
-            var image = new GameObject("Halo", typeof(RectTransform), typeof(Image)).AddComponent<RarityHalo>();
-            image.transform.SetParent(root.transform, false);
-            image.Configure(NewSprite(), NewSprite());
+            var image = NewHalo(root.transform);
             var stage = NewStage(EffectLevel.Medium);
             var view = NewView(image);
 
@@ -269,6 +288,51 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(NewStage(EffectLevel.Medium), Look(default));
             Assert.AreSame(builtInAvatar, view.Avatar.Shown);
             Assert.AreEqual(new[] { FrameStatic }, stills.Loads);
+        }
+
+        [UnityTest]
+        public IEnumerator TheFrameAndTheAvatarFillOneCentredSquareThatFitsTheBoxAtEverySize()
+        {
+            var view = NewView();
+            var box = (RectTransform)view.transform;
+            box.pivot = Vector2.zero;
+            foreach (var size in BoxSizes)
+            {
+                box.sizeDelta = size;
+                yield return null;
+                var side = Mathf.Min(size.x, size.y);
+                var centre = WorldCentreOf(box);
+                AssertSquareAtCentre((RectTransform)view.Frame.transform, side, centre);
+                AssertSquareAtCentre((RectTransform)view.Avatar.transform, side, centre);
+            }
+        }
+
+        [Test]
+        public void TheFrameAndTheAvatarKeepTheirAspectSoTheirArtIsNeverStretchedOrCut()
+        {
+            var view = NewView();
+            Assert.IsTrue(view.Frame.GetComponent<Image>().preserveAspect);
+            Assert.IsTrue(view.Avatar.GetComponent<Image>().preserveAspect);
+        }
+
+        [UnityTest]
+        public IEnumerator TheHaloSurroundsTheFrameFromTheSameCentreAtEverySize()
+        {
+            var view = new GameObject("Avatar", typeof(RectTransform)).AddComponent<AvatarView>();
+            view.transform.SetParent(root.transform, false);
+            var halo = NewHalo(view.transform);
+            view.Configure(NewImage("Art", view.transform), NewImage("Frame", view.transform), halo, null);
+            view.Show(NewStage(EffectLevel.Low), Look(AnimatedAvatar));
+            var box = (RectTransform)view.transform;
+            foreach (var size in BoxSizes)
+            {
+                box.sizeDelta = size;
+                yield return null;
+                var frame = (RectTransform)view.Frame.transform;
+                var haloRect = (RectTransform)halo.transform;
+                AssertSquareAtCentre(haloRect, frame.rect.width, WorldCentreOf(frame));
+                Assert.AreEqual(1.5f, haloRect.localScale.x, Tolerance);
+            }
         }
     }
 }
