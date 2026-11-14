@@ -22,6 +22,7 @@ const (
 
 	RarityCommon = "common"
 	RarityRare   = "rare"
+	RarityMythic = "mythic"
 
 	KindCosmetic   = "cosmetic"
 	KindBundle     = "bundle"
@@ -195,6 +196,16 @@ func (o Offer) validateBundle() error {
 		return errors.New("a chest has no purchase limit or eligibility")
 	}
 	return nil
+}
+
+func (o Offer) TimeLimited() bool {
+	switch o.Section {
+	case SectionDaily, SectionWeekly:
+		return true
+	case SectionFeatured, SectionEvent:
+		return !o.Window.End.IsZero()
+	}
+	return false
 }
 
 func (o Offer) prices() int {

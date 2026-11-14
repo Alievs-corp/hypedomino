@@ -161,6 +161,20 @@ export function changedOffers(previous: ShopCatalog | null, next: ShopCatalog): 
 
 const rotationSections: Record<RotationPeriod, string> = { daily: "daily_rotation", weekly: "weekly_rotation" };
 
+const windowedSections = ["featured", "event"];
+
+export function timeLimited(offer: Offer): boolean {
+  return Object.values(rotationSections).includes(offer.section) || (windowedSections.includes(offer.section) && offer.window.end !== undefined);
+}
+
+export function permanentMythics(offer: Offer, items: CosmeticItem[]): string[] {
+  if (offer.kind === "chest" || timeLimited(offer)) {
+    return [];
+  }
+  const mythics = new Set(items.filter((item) => item.rarity === "mythic").map((item) => item.id));
+  return (offer.bundle?.cosmetics ?? []).filter((id) => mythics.has(id));
+}
+
 export function rotationCandidates(catalog: ShopCatalog, period: RotationPeriod): string[] {
   return catalog.offers.filter((offer) => offer.section === rotationSections[period]).map((offer) => offer.id);
 }
