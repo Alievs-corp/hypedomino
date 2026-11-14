@@ -80,7 +80,7 @@ func (s *Store) BuyLevels(ctx context.Context, account string, count int, curren
 	}
 	if !repeated {
 		level := season.Curve.LevelFor(progress.XP)
-		if count < 1 || level+count > season.Curve.Levels {
+		if count < 1 || count > season.Curve.Levels-level {
 			return LevelPurchase{}, ErrLevelCount
 		}
 		spend := wallet.Entry{Account: account, Currency: currency, Amount: -purchase.Price, Reason: wallet.PassLevelPurchase, Source: wallet.Source{Type: SourcePass, Ref: season.ID}, Key: key, ConfigVersion: int(version)}
