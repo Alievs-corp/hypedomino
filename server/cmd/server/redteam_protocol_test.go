@@ -245,15 +245,18 @@ func TestRedTeamFramesAreBoundToTheirSessionAndShape(t *testing.T) {
 
 	t.Run("intent flood", func(t *testing.T) {
 		c := h.connect(t, h.attacker(t))
+		var flood [][]byte
 		for range 60 {
-			send(t, c, h.frame(c, pass()))
+			flood = append(flood, h.frame(c, pass()))
 		}
-		counts := map[pb.ErrorCode]int{}
-		for range 60 {
-			counts[expectAnyError(t, c)]++
+		answers := make(chan map[pb.ErrorCode]int, 1)
+		go func() { answers <- countErrors(c, len(flood)) }()
+		for _, data := range flood {
+			send(t, c, data)
 		}
+		counts := <-answers
 		burst := gateway.DefaultConfig().IntentBurst
-		if counts[pb.ErrorCode_ERROR_CODE_RATE_LIMITED] == 0 || counts[pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT] > 2*burst {
+		if counts[pb.ErrorCode_ERROR_CODE_UNSPECIFIED] > 0 || counts[pb.ErrorCode_ERROR_CODE_RATE_LIMITED] == 0 || counts[pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT] > 2*burst {
 			t.Fatalf("a flood of 60 intents was answered %v", counts)
 		}
 	})
@@ -271,17 +274,20 @@ func oversizedFrame(t *testing.T, size int) []byte {
 	return data
 }
 
-func expectAnyError(t *testing.T, c *botclient.Client) pb.ErrorCode {
-	t.Helper()
-	for {
-		frame, err := c.Read()
+func countErrors(c *botclient.Client, want int) map[pb.ErrorCode]int {
+	counts := map[pb.ErrorCode]int{}
+	for seen := 0; seen < want; {
+		frame, err := c.Receive()
 		if err != nil {
-			t.Fatal(err)
+			counts[pb.ErrorCode_ERROR_CODE_UNSPECIFIED]++
+			return counts
 		}
 		if refusal := frame.GetError(); refusal != nil {
-			return refusal.GetCode()
+			counts[refusal.GetCode()]++
+			seen++
 		}
 	}
+	return counts
 }
 
 func lobby(command pb.LobbyCommand) *pb.Envelope {
