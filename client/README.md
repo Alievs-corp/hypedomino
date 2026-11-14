@@ -286,6 +286,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `Game/Ranking/RankBadge.TryRead(label, out badge)` reads a roster entry's `rank_label` into the `RankTier` and division of a rank badge (`docs/ranking.md` section 3): division 4 to 1 for Iron IV to Diamond I, no division for the apex tiers, not placed for an empty label. It refuses any other label and allocates nothing; `RankBadgeTests` cover it.
 
+## Hype Pass
+
+`Game/Pass/PassStanding` reads the `GET /pass` reply (`PassReply`, `JsonUtility`) into what the pass screen header and its two tracks show, from server values only (`docs/pass-missions-medals.md` sections 2 and 6). `TryRead` refuses a reply without a season, a level outside 1 to `levels`, XP below the level's start, a next level start not above the XP or an unreadable `ends_at`. The level bar fills from `level_xp` to `next_level_xp`; the last level has no next level and shows full. `StateAt(track, level)` is earned up to the server's level, upcoming above it, and every premium level is locked until the server reports `premium`. Nothing is claimed: the server grants each level the moment it is reached (PM-3), so the client sends no claim intent. `TrySecondsLeft` counts down to `ends_at` on the connection's `ServerClock` and gives nothing before the clock is synced. `StateAt` and the countdown allocate nothing; `PassStandingTests` cover them. The reply's `tracks` (level-keyed maps of reward bundles) are not read yet: `JsonUtility` cannot read maps.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
