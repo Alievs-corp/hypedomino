@@ -105,6 +105,10 @@ The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` Edi
 
 `UI/Localization/Resources/builtin-strings.json` is the built-in bundle (`docs/localization.md` 2.2) for keys the client needs before a published bundle arrives, starting with the currency names of `docs/economy.md` OQ-13. `BuiltinStrings.Load` reads it from `Resources`; `BuiltinStrings` gives the built-in value of a key in one language. The `ShopTests` EditMode tests cover these types.
 
+## Promo codes
+
+`Game/Promo` is the model of the promo code entry (#109, `docs/economy.md` 8); the server decides whether a code is valid and what it grants. `PromoCode.TryNormalize` applies the server's own format check (`server/internal/promo` `Normalize`): spaces, `-` and `_` are dropped, letters are upper-cased without culture, every other character must be in the alphabet without look-alikes, and 4 to 32 characters must remain. A code that fails it is answered with `promo.redeem.code_invalid` without a request; the server refuses such a code the same way, before it counts an attempt. `PromoRedeemer.Redeem` posts the normalised code to `POST /promo/redeem` as `{"code"}` through `ApiClient`, so it is signed with the request MAC, and refuses a second submit while one is in flight, since every request counts toward `PromoAttemptsPerHour`. `PromoRedeemResult.From` turns the reply into one `PromoRedeemOutcome`: a grant keeps the coins, granted cosmetics, pass XP and dropped pass XP the server reported; each `promo.*` refusal has its own key `promo.redeem.<reason>`; `promo.rate_limited` and the limiter's `rate_limited` are `promo.redeem.rate_limited`, `promo.locked` is `promo.redeem.locked`, no response is `promo.redeem.offline`; every other reply, including a reason a newer server adds, is `notice.generic` (`docs/localization.md` 3). A lost session has no message key and goes back to sign-in. The keys have no built-in texts yet. The `PromoRedeemTests` EditMode tests cover the format check, every reply and the single request in flight.
+
 ## Localization
 
 `UI/Localization` is the client side of `docs/localization.md` (section 2.4).
