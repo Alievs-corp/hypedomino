@@ -130,7 +130,7 @@ Run on the reference node spec fixed in #192 and recorded with the results.
 ### 6.1 Reference run
 
 - Node under test: Hetzner Cloud CCX23 (4 dedicated vCPU, 16 GB RAM), location Falkenstein (`fsn1`), Ubuntu 24.04, one server process and nothing else. Dedicated vCPU keeps a neighbour's load out of the numbers, so runs can be compared.
-- Bot host: a second CCX23 in the same location, joined to the node by a Hetzner private network; the load bot never runs on the node. The debug port (`HD_DEBUG_ADDR`) listens on the private address only.
+- Bot host: a second CCX23 in the same location, joined to the node by a Hetzner private network; the load bot never runs on the node. The debug port (`HD_DEBUG_ADDR`, `/metrics`) and the profiling port (`HD_PPROF_ADDR`, `/debug/pprof/`) listen on the private address only.
 - Peak target: the issue's "expected first-days peak ×3" has no number yet. It is set from the CB-3 size after the closed beta (`docs/closed-beta.md` CE-14); until then the run proves the 10,000-room node target of 6.2.
 
 Steps:
@@ -161,11 +161,11 @@ Profiling:
 ```bash
 go test -run='^$' -bench=<Name> -cpuprofile cpu.out -memprofile mem.out ./internal/rules
 go tool pprof -http=:0 cpu.out
-go tool pprof -http=:0 "http://<node>:<debug-port>/debug/pprof/profile?seconds=30"
-go tool pprof -http=:0 "http://<node>:<debug-port>/debug/pprof/heap"
+go tool pprof -http=:0 "http://<node>:<pprof-port>/debug/pprof/profile?seconds=30"
+go tool pprof -http=:0 "http://<node>:<pprof-port>/debug/pprof/heap"
 ```
 
-The debug port is `HD_DEBUG_ADDR`; it is never exposed publicly.
+The profiling port is `HD_PPROF_ADDR` and the metrics port `HD_DEBUG_ADDR`; neither is ever exposed publicly. In Kubernetes pprof listens on the pod's loopback only and is reached with `kubectl port-forward` (`server/README.md` Container and deploy).
 
 ## 7. Tools
 
@@ -220,5 +220,5 @@ Not affected and why:
 ## 9. Open items
 
 - Thresholds are initial; #191 (certification) and #164 (battery) may tighten them by PR to this file.
-- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` and pprof at `/debug/pprof/` on the debug listener (`HD_DEBUG_ADDR`, off when empty, `server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
+- The load bot exists (`server/cmd/loadbot`, #53, `server/README.md` "Load test"); its bot-measured round-trip, error rate and heap drift are the server gates above. The `move_roundtrip_seconds` histogram is served at `/metrics` on the debug listener (`HD_DEBUG_ADDR`) and pprof at `/debug/pprof/` on the profiling listener (`HD_PPROF_ADDR`); each is off when empty (`server/README.md`). The replay harness does not exist yet (#192); until it does, client gates are checked by hand with the Profiler and the commands above.
 - Thermal status on iOS (1.1): reading `ProcessInfo.thermalState` needs a native plugin, added when the first iOS build exists (#159). Until then an iOS device never drops for heat.
