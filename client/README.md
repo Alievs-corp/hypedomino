@@ -13,7 +13,7 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Generated` | `HypeDomino.Proto` | none | `Google.Protobuf.dll` only, no engine references; output of `npm run proto:gen`, never edited |
 | `Assets/HypeDomino/Core` | `HypeDomino.Core` | none | nothing |
 | `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto | |
-| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core | `UnityEngine.UI`, TextMeshPro |
+| `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core, Net | `UnityEngine.UI`, TextMeshPro |
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core | |
 | `Assets/HypeDomino/Content` | `HypeDomino.Content` | UI | Addressables |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics, Content | URP |
@@ -309,6 +309,10 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 `Game/Match/MatchResult` opens once per match end, on the first view whose `state` is finished, and reads the results screen of `docs/ui-motion.md` (Match result) from server values only: won or lost from `winner` against the local team (no outcome without a seat or a winner), the local team's final score first, `hands_played` and the mode. Rewards and the rank change are not in the proto yet, so it holds none. Reading a view allocates nothing; `MatchResultTests` cover it.
 
 `Game/Ranking/RankBadge.TryRead(label, out badge)` reads a roster entry's `rank_label` into the `RankTier` and division of a rank badge (`docs/ranking.md` section 3): division 4 to 1 for Iron IV to Diamond I, no division for the apex tiers, not placed for an empty label. It refuses any other label and allocates nothing; `RankBadgeTests` cover it.
+
+## Profile
+
+`UI/Profile/PlayerProfile` reads `GET /profile/me` (`TryFromOwn(json)`) and `GET /profile/{account}` (`TryFromPublic(json)`) into the profile screen model, from server values only (`docs/privacy.md` section 5). The fixed fields come through `ProfileReplies` and `JsonUtility`; the two maps keyed by mode come through `Net/JsonMap`. The own profile's `stats.modes` gives `ModeStats(i)`: the server's `games`, `wins` and `losses` of each mode, in the server's order. The public profile's `ranked.ranks` gives `Rank(i)`: the rank label of each placed mode (`Gold II`, `Master`), which `Game/Ranking/RankBadge.TryRead` reads into a badge. A missing or `null` map has no entries. A reply that is not a JSON object, a map or mode entry of another kind, an empty mode, an empty or non-string label, or a counter that is missing, negative, fractional or above `int.MaxValue` refuses the whole reply, as a missing account id or nickname does. Reading the model allocates nothing; `PlayerProfileTests` cover it with the server's reply shapes.
 
 ## Hype Pass
 

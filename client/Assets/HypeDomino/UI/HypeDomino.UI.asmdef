@@ -1,7 +1,7 @@
 {
     "name": "HypeDomino.UI",
     "rootNamespace": "HypeDomino.UI",
-    "references": ["HypeDomino.Core", "UnityEngine.UI", "Unity.TextMeshPro"],
+    "references": ["HypeDomino.Core", "HypeDomino.Net", "UnityEngine.UI", "Unity.TextMeshPro"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
