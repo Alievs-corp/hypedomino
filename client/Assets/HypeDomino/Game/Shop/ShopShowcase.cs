@@ -59,6 +59,8 @@ namespace HypeDomino.Game.Shop
 
     public sealed class OfferCard
     {
+        static readonly IReadOnlyDictionary<string, long> NoCompensation = new Dictionary<string, long>();
+
         OfferCard(OfferReply offer, OfferPrice price, ulong endsUnixMs)
         {
             OfferId = offer.id;
@@ -71,6 +73,7 @@ namespace HypeDomino.Game.Shop
             GrantPassXp = offer.pass_xp;
             Cosmetics = offer.cosmetics ?? Array.Empty<string>();
             Owned = offer.owned ?? Array.Empty<string>();
+            CompensationCoins = offer.compensation ?? NoCompensation;
             Limit = offer.limit;
             Bought = offer.bought;
             Purchasable = offer.purchasable;
@@ -92,6 +95,7 @@ namespace HypeDomino.Game.Shop
         public int GrantPassXp { get; }
         public string[] Cosmetics { get; }
         public string[] Owned { get; }
+        public IReadOnlyDictionary<string, long> CompensationCoins { get; }
         public int Limit { get; }
         public int Bought { get; }
         public bool Purchasable { get; }
@@ -101,6 +105,8 @@ namespace HypeDomino.Game.Shop
         public ChestCard Chest { get; }
 
         public bool IsOwned(string item) => Array.IndexOf(Owned, item) >= 0;
+
+        public bool TryCompensationCoins(string item, out long coins) => CompensationCoins.TryGetValue(item, out coins);
 
         public bool TrySecondsLeft(ServerClock clock, double nowSeconds, out double seconds)
         {
@@ -112,10 +118,20 @@ namespace HypeDomino.Game.Shop
         {
             card = null;
             if (offer == null || string.IsNullOrEmpty(offer.id) || string.IsNullOrEmpty(offer.name_key)) return false;
-            if (!OfferPrice.TryFrom(offer, out var price)) return false;
+            if (!OfferPrice.TryFrom(offer, out var price) || !CompensatesOwnedItemsOnly(offer)) return false;
             var offerEndsUnixMs = 0UL;
             if (!string.IsNullOrEmpty(offer.ends_at) && !ServerClock.TryReadUnixMs(offer.ends_at, out offerEndsUnixMs)) return false;
             card = new OfferCard(offer, price, Earlier(offerEndsUnixMs, sectionEndsUnixMs));
+            return true;
+        }
+
+        static bool CompensatesOwnedItemsOnly(OfferReply offer)
+        {
+            if (offer.compensation == null) return true;
+            foreach (var item in offer.compensation.Keys)
+            {
+                if (offer.owned == null || Array.IndexOf(offer.owned, item) < 0) return false;
+            }
             return true;
         }
 
@@ -198,7 +214,7 @@ namespace HypeDomino.Game.Shop
             {
                 return false;
             }
-            return TryRead(reply, out showcase);
+            return OfferCompensation.TryReadInto(body, reply) && TryRead(reply, out showcase);
         }
 
         public static bool TryRead(ShopReply reply, out ShopShowcase showcase)
@@ -213,6 +229,52 @@ namespace HypeDomino.Game.Shop
                 sections.Add(shown);
             }
             showcase = new ShopShowcase(reply.version, sections.ToArray());
+            return true;
+        }
+    }
+
+    static class OfferCompensation
+    {
+        const string SectionsKey = "sections";
+        const string OffersKey = "offers";
+        const string CompensationKey = "compensation";
+
+        public static bool TryReadInto(string body, ShopReply reply)
+        {
+            if (reply?.sections == null || !JsonMap.TryParse(body, out var root)) return false;
+            if (!root.TryMaps(SectionsKey, out var sections) || sections.Length != reply.sections.Length) return false;
+            for (var i = 0; i < sections.Length; i++)
+            {
+                if (!TryReadSection(sections[i], reply.sections[i])) return false;
+            }
+            return true;
+        }
+
+        static bool TryReadSection(JsonMap section, SectionReply reply)
+        {
+            var offers = reply?.offers ?? Array.Empty<OfferReply>();
+            if (section.IsAbsent(OffersKey)) return offers.Length == 0;
+            if (!section.TryMaps(OffersKey, out var maps) || maps.Length != offers.Length) return false;
+            for (var i = 0; i < maps.Length; i++)
+            {
+                if (offers[i] == null || !TryReadOffer(maps[i], out var compensation)) return false;
+                offers[i].compensation = compensation;
+            }
+            return true;
+        }
+
+        static bool TryReadOffer(JsonMap offer, out Dictionary<string, long> compensation)
+        {
+            compensation = null;
+            if (offer.IsAbsent(CompensationKey)) return true;
+            if (!offer.TryMap(CompensationKey, out var byItem)) return false;
+            var read = new Dictionary<string, long>();
+            foreach (var item in byItem.Keys)
+            {
+                if (!byItem.TryInteger(item, out var coins) || coins < 0) return false;
+                read.Add(item, coins);
+            }
+            compensation = read;
             return true;
         }
     }
