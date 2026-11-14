@@ -228,6 +228,7 @@ The match screen places its regions inside the safe area with the same rules in 
 - The seat order is North, East, South, West in 2v2 and X, Y in 1v1 (`docs/rules.md` Examples). A viewer without a seat is placed as South or X.
 - Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
 - A seat box holds the avatar with its animated frame, the name and, on the seat whose turn it is, the turn timer ring. It draws no panel background and no tile count number (`docs/art-direction.md` section 5.5): a seat's hidden tiles show as face-down tiles in its tile skin, so their number reads from the tiles. Places inside the box and of the face-down row come with the seat art (#168, #169).
+- `Game/Match/SeatAvatars` fills the seat boxes' avatars from the `roster` of each `MatchView`: every entry goes to its table side as above, with `AvatarLook.Of` (`docs/cosmetics.md` 8.3). An entry whose seat is not in the match's mode is skipped. A side whose look did not change is left alone, so a repeated view reloads nothing, restarts no loop and allocates nothing. The views take one more hold on the art the loading screen prefetched, so the prefetch can release it once the seats are shown, without a second download.
 
 ### Turn timer
 
