@@ -79,7 +79,7 @@ Access roles are the admin roles of `docs/admin.md` section 2 (super admin, cont
 | D-25 | Crash reports and client error telemetry (stack trace, device model, OS, app version; missing localization keys, manifest failures) | Client (#182) | Stability | CNS (OQ-5) | Sentry (EU data region), telemetry store | `CrashReportRetentionDays` | eng | Sentry |
 | D-26 | Server logs and metrics | Server (#28) | Operations, security investigation | LI | Log store | `ServerLogRetentionDays` | eng | Hosting |
 | D-27 | Admin audit log entries about a player | Admin panel (#134, #144) | Accountability of staff actions | LI | PostgreSQL | `AdminAuditRetentionDays` | super admin | Hosting |
-| D-28 | Deletion tombstone; ban-evasion hash of the auth identity | Server (section 8.2) | Re-apply deletions after a backup restore; keep bans effective | LI | PostgreSQL | Tombstone: `BackupRetentionDays`; hash: section 4 | super admin | Hosting |
+| D-28 | Deletion tombstone; deletion log entry (account id, tombstone id, deletion time); ban-evasion hash of the auth identity | Server (section 8.2) | Re-apply deletions after a backup restore; keep bans effective | LI | PostgreSQL; deletion log bucket in the backup location (`docs/backup-restore.md` 3.7) | Tombstone and log entry: `BackupRetentionDays`; hash: section 4 | super admin; the log: eng | Hosting |
 | D-29 | Data export files | Server (section 8.3) | Access and portability | LEG | Object storage | `ExportLinkTtlHours` | the player only | Hosting, CDN |
 | D-30 | Backups of PostgreSQL | Server (#188) | Disaster recovery | LI | Backup store | `BackupRetentionDays` (#188) | eng | Hosting |
 
@@ -106,7 +106,7 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 | `PurchaseRecordRetentionYears` | 10, counted from the end of the purchase's calendar year (OQ-7) | D-17 | Delete |
 | `ConsentRecordRetentionYears` | 3, counted from the end of the calendar year of the account's deletion (OQ-7) | D-23 after deletion | Delete |
 | `PermanentBanEvasionRetentionDays` | 1095 after the account's deletion (OQ-10) | D-28 hash for a permanent ban | Delete |
-| `BackupRetentionDays` | 35 (`docs/backup-restore.md` section 3.2) | D-30, D-28 tombstone | Backup rotated out |
+| `BackupRetentionDays` | 35 (`docs/backup-restore.md` section 3.2) | D-30, D-28 tombstone and deletion log entry | Backup rotated out; log entry deleted by the deletion job (`HD_DELETION_LOG_RETENTION`) |
 
 - Inactive accounts are never deleted automatically (owner decision, #187). There is no inactivity deletion and no config key for it at launch.
 - A temporary ban's ban-evasion hash expires when the ban would have ended.
@@ -230,7 +230,7 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 | 2. Pending | State `pending_deletion`. All sessions and refresh tokens revoked (#58); removed from matchmaking, presence, friends lists and current leaderboards; push tokens deleted |
 | 3. Grace | `AccountDeletionGraceDays`. Signing in during the grace shows only the pending state and a cancel button; cancel restores the account unchanged |
 | 4. Deletion job | Runs after the grace, idempotent, per the table below. Revokes Sign in with Apple tokens through Apple's REST API. Deletes raw events for the analytics id in the analytics store and sends a deletion request for user keys to Sentry |
-| 5. Tombstone | D-28 records the tombstone id and deletion time so a backup restore re-applies the deletion before the restored database serves traffic (#188) |
+| 5. Tombstone | D-28 records the tombstone id and deletion time. In the same run the job appends the account id, tombstone id and deletion time to the deletion log outside the database; the deletion is complete only once that write succeeded, and a failed write is retried. After a backup restore, `account-deletion replay` re-applies every logged deletion after the restore point before the restored database serves traffic (`docs/backup-restore.md` 3.7 and 7.3, #188, #601) |
 
 | Data | At deletion |
 |---|---|
@@ -522,7 +522,7 @@ Every item must be checked, or waived by an owner comment on #187, before releas
 | L-16 | Export as 8.3, including sanctions and signal categories (OQ-9) | Eng | #63 | Open |
 | L-17 | Sign in with Apple token revocation on deletion | Eng | #57, #63 | Open |
 | L-18 | Deletion propagated to the analytics store and Sentry | Eng | #181, #182 | Open |
-| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188, #601 | Open |
+| L-19 | Backup restore re-applies tombstones before serving traffic; exercised in the restore drill | Eng | #188, #601 | Done in the repository (#601): deletion log, replay command, `backup-restore.md` 7.3 step 1, local and CI drill. Open until the deletion log bucket and key exist (#25) and the staging drill replays from it (`backup-restore.md` 8.2) |
 | L-20 | Breach response in the runbook: assess, notify the authority within 72 hours (GDPR, KVKK), inform players where required | Owner | #197 | Open |
 | L-21 | Rights request handling in support tools with a 30-day clock | Eng | #144 | Open |
 | L-22 | PII access limited to support and super admin roles; analyst sees pseudonymous data only | Eng | #134, #148 | Open |
