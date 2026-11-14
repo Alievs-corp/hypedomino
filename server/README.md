@@ -85,7 +85,7 @@ Panics (#182, `server/internal/panics`): every long-lived goroutine recovers its
 
 ## Container and deploy
 
-`server/Dockerfile` builds the static `server` and `migrate` binaries into a distroless image that runs as user `65532` (ADR 0010). Kubernetes manifests are in `deploy/k8s`: `base` is shared (the server and the `migrate` Job), an overlay per environment sets the image tag, replicas and the `server-env` and `migrate-env` secrets. A release is applied with `tools/deploy/apply-release.sh`, which completes the migration job before the rollout (`docs/launch-runbook.md` 5.1). Locally, with Docker and kind:
+`server/Dockerfile` builds the static `server`, `migrate` and `account-deletion` binaries into a distroless image that runs as user `65532` (ADR 0010). Kubernetes manifests are in `deploy/k8s`: `base` is shared (the server and the `migrate` Job), an overlay per environment sets the image tag, replicas and the `server-env` and `migrate-env` secrets. A release is applied with `tools/deploy/apply-release.sh`, which completes the migration job before the rollout (`docs/launch-runbook.md` 5.1). Locally, with Docker and kind:
 
 ```
 docker build -t hypedomino-server:ci server
