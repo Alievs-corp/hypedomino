@@ -27,8 +27,7 @@
       },
       "window": { "start": "2026-01-01T00:00:00Z", "end": "2027-01-01T00:00:00Z" },
       "limitPerAccount": 1,
-      "nameKey": "shop.offer.table_night_market",
-      "referencePriceCoins": 3500
+      "nameKey": "shop.offer.table_night_market"
     },
     {
       "id": "offer.chest_avatar",

@@ -104,6 +104,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_SHOP_DAILY_SLOTS` | No | server, admin-api | `4` | `4` | No | from #104; admin-api from #139 |
 | `HD_SHOP_WEEKLY_SLOTS` | No | server, admin-api | `2` | `2` | No | from #104; admin-api from #139 |
 | `HD_SHOP_RESET_HOUR_UTC` | No | server, admin-api | `0` | `0` | No | from #104; admin-api from #139 |
+| `HD_SHOP_REFERENCE_PRICE_DAYS` | No | admin-api | `30` (at least 1) | `30` | No | from #139 |
 | `HD_CONFIG_POLL` | No | server | `10s` | `10s` | No | from #104 |
 | `HD_SEASON_POLL` | No | server | `1m` | `1m` | No | from #115 |
 | `HD_OUTBOX_POLL` | No | server | `2s` (at least 100ms) | `2s` | No | from #440 |
@@ -171,7 +172,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. For the store price push (`docs/economy.md` 7.4, #585) it reads `HD_PLAY_PACKAGE` and `HD_PLAY_SERVICE_ACCOUNT` as the server does, and the App Store Connect API key below; a store without its variables is shown as not configured and nothing is pushed to it. The Play service account needs the Play Console permission to manage store presence and pricing of the app; the App Store Connect key needs the App Manager role. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way, and `HD_SHOP_REFERENCE_PRICE_DAYS`, the struck-through price window of `docs/economy.md` 6.3. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. For the store price push (`docs/economy.md` 7.4, #585) it reads `HD_PLAY_PACKAGE` and `HD_PLAY_SERVICE_ACCOUNT` as the server does, and the App Store Connect API key below; a store without its variables is shown as not configured and nothing is pushed to it. The Play service account needs the Play Console permission to manage store presence and pricing of the app; the App Store Connect key needs the App Manager role. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|

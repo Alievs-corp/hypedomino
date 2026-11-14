@@ -20,6 +20,8 @@ import {
   oddsTotal,
   permanentMythics,
   priceOf,
+  inEffectWithinDays,
+  referencePriceProblem,
   replaceOffer,
   withPackCrystals,
   withPoolItem,
@@ -27,6 +29,7 @@ import {
   withRegionalNote,
   type CosmeticItem,
   type Offer,
+  type PublishedCatalog,
   type ShopCatalog,
 } from "./catalog.ts";
 
@@ -140,6 +143,50 @@ test("a mythic item is flagged unless its offer rotates or its featured or event
     assert.deepEqual(permanentMythics(offer({ kind: "bundle", bundle, ...fields }), items), want, JSON.stringify(fields));
   }
   assert.deepEqual(permanentMythics(offer({ section: "featured", bundle: { id: "bundle.owl", revision: 1, cosmetics: ["avatar.moon_owl"] } }), items), []);
+});
+
+test("the versions in effect within the window start with the one in effect at its start", () => {
+  const version = (config_version: number, published_at: string): PublishedCatalog => ({
+    config_version,
+    published_at,
+    catalog: { schema: 1, offers: [offer({ priceCoins: config_version })], rotations: [] },
+  });
+  const newestFirst = [version(4, "2026-11-14T00:00:00Z"), version(3, "2026-11-04T00:00:00Z"), version(2, "2026-10-10T00:00:00Z"), version(1, "2026-10-05T00:00:00Z")];
+  const now = new Date("2026-11-14T12:00:00Z");
+  const cases: [number, number[]][] = [
+    [30, [4, 3, 2]],
+    [5, [4, 3]],
+    [60, [4, 3, 2, 1]],
+  ];
+  for (const [days, want] of cases) {
+    assert.deepEqual(
+      inEffectWithinDays(newestFirst, days, now).map((catalog) => catalog.offers[0].priceCoins),
+      want,
+      String(days),
+    );
+  }
+});
+
+test("a struck-through price must be the lowest earlier price of its offer", () => {
+  const coins = (priceCoins: number, referencePriceCoins?: number) => offer({ priceCoins, referencePriceCoins });
+  const crystals = (priceCrystals: number, referencePriceCrystals?: number) => offer({ priceCrystals, referencePriceCrystals });
+  const versions = (...offers: Offer[][]): ShopCatalog[] => offers.map((listed) => ({ schema: 1, offers: listed, rotations: [] }));
+  const cases: [string, Offer, ShopCatalog[], { reference: number; lowest: number | null } | null][] = [
+    ["no reference price", coins(3000), [], null],
+    ["the only earlier price", coins(3000, 3500), versions([coins(3500)]), null],
+    ["the lowest of several", coins(3000, 3200), versions([coins(3500)], [coins(3200)], [coins(4000)]), null],
+    ["above the lowest", coins(3000, 3500), versions([coins(3500)], [coins(3200)]), { reference: 3500, lowest: 3200 }],
+    ["below every earlier price", coins(3000, 3400), versions([coins(3500)]), { reference: 3400, lowest: 3500 }],
+    ["no earlier version", coins(3000, 3500), [], { reference: 3500, lowest: null }],
+    ["offer absent from the window", coins(3000, 3500), versions([]), { reference: 3500, lowest: null }],
+    ["earlier price in another currency", coins(3000, 3500), versions([crystals(400)]), { reference: 3500, lowest: null }],
+    ["running discount republished unchanged", coins(3000, 3500), versions([coins(3000, 3500)], [coins(3500)]), null],
+    ["running discount lowered again", coins(2500, 3500), versions([coins(3000, 3500)], [coins(3500)]), { reference: 3500, lowest: 3000 }],
+    ["crystal reference", crystals(400, 500), versions([crystals(500)]), null],
+  ];
+  for (const [name, candidate, inEffect, want] of cases) {
+    assert.deepEqual(referencePriceProblem(candidate, inEffect), want, name);
+  }
 });
 
 test("a version lists the offers it added or changed against the one before", () => {

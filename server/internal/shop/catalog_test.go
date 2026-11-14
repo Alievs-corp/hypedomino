@@ -199,7 +199,7 @@ func TestInvalidCatalogsAreRefused(t *testing.T) {
 		"duplicate":             {strings.Replace(twoDaily, `"id":"offer.b"`, `"id":"offer.a"`, 1), DefaultConfig(), "listed twice"},
 		"rotation period":       {strings.Replace(twoDaily, `"period":"daily","start":"2026-11-01`, `"period":"hourly","start":"2026-11-01`, 1), DefaultConfig(), "rotation period"},
 		"rotation start":        {strings.Replace(twoDaily, `"start":"2026-11-01T00:00:00Z","offers"`, `"start":"2026-11-01T00:30:00Z","offers"`, 1), DefaultConfig(), "not a period start"},
-		"rotation slots":        {strings.Replace(twoDaily, `"offers":["offer.b"]`, `"offers":["offer.b","offer.a"]`, 1), Config{DailySlots: 1, WeeklySlots: 1}, "slots 1 to 1"},
+		"rotation slots":        {strings.Replace(twoDaily, `"offers":["offer.b"]`, `"offers":["offer.b","offer.a"]`, 1), Config{DailySlots: 1, WeeklySlots: 1, ReferencePriceDays: 1}, "slots 1 to 1"},
 		"rotation twice":        {strings.Replace(twoDaily, `"start":"2026-10-01T00:00:00Z","offers":["offer.a"]`, `"start":"2026-11-01T00:00:00Z","offers":["offer.a"]`, 1), DefaultConfig(), "listed twice"},
 		"rotation offer":        {strings.Replace(twoDaily, `"offers":["offer.b"]`, `"offers":["offer.z"]`, 1), DefaultConfig(), "unknown offer"},
 		"rotation sect":         {strings.Replace(twoDaily, `"offers":["offer.b"]`, `"offers":["offer.c"]`, 1), DefaultConfig(), "of section featured"},
@@ -217,6 +217,9 @@ func TestInvalidCatalogsAreRefused(t *testing.T) {
 	}
 	if err := (Config{DailySlots: 4, WeeklySlots: 2, ResetHourUTC: 24}).Validate(); !errors.Is(err, ErrInvalidConfig) {
 		t.Fatalf("reset hour 24: %v", err)
+	}
+	if err := (Config{DailySlots: 4, WeeklySlots: 2}).Validate(); !errors.Is(err, ErrInvalidConfig) {
+		t.Fatalf("no reference price window: %v", err)
 	}
 	if _, err := Parse([]byte(offerJSON(`"id":"offer.x","kind":"pass","section":"pass","productId":"pass_premium",`+okWindow+`,"nameKey":"k"`)), DefaultConfig()); err != nil {
 		t.Fatalf("pass offer without a bundle: %v", err)

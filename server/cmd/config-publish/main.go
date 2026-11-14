@@ -135,7 +135,7 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 	case mission.Domain:
 		return missionSourcesArePublished(ctx, pool, raw)
 	case shop.Domain:
-		return offerSourcesArePublished(ctx, pool, raw)
+		return catalogIsPublishable(ctx, pool, raw)
 	case rating.Domain:
 		return ratingFitsPublishedPenalties(ctx, pool, raw)
 	case penalties.Domain:
@@ -151,7 +151,7 @@ func checkAgainstPublished(ctx context.Context, pool *pgxpool.Pool, domain strin
 	return nil
 }
 
-func offerSourcesArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
+func catalogIsPublishable(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {
 	catalog, err := shop.Parse(raw, shop.DefaultConfig())
 	if err != nil {
 		return err
@@ -160,7 +160,14 @@ func offerSourcesArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byt
 	if err != nil {
 		return err
 	}
-	return catalog.CheckSources(items)
+	if err := catalog.CheckSources(items); err != nil {
+		return err
+	}
+	inEffect, err := snapshot.InEffectWithinDays(ctx, pool, shop.Domain, shop.DefaultConfig().ReferencePriceDays)
+	if err != nil {
+		return err
+	}
+	return catalog.CheckReferencePrices(inEffect)
 }
 
 func missionSourcesArePublished(ctx context.Context, pool *pgxpool.Pool, raw []byte) error {

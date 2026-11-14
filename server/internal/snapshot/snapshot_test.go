@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -126,6 +127,47 @@ func TestVersionAndHistoryReadOneDomain(t *testing.T) {
 	}
 	if limited, err := snapshot.History(ctx, pool, "rules", 1); err != nil || len(limited) != 1 || limited[0].Version != second {
 		t.Fatalf("limited %+v %v", limited, err)
+	}
+}
+
+func TestTheVersionsInEffectWithinDaysStartWithTheOneInEffectAtTheWindowStart(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	publishedDaysAgo := func(domain string, days int) int64 {
+		version, err := snapshot.Publish(ctx, pool, domain, []byte(`{}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Exec(ctx, `update config_snapshots set published_at = now() - make_interval(days => $2) where version = $1`, version, days); err != nil {
+			t.Fatal(err)
+		}
+		return version
+	}
+	oldest := publishedDaysAgo("shop", 40)
+	inEffectAtStart := publishedDaysAgo("shop", 35)
+	publishedDaysAgo("rules", 20)
+	recent := publishedDaysAgo("shop", 10)
+	latest := publishedDaysAgo("shop", 0)
+	cases := []struct {
+		days int
+		want []int64
+	}{
+		{30, []int64{latest, recent, inEffectAtStart}},
+		{5, []int64{latest, recent}},
+		{60, []int64{latest, recent, inEffectAtStart, oldest}},
+	}
+	for _, tc := range cases {
+		got, err := snapshot.InEffectWithinDays(ctx, pool, "shop", tc.days)
+		if err != nil {
+			t.Fatal(err)
+		}
+		versions := make([]int64, 0, len(got))
+		for _, published := range got {
+			versions = append(versions, published.Version)
+		}
+		if !slices.Equal(versions, tc.want) {
+			t.Fatalf("%d days: %v, want %v", tc.days, versions, tc.want)
+		}
 	}
 }
 

@@ -148,6 +148,20 @@ func History(ctx context.Context, q Lister, domain string, limit int) ([]Publish
 	if err != nil {
 		return nil, err
 	}
+	return collectPublished(rows)
+}
+
+func InEffectWithinDays(ctx context.Context, q Lister, domain string, days int) ([]Published, error) {
+	rows, err := q.Query(ctx, `select version, content, published_at from config_snapshots where domain = $1
+		and version >= coalesce((select max(version) from config_snapshots where domain = $1 and published_at <= now() - make_interval(days => $2)), 0)
+		order by version desc`, domain, days)
+	if err != nil {
+		return nil, err
+	}
+	return collectPublished(rows)
+}
+
+func collectPublished(rows pgx.Rows) ([]Published, error) {
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Published, error) {
 		var p Published
 		err := row.Scan(&p.Version, &p.Content, &p.At)
