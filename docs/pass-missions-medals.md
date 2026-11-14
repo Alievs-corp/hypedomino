@@ -262,6 +262,7 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 - Earned medal: its art, rarity marks and the server date earned.
 - The collection header shows earned / shown medals. Emblems follow in their own section (5.5).
 - Profile showcase: a player chooses up to `ProfileMedalSlots` (3) owned medals and their order, as an intent with medal ids. The server accepts only owned medals, stores the showcase, and other players see the server's copy (NT-9). A revoked medal leaves the showcase at once. The medal showcase sits next to the emblem showcase on the public profile (`docs/privacy.md` section 5). Implemented: `GET /profile/{account}` carries `medals`, the showcase medals in order as catalog entries.
+- Implemented on the client (`UI/Medals/MedalCollection`, #130): it reads `GET /medals` and shows only the medals the server lists, earned with the server date or locked with name and description, the earned / shown header count and the showcase in the server's order. A showcase change is an intent (`PUT /medals/showcase`) built only from shown, earned medals within the slots, so it never names an unowned medal; the showcase changes on screen only from the server's reply.
 - Medals have no effect in a match and are not shown at the table.
 
 ### 5.5 Emblems
