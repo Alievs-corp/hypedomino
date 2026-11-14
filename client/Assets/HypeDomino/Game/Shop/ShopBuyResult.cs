@@ -105,7 +105,7 @@ namespace HypeDomino.Game.Shop
             }
         }
 
-        static ShopBuyOutcome Refusal(string error) => error switch
+        public static ShopBuyOutcome Refusal(string error) => error switch
         {
             "wallet.insufficient" => ShopBuyOutcome.Insufficient,
             "offer.owned" => ShopBuyOutcome.Owned,

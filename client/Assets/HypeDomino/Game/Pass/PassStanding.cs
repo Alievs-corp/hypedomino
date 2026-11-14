@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using HypeDomino.Net;
 using UnityEngine;
 
@@ -79,7 +78,7 @@ namespace HypeDomino.Game.Pass
             if (reply == null || string.IsNullOrEmpty(reply.season) || reply.levels < 1) return false;
             if (reply.level < 1 || reply.level > reply.levels || reply.xp < reply.level_xp) return false;
             if (reply.level < reply.levels && reply.next_level_xp <= reply.xp) return false;
-            if (!TryReadUnixMs(reply.ends_at, out var endsUnixMs)) return false;
+            if (!ServerClock.TryReadUnixMs(reply.ends_at, out var endsUnixMs)) return false;
             standing = new PassStanding(reply, endsUnixMs);
             return true;
         }
@@ -94,20 +93,7 @@ namespace HypeDomino.Game.Pass
         public bool TrySecondsLeft(ServerClock clock, double nowSeconds, out double seconds)
         {
             seconds = 0;
-            if (clock == null || !clock.Synced) return false;
-            seconds = Math.Max(0d, clock.SecondsUntil(EndsUnixMs, nowSeconds));
-            return true;
-        }
-
-        static bool TryReadUnixMs(string text, out ulong unixMs)
-        {
-            unixMs = 0;
-            if (string.IsNullOrEmpty(text)) return false;
-            if (!DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at)) return false;
-            var ms = at.ToUnixTimeMilliseconds();
-            if (ms <= 0) return false;
-            unixMs = (ulong)ms;
-            return true;
+            return clock != null && clock.TrySecondsLeft(EndsUnixMs, nowSeconds, out seconds);
         }
     }
 }
