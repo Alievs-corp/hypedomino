@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HypeDomino.UI.Shop
@@ -38,6 +39,7 @@ namespace HypeDomino.UI.Shop
         public int limit;
         public int bought;
         public string[] owned;
+        [NonSerialized] public Dictionary<string, long> compensation;
         public bool purchasable;
         public string reason;
         public ChestOddsReply[] odds;

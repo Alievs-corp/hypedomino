@@ -74,6 +74,21 @@ namespace HypeDomino.Net
             return true;
         }
 
+        public bool TryMaps(string key, out JsonMap[] maps)
+        {
+            maps = null;
+            if (!TryValue(key, Value.KindOneofCase.ListValue, out var value)) return false;
+            var items = value.ListValue.Values;
+            var read = new JsonMap[items.Count];
+            for (var i = 0; i < read.Length; i++)
+            {
+                if (items[i].KindCase != Value.KindOneofCase.StructValue) return false;
+                read[i] = new JsonMap(items[i].StructValue);
+            }
+            maps = read;
+            return true;
+        }
+
         bool TryValue(string key, Value.KindOneofCase kind, out Value value) =>
             members.Fields.TryGetValue(key, out value) && value.KindCase == kind;
     }

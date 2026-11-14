@@ -66,6 +66,7 @@ type Config struct {
 	CountryHeader   string
 	CountryCooldown time.Duration
 	DeletionGrace   time.Duration
+	StaleMatchAfter time.Duration
 	Export          dataexport.Settings
 	ExportStore     objectstore.Config
 	Reward          reward.Config
@@ -111,6 +112,7 @@ func DefaultConfig() Config {
 		MatchmakingTTL:  5 * time.Second,
 		CountryCooldown: 180 * 24 * time.Hour,
 		DeletionGrace:   30 * 24 * time.Hour,
+		StaleMatchAfter: 2 * time.Hour,
 		Export:          dataexport.Settings{LinkTTL: 72 * time.Hour, Cooldown: 7 * 24 * time.Hour},
 		Reward:          reward.DefaultConfig(),
 		Purchase:        purchase.DefaultConfig(),
@@ -304,6 +306,7 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_IDLE_TIMEOUT", &config.RateLimit.IdleTimeout)
 	r.duration("HD_COUNTRY_CHANGE_COOLDOWN", &config.CountryCooldown)
 	r.duration("HD_ACCOUNT_DELETION_GRACE", &config.DeletionGrace)
+	r.duration("HD_STALE_MATCH_AFTER", &config.StaleMatchAfter)
 	r.integer("HD_DUPLICATE_COMPENSATION_PERCENT", &config.Reward.DuplicateCompensationPercent)
 	if err := config.Shop.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
@@ -325,6 +328,9 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	}
 	if config.DeletionGrace <= 0 {
 		r.errs = append(r.errs, errors.New("HD_ACCOUNT_DELETION_GRACE: positive"))
+	}
+	if config.StaleMatchAfter <= 0 {
+		r.errs = append(r.errs, errors.New("HD_STALE_MATCH_AFTER: positive"))
 	}
 	r.export(&config)
 	if config.Reward.DuplicateCompensationPercent < 0 || config.Reward.DuplicateCompensationPercent > 100 {

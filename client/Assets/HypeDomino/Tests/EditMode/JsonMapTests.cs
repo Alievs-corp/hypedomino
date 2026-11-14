@@ -69,6 +69,24 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ObjectListsHoldOnlyObjects()
+        {
+            var map = Parse(@"{""offers"":[{""id"":""offer.a""},{""id"":""offer.b""}],""empty"":[],""mixed"":[{""id"":""offer.a""},null],""texts"":[""offer.a""],""object"":{}}");
+
+            Assert.IsTrue(map.TryMaps("offers", out var offers));
+            Assert.AreEqual(2, offers.Length);
+            Assert.IsTrue(offers[1].TryString("id", out var second));
+            Assert.AreEqual("offer.b", second);
+            Assert.IsTrue(map.TryMaps("empty", out var empty));
+            Assert.IsEmpty(empty);
+            Assert.IsFalse(map.TryMaps("mixed", out var mixed));
+            Assert.IsNull(mixed);
+            Assert.IsFalse(map.TryMaps("texts", out _));
+            Assert.IsFalse(map.TryMaps("object", out _));
+            Assert.IsFalse(map.TryMaps("missing", out _));
+        }
+
+        [Test]
         public void AValueOfAnotherKindIsNotRead()
         {
             var map = Parse(@"{""text"":""a"",""number"":1,""flag"":true,""nothing"":null,""list"":[],""object"":{}}");
