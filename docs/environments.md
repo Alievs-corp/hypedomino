@@ -124,7 +124,12 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_REFUND_WEIGHT` | No | server | `3` | `3` | No | from #204 |
 | `HD_COUNTRY_HEADER` | No | server | empty (no IP country fallback) | `CF-IPCountry` | No | from #117; only a header the edge overwrites on every request |
 | `HD_COUNTRY_CHANGE_COOLDOWN` | No | server | `4320h` | `4320h` | No | from #117 |
-| `HD_ACCOUNT_DELETION_GRACE` | No | server | `720h` | `720h` | No | from #63; `AccountDeletionGraceDays` of `docs/privacy.md` section 4 |
+| `HD_ACCOUNT_DELETION_GRACE` | No | server, account-deletion | `720h` | `720h` | No | from #63; `AccountDeletionGraceDays` of `docs/privacy.md` section 4; the same value in both |
+| `HD_DELETION_LOG_URL` | Yes | account-deletion | none: the job refuses to start | `https://<object-store-host>/<deletion-log-bucket>` | No | from #601; its own bucket in the backup location (`docs/backup-restore.md` 3.7), never readable or writable by the server or admin-api keys |
+| `HD_DELETION_LOG_REGION` | Yes | account-deletion | none | `<store-region>` | No | from #601 |
+| `HD_DELETION_LOG_ACCESS_KEY` | Yes | account-deletion | none | `<deletion-log-access-key>` | Yes | from #601 |
+| `HD_DELETION_LOG_SECRET_KEY` | Yes | account-deletion | none | `<deletion-log-secret-key>` | Yes | from #601 |
+| `HD_DELETION_LOG_RETENTION` | No | account-deletion | `840h` | `840h` | No | from #601; `BackupRetentionDays` of `docs/privacy.md` section 4 |
 | `HD_EXPORT_STORE_URL` | No | server | none: `POST /account/export` is not served | `https://<object-store-host>/<private-export-bucket>` | No | from #63; a private bucket, never the public asset bucket |
 | `HD_EXPORT_STORE_REGION` | With `HD_EXPORT_STORE_URL` | server | none | `<store-region>` | No | from #63 |
 | `HD_EXPORT_STORE_ACCESS_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-access-key>` | Yes | from #63 |
@@ -238,6 +243,7 @@ The client reads no environment variable. Crash reporting (#182) adds its variab
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 | Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is the `HD_DATABASE_URL` of the separate `migrate-env` secret of each cluster | Environment variable of the server pods; `migrate-env` only of the `migrate` Job pods |
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
+| Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 
 Rules:
