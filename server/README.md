@@ -15,7 +15,8 @@ The binary reads its configuration from the environment only (CLAUDE.md: secrets
 | Variable | Default | Meaning |
 |---|---|---|
 | `HD_LISTEN_ADDR` | `:8080` | TCP address of the HTTP listener (`/healthz`, `/readyz`, `/loadz`, `/ws`) |
-| `HD_DEBUG_ADDR` | empty | TCP address of the debug listener (`/metrics`, `/debug/pprof/`); empty turns it off. Bind it to a private interface only |
+| `HD_DEBUG_ADDR` | empty | TCP address of the debug listener (`/metrics`); empty turns it off. Bind it to a private interface only, or, in Kubernetes, keep it behind the `server` NetworkPolicy |
+| `HD_PPROF_ADDR` | empty | TCP address of the profiling listener (`/debug/pprof/`); empty turns it off. Bind it to loopback or a private interface only |
 | `HD_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `HD_ORIGINS` | none | Comma separated origin host patterns allowed to open a WebSocket besides the request host |
 | `HD_SHUTDOWN_TIMEOUT` | `10s` | Time given to close connections and the listener after the drain |

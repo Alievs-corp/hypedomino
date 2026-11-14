@@ -34,6 +34,8 @@ func TestConfigDefaultsWhenTheEnvironmentIsEmpty(t *testing.T) {
 func TestConfigReadsEveryVariable(t *testing.T) {
 	config, err := ConfigFromEnv(lookup(map[string]string{
 		"HD_LISTEN_ADDR":                       "127.0.0.1:9000",
+		"HD_DEBUG_ADDR":                        ":6060",
+		"HD_PPROF_ADDR":                        "127.0.0.1:6061",
 		"HD_LOG_LEVEL":                         "DEBUG",
 		"HD_ORIGINS":                           "play.example.com, admin.example.com,",
 		"HD_SHUTDOWN_TIMEOUT":                  "3s",
@@ -126,7 +128,7 @@ func TestConfigReadsEveryVariable(t *testing.T) {
 		t.Fatal(err)
 	}
 	g := config.Gateway
-	if config.ListenAddr != "127.0.0.1:9000" || config.LogLevel != "DEBUG" || len(config.Origins) != 2 || config.Origins[1] != "admin.example.com" {
+	if config.ListenAddr != "127.0.0.1:9000" || config.DebugAddr != ":6060" || config.PprofAddr != "127.0.0.1:6061" || config.LogLevel != "DEBUG" || len(config.Origins) != 2 || config.Origins[1] != "admin.example.com" {
 		t.Fatalf("app config %+v", config)
 	}
 	if config.ShutdownTimeout != 3*time.Second || config.DrainTimeout != 2*time.Minute {
