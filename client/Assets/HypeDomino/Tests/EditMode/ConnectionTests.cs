@@ -389,6 +389,32 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(expected, ConnectionNotices.Network(connection, now));
         }
 
+        [TestCase(ErrorCode.IllegalIntent)]
+        [TestCase(ErrorCode.RateLimited)]
+        [TestCase(ErrorCode.ReplayRejected)]
+        public void ADroppedTurnIntentNeitherWaitsNorIsTimed(ErrorCode code)
+        {
+            GoOnline();
+            now = 20;
+            connection.Send(Envelope.PayloadOneofCase.PassIntent, new PassIntent());
+            Socket.Deliver(ServerFrame(0, Envelope.PayloadOneofCase.Error, new Error { Code = code, RejectedSequence = 1 }));
+            connection.Tick();
+
+            now += 3;
+            connection.Tick();
+            Assert.IsFalse(connection.RoundTrip.HasPending);
+            Assert.AreEqual(NetworkNotice.None, ConnectionNotices.Network(connection, now));
+
+            connection.Send(Envelope.PayloadOneofCase.PassIntent, new PassIntent());
+            now += 0.06;
+            Socket.Deliver(PlayingView(2));
+            connection.Tick();
+
+            Assert.AreEqual(ConnectionState.Online, connection.State);
+            Assert.AreEqual(60, connection.RoundTrip.LastMs, 1e-6);
+            Assert.AreEqual(60, connection.RoundTrip.SmoothedMs, 1e-6);
+        }
+
         [Test]
         public void TickingAQuietConnectionAllocatesNothing()
         {
