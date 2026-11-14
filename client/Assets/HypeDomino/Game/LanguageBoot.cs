@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using HypeDomino.Content;
 using HypeDomino.UI.Localization;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ namespace HypeDomino.Game
 
         public static GameStrings Strings { get; private set; }
 
+        public static StringBundleUpdater Bundles { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
@@ -23,6 +26,9 @@ namespace HypeDomino.Game
             if (Choice.Language != saved) Save();
             else Log();
             Strings = new GameStrings(BuiltinStrings.Load(), Choice, Debug.isDebugBuild);
+            if (Application.isEditor) return;
+            Bundles = new StringBundleUpdater(new UnityStringBundleSource(ContentBoot.Folder), Strings);
+            Bundles.LoadStored();
         }
 
         static void Save()

@@ -11,7 +11,7 @@ namespace HypeDomino.Content
 
         public UnityCacheStore(string catalogFolder) => this.catalogFolder = catalogFolder;
 
-        public long OccupiedBytes => Caching.currentCacheForWriting.spaceOccupied + CatalogBytes();
+        public long OccupiedBytes => Caching.currentCacheForWriting.spaceOccupied + StoredFileBytes();
 
         public bool ClearAtStart
         {
@@ -32,11 +32,11 @@ namespace HypeDomino.Content
 
         public bool TryClear() => Caching.ClearCache();
 
-        long CatalogBytes()
+        long StoredFileBytes()
         {
             if (!Directory.Exists(catalogFolder)) return 0;
             long total = 0;
-            foreach (var file in Directory.GetFiles(catalogFolder)) total += new FileInfo(file).Length;
+            foreach (var file in Directory.GetFiles(catalogFolder, "*", SearchOption.AllDirectories)) total += new FileInfo(file).Length;
             return total;
         }
     }
