@@ -69,13 +69,17 @@ func (t Target) Validate() error {
 	if !versionPattern.MatchString(t.CatalogVersion) {
 		return fmt.Errorf("%w: catalog version %q", ErrLayout, t.CatalogVersion)
 	}
-	url := strings.ToLower(t.StoreURL)
-	if !strings.Contains(url, t.Environment) {
-		return fmt.Errorf("%w: the store url must name the %s environment", ErrEnvironment, t.Environment)
+	return CheckStoreURL(t.Environment, t.StoreURL)
+}
+
+func CheckStoreURL(environment, storeURL string) error {
+	url := strings.ToLower(storeURL)
+	if !strings.Contains(url, environment) {
+		return fmt.Errorf("%w: the store url must name the %s environment", ErrEnvironment, environment)
 	}
 	for _, other := range environments {
-		if other != t.Environment && strings.Contains(url, other) {
-			return fmt.Errorf("%w: the store url names %s, not %s", ErrEnvironment, other, t.Environment)
+		if other != environment && strings.Contains(url, other) {
+			return fmt.Errorf("%w: the store url names %s, not %s", ErrEnvironment, other, environment)
 		}
 	}
 	return nil

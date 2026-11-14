@@ -24,6 +24,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
+	"github.com/Alievs-corp/hypedomino/server/internal/contentpublish"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/economy"
@@ -52,7 +53,10 @@ type config struct {
 	api        adminapi.Config
 }
 
-const defaultAssetURLTTL = 15 * time.Minute
+const (
+	defaultAssetURLTTL = 15 * time.Minute
+	contentURLTTL      = 15 * time.Minute
+)
 
 type lookup func(name string) (string, bool)
 
@@ -141,6 +145,7 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_SINK_RATIO_ALERT_*, HD_ACCOUNT_DAILY_EARN_ALERT_COINS and HD_BALANCE_MEDIAN_ALERT_COINS: %w", err))
 	}
 	errs = append(errs, assetStoreFromEnv(&c.api, text, duration)...)
+	errs = append(errs, contentStoreFromEnv(&c.api, text)...)
 	errs = append(errs, playFromEnv(&c.api, text)...)
 	errs = append(errs, appStoreFromEnv(&c.api, text)...)
 	integer("HD_ADMIN_RATE_ACCOUNT_PER_MINUTE", &c.api.Limits.Account.PerMinute)
@@ -180,6 +185,26 @@ func assetStoreFromEnv(api *adminapi.Config, text func(string, *string), duratio
 		return []error{fmt.Errorf("HD_ASSET_STORE_*: %w", err)}
 	}
 	api.Assets = store
+	return nil
+}
+
+func contentStoreFromEnv(api *adminapi.Config, text func(string, *string)) []error {
+	config := objectstore.Config{URLTTL: contentURLTTL}
+	text("HD_CONTENT_STORE_URL", &config.BaseURL)
+	if config.BaseURL == "" {
+		return nil
+	}
+	text("HD_CONTENT_STORE_REGION", &config.Region)
+	text("HD_CONTENT_STORE_ACCESS_KEY", &config.AccessKey)
+	text("HD_CONTENT_STORE_SECRET_KEY", &config.SecretKey)
+	if err := contentpublish.CheckStoreURL(api.Environment, config.BaseURL); err != nil {
+		return []error{fmt.Errorf("HD_CONTENT_STORE_URL: %w", err)}
+	}
+	store, err := objectstore.New(config)
+	if err != nil {
+		return []error{fmt.Errorf("HD_CONTENT_STORE_*: %w", err)}
+	}
+	api.Content = store
 	return nil
 }
 
