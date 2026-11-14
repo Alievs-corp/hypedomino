@@ -31,7 +31,7 @@ Constraints:
 - Termination order of an old pod: it leaves the Service endpoints, a `preStop` sleep of 10 s lets the load balancer and kube-proxy stop sending it new connections, then `SIGTERM` starts the drain of the binary.
 - `terminationGracePeriodSeconds` = `preStop` + `HD_DRAIN_TIMEOUT` + `HD_SHUTDOWN_TIMEOUT` + 60 s margin = 980 s with the defaults. Raising `HD_DRAIN_TIMEOUT` requires raising it in the same change; otherwise the kubelet kills rooms the binary would have let finish.
 - A `PodDisruptionBudget` of `maxUnavailable: 1` keeps node maintenance from draining several game pods at once.
-- Migrations run as one Kubernetes `Job` from the new image before the rollout starts (`docs/environments.md` M-5); a failed job stops the deploy. The job manifest arrives with the migration tool (#55).
+- Migrations run as one Kubernetes `Job` from the new image before the rollout starts (`docs/environments.md` M-5); a failed job stops the deploy. The job is `deploy/k8s/base/migrate.yaml` and `tools/deploy/apply-release.sh` orders it before the rollout (`docs/launch-runbook.md` 5.1).
 
 ### Rollback
 - Rollback is `kubectl rollout undo deployment/server` or a deploy of the previous SHA tag through the same workflow. It is a rolling deploy like any other: new matches start on the previous version as soon as its pods are ready; matches already running on the bad version finish under the drain.
