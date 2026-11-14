@@ -341,7 +341,7 @@ Accounts, addresses, vendors and decisions only the owner can provide. A step ab
 | OI-4 | Play Console app created by hand; repository variable `ANDROID_APPLICATION_ID`; secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASS`, `ANDROID_KEYALIAS_NAME`, `ANDROID_KEYALIAS_PASS`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` (`docs/environments.md` 2.3). The tag path has not run with real secrets yet | Client lead, Release manager | #27 | GN-11 (Android), GN-22, GN-23 |
 | OI-5 | Apple developer account: distribution certificate, provisioning profile, App Store Connect API key and a macOS runner for the iOS build and TestFlight upload | Client lead, Release manager | #27 | GN-11 (iOS), GN-22, GN-23 |
 | OI-6 | Crash reporting account (EU region), its DSN and a CI token for symbol and mapping upload | Client lead | #182, #566 | GN-11 (symbols), GN-13, section 4.1 crash-free sessions |
-| OI-7 | Prometheus scrape of the server debug listener (`HD_DEBUG_ADDR`, private only) and Grafana dashboards in production | Server lead | #28, #566 | GN-12, section 4.1 |
+| OI-7 | Prometheus in the `monitoring` namespace of each cluster scraping the server debug port (already in the manifests and admitted only from `monitoring`, `server/README.md` Container and deploy) and Grafana dashboards in production | Server lead | #28, #566 | GN-12, section 4.1 |
 | OI-8 | Alert thresholds for error rate, database connections, login success, matchmaking wait and receipt validation per store (section 4.1) | Server lead, Product owner | #28, #566 | Section 4.1, GN-12 |
 | OI-9 | Pager service and alert routing to it, economy alerts (`docs/economy.md` 10) and the backup alerts (`docs/backup-restore.md` 3.3) included; one test alert to the primary | Server lead | #28, #110, #566 | GN-12, GN-25, section 7 |
 | OI-10 | Incident channel and launch war room channel | Release manager | #28 | Section 6.4, section 4 T-1d |
@@ -352,6 +352,5 @@ Accounts, addresses, vendors and decisions only the owner can provide. A step ab
 
 ## 11. Open items
 
-- Not built yet, no owner input needed: `HD_DEBUG_ADDR` in the server manifests for the scrape of OI-7 (#642).
 - All *default* numbers are unvalidated until the closed beta (#193) and soft launch (#196) produce data.
 - The go/no-go checklist turns green only at launch; this document is complete when the release issue records it so.
