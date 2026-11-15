@@ -30,6 +30,12 @@ namespace HypeDomino.Net
             _ => throw new ArgumentOutOfRangeException(nameof(seat), seat, null),
         };
 
+        public static bool IsIn(Seat seat, int seatCount)
+        {
+            if (seat == Seat.X || seat == Seat.Y) return seatCount == 2;
+            return seatCount == 4 && seat >= Seat.North && seat <= Seat.West;
+        }
+
         public static int Viewer(Seat local, Mode mode)
         {
             if (local != Seat.Unspecified) return Clockwise(local);
