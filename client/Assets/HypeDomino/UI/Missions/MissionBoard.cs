@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using HypeDomino.Net;
 
 namespace HypeDomino.UI.Missions
 {
@@ -74,6 +75,22 @@ namespace HypeDomino.UI.Missions
         };
 
         public bool CanReroll(in MissionCard card) => !card.Completed && RerollsLeft(card.Tab) > 0;
+
+        public ulong ResetUnixMs(MissionTab tab) => tab switch
+        {
+            MissionTab.Daily => DailyResetUnixMs,
+            MissionTab.Weekly => WeeklyResetUnixMs,
+            _ => 0,
+        };
+
+        public bool TrySecondsUntilReset(MissionTab tab, ServerClock clock, double nowSeconds, out double seconds)
+        {
+            seconds = 0;
+            return clock != null && clock.TrySecondsLeft(ResetUnixMs(tab), nowSeconds, out seconds);
+        }
+
+        public bool IsPastReset(ServerClock clock, double nowSeconds) =>
+            TrySecondsUntilReset(MissionTab.Daily, clock, nowSeconds, out var seconds) && seconds <= 0;
 
         public static bool TryFrom(MissionBoardReply reply, out MissionBoard board)
         {
