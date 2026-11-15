@@ -335,6 +335,7 @@ export const en = {
   "analytics.accounts_over_daily_earn": "Accounts above the daily earn alert",
   "analytics.source_mix": "Coins created per reason (economy day)",
   "analytics.no_sources": "No coins were created that day.",
+  "analytics.export_csv": "Export CSV",
   "live.title": "Live controls",
   "live.load_failed": "The live controls could not be loaded.",
   "live.version": "Published version",

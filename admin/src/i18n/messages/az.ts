@@ -330,6 +330,7 @@ export const az: Messages = {
   "analytics.accounts_over_daily_earn": "Gündəlik qazanc alert-ini keçən hesablar",
   "analytics.source_mix": "Səbəb üzrə yaranan coin-lər (iqtisadi gün)",
   "analytics.no_sources": "Həmin gün coin yaranmayıb.",
+  "analytics.export_csv": "CSV ixracı",
   "live.title": "Canlı idarəetmə",
   "live.load_failed": "Canlı idarəetmə yüklənmədi.",
   "live.version": "Dərc olunmuş versiya",
