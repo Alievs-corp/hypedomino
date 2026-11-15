@@ -393,7 +393,7 @@ Rules are `docs/economy.md` section 8. Batch generation creates `single_use` cod
 | `rankRewards` | Per mode and final tier: the reward bundle (#120), published as `rankRewards` of the mode in the `rating` config; coins from `RankRewardCoins` |
 | `state` | Server: `draft`, `scheduled`, `live`, `ending`, `closed` |
 
-Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice.
+Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice. The panel's publish review and ranking config history show each value a version changed against the one before, as `field before → after`.
 
 ### 5.13 Live events, banners and push campaigns
 

@@ -84,8 +84,8 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Per mode:** structural values and the reset table are read-only while a season is open (`rules.open_season`). MMR, LP and placement values may change at any time.
 - **Reset table:** generated from the tier drop, floor and ceiling as the server computes it. A row can be edited on its own and is marked as edited; a row set back to the generated rank stops being an override.
 - **Rank rewards:** per final tier, a bundle of cosmetics and medals, `bundle.rank_<tier>` by default. Editing a published bundle raises its revision once and an emptied row removes the bundle. Item sources are checked by the API.
-- **Publish** takes a reason and a confirmation step that lists the changed keys per mode (`PUT /admin/config/rating`) and warns about frozen keys. The first publish starts from the server defaults (`rules.defaults`). The abuse values and emblem brackets are kept as published; this screen does not edit them.
-- **History and rollback:** on `/admin/config/rating/history` and `/admin/config/rating/rollback`; each version lists the keys it changed.
+- **Publish** takes a reason and a confirmation step that lists each changed value as `field before → after`, per mode by path (`1v1.lpBase`), and warns about frozen keys (`PUT /admin/config/rating`). The first publish starts from the server defaults (`rules.defaults`). The abuse values and emblem brackets are kept as published; this screen does not edit them.
+- **History and rollback:** on `/admin/config/rating/history` and `/admin/config/rating/rollback`. Each version lists what it changed against the version before, like the missions history: each setting, region, rank coin amount and per-mode value as `field before → after` (`rankRewardCoins.Gold`, `leaderboardRegions.<id>`, `2v2.seasonResetTable.Gold II`, `1v1.rankRewards.Gold.cosmetics`). A key left out counts as its server default, and the oldest listed version is compared with the defaults.
 
 ## Missions
 

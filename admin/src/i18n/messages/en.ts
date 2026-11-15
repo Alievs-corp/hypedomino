@@ -800,7 +800,6 @@ export const en = {
   "ranked.history": "Published versions",
   "ranked.history_empty": "No ranking config has been published yet.",
   "ranked.published_at": "Published",
-  "ranked.changed": "Changed",
   "ranked.issue.floor": "The reset floor must not be above the ceiling, and both must be division ranks.",
   "ranked.issue.reset_apex": "A reset rank must be a division rank.",
   "ranked.issue.reset_above": "A row must not reset above its final rank.",

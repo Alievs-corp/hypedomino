@@ -795,7 +795,6 @@ export const az: Messages = {
   "ranked.history": "Dərc olunmuş versiyalar",
   "ranked.history_empty": "Hələ reytinq konfiqi dərc olunmayıb.",
   "ranked.published_at": "Dərc olunub",
-  "ranked.changed": "Dəyişən",
   "ranked.issue.floor": "Reset alt həddi üst həddən yuxarı ola bilməz və hər ikisi division rank olmalıdır.",
   "ranked.issue.reset_apex": "Reset rank division rank olmalıdır.",
   "ranked.issue.reset_above": "Sətir son rankdan yuxarıya reset edə bilməz.",
