@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace HypeDomino.UI.Cosmetics
@@ -18,6 +19,8 @@ namespace HypeDomino.UI.Cosmetics
         public bool Equipped { get; }
 
         public bool Obtainable => Item.IsLive;
+
+        public IReadOnlyList<string> EarnPaths => Held || !Obtainable ? Array.Empty<string>() : Item.Sources;
     }
 
     public sealed class CosmeticCollection

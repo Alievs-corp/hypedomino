@@ -1,4 +1,5 @@
 import type { MessageKey } from "@/i18n/translate";
+import { entryChanges, fieldChanges, type CatalogChanges } from "../config/changes.ts";
 
 export type MedalSource = { type: string; ref: string };
 
@@ -81,7 +82,11 @@ export function validShowcaseSlots(slots: number): boolean {
   return Number.isInteger(slots) && slots >= 0;
 }
 
-export function changedMedals(before: MedalCatalog | null, after: MedalCatalog): string[] {
-  const previous = new Map((before?.medals ?? []).map((medal) => [medal.id, JSON.stringify(medal)]));
-  return after.medals.filter((medal) => previous.get(medal.id) !== JSON.stringify(medal)).map((medal) => medal.id);
+export function medalChanges(before: MedalCatalog | null, after: MedalCatalog): CatalogChanges {
+  const { medals, ...settings } = after;
+  if (!before) {
+    return { settings: [], entries: entryChanges([], medals) };
+  }
+  const { medals: previous, ...previousSettings } = before;
+  return { settings: fieldChanges(previousSettings, settings), entries: entryChanges(previous, medals) };
 }

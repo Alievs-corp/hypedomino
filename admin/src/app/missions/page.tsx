@@ -4,7 +4,8 @@ import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedMissions, emptyCatalog, type MissionCatalog, type MissionRules } from "@/missions/catalog";
+import { emptyCatalog, missionChanges, type MissionCatalog, type MissionRules } from "@/missions/catalog";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackMissions } from "./actions";
 import { MissionEditor } from "./MissionEditor";
@@ -58,7 +59,7 @@ function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollba
               <th className="py-2 pr-4">{t("missions.version")}</th>
               <th className="py-2 pr-4">{t("missions.published_at")}</th>
               <th className="py-2 pr-4">{t("missions.mission_count")}</th>
-              <th className="py-2 pr-4">{t("missions.changed")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
@@ -68,7 +69,9 @@ function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollba
                 <td className="py-2 pr-4">{version.config_version}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                 <td className="py-2 pr-4">{version.catalog.missions.length}</td>
-                <td className="py-2 pr-4 font-mono break-all">{changedMissions(versions[index + 1]?.catalog ?? null, version.catalog).join(", ")}</td>
+                <td className="py-2 pr-4 font-mono break-all">
+                  <CatalogChangeList changes={missionChanges(versions[index + 1]?.catalog ?? null, version.catalog)} t={t} />
+                </td>
                 {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackMissions} />}</td>}
               </tr>
             ))}

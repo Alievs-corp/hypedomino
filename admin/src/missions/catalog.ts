@@ -1,5 +1,6 @@
 import type { MessageKey } from "@/i18n/translate";
 import type { Bundle } from "@/shop/catalog";
+import { entryChanges, fieldChanges, type CatalogChanges } from "../config/changes.ts";
 
 export type MissionType = "daily" | "weekly" | "achievement" | "event";
 
@@ -149,7 +150,11 @@ export function issues(catalog: MissionCatalog, mission: Mission): MessageKey[] 
   return found;
 }
 
-export function changedMissions(before: MissionCatalog | null, after: MissionCatalog): string[] {
-  const previous = new Map((before?.missions ?? []).map((mission) => [mission.id, JSON.stringify(mission)]));
-  return after.missions.filter((mission) => previous.get(mission.id) !== JSON.stringify(mission)).map((mission) => mission.id);
+export function missionChanges(before: MissionCatalog | null, after: MissionCatalog): CatalogChanges {
+  const { missions, ...settings } = after;
+  if (!before) {
+    return { settings: [], entries: entryChanges([], missions) };
+  }
+  const { missions: previous, ...previousSettings } = before;
+  return { settings: fieldChanges(previousSettings, settings), entries: entryChanges(previous, missions) };
 }
