@@ -8,33 +8,51 @@ namespace HypeDomino.Game.Promo
         public const int MinLength = 4;
         public const int MaxLength = 32;
 
+        public static bool IsWellFormed(string typed)
+        {
+            var kept = CountKept(typed);
+            return kept >= MinLength && kept <= MaxLength;
+        }
+
         public static bool TryNormalize(string typed, out string code)
         {
-            code = null;
+            code = IsWellFormed(typed) ? Keep(typed) : null;
+            return code != null;
+        }
+
+        static int CountKept(string typed)
+        {
             if (typed == null)
             {
-                return false;
+                return 0;
             }
-            var kept = new StringBuilder(typed.Length);
+            var count = 0;
             foreach (var character in typed)
             {
                 if (IsSeparator(character))
                 {
                     continue;
                 }
-                var upper = char.ToUpperInvariant(character);
-                if (Alphabet.IndexOf(upper) < 0)
+                if (Alphabet.IndexOf(char.ToUpperInvariant(character)) < 0)
                 {
-                    return false;
+                    return 0;
                 }
-                kept.Append(upper);
+                count++;
             }
-            if (kept.Length < MinLength || kept.Length > MaxLength)
+            return count;
+        }
+
+        static string Keep(string typed)
+        {
+            var kept = new StringBuilder(typed.Length);
+            foreach (var character in typed)
             {
-                return false;
+                if (!IsSeparator(character))
+                {
+                    kept.Append(char.ToUpperInvariant(character));
+                }
             }
-            code = kept.ToString();
-            return true;
+            return kept.ToString();
         }
 
         static bool IsSeparator(char character) => character == ' ' || character == '-' || character == '_';
