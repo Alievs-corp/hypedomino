@@ -12,7 +12,7 @@ namespace HypeDomino.Tests.EditMode
 {""id"":""avatar.moon_owl"",""type"":""avatar"",""rarityId"":""rare"",""availability"":""retired"",""staticAddress"":""cosmetic/avatar/moon_owl/static"",""sources"":[{""type"":""event"",""ref"":""event.moon""}]},
 {""id"":""avatar.paper_kite"",""type"":""avatar"",""rarityId"":""epic"",""availability"":""disabled"",""staticAddress"":""cosmetic/avatar/paper_kite/static"",""sources"":[{""type"":""pass"",""ref"":""pass.s1.10""}]},
 {""id"":""emoji.smile"",""type"":""emoji"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/smile/static"",""sources"":[{""type"":""default""}]},
-{""id"":""emoji.wave"",""type"":""emoji"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/wave/static"",""sources"":[{""type"":""mission"",""ref"":""mission.wave""}]}]}";
+{""id"":""emoji.wave"",""type"":""emoji"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/wave/static"",""sources"":[{""type"":""raffle"",""ref"":""raffle.wave""},{""type"":""mission"",""ref"":""mission.wave""},{""type"":""event"",""ref"":""event.wave""}]}]}";
 
         const string InventoryJson = @"{""items"":[
 {""id"":""avatar.starter"",""type"":""avatar"",""source_type"":""default""},
@@ -158,6 +158,45 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.IsTrue(avatars[0].Equipped);
             Assert.IsFalse(avatars[2].Equipped);
+        }
+
+        [Test]
+        public void AnItemNotHeldShowsTheWaysToEarnItFromItsSources()
+        {
+            var avatars = Collection(CosmeticAddresses.Avatar);
+
+            Assert.AreEqual(new[] { "shop" }, avatars[1].EarnPaths);
+            Assert.AreEqual(new[] { "shop" }, avatars[1].Item.Sources);
+        }
+
+        [Test]
+        public void AnUnknownSourceTypeIsSkippedAndTheOthersKeepManifestOrder()
+        {
+            var emoji = Collection(CosmeticAddresses.Emoji);
+
+            Assert.AreEqual(new[] { "mission", "event" }, emoji[1].EarnPaths);
+        }
+
+        [Test]
+        public void AHeldItemShowsNoWayToEarnIt()
+        {
+            var avatars = Collection(CosmeticAddresses.Avatar);
+
+            Assert.AreEqual(new[] { "default" }, avatars[0].Item.Sources);
+            Assert.IsEmpty(avatars[0].EarnPaths);
+            Assert.IsEmpty(avatars[2].EarnPaths);
+        }
+
+        [Test]
+        public void ARetiredItemNotHeldShowsNoWayToEarnIt()
+        {
+            var avatars = Collection(CosmeticAddresses.Avatar);
+
+            avatars.Show(InventoryReply.FromJson(@"{""items"":[{""id"":""avatar.starter""}],""loadout"":{""avatar"":""avatar.starter""}}"));
+
+            Assert.IsFalse(avatars[2].Held);
+            Assert.AreEqual(new[] { "event" }, avatars[2].Item.Sources);
+            Assert.IsEmpty(avatars[2].EarnPaths);
         }
 
         [Test]
