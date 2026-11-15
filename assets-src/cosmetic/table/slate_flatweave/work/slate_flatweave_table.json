@@ -1,0 +1,118 @@
+{
+  "slug": "slate_flatweave",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "seed": 17401,
+  "carpet": {
+    "palette": {
+      "slate": [
+        46,
+        60,
+        62
+      ],
+      "slateDeep": [
+        34,
+        45,
+        48
+      ],
+      "slateMotif": [
+        58,
+        74,
+        74
+      ],
+      "charcoal": [
+        26,
+        28,
+        31
+      ],
+      "rust": [
+        128,
+        62,
+        42
+      ],
+      "ivory": [
+        204,
+        190,
+        158
+      ],
+      "ochre": [
+        150,
+        112,
+        58
+      ]
+    },
+    "field": {
+      "base": "slate",
+      "lattice": {
+        "period": 28,
+        "colour": "slateDeep",
+        "width": 0.7
+      },
+      "motif": {
+        "kind": "diamond",
+        "size": 5,
+        "outline": "slateMotif",
+        "core": "slateDeep"
+      }
+    },
+    "border": {
+      "bands": [
+        [
+          "charcoal",
+          0,
+          12
+        ],
+        [
+          "rust",
+          12,
+          16
+        ],
+        [
+          "ivory",
+          16,
+          18
+        ],
+        [
+          "charcoal",
+          18,
+          40
+        ],
+        [
+          "ivory",
+          40,
+          42
+        ],
+        [
+          "slateDeep",
+          42,
+          45
+        ]
+      ],
+      "main": 3,
+      "period": 20,
+      "motifs": [
+        {
+          "kind": "chevron",
+          "size": 10,
+          "line": "ochre"
+        }
+      ],
+      "guards": [
+        {
+          "band": 1,
+          "kind": "zigzag",
+          "step": 6,
+          "colour": "charcoal"
+        },
+        {
+          "band": 5,
+          "kind": "dots",
+          "step": 5,
+          "colour": "rust"
+        }
+      ]
+    }
+  }
+}
