@@ -142,7 +142,7 @@ assets-src/
 | Concept files | `<YYYYMMDD>-<nn>`, date of generation, `nn` from `01` per day |
 | Work files | `<slug>` or `<slug>_<part>` (for example `comet_fox_head`), any tool format; heavy formats go through Git LFS (`.gitattributes`) |
 | Item folder | Holds only `provenance.md`, `concept/`, `work/` and `export/`. `provenance.md` exists from the first concept on |
-| Classes other than `cosmetic` | Folder roots only. Their addresses come from their own specs: medals `medal/<slug>/static` (`docs/admin.md` 5.9), UI kit #168, tiles #169, effects #176, sound #177 |
+| Classes other than `cosmetic` | Folder roots only. Their addresses come from their own specs: medals `medal/<slug>/static` (`docs/admin.md` 5.9), UI kit #168, tiles `docs/tiles.md` (#169), effects #176, sound #177 |
 
 ### 4.2 Export to Addressables
 
@@ -250,7 +250,7 @@ State on 2026-11-12 of the steps without full evidence:
 | Step | What exists | What closes it |
 |---|---|---|
 | 2 | Everything but the terms; the prompt was written before P-8 and asks for a glow | The account holder reads the OpenAI terms in force on 2026-11-12 for the Free plan and records URL and date (an automated fetch was refused). Whether a concept made before P-8 may stay canonical, or is made again with P-8, is the owner's call |
-| 3 | Canonical concept marked in `provenance.md`; the skin is on B-4 (#166); RC-2 recorded | Silhouette and smallest-size tests once the tile's smallest display size is set (O-6, #169); RC-3 once O-7 names a search tool |
+| 3 | Canonical concept marked in `provenance.md`; the skin is on B-4 (#166); RC-2 recorded | Silhouette and smallest-size tests at the tile's smallest display size (`docs/tiles.md` section 3); RC-3 once O-7 names a search tool |
 | 4 | Scripted clean-up by an AI agent: violet haze around the emblem reduced, moving parts on layers. No paint-over; the lens flare at the gem and the bloom on the crescent remain (`docs/art-direction.md` section 8) | An artist paints over the master (5.1 steps 2 and 4) and documents the human work (RC-5); silhouette and size tests with O-6 |
 | 5 | A procedural star twinkle; canvas, frame count and rate taken from the ADR 0012 measurement because O-5 and O-6 are open | Reduce-motion and low-level check in Unity; the class canvas and rate once O-5 and O-6 are set, then a new export |
 | 6 | The static | B-9, which also needs the smallest display sizes of #168 and #169 |

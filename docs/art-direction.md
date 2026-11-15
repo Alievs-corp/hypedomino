@@ -69,7 +69,7 @@ Rules:
 Rules:
 - The silhouette reads first: an asset still tells what it is as a filled shape at its smallest display size. Ornament adds richness inside a clear outer shape; if the shape is lost, ornament is removed, not shrunk.
 - Detail that vanishes at the smallest size the asset is shown at is removed. The smallest display size per asset class is set with the class spec (#168 to #175).
-- Pips are identical round dots at a fixed layout per value, so a value reads by pattern, not by counting. Tile proportions and pip layout are #169.
+- Pips are identical round dots at a fixed layout per value, so a value reads by pattern, not by counting. Tile proportions and pip layout are `docs/tiles.md` (#169).
 - Crystal and ornament points are allowed on frames and skins; nothing reads as a weapon (localization 6).
 - No card suits, chips, reels, roulette, green felt or coin piles in shape or silhouette (localization 6, gambling imagery).
 
