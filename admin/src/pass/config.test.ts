@@ -9,6 +9,7 @@ import {
   emptyPassConfig,
   newSeason,
   nextSeasonId,
+  passChanges,
   removeSeason,
   replaceSeason,
   seasonIssues,
@@ -112,4 +113,29 @@ test("the publish summary lists changed and dropped seasons and changed settings
   assert.deepEqual(changedSettings(config, next), ["levelCoinPrice"]);
   assert.deepEqual(droppedSeasons(next, removeSeason(next, "season_2")), ["season_2"]);
   assert.deepEqual(changedSeasons(null, config), ["season_1"]);
+});
+
+test("the history names each changed setting and season field, and the seasons added or removed", () => {
+  const clone = cloneSeason(config, season, "2027-03-01T00:00:00Z", "2027-06-01T00:00:00Z");
+  const next = { ...replaceSeason(addSeason(config, clone), withLevel(season, "premium", 4, { amount: 7 }, season)), levelCoinPrice: 250 };
+  assert.deepEqual(passChanges(config, next), {
+    settings: [{ field: "levelCoinPrice", before: "200", after: "250" }],
+    entries: [
+      {
+        id: "season_1",
+        change: "changed",
+        fields: [
+          { field: "premium.4.revision", before: "2", after: "3" },
+          { field: "premium.4.crystals", before: "6", after: "7" },
+        ],
+      },
+      { id: "season_2", change: "added", fields: [] },
+    ],
+  });
+  assert.deepEqual(passChanges(next, removeSeason(next, "season_2")), { settings: [], entries: [{ id: "season_2", change: "removed", fields: [] }] });
+  assert.deepEqual(passChanges(config, config), { settings: [], entries: [] });
+});
+
+test("the oldest listed version shows its seasons as added", () => {
+  assert.deepEqual(passChanges(null, config), { settings: [], entries: [{ id: "season_1", change: "added", fields: [] }] });
 });

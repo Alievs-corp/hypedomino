@@ -15,19 +15,21 @@ test("a list is compared and shown whole", () => {
   assert.deepEqual(fieldChanges({ medals: ["medal.a"] }, { medals: ["medal.a"] }), []);
 });
 
-test("entries are matched by id: new ones are added, unchanged ones are left out", () => {
+test("entries are matched by id: new ones are added, missing ones removed, unchanged ones left out", () => {
   const before = [
     { id: "a", weight: 1 },
     { id: "b", weight: 1 },
+    { id: "d", weight: 1 },
   ];
   const after = [
     { id: "a", weight: 2 },
-    { id: "b", weight: 1 },
     { id: "c", weight: 1 },
+    { id: "d", weight: 1 },
   ];
   assert.deepEqual(entryChanges(before, after), [
-    { id: "a", added: false, fields: [{ field: "weight", before: "1", after: "2" }] },
-    { id: "c", added: true, fields: [] },
+    { id: "a", change: "changed", fields: [{ field: "weight", before: "1", after: "2" }] },
+    { id: "c", change: "added", fields: [] },
+    { id: "b", change: "removed", fields: [] },
   ]);
 });
 

@@ -1,5 +1,6 @@
 import type { MessageKey } from "@/i18n/translate";
 import type { Bundle } from "@/shop/catalog";
+import { entryChanges, fieldChanges, type CatalogChanges } from "../config/changes.ts";
 
 export type Track = "free" | "premium";
 
@@ -218,4 +219,13 @@ export function changedSettings(before: PassConfig | null, after: PassConfig): s
 export function droppedSeasons(before: PassConfig | null, after: PassConfig): string[] {
   const kept = new Set(after.seasons.map((season) => season.id));
   return (before?.seasons ?? []).filter((season) => !kept.has(season.id)).map((season) => season.id);
+}
+
+export function passChanges(before: PassConfig | null, after: PassConfig): CatalogChanges {
+  const { seasons, ...settings } = after;
+  if (!before) {
+    return { settings: [], entries: entryChanges([], seasons) };
+  }
+  const { seasons: previous, ...previousSettings } = before;
+  return { settings: fieldChanges(previousSettings, settings), entries: entryChanges(previous, seasons) };
 }
