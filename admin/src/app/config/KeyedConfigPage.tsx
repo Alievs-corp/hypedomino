@@ -2,7 +2,7 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import type { KeyValues, KeyedConfig, KeyedVersion } from "@/config/keys";
+import { versionChanges, type ConfigKey, type KeyValues, type KeyedConfig, type KeyedVersion } from "@/config/keys";
 import type { ConfigResult } from "@/config/result";
 import { serverTranslator } from "@/i18n/server";
 import type { MessageKey, Translate } from "@/i18n/translate";
@@ -37,6 +37,7 @@ export async function KeyedConfigPage({ path, text, publish, rollback }: { path:
       </div>
       <KeyEditor keys={config.body.keys} canPublish={can(admin.permissions, "game_config", "publish")} publish={publish} />
       <History
+        keys={config.body.keys}
         versions={history.body.versions}
         empty={t(text.historyEmpty)}
         clientId={canRollBack(admin.permissions, "game_config") ? googleClientId() : null}
@@ -47,7 +48,9 @@ export async function KeyedConfigPage({ path, text, publish, rollback }: { path:
   );
 }
 
-function History({ versions, empty, clientId, rollback, t }: { versions: KeyedVersion[]; empty: string; clientId: string | null; rollback: ConfigAction<number>; t: Translate }) {
+type HistoryProps = { keys: ConfigKey[]; versions: KeyedVersion[]; empty: string; clientId: string | null; rollback: ConfigAction<number>; t: Translate };
+
+function History({ keys, versions, empty, clientId, rollback, t }: HistoryProps) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold">{t("config.history")}</h2>
@@ -59,6 +62,7 @@ function History({ versions, empty, clientId, rollback, t }: { versions: KeyedVe
             <tr>
               <th className="py-2 pr-4">{t("config.version")}</th>
               <th className="py-2 pr-4">{t("config.published_at")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               <th className="py-2 pr-4">{t("config.values")}</th>
               {clientId && <th className="py-2 pr-4" />}
             </tr>
@@ -68,6 +72,7 @@ function History({ versions, empty, clientId, rollback, t }: { versions: KeyedVe
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
+                <td className="py-2 pr-4 font-mono">{changesText(keys, versions[index + 1]?.values ?? {}, version.values, t)}</td>
                 <td className="py-2 pr-4 font-mono">
                   {Object.entries(version.values)
                     .map(([key, value]) => `${key}=${value}`)
@@ -81,6 +86,14 @@ function History({ versions, empty, clientId, rollback, t }: { versions: KeyedVe
       )}
     </section>
   );
+}
+
+function changesText(keys: ConfigKey[], older: KeyValues, newer: KeyValues, t: Translate): string {
+  const changes = versionChanges(keys, older, newer);
+  if (changes.length === 0) {
+    return t("config.no_changes");
+  }
+  return changes.map((change) => `${change.key} ${change.before} → ${change.after}`).join(", ");
 }
 
 function Notice({ text }: { text: string }) {
