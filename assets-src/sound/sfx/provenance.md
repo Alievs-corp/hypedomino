@@ -80,6 +80,6 @@ Not done: listening on a device (S-2), the Unity import and its sizes (`docs/sou
 
 | File | sha256 | What it is |
 |---|---|---|
-| work/sfx.py | `8bb088e737de8ec30b4952cd734d5508238ebd14ddf9ee05aa4a74d15f2a2120` | The script, written by Claude Code on 2026-11-15 |
+| work/sfx.py | `0bfa2b068404fadb7f0e641a8ed20aa951897089a0e01efddeb91938d6a8e143` | The script, written by Claude Code on 2026-11-15 |
 | work/sfx_<name>.wav | Git LFS oid of each file | Master: WAV 48 kHz 16-bit PCM mono, the source for the Unity import |
 | export/<name>.ogg | Git LFS oid of each file | Ogg Vorbis, mono 48 kHz, libsndfile compression level 0.6, stream serial 177 |
