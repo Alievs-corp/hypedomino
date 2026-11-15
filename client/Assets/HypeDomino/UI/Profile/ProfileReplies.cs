@@ -28,6 +28,8 @@ namespace HypeDomino.UI.Profile
         public string account_id;
         public string nickname;
         public bool setup_required;
+        public bool rename_required;
+        public string rename_available_at;
         public int level;
         public long xp;
         public LoadoutReply loadout;
