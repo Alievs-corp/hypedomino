@@ -3,10 +3,10 @@ import test from "node:test";
 import {
   addMission,
   chainCandidates,
-  changedMissions,
   emptyCatalog,
   idList,
   issues,
+  missionChanges,
   newMission,
   replaceMission,
   validSlug,
@@ -90,8 +90,25 @@ test("issues name what the server would refuse", () => {
   assert.deepEqual(issues(catalog, { ...withBundle(empty, { coins: 10 }, undefined), eventId: "cup.spring" }), []);
 });
 
-test("history lists the missions a version added or changed", () => {
-  const next = replaceMission(addMission(catalog, newMission("hands_3", "daily", rules))!, { ...catalog.missions[0], target: 60 });
-  assert.deepEqual(changedMissions(catalog, next), ["mission.win_50", "mission.hands_3"]);
-  assert.deepEqual(changedMissions(null, catalog), ["mission.win_50", "mission.play_3"]);
+test("history lists each field a version changed, per mission and in the slots", () => {
+  const raised = { ...catalog.missions[0], target: 60, filters: { queue: "ranked" } };
+  const next = { ...replaceMission(addMission(catalog, newMission("hands_3", "daily", rules))!, raised), weeklySlots: [{ coins: 160, xp: 600 }] };
+  assert.deepEqual(missionChanges(catalog, next), {
+    settings: [{ field: "weeklySlots", before: '[{"coins":150,"xp":600}]', after: '[{"coins":160,"xp":600}]' }],
+    entries: [
+      { id: "mission.win_50", added: false, fields: [{ field: "target", before: "50", after: "60" }, { field: "filters.queue", before: "—", after: "ranked" }] },
+      { id: "mission.hands_3", added: true, fields: [] },
+    ],
+  });
+  assert.deepEqual(missionChanges(catalog, catalog), { settings: [], entries: [] });
+});
+
+test("the oldest listed version shows its missions as added", () => {
+  assert.deepEqual(missionChanges(null, catalog), {
+    settings: [],
+    entries: [
+      { id: "mission.win_50", added: true, fields: [] },
+      { id: "mission.play_3", added: true, fields: [] },
+    ],
+  });
 });
