@@ -6,14 +6,15 @@ namespace HypeDomino.UI.Cosmetics
 {
     public sealed class CosmeticItem
     {
-        public CosmeticItem(string id, string type, string rarityId, string nameKey, string availability, bool isDefault, CosmeticArt art, TableLook table)
+        public CosmeticItem(string id, string type, string rarityId, string nameKey, string availability, string[] sources, CosmeticArt art, TableLook table)
         {
             Id = id;
             Type = type;
             RarityId = rarityId;
             NameKey = nameKey;
             Availability = availability;
-            IsDefault = isDefault;
+            Sources = sources;
+            IsDefault = Array.IndexOf(sources, CosmeticManifest.DefaultSource) >= 0;
             Art = art;
             Table = table;
         }
@@ -27,6 +28,8 @@ namespace HypeDomino.UI.Cosmetics
         public string NameKey { get; }
 
         public string Availability { get; }
+
+        public IReadOnlyList<string> Sources { get; }
 
         public bool IsDefault { get; }
 
@@ -44,7 +47,9 @@ namespace HypeDomino.UI.Cosmetics
         public const int KnownSchemaVersion = 1;
         public const string Live = "live";
         public const string Retired = "retired";
-        const string DefaultSource = "default";
+        public const string DefaultSource = "default";
+
+        static readonly string[] KnownSources = { DefaultSource, "shop", "pass", "mission", "promo", "rank_reward", "first_purchase", "event", "chest" };
 
         static readonly string[] KnownTypes = { CosmeticAddresses.Avatar, CosmeticAddresses.Frame, CosmeticAddresses.Table, CosmeticAddresses.Tile, CosmeticAddresses.Emoji };
 
@@ -137,7 +142,7 @@ namespace HypeDomino.UI.Cosmetics
         {
             if (string.IsNullOrEmpty(entry.id) || string.IsNullOrEmpty(entry.staticAddress)) return;
             if (Array.IndexOf(KnownTypes, entry.type) < 0 || byId.ContainsKey(entry.id)) return;
-            var item = new CosmeticItem(entry.id, entry.type, entry.rarityId, entry.nameKey, entry.availability, IsDefault(entry), Art(entry), Table(entry));
+            var item = new CosmeticItem(entry.id, entry.type, entry.rarityId, entry.nameKey, entry.availability, Sources(entry), Art(entry), Table(entry));
             items.Add(item);
             byId.Add(item.Id, item);
         }
@@ -157,12 +162,13 @@ namespace HypeDomino.UI.Cosmetics
             return new TableLook(entry.staticAddress, layers);
         }
 
-        static bool IsDefault(ItemEntry entry)
+        static string[] Sources(ItemEntry entry)
         {
-            if (entry.sources == null) return false;
-            foreach (var source in entry.sources)
-                if (source != null && source.type == DefaultSource) return true;
-            return false;
+            var known = new List<string>();
+            if (entry.sources != null)
+                foreach (var source in entry.sources)
+                    if (source != null && Array.IndexOf(KnownSources, source.type) >= 0 && !known.Contains(source.type)) known.Add(source.type);
+            return known.ToArray();
         }
     }
 }
