@@ -4,8 +4,9 @@ import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedConfig, effectiveConfig, type RatingConfig } from "@/ranked/config";
+import { effectiveConfig, ratingChanges, type RatingConfig } from "@/ranked/config";
 import type { Season } from "@/ranked/seasons";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackRating } from "./actions";
 import { RatingEditor } from "./RatingEditor";
@@ -80,7 +81,7 @@ function History({ versions, defaults, rollback, t }: { versions: ConfigVersion[
             <tr>
               <th className="py-2 pr-4">{t("ranked.version")}</th>
               <th className="py-2 pr-4">{t("ranked.published_at")}</th>
-              <th className="py-2 pr-4">{t("ranked.changed")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
@@ -89,7 +90,9 @@ function History({ versions, defaults, rollback, t }: { versions: ConfigVersion[
               <tr key={version.config_version} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">{version.config_version}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
-                <td className="py-2 pr-4 font-mono break-all">{changedConfig(effectiveConfig(versions[index + 1]?.catalog ?? null, defaults), effectiveConfig(version.catalog, defaults)).join(", ")}</td>
+                <td className="py-2 pr-4 font-mono break-all">
+                  <CatalogChangeList changes={{ settings: ratingChanges(effectiveConfig(versions[index + 1]?.catalog ?? null, defaults), effectiveConfig(version.catalog, defaults)), entries: [] }} t={t} />
+                </td>
                 {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackRating} />}</td>}
               </tr>
             ))}
