@@ -1,13 +1,22 @@
 import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { alertLabels, comparedVersion, sourceReasons, type EconomyComparison, type EconomyReport } from "@/analytics/economy";
+import {
+  alertLabels,
+  comparedVersion,
+  monitorsCsv,
+  monitorsCsvFileName,
+  sourceReasons,
+  type EconomyComparison,
+  type EconomyReport,
+  type WindowReport,
+} from "@/analytics/economy";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 
 export const dynamic = "force-dynamic";
 
-type Column = { label: string; report: EconomyReport };
+type Column = WindowReport & { label: string };
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ version?: string }> }) {
   const t = await serverTranslator();
@@ -24,10 +33,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     return <Notice text={t("analytics.load_failed")} />;
   }
   const comparison = version ? await adminApi<EconomyComparison>("GET", `/admin/economy/monitors/compare?version=${version}`) : null;
-  const columns: Column[] = [{ label: t("analytics.now"), report: now.body }];
+  const columns: Column[] = [{ window: "now", label: t("analytics.now"), report: now.body }];
   if (comparison?.status === 200) {
-    columns.push({ label: t("analytics.before"), report: comparison.body.before }, { label: t("analytics.after"), report: comparison.body.after });
+    columns.push({ window: "before", label: t("analytics.before"), report: comparison.body.before }, { window: "after", label: t("analytics.after"), report: comparison.body.after });
   }
+  const exportedVersion = comparison?.status === 200 ? comparison.body.config_version : null;
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2">
@@ -51,6 +61,13 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </p>
       )}
       <Monitors t={t} columns={columns} />
+      <a
+        href={`data:text/csv;charset=utf-8,${encodeURIComponent(monitorsCsv(columns))}`}
+        download={monitorsCsvFileName(now.body, exportedVersion)}
+        className="self-start rounded-md bg-surface px-3 py-1 text-text-secondary"
+      >
+        {t("analytics.export_csv")}
+      </a>
     </main>
   );
 }
