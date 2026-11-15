@@ -16,7 +16,7 @@ Static avatar of set 1 (#172), batch C, a painted portrait made with template P-
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 has no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; the expression is friendly; the turban is a draped silk fashion turban worn with the hair showing, as salon dress, not a religious or group head covering; the moonstone brooch is jewellery, not an emblem. The reviewer confirms it reads that way
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.avatar_moonstone_turban`. The offer id is a placeholder until the shop record exists (V-15).
+Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_moonstone_turban`. The offer id is a placeholder until the shop record exists (V-15).
 
 ## Embedded C2PA manifest
 
