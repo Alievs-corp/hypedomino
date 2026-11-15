@@ -85,6 +85,8 @@ export const en = {
   "config.history": "Published versions",
   "rules.history_empty": "No match rules have been published yet; every key has its default.",
   "config.published_at": "Published",
+  "config.changes": "Changes from the version before",
+  "config.no_changes": "no change",
   "config.values": "Values different from the default",
   "config.all_defaults": "all defaults",
   "rollback.open": "Roll back to this version",
