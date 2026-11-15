@@ -59,3 +59,27 @@ export function bundlesOf(bundles: readonly Bundle[], language: string): Bundle[
 export function problemsText(problems: readonly Problem[]): string {
   return problems.map((problem) => `${problem.key}: ${problem.error}`).join("; ");
 }
+
+export type ChainError = "start" | "end" | "unknown" | "repeat";
+
+const finalFallback = "en";
+
+export function chainFromText(text: string): string[] {
+  return text
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+}
+
+export function chainError(language: string, chain: readonly string[], languages: readonly string[]): ChainError | null {
+  if (chain[0] !== language) {
+    return "start";
+  }
+  if (chain[chain.length - 1] !== finalFallback) {
+    return "end";
+  }
+  if (chain.some((step) => !languages.includes(step))) {
+    return "unknown";
+  }
+  return new Set(chain).size === chain.length ? null : "repeat";
+}
