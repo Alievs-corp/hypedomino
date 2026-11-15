@@ -237,16 +237,17 @@ namespace HypeDomino.Tests.EditMode
             stills.Finish(LaughStill, sprite);
             stills.Finish(PartyStill, sprite);
             loops.Finish(PartyLoop, loop);
-            shelf.Show(TableSide.Top, Laugh);
-
-            Assert.That(() =>
+            TestDelegate showBoth = () =>
             {
                 for (var at = 0; at < 100; at++)
                 {
                     shelf.Show(TableSide.Top, Laugh);
                     shelf.Show(TableSide.Left, Party);
                 }
-            }, Allocates.Nothing);
+            };
+            showBoth();
+
+            Assert.That(showBoth, Allocates.Nothing);
         }
     }
 }
