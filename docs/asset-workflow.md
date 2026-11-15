@@ -6,7 +6,7 @@ Status: proposal; the owner approves it by merging. How an asset goes from an AI
 
 | Id | Stage | Tool | Output | Gate |
 |---|---|---|---|---|
-| W-1 | Concept | ChatGPT in the browser, the author's own account (O-1) | Raw images in `concept/`, prompt log in `provenance.md` | Section 2 templates used; section 3 record started |
+| W-1 | Concept | ChatGPT image generation in the author's own account (O-1): in the browser, or through the Codex CLI built-in image tool signed in with that account (2.5) | Raw images in `concept/`, prompt log in `provenance.md` | Section 2 templates used; section 3 record started |
 | W-2 | Concept review | Reference board (`docs/art-direction.md` section 9) | One approved concept sheet per item | Silhouette, smallest-size and palette checks of art-direction sections 2, 3, 5; similarity check (section 3) |
 | W-3 | Clean-up | Illustrator, Photoshop | Layered master in `work/` | Section 5.1 |
 | W-4 | Animation | After Effects or Blender to a sprite sheet (ADR 0012) | Loop or layers in `work/` | Section 5.2 |
@@ -61,6 +61,20 @@ Effect sprites (`docs/art-direction.md` section 6) are white or greyscale shapes
 3. All variants of one item are generated in one conversation started from the canonical concept. A new conversation starts again from step 2.
 4. A generation that changes proportions, palette or outline weight is rejected, not fixed in the prompt chain. Small drift (a hand, a fold) is fixed in W-3.
 5. The final consistency comes from W-3 and W-4: one cleaned master, and every key frame and the static fallback is built from its parts or redrawn over it at the same canvas and pivot (`docs/art-direction.md` 5.1, section 7). AI output is reference for the key frames, not the source of the shipped frames.
+
+### 2.5 Generating through the Codex CLI
+
+The Codex CLI signed in with a ChatGPT account (`codex login status` shows `Logged in using ChatGPT`) generates images with its built-in image tool, which counts against that account's plan, not against API credits. It needs no browser, so an agent can run W-1 from a script; the rules of 2.1 to 2.4 apply unchanged.
+
+```bash
+cd assets-src/cosmetic/<type>/<slug>/concept
+env -u OPENAI_API_KEY codex exec --skip-git-repo-check --sandbox workspace-write -C "$(pwd)" '$imagegen <style key> <filled template>. Generate exactly one image. Save the final PNG in the current working directory as <YYYYMMDD>-<nn>.png. Do not use any API key and do not edit the image.'
+```
+
+- `OPENAI_API_KEY` is removed from the environment so the call cannot switch to API billing.
+- An edit of our own canonical concept attaches it with `-i <file>` and is logged on the Inputs line (section 3).
+- `provenance.md` records the CLI version, the Codex session id it prints, the UTC time the prompt was sent and the C2PA manifest of the PNG, next to the account holder and plan (RC-1).
+- Codex also keeps every generated image under `~/.codex/generated_images/<session id>/`; the file in `concept/` is a byte copy of it.
 
 ## 3. Rights and provenance record
 
