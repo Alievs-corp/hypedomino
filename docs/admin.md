@@ -438,7 +438,7 @@ Remote config (#145) is one editor over every key of the domains in 3.1. The `ru
 
 Feature flags are boolean or enum keys of the `liveops` domain with an optional audience filter by platform and app version. Who edits which domain is the matrix in 2.3; anti-cheat values are hidden from every role but `super_admin` because they describe detection (`docs/privacy.md` 8.3).
 
-Built so far (#145): `rules` at `/config/rules`, `matchmaking` and `penalties` at their screens, and of `liveops` only the content gate minimums at `/config/liveops` (9.1). No feature flag key is defined yet, so the `liveops` domain has no flags and nothing of it reaches the client.
+Built so far (#145): `rules` at `/config/rules`, `matchmaking` and `penalties` at their screens, and of `liveops` only the content gate minimums at `/config/liveops` (9.1). The history of `rules` and `liveops` shows each key a version changed against the version before. No feature flag key is defined yet, so the `liveops` domain has no flags and nothing of it reaches the client.
 
 ### 5.15 Game strings
 
