@@ -1,4 +1,4 @@
-import { changeText, type CatalogChanges } from "@/config/changes";
+import { changeText, type CatalogChanges, type EntryChange } from "@/config/changes";
 import type { Translate } from "@/i18n/translate";
 
 export function CatalogChangeList({ changes, t }: { changes: CatalogChanges; t: Translate }) {
@@ -12,9 +12,19 @@ export function CatalogChangeList({ changes, t }: { changes: CatalogChanges; t: 
       ))}
       {changes.entries.map((entry) => (
         <li key={entry.id}>
-          {entry.id}: {entry.added ? t("config.added") : entry.fields.map(changeText).join(", ")}
+          {entry.id}: <EntryText entry={entry} t={t} />
         </li>
       ))}
     </ul>
   );
+}
+
+function EntryText({ entry, t }: { entry: EntryChange; t: Translate }) {
+  if (entry.change === "added") {
+    return <>{t("config.added")}</>;
+  }
+  if (entry.change === "removed") {
+    return <>{t("config.removed")}</>;
+  }
+  return <>{entry.fields.map(changeText).join(", ")}</>;
 }

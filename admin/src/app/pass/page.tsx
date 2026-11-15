@@ -4,7 +4,8 @@ import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedSeasons, changedSettings, emptyPassConfig, type PassConfig } from "@/pass/config";
+import { emptyPassConfig, passChanges, type PassConfig } from "@/pass/config";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackPass } from "./actions";
 import { PassEditor } from "./PassEditor";
@@ -58,23 +59,22 @@ function History({ versions, rollback, t }: { versions: ConfigVersion[]; rollbac
               <th className="py-2 pr-4">{t("pass.version")}</th>
               <th className="py-2 pr-4">{t("pass.published_at")}</th>
               <th className="py-2 pr-4">{t("pass.season_count")}</th>
-              <th className="py-2 pr-4">{t("pass.changed")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
           <tbody>
-            {versions.map((version, index) => {
-              const previous = versions[index + 1]?.catalog ?? null;
-              return (
-                <tr key={version.config_version} className="border-t border-surface align-top">
-                  <td className="py-2 pr-4">{version.config_version}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
-                  <td className="py-2 pr-4">{version.catalog.seasons.length}</td>
-                  <td className="py-2 pr-4 font-mono break-all">{[...changedSeasons(previous, version.catalog), ...(previous ? changedSettings(previous, version.catalog) : [])].join(", ")}</td>
-                  {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackPass} />}</td>}
-                </tr>
-              );
-            })}
+            {versions.map((version, index) => (
+              <tr key={version.config_version} className="border-t border-surface align-top">
+                <td className="py-2 pr-4">{version.config_version}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
+                <td className="py-2 pr-4">{version.catalog.seasons.length}</td>
+                <td className="py-2 pr-4 font-mono break-all">
+                  <CatalogChangeList changes={passChanges(versions[index + 1]?.catalog ?? null, version.catalog)} t={t} />
+                </td>
+                {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackPass} />}</td>}
+              </tr>
+            ))}
           </tbody>
         </table>
       )}

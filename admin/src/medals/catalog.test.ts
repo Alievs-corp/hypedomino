@@ -78,9 +78,9 @@ test("history lists each field a version changed, per medal and in the showcase 
   assert.deepEqual(medalChanges(catalog, next), {
     settings: [{ field: "profileMedalSlots", before: "3", after: "4" }],
     entries: [
-      { id: "medal.wins_50", added: false, fields: [{ field: "availability", before: "live", after: "retired" }] },
-      { id: "medal.cup", added: true, fields: [] },
+      { id: "medal.wins_50", change: "changed", fields: [{ field: "availability", before: "live", after: "retired" }] },
+      { id: "medal.cup", change: "added", fields: [] },
     ],
   });
-  assert.deepEqual(medalChanges(null, catalog), { settings: [], entries: [{ id: "medal.wins_50", added: true, fields: [] }] });
+  assert.deepEqual(medalChanges(null, catalog), { settings: [], entries: [{ id: "medal.wins_50", change: "added", fields: [] }] });
 });

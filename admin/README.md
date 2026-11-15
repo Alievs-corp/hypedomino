@@ -74,7 +74,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 - **Running seasons:** the state (planned, running, ended) comes from server time (`rules.server_time`). Once a season has started its start, curve and level rewards are read-only; only the end of a running season may change. A planned season may be removed until it starts.
 - **Checks:** a window that ends before it starts, an overlap, curve values below 1, XP max below XP base, levels not above premium plus levels, an empty premium level, a track over its budget or an invalid setting marks the field and blocks the publish. Item sources and mythic items are checked by the API.
 - **Publish** takes a reason and a confirmation step that lists the added or changed seasons with their totals, dropped seasons and changed settings (`PUT /admin/config/pass`). It is shown only to roles with publish on pass seasons.
-- **History and rollback:** as for shop offers, on `/admin/config/pass/history` and `/admin/config/pass/rollback`; each version lists the seasons and settings it changed.
+- **History and rollback:** as for shop offers, on `/admin/config/pass/history` and `/admin/config/pass/rollback`. Each version lists what it changed against the version before, like the missions history: each setting as `before → after`, each season it added or removed, and each field of a season it changed by path, such as `curve.levels` or `premium.4.crystals`.
 
 ## Ranked seasons
 
