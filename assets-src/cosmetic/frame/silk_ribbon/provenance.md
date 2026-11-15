@@ -77,9 +77,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `7eb9c18f60c306039df80749f5cf326effb52d836e69e86d3f2e78d6b3b43506` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe2-3ef5-71c2-8fdb-b398ce02090a/` |
-| work/silk_ribbon_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/silk_ribbon_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/silk_ribbon_master.png | `7b76e55c494bf7e555f9875a7f1aec4008d17f8961d75a17666abe71d66fdcce` | 1254 x 1254 RGBA, the cut-out master | `silk_ribbon_cleanup.py` |
-| work/silk_ribbon_loop.py | `bd7e279e7caa08bf50d2447720f578daa63f29f25143486971c7092de665cf70` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/silk_ribbon_loop.py | `6b7c78e03db63ea41b4f604b86347fa182dee71b537c921d68b18b09c05a7ed2` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `4d1e72446212cf2660b90fbeccb69740a531b66df9d87131ecf4ba4c59da3bcb` | 256 x 256 RGBA static | `silk_ribbon_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `silk_ribbon_loop.py` |
 

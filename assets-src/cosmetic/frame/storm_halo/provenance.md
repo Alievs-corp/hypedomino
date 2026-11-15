@@ -79,9 +79,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `61380aa0f67ac294c12edc5a9bef7dd605f70f1f492e28923f613be3216cf7da` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfdb-ba58-7943-87cb-24e772e12382/` |
-| work/storm_halo_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/storm_halo_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/storm_halo_master.png | `d3042f1cb4aac4baf0f3effe3908b1d93cfe86221ffa353324fe72c23b25c522` | 1254 x 1254 RGBA, the cut-out master | `storm_halo_cleanup.py` |
-| work/storm_halo_loop.py | `7ba172f5c9d95f00a22480bf39f1fdd53648850e0def7fea523fc1a3e6fcb788` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/storm_halo_loop.py | `e7c5dc722dfc556c0c300930835eb160dadeb5d60c7901f360b7712e25910919` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `7245b6464191de321f5752a52cb7204bbac94f4b15d38e764169528df921c217` | 256 x 256 RGBA static | `storm_halo_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `storm_halo_loop.py` |
 

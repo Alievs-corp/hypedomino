@@ -82,13 +82,13 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 |---|---|---|---|
 | concept/20261115-01.png | `c4b263d8b4b9a5f7cf0bc182590edea19521b6cd5deffd412783ad16a623d997` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe0-13b6-7cc3-a60c-5e8f4bfe579f/` |
 | concept/20261115-02.png | `e770cd88ef478166517047b5338a9f2cbccf4213c620d3c34dd4d1716ac86dfc` | 1254 x 1254 RGB, the edit of the canonical concept, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe6-88e0-70f1-83c4-dee4214aa492/` |
-| work/opal_wings_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/opal_wings_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/opal_wings_master.png | `7d320b260155935b624b4ce695a39de7d0753c939ef066f4a1de13355f79ec8f` | 1254 x 1254 RGBA, the cut-out master | `opal_wings_cleanup.py` |
 | work/opal_wings_plate_master.png | `33097b591844052d26c89b69c6020ee1bf08d00982dd1699e08b6b4fbfa2701a` | 1254 x 1254 RGBA, the cut-out edit | `opal_wings_cleanup.py` on the edit |
-| work/opal_wings_parts.py | `0b442d8eff75c9749b034b6399bb4f203636f289ccf131959a2d15a2a059d6ba` | Script that splits the moving parts | Written by Claude Code, 2026-11-15 |
+| work/opal_wings_parts.py | `b8ca1d853aaf8c3177d258e4d5b7c55adfe3a2437e8bba2e767be7538acec0fc` | Script that splits the moving parts | Written by Claude Code, 2026-11-15 |
 | work/opal_wings_butterflies.png | `5c7bcd0322f160c84b3e7503dbc508364129d67c73b8c3e4d3d48a3dfccc8ff1` | 1254 x 1254 RGBA, the moving layer | `opal_wings_parts.py` |
 | work/opal_wings_under.png | `ad6105c1d4bcc6d36261afa18215d4aa3a96d93a544db272766efe8e29d81de0` | 1254 x 1254 RGBA, the still layer | `opal_wings_parts.py` |
-| work/opal_wings_loop.py | `da494ad0ced6c7b3d873a67c6ec8f8f7f1d982cf6966f46c7cd537c2450e0bfd` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/opal_wings_loop.py | `4ce0cc0729531d0de280477ea2675d54d539fe1fd7ed0dd78d1dd37fd2750183` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `d7a4984b7a9249c62f59856da1d15e53fa16cf5baa35457d4d34cb94748daa18` | 256 x 256 RGBA static | `opal_wings_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `opal_wings_loop.py` |
 

@@ -77,9 +77,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `5122431904fe7752482bb2cd38944ab610694aa3ee0f82f7bd008bb3a101f03c` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfde-0b0e-7643-808d-d8b880f84305/` |
-| work/plum_bough_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/plum_bough_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/plum_bough_master.png | `ae7e6b41ace9281e5feaf0d3e0c104c3b6e0d93cc8bf025c141da166e63323a0` | 1254 x 1254 RGBA, the cut-out master | `plum_bough_cleanup.py` |
-| work/plum_bough_loop.py | `cda1c60016ea96263f9dcc983d3f15a38eb877c87dd7501102621ada0963ecbd` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/plum_bough_loop.py | `35c8d0f52c72f389189522999f91543bde7c7a418b7afbb6225174b6e231801d` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `4ea3987ba6b667fda24f428061a80ee4a1c2dc963b994f3f65e9c4490703ed4d` | 256 x 256 RGBA static | `plum_bough_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `plum_bough_loop.py` |
 

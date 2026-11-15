@@ -77,9 +77,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `c021ed60edfa66267550891ec9ee1fcd53e1c39246928ee09e2281febf44250e` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe3-7bc5-7962-8146-d9228e343751/` |
-| work/honey_comb_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/honey_comb_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/honey_comb_master.png | `e1434389787f9908dfc91444077884df8d5bc7044a73e5d6552e2d548c921db2` | 1254 x 1254 RGBA, the cut-out master | `honey_comb_cleanup.py` |
-| work/honey_comb_loop.py | `3b426b8118894994ae1f1ffae4d4d67eab8cf24b729faf0babf84ee7d55d1197` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/honey_comb_loop.py | `0504ad9394606cca90c9c246234086c8ede61289d79092f0e1bad3af4544197a` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `e90616fa80f582a92ae3bd3334dfdf5ca9a72e15c8b5fdd22db2beb72ec3f77e` | 256 x 256 RGBA static | `honey_comb_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `honey_comb_loop.py` |
 

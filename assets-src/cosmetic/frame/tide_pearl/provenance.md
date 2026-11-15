@@ -77,9 +77,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `958ee4add4992bbca3ff6aa2aacfedd05e3233ca7f8defa2961eebe0cbac02d7` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfdd-1a1c-75e1-a099-a6e6a8864773/` |
-| work/tide_pearl_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/tide_pearl_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/tide_pearl_master.png | `18e11eb50d916be051f2f1031ecd4a3dce5f5be2f44d7c337e5d4d8f7d17f856` | 1254 x 1254 RGBA, the cut-out master | `tide_pearl_cleanup.py` |
-| work/tide_pearl_loop.py | `813edce1e77741435bd4c62a81a3fa1adb7543e7f0466d893a01ac152219c6c6` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/tide_pearl_loop.py | `16a895ce7b94f21cf1aa34eefaa52c7586cb5a0b82b1a3868f5dd687f1cbe0d8` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `bca45538746507c262113db2e8092a7f3378793a4aeb408d6a922fff35876759` | 256 x 256 RGBA static | `tide_pearl_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `tide_pearl_loop.py` |
 

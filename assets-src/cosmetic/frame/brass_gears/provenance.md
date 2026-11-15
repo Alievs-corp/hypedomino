@@ -82,13 +82,13 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 |---|---|---|---|
 | concept/20261115-01.png | `2b73a51aa510fe633d6c58fef8fb42399afc792b68c22347556e66455ea0a86c` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe1-1e8d-7060-a36c-16b55fca1645/` |
 | concept/20261115-02.png | `144890085124e85eb584953b383f53f04a0f8fd966b4db3aa94dc4b600f251d5` | 1254 x 1254 RGB, the edit of the canonical concept, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfe5-5968-7850-9808-e6a04d0eb6a0/` |
-| work/brass_gears_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/brass_gears_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/brass_gears_master.png | `3a0f37a7b322ee05a770472a76ad0528b0321f2d90d69eb8516c4933e1a7a585` | 1254 x 1254 RGBA, the cut-out master | `brass_gears_cleanup.py` |
 | work/brass_gears_plate_master.png | `e990d278155cdc27c556e96d836e840f05b8d2a01d884a55610aa9cb7e6d9224` | 1254 x 1254 RGBA, the cut-out edit | `brass_gears_cleanup.py` on the edit |
-| work/brass_gears_parts.py | `eb0cc80ef30df77c03d0b185be864d88b0a4340110be5aa5fe2e1a6c21590422` | Script that splits the moving parts | Written by Claude Code, 2026-11-15 |
+| work/brass_gears_parts.py | `8cb75948dfb3fa9da4ce2956d80472417d71e190af2d51d43ede146ca1fc00cf` | Script that splits the moving parts | Written by Claude Code, 2026-11-15 |
 | work/brass_gears_teeth.png | `c347e81b26c06a906337de53f864545b72f45a7c1cc7c1cc6c01e4f5dcc2e624` | 1254 x 1254 RGBA, the moving layer | `brass_gears_parts.py` |
 | work/brass_gears_under.png | `bb63eecb802c63a3520968eb0b9e17e5a5950ea5739287347d14f608d37dc714` | 1254 x 1254 RGBA, the still layer | `brass_gears_parts.py` |
-| work/brass_gears_loop.py | `470a297a2bf153ae28ffff6fac7ffd341a9169bfd4a932c505736ac712ded0e1` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/brass_gears_loop.py | `75059ea48c8026e998820deb66acc2c3d83160252022e1a6dd235c8efe409e91` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `07fcfbb2df0f4f30e2c6ae666c596a40a0f68617cd4465e521bc13f9e230aa66` | 256 x 256 RGBA static | `brass_gears_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `brass_gears_loop.py` |
 

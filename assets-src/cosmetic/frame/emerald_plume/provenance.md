@@ -77,9 +77,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `de4c61fdc7c22421f35ea03a7722d22f529ca84105b466e170ff7ab609b6b4aa` | 1254 x 1254 RGB, the generator's output, unchanged | Saved by Codex from `~/.codex/generated_images/01a1dfdf-2639-71d1-abb3-d2b8b3fe7871/` |
-| work/emerald_plume_cleanup.py | `20e705f5562a8dabd5ec83ac72123e2327ba1a526dcb8b250edcf0d6cd6ab750` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
+| work/emerald_plume_cleanup.py | `5e34e5d2919f7f5755d87a536bbbcd8801444203795050beb35f7d390fcd208a` | W-3 script | Written by Claude Code, 2026-11-15; the same script for every frame of this PR |
 | work/emerald_plume_master.png | `d80f077367592ba93a267bf784939f84a08d57bc32bcf7ea27d078dcaa66609d` | 1254 x 1254 RGBA, the cut-out master | `emerald_plume_cleanup.py` |
-| work/emerald_plume_loop.py | `e07d98f22b51c6510416efebb96ee5665c53fbb014b6b3a4f75bd02770420e4b` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
+| work/emerald_plume_loop.py | `5444bc2181c36dbdd4918a39b9dc5c160c146338c1d79060e0fd71debcbbce91` | W-4 and W-5 script | Written by Claude Code, 2026-11-15 |
 | export/static.png | `96ccb13d8f3828dec88e277f4c45cc51d1c8e2c237caf153a1b498d7d6cfa7ba` | 256 x 256 RGBA static | `emerald_plume_loop.py`, frame 9 without ambient detail |
 | export/anim/0001.png to 0016.png | per file in git | 256 x 256 RGBA loop frames | `emerald_plume_loop.py` |
 
