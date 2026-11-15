@@ -30,9 +30,9 @@ namespace HypeDomino.Content
             source.Download(ContentUrls.Strings(baseUrl, language, hash), content => Downloaded(language, version, hash, content));
         }
 
-        void Restore(string language)
+        public void Restore(string language)
         {
-            if (!source.TryLoadStored(language, out var version, out var hash, out var content)) return;
+            if (!source.TryLoadStored(language, out var version, out var hash, out var content) || strings.Holds(language, hash)) return;
             if (!strings.Stage(language, version, hash, content)) Debug.LogWarning($"Strings stored refused language={language} version={version}");
         }
 
