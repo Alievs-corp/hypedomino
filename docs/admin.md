@@ -393,7 +393,7 @@ Rules are `docs/economy.md` section 8. Batch generation creates `single_use` cod
 | `rankRewards` | Per mode and final tier: the reward bundle (#120), published as `rankRewards` of the mode in the `rating` config; coins from `RankRewardCoins` |
 | `state` | Server: `draft`, `scheduled`, `live`, `ending`, `closed` |
 
-Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice.
+Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice. The panel's publish review and ranking config history show each value a version changed against the one before, as `field before → after`.
 
 ### 5.13 Live events, banners and push campaigns
 
@@ -784,7 +784,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version, with their CSV export (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.
