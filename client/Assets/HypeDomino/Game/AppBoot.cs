@@ -26,10 +26,18 @@ namespace HypeDomino.Game
         public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, Action<HapticCue> playHaptic)
         {
             var cues = new HapticCues();
+            ServerHello announced = null;
+            var followed = strings.Language;
             session.HelloReceived += hello =>
             {
                 cues.StartConnection();
-                Hello(hello, flow, catalog, strings, bundles);
+                if (Hello(hello, flow, catalog, strings, bundles)) announced = hello;
+            };
+            strings.Changed += () =>
+            {
+                if (strings.Language == followed) return;
+                followed = strings.Language;
+                FollowLanguage(announced, strings, bundles);
             };
             session.ViewReceived += view =>
             {
@@ -50,6 +58,11 @@ namespace HypeDomino.Game
             var chains = hello.FallbackChains;
             for (var i = 0; i < chains.Count; i++)
                 if (!strings.SetChain(chains[i].Language, chains[i].Languages)) Debug.LogWarning($"Strings chain refused language={chains[i].Language}");
+            return Missing(hello, strings);
+        }
+
+        static List<AnnouncedBundle> Missing(ServerHello hello, GameStrings strings)
+        {
             var bundles = hello.StringBundles;
             var missing = new List<AnnouncedBundle>(bundles.Count);
             for (var i = 0; i < bundles.Count; i++)
@@ -59,16 +72,27 @@ namespace HypeDomino.Game
 
         static bool IsWanted(string language, string selected) => language == selected || language == GameLanguage.English;
 
-        static void Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles)
+        static bool Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles)
         {
             flow.Hello(hello);
-            if (hello.Status != HelloStatus.Accepted) return;
+            if (hello.Status != HelloStatus.Accepted) return false;
             catalog?.Announce(hello.CatalogVersion, hello.ContentBaseUrl);
-            var missing = FollowStrings(hello, strings);
+            Fetch(hello.ContentBaseUrl, FollowStrings(hello, strings), bundles);
+            return true;
+        }
+
+        static void FollowLanguage(ServerHello announced, GameStrings strings, StringBundleUpdater bundles)
+        {
+            bundles?.Restore(strings.Language);
+            if (announced != null) Fetch(announced.ContentBaseUrl, Missing(announced, strings), bundles);
+        }
+
+        static void Fetch(string baseUrl, List<AnnouncedBundle> missing, StringBundleUpdater bundles)
+        {
             for (var i = 0; i < missing.Count; i++)
             {
                 Debug.Log($"Strings fetch language={missing[i].Language} version={missing[i].Version}");
-                bundles?.Fetch(hello.ContentBaseUrl, missing[i].Language, (int)missing[i].Version, missing[i].Hash);
+                bundles?.Fetch(baseUrl, missing[i].Language, (int)missing[i].Version, missing[i].Hash);
             }
         }
 

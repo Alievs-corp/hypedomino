@@ -5,12 +5,13 @@ import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Bundle, Coverage, GameString } from "@/strings/strings";
 import { Bundles } from "./Bundles";
+import { FallbackChains } from "./FallbackChains";
 import { StringsEditor } from "./StringsEditor";
 import { Transfer } from "./Transfer";
 
 export const dynamic = "force-dynamic";
 
-type Active = { config_version: number; bundles: Record<string, number> };
+type Active = { config_version: number; bundles: Record<string, number>; fallback_chains: Record<string, string[]> };
 
 export default async function StringsPage() {
   const t = await serverTranslator();
@@ -80,6 +81,7 @@ export default async function StringsPage() {
         mayPublish={can(permissions, "game_strings", "publish")}
         rollbackClientId={canRollBack(permissions, "game_strings") ? googleClientId() : null}
       />
+      <FallbackChains languages={languages} chains={active.body.fallback_chains} mayPublish={can(permissions, "game_strings", "publish")} />
     </main>
   );
 }

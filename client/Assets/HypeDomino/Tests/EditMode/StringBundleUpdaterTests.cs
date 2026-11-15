@@ -173,6 +173,33 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheKeptBundleOfALanguageChosenLaterIsStagedForTheNextScreen()
+        {
+            FetchedOnce("ru", RuContent, 2);
+            var source = new ServedSource(folder);
+            var strings = Strings("az");
+            var updater = Updater(source, strings);
+            updater.LoadStored();
+            updater.Restore("ru");
+            Assert.IsTrue(strings.Holds("ru", Hash(RuContent)));
+            Assert.IsTrue(strings.ApplyStaged(false));
+            CollectionAssert.IsEmpty(source.Downloads);
+        }
+
+        [Test]
+        public void AKeptBundleAlreadyHeldIsNotStagedAgain()
+        {
+            FetchedOnce("az", AzContent, 3);
+            var source = new ServedSource(folder);
+            var strings = Strings("az");
+            var updater = Updater(source, strings);
+            updater.LoadStored();
+            updater.Restore("az");
+            Assert.IsTrue(strings.Holds("az", Hash(AzContent)));
+            Assert.IsFalse(strings.ApplyStaged(false));
+        }
+
+        [Test]
         public void OfflineTheBuiltinStaysAndTheNextHelloTriesAgain()
         {
             var source = new ServedSource(folder);

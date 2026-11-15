@@ -60,12 +60,20 @@ export async function publishBundle(language: string, reason: string): Promise<C
   return reply.status === 200 ? { ok: true, version: reply.body.version } : refused(reply.status, reply.body as Blocked);
 }
 
-export async function activateBundle(language: string, version: number, reason: string): Promise<ConfigResult> {
+async function changeActive(change: (active: Active) => Active, reason: string): Promise<ConfigResult> {
   const active = await adminApi<Active>("GET", "/admin/strings/active");
   if (active.status !== 200) {
     return refused(active.status, active.body);
   }
-  const bundles = { ...active.body.bundles, [language]: version };
-  const reply = await adminApi<Active>("PUT", "/admin/strings/active", { bundles, fallback_chains: active.body.fallback_chains, reason });
+  const { bundles, fallback_chains } = change(active.body);
+  const reply = await adminApi<Active>("PUT", "/admin/strings/active", { bundles, fallback_chains, reason });
   return reply.status === 200 ? { ok: true, version: reply.body.config_version } : refused(reply.status, reply.body);
+}
+
+export async function activateBundle(language: string, version: number, reason: string): Promise<ConfigResult> {
+  return changeActive((active) => ({ ...active, bundles: { ...active.bundles, [language]: version } }), reason);
+}
+
+export async function saveFallbackChain(language: string, chain: string[], reason: string): Promise<ConfigResult> {
+  return changeActive((active) => ({ ...active, fallback_chains: { ...active.fallback_chains, [language]: chain } }), reason);
 }

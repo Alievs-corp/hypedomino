@@ -27,8 +27,8 @@ namespace HypeDomino.Tests.EditMode
         const ulong Nonce = 0x5EED_CAFE_F00D_0001;
         const string Builtin = @"{""entries"":[{""key"":""k"",""en"":""E"",""tr"":""T""}]}";
         const string AzContent = @"{""language"":""az"",""strings"":{""k"":""A""}}";
+        const string RuContent = @"{""language"":""ru"",""strings"":{""k"":""R""}}";
         const string EnHash = "e0";
-        const string RuHash = "r0";
 
         static readonly string[] NoLocales = { };
         static readonly Regex MissingK = new Regex("^Strings missing key=k language=az version=0$");
@@ -52,14 +52,20 @@ namespace HypeDomino.Tests.EditMode
         {
             public List<string> Downloads { get; } = new();
 
+            public string KeptLanguage { get; set; }
+
+            public int KeptReads { get; private set; }
+
             public void Download(string url, Action<byte[]> done) => Downloads.Add(url);
 
             public bool TryLoadStored(string language, out int version, out string hash, out byte[] content)
             {
-                version = 0;
-                hash = null;
-                content = null;
-                return false;
+                KeptReads++;
+                var kept = language == KeptLanguage;
+                version = kept ? 2 : 0;
+                hash = kept ? RuHash : null;
+                content = kept ? Encoding.UTF8.GetBytes(RuContent) : null;
+                return kept;
             }
 
             public void Store(string language, int version, string hash, byte[] content) { }
@@ -95,13 +101,15 @@ namespace HypeDomino.Tests.EditMode
             public readonly AppFlow Flow = new();
             public readonly IdleCatalogSource Source = new();
             public readonly FrameRatePolicy FrameRate = AppBootTests.FrameRate();
-            public readonly GameStrings Strings = AppBootTests.Strings("az");
+            public readonly LanguageChoice Choice = LanguageChoice.Load("az", () => NoLocales);
             public readonly IdleStringSource StringSource = new();
+            public readonly GameStrings Strings;
             public readonly CatalogUpdater Catalog;
             public HapticCue Felt;
 
             public Listened()
             {
+                Strings = new GameStrings(BuiltinStrings.Parse(Builtin), Choice, false);
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
                 AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), cue => Felt = cue);
@@ -141,6 +149,10 @@ namespace HypeDomino.Tests.EditMode
             new GameStrings(BuiltinStrings.Parse(Builtin), LanguageChoice.Load(language, () => NoLocales), false);
 
         static string AzHash => DownloadedBundle.Sha256Hex(Encoding.UTF8.GetBytes(AzContent));
+
+        static string RuHash => DownloadedBundle.Sha256Hex(Encoding.UTF8.GetBytes(RuContent));
+
+        static string StringsUrl(string language, string hash) => ContentUrls.Strings(Cdn, language, hash);
 
         static ServerHello Announcing(HelloStatus status, params FallbackChain[] chains)
         {
@@ -319,6 +331,68 @@ namespace HypeDomino.Tests.EditMode
             CollectionAssert.AreEqual(new[] { ContentUrls.Strings(Cdn, "az", AzHash), ContentUrls.Strings(Cdn, "en", EnHash) }, app.StringSource.Downloads);
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("E", app.Strings.Text("k"));
+        }
+
+        [Test]
+        public void ALanguageChosenAfterTheHelloFetchesItsAnnouncedBundle()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted));
+            LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=ru version=2$"));
+            Assert.IsTrue(app.Choice.Choose("ru"));
+            CollectionAssert.AreEqual(new[] { StringsUrl("az", AzHash), StringsUrl("en", EnHash), StringsUrl("ru", RuHash) }, app.StringSource.Downloads);
+        }
+
+        [Test]
+        public void ALanguageChosenBeforeAnyHelloFetchesNothing()
+        {
+            var app = new Listened();
+            Assert.IsTrue(app.Choice.Choose("ru"));
+            CollectionAssert.IsEmpty(app.StringSource.Downloads);
+        }
+
+        [Test]
+        public void ALanguageTheHelloDidNotAnnounceFetchesNothing()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted));
+            Assert.IsTrue(app.Choice.Choose("tr"));
+            Assert.AreEqual(2, app.StringSource.Downloads.Count);
+        }
+
+        [Test]
+        public void ALanguageChosenAfterABlockingHelloFetchesNothing()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Maintenance));
+            Assert.IsTrue(app.Choice.Choose("ru"));
+            CollectionAssert.IsEmpty(app.StringSource.Downloads);
+        }
+
+        [Test]
+        public void AKeptBundleOfTheChosenLanguageIsUsedInsteadOfAFetch()
+        {
+            var app = new Listened();
+            app.StringSource.KeptLanguage = "ru";
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted));
+            Assert.IsTrue(app.Choice.Choose("ru"));
+            Assert.AreEqual(2, app.StringSource.Downloads.Count);
+            Assert.IsTrue(app.Strings.Holds("ru", RuHash));
+            Assert.IsTrue(app.Strings.ApplyStaged(false));
+            Assert.AreEqual("R", app.Strings.Text("k"));
+        }
+
+        [Test]
+        public void AppliedBundlesInTheSameLanguageReadAndFetchNothingAgain()
+        {
+            var app = new Listened();
+            app.StringSource.KeptLanguage = "ru";
+            Assert.IsTrue(app.Choice.Choose("ru"));
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted));
+            CollectionAssert.AreEqual(new[] { StringsUrl("en", EnHash) }, app.StringSource.Downloads);
+            Assert.IsTrue(app.Strings.ApplyStaged(false));
+            Assert.AreEqual(1, app.StringSource.KeptReads);
+            Assert.AreEqual(1, app.StringSource.Downloads.Count);
         }
 
         [Test]

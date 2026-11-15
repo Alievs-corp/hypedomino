@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bundlesOf, placeholdersFromText, placeholdersText, problemsText, valueOf, visibleStrings, type GameString } from "./strings.ts";
+import { bundlesOf, chainError, chainFromText, placeholdersFromText, placeholdersText, problemsText, valueOf, visibleStrings, type GameString } from "./strings.ts";
 
 function entry(key: string, fields: Partial<GameString> = {}): GameString {
   return { key, note: "", max_length: 40, placeholders: [], deprecated: false, values: {}, ...fields };
@@ -47,4 +47,21 @@ test("bundles of one language come newest first", () => {
 
 test("blocked problems read as key: error", () => {
   assert.equal(problemsText([{ key: "a.b", error: "too long" }, { key: "c.d", error: "bad placeholder" }]), "a.b: too long; c.d: bad placeholder");
+});
+
+const languages = ["az", "en", "ru", "tr"];
+
+test("a chain reads from comma separated language codes", () => {
+  assert.deepEqual(chainFromText(" az, tr ,,en "), ["az", "tr", "en"]);
+  assert.deepEqual(chainFromText("  "), []);
+});
+
+test("a chain starts with its language, ends with en and repeats no known language", () => {
+  assert.equal(chainError("az", ["az", "tr", "en"], languages), null);
+  assert.equal(chainError("en", ["en"], languages), null);
+  assert.equal(chainError("az", [], languages), "start");
+  assert.equal(chainError("az", ["tr", "az", "en"], languages), "start");
+  assert.equal(chainError("tr", ["tr", "az"], languages), "end");
+  assert.equal(chainError("tr", ["tr", "de", "en"], languages), "unknown");
+  assert.equal(chainError("az", ["az", "tr", "tr", "en"], languages), "repeat");
 });
