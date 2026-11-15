@@ -96,8 +96,8 @@ test("history lists each field a version changed, per mission and in the slots",
   assert.deepEqual(missionChanges(catalog, next), {
     settings: [{ field: "weeklySlots", before: '[{"coins":150,"xp":600}]', after: '[{"coins":160,"xp":600}]' }],
     entries: [
-      { id: "mission.win_50", added: false, fields: [{ field: "target", before: "50", after: "60" }, { field: "filters.queue", before: "—", after: "ranked" }] },
-      { id: "mission.hands_3", added: true, fields: [] },
+      { id: "mission.win_50", change: "changed", fields: [{ field: "target", before: "50", after: "60" }, { field: "filters.queue", before: "—", after: "ranked" }] },
+      { id: "mission.hands_3", change: "added", fields: [] },
     ],
   });
   assert.deepEqual(missionChanges(catalog, catalog), { settings: [], entries: [] });
@@ -107,8 +107,8 @@ test("the oldest listed version shows its missions as added", () => {
   assert.deepEqual(missionChanges(null, catalog), {
     settings: [],
     entries: [
-      { id: "mission.win_50", added: true, fields: [] },
-      { id: "mission.play_3", added: true, fields: [] },
+      { id: "mission.win_50", change: "added", fields: [] },
+      { id: "mission.play_3", change: "added", fields: [] },
     ],
   });
 });

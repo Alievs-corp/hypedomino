@@ -1,6 +1,6 @@
 export type FieldChange = { field: string; before: string; after: string };
 
-export type EntryChange = { id: string; added: boolean; fields: FieldChange[] };
+export type EntryChange = { id: string; change: "added" | "changed" | "removed"; fields: FieldChange[] };
 
 export type CatalogChanges = { settings: FieldChange[]; entries: EntryChange[] };
 
@@ -38,14 +38,17 @@ export function fieldChanges(before: unknown, after: unknown): FieldChange[] {
 
 export function entryChanges(before: readonly Entry[], after: readonly Entry[]): EntryChange[] {
   const previous = new Map(before.map((entry) => [entry.id, entry]));
-  return after.flatMap((entry): EntryChange[] => {
+  const kept = new Set(after.map((entry) => entry.id));
+  const changed = after.flatMap((entry): EntryChange[] => {
     const older = previous.get(entry.id);
     if (!older) {
-      return [{ id: entry.id, added: true, fields: [] }];
+      return [{ id: entry.id, change: "added", fields: [] }];
     }
     const fields = fieldChanges(older, entry);
-    return fields.length > 0 ? [{ id: entry.id, added: false, fields }] : [];
+    return fields.length > 0 ? [{ id: entry.id, change: "changed", fields }] : [];
   });
+  const removed = before.filter((entry) => !kept.has(entry.id)).map((entry): EntryChange => ({ id: entry.id, change: "removed", fields: [] }));
+  return [...changed, ...removed];
 }
 
 export function changeText(change: FieldChange): string {

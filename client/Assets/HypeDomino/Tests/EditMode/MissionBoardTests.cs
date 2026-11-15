@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Net;
 using HypeDomino.UI.Missions;
 using NUnit.Framework;
 
@@ -87,6 +88,80 @@ namespace HypeDomino.Tests.EditMode
             var board = Board();
             Assert.AreEqual(UnixMs(2026, 11, 15), board.DailyResetUnixMs);
             Assert.AreEqual(UnixMs(2026, 11, 16), board.WeeklyResetUnixMs);
+        }
+
+        static ServerClock ClockAt(ulong serverUnixMs)
+        {
+            var clock = new ServerClock();
+            clock.Sync(serverUnixMs, 0, 0);
+            return clock;
+        }
+
+        [Test]
+        public void DailyAndWeeklyTabsCountDownToTheirResetOnServerTime()
+        {
+            var board = Board();
+            var clock = ClockAt(UnixMs(2026, 11, 15) - 90_000);
+            Assert.AreEqual(board.DailyResetUnixMs, board.ResetUnixMs(MissionTab.Daily));
+            Assert.AreEqual(board.WeeklyResetUnixMs, board.ResetUnixMs(MissionTab.Weekly));
+            Assert.IsTrue(board.TrySecondsUntilReset(MissionTab.Daily, clock, 0, out var daily));
+            Assert.AreEqual(90, daily, 0.001);
+            Assert.IsTrue(board.TrySecondsUntilReset(MissionTab.Weekly, clock, 30.5, out var weekly));
+            Assert.AreEqual(86_459.5, weekly, 0.001);
+            Assert.IsTrue(board.TrySecondsUntilReset(MissionTab.Daily, clock, 120, out var past));
+            Assert.AreEqual(0, past);
+        }
+
+        [Test]
+        public void TheAchievementTabHasNoResetCountdown()
+        {
+            var board = Board();
+            Assert.AreEqual(0UL, board.ResetUnixMs(MissionTab.Achievement));
+            Assert.IsFalse(board.TrySecondsUntilReset(MissionTab.Achievement, ClockAt(UnixMs(2026, 11, 14)), 0, out var seconds));
+            Assert.AreEqual(0, seconds);
+        }
+
+        [Test]
+        public void NoResetCountdownRunsBeforeTheClockIsSynced()
+        {
+            var board = Board();
+            Assert.IsFalse(board.TrySecondsUntilReset(MissionTab.Daily, new ServerClock(), 10, out var seconds));
+            Assert.AreEqual(0, seconds);
+            Assert.IsFalse(board.TrySecondsUntilReset(MissionTab.Weekly, null, 10, out _));
+            Assert.IsFalse(board.IsPastReset(new ServerClock(), 10));
+            Assert.IsFalse(board.IsPastReset(null, 10));
+        }
+
+        [Test]
+        public void TheBoardIsPastItsResetOnceTheServerDayEnds()
+        {
+            var board = Board();
+            var clock = ClockAt(UnixMs(2026, 11, 15) - 1_000);
+            Assert.IsFalse(board.IsPastReset(clock, 0));
+            Assert.IsFalse(board.IsPastReset(clock, 0.5));
+            Assert.IsTrue(board.IsPastReset(clock, 1));
+            Assert.IsTrue(board.IsPastReset(clock, 3_600));
+        }
+
+        [Test]
+        public void TickingTheResetCountdownsAllocatesNothing()
+        {
+            var board = Board();
+            var clock = ClockAt(UnixMs(2026, 11, 15) - 90_000);
+            var now = 0.0;
+            var sink = 0.0;
+            TestDelegate tick = () =>
+            {
+                board.TrySecondsUntilReset(MissionTab.Daily, clock, now, out var daily);
+                board.TrySecondsUntilReset(MissionTab.Weekly, clock, now, out var weekly);
+                board.TrySecondsUntilReset(MissionTab.Achievement, clock, now, out var none);
+                sink += daily + weekly + none + (board.IsPastReset(clock, now) ? 1 : 0);
+                now += 0.016;
+            };
+            tick();
+
+            Assert.That(tick, Allocates.Nothing);
+            Assert.Greater(sink, 0d);
         }
 
         [TestCase("2026-12-31", "2026-W53", 2027, 1, 1, 2027, 1, 4)]

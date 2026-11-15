@@ -1,3 +1,4 @@
+import { fieldChanges, type FieldChange } from "../config/changes.ts";
 import { sameContent } from "../config/sameContent.ts";
 import type { MessageKey } from "@/i18n/translate";
 import type { Bundle } from "@/shop/catalog";
@@ -224,16 +225,11 @@ export function configIssues(config: RatingConfig, divisionRanks: readonly strin
   return [...found];
 }
 
-function changedKeys<T extends Record<string, unknown>>(before: T, after: T, skip: readonly string[]): string[] {
-  const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].filter((key) => !skip.includes(key));
-  return keys.filter((key) => differs(before[key], after[key]));
-}
-
-export function changedConfig(before: RatingConfig, after: RatingConfig): string[] {
-  return [
-    ...changedKeys(before, after, ["modes"]),
-    ...modes.flatMap((mode) => changedKeys(before.modes[mode], after.modes[mode], []).map((key) => `${mode}.${key}`)),
-  ];
+export function ratingChanges(before: RatingConfig, after: RatingConfig): FieldChange[] {
+  const { modes: _previousModes, ...previous } = before;
+  const { modes: _nextModes, ...next } = after;
+  const perMode = modes.flatMap((mode) => fieldChanges(before.modes[mode], after.modes[mode]).map((change) => ({ ...change, field: `${mode}.${change.field}` })));
+  return [...fieldChanges(previous, next), ...perMode];
 }
 
 export function changedStructural(before: RatingConfig, after: RatingConfig, structuralKeys: readonly string[], divisionRanks: readonly string[]): string[] {
