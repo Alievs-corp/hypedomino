@@ -229,6 +229,56 @@ namespace HypeDomino.Tests.EditMode
             CollectionAssert.AreEqual(new[] { PartyLoop }, loops.Releases);
         }
 
+        EmojiArtShelf LoadedShelf()
+        {
+            var shelf = Shelf(EffectLevel.Medium);
+            shelf.Prefetch(new[] { Laugh, Party });
+            stills.Finish(LaughStill, sprite);
+            stills.Finish(PartyStill, sprite);
+            loops.Finish(PartyLoop, loop);
+            return shelf;
+        }
+
+        [Test]
+        public void DiagStill()
+        {
+            var shelf = LoadedShelf();
+            shelf.Show(TableSide.Top, Laugh);
+            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Laugh); }));
+        }
+
+        [Test]
+        public void DiagLoop()
+        {
+            var shelf = LoadedShelf();
+            shelf.Show(TableSide.Top, Party);
+            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Party); }));
+        }
+
+        [Test]
+        public void DiagDelegate()
+        {
+            Action<TableSide, LoopArt> show = Record;
+            show(TableSide.Top, loop);
+            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) show(TableSide.Top, loop); }));
+        }
+
+        [Test]
+        public void DiagUnknown()
+        {
+            var shelf = LoadedShelf();
+            shelf.Show(TableSide.Top, "emoji.missing");
+            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, "emoji.missing"); }));
+        }
+
+        [Test]
+        public void DiagIsWaiting()
+        {
+            var shelf = LoadedShelf();
+            shelf.IsWaiting(TableSide.Top);
+            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.IsWaiting(TableSide.Top); }));
+        }
+
         [Test]
         public void ShowingALoadedEmojiDoesNotAllocate()
         {
