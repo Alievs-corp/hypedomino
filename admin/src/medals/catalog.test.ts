@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   addMedal,
-  changedMedals,
   emptyMedalCatalog,
+  medalChanges,
   medalIssues,
   newMedal,
   replaceMedal,
@@ -73,8 +73,14 @@ test("issues name what the server would refuse or what cannot be meant", () => {
   assert.ok(validShowcaseSlots(0) && validShowcaseSlots(3) && !validShowcaseSlots(-1) && !validShowcaseSlots(1.5));
 });
 
-test("history lists the medals a version added or changed", () => {
-  const next = replaceMedal(addMedal(catalog, newMedal("cup", rules))!, { ...catalog.medals[0], availability: "retired" });
-  assert.deepEqual(changedMedals(catalog, next), ["medal.wins_50", "medal.cup"]);
-  assert.deepEqual(changedMedals(null, catalog), ["medal.wins_50"]);
+test("history lists each field a version changed, per medal and in the showcase slots", () => {
+  const next = { ...replaceMedal(addMedal(catalog, newMedal("cup", rules))!, { ...catalog.medals[0], availability: "retired" }), profileMedalSlots: 4 };
+  assert.deepEqual(medalChanges(catalog, next), {
+    settings: [{ field: "profileMedalSlots", before: "3", after: "4" }],
+    entries: [
+      { id: "medal.wins_50", added: false, fields: [{ field: "availability", before: "live", after: "retired" }] },
+      { id: "medal.cup", added: true, fields: [] },
+    ],
+  });
+  assert.deepEqual(medalChanges(null, catalog), { settings: [], entries: [{ id: "medal.wins_50", added: true, fields: [] }] });
 });

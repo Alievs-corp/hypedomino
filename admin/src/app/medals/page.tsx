@@ -4,7 +4,8 @@ import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedMedals, emptyMedalCatalog, type MedalCatalog, type MedalRules } from "@/medals/catalog";
+import { emptyMedalCatalog, medalChanges, type MedalCatalog, type MedalRules } from "@/medals/catalog";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackMedals } from "./actions";
 import { MedalEditor } from "./MedalEditor";
@@ -57,7 +58,7 @@ function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollba
               <th className="py-2 pr-4">{t("medals.version")}</th>
               <th className="py-2 pr-4">{t("medals.published_at")}</th>
               <th className="py-2 pr-4">{t("medals.medal_count")}</th>
-              <th className="py-2 pr-4">{t("medals.changed")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
@@ -67,7 +68,9 @@ function History({ versions, rollback, t }: { versions: CatalogVersion[]; rollba
                 <td className="py-2 pr-4">{version.config_version}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
                 <td className="py-2 pr-4">{version.catalog.medals.length}</td>
-                <td className="py-2 pr-4 font-mono break-all">{changedMedals(versions[index + 1]?.catalog ?? null, version.catalog).join(", ")}</td>
+                <td className="py-2 pr-4 font-mono break-all">
+                  <CatalogChangeList changes={medalChanges(versions[index + 1]?.catalog ?? null, version.catalog)} t={t} />
+                </td>
                 {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackMedals} />}</td>}
               </tr>
             ))}
