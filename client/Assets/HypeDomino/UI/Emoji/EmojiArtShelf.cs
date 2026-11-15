@@ -66,13 +66,18 @@ namespace HypeDomino.UI.Emoji
             if (!shelved.TryGetValue(itemId ?? string.Empty, out entry))
             {
                 if (!IsShownEmoji(itemId, out var item)) return false;
-                entry = new Shelved { Art = item.Art };
-                shelved.Add(itemId, entry);
-                var held = entry;
-                stage.Stills.Acquire(held.Art.StaticAddress, sprite => OnStill(itemId, held, sprite));
+                entry = Shelve(itemId, item);
             }
             if (WantsLoop(entry)) AcquireLoop(itemId, entry);
             return true;
+        }
+
+        Shelved Shelve(string itemId, CosmeticItem item)
+        {
+            var entry = new Shelved { Art = item.Art };
+            shelved.Add(itemId, entry);
+            stage.Stills.Acquire(entry.Art.StaticAddress, sprite => OnStill(itemId, entry, sprite));
+            return entry;
         }
 
         bool IsShownEmoji(string itemId, out CosmeticItem item) =>
