@@ -27,7 +27,7 @@ namespace HypeDomino.Game.Match
             for (var at = 0; at < roster.Count; at++)
             {
                 var entry = roster[at];
-                if (!Seats(entry.Seat, seatCount)) continue;
+                if (!SeatOrder.IsIn(entry.Seat, seatCount)) continue;
                 var side = (int)TableSides.Of(viewer, SeatOrder.Clockwise(entry.Seat), seatCount);
                 Place(side, AvatarLook.Of(manifest, entry.Avatar, entry.Frame));
             }
@@ -46,12 +46,6 @@ namespace HypeDomino.Game.Match
             shown[side] = look;
             showing[side] = true;
             bySide[side].Show(stage, look);
-        }
-
-        static bool Seats(Seat seat, int seatCount)
-        {
-            if (seat == Seat.X || seat == Seat.Y) return seatCount == 2;
-            return seatCount == 4 && seat >= Seat.North && seat <= Seat.West;
         }
     }
 }
