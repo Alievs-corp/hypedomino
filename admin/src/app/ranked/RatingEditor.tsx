@@ -7,7 +7,6 @@ import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { idList } from "@/missions/catalog";
 import {
-  changedConfig,
   changedStructural,
   configIssues,
   countryList,
@@ -16,6 +15,7 @@ import {
   liveNumberKeys,
   modeIssues,
   modes,
+  ratingChanges,
   resetRanks,
   rewardIssues,
   snapshotIssues,
@@ -30,6 +30,7 @@ import {
   type NumberKey,
   type RatingConfig,
 } from "@/ranked/config";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { publishRating } from "./actions";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary disabled:opacity-50";
@@ -183,14 +184,16 @@ function Review({
   onConfirm: () => void;
 }) {
   const t = useTranslator();
-  const changed = changedConfig(before, after);
   const structural = changedStructural(before, after, structuralKeys, divisionRanks);
   return (
     <div role="region" aria-label={t("ranked.review")} className="flex flex-col gap-2 rounded-md border border-surface p-3 text-sm">
       <p className="text-text-secondary">{t("ranked.review_hint")}</p>
-      <p>
-        {t("ranked.review_changed")}: <span className="font-mono break-all">{changed.join(", ") || "—"}</span>
-      </p>
+      <div className="flex flex-col gap-1">
+        <p>{t("ranked.review_changed")}:</p>
+        <div className="font-mono break-all">
+          <CatalogChangeList changes={{ settings: ratingChanges(before, after), entries: [] }} t={t} />
+        </div>
+      </div>
       {frozen && structural.length > 0 && (
         <p className="text-danger-text">
           {t("ranked.review_frozen")}: <span className="font-mono break-all">{structural.join(", ")}</span>
