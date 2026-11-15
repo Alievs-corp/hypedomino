@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { changedKeys, invalidKeys, publishedValues, withinBounds, type ConfigKey } from "./keys.ts";
+import { changedKeys, invalidKeys, publishedValues, versionChanges, withinBounds, type ConfigKey } from "./keys.ts";
 
 const turn: ConfigKey = { key: "TurnSeconds", type: "integer", unit: "seconds", min: 10, max: 60, default: 20, value: 25, set: true };
 const afk: ConfigKey = { key: "AfkConsecutiveTimeouts", type: "integer", unit: "timeouts", min: 1, max: 10, default: 3, value: 3, set: false };
@@ -41,4 +41,18 @@ test("a publish carries every value that differs from the default and leaves def
   assert.deepEqual(publishedValues(keys, {}), { TurnSeconds: 25 });
   assert.deepEqual(publishedValues(keys, { TurnSeconds: 20 }), {});
   assert.deepEqual(publishedValues(keys, { AfkConsecutiveTimeouts: 5 }), { TurnSeconds: 25, AfkConsecutiveTimeouts: 5 });
+});
+
+test("a version lists each key whose published value differs from the version before", () => {
+  assert.deepEqual(versionChanges(keys, { TurnSeconds: 25 }, { TurnSeconds: 30, AfkConsecutiveTimeouts: 5 }), [
+    { key: "TurnSeconds", before: 25, after: 30 },
+    { key: "AfkConsecutiveTimeouts", before: 3, after: 5 },
+  ]);
+  assert.deepEqual(versionChanges(keys, { TurnSeconds: 25 }, { TurnSeconds: 25 }), []);
+});
+
+test("a key left out of a version counts as its default", () => {
+  assert.deepEqual(versionChanges(keys, { TurnSeconds: 30 }, {}), [{ key: "TurnSeconds", before: 30, after: 20 }]);
+  assert.deepEqual(versionChanges(keys, {}, { TurnSeconds: 20 }), []);
+  assert.deepEqual(versionChanges(keys, {}, { AfkConsecutiveTimeouts: 4 }), [{ key: "AfkConsecutiveTimeouts", before: 3, after: 4 }]);
 });

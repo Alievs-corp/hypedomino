@@ -87,6 +87,8 @@ export const az: Messages = {
   "config.history": "Nəşr olunmuş versiyalar",
   "rules.history_empty": "Hələ heç bir matç qaydası nəşr olunmayıb; bütün açarlar default dəyərdədir.",
   "config.published_at": "Nəşr vaxtı",
+  "config.changes": "Əvvəlki versiyadan dəyişikliklər",
+  "config.no_changes": "dəyişiklik yoxdur",
   "config.values": "Default-dan fərqli dəyərlər",
   "config.all_defaults": "hamısı default",
   "rollback.open": "Bu versiyaya qaytar",
