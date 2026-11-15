@@ -4,6 +4,13 @@ using UnityEngine;
 namespace HypeDomino.UI.Medals
 {
     [Serializable]
+    public sealed class MedalSourceReply
+    {
+        public string type;
+        public string @ref;
+    }
+
+    [Serializable]
     public sealed class MedalReply
     {
         public string id;
@@ -11,6 +18,7 @@ namespace HypeDomino.UI.Medals
         public string descriptionKey;
         public string rarityId;
         public string staticAddress;
+        public MedalSourceReply[] sources;
     }
 
     [Serializable]
