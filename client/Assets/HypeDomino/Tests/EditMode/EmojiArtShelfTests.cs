@@ -244,7 +244,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var shelf = LoadedShelf();
             shelf.Show(TableSide.Top, Laugh);
-            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Laugh); }));
+            Assert.AreEqual(0, AllocatesNothingConstraint.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Laugh); }));
         }
 
         [Test]
@@ -252,7 +252,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var shelf = LoadedShelf();
             shelf.Show(TableSide.Top, Party);
-            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Party); }));
+            Assert.AreEqual(0, AllocatesNothingConstraint.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, Party); }));
         }
 
         [Test]
@@ -260,7 +260,7 @@ namespace HypeDomino.Tests.EditMode
         {
             Action<TableSide, LoopArt> show = Record;
             show(TableSide.Top, loop);
-            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) show(TableSide.Top, loop); }));
+            Assert.AreEqual(0, AllocatesNothingConstraint.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) show(TableSide.Top, loop); }));
         }
 
         [Test]
@@ -268,7 +268,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var shelf = LoadedShelf();
             shelf.Show(TableSide.Top, "emoji.missing");
-            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, "emoji.missing"); }));
+            Assert.AreEqual(0, AllocatesNothingConstraint.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.Show(TableSide.Top, "emoji.missing"); }));
         }
 
         [Test]
@@ -276,7 +276,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var shelf = LoadedShelf();
             shelf.IsWaiting(TableSide.Top);
-            Assert.AreEqual(0, Allocates.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.IsWaiting(TableSide.Top); }));
+            Assert.AreEqual(0, AllocatesNothingConstraint.CountOnCallingThread(() => { for (var at = 0; at < 10; at++) shelf.IsWaiting(TableSide.Top); }));
         }
 
         [Test]
