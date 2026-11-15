@@ -142,7 +142,7 @@ assets-src/
 | Concept files | `<YYYYMMDD>-<nn>`, date of generation, `nn` from `01` per day |
 | Work files | `<slug>` or `<slug>_<part>` (for example `comet_fox_head`), any tool format; heavy formats go through Git LFS (`.gitattributes`) |
 | Item folder | Holds only `provenance.md`, `concept/`, `work/` and `export/`. `provenance.md` exists from the first concept on |
-| Classes other than `cosmetic` | Folder roots only. Their addresses come from their own specs: medals `medal/<slug>/static` (`docs/admin.md` 5.9), UI kit #168, tiles #169, effects #176, sound #177 |
+| Classes other than `cosmetic` | Folder roots only. Their addresses come from their own specs: medals `medal/<slug>/static` (`docs/admin.md` 5.9), UI kit #168, tiles #169, effects #176, sound `docs/sound.md` (#177) |
 
 ### 4.2 Export to Addressables
 
