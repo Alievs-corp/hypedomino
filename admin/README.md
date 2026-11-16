@@ -100,7 +100,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 ## Assets
 
-`/assets` (#135, `docs/admin.md` 5.2) uploads the static PNG of a cosmetic item. The panel asks `POST /admin/assets/uploads` for a signed URL, the browser sends the file straight to the object store, and `POST /admin/assets/{id}/check` makes the server read it back and record format, alpha, width, height, bytes and SHA-256. A file that fails stays listed as rejected and is never shown; a new upload makes a new row. The file does not reach players yet.
+`/assets` (#135, `docs/admin.md` 5.2) uploads the static PNG of a cosmetic item. The panel asks `POST /admin/assets/uploads` for a signed URL, the browser sends the file straight to the object store, and `POST /admin/assets/{id}/check` makes the server read it back and record format, alpha, width, height, bytes and SHA-256. A file that fails stays listed as rejected and is never shown; a new upload makes a new row. The list pages on the server, 50 rows at a time, and filters by status and item id prefix. The file does not reach players yet.
 
 The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its origin to `img-src` and `connect-src` of the Content Security Policy, and the bucket's CORS rules must allow `PUT` from the panel's origin. Without `HD_ASSET_STORE_URL` on the admin API, the page lists rows and closes uploads.
 

@@ -1062,6 +1062,11 @@ export const en = {
   "assets.status.awaiting_file": "Awaiting file",
   "assets.status.passed": "Passed",
   "assets.status.rejected": "Rejected",
+  "assets.any_status": "Any status",
+  "assets.search": "Search",
+  "assets.clear": "Clear",
+  "assets.older": "Older assets",
+  "assets.empty_match": "No assets match this filter.",
   "assets.check.format": "The file is not a PNG",
   "assets.check.alpha": "The PNG has no alpha channel",
 };
