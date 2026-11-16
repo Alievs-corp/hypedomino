@@ -1,9 +1,9 @@
 # table.crimson_carpet
 
-Static table of set 1 (#174), the crimson carpet. The back layer is a concept made with template P-5 of `docs/asset-workflow.md` section 2; the middle (gold inlay) and front (wood rim) layers are drawn by the clean-up script from colour tokens. Every line below is read from a file or a record, or marked as not done. Recorded on 2026-11-14 while the work was done.
+Static table of set 1 (#174), the crimson carpet. The back layer is a concept made with template P-5 of `docs/asset-workflow.md` section 2; the middle (gold inlay) and front (wood rim) layers are drawn by the clean-up script from colour tokens. Every line below is read from a file or a record, or marked as not done. Recorded on 2026-11-14 while the work was done; the calmed centre (#174, readability rule of #708) recorded on 2026-11-16 the same way.
 
 - artSource: ai_assisted
-- Authors: W-1 back-layer concept generated in the project owner's second ChatGPT account on 2026-11-14 by an AI agent (Claude Code) driving the owner's browser. W-3 layers and W-5 export by the same agent with `work/crimson_carpet_cleanup.py`. No person has done W-3
+- Authors: W-1 back-layer concept generated in the project owner's second ChatGPT account on 2026-11-14 by an AI agent (Claude Code) driving the owner's browser. W-3 layers and W-5 export by the same agent with `work/crimson_carpet_cleanup.py`; the centre calmed on 2026-11-16 by Claude Code in the same script. No person has done W-3
 - Generator: ChatGPT in the browser, Create image tool, model `gpt-image` as named by the C2PA manifest embedded in the concept (below). Account holder: the project owner, second ChatGPT account (the first one reached its image limit during #172), signed in to the second browser on the owner's computer. Plan: Free (shown under the account name in the ChatGPT sidebar on 2026-11-14)
 - Terms: OpenAI Terms of Use, `https://openai.com/policies/terms-of-use/`, not read (RC-1 open for the terms, O-2). The account holder reads the terms in force on 2026-11-14 for the Free plan and records the date here
 - Canonical concept: concept/20261114-01.png (back layer)
@@ -53,9 +53,11 @@ python -I assets-src/cosmetic/table/crimson_carpet/work/crimson_carpet_cleanup.p
 
 It printed trim `(11, 10, 1661, 929)`, stretch `0.990`, crop `(0, 0.0, 1650, 919.0)`, canvas 1920x1080. A second run into an empty folder wrote byte-identical files.
 
+Run again on 2026-11-16 with the same command and versions after the centre step was added; it printed the same line, and a second run into an empty folder wrote byte-identical files. The middle and front layers are byte-identical to those of 2026-11-14; only the back layer and the static changed.
+
 | Layer | File | How it is made |
 |---|---|---|
-| back | `work/crimson_carpet_back.png` | The concept, its light margin trimmed (rows and columns where 98% of pixels are within 30 of the outermost ring's median colour), fitted to the canvas. The trimmed carpet is 1650 x 919, already 16:9 within 1%, so it is scaled with a horizontal factor of 0.990 and no crop. |
+| back | `work/crimson_carpet_back.png` | The concept, its light margin trimmed (rows and columns where 98% of pixels are within 30 of the outermost ring's median colour), fitted to the canvas. The trimmed carpet is 1650 x 919, already 16:9 within 1%, so it is scaled with a horizontal factor of 0.990 and no crop. Then the centre is calmed as `table.plum_trellis` does (#708), with milder settings: inside an ellipse of 0.44 x 0.40 of the canvas (half axes), fading in over the outer 25%, the detail above a Gaussian base of sigma 12 px is reduced by 30% and the value by 5% (`CALM_*` in the script). The field motifs stay; they are a little softer and darker in the middle of the field |
 | middle | `work/crimson_carpet_middle.png` | A 4 px gold inlay line, a rectangle 54 px inside the canvas edge, with a small diamond (11 px half-diagonal) at each corner. Shaded with light from above across the line from `color.gold.lo` through `color.gold.mid` and `color.gold.default` to `color.gold.hi` (`docs/ui-motion.md`), drawn at 2x and box-filtered down. Everything else transparent |
 | front | `work/crimson_carpet_front.png` | The wood rim: a 40 px band at the canvas edge with an opening of 28 px corner radius, shaded with light from above across its inner bevel from `color.wood.lo` through `color.wood.default` to `color.wood.hi`, drawn at 2x and box-filtered down. Everything inside transparent |
 | static | `export/static.png` | back, middle and front composited in that order; 1920 x 1080 RGBA, fully opaque |
@@ -68,9 +70,24 @@ The middle and front layers are the same for every table of this set, so the lay
 | 2. Paint-over, AI artefacts | No | No paint-over; generator artefacts in the fine border motifs are not checked at full size. The rim is flat-shaded wood colour with no grain; an artist paints the rim and the inlay |
 | 3. Moving parts on their own layers | Yes | back, middle and front in `work/`; no layer animates in this static item |
 | 4. Nothing art-direction section 8 forbids | Checked by the agent | No text, glow, drop shadow, rarity colour or team hue seen |
-| 5. Silhouette and smallest-size tests | Tile readability only | Tile faces and backs from the reference prototype renders (`table-v2/out/face_*.png`, `back_sema.png`, outside the repository) laid on the static at about the match size: centre field relative luminance median 0.064 (90th percentile 0.120); tile ivory 0.762; contrast of the ivory face against the median field 7.1:1. The centre field is calm: small motifs in ochre on red at low contrast. The tile backs of `tile.sema` sit on the indigo border in the check and stay readable by their gold rim. |
+| 5. Silhouette and smallest-size tests | Tile readability only | Tile faces and backs from the reference prototype renders (`table-v2/out/face_*.png`, `back_sema.png`, outside the repository) laid on the static at about the match size: centre field relative luminance median 0.064 (90th percentile 0.120); tile ivory 0.762; contrast of the ivory face against the median field 7.1:1. The centre field is calm: small motifs in ochre on red at low contrast. The tile backs of `tile.sema` sit on the indigo border in the check and stay readable by their gold rim. On 2026-11-16, by the readability rule of #708 (below): pass |
 
-`npm run asset:check -- assets-src/cosmetic/table/crimson_carpet`: 1 sprite, ASTC 6x6 estimate 921,600 bytes, no limit set for a static table (O-5).
+## Tile readability (#174, rule of #708)
+
+The rule set by #708 for every table of set 1: the ivory face (median relative luminance of the 28 `tile.ivory` faces box-filtered to 32 x 64 px) against the 2v2 landscape board region (1516 x 521 of 1080 units, centred) has a contrast of at least 7:1 against the median and 4.5:1 against the 90th percentile. `work/crimson_carpet_check.py` is `teal_lattice_check.py` of #708, copied unchanged:
+
+```bash
+python -I assets-src/cosmetic/table/crimson_carpet/work/crimson_carpet_check.py assets-src/cosmetic/table/crimson_carpet assets-src/tile/ivory/export/face assets-src/effect/tile_shadow/export/static.png docs/design-tokens.json <out>
+```
+
+| Static | Ivory face | Centre median | 90th percentile | Against the median | Against the 90th percentile | Result |
+|---|---|---|---|---|---|---|
+| 2026-11-14 (before) | 0.7425 | 0.0635 | 0.1276 | 6.98:1 | 4.46:1 | fail |
+| 2026-11-16 (calmed centre) | 0.7425 | 0.0588 | 0.1025 | 7.28:1 | 5.20:1 | pass |
+
+Run on 2026-11-16; the script prints one decimal (`7.3:1`, `5.2:1`, `pass`), the two-decimal values are from the same computation with more digits. The check also renders nine ivory faces with their runtime shadow at 32 x 64 on the table at 828 px height; the agent looked at it.
+
+`npm run asset:check -- assets-src/cosmetic/table/crimson_carpet`: 1 sprite, ASTC 6x6 estimate 921,600 bytes, no limit set for a static table (O-5); run again on 2026-11-16 with the same result.
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
@@ -79,16 +96,18 @@ Not done: W-6. `npm run asset:add` refuses the item until the Cultural review li
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261114-01.png | `693eb2abf4c094e66d203ef4db4474544b849aa655c45549c9459726bfc36b15` | 1672 x 941 RGB, the generator's download, unchanged | ChatGPT image viewer Download button, copied byte for byte |
-| work/crimson_carpet_cleanup.py | `e4572f28aabedf8539ac8147cb6a19c28a7fe9eb1e952eecbe7faf9fe8fdf8f4` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of this PR |
-| work/crimson_carpet_back.png | `0c4efad22c8affd7b22ae2827dbe90d406cf59cdf0c2c77286f73408beab3cee` | 1920 x 1080 RGBA, back layer | `crimson_carpet_cleanup.py` |
+| work/crimson_carpet_cleanup.py | `b9b876cd586bd6d705524ccd62e68edc11b6812888cef3ad710e2a9ce46050bf` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of that PR. The centre step (`calm_centre`) added on 2026-11-16 for this table only |
+| work/crimson_carpet_back.png | `0590ba69865cf81d713c142a284658d32e6e3a34cdd74e762f5a1ac12ce7e6e1` | 1920 x 1080 RGBA, back layer | `crimson_carpet_cleanup.py` |
 | work/crimson_carpet_middle.png | `bf002a633c302a3d7b799119253bb820e9e5220232919a6c245c23d1d319cf1c` | 1920 x 1080 RGBA, middle layer | `crimson_carpet_cleanup.py` |
+| work/crimson_carpet_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | Readability check of #708 | `teal_lattice_check.py`, copied unchanged on 2026-11-16 |
 | work/crimson_carpet_front.png | `7c5379bb0f1fb5766c32a4b9d171e1df2ddb7a3a5c6f3b8296a42fd1c928192d` | 1920 x 1080 RGBA, front layer | `crimson_carpet_cleanup.py` |
-| export/static.png | `a8345eeaa8284526b911998f3a6f92578dec19981537fafacb48e0eba31859ba` | 1920 x 1080 RGBA static, flattened layers | `crimson_carpet_cleanup.py` |
+| export/static.png | `291949e75f5119af8c193a407d1a34a4d7c946ba36db20544054296a99bf9f1c` | 1920 x 1080 RGBA static, flattened layers | `crimson_carpet_cleanup.py` |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-14 | concept/20261114-01.png | P-5 back layer with the style key, the first prompt of its conversation, quoted below. Sent 12:26:17 UTC by Claude Code; `c2pa.created` 2026-11-14T12:26:29Z |
 | 2026-11-14 | work/crimson_carpet_back.png, work/crimson_carpet_middle.png, work/crimson_carpet_front.png, export/static.png | `crimson_carpet_cleanup.py` on the concept |
+| 2026-11-16 | work/crimson_carpet_back.png, export/static.png | `crimson_carpet_cleanup.py` with the calmed centre, on the concept (#174, rule of #708) |
 
 Prompt of `concept/20261114-01.png`, verbatim:
 
