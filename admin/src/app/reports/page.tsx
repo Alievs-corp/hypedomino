@@ -3,9 +3,12 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
+import type { SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
+import { nextQueueHref, queueApiPath, readReportQuery, reportReasons } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
+import { QueueFilter } from "../reviews/QueueFilter";
 import { ReportDecision } from "./ReportDecision";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +17,7 @@ type ReportEntry = { id: number; reporter: string; reason: string; name_text: st
 
 type ReportTarget = { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[] };
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const t = await serverTranslator();
   const admin = await currentAdmin();
   if (!admin) {
@@ -23,18 +26,28 @@ export default async function ReportsPage() {
   if (!canView(admin.permissions, "queues")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const reply = await adminApi<{ targets: ReportTarget[] }>("GET", "/admin/reports");
+  const query = readReportQuery(await searchParams);
+  const reply = await adminApi<{ targets: ReportTarget[] }>("GET", queueApiPath("/admin/reports", query));
   if (reply.status !== 200) {
     return <Notice text={t("reports.load_failed")} />;
   }
+  const { targets } = reply.body;
   const clientId = can(admin.permissions, "queues", "act_on_queue") ? googleClientId() : null;
+  const next = nextQueueHref("/reports", query, targets.map((target) => target.account_id));
+  const filtered = Boolean(query.reason || query.account || query.after);
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">{t("reports.title")}</h1>
         <p className="text-sm text-text-secondary">{t("reports.explain")}</p>
       </div>
-      {reply.body.targets.length === 0 ? <p className="text-text-secondary">{t("reports.none")}</p> : reply.body.targets.map((target) => <TargetEntry key={target.account_id} target={target} clientId={clientId} t={t} />)}
+      <QueueFilter screen="/reports" name="reason" label="reports.reason_code" options={reportReasons} selected={query.reason} account={query.account} t={t} />
+      {targets.length === 0 ? <p className="text-text-secondary">{t(filtered ? "queues.empty_match" : "reports.none")}</p> : targets.map((target) => <TargetEntry key={target.account_id} target={target} clientId={clientId} t={t} />)}
+      {next && (
+        <Link href={next} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-text-secondary">
+          {t("queues.next")}
+        </Link>
+      )}
     </main>
   );
 }

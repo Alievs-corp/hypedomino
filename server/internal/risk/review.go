@@ -46,10 +46,19 @@ type Querier interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-func OpenReviews(ctx context.Context, db Querier, limit, signalLimit int) ([]Review, error) {
+type ReviewQuery struct {
+	Cause   string
+	Account string
+	After   int64
+	Limit   int
+}
+
+func OpenReviews(ctx context.Context, db Querier, q ReviewQuery, signalLimit int) ([]Review, error) {
 	rows, err := db.Query(ctx, `select r.id, r.account_id::text, coalesce(p.nickname, ''), r.cause, r.opened_at, a.shadowbanned_at
 		from risk_reviews r join accounts a on a.id = r.account_id left join profiles p on p.account_id = r.account_id
-		where r.closed_at is null order by r.opened_at, r.id limit $1`, limit)
+		where r.closed_at is null and ($1 = '' or r.cause = $1) and starts_with(r.account_id::text, $2)
+			and ($3::bigint = 0 or (r.opened_at, r.id) > (select opened_at, id from risk_reviews where id = $3))
+		order by r.opened_at, r.id limit $4`, q.Cause, q.Account, q.After, q.Limit)
 	if err != nil {
 		return nil, err
 	}

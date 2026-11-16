@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	ReviewListLimit     = 100
+	QueuePageSize       = 50
+	QueuePageMax        = 200
 	ReviewSignalLimit   = 50
 	ClearReviewAction   = "clear_review"
 	ConfirmReviewAction = "confirm_review"
@@ -28,8 +29,32 @@ type reviewState struct {
 	Shadowbanned bool   `json:"shadowbanned"`
 }
 
+func queuePageLimit(raw string) (int, error) {
+	limit, err := optionalNumber(raw)
+	if err != nil {
+		return 0, err
+	}
+	if limit == 0 {
+		return QueuePageSize, nil
+	}
+	return int(min(limit, QueuePageMax)), nil
+}
+
 func (h *Handler) listReviews(w http.ResponseWriter, r *http.Request, p principal) {
-	reviews, err := risk.OpenReviews(r.Context(), h.pool, ReviewListLimit, ReviewSignalLimit)
+	query := r.URL.Query()
+	after, err := optionalNumber(query.Get("after"))
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	limit, err := queuePageLimit(query.Get("limit"))
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reviews, err := risk.OpenReviews(r.Context(), h.pool, risk.ReviewQuery{
+		Cause: query.Get("cause"), Account: query.Get("account"), After: after, Limit: limit,
+	}, ReviewSignalLimit)
 	if err != nil {
 		h.refuse(w, err)
 		return
