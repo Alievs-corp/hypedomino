@@ -54,10 +54,12 @@ A second run into an empty folder wrote byte-identical files. The steps of `docs
 Run on 2026-11-12 by Claude Code with the same versions, after the clean-up:
 
 ```bash
-python -I assets-src/cosmetic/tile/sema/work/sema_loop.py assets-src/cosmetic/tile/sema/work assets-src/cosmetic/tile/sema/export
+python -I assets-src/cosmetic/tile/sema/work/sema_loop.py assets-src/cosmetic/tile/sema/work assets-src/cosmetic/tile/sema/export assets-src/tile/ivory/export/face/0_0.png
 ```
 
-It writes `export/anim/0001.png` to `0016.png` and `export/static.png`: RGBA PNG, 8 bit, alpha 255 everywhere (the skin fills the back face), each frame composed at 887 x 1774 and Lanczos-resized to the canvas. A second run into an empty folder wrote byte-identical files.
+It writes `export/anim/0001.png` to `0016.png` and `export/static.png`: RGBA PNG, 8 bit, each frame composed at 887 x 1774 and Lanczos-resized to the canvas. The alpha of every frame is the alpha of the ivory face `assets-src/tile/ivory/export/face/0_0.png` (the third argument), so the back has the face's silhouette with its transparent rounded corners and the two swap without a jump (`docs/tiles.md` section 1); all 28 ivory faces share that alpha byte for byte. A second run into an empty folder wrote byte-identical files.
+
+Until 2026-11-16 the export had alpha 255 everywhere, so the back showed square opaque corners next to the rounded faces (found on the phone in the Art Bench, 2026-11-16). On 2026-11-16 Claude Code added the silhouette mask to `sema_loop.py` and ran it again with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1; the colour of every pixel is unchanged, only the alpha differs (pixel 0, 0 now has alpha 0). `sema_cleanup.py` and the `work/` layers were not changed. The copy in `client/Assets/Cosmetics/remote/tile/sema/` was replaced with the new export, keeping its `.meta` files.
 
 | Choice | Value | Source |
 |---|---|---|
@@ -81,9 +83,9 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), board panel B-9,
 | work/sema_master.png | `ffb3e2fb382a392b7ff7e7d21ee9e443af6c04308fe6c884c138b0142e19c518` | 887 x 1774 RGB, the cleaned master (base layer) | `sema_cleanup.py` |
 | work/sema_stars.png | `524e9e8d7257ccf30b7f7ab2fbdd2f5108a5b84172447b0f31c048a2e70e207f` | 887 x 1774 RGBA, the gold star layer | `sema_cleanup.py` |
 | work/sema_sparkles.png | `d05969fc7b98f773bdac31c83d92733e863d3cd75d3934e44305e1ed4a782e6c` | 887 x 1774 RGBA, the sky star layer | `sema_cleanup.py` |
-| work/sema_loop.py | `f4cbcb77ff5c8e54bd33bb73fc9fae9bd0f04ea991457d2b7aa170c2ad325086` | W-4 and W-5 script | Written by Claude Code, 2026-11-12 |
-| export/static.png | `3731d128073de67c9238ee0b1eb7f92920e475798f7db3a9078b20f12edb9204` | 128 x 256 RGBA static | `sema_loop.py`, frame 9 |
-| export/anim/0001.png to 0016.png | per file in git | 128 x 256 RGBA loop frames | `sema_loop.py` |
+| work/sema_loop.py | `6e8fdcabf0f1376ac07d17494916c2643ae2925d30cb36c6a923eddeaeb8cbc7` | W-4 and W-5 script | Written by Claude Code, 2026-11-12; silhouette mask added 2026-11-16 |
+| export/static.png | `ab3d67654b96755a5ad640c68f47ed6424263fe4efb7ddb6b099c906b8c3ff59` | 128 x 256 RGBA static, alpha of the ivory face | `sema_loop.py`, frame 9 |
+| export/anim/0001.png to 0016.png | per file in git | 128 x 256 RGBA loop frames, alpha of the ivory face | `sema_loop.py` |
 
 Reproduced on 2026-11-12 with Blender 5.2.2 LTS (`blender -b --factory-startup -P render_tiles.py -- <out> back work/sema_texture.png sema`): the new render matches `work/sema_render.png` with a mean channel difference of 0 and a maximum of 9 of 255 (denoiser noise).
 
@@ -96,6 +98,7 @@ Not imported: prototype `gen/preview-sema.jpg`, a 300 x 600 JPEG of the same ima
 | 2026-11-12 | work/sema_render.png | `render_tiles.py` mode `back` with `work/sema_texture.png` |
 | 2026-11-12 | work/sema_master.png, work/sema_stars.png, work/sema_sparkles.png | `sema_cleanup.py` on the concept |
 | 2026-11-12 | export/static.png, export/anim/ | `sema_loop.py` on the `work/` layers |
+| 2026-11-16 | export/static.png, export/anim/ | `sema_loop.py` again, now masked by the alpha of `assets-src/tile/ivory/export/face/0_0.png` |
 
 Prompt of `concept/20261112-01.png`, verbatim:
 
