@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bundleEditChanged, bundleEditIssues, editOf, emptyBundleFilter, filteredBundles, parsedIds, useLabel, usedDomains, type RewardBundle } from "./bundles.ts";
+import { bundleEditChanged, bundleEditIssues, bundlePageSize, editOf, nextRewardsHref, parsedIds, readBundleQuery, rewardBundlesApiPath, useLabel, type RewardBundle } from "./bundles.ts";
 
 const daily: RewardBundle = {
   id: "bundle.daily_login_day_1",
@@ -28,26 +28,18 @@ const wins: RewardBundle = {
   editable: false,
 };
 
-const ids = (change: object) => filteredBundles([daily, wins], { ...emptyBundleFilter, ...change }).map((bundle) => bundle.id);
-
-test("the list searches ids, items, medals and the objects that grant a bundle", () => {
-  assert.deepEqual(ids({}), ["bundle.daily_login_day_1", "bundle.wins"]);
-  assert.deepEqual(ids({ query: " AVATAR.fox " }), ["bundle.wins"]);
-  assert.deepEqual(ids({ query: "medal.winner" }), ["bundle.wins"]);
-  assert.deepEqual(ids({ query: "day.1" }), ["bundle.daily_login_day_1"]);
-  assert.deepEqual(ids({ query: "nothing" }), []);
+test("the list query keeps a known domain, the differing flag and the cursor", () => {
+  assert.deepEqual(readBundleQuery({ q: " fox ", domain: "pass", differing: "true", after: "bundle.a" }), { q: "fox", domain: "pass", differing: "true", after: "bundle.a" });
+  assert.deepEqual(readBundleQuery({ domain: "toString", differing: "yes" }), { q: "", domain: "", differing: "", after: "" });
 });
 
-test("the list narrows to a domain or to ids holding differing content", () => {
-  assert.deepEqual(ids({ domain: "pass" }), ["bundle.wins"]);
-  assert.deepEqual(ids({ domain: "daily_login" }), ["bundle.daily_login_day_1"]);
-  assert.deepEqual(ids({ onlyDiffering: true }), ["bundle.wins"]);
+test("the list pages on the server and offers a next page only when full", () => {
+  const query = { q: "a&b", domain: "", differing: "true", after: "" } as const;
+  assert.equal(rewardBundlesApiPath(query), `/admin/reward-bundles?q=a%26b&differing=true&limit=${bundlePageSize}`);
+  const ids = Array.from({ length: bundlePageSize }, (_, at) => `bundle.${at}`);
+  assert.equal(nextRewardsHref(query, ids), `/rewards?q=a%26b&differing=true&after=bundle.${bundlePageSize - 1}`);
+  assert.equal(nextRewardsHref(query, ids.slice(1)), null);
 });
-
-test("the domain filter offers each domain in use once", () => {
-  assert.deepEqual(usedDomains([daily, wins]), ["daily_login", "missions", "pass"]);
-});
-
 test("a use shows its object and its place inside it", () => {
   assert.equal(useLabel(wins.usedBy[0]), "mission.first");
   assert.equal(useLabel(wins.usedBy[1]), "season_1 free.3");
