@@ -35,7 +35,15 @@ export const identityProviders = ["google", "apple"] as const;
 
 export type IdentityProvider = (typeof identityProviders)[number];
 
-export type PlayerSearch = { q: string } | { provider: IdentityProvider; subject: string };
+export const accountStates = ["active", "deleting", "deleted", "banned"] as const;
+
+export type PlayerListSearch = { q: string; state: (typeof accountStates)[number] | ""; after: string };
+
+export type PlayerSearch = PlayerListSearch | { provider: IdentityProvider; subject: string };
+
+export const playerPageSize = 50;
+
+const accountIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function firstValue(params: SearchParams, key: string): string {
   const value = params[key];
@@ -53,11 +61,28 @@ export function playerSearch(params: SearchParams): PlayerSearch | null {
     return { provider, subject };
   }
   const q = searchQuery(params);
-  return q ? { q } : null;
+  const state = accountStates.find((candidate) => candidate === firstValue(params, "state")) ?? "";
+  const after = firstValue(params, "after");
+  return q || state ? { q, state, after: accountIdPattern.test(after) ? after : "" } : null;
+}
+
+function searchOf(search: PlayerSearch): URLSearchParams {
+  return new URLSearchParams(Object.entries(search).filter(([, value]) => value));
 }
 
 export function playersApiPath(search: PlayerSearch): string {
-  return `/admin/players?${new URLSearchParams(search)}`;
+  const params = searchOf(search);
+  if ("q" in search) {
+    params.set("limit", String(playerPageSize));
+  }
+  return `/admin/players?${params}`;
+}
+
+export function nextPlayersHref(search: PlayerSearch, ids: readonly string[]): string | null {
+  if (!("q" in search) || ids.length < playerPageSize) {
+    return null;
+  }
+  return `/players?${searchOf({ ...search, after: ids[ids.length - 1] })}`;
 }
 
 export function playerApiPath(id: string): string {

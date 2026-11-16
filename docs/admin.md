@@ -219,7 +219,7 @@ Lifecycle: create and edit as drafts; publish adds the item to the next manifest
 
 | Field | Rule |
 |---|---|
-| `address` | Server: from item id and slot (`docs/cosmetics.md` 8.1) |
+| `address` | Server: from item id and slot (`docs/cosmetics.md` 8.1); for a medal, `medal/<slug>/static` (5.9) |
 | `slot` | `static`, `anim`, `clip/<name>`, `layer/<name>` |
 | `file` | Uploaded through a signed URL to object storage (#135) |
 | `format`, `width`, `height`, `bytes`, `frames` | Server: measured and checked against the limits of #93 and #135 |
@@ -229,7 +229,7 @@ Lifecycle: create and edit as drafts; publish adds the item to the next manifest
 
 Lifecycle: upload, check, include in a catalog build, publish with the item. An asset of a published item is never deleted; a new upload makes a new item revision.
 
-Built so far (#135): the `static` slot only, through `/assets`. `POST /admin/assets/uploads` records the row and returns a signed `PUT` URL; `POST /admin/assets/{id}/check` reads the object back and records `format`, `width`, `height`, `bytes`, `frames` and `contentHash`, with `format` (a PNG) and `alpha` (straight alpha, `docs/asset-workflow.md` 5.3) as the checks that can refuse. A rejected row stays listed; a new upload makes a new row. `GET /admin/assets` lists the newest rows first, 50 a page (at most 200 through `limit`), with `status` as the state filter, `item` as an item id prefix search and `before=<asset id>` for the next page (#148). Every step is audited; a signed URL is never stored. Other slots answer `asset_slot_unsupported`; their format is proposed in ADR 0012 and their upload is not built. Size, atlas and frame limits are measured where possible but refuse nothing until O-5 and O-6 of `docs/asset-workflow.md` set them. `catalogVersion`, the catalog build and publishing with the item are not built, so an uploaded file does not reach players yet.
+Built so far (#135): the `static` slot only, through `/assets`. `POST /admin/assets/uploads` takes a cosmetic item id or a medal id (`medal.<slug>`, #178), records the row and returns a signed `PUT` URL; `POST /admin/assets/{id}/check` reads the object back and records `format`, `width`, `height`, `bytes`, `frames` and `contentHash`, with `format` (a PNG) and `alpha` (straight alpha, `docs/asset-workflow.md` 5.3) as the checks that can refuse. A rejected row stays listed; a new upload makes a new row. `GET /admin/assets` lists the newest rows first, 50 a page (at most 200 through `limit`), with `status` as the state filter, `item` as an item id prefix search and `before=<asset id>` for the next page (#148). Every step is audited; a signed URL is never stored. Other slots answer `asset_slot_unsupported`; their format is proposed in ADR 0012 and their upload is not built. Size, atlas and frame limits are measured where possible but refuse nothing until O-5 and O-6 of `docs/asset-workflow.md` set them. `catalogVersion`, the catalog build and publishing with the item are not built, so an uploaded file does not reach players yet.
 
 ### 5.3 Rarity table
 
@@ -343,11 +343,13 @@ Rules: `docs/pass-missions-medals.md` section 5.
 | `revision` | Server: +1 on every published change |
 | `nameKey`, `descriptionKey` | Server: `medal.<slug>.name`, `medal.<slug>.description`; the values are edited as game strings (5.15); the description says how the medal is earned |
 | `rarityId` | Picked from the published rarity table, guided by the expected earn share (`docs/pass-missions-medals.md` 5.3); the list shows the measured share from #147 |
-| `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2) |
+| `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2): a publish or rollback is refused (`medal_art_missing`, naming the medals) while a listed medal has no `static` upload that passed its checks |
 | `sources` | At least one: `mission` (achievement or event mission id) or `rank_reward` (#120 reward id) |
 | `availability` | `live`, `retired`, `disabled` (`docs/cosmetics.md` section 6) |
 
 Medals are granted only through a bundle of a listed source (`docs/economy.md` section 4); pass tracks, shop offers and promo codes never carry one. Grant rules are #129.
+
+Medal art is uploaded on `/assets` with the medal id as the item id, before the medal is published. The file of `medal.<slug>` is `assets-src/medal/<slug>/export/static.png` (`docs/pass-missions-medals.md` 5.6).
 
 ### 5.10 Leaderboard emblems
 
@@ -672,7 +674,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/config/pass` `{"catalog"}` | P on pass seasons | Publishes the config as the next `pass` snapshot (Pass seasons note) |
 | `GET /admin/config/pass/history` | V on pass seasons | The last 50 `pass` snapshots, newest first |
 | `POST /admin/config/pass/rollback` `{"version"}` | P on pass seasons and S: rollback on snapshots | Publishes the content of an earlier `pass` snapshot as the next version |
-| `GET /admin/players?q=` | V on players | With `provider` and `subject` instead of `q`, the account of that auth identity, for `super_admin` only (D-2). Otherwise search (6.1): an account id, an email (exact, any case) or a nickname prefix (folded as for uniqueness, `docs/localization.md` 5.2); at most 20, by nickname |
+| `GET /admin/players?q=` | V on players | With `provider` and `subject` instead of `q`, the account of that auth identity, for `super_admin` only (D-2). Otherwise search (6.1): an account id, an email (exact, any case) or a nickname prefix (folded as for uniqueness, `docs/localization.md` 5.2), by nickname; `state` (`active`, `deleting`, `deleted`, `banned`) keeps accounts in that state and, without `q`, lists them newest first. 50 a page (at most 200 through `limit`), `after=<account id>` asks for the next page (#148) |
 | `GET /admin/players/{id}` | V on players | The player record of 6.1 that exists so far: account (state, country, emails; auth identities for `super_admin` only, D-2), profile, nickname history, inventory with revoked items, balance, and the newest 50 ledger entries, reward grants, purchases, matches and mission assignments (mission, type, slot, period, progress, the target in the published mission catalog or 0 when it is not there, assigned, completed and rerolled times) |
 | `POST /admin/players/{id}/coins` `{"amount","request_id"}` | S on players: adjust coins | An `admin_adjust` ledger entry, positive or negative (6.2); above `AdminGrantApprovalCoins` it answers 202 with a `player_grant` proposal instead (section 8) |
 | `POST /admin/players/{id}/temporary-ban` | S on players: temporary ban | Bans sign-in for `TempBanHours` (`HD_TEMP_BAN_HOURS`) from now and revokes every refresh session of the account (6.2) |
@@ -687,7 +689,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/reward-bundles/{id}` `{"revision","coins","crystals","cosmetics","medals","passXp","reason"}` | P on reward bundles and on each domain holding it | Publishes the new content to every holder in one transaction; `editable` on the list says which bundles allow it. `stale_bundle` when `revision` is not the current one, `bundle_not_editable` for a differing id or another holder (5.4) |
 | `POST /admin/players/{id}/grant` `{"bundle","source","request_id"}` | S on players: grant | Applies the bundle through the reward engine (6.2); above `AdminGrantApprovalCoins` coins or with a `mythic` item it answers 202 with a `player_grant` proposal instead (section 8) |
 | `GET /admin/matches/{id}/replay` | V on players | The match (mode, kind, window, scores, winner, config version), its seats with account, nickname, bot and result, and the replay record (D-13) played back hand by hand: the tiles dealt to each seat, every intent with its tile, end, points or drawn tile, and each hand's outcome; `timeline` is null when no record was stored |
-| `GET /admin/matches/suspicious` | V on players | The newest 50 matches played by a pair with a `win_trade`, `feeding` or `partner_fit` signal inside that signal's window (`docs/anti-cheat.md` V-9): match id, start, mode, kind, signal kinds and the accounts of the flagged pairs |
+| `GET /admin/matches/suspicious` | V on players | Matches played by a pair with a `win_trade`, `feeding` or `partner_fit` signal inside that signal's window (`docs/anti-cheat.md` V-9), newest first, 50 a page (at most 200 through `limit`): match id, start, mode, kind, signal kinds and the accounts of the flagged pairs. `signal` keeps matches with that signal, `account` is an account id prefix search over the flagged pairs, `after=<match id>` asks for the next page (#148) |
 | `GET /admin/promo-codes?campaign=&state=&id=&before=&limit=` | V on promo codes | Usage per campaign (`campaigns`: codes, active, pending, disabled, cap, redemptions, earliest start, latest end) and one page of codes (`codes`), newest first, 50 a page (at most 200 through `limit`); `campaign` keeps one campaign, `state` one stored state, `id` is a code id prefix search and `before=<code id>` asks for the next page (#148); never a code's plaintext |
 | `POST /admin/promo-codes` `{"id","campaign","kind","bundle","start","end","cap","code","accounts","passPremium"}` | C on promo codes | Creates one code (5.11) and answers 201 with the code and its `plaintext`, shown this once; a code that needs a second admin also carries `approval_id` |
 | `POST /admin/promo-codes/batch` `{...,"count"}` | C on promo codes | Creates `count` (1 to 10,000) `single_use` codes `<id>_<n>` and answers 201 with a CSV of `promo_id,code`, never stored; headers `Hd-Promo-State` and, when a second admin must approve, `Hd-Approval-Id` |
