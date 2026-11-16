@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using HypeDomino.UI.Localization;
@@ -118,6 +120,86 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(999L, "en", "999")]
         public void NumbersAreGroupedForTheLanguage(long number, string language, string text) =>
             Assert.AreEqual(text, MessageFormat.Number(number, language));
+
+        [TestCase("1234.5", "en", "1,234.5")]
+        [TestCase("1234.5", "az", "1.234,5")]
+        [TestCase("1234.5", "tr", "1.234,5")]
+        [TestCase("1234.5", "ru", "1 234,5")]
+        [TestCase("-1234567.25", "en", "-1,234,567.25")]
+        [TestCase("-0.5", "az", "-0,5")]
+        [TestCase("1.50", "en", "1.50")]
+        [TestCase("999", "ru", "999")]
+        public void DecimalsUseTheSeparatorsOfTheLanguage(string number, string language, string text) =>
+            Assert.AreEqual(text, MessageFormat.Decimal(decimal.Parse(number, CultureInfo.InvariantCulture), language));
+
+        [TestCase("en", "3/7/2026, 09:05")]
+        [TestCase("az", "07.03.2026 09:05")]
+        [TestCase("tr", "07.03.2026 09:05")]
+        [TestCase("ru", "07.03.2026, 09:05")]
+        public void TimestampsUseTheOrderOfTheLanguageAndA24HourClock(string language, string text)
+        {
+            var utc = new DateTimeOffset(2026, 3, 7, 9, 5, 59, TimeSpan.Zero);
+            Assert.AreEqual(text, MessageFormat.Timestamp(utc, TimeZoneInfo.Utc, language));
+        }
+
+        [Test]
+        public void TimestampsShowInTheGivenTimeZone()
+        {
+            var baku = TimeZoneInfo.CreateCustomTimeZone("plus4", TimeSpan.FromHours(4), "plus4", "plus4");
+            var utc = new DateTimeOffset(2026, 12, 31, 21, 30, 0, TimeSpan.Zero);
+            Assert.AreEqual("01.01.2027 01:30", MessageFormat.Timestamp(utc, baku, "az"));
+            Assert.AreEqual("12/31/2026, 21:30", MessageFormat.Timestamp(utc, TimeZoneInfo.Utc, "en"));
+        }
+
+        [Test]
+        public void TypedDecimalAndTimestampArgumentsFormatInTheNumberLanguage()
+        {
+            var args = new Dictionary<string, object> { ["rate"] = 1234.5m, ["at"] = DateTimeOffset.UtcNow };
+            Assert.AreEqual("1.234,5", Format("{rate}", "tr", args));
+            Assert.AreEqual(MessageFormat.Timestamp((DateTimeOffset)args["at"], TimeZoneInfo.Local, "ru"), Format("{at}", "ru", args));
+        }
+
+        [TestCase(2, 3, 4, 5, "duration.days")]
+        [TestCase(0, 3, 0, 0, "duration.hours")]
+        [TestCase(0, 0, 4, 59, "duration.minutes")]
+        [TestCase(0, 0, 0, 5, "duration.seconds")]
+        [TestCase(0, 0, 0, 0, "duration.seconds")]
+        public void ADurationPicksTheKeyOfItsLargestUnit(int days, int hours, int minutes, int seconds, string key) =>
+            Assert.AreEqual(key, MessageFormat.DurationKey(new TimeSpan(days, hours, minutes, seconds)));
+
+        [Test]
+        public void ADurationFormatsThroughItsUnitKeyWithPlurals()
+        {
+            var units = new Dictionary<string, string>
+            {
+                ["duration.hours"] = "{hours, plural, one {# час} few {# часа} many {# часов} other {# часа}} {minutes, plural, one {# минута} few {# минуты} many {# минут} other {# минуты}}",
+                ["duration.days"] = "{days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}",
+            };
+            string Unit(string key) => units.TryGetValue(key, out var pattern) ? pattern : null;
+            Assert.IsTrue(MessageFormat.TryFormat("{left}", "ru", "ru", new Dictionary<string, object> { ["left"] = new TimeSpan(0, 2, 21, 7) }, Unit, out var hours));
+            Assert.AreEqual("2 часа 21 минута", hours);
+            Assert.IsTrue(MessageFormat.TryFormat("Ends in {left}", "en", "en", new Dictionary<string, object> { ["left"] = new TimeSpan(1, 1, 0, 0) }, Unit, out var days));
+            Assert.AreEqual("Ends in 1 day 1 hour", days);
+        }
+
+        [Test]
+        public void ADurationWithoutAUnitTextFallsBackToAClock()
+        {
+            var args = new Dictionary<string, object> { ["left"] = new TimeSpan(2, 1, 5, 9, 900) };
+            Assert.IsTrue(MessageFormat.TryFormat("{left}", "en", "en", args, _ => null, out var text));
+            Assert.AreEqual("49:05:09", text);
+            Assert.AreEqual("49:05:09", Format("{left}", "en", args));
+            Assert.AreEqual("0:00:00", MessageFormat.Clock(TimeSpan.Zero));
+        }
+
+        [Test]
+        public void ANegativeDurationOrABrokenUnitTextDoesNotFormat()
+        {
+            var negative = new Dictionary<string, object> { ["left"] = TimeSpan.FromSeconds(-1) };
+            Assert.IsFalse(MessageFormat.TryFormat("{left}", "en", "en", negative, _ => null, out _));
+            var seconds = new Dictionary<string, object> { ["left"] = TimeSpan.FromSeconds(5) };
+            Assert.IsFalse(MessageFormat.TryFormat("{left}", "en", "en", seconds, _ => "{seconds, plural, one {#}", out _));
+        }
 
         [Test]
         public void PlaceholdersPluralsAndSelectsFormat()
