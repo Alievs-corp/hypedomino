@@ -1,6 +1,6 @@
 # Sound
 
-Status: proposal; the owner approves it by merging. The sound class of Epic 15 (#177): which sounds exist, when each one plays, file formats, loudness, folders and the license record. Groups and volume settings are `docs/ui-motion.md` section 6 (Sound); the content rules are `docs/localization.md` section 6 ("No sudden loud sounds"). The client does not play any of these files yet (section 6).
+Status: proposal; the owner approves it by merging. The sound class of Epic 15 (#177): which sounds exist, when each one plays, file formats, loudness, folders and the license record. Groups and volume settings are `docs/ui-motion.md` section 6 (Sound); the content rules are `docs/localization.md` section 6 ("No sudden loud sounds"). The client plays them as section 6 describes.
 
 ## 1. Sounds
 
@@ -71,7 +71,7 @@ A music loop is rendered as one period of a periodic signal: notes, reverb tails
 
 ## 6. Client import
 
-Not done yet: the client has the group volumes (`UI/Audio/AudioVolumes`, `Game/AudioBoot`) and no player, clip or importer setting. Proposed for the issue that wires the sounds:
+The masters are copied into `client/Assets/HypeDomino/UI/Audio/Clips/Sfx/<name>.wav` and `Clips/Music/<name>.wav` (Git LFS) and imported by `HypeDomino.Editor.SoundContent` (menu HypeDomino > Import Sounds; batch `ImportAllAndExit` through the `unity-editor.yml` workflow), which also writes `UI/Audio/Resources/SoundBank.asset`, the clip of each sound and track. `combo_1` to `combo_5` are not copied until S-1 decides when they play. The import, one setting for every platform:
 
 | Setting | sfx, ui | music |
 |---|---|---|
@@ -81,7 +81,18 @@ Not done yet: the client has the group volumes (`UI/Audio/AudioVolumes`, `Game/A
 | Force To Mono | On | Off |
 | Preload Audio Data | On | Off |
 
-Short clips decompressed at load cost no decode time during a match, which matters for the 0 B per frame and frame-time budgets (`docs/performance.md`); streaming keeps the two music loops out of memory. The Vorbis quality and the sizes in the build are measured on the device check (S-2).
+Short clips decompressed at load cost no decode time during a match, which matters for the 0 B per frame and frame-time budgets (`docs/performance.md`); streaming keeps the two music loops out of memory. The Vorbis quality stays at Unity's default until the sizes in the build are measured on the device check (S-2).
+
+### 6.1 Playback
+
+- `UI/Audio/SoundPlayer` holds a fixed pool of 8 voices and 2 music sources, made once. A sound takes the next voice in turn at its group's level (`docs/ui-motion.md`, Sound); while its group is at 0 it is not started. A ninth sound inside the length of the first cuts the oldest voice.
+- `tile_place` picks one of its four variants at random, never the last one again.
+- Music loops with `AudioSource.loop`. A new track crossfades from the playing one over `motion.duration.slow` (480 ms). While the music group is at 0 no track plays; raising it starts the track of the current screen again. Login and lobby play `lobby`, a match plays `match`, the boot, update and maintenance screens play none.
+- A volume change applies at once to the playing voices and the music. An app pause stops the voices, ends a crossfade and pauses the music, and nothing starts until the app resumes.
+- Match sounds come from `Game/Match/SoundCues`, which reads each server view as the haptics do: the first view of a connection plays nothing. The client sees no pass or draw event, so it reads them from two views of the same hand: a draw is a smaller boneyard; a pass is a turn that moved to another seat with no new tile, no draw and no placement earlier in the turn (so ending a turn of several doubles, R-31, is no pass). The last placement of a hand arrives in the same view as the next deal, so it plays `hand_end`, not `tile_place`. `tile_place` plays when the view arrives; it moves to the settle of the tile (section 1) when the match screen drives `TilePlaceLayer`.
+- A view that ends the match plays only `match_win` or `match_lose`, and a view that ends a hand plays only `hand_end`, so the short sounds of that view do not stack on the longer one ("No sudden loud sounds").
+- `turn_warning` plays once per local turn when `TurnTimer.IsWarning` becomes true (`SoundCues.ReadTurnWarning`), from the match screen's timer tick.
+- `ui_click` plays from `UI/Audio/ClickSound`, added to a button; a button that is not interactable is silent.
 
 ## 7. License record
 
@@ -104,4 +115,4 @@ Short clips decompressed at load cost no decode time during a match, which matte
 | S-2 | Listening check by a person on Mid and High devices, speaker and headphones: levels between groups, "No sudden loud sounds", the loop seams after Unity's encoding, Vorbis quality and build size | Art team, with the wiring issue |
 | S-3 | Listening check that no melody resembles an existing work | Owner or delegate, with the cultural review |
 | S-4 | Self-check and cultural review of the sounds (`docs/localization.md` 6.1 steps 1 and 3) | Asset author, owner or delegate |
-| S-5 | Client wiring: a pooled player per group, the events of section 1, the import settings of section 6 | Client, follow-up of #177 |
+| S-5 | Client wiring: done (section 6.1), except where the match screen calls the cues: the screen is not assembled yet, so `turn_warning` and the placement timing at the settle wait for it | Client, follow-up of #177 |
