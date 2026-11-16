@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -177,7 +178,7 @@ func TestPublishingStoresANumberedBundlePerLanguage(t *testing.T) {
 	}
 }
 
-func TestBundlesListEveryVersionNewestFirstWithoutContent(t *testing.T) {
+func TestBundlesPageTheVersionsOfOneLanguageNewestFirstWithoutContent(t *testing.T) {
 	store := newStore(t)
 	ctx := context.Background()
 	save(t, store, win())
@@ -187,15 +188,79 @@ func TestBundlesListEveryVersionNewestFirstWithoutContent(t *testing.T) {
 	second, _, _ := store.Publish(ctx, gamestrings.English, "content-1", now)
 	set(t, store, "match.result.win", gamestrings.Azerbaijani, "Qələbə!", gamestrings.Approved)
 	azerbaijani, _, _ := store.Publish(ctx, gamestrings.Azerbaijani, "content-1", now)
-	listed, err := store.Bundles(ctx)
-	if err != nil || len(listed) != 3 {
-		t.Fatalf("bundles %+v %v", listed, err)
+	pages := []struct {
+		language      gamestrings.Language
+		before, limit int
+		want          []gamestrings.Published
+	}{
+		{gamestrings.English, 0, 50, []gamestrings.Published{second, first}},
+		{gamestrings.English, 0, 1, []gamestrings.Published{second}},
+		{gamestrings.English, second.Version, 50, []gamestrings.Published{first}},
+		{gamestrings.Azerbaijani, 0, 50, []gamestrings.Published{azerbaijani}},
+		{gamestrings.Russian, 0, 50, nil},
 	}
-	for i, want := range []gamestrings.Published{azerbaijani, second, first} {
-		want.Content = []byte{}
-		if !reflect.DeepEqual(listed[i], want) {
-			t.Fatalf("bundle %d %+v, want %+v", i, listed[i], want)
+	for _, page := range pages {
+		listed, err := store.Bundles(ctx, page.language, page.before, page.limit)
+		if err != nil || len(listed) != len(page.want) {
+			t.Fatalf("%s before %d: %+v %v", page.language, page.before, listed, err)
 		}
+		for i, want := range page.want {
+			want.Content = []byte{}
+			if !reflect.DeepEqual(listed[i], want) {
+				t.Fatalf("%s bundle %d %+v, want %+v", page.language, i, listed[i], want)
+			}
+		}
+	}
+}
+
+func TestEntriesPageByKeyAndCoverageCountsApprovedValues(t *testing.T) {
+	store := newStore(t)
+	ctx := context.Background()
+	save(t, store, win(), coins(), gamestrings.Entry{Key: "lobby.banner.old", Note: "Retired banner.", MaxLength: 30, Deprecated: true})
+	set(t, store, "match.result.win", gamestrings.English, "Victory!", gamestrings.Approved)
+	set(t, store, "match.result.coins", gamestrings.English, "Coins", gamestrings.Draft)
+
+	keys := func(q gamestrings.EntryQuery) string {
+		t.Helper()
+		entries, err := store.Page(ctx, q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		found := []string{}
+		for _, entry := range entries {
+			found = append(found, entry.Key)
+		}
+		return strings.Join(found, ",")
+	}
+	if got := keys(gamestrings.EntryQuery{Limit: 2}); got != "lobby.banner.old,match.result.coins" {
+		t.Fatalf("first page %q", got)
+	}
+	if got := keys(gamestrings.EntryQuery{After: "match.result.coins", Limit: 2}); got != "match.result.win" {
+		t.Fatalf("next page %q", got)
+	}
+	searches := map[string]string{"WIN": "match.result.win", "victory": "match.result.win", "retired": "lobby.banner.old", "reward": "match.result.coins"}
+	for text, want := range searches {
+		if got := keys(gamestrings.EntryQuery{Text: text, Limit: 50}); got != want {
+			t.Fatalf("search %q: %q, want %q", text, got, want)
+		}
+	}
+	if got := keys(gamestrings.EntryQuery{Missing: gamestrings.English, Limit: 50}); got != "match.result.coins" {
+		t.Fatalf("missing in en %q", got)
+	}
+	page, err := store.Page(ctx, gamestrings.EntryQuery{Text: "win", Limit: 50})
+	if err != nil || page[0].Values[gamestrings.English].Text != "Victory!" {
+		t.Fatalf("values %+v %v", page, err)
+	}
+
+	coverage, err := store.Coverage(ctx)
+	want := []gamestrings.Coverage{
+		{Language: gamestrings.Azerbaijani, Keys: 2},
+		{Language: gamestrings.English, Keys: 2, Approved: 1, Percent: 50},
+		{Language: gamestrings.Turkish, Keys: 2},
+		{Language: gamestrings.Russian, Keys: 2},
+	}
+	if err != nil || !reflect.DeepEqual(coverage, want) {
+		t.Fatalf("coverage %+v %v", coverage, err)
 	}
 }
 

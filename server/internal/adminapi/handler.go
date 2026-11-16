@@ -246,6 +246,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/strings/{key}/values/{language}", h.allowed(rbac.GameStrings, rbac.View, h.setValue))
 	h.mux.HandleFunc("GET /admin/strings/export", h.allowed(rbac.GameStrings, rbac.View, h.exportStrings))
 	h.mux.HandleFunc("POST /admin/strings/import", h.allowed(rbac.GameStrings, rbac.Edit, h.importStrings))
+	h.mux.HandleFunc("GET /admin/strings/coverage", h.allowed(rbac.GameStrings, rbac.View, h.stringsCoverage))
 	h.mux.HandleFunc("GET /admin/strings/active", h.allowed(rbac.GameStrings, rbac.View, h.activeStrings))
 	h.mux.HandleFunc("PUT /admin/strings/active", h.allowed(rbac.GameStrings, rbac.Publish, h.activateStrings))
 	h.mux.HandleFunc("GET /admin/strings/bundles", h.allowed(rbac.GameStrings, rbac.View, h.listBundles))

@@ -703,14 +703,15 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/approvals` | signed in | Pending proposals (section 8) the admin proposed or may decide |
 | `POST /admin/approvals/{id}/approve` | an approver role of section 8 | Approves and carries out the proposal |
 | `POST /admin/approvals/{id}/reject` | an approver role of section 8 | Rejects it |
-| `GET /admin/strings` | V on game strings | Every key with its values per language, and the missing-value report per language (`coverage`: keys, approved, percent, missing keys) |
+| `GET /admin/strings` | V on game strings | Keys with their values per language, by key, 50 a page (at most 200 through `limit`), `after=<key>` asks for the next page (#148). `q` searches keys, notes and value texts (any case), `missing=<language>` keeps the keys the missing-value report counts for that language: not deprecated and without an approved value |
+| `GET /admin/strings/coverage` | V on game strings | The missing-value report per language (`coverage`: keys, approved, percent), counted over keys that are not deprecated |
 | `PUT /admin/strings/{key}` `{"note","max_length","placeholders","deprecated"}` | C for a new key, E for an existing one, R to deprecate it | Saves the key |
 | `PUT /admin/strings/{key}/values/{language}` `{"text","status"}` | E for `draft`, E and P for `approved` | Saves one value |
 | `GET /admin/strings/export?language=&format=` | V on game strings | The translator file of `docs/localization.md` 2.1, `csv` or `json` |
 | `POST /admin/strings/import?language=&format=` | E on game strings | Imports a translator file of at most 4 MiB |
 | `GET /admin/strings/active` | V on game strings | The active bundle version per language and the fallback chains, with their `config_version` (0 before the first publish) |
 | `PUT /admin/strings/active` `{"bundles","fallback_chains"}` | P on game strings; a rollback also S: rollback on snapshots | Publishes the next `localization` snapshot (`docs/localization.md` 2.2) |
-| `GET /admin/strings/bundles` | V on game strings | Every published bundle version, newest first per language |
+| `GET /admin/strings/bundles?language=` | V on game strings | The published bundle versions of one language, newest first, 50 a page (at most 200 through `limit`), `before=<version>` asks for older versions (#148); a missing or unknown language answers 400 `invalid` |
 | `POST /admin/strings/bundles/{language}` | P on game strings | Publishes the language as its next bundle version and uploads its file to the CDN (`docs/localization.md` 2.2) in the same step; unchanged content answers the existing version and uploads its file again. Without a content store 503 `content_store_off`; when the store does not take the file 503 `content_store_unavailable`, and no version is stored |
 
 - **Sign-in.** The Google ID token must have a trusted audience and the nonce, a verified email, the company Workspace as hosted domain (`hd`) and an email in that domain. The email must belong to an active account (5.18). Unknown and disabled accounts get the same answer, `account_refused`.

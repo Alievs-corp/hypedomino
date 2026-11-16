@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -234,36 +233,4 @@ func (b Bundle) Encode() ([]byte, string, error) {
 	}
 	sum := sha256.Sum256(data)
 	return data, hex.EncodeToString(sum[:]), nil
-}
-
-type Coverage struct {
-	Language Language
-	Keys     int
-	Approved int
-	Percent  float64
-	Missing  []string
-}
-
-func Report(entries []Entry) []Coverage {
-	report := make([]Coverage, 0, len(Languages))
-	for _, language := range Languages {
-		coverage := Coverage{Language: language, Missing: []string{}}
-		for _, entry := range entries {
-			if entry.Deprecated {
-				continue
-			}
-			coverage.Keys++
-			if entry.Values[language].Status == Approved {
-				coverage.Approved++
-				continue
-			}
-			coverage.Missing = append(coverage.Missing, entry.Key)
-		}
-		sort.Strings(coverage.Missing)
-		if coverage.Keys > 0 {
-			coverage.Percent = float64(coverage.Approved) * 100 / float64(coverage.Keys)
-		}
-		report = append(report, coverage)
-	}
-	return report
 }

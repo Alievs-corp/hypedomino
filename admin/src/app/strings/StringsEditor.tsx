@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { editableStatuses, placeholdersFromText, placeholdersText, valueOf, visibleStrings, type Coverage, type GameString, type Status } from "@/strings/strings";
+import { editableStatuses, placeholdersFromText, placeholdersText, valueOf, type GameString, type Status, type StringsQuery } from "@/strings/strings";
 import { saveKey, saveValue, type SavedResult } from "./actions";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
@@ -19,13 +20,10 @@ const statusLabels: Record<Status, MessageKey> = {
 
 type Rights = { mayCreate: boolean; mayEdit: boolean; mayApprove: boolean };
 
-export function StringsEditor({ strings, coverage, ...rights }: { strings: GameString[]; coverage: Coverage[] } & Rights) {
+type ListProps = { strings: GameString[]; languages: string[]; query: StringsQuery; next: string | null };
+
+export function StringsEditor({ strings, languages, query, next, ...rights }: ListProps & Rights) {
   const t = useTranslator();
-  const [search, setSearch] = useState("");
-  const [missingIn, setMissingIn] = useState("");
-  const languages = coverage.map((report) => report.language);
-  const missing = coverage.find((report) => report.language === missingIn)?.missing ?? null;
-  const shown = visibleStrings(strings, search, missing);
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">{t("strings.keys")}</h2>
@@ -35,14 +33,15 @@ export function StringsEditor({ strings, coverage, ...rights }: { strings: GameS
           <KeyForm entry={null} />
         </details>
       )}
-      <div className="flex flex-wrap gap-4">
+      <form method="get" action="/strings" className="flex flex-wrap items-end gap-4">
+        <input type="hidden" name="bundles" value={query.bundles} />
         <label className={labelClass}>
           {t("strings.search")}
-          <input value={search} onChange={(event) => setSearch(event.target.value)} className={fieldClass} />
+          <input name="q" defaultValue={query.q} className={fieldClass} />
         </label>
         <label className={labelClass}>
           {t("strings.missing_in")}
-          <select value={missingIn} onChange={(event) => setMissingIn(event.target.value)} className={fieldClass}>
+          <select name="missing" defaultValue={query.missing} className={fieldClass}>
             <option value="">{t("strings.all_keys")}</option>
             {languages.map((language) => (
               <option key={language} value={language}>
@@ -51,10 +50,10 @@ export function StringsEditor({ strings, coverage, ...rights }: { strings: GameS
             ))}
           </select>
         </label>
-      </div>
-      <p className="text-sm text-text-muted">
-        {t.number(shown.length)} / {t.number(strings.length)}
-      </p>
+        <button type="submit" className="rounded-md bg-primary px-4 py-2 font-semibold text-on-primary">
+          {t("queues.search")}
+        </button>
+      </form>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -68,7 +67,7 @@ export function StringsEditor({ strings, coverage, ...rights }: { strings: GameS
             </tr>
           </thead>
           <tbody>
-            {shown.map((entry) => (
+            {strings.map((entry) => (
               <tr key={entry.key} className="border-t border-surface align-top">
                 <td className="py-2 pr-4">
                   <KeyCell entry={entry} mayEdit={rights.mayEdit} />
@@ -83,6 +82,11 @@ export function StringsEditor({ strings, coverage, ...rights }: { strings: GameS
           </tbody>
         </table>
       </div>
+      {next && (
+        <Link href={next} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-text-secondary">
+          {t("queues.next")}
+        </Link>
+      )}
     </section>
   );
 }

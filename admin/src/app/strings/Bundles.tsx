@@ -1,23 +1,26 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
-import { bundlesOf, type Bundle } from "@/strings/strings";
+import type { Bundle } from "@/strings/strings";
 import { Rollback } from "../config/Rollback";
 import { activateBundle, publishBundle } from "./actions";
 
 type Props = {
-  languages: string[];
+  language: string;
+  languageHrefs: Record<string, string>;
   bundles: Bundle[];
+  older: string | null;
   active: Record<string, number>;
   configVersion: number;
   mayPublish: boolean;
   rollbackClientId: string | null;
 };
 
-export function Bundles({ languages, bundles, active, configVersion, mayPublish, rollbackClientId }: Props) {
+export function Bundles({ language, languageHrefs, bundles, older, active, configVersion, mayPublish, rollbackClientId }: Props) {
   const t = useTranslator();
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -55,8 +58,15 @@ export function Bundles({ languages, bundles, active, configVersion, mayPublish,
           {result.ok ? `${t("strings.done")}: ${result.version}` : `${t("strings.refused")}: ${result.error} ${result.detail}`}
         </p>
       )}
-      {languages.map((language) => (
-        <div key={language} className="flex flex-col gap-2">
+      <nav className="flex flex-wrap gap-2 text-sm">
+        {Object.entries(languageHrefs).map(([code, href]) => (
+          <Link key={code} href={href} prefetch={false} aria-current={code === language ? "page" : undefined} className={`rounded-md px-3 py-1 font-mono ${code === language ? "bg-primary text-on-primary" : "bg-surface text-text-secondary"}`}>
+            {code}
+          </Link>
+        ))}
+      </nav>
+      {language && (
+        <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-4">
             <h3 className="font-mono font-semibold">{language}</h3>
             <span className="text-sm text-text-muted">
@@ -70,7 +80,7 @@ export function Bundles({ languages, bundles, active, configVersion, mayPublish,
           </div>
           <table className="text-sm">
             <tbody>
-              {bundlesOf(bundles, language).map((bundle) => (
+              {bundles.map((bundle) => (
                 <tr key={bundle.version} className="border-t border-surface align-top">
                   <td className="py-2 pr-4">{bundle.version}</td>
                   <td className="py-2 pr-4 font-mono">{bundle.hash.slice(0, 12)}</td>
@@ -89,8 +99,13 @@ export function Bundles({ languages, bundles, active, configVersion, mayPublish,
               ))}
             </tbody>
           </table>
+          {older && (
+            <Link href={older} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-sm text-text-secondary">
+              {t("queues.next")}
+            </Link>
+          )}
         </div>
-      ))}
+      )}
     </section>
   );
 }
