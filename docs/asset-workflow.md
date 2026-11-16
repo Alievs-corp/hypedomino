@@ -223,7 +223,19 @@ Static fallback, every item: a chosen key frame, not frame 0, exported at the sa
 Size:
 
 - `tools/asset-export` estimates an item's texture bytes with the size rule of ADR 0012: every sprite of the item, the static and every frame, at 16 bytes per ASTC block of the default block, summed. Atlas padding and bundle overhead only add to it, so an item over its limit here is over it in the build too. An item under it still owes the bundle measurement of ADR 0012.
-- Limits are in `tools/asset-export/budgets.json`, each with its source: an animated avatar under 300,000 bytes (#171) and an emoji under 100,000 bytes (#175), reading 1 KB as 1,000 bytes. Static avatars, frames, tables and tile skins have no limit yet (#93, #135, class specs #168 to #175, O-5); their estimate is reported and never fails.
+- Limits are in `tools/asset-export/budgets.json`, per type and kind (static or animated), each with its source; 1 KB reads as 1,000 bytes:
+
+| Type | Static | Animated | Source |
+|---|---|---|---|
+| Avatar | No limit | Under 300,000 bytes | #171 |
+| Emoji | Under 100,000 bytes | Under 100,000 bytes | #175 |
+| Frame | Under 125,000 bytes | Under 600,000 bytes | Owner decision 2026-11-16 |
+| Table | Under 1,000,000 bytes | Under 5,000,000 bytes, at most 2 layers of which at most 1 animated | Owner decision 2026-11-16 |
+| Tile skin | No limit | No limit | O-5 |
+
+- The animated frame limit leaves margin over the 256 px canvas of set 1: 17 sprites, 502,928 bytes. The owner named about 100,000 bytes for a static frame; the limit is 125,000 so the four 512 px statics of set 1 (118,336 bytes each) pass, while the other static frames are 256 px (29,584 bytes). An animated frame on a 512 px canvas (about 2,000,000 bytes) does not fit.
+- A layer of an animated table is a folder under `export/layer/`; it is animated when it holds more than one frame. The tool counts both and fails a table over either limit. Set 1's animated tables have a one-frame `base` layer and a 10-frame `motion` layer, 4,930,560 bytes.
+- A type and kind without a limit is reported and never fails.
 - CI job `assets`, part of `CI complete`, runs when `assets-src/` or these tools change: the naming check over all of `assets-src/`, then the export and size checks over every cosmetic item the change touches, with Git LFS files pulled for those items only. The estimates go to the job summary.
 - The admin measures format, size, atlas and frame count on upload (`docs/admin.md` 5.2).
 - A new or changed effect, or anything in the match scene, reports the measurements of `docs/performance.md` section 8.
@@ -268,7 +280,7 @@ B-10 (do and don't) is drawn from this skin and its render.
 | O-2 | The current terms of the chosen generator on ownership and commercial use of output, read and confirmed for this use | Owner, with legal advice, before launch (GN-4) |
 | O-3 | Whether copyright protection of AI-assisted art matters for the business, in which jurisdictions, and how much human work (RC-5) that needs | Owner, with legal advice, before launch (GN-4) |
 | O-4 | Disclosure and retention | Decided 2026-10-26: AI use is disclosed only where Google Play or App Store rules require it, checked at GN-4; `artSource` stays in the manifest; `provenance.md` is kept in git for as long as the repository exists |
-| O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
+| O-5 | ASTC block size and atlas size per asset class; the maximum item size is set for avatars (animated), emoji, frames and tables (5.4, owner decision 2026-11-16 for frames and tables) and open for static avatars and tile skins | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |
 | O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board image B-9 (B-1 to B-7 were committed with #166, B-10 with #167, B-8 with #176) | Art team, #167; the terms of step 2 with the account holder of the 2026-11-12 generation; paint-over and human work of steps 4 and 5 by an artist; cultural review by the owner or a delegate; B-9 #167 and #168 |
