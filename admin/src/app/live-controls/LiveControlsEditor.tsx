@@ -4,7 +4,18 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { needsStepUp } from "@/admin/refusals";
 import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
-import { buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, validVersion, type LiveControls } from "@/config/liveControls";
+import {
+  breakGlassSeverities,
+  buildsFromText,
+  emptyEnforcedAllowlist,
+  maintenanceEnd,
+  maintenanceInput,
+  sameControls,
+  validIncidentId,
+  validVersion,
+  type Incident,
+  type LiveControls,
+} from "@/config/liveControls";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { switchLiveControls, type SwitchResult } from "./actions";
@@ -25,20 +36,23 @@ export function LiveControlsEditor({ published, clientId }: { published: LiveCon
   const [controls, setControls] = useState(published);
   const [builds, setBuilds] = useState(published.build_allowlist.join("\n"));
   const [reason, setReason] = useState("");
+  const [incident, setIncident] = useState<Incident | null>(null);
   const [result, setResult] = useState<SwitchResult | null>(null);
   const [pending, startTransition] = useTransition();
   const next = { ...controls, build_allowlist: buildsFromText(builds) };
   const versionValid = validVersion(next.minimum_app_version);
   const allowlistEmpty = emptyEnforcedAllowlist(next);
+  const incidentMissing = incident !== null && !validIncidentId(incident.id);
   const stepUp = result !== null && !result.ok && needsStepUp(result.error);
   const canSwitch = clientId !== null;
 
   function send() {
     startTransition(async () => {
-      const outcome = await switchLiveControls(next, reason);
+      const outcome = await switchLiveControls(next, reason, incident);
       setResult(outcome);
       if (outcome.ok) {
         setReason("");
+        setIncident(null);
         router.refresh();
       }
     });
@@ -94,9 +108,40 @@ export function LiveControlsEditor({ published, clientId }: { published: LiveCon
             {t("live.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={incident !== null} onChange={(event) => setIncident(event.target.checked ? { severity: "SEV1", id: "" } : null)} />
+            {t("live.break_glass")}
+          </label>
+          {incident !== null && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-text-secondary">{t("live.break_glass_explain")}</p>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  aria-label={t("live.break_glass_severity")}
+                  value={incident.severity}
+                  onChange={(event) => setIncident({ ...incident, severity: event.target.value as Incident["severity"] })}
+                  className={fieldClass}
+                >
+                  {breakGlassSeverities.map((severity) => (
+                    <option key={severity} value={severity}>
+                      {severity}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  aria-label={t("live.break_glass_incident")}
+                  placeholder={t("live.break_glass_incident")}
+                  aria-invalid={incidentMissing}
+                  value={incident.id}
+                  onChange={(event) => setIncident({ ...incident, id: event.target.value.trim() })}
+                  className={`grow font-mono ${fieldClass}`}
+                />
+              </div>
+            </div>
+          )}
           <button
             type="button"
-            disabled={pending || !versionValid || allowlistEmpty || reason.trim() === "" || sameControls(next, published)}
+            disabled={pending || !versionValid || allowlistEmpty || incidentMissing || reason.trim() === "" || sameControls(next, published)}
             onClick={send}
             className="self-start rounded-md bg-primary px-4 py-2 text-on-primary disabled:opacity-40"
           >
@@ -116,6 +161,13 @@ function Outcome({ result }: { result: SwitchResult }) {
     return (
       <p role="status" className="text-sm text-text-secondary">
         {t("live.refused")}: {result.error} {result.detail}
+      </p>
+    );
+  }
+  if (result.breakGlassId !== null) {
+    return (
+      <p role="status" className="text-sm text-text-secondary">
+        {`${t("live.switched")}: ${result.version}. ${t("live.break_glass_waiting")}: ${result.breakGlassId}`}
       </p>
     );
   }

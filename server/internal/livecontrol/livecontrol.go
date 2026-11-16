@@ -6,14 +6,36 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
 )
 
 const Domain = "live_controls"
 
-var ErrInvalid = errors.New("livecontrol: invalid controls")
+var (
+	ErrInvalid  = errors.New("livecontrol: invalid controls")
+	ErrIncident = errors.New("livecontrol: break-glass needs a declared SEV1 or SEV2 incident id")
+)
+
+const maxIncidentIDLength = 128
+
+type Incident struct {
+	Severity string `json:"severity"`
+	ID       string `json:"id"`
+}
+
+func (i Incident) Validate() error {
+	if i.Severity != "SEV1" && i.Severity != "SEV2" {
+		return fmt.Errorf("%w: severity %q", ErrIncident, i.Severity)
+	}
+	if i.ID == "" || i.ID != strings.TrimSpace(i.ID) || len(i.ID) > maxIncidentIDLength || strings.ContainsFunc(i.ID, unicode.IsControl) {
+		return fmt.Errorf("%w: incident id %q", ErrIncident, i.ID)
+	}
+	return nil
+}
 
 type Controls struct {
 	MinimumAppVersion      string     `json:"minimum_app_version"`
