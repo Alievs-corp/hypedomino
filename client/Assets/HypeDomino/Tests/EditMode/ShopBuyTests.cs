@@ -48,6 +48,37 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(ShopBuyOutcome.Failed, result.Outcome);
             Assert.AreEqual(ShopBuyKeys.Failed, result.MessageKey);
             Assert.IsNull(result.Purchase);
+            Assert.IsEmpty(result.Duplicates);
+        }
+
+        [Test]
+        public void APurchaseKeepsTheDuplicateCompensation()
+        {
+            const string body = "{\"offer\":\"offer.bundle_night\",\"currency\":\"crystal\",\"balance\":40,\"grant\":{\"coins\":0,\"cosmetics\":[\"avatar.comet_fox\"],\"duplicates\":{\"tile.moon_owl\":40,\"frame.paper_kite\":0}},\"repeated\":false}";
+            var result = ShopBuyResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
+            Assert.AreEqual(ShopBuyOutcome.Bought, result.Outcome);
+            Assert.AreEqual(2, result.Duplicates.Count);
+            Assert.AreEqual(40, result.Duplicates["tile.moon_owl"]);
+            Assert.AreEqual(0, result.Duplicates["frame.paper_kite"]);
+        }
+
+        [Test]
+        public void APurchaseWithoutDuplicatesHasNone()
+        {
+            Assert.IsEmpty(ShopBuyResult.From(new ApiReply(ApiOutcome.Ok, 200, BoughtJson)).Duplicates);
+            Assert.IsEmpty(ShopBuyResult.From(new ApiReply(ApiOutcome.Ok, 200, "{\"offer\":\"offer.x\",\"grant\":{\"duplicates\":{}}}")).Duplicates);
+        }
+
+        [TestCase("{\"offer\":\"offer.x\",\"grant\":[]}")]
+        [TestCase("{\"offer\":\"offer.x\",\"grant\":{\"duplicates\":[\"tile.moon_owl\"]}}")]
+        [TestCase("{\"offer\":\"offer.x\",\"grant\":{\"duplicates\":{\"tile.moon_owl\":-1}}}")]
+        [TestCase("{\"offer\":\"offer.x\",\"grant\":{\"duplicates\":{\"tile.moon_owl\":1.5}}}")]
+        public void APurchaseWithUnreadableDuplicatesIsAFailure(string body)
+        {
+            var result = ShopBuyResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
+            Assert.AreEqual(ShopBuyOutcome.Failed, result.Outcome);
+            Assert.IsNull(result.Purchase);
+            Assert.IsEmpty(result.Duplicates);
         }
 
         [TestCase(402, "wallet.insufficient", ShopBuyOutcome.Insufficient, "shop.buy.insufficient")]
