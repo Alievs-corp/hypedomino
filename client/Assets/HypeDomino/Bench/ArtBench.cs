@@ -242,10 +242,12 @@ namespace HypeDomino.Bench
             layout.Arrange(TableChain, TableChainAnchor, Array.Empty<Domino>(), Array.Empty<Domino>(), ChainBoard, shortSide);
             var row = NewRect(caption, parent);
             row.anchoredPosition = new Vector2(0f, y);
+            var shadows = new Image[TableChain.Length];
+            for (var at = 0; at < shadows.Length; at++) shadows[at] = NewImage("TileShadow", row, null, 0f, CellCentre);
             var tiles = new Image[TableChain.Length];
             for (var at = 0; at < tiles.Length; at++) tiles[at] = NewImage("Tile", row, null, 0f, CellCentre);
             var view = row.gameObject.AddComponent<BoardTilesView>();
-            view.Configure(content.tileFaceSet, tiles);
+            view.Configure(content.tileFaceSet, tiles, TileShadowSprite(), shadows);
             view.Show(layout);
             var label = NewText(caption, row, TokenColor.TextPrimary, LabelFontSize);
             label.alignment = TextAnchor.MiddleRight;
@@ -253,6 +255,8 @@ namespace HypeDomino.Bench
             label.rectTransform.sizeDelta = new Vector2(CaptionWidth, LabelHeight);
             label.rectTransform.anchoredPosition = new Vector2(-(layout.Bounds.width * layout.Scale + CaptionWidth) / 2f - Gap, 0f);
         }
+
+        Sprite TileShadowSprite() => Array.Find(content.effectSprites, sprite => sprite != null && sprite.name == "tile_shadow");
 
         void BuildEmojiSheets()
         {
