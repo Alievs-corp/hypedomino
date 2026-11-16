@@ -20,7 +20,7 @@ Rules:
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
 - E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); Redis is 7 (#51, `server/internal/cluster/redistest` runs `redis:7-alpine`); the hosting is #25 (ADR 0010).
 
-Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment.
+Hosting: the primary data region is Germany (EU) with Hetzner as hosting provider (`docs/privacy.md` section 2, OQ-3). Orchestration is ADR 0010: k3s on Hetzner Cloud in Germany, one cluster per environment, manifests in `deploy/k8s`, infrastructure as code with OpenTofu and its state in a Hetzner Object Storage bucket per environment. Node types per role (`control`, `game`, `db`), the load balancer and the bucket names are ADR 0014: shared-vCPU CX/CAX servers for the closed beta and the launch, the game node moved to dedicated vCPU (CCX23) when the latency trigger of ADR 0014 fires.
 
 ## 2. Environment variables
 
