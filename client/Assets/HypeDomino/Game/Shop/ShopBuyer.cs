@@ -18,6 +18,8 @@ namespace HypeDomino.Game.Shop
 
         public bool Busy { get; private set; }
 
+        public bool IsUnsettled(string offer) => offer != null && offer == pendingOffer;
+
         public bool Buy(string offer, Action<ShopBuyResult> done)
         {
             if (Busy || string.IsNullOrEmpty(offer))
