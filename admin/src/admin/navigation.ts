@@ -32,6 +32,7 @@ export const screens: readonly Screen[] = [
   { href: "/live-controls", labelKey: "nav.live", object: "live_controls" },
   { href: "/approvals", labelKey: "nav.approvals", object: null },
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
+  { href: "/accounts", labelKey: "nav.accounts", object: "admin_accounts" },
 ];
 
 export function can(permissions: Permissions, object: string, action: string): boolean {
