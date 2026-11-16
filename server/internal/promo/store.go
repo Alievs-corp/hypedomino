@@ -491,8 +491,19 @@ func missingFrom(present, wanted []string) []string {
 	return missing
 }
 
-func (s *Store) List(ctx context.Context, campaign string, limit int) ([]Code, error) {
-	rows, err := s.db.Query(ctx, `select `+codeColumns+` from promo_codes c where $1 = '' or c.campaign_id = $1 order by c.created_at desc, c.promo_id limit $2`, campaign, limit)
+type ListQuery struct {
+	Campaign string
+	State    string
+	IDPrefix string
+	Before   string
+	Limit    int
+}
+
+func (s *Store) List(ctx context.Context, q ListQuery) ([]Code, error) {
+	rows, err := s.db.Query(ctx, `select `+codeColumns+` from promo_codes c
+		where ($1 = '' or c.campaign_id = $1) and ($2 = '' or c.state = $2) and starts_with(c.promo_id, $3)
+			and ($4 = '' or (c.created_at, c.promo_id) < (select created_at, promo_id from promo_codes where promo_id = $4))
+		order by c.created_at desc, c.promo_id desc limit $5`, q.Campaign, q.State, q.IDPrefix, q.Before, q.Limit)
 	if err != nil {
 		return nil, err
 	}

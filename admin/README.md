@@ -161,7 +161,7 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 `/promo` (A-15, `docs/admin.md` 5.11, #142) is in the nav for roles that may view promo codes. It needs `HD_PROMO_KEY` on the admin API; without it the screen says promo codes are off.
 
 - **Usage:** per campaign, the codes, how many are active, pending approval or disabled, redemptions against the summed cap, and the window. A campaign links to its codes.
-- **Codes:** the newest 200, or those of one campaign: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
+- **Codes:** newest first, 50 a page with an "Older codes" link, of all campaigns or one, filtered by state and searched by code id prefix: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
 - **Create (`live_ops`, `super_admin`):** one code of any type, or a batch of up to 10,000 `single_use` codes. The bundle is a bundle id with coins, pass XP and cosmetic item ids. The window is entered in UTC. A `multi_use` code takes a cap and an optional chosen code. A `targeted` code starts without accounts. A reason is required.
   - **One code:** its plaintext is shown once.
   - **Batch:** downloads as `<id>.csv` from the browser. Nothing keeps the plaintext afterwards, beyond a "download again" button while the page stays open.

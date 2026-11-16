@@ -1,3 +1,4 @@
+import type { SearchParams } from "../audit/query.ts";
 import type { Bundle } from "../shop/catalog.ts";
 
 export type PromoKind = "single_use" | "multi_use" | "targeted";
@@ -161,8 +162,50 @@ export function codeGrants(code: PromoCode, premiumPass: string): string {
   return code.passPremium ? `${grants} + ${premiumPass}` : grants;
 }
 
-export function promoApiPath(campaign: string): string {
-  return campaign ? `/admin/promo-codes?campaign=${encodeURIComponent(campaign)}` : "/admin/promo-codes";
+export const promoPageSize = 50;
+
+export const promoStates = ["active", "pending_approval", "disabled"] as const;
+
+export type PromoQuery = { campaign: string; state: (typeof promoStates)[number] | ""; id: string; before: string };
+
+const promoIdPattern = /^promo\.[a-z0-9_]+$/;
+
+function single(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+export function readPromoQuery(params: SearchParams): PromoQuery {
+  const state = single(params.state);
+  const before = single(params.before);
+  return {
+    campaign: single(params.campaign),
+    state: promoStates.find((known) => known === state) ?? "",
+    id: single(params.id),
+    before: promoIdPattern.test(before) ? before : "",
+  };
+}
+
+function searchOf(query: PromoQuery): URLSearchParams {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value) {
+      search.set(key, value);
+    }
+  }
+  return search;
+}
+
+export function promoApiPath(query: PromoQuery): string {
+  const search = searchOf(query);
+  search.set("limit", String(promoPageSize));
+  return `/admin/promo-codes?${search}`;
+}
+
+export function olderPromoHref(query: PromoQuery, codes: readonly PromoCode[]): string | null {
+  if (codes.length < promoPageSize) {
+    return null;
+  }
+  return `/promo?${searchOf({ ...query, before: codes[codes.length - 1].id })}`;
 }
 
 export function disablePath(id: string, batch: boolean): string {
