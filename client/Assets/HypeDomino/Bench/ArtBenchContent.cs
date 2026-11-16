@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.UI.Board;
 using UnityEngine;
 
 namespace HypeDomino.Bench
@@ -30,14 +31,13 @@ namespace HypeDomino.Bench
         public ArtBenchLoop[] emoji = Array.Empty<ArtBenchLoop>();
         public ArtBenchLoop[] tileBacks = Array.Empty<ArtBenchLoop>();
         public Sprite[] tileFaces = Array.Empty<Sprite>();
+        public TileFaceSet tileFaceSet;
         public ArtBenchLoop[] medals = Array.Empty<ArtBenchLoop>();
         public Sprite[] effectSprites = Array.Empty<Sprite>();
         public Sprite[] kit = Array.Empty<Sprite>();
         public Material additive;
         public Material alpha;
         public TextAsset effectTable;
-        public float shadowOffsetY;
-        public float shadowAlpha;
         public AudioClip[] sfx = Array.Empty<AudioClip>();
         public AudioClip[] music = Array.Empty<AudioClip>();
     }

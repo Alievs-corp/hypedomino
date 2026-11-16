@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using HypeDomino.Bench;
 using HypeDomino.Content;
+using HypeDomino.UI.Board;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -18,29 +19,9 @@ namespace HypeDomino.Editor
         const string ScenePath = SceneFolder + "/ArtBench.unity";
         const string CosmeticRoot = ArtRoot + "/cosmetic";
         const string MedalRoot = ArtRoot + "/medal";
-        const string TokensPath = ArtRoot + "/design-tokens.json";
         const string DefaultOutputPath = "Builds/art-bench.apk";
         const string OutputPathArgument = "-customBuildPath";
         const string BenchIdentifier = "com.hypedomino.artbench";
-
-        [Serializable]
-        public sealed class ElevationLevel
-        {
-            public float offsetY;
-            public float alpha;
-        }
-
-        [Serializable]
-        public sealed class Elevation
-        {
-            public ElevationLevel e1;
-        }
-
-        [Serializable]
-        public sealed class Tokens
-        {
-            public Elevation elevation;
-        }
 
         public static void BuildAndroid() => EditorMethod.Run(() => Build(OutputPath()));
 
@@ -73,7 +54,6 @@ namespace HypeDomino.Editor
 
         static ArtBenchContent Content()
         {
-            var elevation = JsonUtility.FromJson<Tokens>(File.ReadAllText(TokensPath)).elevation.e1;
             return new ArtBenchContent
             {
                 avatars = Items("avatar"),
@@ -82,14 +62,13 @@ namespace HypeDomino.Editor
                 emoji = Items("emoji"),
                 tileBacks = Items("tile"),
                 tileFaces = Loaded<Sprite>(PngPaths(TileFaceContent.FacesFolder(TileFaceContent.DefaultSet))),
+                tileFaceSet = AssetDatabase.LoadAssetAtPath<TileFaceSet>(TileFaceContent.SetPath(TileFaceContent.DefaultSet)),
                 medals = SubFolders(MedalRoot).Select(Item).Where(item => item != null).ToArray(),
                 effectSprites = Loaded<Sprite>(EffectsContent.SpritePaths()),
                 kit = Loaded<Sprite>(UiKitContent.SpritePaths()),
                 additive = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AdditiveMaterialPath),
                 alpha = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AlphaMaterialPath),
                 effectTable = AssetDatabase.LoadAssetAtPath<TextAsset>(EffectsContent.TablePath),
-                shadowOffsetY = elevation.offsetY,
-                shadowAlpha = elevation.alpha,
                 sfx = Loaded<AudioClip>(SoundContent.SfxPaths()),
                 music = Loaded<AudioClip>(SoundContent.MusicPaths()),
             };

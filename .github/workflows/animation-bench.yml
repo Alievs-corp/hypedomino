@@ -40,7 +40,6 @@ jobs:
             mkdir -p "$art/${item#assets-src/}"
             cp -R "$export"/. "$art/${item#assets-src/}"/
           done
-          cp docs/design-tokens.json "$art"/
           find "$art" -type f | cut -d/ -f7-8 | sort | uniq -c
       - uses: game-ci/unity-builder@v6
         continue-on-error: true

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.Core.Diagnostics;
+using HypeDomino.UI.Board;
 using HypeDomino.UI.Effects;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
@@ -28,7 +29,6 @@ namespace HypeDomino.Bench
         const float SwipeMinUnits = 200f;
         const float SmallestTileShortSide = 41.7f;
         const float MedianTileShortSide = 65f;
-        const float TileGap = 2f;
         const float LargestFrameSide = 400f;
         const int AvatarColumns = 5;
         const int AvatarRows = 3;
@@ -42,10 +42,13 @@ namespace HypeDomino.Bench
         const int SoundColumns = 5;
         const int SoundRows = 4;
         const int RateIndexDefault = 1;
+        const int TableChainAnchor = 3;
+        const float CaptionWidth = 240f;
 
         static readonly float[] LoopRates = { 8f, 12f };
         static readonly float[] FrameSides = { TokenSize.TouchTargetMin, TokenSize.SeatPanelHeight, LargestFrameSide };
-        static readonly string[] TableChain = { "6_6", "3_6", "3_3", "1_3", "1_5", "5_5", "0_5" };
+        static readonly Domino[] TableChain = { new Domino(5, 1), new Domino(1, 3), new Domino(3, 6), new Domino(6, 6), new Domino(6, 4), new Domino(4, 4), new Domino(4, 2) };
+        static readonly Vector2 ChainBoard = new Vector2(ReferenceLongSide, ReferenceShortSide / 3f);
         static readonly int AnimatedSlots = Math.Max(TokenEffectLevel.MediumMaxAnimatedCosmetics, TokenEffectLevel.HighMaxAnimatedCosmetics);
         static float AreaHeight => ReferenceShortSide - HudHeight - 2f * Margin;
 
@@ -234,57 +237,21 @@ namespace HypeDomino.Bench
 
         void AddTileChain(RectTransform parent, float shortSide, float y, string caption)
         {
-            var faces = new List<Sprite>();
-            foreach (var name in TableChain)
-            {
-                var face = FaceNamed(name);
-                if (face != null) faces.Add(face);
-            }
-            if (faces.Count == 0) return;
-            var scale = shortSide / faces[0].rect.width;
-            var longSide = faces[0].rect.height * scale;
-            var width = 0f;
-            foreach (var face in faces) width += (IsDouble(face) ? shortSide : longSide) + TileGap;
-            var shadowSprite = EffectSprite("tile_shadow");
-            if (shadowSprite != null) PlaceTiles(faces, shortSide, longSide, width, y, (face, upright, centre) => AddShadow(parent, shadowSprite, scale, upright, centre));
-            PlaceTiles(faces, shortSide, longSide, width, y, (face, upright, centre) => AddFace(parent, face, scale, upright, centre));
-            var label = NewText(caption, parent, TokenColor.TextPrimary, LabelFontSize);
+            if (content.tileFaceSet == null) return;
+            var layout = new ChainLayout(TableChain.Length);
+            layout.Arrange(TableChain, TableChainAnchor, Array.Empty<Domino>(), Array.Empty<Domino>(), ChainBoard, shortSide);
+            var row = NewRect(caption, parent);
+            row.anchoredPosition = new Vector2(0f, y);
+            var tiles = new Image[TableChain.Length];
+            for (var at = 0; at < tiles.Length; at++) tiles[at] = NewImage("Tile", row, null, 0f, CellCentre);
+            var view = row.gameObject.AddComponent<BoardTilesView>();
+            view.Configure(content.tileFaceSet, tiles);
+            view.Show(layout);
+            var label = NewText(caption, row, TokenColor.TextPrimary, LabelFontSize);
             label.alignment = TextAnchor.MiddleRight;
             label.text = caption;
-            label.rectTransform.sizeDelta = new Vector2(240f, LabelHeight);
-            label.rectTransform.anchoredPosition = new Vector2(-width / 2f - 140f, y);
-        }
-
-        static void PlaceTiles(List<Sprite> faces, float shortSide, float longSide, float width, float y, Action<Sprite, bool, Vector2> place)
-        {
-            var x = -width / 2f;
-            foreach (var face in faces)
-            {
-                var upright = IsDouble(face);
-                var span = upright ? shortSide : longSide;
-                place(face, upright, new Vector2(x + span / 2f, y));
-                x += span + TileGap;
-            }
-        }
-
-        void AddShadow(RectTransform parent, Sprite sprite, float scale, bool upright, Vector2 centre)
-        {
-            var shadow = NewImage("Shadow", parent, sprite, 0f, CellCentre);
-            shadow.rectTransform.sizeDelta = sprite.rect.size * scale;
-            shadow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, upright ? 0f : 90f);
-            shadow.rectTransform.anchoredPosition = centre + new Vector2(0f, -content.shadowOffsetY);
-            Color tint = TokenColor.Shadow;
-            tint.a = content.shadowAlpha;
-            shadow.color = tint;
-            shadow.material = MaterialOf(sprite.name);
-        }
-
-        void AddFace(RectTransform parent, Sprite face, float scale, bool upright, Vector2 centre)
-        {
-            var tile = NewImage(face.name, parent, face, 0f, CellCentre);
-            tile.rectTransform.sizeDelta = face.rect.size * scale;
-            tile.rectTransform.localRotation = Quaternion.Euler(0f, 0f, upright ? 0f : 90f);
-            tile.rectTransform.anchoredPosition = centre;
+            label.rectTransform.sizeDelta = new Vector2(CaptionWidth, LabelHeight);
+            label.rectTransform.anchoredPosition = new Vector2(-(layout.Bounds.width * layout.Scale + CaptionWidth) / 2f - Gap, 0f);
         }
 
         void BuildEmojiSheets()
@@ -643,21 +610,12 @@ namespace HypeDomino.Bench
             library = EffectLibrary.Parse(content.effectTable.text);
             for (var sprite = 0; sprite < library.SpriteCount; sprite++)
                 effectMaterials[library.SpriteName(sprite)] = library.MaterialOf(sprite) == EffectMaterial.Additive ? content.additive : content.alpha;
-            Debug.Log($"ArtBench effect sprites={effectSprites.Count} materials={effectMaterials.Count} additive={content.additive} alpha={content.alpha} shadowAlpha={content.shadowAlpha}");
+            Debug.Log($"ArtBench effect sprites={effectSprites.Count} materials={effectMaterials.Count} additive={content.additive} alpha={content.alpha}");
         }
 
         Sprite EffectSprite(string name) => effectSprites.TryGetValue(name, out var sprite) ? sprite : null;
 
         Material MaterialOf(string name) => effectMaterials.TryGetValue(name, out var material) ? material : null;
-
-        Sprite FaceNamed(string name)
-        {
-            foreach (var face in content.tileFaces)
-                if (face.name == name) return face;
-            return null;
-        }
-
-        static bool IsDouble(Sprite face) => face.name.Length == 3 && face.name[0] == face.name[2];
 
         static ArtBenchLoop FirstStill(ArtBenchLoop[] items)
         {
