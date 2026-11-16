@@ -10,28 +10,28 @@ from scipy import ndimage, optimize
 SLUG = "cranberry_kitten"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (32, 0, 1235, 1203)
+CROP = (0, -148, 1254, 1106)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (370, 185, 190, 200)
+HEAD = (375, 268, 182, 192)
 HEAD_FALLOFF = 0.3
-NECK_Y = 350
-NECK_BAND = 35
-SHOULDER_Y = 470
+NECK_Y = 426
+NECK_BAND = 34
+SHOULDER_Y = 542
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.67
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(345, 192, 36, 18), (438, 176, 36, 18)]
-EYE_FEATHER = 5.0
+NOD = 1.92
+EYES = [(351, 275, 35, 17), (440, 259, 35, 17)]
+EYE_FEATHER = 4.8
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "kitten_head", "polygon": [(498, 168), (516, 148), (534, 166), (552, 184), (576, 194), (598, 196), (614, 196), (608, 228), (594, 254), (574, 274), (546, 284), (516, 278), (498, 256), (492, 214)], "pivot": (556, 286), "length": 50, "swing": 7.0, "lag": 0.0, "flutter": 0.5, "grow": 1, "behind": "fill"},
-    {"name": "kitten_tail", "polygon": [(636, 410), (662, 402), (684, 438), (702, 480), (714, 530), (716, 580), (708, 622), (690, 638), (668, 632), (660, 592), (662, 540), (658, 490), (644, 450)], "pivot": (650, 414), "length": 90, "swing": 7.0, "lag": 1.0, "flutter": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "kitten_head", "polygon": [(497, 252), (515, 233), (532, 250), (549, 267), (572, 277), (593, 279), (609, 279), (603, 309), (589, 334), (570, 353), (543, 363), (515, 357), (497, 336), (492, 296)], "pivot": (553, 365), "length": 48, "swing": 7.0, "lag": 0.0, "flutter": 0.5, "grow": 1, "behind": "fill"},
+    {"name": "kitten_tail", "polygon": [(630, 484), (655, 476), (676, 511), (693, 551), (705, 599), (706, 647), (699, 687), (682, 703), (660, 697), (653, 659), (655, 609), (651, 561), (637, 522)], "pivot": (643, 488), "length": 86, "swing": 7.0, "lag": 1.0, "flutter": 0.4, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

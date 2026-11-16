@@ -82,6 +82,62 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.93 to 1.0 (0.93 / 0.92 = 1.011 is wider than the concept, so it is clamped to 1.0, the shorter side of the concept; the subject is 7.0% smaller in the circle instead of 8%)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `wren_perch: background [184.0, 184.0, 184.0], pockets 7961 px, crop (0, -193, 1254, 1061), portrait 768`
+- Crop `(17, 0, 1183, 1166)` to `(0, -193, 1254, 1061)` on the concept
+- Scale k = 0.9298. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `wren_perch_loop: blink edit registered (tx, ty, scale, angle) = (0.1312, 0.1285, 0.9995, -0.0004), residual 0.00115 -> 0.00111, eye colour offset [-5.7, -0.2, 2.9], parts 2, ripples 0, filled 7149 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.021 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/wren_perch/work/wren_perch_cleanup.py wren_perch assets-src/cosmetic/avatar/wren_perch/concept/20261115-01.png assets-src/cosmetic/avatar/wren_perch/work
+python -I assets-src/cosmetic/avatar/wren_perch/work/wren_perch_loop.py assets-src/cosmetic/avatar/wren_perch/concept assets-src/cosmetic/avatar/wren_perch/work assets-src/cosmetic/avatar/wren_perch/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/wren_perch` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `8626cb4cd6567387c38ca6fecd9b0dbd70e058ec993b1b3ec363a1a42d3f3f29` |
+| export/anim/0002.png | `de2718c6e4624181eef27d0c4542600f512ff4f84614e501c0f796858b5fa820` |
+| export/anim/0003.png | `0f4259248b17acf0d482be3a3f22188420381f51c1ab9d65acc761b478125e68` |
+| export/anim/0004.png | `cc2db8152f5fb6afdb8007d584c3433b6f34bf66d9fc4e626f1d808aeb82fabb` |
+| export/anim/0005.png | `5820ae6c68af1d255650f8b9c325af252d2cddeaadbd8281c79d375dcd9081f5` |
+| export/anim/0006.png | `523cacc995545846345e3541790cd9f2f7892e560ff3bc90fee6efbc4ab6a023` |
+| export/anim/0007.png | `8a742d135c57bddc9165c6ae343a491ca09554a809b058f3a9680f88c42c3e6d` |
+| export/anim/0008.png | `2e3325cdc713dcdbd85198e566908e63568b0555f5c3859a35a07bb674c0fded` |
+| export/anim/0009.png | `6e91518de4ff200d84a7eb2cc3136a8a0ee2e1fb2fca6dac4cb28c7ebed7ed5f` |
+| export/anim/0010.png | `d023b6b4abe00f4f756b902b9940027a81b2d0853c92fd60a3a8d7498476beb7` |
+| export/anim/0011.png | `753382bd275c24b6dae636a5b50ec7e75ac55b603f2949c193219885b88ee318` |
+| export/anim/0012.png | `99a48901cccb3904d237c4cb5b68df7d18e30427202cb553d9d144ce1897f9c9` |
+| export/anim/0013.png | `486dc69e8f5cfc53e82990f371f1404b71933b93104687dea0875199a796ca93` |
+| export/anim/0014.png | `2909c7699e11fefd1ed56e6d4ef06e0f2f4d5a440cae3e56929d689eca1def39` |
+| export/anim/0015.png | `c6427fc5fcbbf7661794def81bbf10be1669a275b4cb3ba3b14a12d1ffd98b33` |
+| export/anim/0016.png | `2877b486690564a0b50fbab7e808213602e979b9cbd3b04659907af886d75185` |
+| export/static.png | `6e91518de4ff200d84a7eb2cc3136a8a0ee2e1fb2fca6dac4cb28c7ebed7ed5f` |
+| work/wren_perch_base.png | `512f67a63c70b5653e92444a66f128ee9560e1786fe28949c18f23a0a541b501` |
+| work/wren_perch_bird_head.png | `655f5725610e0d28e15409094b03e34319ca1fdf8696f5a65e498743c2d6dde2` |
+| work/wren_perch_bird_tail.png | `5a1a6b1e5b6d1b237c4fd38a5a894fec4c038c40ab54fdd2bfda319b3ba43752` |
+| work/wren_perch_cleanup.py | `1da8c45fbe97b8b5a0001a0c1e81daa1619d2b115c4966c30e71d5d8112591df` |
+| work/wren_perch_eyes_closed.png | `be0dedce9cacac6df2df1f79c6d468425b846fe3610eb2b85bfc54a7c07dc4b7` |
+| work/wren_perch_eyes_open.png | `ee101239a78652c36e90bb96dfb67f5209ecd530bc8bb136ff54b1f64e43a356` |
+| work/wren_perch_head.png | `99575efb54ba1a35f613812d6b0f2ab8a41fe7131e46f076b77a8d1a0a1e5b5b` |
+| work/wren_perch_loop.py | `d21058723cd9cce5aeac8c0f8714a18b8fbdd12ec0060e3dbb36ec6a46891108` |
+| work/wren_perch_portrait.png | `490ed580ec9be13cb0209362063c1fcc6485813c11fde89b2fe2a1da6bb1c237` |
+| work/wren_perch_torso.png | `32e8493534640de58d604931b18d0b3165bb04f151d932429d6a1b2ee6c39b9e` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -107,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:22:13 UTC; `c2pa.created` 2026-11-15T17:22:55Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:39:41 UTC; `c2pa.created` 2026-11-15T17:40:56Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/wren_perch_base.png, work/wren_perch_bird_head.png, work/wren_perch_bird_tail.png, work/wren_perch_cleanup.py, work/wren_perch_eyes_closed.png, work/wren_perch_eyes_open.png, work/wren_perch_head.png, work/wren_perch_loop.py, work/wren_perch_portrait.png, work/wren_perch_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.93 to 1.0, `HEADROOM` 0.07 to 0.17, crop `(17, 0, 1183, 1166)` to `(0, -193, 1254, 1061)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

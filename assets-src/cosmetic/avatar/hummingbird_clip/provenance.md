@@ -79,6 +79,63 @@ It printed `hummingbird_clip_loop: blink edit registered (tx, ty, scale, angle) 
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `hummingbird_clip: background [189.0, 189.0, 189.0], pockets 1315 px, crop (92, -183, 1213, 938), portrait 768`
+- Crop `(137, 0, 1168, 1031)` to `(92, -183, 1213, 938)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `hummingbird_clip_loop: blink edit registered (tx, ty, scale, angle) = (-0.1208, -0.2336, 1.0005, 0.0003), residual 0.00095 -> 0.00090, eye colour offset [-4.6, -1.9, 1.1], parts 2, filled 4081 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.010 before, 0.172 after; highest over the 16 loop frames 0.005 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/hummingbird_clip/work/hummingbird_clip_cleanup.py hummingbird_clip assets-src/cosmetic/avatar/hummingbird_clip/concept/20261115-01.png assets-src/cosmetic/avatar/hummingbird_clip/work
+python -I assets-src/cosmetic/avatar/hummingbird_clip/work/hummingbird_clip_loop.py assets-src/cosmetic/avatar/hummingbird_clip/concept assets-src/cosmetic/avatar/hummingbird_clip/work assets-src/cosmetic/avatar/hummingbird_clip/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/hummingbird_clip` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `3e26c896c802e090ccd6129017ef6eb08072fecf86208477135d0f84abcee374` |
+| export/anim/0002.png | `7d9952812efe40b24f1fe07727d500ae808fba4b1acd0a430496e0bdd6ba8f88` |
+| export/anim/0003.png | `8051300154a2e86ce91359f88e1aa734f20ea90c1580a13a018f72ed2b2b4bb3` |
+| export/anim/0004.png | `b21127a4a7c3766795af004f2ef2bcdcac0338944874a5b743ae9372a6147167` |
+| export/anim/0005.png | `5370b6858b0eb96c23fa376be7a6c5fa7bf235fdf5e71d627b501dcd535e65ec` |
+| export/anim/0006.png | `6c0f96c8ec4ec6e741bd78925c3fd88e42b8098dbe9bef4b5560a27fc73ae30f` |
+| export/anim/0007.png | `c7767e2e605e932cee2acf2de85a6e6f8ad4b11f33e904f89c32ef05adb29715` |
+| export/anim/0008.png | `9a47c54aeebee25a457270fbb5ec681b44f614988b022fde2f12773b12a5105c` |
+| export/anim/0009.png | `5182ea583b7409bd4e948e009c1b5fa2acc7839f6669b9819d3dff0c21961867` |
+| export/anim/0010.png | `98f1a25e6c2805bac4e312ec9af393f706ce84bc372bd74e893f326652a600f1` |
+| export/anim/0011.png | `1a6ff408ad89e1c19cb123a2dbf2e67c5771e5bd7939bad798b4fff137429fb2` |
+| export/anim/0012.png | `cd5500a53f7fc6193bde092360d600295d7327f2febbc1d8e97f9889c7ef4610` |
+| export/anim/0013.png | `e3f7564710bff4873b9eea13a659e5b5acc59cd247565ab1d2f7dedad19dba01` |
+| export/anim/0014.png | `f1ec79cf707e5c19bf92ea1330e529c9753af5e23d398996761c0a167c8d1c79` |
+| export/anim/0015.png | `1e305e16a3076635673f166d8bc64b39af3e97d9d03e37e519b5481732543fb5` |
+| export/anim/0016.png | `a9d834ae69b67e4868b1a773e11ca1394f1a2d4e20b3f021372dc78878e7fa3b` |
+| export/static.png | `5182ea583b7409bd4e948e009c1b5fa2acc7839f6669b9819d3dff0c21961867` |
+| work/hummingbird_clip_base.png | `b1bd1175f83f4b784fc065d7955ddb9f1a97de4cdf39319bdc1ff6b1b6a3314e` |
+| work/hummingbird_clip_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/hummingbird_clip_earring_left.png | `693510b2cf00f18d70144f9221859a09968ba97393a2b048f11db932c3b677a2` |
+| work/hummingbird_clip_earring_right.png | `80637bc6edcc1f0fd4eaefa692f7f8c79215b77ca7204c24d9642ce110464bf1` |
+| work/hummingbird_clip_eyes_closed.png | `553c38520e0b2e8768e555f8eaf8fdc2a2dbd1358fc9cd8acef9bbe4361f006b` |
+| work/hummingbird_clip_eyes_open.png | `9092b21b787abeeccbc5359e71f47be2f0585a6c92e82c9b5050817bcfdb879d` |
+| work/hummingbird_clip_head.png | `2d92aa17fe8167ffef42749145d818ebe22786aa3aa93daacb917a61e582651f` |
+| work/hummingbird_clip_loop.py | `94f442bb7f26e9cfb8e5063727da3132f588ace250d804fc5a34e40669299f98` |
+| work/hummingbird_clip_portrait.png | `74c76852a5a96fc02ba958ff38406246eb011c2cab6caa588ffc6e4de5f81a74` |
+| work/hummingbird_clip_torso.png | `656118196fe0b48152d7b1613d5c60a4f8efa0485358f9b4ae01ea09cf806111` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -104,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:58:21 UTC; `c2pa.created` 2026-11-15T16:59:29Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:00:02 UTC; `c2pa.created` 2026-11-15T17:01:15Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/hummingbird_clip_base.png, work/hummingbird_clip_cleanup.py, work/hummingbird_clip_earring_left.png, work/hummingbird_clip_earring_right.png, work/hummingbird_clip_eyes_closed.png, work/hummingbird_clip_eyes_open.png, work/hummingbird_clip_head.png, work/hummingbird_clip_loop.py, work/hummingbird_clip_portrait.png, work/hummingbird_clip_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(137, 0, 1168, 1031)` to `(92, -183, 1213, 938)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

@@ -10,24 +10,24 @@ from scipy import ndimage, optimize
 SLUG = "teal_boa"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (56, 0, 1053, 997)
+CROP = (12, -178, 1096, 906)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (420, 250, 220, 250)
+HEAD = (417, 356, 202, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 470
-NECK_BAND = 35
-SHOULDER_Y = 580
+NECK_Y = 558
+NECK_BAND = 32
+SHOULDER_Y = 660
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(379, 285, 38, 20), (487, 300, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(380, 388, 35, 18), (479, 402, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
 ]
@@ -35,8 +35,8 @@ GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(0, 450), (90, 430), (180, 440), (260, 470), (290, 540), (250, 640), (200, 780), (0, 780)], "feather": 14, "top": 430, "ramp": 120, "amplitude": 9.0, "wavelength": 160, "cycles": 1},
-    {"polygon": [(560, 470), (640, 440), (730, 450), (780, 480), (780, 780), (640, 780), (600, 640), (570, 560)], "feather": 14, "top": 440, "ramp": 120, "amplitude": 9.0, "wavelength": 160, "cycles": 1},
+    {"polygon": [(31, 540), (114, 522), (197, 531), (270, 558), (298, 623), (261, 715), (215, 844), (31, 844)], "feather": 13, "top": 522, "ramp": 110, "amplitude": 8.28, "wavelength": 147, "cycles": 1},
+    {"polygon": [(546, 558), (620, 531), (703, 540), (749, 568), (749, 844), (620, 844), (583, 715), (555, 641)], "feather": 13, "top": 531, "ramp": 110, "amplitude": 8.28, "wavelength": 147, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4

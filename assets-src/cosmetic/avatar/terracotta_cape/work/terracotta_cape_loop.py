@@ -10,24 +10,24 @@ from scipy import ndimage, optimize
 SLUG = "terracotta_cape"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (34, 0, 1112, 1078)
+CROP = (0, -182, 1172, 990)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (395, 180, 170, 200)
+HEAD = (386, 285, 156, 184)
 HEAD_FALLOFF = 0.3
-NECK_Y = 350
-NECK_BAND = 35
-SHOULDER_Y = 470
+NECK_Y = 441
+NECK_BAND = 32
+SHOULDER_Y = 552
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(365, 177, 38, 20), (460, 167, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(358, 282, 35, 18), (445, 273, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
 ]
@@ -35,7 +35,7 @@ GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(500, 560), (520, 480), (560, 432), (620, 446), (690, 500), (740, 580), (780, 660), (780, 780), (470, 780), (462, 640)], "feather": 14, "top": 460, "ramp": 160, "amplitude": 10.0, "wavelength": 240, "cycles": 1},
+    {"polygon": [(482, 634), (501, 561), (537, 517), (593, 529), (657, 579), (703, 653), (740, 726), (740, 837), (455, 837), (447, 708)], "feather": 13, "top": 542, "ramp": 147, "amplitude": 9.2, "wavelength": 221, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4

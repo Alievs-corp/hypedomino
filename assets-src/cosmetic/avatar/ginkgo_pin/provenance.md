@@ -79,6 +79,62 @@ It printed `ginkgo_pin_loop: blink edit registered (tx, ty, scale, angle) = (0.1
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `ginkgo_pin: background [198.0, 198.0, 198.0], pockets 11799 px, crop (0, -189, 1172, 983), portrait 768`
+- Crop `(36, 0, 1114, 1078)` to `(0, -189, 1172, 983)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `ginkgo_pin_loop: blink edit registered (tx, ty, scale, angle) = (0.1070, -0.1405, 1.0000, -0.0001), residual 0.00094 -> 0.00091, eye colour offset [-0.2, 2.2, 2.6], parts 1, filled 19952 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.010 before, 0.172 after; highest over the 16 loop frames 0.005 before, 0.161 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/ginkgo_pin/work/ginkgo_pin_cleanup.py ginkgo_pin assets-src/cosmetic/avatar/ginkgo_pin/concept/20261115-01.png assets-src/cosmetic/avatar/ginkgo_pin/work
+python -I assets-src/cosmetic/avatar/ginkgo_pin/work/ginkgo_pin_loop.py assets-src/cosmetic/avatar/ginkgo_pin/concept assets-src/cosmetic/avatar/ginkgo_pin/work assets-src/cosmetic/avatar/ginkgo_pin/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/ginkgo_pin` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `61640f7061dd53e93ec69d3c8baefaee74e870fc7ed7b0b6f7f64ce0c6f5315b` |
+| export/anim/0002.png | `fd976550e211f4aada61f129bd5d7d38d696e908d025e52e4f40e43159497aa6` |
+| export/anim/0003.png | `1999e99874fcf04d615a0a762106c8f9b525596e0be03254f1f080222995616e` |
+| export/anim/0004.png | `e1032fc1e0de7cc387cad29149d063f16a3f621e08d8fc303e6e47d35023d97f` |
+| export/anim/0005.png | `8237030352a38f4c374c68c209155bb88be4802c87197562e9c031e91503f74a` |
+| export/anim/0006.png | `50f64ec24b9570305167e17157deaed198fe49d789f04b9b6cf943f8f01e37ce` |
+| export/anim/0007.png | `8a72776faacf652b0d957844f4dac8f0078d92ca8cecc4646019b24b422f64a8` |
+| export/anim/0008.png | `4cbc7fa3987a0cbd6e4121aabdd7ce14a85be1c660c60b1225608c8284b93308` |
+| export/anim/0009.png | `3960e87e5db681cfac67a27154d5192910dedf1e636bb6ef475483f2be8c5ebc` |
+| export/anim/0010.png | `d97cd6c650f0f657f132d2b3aa0e4f0c827969842bd55ca8ba6afff61d80b636` |
+| export/anim/0011.png | `6dbe12fa7ef94dd2fbc47df486190bfd452b1aa65393df234af38abd59daffd8` |
+| export/anim/0012.png | `e6190057f2efed9bf7d249a41653176d27b010f88eb2e890bdef98e98c35264f` |
+| export/anim/0013.png | `38b2aea67bccb77b1493efa6bb2e837051bdd4d5193040953a579c9931138263` |
+| export/anim/0014.png | `2cd95ba5be5b62551002a9c668add1c64a0c4194290da24879850740e5ebed9d` |
+| export/anim/0015.png | `a375aec77da971a6f5ba5bc3b6af34ca1ebc5de548b4a35226bfb788f4a7c0a6` |
+| export/anim/0016.png | `e4a69fc699f07921384ccdacdc4ea2f9a83a331624081859e00737a08cd4033a` |
+| export/static.png | `3960e87e5db681cfac67a27154d5192910dedf1e636bb6ef475483f2be8c5ebc` |
+| work/ginkgo_pin_base.png | `a5164dbfa9550cf9b75b87d0808b5219e202772fefd8f532365c769ee370eb7b` |
+| work/ginkgo_pin_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/ginkgo_pin_eyes_closed.png | `69a24174f76053957e25d4722da5a007a799983017c12217f6610b2b4c6e7f43` |
+| work/ginkgo_pin_eyes_open.png | `bf7ca67f96521fc32c4f1217551e1b805e37574107d9e69be8684a84d4050b85` |
+| work/ginkgo_pin_ginkgo_dangles.png | `6e6a5472a63885bd0b5da7fcf9d11cfab734920f4cc085af90b47f9ccff3b4af` |
+| work/ginkgo_pin_head.png | `3c29041f56bb23bd59a69ef808cf8ad579e50a970b16c221f89ddcb2577e16c7` |
+| work/ginkgo_pin_loop.py | `0036647b1288cfadbf46309ceee53000c7cd484599ef1d6a203e0e633eb9532e` |
+| work/ginkgo_pin_portrait.png | `56ebdcc377ba5082c30e0f9484ddc06f955d6f2bebd0f8f2dd5ba4da8607eda7` |
+| work/ginkgo_pin_torso.png | `7f357e07bca2a3fde093829b3b8423baf80630410cc964e10d1a33a6696bbb3d` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -103,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:49:44 UTC; `c2pa.created` 2026-11-15T16:50:59Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:51:24 UTC; `c2pa.created` 2026-11-15T16:52:34Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/ginkgo_pin_base.png, work/ginkgo_pin_cleanup.py, work/ginkgo_pin_eyes_closed.png, work/ginkgo_pin_eyes_open.png, work/ginkgo_pin_ginkgo_dangles.png, work/ginkgo_pin_head.png, work/ginkgo_pin_loop.py, work/ginkgo_pin_portrait.png, work/ginkgo_pin_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(36, 0, 1114, 1078)` to `(0, -189, 1172, 983)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

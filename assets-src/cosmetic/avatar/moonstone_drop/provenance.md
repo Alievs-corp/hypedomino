@@ -79,6 +79,62 @@ It printed `moonstone_drop_loop: blink edit registered (tx, ty, scale, angle) = 
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `moonstone_drop: background [202.0, 202.0, 202.0], pockets 11151 px, crop (43, -176, 1164, 945), portrait 768`
+- Crop `(88, 0, 1119, 1031)` to `(43, -176, 1164, 945)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `moonstone_drop_loop: blink edit registered (tx, ty, scale, angle) = (0.2148, -0.3415, 1.0002, 0.0001), residual 0.00058 -> 0.00053, eye colour offset [-10.6, -5.0, -0.6], parts 1, filled 4532 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/moonstone_drop/work/moonstone_drop_cleanup.py moonstone_drop assets-src/cosmetic/avatar/moonstone_drop/concept/20261115-01.png assets-src/cosmetic/avatar/moonstone_drop/work
+python -I assets-src/cosmetic/avatar/moonstone_drop/work/moonstone_drop_loop.py assets-src/cosmetic/avatar/moonstone_drop/concept assets-src/cosmetic/avatar/moonstone_drop/work assets-src/cosmetic/avatar/moonstone_drop/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/moonstone_drop` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `640199ad567a6108c2290703497be083dd3c1830ab4c8b5583f6314bc985dc70` |
+| export/anim/0002.png | `a6ff6de14c04f3489521177a556e7aa84a30b84f31e2be711a316d2158db7981` |
+| export/anim/0003.png | `1f179dc7a26f98e11fdfcfc69d6aa1ecb09c7ea327a81d887d4c7f66d95b7d93` |
+| export/anim/0004.png | `641bc428f8a5daa0bbb3bd4f73a157b45e7f2150b4e9fa347a8aad2cf38598a4` |
+| export/anim/0005.png | `47ab28298c07e14ed86b7d9c408088a78c57b6ec6a0f2b9971e81be907c9d86a` |
+| export/anim/0006.png | `26ece5fcf95e6e603e922d0481ad22216fcca587c9f3801f4f4f38b761772b58` |
+| export/anim/0007.png | `14e896b2d7ac0667ab1ee7c1c2c4fb2411d8065631dc64ef31b1446dce307faf` |
+| export/anim/0008.png | `9100ae8d60dfaa07935c763992eb0b658df44f621a1b16f1e70078efc3246bf8` |
+| export/anim/0009.png | `ac2d8e8e68feae84d9dc850877d4395151a1d02bb00930d1ce69bd6912cb0c61` |
+| export/anim/0010.png | `18976b944324792a70963679f389f205a130b21838558cdf24feeaab679c215c` |
+| export/anim/0011.png | `25f7daba72f403b0aff5e707213c4c6a816bdc7b94a17a6b60bab4ce01b1f6af` |
+| export/anim/0012.png | `511720f8764b93f0f990a7d626d78fd5214ac032e2a6f25858654352a8a4fe0c` |
+| export/anim/0013.png | `d3161f94bf86551a8a6567580f1be4029a100f5c5f4d04c78899c9d28c98ca04` |
+| export/anim/0014.png | `0b39ed3f76825ed5905d7fe4630f27daaf8dfb683edbec211fdb4b46eecee1f2` |
+| export/anim/0015.png | `6e914b82ebfeca86e74198b3f102568a8fae5cd2920fa4622911e11bcb5296ce` |
+| export/anim/0016.png | `0ac66e8c3b9f983b3197a70a5c91524a2333bf81064d914fc74d1178bb68edb6` |
+| export/static.png | `ac2d8e8e68feae84d9dc850877d4395151a1d02bb00930d1ce69bd6912cb0c61` |
+| work/moonstone_drop_base.png | `558e84bec4ddf2b603eb151c2143894276b0d384b9a982f0a05a0c02b89b6e7a` |
+| work/moonstone_drop_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/moonstone_drop_earring.png | `2ee07cfe7bd14dc7516df7829437a0fa782af231f9a4c306dab483a7009ed7a2` |
+| work/moonstone_drop_eyes_closed.png | `65e1dbaf627fb4ac504143820c21a57045843d4cdb1e95aaabe23b556d755bcb` |
+| work/moonstone_drop_eyes_open.png | `068ffc5c2d31bfafa024decbaeb931274ed65a7f88a983e2a6a9d065854bb130` |
+| work/moonstone_drop_head.png | `628d6767c4797e884e57c45009a44fe16b5829380b15ca592558e52a45203193` |
+| work/moonstone_drop_loop.py | `c8484056a6d249b79bf92a7df3e323fea3df6a16aa8099a8f578b8acf8d9a157` |
+| work/moonstone_drop_portrait.png | `fd471d8a7aba4ac559633e3a7c30e802116117ba694d76e8d53984978936c5b8` |
+| work/moonstone_drop_torso.png | `8eb0130cb98609ca791f26d208815a0b37f8d2ed8ea7eece396e54bb0585cbc3` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -103,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:47:08 UTC; `c2pa.created` 2026-11-15T16:47:48Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:48:14 UTC; `c2pa.created` 2026-11-15T16:49:17Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/moonstone_drop_base.png, work/moonstone_drop_cleanup.py, work/moonstone_drop_earring.png, work/moonstone_drop_eyes_closed.png, work/moonstone_drop_eyes_open.png, work/moonstone_drop_head.png, work/moonstone_drop_loop.py, work/moonstone_drop_portrait.png, work/moonstone_drop_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(88, 0, 1119, 1031)` to `(43, -176, 1164, 945)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

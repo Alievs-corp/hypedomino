@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "citrine_braid"
-CROP = (81, 0, 1128, 1047)
+CROP = (36, -180, 1174, 958)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (390, 230, 215, 240)
+HEAD = (389, 333, 198, 221)
 HEAD_FALLOFF = 0.3
-NECK_Y = 455
-NECK_BAND = 40
-SHOULDER_Y = 570
+NECK_Y = 540
+NECK_BAND = 37
+SHOULDER_Y = 646
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(352, 226, 42, 24), (470, 240, 40, 24)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(354, 329, 39, 22), (463, 342, 37, 22)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = []
-GLINTS = [(411, 682, 21, 27, 10, 5), (139, 659, 15, 15, 13, 4)]
+GLINTS = [(409, 749, 19, 25, 10, 5), (158, 728, 14, 14, 13, 4)]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
 FRAME_NAME = re.compile(r"^\d{4}\.png$")
@@ -87,7 +87,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

@@ -8,28 +8,28 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "jade_tassel"
-CROP = (68, 0, 1146, 1078)
+CROP = (21, -134, 1193, 1038)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (384, 260, 330, 290)
+HEAD = (384, 327, 304, 267)
 HEAD_FALLOFF = 0.3
-NECK_Y = 540
-NECK_BAND = 40
-SHOULDER_Y = 660
+NECK_Y = 584
+NECK_BAND = 37
+SHOULDER_Y = 695
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(400, 322, 46, 26), (540, 302, 42, 26)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(399, 384, 42, 24), (527, 366, 39, 24)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "tassel_left", "polygon": [(116, 466), (174, 466), (180, 520), (188, 612), (102, 612), (110, 520)], "pivot": (145, 462), "length": 120, "swing": 7.0, "lag": 0.6, "behind": "clear"},
-    {"name": "tassel_right", "polygon": [(642, 468), (696, 468), (700, 520), (704, 612), (638, 612), (643, 520)], "pivot": (669, 466), "length": 120, "swing": 7.0, "lag": 0.9, "behind": "clear"},
+    {"name": "tassel_left", "polygon": [(137, 516), (191, 516), (196, 566), (204, 651), (125, 651), (132, 566)], "pivot": (164, 513), "length": 110, "swing": 7.0, "lag": 0.6, "behind": "clear"},
+    {"name": "tassel_right", "polygon": [(621, 518), (671, 518), (675, 566), (678, 651), (618, 651), (622, 566)], "pivot": (646, 516), "length": 110, "swing": 7.0, "lag": 0.9, "behind": "clear"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -90,7 +90,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

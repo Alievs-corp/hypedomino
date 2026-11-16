@@ -8,28 +8,28 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "ruby_drop"
-CROP = (62, 0, 1093, 1031)
+CROP = (17, -141, 1138, 980)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (400, 290, 235, 265)
+HEAD = (399, 363, 216, 244)
 HEAD_FALLOFF = 0.3
-NECK_Y = 505
-NECK_BAND = 35
-SHOULDER_Y = 650
+NECK_Y = 561
+NECK_BAND = 32
+SHOULDER_Y = 694
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(365, 296, 44, 26), (488, 272, 44, 26)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(367, 369, 40, 24), (480, 347, 40, 24)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "earring_left", "polygon": [(276, 411), (294, 411), (298, 440), (311, 455), (312, 485), (301, 500), (299, 520), (303, 540), (299, 563), (275, 563), (271, 540), (275, 520), (273, 500), (261, 485), (261, 455), (274, 440)], "pivot": (285, 408), "length": 90, "swing": 5.0, "lag": 0.5, "behind": "clear"},
-    {"name": "earring_right", "polygon": [(549, 403), (572, 403), (578, 438), (589, 455), (589, 480), (579, 495), (575, 520), (581, 540), (571, 549), (552, 549), (547, 520), (545, 495), (536, 480), (536, 455), (545, 438)], "pivot": (560, 400), "length": 90, "swing": 5.0, "lag": 0.8, "behind": "clear"},
+    {"name": "earring_left", "polygon": [(285, 475), (301, 475), (305, 501), (317, 515), (318, 543), (308, 556), (306, 575), (310, 593), (306, 614), (284, 614), (280, 593), (284, 575), (282, 556), (271, 543), (271, 515), (283, 501)], "pivot": (293, 472), "length": 83, "swing": 5.0, "lag": 0.5, "behind": "clear"},
+    {"name": "earring_right", "polygon": [(536, 467), (557, 467), (562, 499), (573, 515), (573, 538), (563, 552), (560, 575), (565, 593), (556, 602), (539, 602), (534, 575), (532, 552), (524, 538), (524, 515), (532, 499)], "pivot": (546, 464), "length": 83, "swing": 5.0, "lag": 0.8, "behind": "clear"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -90,7 +90,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)
