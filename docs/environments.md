@@ -194,7 +194,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_SECRET_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-secret-key>` | Yes | from #135 |
 | `HD_ASSET_STORE_URL_TTL` | No | admin-api | `15m`, at most `168h` | `15m` | No | from #135 |
-| `HD_CONTENT_STORE_URL` | No | admin-api | none: publishing a language bundle answers `content_store_off` | `https://<object-store-host>/hypedomino-content-<environment>`; it must name `HD_ADMIN_ENVIRONMENT` and no other environment | No | from #214, `docs/content-delivery.md` CD-27 |
+| `HD_CONTENT_STORE_URL` | No | admin-api | none: publishing a language bundle or a cosmetics manifest answers `content_store_off` | `https://<object-store-host>/hypedomino-content-<environment>`; it must name `HD_ADMIN_ENVIRONMENT` and no other environment | No | from #214, `docs/content-delivery.md` CD-27 |
 | `HD_CONTENT_STORE_REGION` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<store-region>` | No | from #214 |
 | `HD_CONTENT_STORE_ACCESS_KEY` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<content-store-access-key>` | Yes | from #214 |
 | `HD_CONTENT_STORE_SECRET_KEY` | With `HD_CONTENT_STORE_URL` | admin-api | none | `<content-store-secret-key>` | Yes | from #214 |
