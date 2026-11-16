@@ -34,20 +34,23 @@ const (
 	PermanentBan    Kind = "permanent_ban"
 	LiveControl     Kind = "live_control"
 	SuperAdminGrant Kind = "super_admin_grant"
+	BreakGlass      Kind = "break_glass"
 )
 
 type rule struct {
 	object    rbac.Object
 	proposers []rbac.Role
 	approvers []rbac.Role
+	confirmed bool
 }
 
 var rules = map[Kind]rule{
-	PlayerGrant:     {rbac.Players, []rbac.Role{rbac.Support}, []rbac.Role{rbac.Support, rbac.SuperAdmin}},
-	PromoCode:       {rbac.PromoCodes, []rbac.Role{rbac.LiveOps}, []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}},
-	PermanentBan:    {rbac.Players, []rbac.Role{rbac.Support}, []rbac.Role{rbac.Support, rbac.SuperAdmin}},
-	LiveControl:     {rbac.LiveControls, []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}},
-	SuperAdminGrant: {rbac.AdminAccounts, []rbac.Role{rbac.SuperAdmin}, []rbac.Role{rbac.SuperAdmin}},
+	PlayerGrant:     {object: rbac.Players, proposers: []rbac.Role{rbac.Support}, approvers: []rbac.Role{rbac.Support, rbac.SuperAdmin}},
+	PromoCode:       {object: rbac.PromoCodes, proposers: []rbac.Role{rbac.LiveOps}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}},
+	PermanentBan:    {object: rbac.Players, proposers: []rbac.Role{rbac.Support}, approvers: []rbac.Role{rbac.Support, rbac.SuperAdmin}},
+	LiveControl:     {object: rbac.LiveControls, proposers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}},
+	SuperAdminGrant: {object: rbac.AdminAccounts, proposers: []rbac.Role{rbac.SuperAdmin}, approvers: []rbac.Role{rbac.SuperAdmin}},
+	BreakGlass:      {object: rbac.LiveControls, proposers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, confirmed: true},
 }
 
 type State string
@@ -169,7 +172,7 @@ func (p Proposal) decidableBy(decider audit.Actor, now time.Time) error {
 	switch {
 	case p.State != Pending:
 		return fmt.Errorf("%w: %d is %s", ErrDecided, p.ID, p.State)
-	case !now.Before(p.ExpiresAt):
+	case !now.Before(p.ExpiresAt) && !rules[p.Kind].confirmed:
 		return fmt.Errorf("%w: %d expired at %s", ErrExpired, p.ID, p.ExpiresAt)
 	case decider.ID == p.Proposer.ID:
 		return ErrSelfDecision
@@ -184,7 +187,15 @@ func (s *Store) Get(ctx context.Context, id int64) (Proposal, error) {
 }
 
 func (s *Store) Pending(ctx context.Context, now time.Time) ([]Proposal, error) {
-	rows, err := s.db.Query(ctx, `select `+columns+` from admin_approvals where state = 'pending' and expires_at > $1 order by id`, now.UTC())
+	return s.list(ctx, `select `+columns+` from admin_approvals where state = 'pending' and (expires_at > $1 or kind = $2) order by id`, now.UTC(), BreakGlass)
+}
+
+func (s *Store) Unconfirmed(ctx context.Context) ([]Proposal, error) {
+	return s.list(ctx, `select `+columns+` from admin_approvals where state = 'pending' and kind = $1 order by id`, BreakGlass)
+}
+
+func (s *Store) list(ctx context.Context, sql string, args ...any) ([]Proposal, error) {
+	rows, err := s.db.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -31,6 +31,10 @@ test("the change summary shows what changes and hides bookkeeping ids", () => {
   assert.equal(changeSummary(grant.change), "coins: 5000");
   assert.equal(changeSummary({ roles: ["super_admin", "content"] }), "roles: super_admin, content");
   assert.equal(changeSummary("raw"), '"raw"');
+  assert.equal(
+    changeSummary({ incident: { severity: "SEV1", id: "INC-12" }, config_version: 4, controls: { purchases_disabled: true } }),
+    'SEV1 INC-12; config_version: 4; controls: {"purchases_disabled":true}',
+  );
 });
 
 test("a promo proposal links to the promo screen and reads as its code", () => {

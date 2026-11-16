@@ -42,6 +42,26 @@ export function sameControls(left: LiveControls, right: LiveControls): boolean {
   );
 }
 
+export const breakGlassSeverities = ["SEV1", "SEV2"] as const;
+
+export type Incident = { severity: (typeof breakGlassSeverities)[number]; id: string };
+
+const maxIncidentIdLength = 128;
+
+export function validIncidentId(id: string): boolean {
+  return id !== "" && id === id.trim() && id.length <= maxIncidentIdLength && !/\p{Cc}/u.test(id);
+}
+
+export type BreakGlass = { incident: Incident; config_version: number };
+
+export function breakGlassOf(change: unknown): BreakGlass | null {
+  const candidate = change as Partial<BreakGlass> | null;
+  if (typeof candidate?.incident?.id !== "string" || typeof candidate.config_version !== "number") {
+    return null;
+  }
+  return { incident: candidate.incident, config_version: candidate.config_version };
+}
+
 export function maintenanceInput(endsAt: string | null | undefined): string {
   return endsAt ? endsAt.slice(0, 16) : "";
 }
