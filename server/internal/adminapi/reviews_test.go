@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -124,4 +125,52 @@ func TestConfirmingAReviewKeepsTheShadowbanAndWaitsForNewSignals(t *testing.T) {
 	if _, body := a.call("GET", "/admin/reviews", support, nil); len(body["reviews"].([]any)) != 1 {
 		t.Fatalf("a new signal opened no review: %v", body)
 	}
+}
+
+func (a *api) openReview(account, cause string, at time.Time) {
+	a.t.Helper()
+	if _, err := a.pool.Exec(context.Background(), `insert into risk_reviews (account_id, cause, opened_at) values ($1, $2, $3)`, account, cause, at); err != nil {
+		a.t.Fatal(err)
+	}
+}
+
+func listedReviews(a *api, token, query string) []string {
+	a.t.Helper()
+	status, body := a.call("GET", "/admin/reviews"+query, token, nil)
+	if status != http.StatusOK {
+		a.t.Fatalf("reviews %d %v", status, body)
+	}
+	var listed []string
+	for index, review := range body["reviews"].([]any) {
+		listed = append(listed, review.(map[string]any)["account_id"].(string)+"#"+reviewID(a.t, body, index))
+	}
+	return listed
+}
+
+func TestTheReviewQueuePagesFiltersByCauseAndSearchesByAccount(t *testing.T) {
+	a := newAPI(t)
+	a.now = time.Now().UTC()
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	first := a.player("g-1", "first@mail.example", "First")
+	second := a.player("g-2", "second@mail.example", "Second")
+	third := a.player("g-3", "third@mail.example", "Third")
+	a.openReview(first, risk.CauseScore, a.now.Add(-3*time.Hour))
+	a.openReview(second, risk.CauseHardSignal, a.now.Add(-2*time.Hour))
+	a.openReview(third, risk.CauseScore, a.now.Add(-time.Hour))
+
+	all := listedReviews(a, support, "")
+	page := listedReviews(a, support, "?limit=2")
+	rest := listedReviews(a, support, "?limit=2&after="+strings.SplitN(page[1], "#", 2)[1])
+	if len(all) != 3 || !strings.HasPrefix(all[0], first+"#") || strings.Join(append(page, rest...), ",") != strings.Join(all, ",") {
+		t.Fatalf("all %v, pages %v %v", all, page, rest)
+	}
+	if scored := listedReviews(a, support, "?cause=score"); len(scored) != 2 || !strings.HasPrefix(scored[1], third+"#") {
+		t.Fatalf("scored %v", scored)
+	}
+	if found := listedReviews(a, support, "?account="+second[:8]); len(found) != 1 || !strings.HasPrefix(found[0], second+"#") {
+		t.Fatalf("found %v", found)
+	}
+	status, body := a.call("GET", "/admin/reviews?after=nope", support, nil)
+	expect(t, status, body, http.StatusBadRequest, "invalid")
 }

@@ -3,15 +3,17 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
+import type { SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { evidenceSummary, signalWeight, type Review } from "@/reviews/reviews";
+import { evidenceSummary, nextQueueHref, queueApiPath, readReviewQuery, reviewCauses, signalWeight, type Review } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
+import { QueueFilter } from "./QueueFilter";
 import { ReviewDecision } from "./ReviewDecision";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReviewsPage() {
+export default async function ReviewsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const t = await serverTranslator();
   const admin = await currentAdmin();
   if (!admin) {
@@ -20,18 +22,28 @@ export default async function ReviewsPage() {
   if (!canView(admin.permissions, "queues")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const reply = await adminApi<{ reviews: Review[] }>("GET", "/admin/reviews");
+  const query = readReviewQuery(await searchParams);
+  const reply = await adminApi<{ reviews: Review[] }>("GET", queueApiPath("/admin/reviews", query));
   if (reply.status !== 200) {
     return <Notice text={t("reviews.load_failed")} />;
   }
+  const { reviews } = reply.body;
   const clientId = can(admin.permissions, "queues", "act_on_queue") ? googleClientId() : null;
+  const next = nextQueueHref("/reviews", query, reviews.map((review) => String(review.id)));
+  const filtered = Boolean(query.cause || query.account || query.after);
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold">{t("reviews.title")}</h1>
         <p className="text-sm text-text-secondary">{t("reviews.explain")}</p>
       </div>
-      {reply.body.reviews.length === 0 ? <p className="text-text-secondary">{t("reviews.none")}</p> : reply.body.reviews.map((review) => <ReviewEntry key={review.id} review={review} clientId={clientId} t={t} />)}
+      <QueueFilter screen="/reviews" name="cause" label="reviews.cause" options={reviewCauses} selected={query.cause} account={query.account} t={t} />
+      {reviews.length === 0 ? <p className="text-text-secondary">{t(filtered ? "queues.empty_match" : "reviews.none")}</p> : reviews.map((review) => <ReviewEntry key={review.id} review={review} clientId={clientId} t={t} />)}
+      {next && (
+        <Link href={next} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-text-secondary">
+          {t("queues.next")}
+        </Link>
+      )}
     </main>
   );
 }

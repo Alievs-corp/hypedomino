@@ -151,7 +151,7 @@ The page reloads the record after each change.
 
 `/live-controls` (A-25, `docs/admin.md` section 4, #210) is in the nav for roles that may view live controls. It edits the purchase and ranked kill switches, the minimum app version and the build allowlist of `docs/anti-cheat.md` 5.2. A change needs a reason and a fresh sign-in. Staging applies it at once; production waits in `/approvals` for a second admin.
 
-`/reviews` (A-31, `docs/admin.md` 6.4, #209) is in the nav for roles that may view queues. It lists the open reviews of `GET /admin/reviews` with their signals and evidence, and links each account to its player record. Clear lifts a shadowban and confirm keeps it (`docs/anti-cheat.md` 5.3). Both need a reason and a fresh sign-in. An admin who wants a temporary ban uses the player record first, then confirms.
+`/reviews` (A-31, `docs/admin.md` 6.4, #209) is in the nav for roles that may view queues. It lists the open reviews of `GET /admin/reviews` with their signals and evidence, and links each account to its player record. The list pages on the server, 50 at a time, filters by cause and searches by account id prefix; `/reports` pages, filters by reason and searches the same way. Clear lifts a shadowban and confirm keeps it (`docs/anti-cheat.md` 5.3). Both need a reason and a fresh sign-in. An admin who wants a temporary ban uses the player record first, then confirms.
 
 `/approvals` (two-person rule, `docs/admin.md` section 8) is in the nav for every signed-in admin. It lists what `GET /admin/approvals` returns: pending proposals the admin's roles may decide, and their own. A row shows the kind, the object (a player links to the record), the change without its bookkeeping ids, the reason, the proposer with their roles, and the expiry. An admin's own proposal says another admin decides. On the others, Approve and Reject take an optional note. Approve needs a fresh sign-in and uses `StepUpPrompt`, and the list reloads after a decision.
 A `promo_code` proposal reads as its code count, campaign, bundle and window, and links to `/promo`.
@@ -161,7 +161,7 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 `/promo` (A-15, `docs/admin.md` 5.11, #142) is in the nav for roles that may view promo codes. It needs `HD_PROMO_KEY` on the admin API; without it the screen says promo codes are off.
 
 - **Usage:** per campaign, the codes, how many are active, pending approval or disabled, redemptions against the summed cap, and the window. A campaign links to its codes.
-- **Codes:** the newest 200, or those of one campaign: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
+- **Codes:** newest first, 50 a page with an "Older codes" link, of all campaigns or one, filtered by state and searched by code id prefix: type, state (an active code past its end shows `expired`), what it grants, window, redemptions and cap, creator and approver.
 - **Create (`live_ops`, `super_admin`):** one code of any type, or a batch of up to 10,000 `single_use` codes. The bundle is a bundle id with coins, pass XP and cosmetic item ids. The window is entered in UTC. A `multi_use` code takes a cap and an optional chosen code. A `targeted` code starts without accounts. A reason is required.
   - **One code:** its plaintext is shown once.
   - **Batch:** downloads as `<id>.csv` from the browser. Nothing keeps the plaintext afterwards, beyond a "download again" button while the page stays open.

@@ -490,7 +490,7 @@ func TestATemplateStaysADraftOutsideTheCodes(t *testing.T) {
 	if err != nil || len(templates) != 2 || templates[0].ID != "promo.compensation" || templates[0].Bundle != nil || templates[1].Bundle.Coins != coins.Coins || templates[1].State != promo.StateDraft {
 		t.Fatalf("templates %+v %v", templates, err)
 	}
-	if codes, err := f.store.List(ctx, "", 10); err != nil || len(codes) != 0 {
+	if codes, err := f.store.List(ctx, promo.ListQuery{Limit: 10}); err != nil || len(codes) != 0 {
 		t.Fatalf("codes %v %v", codes, err)
 	}
 }
