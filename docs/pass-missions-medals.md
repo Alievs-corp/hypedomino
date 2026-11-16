@@ -271,6 +271,19 @@ The admin sets each medal's `rarityId` from the share of players active in the s
 - The medal collection screen shows emblems in their own section after the medals, newest season first, with the same art (#178). Emblems do not count toward the medal total.
 - Reason: emblems are positional season records with board and bracket fields; making each board, bracket and season a catalogue medal would add thousands of entries for no player-visible gain. One screen, two systems.
 
+### 5.6 Medal art
+
+Proposal of #178; the owner approves it by merging. Look and materials follow `docs/art-direction.md`; the production steps and the provenance record are `docs/asset-workflow.md`.
+
+| Topic | Rule |
+|---|---|
+| Source | `assets-src/medal/<slug>/` with the item layout of `docs/asset-workflow.md` 4.1. `export/static.png` is the file uploaded for `medal/<slug>/static` (5.1) |
+| Canvas | 256 x 256, square, PNG with straight alpha, sRGB. The medal is centred on the canvas (pivot at the centre) and its longer side is 240, so an 8 px band stays empty and no medal touches the canvas edge |
+| Smallest display size | `size.touchTargetMin` (120 units): a collection cell and a showcase slot are touch targets, so no medal is drawn smaller. Every medal is checked at 120 and at 64 px on `color.background.base` and `color.surface.default` |
+| Shape | One emblem per medal with its own outer silhouette, painted in the house materials (gold, brass, bronze, silver, ivory, gemstone). No ribbon, text, numbers, flags, stars, crosses, crescents, fleur-de-lis, landscapes or weapons. The count a medal stands for is in its description string, never in the art. The steps of one chain share a motif and climb in material, from brass or bronze to silver, gold and gems |
+| Rarity | Nothing about rarity is painted. An earned medal shows the diamond, label and halo of `docs/rarity.md` 2.3 for an item card, drawn from its `rarityId`. There is no rarity rim or frame sprite: `docs/rarity.md` section 2 defines the marks, and a tinted rim would be a new one |
+| Locked look | No texture of its own. A locked medal draws its own static with vertex colour `color.surface.raised`, which turns it into a dark silhouette that keeps its outline, and the lock icon of the UI kit (#168) centred over it. No rarity marks and no halo while locked (5.4). The default UI material serves both looks, so locked and earned medals batch together and no medal needs a second sprite |
+
 ## 6. Grants, claim and reveal
 
 - **No claim step.** Pass levels, mission completions and medals are granted by the server in the transaction that records the earning event (match end, purchase, level purchase, season end). A reward is never lost to a missed claim, a period end or a season end; the season-end job (2.7) is the safety net for defects.
