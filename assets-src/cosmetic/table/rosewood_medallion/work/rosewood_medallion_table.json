@@ -1,0 +1,155 @@
+{
+  "slug": "rosewood_medallion",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "seed": 17403,
+  "carpet": {
+    "palette": {
+      "rosewood": [
+        86,
+        34,
+        34
+      ],
+      "rosewoodDeep": [
+        68,
+        25,
+        27
+      ],
+      "rosewoodMotif": [
+        100,
+        44,
+        40
+      ],
+      "ink": [
+        30,
+        26,
+        38
+      ],
+      "inkMotif": [
+        44,
+        38,
+        54
+      ],
+      "ivory": [
+        210,
+        194,
+        160
+      ],
+      "sage": [
+        112,
+        126,
+        98
+      ],
+      "ochre": [
+        160,
+        118,
+        60
+      ]
+    },
+    "field": {
+      "base": "rosewood",
+      "lattice": {
+        "period": 24,
+        "colour": "rosewoodDeep",
+        "width": 0.6
+      },
+      "node": {
+        "kind": "flower4",
+        "size": 4,
+        "petals": "rosewoodMotif",
+        "centre": "rosewoodDeep"
+      },
+      "medallion": {
+        "kind": "octagon",
+        "axes": [
+          128,
+          70
+        ],
+        "fill": "rosewood",
+        "outline": "ink",
+        "second": "ochre",
+        "gap": 3
+      }
+    },
+    "spandrels": {
+      "axes": [
+        64,
+        40
+      ],
+      "fill": "ink",
+      "outline": "ochre",
+      "motif": {
+        "kind": "flower8",
+        "size": 8,
+        "petals": "ivory",
+        "centre": "ochre"
+      }
+    },
+    "border": {
+      "bands": [
+        [
+          "ink",
+          0,
+          11
+        ],
+        [
+          "rosewoodDeep",
+          11,
+          15
+        ],
+        [
+          "ivory",
+          15,
+          17
+        ],
+        [
+          "ink",
+          17,
+          42
+        ],
+        [
+          "ivory",
+          42,
+          44
+        ],
+        [
+          "rosewoodDeep",
+          44,
+          47
+        ]
+      ],
+      "main": 3,
+      "period": 26,
+      "motifs": [
+        {
+          "kind": "flower8",
+          "size": 10,
+          "petals": "ivory",
+          "centre": "ochre"
+        },
+        {
+          "kind": "rosette",
+          "size": 8,
+          "ring": "sage",
+          "core": "rosewood"
+        }
+      ],
+      "guards": [
+        {
+          "band": 1,
+          "kind": "zigzag",
+          "step": 6,
+          "colour": "ochre"
+        },
+        {
+          "band": 5,
+          "kind": "dots",
+          "step": 5,
+          "colour": "ochre"
+        }
+      ]
+    }
+  }
+}

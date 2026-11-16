@@ -18,6 +18,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase("ABCDEFGHJKMNPQRSTUVWXYZ234567892", "ABCDEFGHJKMNPQRSTUVWXYZ234567892")]
         public void ATypedCodeIsNormalisedAsTheServerDoes(string typed, string expected)
         {
+            Assert.IsTrue(PromoCode.IsWellFormed(typed));
             Assert.IsTrue(PromoCode.TryNormalize(typed, out var code));
             Assert.AreEqual(expected, code);
         }
@@ -39,8 +40,23 @@ namespace HypeDomino.Tests.EditMode
         [TestCase("ABCDÉ234")]
         public void ACodeTheServerWouldRefuseForItsFormatIsRefusedBeforeSending(string typed)
         {
+            Assert.IsFalse(PromoCode.IsWellFormed(typed));
             Assert.IsFalse(PromoCode.TryNormalize(typed, out var code));
             Assert.IsNull(code);
+        }
+
+        static string checkedCode;
+
+        static void CheckCode() => PromoCode.IsWellFormed(checkedCode);
+
+        [TestCase("ab-cd 23_45")]
+        [TestCase("ABCD1234")]
+        public void CheckingATypedCodeAllocatesNothing(string typed)
+        {
+            checkedCode = typed;
+            CheckCode();
+
+            Assert.That(CheckCode, Allocates.Nothing);
         }
 
         [Test]
@@ -216,6 +232,88 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.IsTrue(redeemer.Redeem("WXYZ2345", results.Add));
             Assert.AreEqual(2, api.Requests.Count);
+        }
+
+        int changes;
+
+        void CountChange() => changes++;
+
+        [Test]
+        public void TheEntryOffersSubmitOnlyForAWellFormedCode()
+        {
+            changes = 0;
+            var entry = new PromoCodeEntry(redeemer);
+            entry.Changed += CountChange;
+            Assert.AreEqual(string.Empty, entry.Text);
+            Assert.IsFalse(entry.CanSubmit);
+
+            entry.Edit("abc");
+            Assert.IsFalse(entry.WellFormed);
+            Assert.IsFalse(entry.CanSubmit);
+
+            entry.Edit("abcd");
+            Assert.AreEqual("abcd", entry.Text);
+            Assert.IsTrue(entry.WellFormed);
+            Assert.IsTrue(entry.CanSubmit);
+
+            entry.Edit("abcd");
+            Assert.AreEqual(2, changes);
+
+            entry.Edit("abc1");
+            Assert.IsFalse(entry.CanSubmit);
+            Assert.IsFalse(entry.Submit());
+            Assert.AreEqual(0, api.Requests.Count);
+
+            entry.Edit(null);
+            Assert.AreEqual(string.Empty, entry.Text);
+            Assert.IsFalse(entry.CanSubmit);
+        }
+
+        [Test]
+        public void PastingReplacesTheTextAndAnEmptyClipboardKeepsIt()
+        {
+            var entry = new PromoCodeEntry(redeemer);
+            entry.Edit("WX");
+
+            entry.Paste(string.Empty);
+            entry.Paste(null);
+            Assert.AreEqual("WX", entry.Text);
+
+            entry.Paste("abcd-2345");
+            Assert.AreEqual("abcd-2345", entry.Text);
+            Assert.IsTrue(entry.CanSubmit);
+
+            entry.Paste("ABCD\n2345");
+            Assert.AreEqual("ABCD\n2345", entry.Text);
+            Assert.IsFalse(entry.CanSubmit);
+        }
+
+        [Test]
+        public void SubmittingSendsOneRequestAndShowsTheReplyUntilTheNextEdit()
+        {
+            var entry = new PromoCodeEntry(redeemer);
+            entry.Redeemed += results.Add;
+            entry.Paste("abcd-2345");
+
+            Assert.IsTrue(entry.Submit());
+            Assert.IsTrue(entry.Busy);
+            Assert.IsFalse(entry.CanSubmit);
+            Assert.IsFalse(entry.Submit());
+            Assert.AreEqual(1, api.Requests.Count);
+            Assert.AreEqual("{\"code\":\"ABCD2345\"}", api.Requests[0].Body);
+
+            api.Requests[0].Done(new HttpReply(409, "{\"error\":\"promo.expired\"}"));
+            Assert.IsFalse(entry.Busy);
+            Assert.AreEqual(PromoRedeemKeys.Expired, entry.MessageKey);
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual(PromoRedeemOutcome.Expired, results[0].Outcome);
+
+            entry.Edit("abcd-2346");
+            Assert.IsNull(entry.MessageKey);
+            Assert.IsTrue(entry.Submit());
+            api.Requests[1].Done(new HttpReply(200, RedemptionJson));
+            Assert.AreEqual(PromoRedeemKeys.Granted, entry.MessageKey);
+            Assert.AreEqual(500, results[1].Coins);
         }
     }
 }
