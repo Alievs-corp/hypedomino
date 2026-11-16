@@ -137,12 +137,26 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void EmojiAreNotEquippedOneByOne()
+        public void AnEmojiNotHeldGivesNoIntent()
         {
             var emoji = Collection(CosmeticAddresses.Emoji);
 
-            Assert.IsFalse(emoji.TryEquip(0, out _));
-            Assert.IsFalse(emoji.TryEquip(1, out _));
+            Assert.IsFalse(emoji.TryEquip(1, out var request));
+            Assert.IsNull(request);
+        }
+
+        [TestCase(2, 1, true, @"{""slot"":""emoji"",""items"":[""emoji.smile"",""emoji.wave""]}")]
+        [TestCase(1, 1, false, null)]
+        [TestCase(0, 1, false, null)]
+        [TestCase(2, 0, true, @"{""slot"":""emoji"",""items"":[]}")]
+        [TestCase(1, 0, true, @"{""slot"":""emoji"",""items"":[]}")]
+        public void AHeldEmojiTogglesInTheSlotListUpToTheSlotCount(int slots, int index, bool sent, string json)
+        {
+            var emoji = Collection(CosmeticAddresses.Emoji);
+            emoji.Show(InventoryReply.FromJson(@"{""items"":[{""id"":""emoji.smile""},{""id"":""emoji.wave""}],""loadout"":{""emojis"":[""emoji.smile""]},""emoji_slots"":" + slots + "}"));
+
+            Assert.AreEqual(sent, emoji.TryEquip(index, out var request));
+            Assert.AreEqual(json, request?.ToJson());
         }
 
         [Test]
