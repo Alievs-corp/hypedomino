@@ -36,3 +36,36 @@ export function sourceReasons(reports: readonly EconomyReport[]): string[] {
 export function comparedVersion(value: string | undefined): number | null {
   return value && /^[1-9][0-9]{0,14}$/.test(value) ? Number(value) : null;
 }
+
+export type MonitorWindow = "now" | "before" | "after";
+
+export type WindowReport = { window: MonitorWindow; report: EconomyReport };
+
+const csvHeader = "window,from,to,day,metric,reason,value";
+
+export function monitorsCsv(windows: readonly WindowReport[]): string {
+  const reasons = sourceReasons(windows.map((entry) => entry.report));
+  const lines = windows.flatMap((entry) => windowLines(entry, reasons));
+  return [csvHeader, ...lines].join("\n") + "\n";
+}
+
+export function monitorsCsvFileName(now: EconomyReport, version: number | null): string {
+  const day = now.to.slice(0, 10);
+  return version === null ? `economy-monitors-${day}.csv` : `economy-monitors-${day}-v${version}.csv`;
+}
+
+function windowLines({ window, report }: WindowReport, reasons: readonly string[]): string[] {
+  const metrics: [string, string, number | null][] = [
+    ["coins_created", "", report.coinsCreated],
+    ["coins_spent", "", report.coinsSpent],
+    ["sink_ratio_percent", "", report.sinkRatioPercent],
+    ["median_balance", "", report.medianBalance],
+    ["accounts_over_daily_earn", "", report.accountsOverDailyEarn],
+    ...reasons.map((reason): [string, string, number] => ["source_mix", reason, report.sourceMix[reason] ?? 0]),
+  ];
+  return metrics.map(([metric, reason, value]) => [window, report.from, report.to, report.day, metric, reason, value === null ? "" : String(value)].map(csvField).join(","));
+}
+
+function csvField(value: string): string {
+  return /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}

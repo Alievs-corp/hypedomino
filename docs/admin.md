@@ -310,6 +310,8 @@ Rules: `docs/pass-missions-medals.md` section 2.
 
 Lifecycle: create or clone a past season (#140), publish before its start. While it runs, `levels`, `curve` and the level-to-bundle tables are frozen; the only track change is replacing a `disabled` cosmetic with a `live` item of the same type and rarity, with an audited reason. The admin API accepts it when the rest of the level's bundle is unchanged and its revision goes up by one, and answers `reason_required` without a reason; `cmd/config-publish` accepts no replacement. XP source values (`docs/pass-missions-medals.md` 2.3) are config keys (5.14) and may change at any time.
 
+The panel edits seasons on `/pass` (`admin/README.md`). Its history shows, for each version, the settings and the season fields it changed against the version before, and the seasons it added or removed.
+
 ### 5.8 Missions and daily login
 
 Rules: `docs/pass-missions-medals.md` section 4.
@@ -391,7 +393,7 @@ Rules are `docs/economy.md` section 8. Batch generation creates `single_use` cod
 | `rankRewards` | Per mode and final tier: the reward bundle (#120), published as `rankRewards` of the mode in the `rating` config; coins from `RankRewardCoins` |
 | `state` | Server: `draft`, `scheduled`, `live`, `ending`, `closed` |
 
-Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice.
+Everything is editable until start (#143). While live, only the non-structural keys of `docs/ranking.md` 7.1 change, and the end may move later, never earlier; the next season moves with it. `LeaderboardRegions` and `LeaderboardTopSize` are ranking config (5.14). Season end runs once per mode (#115); the admin sees its progress and cannot run it twice. The panel's publish review and ranking config history show each value a version changed against the one before, as `field before → after`.
 
 ### 5.13 Live events, banners and push campaigns
 
@@ -782,7 +784,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version, with their CSV export (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.

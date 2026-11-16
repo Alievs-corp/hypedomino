@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  changedConfig,
   changedStructural,
   configIssues,
   countryList,
@@ -10,6 +9,7 @@ import {
   generatedReset,
   isOverride,
   modeIssues,
+  ratingChanges,
   resetIssues,
   rewardIssues,
   snapshotIssues,
@@ -176,17 +176,35 @@ test("every mode counts towards the publish block", () => {
 test("the stored key order of a snapshot is not a change", () => {
   const stored = { ...defaults, abuse: { pairMinMatches: 6, repeatPairMax: 3 } } as RatingConfig;
   const reordered = { ...defaults, abuse: { repeatPairMax: 3, pairMinMatches: 6 } } as RatingConfig;
-  assert.deepEqual(changedConfig(stored, reordered), []);
+  assert.deepEqual(ratingChanges(stored, reordered), []);
   const published: ModeConfig = { ...mode, rankRewards: { Gold: { id: "bundle.rank_gold", revision: 3, medals: ["medal.a"], cosmetics: ["frame.a"] } } };
   const same = { ...mode, rankRewards: { Gold: { revision: 3, id: "bundle.rank_gold", cosmetics: ["frame.a"], medals: ["medal.a"] } } };
   assert.equal(withRankReward(same, "Gold", { cosmetics: ["frame.a"] }, published).rankRewards?.Gold.revision, 3);
 });
 
-test("the review lists changed keys and the ones a running season freezes", () => {
+test("the review lists changed values and the keys a running season freezes", () => {
   const structural = ["divisionLp", "resetTierDrop", "seasonResetTable"];
   const after = withMode(withMode({ ...defaults, leaderboardTopSize: 300 }, "1v1", { mmrK: 30, divisionLp: 120 }), "2v2", withResetRow(mode, divisionRanks, "Gold II", "Silver III"));
-  assert.deepEqual(changedConfig(defaults, after), ["leaderboardTopSize", "1v1.divisionLp", "1v1.mmrK", "2v2.seasonResetTable"]);
+  assert.deepEqual(ratingChanges(defaults, after), [
+    { field: "leaderboardTopSize", before: "200", after: "300" },
+    { field: "1v1.divisionLp", before: "100", after: "120" },
+    { field: "1v1.mmrK", before: "20", after: "30" },
+    { field: "2v2.seasonResetTable.Gold II", before: "—", after: "Silver III" },
+  ]);
   assert.deepEqual(changedStructural(defaults, after, structural, divisionRanks), ["1v1.divisionLp", "2v2.seasonResetTable"]);
   const dropped = withMode(defaults, "1v1", { resetTierDrop: 2 });
   assert.deepEqual(changedStructural(defaults, dropped, structural, divisionRanks), ["1v1.resetTierDrop", "1v1.seasonResetTable"]);
+});
+
+test("a version lists coins, regions and rank rewards it changed by path", () => {
+  const rewarded = withMode(defaults, "1v1", withRankReward(mode, "Gold", { cosmetics: ["frame.a"] }, undefined));
+  const before = withRegion(rewarded, "caucasus", ["AZ"]);
+  const after = withRegion({ ...withMode(before, "1v1", withRankReward(before.modes["1v1"], "Gold", { cosmetics: ["frame.a", "frame.b"] }, before.modes["1v1"])), rankRewardCoins: { Iron: 100, Gold: 800 } }, "caucasus", ["AZ", "GE"]);
+  assert.deepEqual(ratingChanges(before, after), [
+    { field: "rankRewardCoins.Gold", before: "700", after: "800" },
+    { field: "leaderboardRegions.caucasus", before: '["AZ"]', after: '["AZ","GE"]' },
+    { field: "1v1.rankRewards.Gold.revision", before: "1", after: "2" },
+    { field: "1v1.rankRewards.Gold.cosmetics", before: '["frame.a"]', after: '["frame.a","frame.b"]' },
+  ]);
+  assert.deepEqual(ratingChanges(after, withoutRegion(after, "caucasus")), [{ field: "leaderboardRegions.caucasus", before: '["AZ","GE"]', after: "—" }]);
 });

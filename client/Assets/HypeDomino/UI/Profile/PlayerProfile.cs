@@ -128,6 +128,8 @@ namespace HypeDomino.UI.Profile
         public bool IsOwn { get; }
         public string AvatarId { get; }
         public string FrameId { get; }
+        public bool RenameRequired { get; private set; }
+        public ulong RenameAvailableUnixMs { get; private set; }
         public int StatCount => stats.Length;
         public int ModeStatsCount => modeStats.Length;
         public int RankCount => ranks.Length;
@@ -156,13 +158,29 @@ namespace HypeDomino.UI.Profile
                 return false;
             }
             var reply = OwnProfileReply.FromJson(json);
-            if (reply.setup_required || !Named(reply.account_id, reply.nickname))
+            if (reply.setup_required || !Named(reply.account_id, reply.nickname) || !TryRenameAvailable(reply.rename_available_at, out var renameAvailableUnixMs))
             {
                 return false;
             }
             profile = new PlayerProfile(reply.account_id, reply.nickname, reply.level, reply.xp, true, reply.loadout, OwnStats(reply.stats ?? new OwnStatsReply()), modeStats,
-                Array.Empty<ProfileRank>(), Array.Empty<ShowcaseMedal>(), Array.Empty<ShowcaseEmblem>());
+                Array.Empty<ProfileRank>(), Array.Empty<ShowcaseMedal>(), Array.Empty<ShowcaseEmblem>())
+            {
+                RenameRequired = reply.rename_required,
+                RenameAvailableUnixMs = renameAvailableUnixMs,
+            };
             return true;
+        }
+
+        public bool TryRenameSecondsLeft(ServerClock clock, double nowSeconds, out double seconds)
+        {
+            seconds = 0;
+            return clock != null && clock.TrySecondsLeft(RenameAvailableUnixMs, nowSeconds, out seconds);
+        }
+
+        static bool TryRenameAvailable(string text, out ulong unixMs)
+        {
+            unixMs = 0;
+            return string.IsNullOrEmpty(text) || ServerClock.TryReadUnixMs(text, out unixMs);
         }
 
         public static bool TryFromPublic(string json, out PlayerProfile profile)
