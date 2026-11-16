@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using HypeDomino.UI.Cosmetics;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,19 +9,6 @@ namespace HypeDomino.Tests.PlayMode
     {
         const float Tolerance = 0.01f;
         static readonly Vector4 Slice = new(20f, 8f, 20f, 8f);
-
-        sealed class MeshProbe : MonoBehaviour, IMeshModifier
-        {
-            public readonly List<UIVertex> Vertices = new();
-
-            public void ModifyMesh(Mesh mesh) { }
-
-            public void ModifyMesh(VertexHelper verts)
-            {
-                Vertices.Clear();
-                verts.GetUIVertexStream(Vertices);
-            }
-        }
 
         GameObject root;
         Texture2D texture;
