@@ -1,4 +1,5 @@
 using HypeDomino.UI.Medals;
+using HypeDomino.UI.Missions;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
@@ -17,6 +18,19 @@ namespace HypeDomino.Tests.EditMode
 {""medal"":""medal.domino_ten"",""earned_at"":""2026-11-03T10:00:00Z""},
 {""medal"":""medal.switched_off"",""earned_at"":""2026-11-04T10:00:00Z""}],
 ""showcase"":[""medal.moon_event"",""medal.switched_off"",""medal.first_win""]}";
+
+        const string BoardJson = @"{""version"":3,""day"":""2026-11-14"",""week"":""2026-W46"",""missions"":[
+{""mission"":{""id"":""mission.first_win"",""type"":""achievement"",""nameKey"":""mission.first_win.name"",""target"":1},""period"":""once"",""progress"":1,""completed_at"":""2026-11-01T10:00:00Z""},
+{""mission"":{""id"":""rank.s1.top"",""type"":""achievement"",""nameKey"":""mission.rank_named.name"",""target"":5},""period"":""once"",""progress"":2,""completed_at"":null},
+{""mission"":{""id"":""mission.hundred_wins"",""type"":""daily"",""nameKey"":""mission.hundred_wins_daily.name"",""target"":3},""period"":""2026-11-14"",""progress"":1,""completed_at"":null},
+{""mission"":{""id"":""mission.hundred_wins"",""type"":""achievement"",""nameKey"":""mission.hundred_wins.name"",""target"":100},""period"":""once"",""progress"":37,""completed_at"":null}],
+""daily_rerolls"":1,""weekly_rerolls"":1}";
+
+        static MissionBoard Board()
+        {
+            Assert.IsTrue(MissionBoard.TryFrom(MissionBoardReply.FromJson(BoardJson), out var board));
+            return board;
+        }
 
         static MedalCollection Collection(string json = CollectionJson)
         {
@@ -189,6 +203,79 @@ namespace HypeDomino.Tests.EditMode
                 collection.TryGet("medal.hundred_wins", out _);
                 for (var at = 0; at < collection.ShowcaseCount; at++) collection.ShowcaseAt(at);
                 collection.IsShowcased("medal.domino_ten");
+            };
+            read();
+
+            Assert.That(read, Allocates.Nothing);
+        }
+
+        [Test]
+        public void ALockedMissionMedalShowsTheServerProgressAndTarget()
+        {
+            Assert.IsTrue(Collection().TryMissionProgress("medal.hundred_wins", Board(), out var mission));
+
+            Assert.AreEqual("mission.hundred_wins", mission.Id);
+            Assert.AreEqual(MissionTab.Achievement, mission.Tab);
+            Assert.AreEqual(37, mission.ShownProgress);
+            Assert.AreEqual(100, mission.Target);
+            Assert.IsFalse(mission.Completed);
+        }
+
+        [Test]
+        public void TheFirstMissionSourceOnTheBoardGivesTheProgress()
+        {
+            var collection = Collection(CollectionJson.Replace(
+                @"""sources"":[{""type"":""mission"",""ref"":""mission.hundred_wins""}]",
+                @"""sources"":[{""type"":""rank_reward"",""ref"":""rank.s1.top""},{""type"":""mission"",""ref"":""mission.gone""},{""type"":""mission"",""ref"":""mission.hundred_wins""}]"));
+
+            Assert.IsTrue(collection.TryMissionProgress("medal.hundred_wins", Board(), out var mission));
+            Assert.AreEqual("mission.hundred_wins", mission.Id);
+            Assert.AreEqual(37, mission.Progress);
+        }
+
+        [Test]
+        public void AnEarnedMedalShowsItsDateInsteadOfProgress()
+        {
+            Assert.IsFalse(Collection().TryMissionProgress("medal.first_win", Board(), out var mission));
+            Assert.IsNull(mission.Id);
+        }
+
+        [Test]
+        public void ARankRewardMedalHasNoMissionProgress()
+        {
+            Assert.IsFalse(Collection().TryMissionProgress("medal.season_top", Board(), out _));
+        }
+
+        [Test]
+        public void NoProgressWithoutABoardOrForAMedalTheServerDidNotList()
+        {
+            var collection = Collection();
+
+            Assert.IsFalse(collection.TryMissionProgress("medal.hundred_wins", null, out _));
+            Assert.IsFalse(collection.TryMissionProgress("medal.unknown", Board(), out _));
+            Assert.IsFalse(collection.TryMissionProgress(null, Board(), out _));
+        }
+
+        [Test]
+        public void NoProgressWhenTheSourceMissionIsNotOnTheBoardOrTheMedalHasNoSources()
+        {
+            var off = Collection(CollectionJson.Replace(@"""ref"":""mission.hundred_wins""", @"""ref"":""mission.retired_achievement"""));
+            var bare = Collection(CollectionJson.Replace(@",""sources"":[{""type"":""mission"",""ref"":""mission.hundred_wins""}]", string.Empty));
+
+            Assert.IsFalse(off.TryMissionProgress("medal.hundred_wins", Board(), out _));
+            Assert.IsFalse(bare.TryMissionProgress("medal.hundred_wins", Board(), out _));
+        }
+
+        [Test]
+        public void ReadingMissionProgressAllocatesNothing()
+        {
+            var collection = Collection();
+            var board = Board();
+            TestDelegate read = () =>
+            {
+                collection.TryMissionProgress("medal.hundred_wins", board, out _);
+                collection.TryMissionProgress("medal.season_top", board, out _);
+                collection.TryMissionProgress("medal.first_win", board, out _);
             };
             read();
 
