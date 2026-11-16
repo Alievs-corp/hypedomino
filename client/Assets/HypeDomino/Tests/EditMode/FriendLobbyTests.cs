@@ -35,7 +35,10 @@ namespace HypeDomino.Tests.EditMode
         }
 
         static LobbyState GoldenState() =>
-            Envelope.Parser.ParseFrom(File.ReadAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "proto", "testdata", "frames", "lobby_state.bin")))).LobbyState;
+            Envelope.Parser.ParseFrom(GoldenFrame("lobby_state")).LobbyState;
+
+        static byte[] GoldenFrame(string name) =>
+            File.ReadAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "proto", "testdata", "frames", name + ".bin")));
 
         static LobbyState FullTwoVersusTwo()
         {
@@ -282,6 +285,156 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(expected.Length, transport.Sent.Count);
             for (var index = 0; index < expected.Length; index++)
                 Assert.AreEqual(expected[index], Envelope.Parser.ParseFrom(transport.Sent[index]).LobbyIntent, $"command {index}");
+        }
+
+        static LobbyInvite Invite(string code, string from) => new() { Code = code, FromAccountId = from };
+
+        [Test]
+        public void AnInGameInviteFromTheSessionWaitsForAnAnswer()
+        {
+            var transport = new FakeTransport();
+            var session = AcceptedSession(transport);
+            var invites = new RoomInvites();
+            var changes = 0;
+            invites.Changed += () => changes++;
+            invites.Follow(session);
+
+            transport.Deliver(GoldenFrame("lobby_invite"));
+            session.Poll();
+
+            Assert.AreEqual(1, changes);
+            Assert.AreEqual(1, invites.Pending.Count);
+            Assert.AreEqual("K7QM3X", invites.Pending[0].Code);
+            Assert.AreEqual(Leader, invites.Pending[0].From);
+            Assert.IsTrue(invites.CanAccept);
+        }
+
+        [Test]
+        public void AnotherInviteToTheSameRoomReplacesTheEarlierOne()
+        {
+            var invites = new RoomInvites();
+
+            invites.Read(Invite("K7QM3X", Leader));
+            invites.Read(Invite("Z23456", Leader));
+            invites.Read(Invite("K7QM3X", Friend));
+
+            Assert.AreEqual(2, invites.Pending.Count);
+            Assert.AreEqual("Z23456", invites.Pending[0].Code);
+            Assert.AreEqual("K7QM3X", invites.Pending[1].Code);
+            Assert.AreEqual(Friend, invites.Pending[1].From);
+        }
+
+        [TestCase("", Leader)]
+        [TestCase("K7QM30", Leader)]
+        [TestCase("K7QM3X", "")]
+        public void AnInviteNoRoomCanHaveIsDropped(string code, string from)
+        {
+            var invites = new RoomInvites();
+            var changes = 0;
+            invites.Changed += () => changes++;
+
+            invites.Read(Invite(code, from));
+
+            Assert.IsEmpty(invites.Pending);
+            Assert.AreEqual(0, changes);
+        }
+
+        [Test]
+        public void AcceptingSendsAJoinWithTheInvitedCodeAndClearsTheInvite()
+        {
+            var transport = new FakeTransport();
+            var session = AcceptedSession(transport);
+            var invites = new RoomInvites();
+            invites.Read(Invite("K7QM3X", Leader));
+            var changes = 0;
+            invites.Changed += () => changes++;
+
+            Assert.IsTrue(invites.TryAccept(session, new LobbyCommands(), "K7QM3X"));
+
+            Assert.AreEqual(new LobbyIntent { Command = LobbyCommand.Join, Code = "K7QM3X" }, Envelope.Parser.ParseFrom(transport.Sent[0]).LobbyIntent);
+            Assert.IsEmpty(invites.Pending);
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void AnInviteIsKeptWhenTheJoinCannotBeSent()
+        {
+            var transport = new FakeTransport();
+            var session = new Session();
+            session.Hello(transport, new ClientHello());
+            transport.Sent.Clear();
+            var invites = new RoomInvites();
+            invites.Read(Invite("K7QM3X", Leader));
+
+            Assert.IsFalse(invites.TryAccept(session, new LobbyCommands(), "K7QM3X"));
+
+            Assert.IsEmpty(transport.Sent);
+            Assert.AreEqual(1, invites.Pending.Count);
+        }
+
+        [Test]
+        public void OnlyAPendingInviteCanBeAccepted()
+        {
+            var transport = new FakeTransport();
+            var session = AcceptedSession(transport);
+            var invites = new RoomInvites();
+            invites.Read(Invite("K7QM3X", Leader));
+
+            Assert.IsFalse(invites.TryAccept(session, new LobbyCommands(), "Z23456"));
+
+            Assert.IsEmpty(transport.Sent);
+            Assert.AreEqual(1, invites.Pending.Count);
+        }
+
+        [Test]
+        public void DecliningDropsOnlyThatInvite()
+        {
+            var invites = new RoomInvites();
+            invites.Read(Invite("K7QM3X", Leader));
+            invites.Read(Invite("Z23456", Friend));
+            var changes = 0;
+            invites.Changed += () => changes++;
+
+            invites.Decline("K7QM3X");
+            invites.Decline("K7QM3X");
+
+            Assert.AreEqual(1, invites.Pending.Count);
+            Assert.AreEqual("Z23456", invites.Pending[0].Code);
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void InsideARoomInvitesWaitUntilThePlayerLeavesIt()
+        {
+            var transport = new FakeTransport();
+            var session = AcceptedSession(transport);
+            var invites = new RoomInvites();
+            invites.Read(Invite("Z23456", Friend));
+
+            invites.Read(new LobbyState { Code = "K7QM3X", LeaderAccountId = Leader });
+
+            Assert.IsFalse(invites.CanAccept);
+            Assert.IsFalse(invites.TryAccept(session, new LobbyCommands(), "Z23456"));
+            Assert.IsEmpty(transport.Sent);
+            Assert.AreEqual(1, invites.Pending.Count);
+
+            invites.Read(new LobbyState());
+
+            Assert.IsTrue(invites.CanAccept);
+            Assert.IsTrue(invites.TryAccept(session, new LobbyCommands(), "Z23456"));
+        }
+
+        [Test]
+        public void AnInviteToTheRoomThePlayerIsInIsDropped()
+        {
+            var invites = new RoomInvites();
+            invites.Read(Invite("K7QM3X", Leader));
+
+            invites.Read(GoldenState());
+            invites.Read(Invite("K7QM3X", Friend));
+
+            Assert.AreEqual("K7QM3X", invites.CurrentRoom);
+            Assert.IsEmpty(invites.Pending);
         }
     }
 }
