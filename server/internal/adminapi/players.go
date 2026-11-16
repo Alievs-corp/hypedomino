@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
@@ -65,7 +66,16 @@ type suspiciousMatchesView struct {
 }
 
 func (h *Handler) suspiciousMatches(w http.ResponseWriter, r *http.Request, p principal) {
-	matches, err := playerrecord.LoadSuspiciousMatches(r.Context(), h.pool)
+	query := r.URL.Query()
+	after := query.Get("after")
+	limit, err := queuePageLimit(query.Get("limit"))
+	if err != nil || (after != "" && uuid.Validate(after) != nil) {
+		h.refuse(w, errMalformed)
+		return
+	}
+	matches, err := playerrecord.LoadSuspiciousMatches(r.Context(), h.pool, playerrecord.SuspiciousQuery{
+		Signal: query.Get("signal"), Account: query.Get("account"), After: after, Limit: limit,
+	})
 	if err != nil {
 		h.refuse(w, err)
 		return

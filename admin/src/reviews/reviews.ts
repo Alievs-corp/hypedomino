@@ -35,6 +35,10 @@ export type ReviewQuery = { cause: (typeof reviewCauses)[number] | ""; account: 
 
 export type ReportQuery = { reason: (typeof reportReasons)[number] | ""; account: string; after: string };
 
+export const suspiciousSignals = ["win_trade", "feeding", "partner_fit"] as const;
+
+export type SuspiciousQuery = { signal: (typeof suspiciousSignals)[number] | ""; account: string; after: string };
+
 const reviewIdPattern = /^[1-9][0-9]{0,17}$/;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -57,7 +61,12 @@ export function readReportQuery(params: SearchParams): ReportQuery {
   return { reason: known(reportReasons, single(params.reason)), account: single(params.account), after: uuidPattern.test(after) ? after : "" };
 }
 
-function searchOf(query: ReviewQuery | ReportQuery): URLSearchParams {
+export function readSuspiciousQuery(params: SearchParams): SuspiciousQuery {
+  const after = single(params.after);
+  return { signal: known(suspiciousSignals, single(params.signal)), account: single(params.account), after: uuidPattern.test(after) ? after : "" };
+}
+
+function searchOf(query: ReviewQuery | ReportQuery | SuspiciousQuery): URLSearchParams {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value) {
@@ -67,13 +76,13 @@ function searchOf(query: ReviewQuery | ReportQuery): URLSearchParams {
   return search;
 }
 
-export function queueApiPath(path: "/admin/reviews" | "/admin/reports", query: ReviewQuery | ReportQuery): string {
+export function queueApiPath(path: "/admin/reviews" | "/admin/reports" | "/admin/matches/suspicious", query: ReviewQuery | ReportQuery | SuspiciousQuery): string {
   const search = searchOf(query);
   search.set("limit", String(queuePageSize));
   return `${path}?${search}`;
 }
 
-export function nextQueueHref(screen: "/reviews" | "/reports", query: ReviewQuery | ReportQuery, cursors: readonly string[]): string | null {
+export function nextQueueHref(screen: "/reviews" | "/reports" | "/matches", query: ReviewQuery | ReportQuery | SuspiciousQuery, cursors: readonly string[]): string | null {
   if (cursors.length < queuePageSize) {
     return null;
   }
