@@ -114,3 +114,94 @@ func TestAnApprovalCannotUndoANewerLiveControlChange(t *testing.T) {
 		t.Fatalf("published %+v", controls)
 	}
 }
+
+func breakGlassBody(minimum, severity, incident string) map[string]any {
+	body := controlsBody(minimum, true)
+	body["break_glass"] = map[string]any{"severity": severity, "id": incident}
+	return body
+}
+
+func (a *api) unconfirmedBreakGlass(token string) []any {
+	a.t.Helper()
+	status, body := a.call("GET", "/admin/live-controls/break-glass", token, nil)
+	if status != http.StatusOK {
+		a.t.Fatalf("break-glass list %d %v", status, body)
+	}
+	return body["proposals"].([]any)
+}
+
+func TestBreakGlassRefusesWithoutARoleOrADeclaredIncident(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
+	a.create("leyla@example.com", rbac.LiveOps)
+	a.create("orxan@example.com", rbac.Support)
+	liveOps, support := a.signIn("leyla"), a.signIn("orxan")
+	cases := []struct {
+		name       string
+		token      string
+		body       map[string]any
+		wantStatus int
+		wantError  string
+	}{
+		{"support role", support, breakGlassBody("1.4.0", "SEV1", "INC-12"), http.StatusForbidden, "forbidden"},
+		{"sev3", liveOps, breakGlassBody("1.4.0", "SEV3", "INC-12"), http.StatusBadRequest, "incident_required"},
+		{"no severity", liveOps, breakGlassBody("1.4.0", "", "INC-12"), http.StatusBadRequest, "incident_required"},
+		{"no incident id", liveOps, breakGlassBody("1.4.0", "SEV1", ""), http.StatusBadRequest, "incident_required"},
+		{"bad controls", liveOps, breakGlassBody("latest", "SEV1", "INC-12"), http.StatusBadRequest, "invalid"},
+		{"no reason", liveOps, map[string]any{"controls": map[string]any{"minimum_app_version": "1.4.0"}, "break_glass": map[string]any{"severity": "SEV1", "id": "INC-12"}}, http.StatusBadRequest, "reason_required"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			status, body := a.call("PUT", "/admin/live-controls", c.token, c.body)
+			expect(t, status, body, c.wantStatus, c.wantError)
+		})
+	}
+	status, body := a.call("GET", "/admin/live-controls", liveOps, nil)
+	if status != http.StatusOK || body["config_version"] != float64(0) || len(a.unconfirmedBreakGlass(liveOps)) != 0 {
+		t.Fatalf("a refused break-glass changed something: %d %v", status, body)
+	}
+}
+
+func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
+	a.create("leyla@example.com", rbac.LiveOps)
+	a.create("orxan@example.com", rbac.Support)
+	liveOps, root, support := a.signIn("leyla"), a.signIn("root"), a.signIn("orxan")
+
+	_, pending := a.call("PUT", "/admin/live-controls", liveOps, controlsBody("1.3.0", false))
+	status, body := a.call("PUT", "/admin/live-controls", liveOps, breakGlassBody("1.4.0", "SEV1", "INC-12"))
+	if status != http.StatusOK || body["config_version"] != float64(1) || body["break_glass_id"] == nil {
+		t.Fatalf("break-glass %d %v", status, body)
+	}
+	id := fmt.Sprintf("%.0f", body["break_glass_id"].(float64))
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.4.0" || !controls.PurchasesDisabled {
+		t.Fatalf("published %+v", controls)
+	}
+	switched := a.entries(root, "object_type=live_controls&action="+adminapi.BreakGlassAction)
+	if len(switched) != 1 || switched[0]["ref"] != "INC-12" || switched[0]["reason"] != "incident" || switched[0]["config_version"] != float64(1) {
+		t.Fatalf("break-glass entries %v", switched)
+	}
+	if listed := a.unconfirmedBreakGlass(support); len(listed) != 1 || listed[0].(map[string]any)["proposer_id"] == "" {
+		t.Fatalf("unconfirmed %v", listed)
+	}
+
+	status, body = a.call("POST", fmt.Sprintf("/admin/approvals/%.0f/approve", pending["approval_id"].(float64)), root, map[string]any{"reason": "checked"})
+	expect(t, status, body, http.StatusConflict, "stale_proposal")
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", liveOps, map[string]any{"reason": "mine"})
+	expect(t, status, body, http.StatusForbidden, "self_decision")
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", support, map[string]any{"reason": "seen"})
+	expect(t, status, body, http.StatusForbidden, "forbidden")
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", root, map[string]any{"reason": "confirmed in the incident channel"})
+	if status != http.StatusOK || body["state"] != "approved" {
+		t.Fatalf("confirm %d %v", status, body)
+	}
+	if listed := a.unconfirmedBreakGlass(support); len(listed) != 0 {
+		t.Fatalf("confirmed still listed %v", listed)
+	}
+	confirmed := a.entries(root, "object_type=live_controls&action=approve")
+	if len(confirmed) != 1 || confirmed[0]["ref"] != "INC-12" || confirmed[0]["actor_id"] == switched[0]["actor_id"] {
+		t.Fatalf("confirmation entries %v", confirmed)
+	}
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.4.0" {
+		t.Fatalf("confirmation changed the controls %+v", controls)
+	}
+}
