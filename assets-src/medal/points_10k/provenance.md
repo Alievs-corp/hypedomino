@@ -59,19 +59,43 @@ The script is `court_poet_cleanup.py` of set 1 changed for a sheet: the backgrou
 
 Not done: upload of `export/static.png` for `medal/points_10k/static`. The admin asset upload takes only cosmetic item ids so far (`docs/admin.md` 5.2), and the cultural review above is open.
 
+## Value and contrast (2026-11-16)
+
+On the phone in the Art Bench (2026-11-16) this medal read pale and flat on `color.background.base` at 120 px next to the other medals: a milky, low-chroma crystal and setting with little difference between its darks and its lights. On 2026-11-16 Claude Code added one step to `work/points_10k_cleanup.py`, after the fringe removal and before the crop: each pixel's colour is scaled so its Rec. 709 luma `L` (0 to 1) becomes `L` to the power 1.4 (`VALUE_GAMMA`), which keeps the highlights and deepens the mid and dark tones without a hue shift, and then its distance from that luma is multiplied by 1.15 (`CHROMA_GAIN`) for a richer champagne and metal. No outline, glow or shadow was added; the outer shape and the alpha are unchanged. Run with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1:
+
+```bash
+python -I assets-src/medal/points_10k/work/points_10k_cleanup.py points_10k assets-src/medal/points_10k/concept/20261115-01.png 3 3 1 assets-src/medal/points_10k/work assets-src/medal/points_10k/export
+```
+
+It printed `points_10k: background [196.0, 196.0, 197.0], pockets 0 px of at least 20, cell 1 of 3x3, box (58, 5, 363, 409), canvas 256, value gamma 1.4, chroma gain 1.15`. A second and a third run into empty folders wrote byte-identical files and the same line.
+
+Measured by Claude Code on `export/static.png` resized to 120 px with Lanczos, WCAG relative luminance, alpha-weighted over the medal; "rim" is the outer 3 px of the medal's opaque area. The family median is over the 38 other medals in `assets-src/medal/`.
+
+| Measure | Before | After | Family median |
+|---|---|---|---|
+| Mean luminance | 0.358 | 0.271 | 0.31 |
+| Internal contrast, 90th over 10th percentile luminance | 5.39:1 | 7.78:1 | 6.14:1 |
+| Mean against `color.background.base` | 7.83:1 | 6.16:1 | 6.95:1 |
+| Mean against `color.surface.default` | 6.68:1 | 5.25:1 | 5.93:1 |
+| Rim against `color.background.base` | 6.31:1 | 4.55:1 | 6.31:1 |
+| Rim against `color.surface.default` | 5.39:1 | 3.88:1 | 5.39:1 |
+
+The luminance contrast against both backgrounds falls, as the medal was among the brightest of the set and its paleness was a lack of dark tones and chroma, not a lack of light; every value stays above the 3:1 non-text minimum (WCAG 2.2 SC 1.4.11) that `docs/ui-motion.md` uses for fills and inside the range of the other medals. Not done: a look on the phone after the change and a human paint-over (RC-5).
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `cafc32559f9c51ae19e86935b5ace968a5fd2242aff1f35cebe46ccee0cb822c` | 1254 x 1254 RGB, the generated sheet of nine medals, unchanged; this medal is row 1, column 1 (cell 1) | Codex CLI `$imagegen`, copied byte for byte by Codex; byte-identical to the file in `~/.codex/generated_images/01a1e074-cb65-7863-9196-01ff84de2df9/` (checked with `cmp`) |
-| work/points_10k_cleanup.py | `a73b621f6087178a71d2494916865384d0f93516d0fa7b3cf5fed9c700c97a10` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `court_poet_cleanup.py` of set 1; the same script for every medal of this PR |
-| work/points_10k_master.png | `9538862e9553a613158c53df0db5c8e204d8acae3b7b251c0dc7fdfec385bb40` | 305 x 404 RGBA, the cut-out medal at the resolution of the sheet | `points_10k_cleanup.py` |
-| export/static.png | `6a10fd2d8e55e95679b6dee2ec20e0709513b16177368cc69a51e36ee6718678` | 256 x 256 RGBA static, medal centred, longer side 240 | `points_10k_cleanup.py` |
+| work/points_10k_cleanup.py | `45f9e97cbb045d79830226d82814df456cb99b380c30c91c6ea80524027308b3` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `court_poet_cleanup.py` of set 1; the value and chroma step added 2026-11-16 (Value and contrast below), so it now differs from the script of the other medals |
+| work/points_10k_master.png | `3ea74c1106076fc179839e6829886532b7bddcafad8e4a912ef3775294905c4f` | 305 x 404 RGBA, the cut-out medal at the resolution of the sheet | `points_10k_cleanup.py` |
+| export/static.png | `c70b87bcde95e13a4c6b90cee0dfac895454d6e30fde579bc3017cace383c7f3` | 256 x 256 RGBA static, medal centred, longer side 240 | `points_10k_cleanup.py` |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-15 | concept/20261115-01.png | Style key and sheet prompt, quoted below. Codex session `01a1e074-cb65-7863-9196-01ff84de2df9`; `c2pa.created` 2026-11-15T18:26:35Z |
 | 2026-11-15 | work/points_10k_master.png, export/static.png | `points_10k_cleanup.py` on cell 1 of the concept |
+| 2026-11-16 | work/points_10k_master.png, export/static.png | `points_10k_cleanup.py` again with the value and chroma step (value gamma 1.4, chroma gain 1.15) |
 
 Prompt of `concept/20261115-01.png`, verbatim (the Codex call wraps it in `$imagegen <prompt> Generate exactly one image. Save the final PNG in the current working directory as sheet_d.png. Do not use any API key and do not edit the image.`):
 

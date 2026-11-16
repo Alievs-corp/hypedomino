@@ -16,6 +16,9 @@ PART_MIN_PIXELS = 400
 MASTER_PAD = 4
 CANVAS = 256
 CONTENT = 240
+VALUE_GAMMA = 1.7
+CHROMA_GAIN = 1.15
+LUMA = np.array([0.2126, 0.7152, 0.0722])
 
 
 def border_colour(pixels):
@@ -73,6 +76,15 @@ def remove_fringe(pixels, alpha, colour):
     return np.where(partial[..., None], np.clip(clean, 0, 255), pixels)
 
 
+def deepen(pixels):
+    unit = pixels / 255
+    luma = unit @ LUMA
+    unit = unit * (np.maximum(luma, 1e-6) ** (VALUE_GAMMA - 1))[..., None]
+    luma = unit @ LUMA
+    unit = luma[..., None] + (unit - luma[..., None]) * CHROMA_GAIN
+    return np.clip(unit * 255, 0, 255)
+
+
 def bounding_box(alpha):
     rows = np.where(alpha.max(axis=1) > 0)[0]
     columns = np.where(alpha.max(axis=0) > 0)[0]
@@ -116,12 +128,12 @@ def main():
     subject = ndimage.binary_fill_holes(~background) & ~pockets
     medal = cell_subject(subject, arguments.rows, arguments.columns, arguments.cell)
     alpha = subject_alpha(medal)
-    clean = remove_fringe(pixels, alpha, colour)
+    clean = deepen(remove_fringe(pixels, alpha, colour))
     box = bounding_box(alpha)
     master = to_image(clean, alpha).crop(box)
     master.save(os.path.join(arguments.work, f"{arguments.slug}_master.png"))
     fit_canvas(master).save(os.path.join(arguments.export, "static.png"))
-    print(f"{arguments.slug}: background {colour.round(1).tolist()}, pockets {int(pockets.sum())} px of at least {arguments.pocket_min}, cell {arguments.cell} of {arguments.rows}x{arguments.columns}, box {tuple(int(v) for v in box)}, canvas {CANVAS}")
+    print(f"{arguments.slug}: background {colour.round(1).tolist()}, pockets {int(pockets.sum())} px of at least {arguments.pocket_min}, cell {arguments.cell} of {arguments.rows}x{arguments.columns}, box {tuple(int(v) for v in box)}, canvas {CANVAS}, value gamma {VALUE_GAMMA}, chroma gain {CHROMA_GAIN}")
 
 
 main()
