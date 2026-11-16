@@ -618,6 +618,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
 | `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
 | `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
+| `GET /admin/config/version` | V on dashboards | The active `configVersion`: the newest snapshot of any domain, with that `domain` and its `published_at`; 0 and no domain before the first publish |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
 | `GET /admin/accounts` | V on admin accounts | Every account |
@@ -765,7 +766,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
-| Home | A-1 Dashboard: active `configVersion`, scheduled change sets, pending approvals, unconfirmed break-glass actions, live control states, economy monitors (`docs/economy.md` section 10) | All | 3, 4, 8 |
+| Home | A-1 Dashboard: active `configVersion`, scheduled change sets, pending approvals, unconfirmed break-glass actions, live control states, economy monitors (`docs/economy.md` section 10). Built at `/` without scheduled change sets, which wait for A-2 (`admin/README.md`) | All | 3, 4, 8 |
 | Publishing | A-2 Change sets: list, editor, diff, validation report | `super_admin`, `content`, `live_ops` | 3.2 to 3.4 |
 | | A-3 Approvals | Accounts with P | 3.5, 8 |
 | | A-4 Snapshots and rollback | All but `analyst` | 3.7, 5.17 |
