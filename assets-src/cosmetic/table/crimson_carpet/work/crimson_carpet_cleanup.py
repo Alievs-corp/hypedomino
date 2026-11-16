@@ -17,6 +17,11 @@ INLAY_WIDTH = 4
 INLAY_CORNER = 11
 WOOD = {"hi": "#5A2414", "default": "#3A150B", "lo": "#240C06"}
 GOLD = {"hi": "#FFF4C2", "default": "#E6C068", "mid": "#C99A3C", "lo": "#7A5418"}
+CALM_RADIUS = (0.44, 0.40)
+CALM_EDGE = 0.25
+CALM_SOFTEN = 0.3
+CALM_GAIN = 0.95
+CALM_SIGMA = 12
 
 
 def rgb(hex_colour):
@@ -45,6 +50,19 @@ def fit_to_canvas(image):
         upper = (height - crop_height) / 2
         box = (0, upper, width, upper + crop_height)
     return image.resize(CANVAS, Image.LANCZOS, box=box), stretch, tuple(round(value, 1) for value in box)
+
+
+def calm_centre(image):
+    pixels = np.asarray(image).astype(np.float64)
+    height, width = pixels.shape[:2]
+    ys, xs = np.mgrid[0:height, 0:width] + 0.5
+    dx = (xs - width / 2) / (width * CALM_RADIUS[0])
+    dy = (ys - height / 2) / (height * CALM_RADIUS[1])
+    weight = (np.clip(1 - np.hypot(dx, dy), 0, CALM_EDGE) / CALM_EDGE)[..., None]
+    base = ndimage.gaussian_filter(pixels, (CALM_SIGMA, CALM_SIGMA, 0))
+    calmed = base + (pixels - base) * (1 - CALM_SOFTEN * weight)
+    toned = calmed * (1 - (1 - CALM_GAIN) * weight)
+    return Image.fromarray(toned.round().clip(0, 255).astype(np.uint8), mode="RGB")
 
 
 def rounded_rectangle(size, inset, radius):
@@ -121,7 +139,7 @@ def main():
     concept = Image.open(arguments.back).convert("RGB")
     trim = margin_trim(np.asarray(concept).astype(np.float64))
     back, stretch, box = fit_to_canvas(concept.crop(trim))
-    back = back.convert("RGBA")
+    back = calm_centre(back).convert("RGBA")
     middle = middle_layer(CANVAS)
     front = front_layer(CANVAS)
     for name, layer in (("back", back), ("middle", middle), ("front", front)):
