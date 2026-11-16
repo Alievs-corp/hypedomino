@@ -1,0 +1,173 @@
+using System;
+using System.IO;
+using System.Linq;
+using HypeDomino.Bench;
+using HypeDomino.Content;
+using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace HypeDomino.Editor
+{
+    public static class ArtBenchBuild
+    {
+        const string SceneFolder = "Assets/HypeDomino/Bench/Generated";
+        const string ArtRoot = SceneFolder + "/Art";
+        const string ScenePath = SceneFolder + "/ArtBench.unity";
+        const string CosmeticRoot = ArtRoot + "/cosmetic";
+        const string TileFacesFolder = ArtRoot + "/tile/ivory/face";
+        const string MedalRoot = ArtRoot + "/medal";
+        const string SfxFolder = ArtRoot + "/sound/sfx";
+        const string MusicFolder = ArtRoot + "/sound/music";
+        const string TokensPath = ArtRoot + "/design-tokens.json";
+        const string DefaultOutputPath = "Builds/art-bench.apk";
+        const string OutputPathArgument = "-customBuildPath";
+        const string BenchIdentifier = "com.hypedomino.artbench";
+
+        [Serializable]
+        public sealed class ElevationLevel
+        {
+            public float offsetY;
+            public float alpha;
+        }
+
+        [Serializable]
+        public sealed class Elevation
+        {
+            public ElevationLevel e1;
+        }
+
+        [Serializable]
+        public sealed class Tokens
+        {
+            public Elevation elevation;
+        }
+
+        public static void BuildAndroid() => EditorMethod.Run(() => Build(OutputPath()));
+
+        static void Build(string output)
+        {
+            if (!AssetDatabase.IsValidFolder(ArtRoot)) throw new InvalidOperationException($"{ArtRoot} is missing; the Bench APK workflow stages it from assets-src");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
+            var content = Content();
+            Debug.Log($"ArtBenchBuild avatars={content.avatars.Length} frames={content.frames.Length} tables={content.tables.Length} emoji={content.emoji.Length} " +
+                      $"tileBacks={content.tileBacks.Length} tileFaces={content.tileFaces.Length} medals={content.medals.Length} effects={content.effectSprites.Length} " +
+                      $"kit={content.kit.Length} sfx={content.sfx.Length} music={content.music.Length}");
+
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            new GameObject("Bench").AddComponent<ArtBench>().Configure(content);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BenchIdentifier);
+            PlayerSettings.productName = "Art Bench";
+            EditorUserBuildSettings.buildAppBundle = false;
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = output,
+                target = BuildTarget.Android,
+                options = BuildOptions.Development,
+            });
+            Debug.Log($"ArtBenchBuild result={report.summary.result} bytes={report.summary.totalSize}");
+            if (report.summary.result != BuildResult.Succeeded) throw new BuildFailedException($"art bench build {report.summary.result}");
+        }
+
+        static ArtBenchContent Content()
+        {
+            var elevation = JsonUtility.FromJson<Tokens>(File.ReadAllText(TokensPath)).elevation.e1;
+            return new ArtBenchContent
+            {
+                avatars = Items("avatar"),
+                frames = Items("frame"),
+                tables = Tables(),
+                emoji = Items("emoji"),
+                tileBacks = Items("tile"),
+                tileFaces = PngPaths(TileFacesFolder).Select(CosmeticContent.ImportSprite).ToArray(),
+                medals = SubFolders(MedalRoot).Select(Item).Where(item => item != null).ToArray(),
+                effectSprites = EffectsContent.SpritePaths().Select(AssetDatabase.LoadAssetAtPath<Sprite>).Where(sprite => sprite != null).ToArray(),
+                kit = UiKitContent.SpritePaths().Select(AssetDatabase.LoadAssetAtPath<Sprite>).Where(sprite => sprite != null).ToArray(),
+                additive = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AdditiveMaterialPath),
+                alpha = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AlphaMaterialPath),
+                effectTable = AssetDatabase.LoadAssetAtPath<TextAsset>(EffectsContent.TablePath),
+                shadowOffsetY = elevation.offsetY,
+                shadowAlpha = elevation.alpha,
+                sfx = Clips(SfxFolder, false),
+                music = Clips(MusicFolder, true),
+            };
+        }
+
+        static ArtBenchLoop[] Items(string type) => SubFolders($"{CosmeticRoot}/{type}").Select(Item).Where(item => item != null).ToArray();
+
+        static ArtBenchLoop Item(string folder)
+        {
+            var still = $"{folder}/{CosmeticContent.StaticFile}";
+            if (!File.Exists(still)) return null;
+            var anim = $"{folder}/{CosmeticContent.AnimSlot}";
+            return new ArtBenchLoop
+            {
+                name = Path.GetFileName(folder),
+                still = CosmeticContent.ImportSprite(still),
+                frames = CosmeticContent.HasFrames(anim) ? LoopFrames(anim) : Array.Empty<Sprite>(),
+            };
+        }
+
+        static ArtBenchTable[] Tables() =>
+            SubFolders($"{CosmeticRoot}/table").Select(Table).Where(table => table != null).ToArray();
+
+        static ArtBenchTable Table(string folder)
+        {
+            var item = Item(folder);
+            if (item == null) return null;
+            var layers = $"{folder}/{CosmeticContent.LayerSlot}";
+            return new ArtBenchTable
+            {
+                name = item.name,
+                still = item.still,
+                layers = SubFolders(layers).Where(CosmeticContent.HasFrames).Select(Layer).ToArray(),
+            };
+        }
+
+        static ArtBenchLoop Layer(string folder)
+        {
+            var frames = LoopFrames(folder);
+            return new ArtBenchLoop { name = Path.GetFileName(folder), still = frames[0], frames = frames };
+        }
+
+        static Sprite[] LoopFrames(string folder) => AssetDatabase.LoadAssetAtPath<SpriteLoop>(CosmeticContent.BuildLoop(folder)).Frames;
+
+        static AudioClip[] Clips(string folder, bool music) =>
+            Directory.Exists(folder)
+                ? Directory.GetFiles(folder, "*.wav").Select(path => path.Replace('\\', '/')).OrderBy(path => path, StringComparer.Ordinal).Select(path => ImportClip(path, music)).Where(clip => clip != null).ToArray()
+                : Array.Empty<AudioClip>();
+
+        static AudioClip ImportClip(string path, bool music)
+        {
+            var importer = (AudioImporter)AssetImporter.GetAtPath(path);
+            importer.forceToMono = !music;
+            var settings = importer.defaultSampleSettings;
+            settings.loadType = music ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
+            settings.compressionFormat = music ? AudioCompressionFormat.Vorbis : AudioCompressionFormat.ADPCM;
+            settings.preloadAudioData = !music;
+            importer.defaultSampleSettings = settings;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        }
+
+        static string[] SubFolders(string folder) =>
+            AssetDatabase.IsValidFolder(folder) ? AssetDatabase.GetSubFolders(folder).OrderBy(path => path, StringComparer.Ordinal).ToArray() : Array.Empty<string>();
+
+        static string[] PngPaths(string folder) =>
+            Directory.Exists(folder)
+                ? Directory.GetFiles(folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path, StringComparer.Ordinal).ToArray()
+                : Array.Empty<string>();
+
+        static string OutputPath()
+        {
+            var arguments = Environment.GetCommandLineArgs();
+            var at = Array.IndexOf(arguments, OutputPathArgument);
+            return at >= 0 && at + 1 < arguments.Length ? arguments[at + 1] : DefaultOutputPath;
+        }
+    }
+}

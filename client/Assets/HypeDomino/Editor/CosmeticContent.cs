@@ -116,7 +116,7 @@ namespace HypeDomino.Editor
                 yield return ($"{LayerSlot}/{Path.GetFileName(layer)}", layer);
         }
 
-        static bool HasFrames(string folder) => AssetDatabase.IsValidFolder(folder) && Frames(folder).Length > 0;
+        internal static bool HasFrames(string folder) => AssetDatabase.IsValidFolder(folder) && Frames(folder).Length > 0;
 
         static string[] Frames(string folder) =>
             Directory.GetFiles(folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path, StringComparer.Ordinal).ToArray();
@@ -143,7 +143,7 @@ namespace HypeDomino.Editor
 
         static bool IsGenerated(string path) => path.EndsWith(LoopExtension, StringComparison.Ordinal) || path.EndsWith(AtlasExtension, StringComparison.Ordinal);
 
-        static string BuildLoop(string folder)
+        internal static string BuildLoop(string folder)
         {
             var frames = Frames(folder).Select(ImportSprite).ToArray();
             var loopPath = folder + LoopExtension;
@@ -159,7 +159,7 @@ namespace HypeDomino.Editor
             return loopPath;
         }
 
-        static Sprite ImportSprite(string path)
+        internal static Sprite ImportSprite(string path)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             var texture = new TextureImporterSettings();
