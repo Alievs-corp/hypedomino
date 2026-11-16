@@ -98,13 +98,13 @@ namespace HypeDomino.Bench
             {
                 particles.Add(NewImage("Particle"));
                 paths.Add(Path(random));
-                particleColors.Add(Color.white);
+                particleColors.Add(Color.clear);
             }
             var mostLayers = Math.Max(effect.levels.low.sprites.Length, Math.Max(effect.levels.medium.sprites.Length, effect.levels.high.sprites.Length));
             for (var at = 0; at < mostLayers; at++)
             {
                 layers.Add(NewImage("Layer"));
-                layerColors.Add(Color.white);
+                layerColors.Add(Color.clear);
             }
         }
 
@@ -195,7 +195,7 @@ namespace HypeDomino.Bench
                 case "color.role.score.fill": return TokenColor.RoleScoreFill;
                 case "color.role.secondary.fill": return TokenColor.RoleSecondaryFill;
                 case "team": return TokenColor.RoleTeamAFill;
-                default: return Color.white;
+                default: return Color.clear;
             }
         }
     }
