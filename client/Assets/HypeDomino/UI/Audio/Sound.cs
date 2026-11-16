@@ -11,6 +11,11 @@ namespace HypeDomino.UI.Audio
         MatchWin,
         MatchLose,
         UiClick,
+        Combo1,
+        Combo2,
+        Combo3,
+        Combo4,
+        Combo5,
     }
 
     public enum Music

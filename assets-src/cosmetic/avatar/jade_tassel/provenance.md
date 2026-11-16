@@ -19,6 +19,8 @@ Animated avatar of set 1 (#171), a painted portrait made with template P-3 of `d
 
 Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_jade_tassel`. The offer id is a placeholder until the shop record exists (V-15). Animated avatars are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`; this batch proposes 5 epic, 4 legendary, 1 mythic.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (tassels (pair)), so `epic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifests
 
 Both concept files carry a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-16; the signatures were not validated with a C2PA tool.

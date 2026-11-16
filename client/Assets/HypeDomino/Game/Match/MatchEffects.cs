@@ -61,7 +61,7 @@ namespace HypeDomino.Game.Match
             return new EffectCue(StepOf(view.Scores.TeamA, scoreA, handEnded, placements), StepOf(view.Scores.TeamB, scoreB, handEnded, placements), ending, handWinner, matchWinner);
         }
 
-        static int StepOf(uint score, uint before, bool handEnded, int placements)
+        public static int StepOf(uint score, uint before, bool handEnded, int placements)
         {
             if (score <= before) return 0;
             var points = score - before;

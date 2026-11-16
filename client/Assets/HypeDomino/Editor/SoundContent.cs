@@ -48,6 +48,11 @@ namespace HypeDomino.Editor
             Sound.MatchWin => "match_win",
             Sound.MatchLose => "match_lose",
             Sound.UiClick => "ui_click",
+            Sound.Combo1 => "combo_1",
+            Sound.Combo2 => "combo_2",
+            Sound.Combo3 => "combo_3",
+            Sound.Combo4 => "combo_4",
+            Sound.Combo5 => "combo_5",
             _ => throw new ArgumentOutOfRangeException(nameof(sound), sound, "tile_place has one file per variant"),
         };
 

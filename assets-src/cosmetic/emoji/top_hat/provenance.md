@@ -18,6 +18,8 @@ Animated emoji of set 1 (#175), one cell of a concept sheet of nine emoji made w
 
 Proposed for the admin draft, not decided: rarity `epic`, group `greet`, source `shop:offer.emoji_top_hat`. The offer id is a placeholder until the shop record exists (V-15). The repository names no emoji group yet besides `basic` in the example manifests, so set 1 proposes the groups joy, cheer, love, surprise, think, sorry, greet (`--group` of `npm run asset:add`). Static emoji are proposed at `common` and `rare`, animated ones at `rare` and above.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (hat), so `epic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261115-04.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signature was not validated with a C2PA tool.

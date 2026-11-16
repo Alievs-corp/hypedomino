@@ -17,7 +17,9 @@ Animated avatar of set 1 (#171), batch C, a painted portrait made with template 
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 and W-4 have no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; no glow or drop shadow painted in; the expression is friendly
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.avatar_apricot_fan`. The offer id is a placeholder until the shop record exists (V-15). A large prop in front of the costume: the lace fan opens and closes while it flutters about its rivet. Animated avatars stay at `epic` and above as in batches A and B; batch C proposes 5 epic, 3 legendary, 2 mythic, which brings the 30 animated avatars of set 1 to 15 epic, 11 legendary and 4 mythic.
+Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_apricot_fan`. The offer id is a placeholder until the shop record exists (V-15). A large prop in front of the costume: the lace fan opens and closes while it flutters about its rivet. Animated avatars stay at `epic` and above as in batches A and B; batch C proposes 5 epic, 3 legendary, 2 mythic, which brings the 30 animated avatars of set 1 to 15 epic, 11 legendary and 4 mythic.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (fan), so `epic`, was `legendary`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifests
 
