@@ -16,10 +16,17 @@ namespace HypeDomino.Game.Match
         HandEnd = 16,
         MatchWin = 32,
         MatchLose = 64,
+        Combo1 = 128,
+        Combo2 = 256,
+        Combo3 = 512,
+        Combo4 = 1024,
+        Combo5 = 2048,
     }
 
     public sealed class SoundCues
     {
+        public const int ComboSteps = 5;
+
         bool seen;
         bool warned;
         MatchState state;
@@ -67,7 +74,12 @@ namespace HypeDomino.Game.Match
             PlayIf(sounds, MatchSounds.TileDraw, Sound.TileDraw, player);
             PlayIf(sounds, MatchSounds.Pass, Sound.Pass, player);
             PlayIf(sounds, MatchSounds.Score, Sound.Score, player);
+            for (var step = 0; step < ComboSteps; step++)
+                PlayIf(sounds, (MatchSounds)((int)MatchSounds.Combo1 << step), Sound.Combo1 + step, player);
         }
+
+        public static MatchSounds ScoreSoundOf(int step) =>
+            step <= 0 ? MatchSounds.Score : (MatchSounds)((int)MatchSounds.Combo1 << (Math.Min(step, ComboSteps) - 1));
 
         static void PlayIf(MatchSounds sounds, MatchSounds cue, Sound sound, SoundPlayer player)
         {
@@ -84,7 +96,8 @@ namespace HypeDomino.Game.Match
             if (sameHand && tiles > boardTiles) sounds |= MatchSounds.TilePlace;
             if (sameHand && view.State == MatchState.Playing && view.BoneyardSize < boneyard) sounds |= MatchSounds.TileDraw;
             if (sameHand && IsPass(view, tiles)) sounds |= MatchSounds.Pass;
-            if (team != Team.Unspecified && score > teamScore) sounds |= MatchSounds.Score;
+            if (team != Team.Unspecified && score > teamScore)
+                sounds |= ScoreSoundOf(EffectCues.StepOf(score, teamScore, view.HandsPlayed != hand && view.HasLastResult, (int)view.TurnPlacements));
             return sounds;
         }
 

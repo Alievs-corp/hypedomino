@@ -19,6 +19,8 @@ Animated avatar of set 1 (#171), batch B, a painted portrait made with template 
 
 Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.avatar_watch_chain`. The offer id is a placeholder until the shop record exists (V-15). A glint runs along the whole chain while the chain sways. Animated avatars stay at `epic` and above as in batch A; batch B proposes 5 epic, 4 legendary, 1 mythic, the same split as batch A.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 2 animated details (chain glint, chain sway), so `legendary`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifests
 
 Both concept files carry a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signatures were not validated with a C2PA tool.

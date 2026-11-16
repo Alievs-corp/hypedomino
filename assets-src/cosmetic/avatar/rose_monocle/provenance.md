@@ -17,7 +17,9 @@ Animated avatar of set 1 (#171), batch B, a painted portrait made with template 
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 and W-4 have no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; no glow or drop shadow painted in; the expression is friendly; the hair ornament is a small jewelled band, not a crown
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.avatar_rose_monocle`. The offer id is a placeholder until the shop record exists (V-15). A glint crosses the monocle lens, its chain sways and both earrings swing. Animated avatars stay at `epic` and above as in batch A; batch B proposes 5 epic, 4 legendary, 1 mythic, the same split as batch A.
+Proposed for the admin draft, not decided: rarity `mythic`, source `shop:offer.avatar_rose_monocle`. The offer id is a placeholder until the shop record exists (V-15). A glint crosses the monocle lens, its chain sways and both earrings swing. Animated avatars stay at `epic` and above as in batch A; batch B proposes 5 epic, 4 legendary, 1 mythic, the same split as batch A.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 3 animated details (lens glint, chain ripple, earrings (pair)), so `mythic`, was `legendary`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifests
 

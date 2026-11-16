@@ -118,8 +118,37 @@ test("a type or kind without a documented limit is measured and not judged", () 
   const still = itemBudget(inspectItem(makeItem({ "export/static.png": png(2048, 2048) }).directory), budgets);
   assert.equal(still.ok, true);
   assert.match(budgetLine(still), /no size limit set/);
-  const frame = itemBudget(inspectItem(makeItem({ "export/static.png": png(1024, 1024), ...loop(8, 1024) }, { type: "frame" }).directory), budgets);
-  assert.equal(frame.ok, true);
+  const tile = itemBudget(inspectItem(makeItem({ "export/static.png": png(1024, 1024), ...loop(8, 1024) }, { type: "tile" }).directory), budgets);
+  assert.equal(tile.ok, true);
+  assert.match(budgetLine(tile), /no size limit set/);
+});
+
+test("frames are limited static and animated by the owner decision of 2026-11-16", () => {
+  const frame = (files) => itemBudget(inspectItem(makeItem(files, { type: "frame" }).directory), budgets);
+  assert.equal(frame({ "export/static.png": png(512, 512) }).ok, true);
+  const bigStill = frame({ "export/static.png": png(1024, 1024) });
+  assert.equal(bigStill.ok, false);
+  assert.match(budgetLine(bigStill), /limit under 125,000 \(owner decision 2026-11-16.*\): fail/);
+  const animated = frame({ "export/static.png": png(256, 256), ...loop(16, 256) });
+  assert.equal(animated.bytes, 502928);
+  assert.equal(animated.ok, true);
+  assert.match(budgetLine(animated), /limit under 600,000/);
+  assert.equal(frame({ "export/static.png": png(512, 512), ...loop(16, 512) }).ok, false);
+});
+
+test("tables are limited by size and an animated table by its layers", () => {
+  const table = (files) => itemBudget(inspectItem(makeItem(files, { type: "table" }).directory), budgets);
+  assert.equal(table({ "export/static.png": png(1440, 1440) }).ok, true);
+  assert.equal(table({ "export/static.png": png(1500, 1500) }).ok, false);
+  const base = loop(1, 64, "export/layer/base");
+  const animated = table({ "export/static.png": png(64, 64), ...base, ...loop(10, 64, "export/layer/motion") });
+  assert.deepEqual([animated.layers, animated.animatedLayers, animated.ok], [2, 1, true]);
+  assert.match(budgetLine(animated), /limit under 5,000,000, 2 layers \(1 animated\), at most 2 \(1 animated\)/);
+  const threeLayers = table({ "export/static.png": png(64, 64), ...base, ...loop(1, 64, "export/layer/rim"), ...loop(10, 64, "export/layer/motion") });
+  assert.equal(threeLayers.ok, false);
+  const twoAnimated = table({ "export/static.png": png(64, 64), ...loop(4, 64, "export/layer/cloth"), ...loop(10, 64, "export/layer/motion") });
+  assert.equal(twoAnimated.ok, false);
+  assert.equal(table({ "export/static.png": png(1200, 1200), ...base, ...loop(10, 1200, "export/layer/motion") }).ok, false);
 });
 
 test("emoji are limited static or animated (#175)", () => {

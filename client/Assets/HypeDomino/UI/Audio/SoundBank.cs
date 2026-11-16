@@ -7,7 +7,7 @@ namespace HypeDomino.UI.Audio
     {
         public const string ResourceName = "SoundBank";
         public const int TilePlaceVariants = 4;
-        public const int SoundCount = (int)Sound.UiClick + 1;
+        public const int SoundCount = (int)Sound.Combo5 + 1;
         public const int MusicCount = (int)Music.Match + 1;
 
         [SerializeField] AudioClip[] tilePlace = Array.Empty<AudioClip>();

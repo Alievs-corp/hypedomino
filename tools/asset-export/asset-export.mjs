@@ -80,19 +80,33 @@ export function inspectItem(directory) {
   return { ...item, errors, still, loops };
 }
 
+function layerCounts(item) {
+  const layers = item.loops.filter(({ slot }) => slot.startsWith("layer/"));
+  return { layers: layers.length, animatedLayers: layers.filter(({ frames }) => frames.length > 1).length };
+}
+
 export function itemBudget(item, budgets) {
-  const rule = budgets.types[item.type];
-  const block = rule?.astcBlock ?? budgets.astcBlock;
+  const typeRule = budgets.types[item.type];
+  const rule = typeRule?.[item.loops.length > 0 ? "animated" : "static"];
+  const block = typeRule?.astcBlock ?? budgets.astcBlock;
   const sprites = [item.still, ...item.loops.flatMap(({ frames }) => frames.map(({ png }) => png))];
   const bytes = sprites.reduce((sum, png) => sum + astcBytes(png.width, png.height, block), 0);
-  const applies = Boolean(rule) && (item.loops.length > 0 || !rule.animatedOnly);
-  return { id: item.id, sprites: sprites.length, block, bytes, maxBytes: applies ? rule.maxBytes : undefined, source: applies ? rule.source : undefined, ok: !applies || bytes < rule.maxBytes };
+  const { layers, animatedLayers } = layerCounts(item);
+  const measured = { id: item.id, sprites: sprites.length, block, bytes, layers, animatedLayers };
+  if (!rule) return { ...measured, ok: true };
+  const layersOk = (rule.maxLayers === undefined || layers <= rule.maxLayers) && (rule.maxAnimatedLayers === undefined || animatedLayers <= rule.maxAnimatedLayers);
+  return { ...measured, maxBytes: rule.maxBytes, maxLayers: rule.maxLayers, maxAnimatedLayers: rule.maxAnimatedLayers, source: rule.source, ok: bytes < rule.maxBytes && layersOk };
+}
+
+function layerText(budget) {
+  if (budget.maxLayers === undefined && budget.maxAnimatedLayers === undefined) return "";
+  return `, ${budget.layers} layers (${budget.animatedLayers} animated), at most ${budget.maxLayers ?? "any"} (${budget.maxAnimatedLayers ?? "any"} animated)`;
 }
 
 export function budgetLine(budget) {
   const measured = `${budget.id}: ${budget.sprites} sprites, ASTC ${budget.block} estimate ${budget.bytes.toLocaleString("en-US")} bytes`;
   if (budget.maxBytes === undefined) return `${measured}, no size limit set for this type and kind (docs/asset-workflow.md O-5)`;
-  return `${measured}, limit under ${budget.maxBytes.toLocaleString("en-US")} (${budget.source}): ${budget.ok ? "pass" : "fail"}`;
+  return `${measured}, limit under ${budget.maxBytes.toLocaleString("en-US")}${layerText(budget)} (${budget.source}): ${budget.ok ? "pass" : "fail"}`;
 }
 
 export function readProvenance(text) {
