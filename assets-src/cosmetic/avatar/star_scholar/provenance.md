@@ -57,6 +57,34 @@ The script is the set 1 script of `avatar.silk_weaver` with one added step: grey
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `star_scholar: background [212.0, 212.0, 213.0], pockets 1415 px, crop (83, -178, 1219, 958), canvas 512`
+- Crop `(129, 0, 1174, 1045)` to `(83, -178, 1219, 958)` on the concept
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.170 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/star_scholar/work/star_scholar_cleanup.py star_scholar assets-src/cosmetic/avatar/star_scholar/concept/20261114-01.png assets-src/cosmetic/avatar/star_scholar/work assets-src/cosmetic/avatar/star_scholar/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 2 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/star_scholar` after the re-crop: 1 sprites, ASTC 6x6 estimate 118,336 bytes, no size limit set for this type and kind (docs/asset-workflow.md O-5).
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/static.png | `9aa6dd0a2410f2858fad1d8f9278930e11afd5f61fa21f4580e5bca350e83d6f` |
+| work/star_scholar_cleanup.py | `242a131f47bcbee479780b345db58ff23706fd0567bf547fd4df51ca0c99f999` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -70,6 +98,7 @@ Not done: W-6. `npm run asset:add` refuses the item until the Cultural review li
 |---|---|---|
 | 2026-11-14 | concept/20261114-01.png | P-3 with the style key, the only prompt of the conversation, quoted below. Sent 12:22:24 UTC by Claude Code; `c2pa.created` 2026-11-14T12:22:36Z |
 | 2026-11-14 | work/star_scholar_master.png, export/static.png | `star_scholar_cleanup.py` on the concept |
+| 2026-11-16 | export/static.png, work/star_scholar_cleanup.py | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(129, 0, 1174, 1045)` to `(83, -178, 1219, 958)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261114-01.png`, verbatim:
 
