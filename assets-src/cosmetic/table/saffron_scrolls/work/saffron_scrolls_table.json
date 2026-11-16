@@ -5,6 +5,7 @@
     720
   ],
   "seed": 17412,
+  "edges": {"depth": 300},
   "back": {
     "concept": "concept/20261115-01.png"
   },
