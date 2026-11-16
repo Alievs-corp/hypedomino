@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HypeDomino.Net.Api;
 using HypeDomino.UI.Shop;
 using UnityEngine;
@@ -63,14 +64,16 @@ namespace HypeDomino.Game.Shop
 
     public readonly struct ShopBuyResult
     {
-        ShopBuyResult(ShopBuyOutcome outcome, PurchaseReply purchase = null)
+        ShopBuyResult(ShopBuyOutcome outcome, PurchaseReply purchase = null, IReadOnlyDictionary<string, long> duplicates = null)
         {
             Outcome = outcome;
             Purchase = purchase;
+            Duplicates = duplicates ?? GrantDuplicates.None;
         }
 
         public ShopBuyOutcome Outcome { get; }
         public PurchaseReply Purchase { get; }
+        public IReadOnlyDictionary<string, long> Duplicates { get; }
         public string MessageKey => ShopBuyKeys.Of(Outcome);
 
         public static ShopBuyResult From(ApiReply reply) => reply.Outcome switch
@@ -86,7 +89,8 @@ namespace HypeDomino.Game.Shop
         static ShopBuyResult Bought(string body)
         {
             var purchase = Parse(body);
-            return purchase == null || string.IsNullOrEmpty(purchase.offer) ? new(ShopBuyOutcome.Failed) : new(ShopBuyOutcome.Bought, purchase);
+            if (purchase == null || string.IsNullOrEmpty(purchase.offer) || !GrantDuplicates.TryRead(body, out var duplicates)) return new(ShopBuyOutcome.Failed);
+            return new(ShopBuyOutcome.Bought, purchase, duplicates);
         }
 
         static PurchaseReply Parse(string body)
