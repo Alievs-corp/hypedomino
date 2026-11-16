@@ -1,4 +1,5 @@
 using HypeDomino.Core.Pooling;
+using HypeDomino.UI.Effects;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using Unity.Profiling;
@@ -10,11 +11,14 @@ namespace HypeDomino.UI.Emoji
     {
         public const string ProfilerMarkerName = "Effect.emoji";
 
+        const float MillisecondsPerSecond = 1000f;
+
         static readonly ProfilerMarker TickMarker = new(ProfilerMarkerName);
 
         PrefabPool<EmojiPopup> pool;
         RectTransform[] seats;
         EmojiPopup[] live;
+        EffectPlayer effects;
         EffectLevel level = EffectLevel.Medium;
         bool reduceMotion;
 
@@ -36,8 +40,11 @@ namespace HypeDomino.UI.Emoji
             reduceMotion = reduce;
         }
 
+        public void Attach(EffectPlayer player) => effects = player;
+
         public void Show(int seat, LoopArt art, float now)
         {
+            if (effects != null) effects.Play(EffectRequest.On(TokenEffectKind.Emoji, seats[seat], now * MillisecondsPerSecond));
             var popup = live[seat];
             if (popup == null)
             {

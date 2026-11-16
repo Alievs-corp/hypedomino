@@ -6,7 +6,8 @@ namespace HypeDomino.UI.Board
     public static class TileFaces
     {
         public const int SetSize = 28;
-        const int Values = 7;
+        public const int HighestValue = 6;
+        const int Values = HighestValue + 1;
 
         public static int Index(Domino tile)
         {
