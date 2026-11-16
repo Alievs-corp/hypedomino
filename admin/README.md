@@ -43,7 +43,7 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 ## Reward bundles
 
-`/rewards` (#138, `docs/admin.md` 5.4) reads `GET /admin/reward-bundles`: every bundle the published config grants, with its contents, guide value and uses. It searches ids, items, medals and objects, and filters by the domain using a bundle or by ids holding differing content. Bundles live inside the objects that grant them, so an edit (`PUT /admin/reward-bundles/{id}`) writes the new content to every holder and publishes each affected domain in one transaction. The editor lists those objects and needs a confirmation and a reason. A domain's own rules still apply, so one refusal, such as a running pass season, stops the whole edit. A bundle held by rank rewards, daily login or promo codes, or an id holding differing content, is not editable here.
+`/rewards` (#138, `docs/admin.md` 5.4) reads `GET /admin/reward-bundles`: every bundle the published config grants, with its contents, guide value and uses. The API searches ids, items, medals and objects, filters by the domain using a bundle or by ids holding differing content, and returns 50 bundles a page with a "Next page" link (#148). Bundles live inside the objects that grant them, so an edit (`PUT /admin/reward-bundles/{id}`) writes the new content to every holder and publishes each affected domain in one transaction. The editor lists those objects and needs a confirmation and a reason. A domain's own rules still apply, so one refusal, such as a running pass season, stops the whole edit. A bundle held by rank rewards, daily login or promo codes, or an id holding differing content, is not editable here.
 
 ## Shop offers
 

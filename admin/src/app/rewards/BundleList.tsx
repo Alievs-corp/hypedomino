@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BundleEditor } from "./BundleEditor";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { emptyBundleFilter, filteredBundles, useLabel, usedDomains, type RewardBundle } from "@/rewards/bundles";
+import { bundleDomains, useLabel, type BundleQuery, type RewardBundle } from "@/rewards/bundles";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -19,25 +19,23 @@ const domainLabel: Record<string, MessageKey> = {
   promo_template: "rewards.domain.promo_template",
 };
 
-export function BundleList({ bundles, canEdit }: { bundles: RewardBundle[]; canEdit: boolean }) {
+export function BundleList({ bundles, query, canEdit }: { bundles: RewardBundle[]; query: BundleQuery; canEdit: boolean }) {
   const t = useTranslator();
-  const [filter, setFilter] = useState(emptyBundleFilter);
   const [selected, setSelected] = useState("");
   const label = (domain: string) => (domainLabel[domain] ? t(domainLabel[domain]) : domain);
-  const visible = filteredBundles(bundles, filter);
   const editing = bundles.find((bundle) => bundle.id === selected && bundle.editable);
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end gap-3">
+      <form method="get" action="/rewards" className="flex flex-wrap items-end gap-3">
         <label className={labelClass}>
           {t("rewards.search")}
-          <input value={filter.query} onChange={(event) => setFilter({ ...filter, query: event.target.value })} className={fieldClass} />
+          <input name="q" defaultValue={query.q} className={fieldClass} />
         </label>
         <label className={labelClass}>
           <span>{t("rewards.used_in")}</span>
-          <select aria-label={t("rewards.used_in")} value={filter.domain} onChange={(event) => setFilter({ ...filter, domain: event.target.value })} className={fieldClass}>
+          <select name="domain" aria-label={t("rewards.used_in")} defaultValue={query.domain} className={fieldClass}>
             <option value="">{t("rewards.all")}</option>
-            {usedDomains(bundles).map((domain) => (
+            {bundleDomains.map((domain) => (
               <option key={domain} value={domain}>
                 {label(domain)}
               </option>
@@ -45,14 +43,13 @@ export function BundleList({ bundles, canEdit }: { bundles: RewardBundle[]; canE
           </select>
         </label>
         <label className="flex items-center gap-2 text-sm text-text-secondary">
-          <input type="checkbox" checked={filter.onlyDiffering} onChange={(event) => setFilter({ ...filter, onlyDiffering: event.target.checked })} />
+          <input type="checkbox" name="differing" value="true" defaultChecked={query.differing === "true"} />
           {t("rewards.only_differing")}
         </label>
-      </div>
-      <p className="text-sm text-text-muted">
-        {t("rewards.count")}: {visible.length}
-      </p>
-      <table className="w-full text-sm">
+        <button type="submit" className="rounded-md bg-primary px-4 py-2 font-semibold text-on-primary">
+          {t("queues.search")}
+        </button>
+      </form>      <table className="w-full text-sm">
         <thead className="text-left text-text-muted">
           <tr>
             <th className="py-1 pr-3">{t("rewards.id")}</th>
@@ -64,7 +61,7 @@ export function BundleList({ bundles, canEdit }: { bundles: RewardBundle[]; canE
           </tr>
         </thead>
         <tbody>
-          {visible.map((bundle) => (
+          {bundles.map((bundle) => (
             <tr key={`${bundle.id}:${useLabel(bundle.usedBy[0])}`} className="border-t border-surface align-top">
               <td className="py-1 pr-3 font-mono break-all">
                 {bundle.id}
@@ -99,7 +96,7 @@ export function BundleList({ bundles, canEdit }: { bundles: RewardBundle[]; canE
           ))}
         </tbody>
       </table>
-      {visible.length === 0 && <p className="text-sm text-text-secondary">{t("rewards.no_match")}</p>}
+      {bundles.length === 0 && <p className="text-sm text-text-secondary">{t("rewards.no_match")}</p>}
       {canEdit && editing && <BundleEditor key={`${editing.id}:${editing.revision}`} bundle={editing} domainLabel={label} />}
     </section>
   );

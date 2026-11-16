@@ -21,7 +21,6 @@ import (
 
 const (
 	MaxPromoBatchCount = 10000
-	MaxPromoListed     = 200
 	PromoPageSize      = 50
 	PromoPageMax       = 200
 

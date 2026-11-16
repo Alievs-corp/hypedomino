@@ -1,3 +1,4 @@
+import type { SearchParams } from "../audit/query.ts";
 import type { MessageKey } from "../i18n/translate.ts";
 
 export type BundleUse = { domain: string; object: string; detail?: string };
@@ -18,26 +19,40 @@ export type RewardBundle = {
 
 export type BundleEdit = { coins: number; crystals: number; cosmetics: string[]; medals: string[]; passXp: number };
 
-export type BundleFilter = { query: string; domain: string; onlyDiffering: boolean };
+export const bundlePageSize = 50;
 
-export const emptyBundleFilter: BundleFilter = { query: "", domain: "", onlyDiffering: false };
+export const bundleDomains = ["shop", "pass", "missions", "rating", "daily_login", "promo", "promo_template"] as const;
 
-function searchable(bundle: RewardBundle): string[] {
-  return [bundle.id, ...(bundle.cosmetics ?? []), ...(bundle.medals ?? []), ...bundle.usedBy.map((use) => use.object)];
+export type BundleQuery = { q: string; domain: (typeof bundleDomains)[number] | ""; differing: "true" | ""; after: string };
+
+function single(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
 }
 
-export function filteredBundles(bundles: RewardBundle[], filter: BundleFilter): RewardBundle[] {
-  const query = filter.query.trim().toLowerCase();
-  return bundles.filter(
-    (bundle) =>
-      (!filter.onlyDiffering || bundle.differs) &&
-      (!filter.domain || bundle.usedBy.some((use) => use.domain === filter.domain)) &&
-      (!query || searchable(bundle).some((value) => value.toLowerCase().includes(query))),
-  );
+export function readBundleQuery(params: SearchParams): BundleQuery {
+  return {
+    q: single(params.q),
+    domain: bundleDomains.find((domain) => domain === single(params.domain)) ?? "",
+    differing: single(params.differing) === "true" ? "true" : "",
+    after: single(params.after),
+  };
 }
 
-export function usedDomains(bundles: RewardBundle[]): string[] {
-  return [...new Set(bundles.flatMap((bundle) => bundle.usedBy.map((use) => use.domain)))].sort();
+function searchOf(query: BundleQuery): URLSearchParams {
+  return new URLSearchParams(Object.entries(query).filter(([, value]) => value));
+}
+
+export function rewardBundlesApiPath(query: BundleQuery): string {
+  const search = searchOf(query);
+  search.set("limit", String(bundlePageSize));
+  return `/admin/reward-bundles?${search}`;
+}
+
+export function nextRewardsHref(query: BundleQuery, ids: readonly string[]): string | null {
+  if (ids.length < bundlePageSize) {
+    return null;
+  }
+  return `/rewards?${searchOf({ ...query, after: ids[ids.length - 1] })}`;
 }
 
 export function useLabel(use: BundleUse): string {
