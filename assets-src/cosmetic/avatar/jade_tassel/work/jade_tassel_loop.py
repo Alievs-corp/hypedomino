@@ -8,30 +8,36 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "jade_tassel"
-CROP = (21, -134, 1193, 1038)
+CANONICAL = "20261116-01.png"
+BLINK_EDIT = "20261116-02.png"
+CROP = (39, -175, 1211, 997)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (384, 327, 304, 267)
+HEAD = (388, 335, 250, 215)
 HEAD_FALLOFF = 0.3
-NECK_Y = 584
-NECK_BAND = 37
-SHOULDER_Y = 695
+NECK_Y = 545
+NECK_BAND = 34
+SHOULDER_Y = 670
 HEAD_RIDE = 0.4
 BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
 NOD = 1.84
-EYES = [(399, 384, 42, 24), (527, 366, 39, 24)]
+EYES = [(378, 356, 36, 20), (487, 346, 33, 18)]
 EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "tassel_left", "polygon": [(137, 516), (191, 516), (196, 566), (204, 651), (125, 651), (132, 566)], "pivot": (164, 513), "length": 110, "swing": 7.0, "lag": 0.6, "behind": "clear"},
-    {"name": "tassel_right", "polygon": [(621, 518), (671, 518), (675, 566), (678, 651), (618, 651), (622, 566)], "pivot": (646, 516), "length": 110, "swing": 7.0, "lag": 0.9, "behind": "clear"},
+    {"name": "tassel_left", "polygon": [(194, 451), (206, 451), (214, 462), (217, 488), (219, 510), (226, 576), (183, 576), (185, 510), (187, 488), (191, 462)], "pivot": (200, 451), "length": 100, "swing": 7.0, "lag": 0.6, "behind": "clear"},
+    {"name": "tassel_right", "polygon": [(571, 446), (583, 446), (590, 455), (593, 478), (595, 500), (599, 564), (555, 564), (559, 500), (562, 478), (565, 455)], "pivot": (577, 446), "length": 100, "swing": 7.0, "lag": 0.9, "behind": "clear"},
 ]
 GLINTS = []
+GLINT_PEAK = 0.55
+GLINT_FLOOR = 0.3
+RIPPLES = [
+]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
 FRAME_NAME = re.compile(r"^\d{4}\.png$")
@@ -147,6 +153,9 @@ def fill_holes(premultiplied, hole):
         blurred = np.dstack([ndimage.gaussian_filter(premultiplied[..., c] * known, sigma) for c in range(4)])
         reliable = weight > 0.05
         estimate = np.where(reliable[..., None], blurred / np.maximum(weight, 1e-6)[..., None], estimate)
+    cover = estimate[..., 3]
+    solid = smoothstep(0.35, 0.65, cover)
+    estimate = np.dstack([estimate[..., :3] / np.maximum(cover, 1e-6)[..., None] * solid[..., None], solid])
     return np.where(hole[..., None], estimate, premultiplied)
 
 
@@ -187,7 +196,8 @@ def swayed(layer, part, frame, xs, ys):
     dx, dy = xs - px - shift_x[0], ys - py - shift_y[0]
     bend = angle * smoothstep(0, part["length"], np.hypot(dx, dy))
     cos, sin = np.cos(-bend), np.sin(-bend)
-    return sample(layer, px + cos * dx - sin * dy, py + sin * dx + cos * dy)
+    fold = 1 - part.get("flap", 0.0) * (1 - math.cos(2 * t)) / 2
+    return sample(layer, px + (cos * dx - sin * dy) / fold, py + sin * dx + cos * dy)
 
 
 def glint(frame, xs, ys):
@@ -203,7 +213,7 @@ def glint(frame, xs, ys):
         centre = -1.6 + 3.2 * progress
         streak = np.exp(-((along - centre) / 0.28) ** 2)
         spot = np.exp(-(((xs - cx + 0.25 * rx) / (0.22 * rx)) ** 2 + ((ys - cy + 0.25 * ry) / (0.22 * ry)) ** 2))
-        alpha = np.clip(0.55 * strength * gem * np.maximum(streak, spot * strength), 0, 1)
+        alpha = np.clip(GLINT_PEAK * strength * gem * np.maximum(streak, spot * strength), 0, 1)
         colour = np.array(GLINT_COLOUR) / 255
         layer = np.dstack([colour * alpha[..., None] + layer[..., :3] * (1 - alpha[..., None]), alpha + layer[..., 3] * (1 - alpha)])
     return layer
@@ -230,11 +240,24 @@ def displacement(frame, xs, ys):
     return breath_x + head * head_x, breath_y + head * head_y
 
 
-def warp(premultiplied, frame, xs, ys):
-    source_x, source_y = xs, ys
+def ripple_fields(ys):
+    return [polygon_mask(ripple["polygon"], ripple["feather"], 0) * smoothstep(ripple["top"], ripple["top"] + ripple["ramp"], ys) for ripple in RIPPLES]
+
+
+def ripple_flow(frame, ys, fields):
+    t = phase(frame)
+    flow = np.zeros_like(ys)
+    for ripple, field in zip(RIPPLES, fields):
+        wave = 2 * math.pi * ys / ripple["wavelength"]
+        flow = flow + ripple["amplitude"] * field * (np.sin(wave - ripple["cycles"] * t) - np.sin(wave))
+    return flow
+
+
+def warp(premultiplied, frame, xs, ys, flow):
+    source_x, source_y = xs - flow, ys
     for _ in range(3):
         dx, dy = displacement(frame, source_x, source_y)
-        source_x, source_y = xs - dx, ys - dy
+        source_x, source_y = xs - flow - dx, ys - dy
     return sample(premultiplied, source_x, source_y)
 
 
@@ -255,11 +278,12 @@ def to_image(premultiplied):
     return Image.fromarray(rgba.round().astype(np.uint8), mode="RGBA")
 
 
-def render(frame, bases, layers, xs, ys, ring):
+def render(frame, bases, layers, xs, ys, ring, fields, shine):
     weight = BLINK.get(frame, 0.0)
-    image = warp(bases[0] + weight * (bases[1] - bases[0]), frame, xs, ys)
+    flow = ripple_flow(frame, ys, fields)
+    image = warp(bases[0] + weight * (bases[1] - bases[0]), frame, xs, ys, flow)
     if GLINTS:
-        image = over(warp(glint(frame, xs, ys), frame, xs, ys), image)
+        image = over(warp(glint(frame, xs, ys) * shine[..., None], frame, xs, ys, flow), image)
     for layer, part in layers:
         image = over(swayed(layer, part, frame, xs, ys), image)
     return to_image(downsample(image * ring[..., None]))
@@ -282,8 +306,8 @@ def main():
     parser.add_argument("work")
     parser.add_argument("export")
     arguments = parser.parse_args()
-    canonical = np.asarray(Image.open(os.path.join(arguments.concept, "20261115-01.png")).convert("RGB")).astype(np.float64) / 255
-    edit = np.asarray(Image.open(os.path.join(arguments.concept, "20261115-02.png")).convert("RGB").resize(canonical.shape[1::-1], Image.LANCZOS)).astype(np.float64) / 255
+    canonical = np.asarray(Image.open(os.path.join(arguments.concept, CANONICAL)).convert("RGB")).astype(np.float64) / 255
+    edit = np.asarray(Image.open(os.path.join(arguments.concept, BLINK_EDIT)).convert("RGB").resize(canonical.shape[1::-1], Image.LANCZOS)).astype(np.float64) / 255
     aligned, params, before, after = register(canonical, edit)
     portrait = load_rgba(os.path.join(arguments.work, f"{SLUG}_portrait.png"))
     xs, ys = grid(SUPER)
@@ -299,15 +323,17 @@ def main():
     for layer, part in layers:
         save_layer(layer, os.path.join(arguments.work, f"{SLUG}_{part['name']}.png"))
     ring = circle(xs, ys)
+    fields = ripple_fields(ys)
+    shine = smoothstep(GLINT_FLOOR, GLINT_FLOOR + 0.2, portrait[..., :3].mean(axis=2))
     anim = os.path.join(arguments.export, "anim")
     clear_frames(anim)
     for index in range(1, FRAMES + 1):
-        frame = render(index - 1, (base_open, base_closed), layers, xs, ys, ring)
+        frame = render(index - 1, (base_open, base_closed), layers, xs, ys, ring, fields, shine)
         frame.save(os.path.join(anim, f"{index:04d}.png"))
         if index == STATIC_FRAME:
             frame.save(os.path.join(arguments.export, "static.png"))
     shift = ", ".join(f"{value:.4f}" for value in params)
-    print(f"{SLUG}_loop: blink edit registered (tx, ty, scale, angle) = ({shift}), residual {before:.5f} -> {after:.5f}, eye colour offset {np.round(offset * 255, 1).tolist()}, parts {len(layers)}, filled {int(hole.sum())} px")
+    print(f"{SLUG}_loop: blink edit registered (tx, ty, scale, angle) = ({shift}), residual {before:.5f} -> {after:.5f}, eye colour offset {np.round(offset * 255, 1).tolist()}, parts {len(layers)}, ripples {len(RIPPLES)}, filled {int(hole.sum())} px")
     print(f"{SLUG}_loop: wrote {FRAMES} frames and the static (frame {STATIC_FRAME}) at {CANVAS}x{CANVAS}")
 
 

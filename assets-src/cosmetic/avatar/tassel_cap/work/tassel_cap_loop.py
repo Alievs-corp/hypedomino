@@ -8,29 +8,35 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "tassel_cap"
-CROP = (29, -182, 1201, 990)
+CANONICAL = "20261116-01.png"
+BLINK_EDIT = "20261116-02.png"
+CROP = (0, -192, 1172, 980)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (394, 363, 216, 244)
+HEAD = (385, 345, 240, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 602
-NECK_BAND = 37
-SHOULDER_Y = 708
+NECK_Y = 575
+NECK_BAND = 34
+SHOULDER_Y = 690
 HEAD_RIDE = 0.4
 BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
 NOD = 1.84
-EYES = [(364, 393, 40, 23), (480, 377, 39, 23)]
+EYES = [(358, 372, 32, 18), (472, 356, 31, 17)]
 EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "tassel", "polygon": [(183, 379), (204, 379), (210, 423), (219, 441), (227, 506), (234, 609), (155, 610), (160, 506), (169, 441), (176, 423)], "pivot": (194, 377), "length": 184, "swing": 4.0, "lag": 0.4, "grow": 3, "behind": "fill"},
+    {"name": "tassel", "polygon": [(236, 356), (248, 356), (250, 415), (256, 425), (259, 450), (262, 480), (276, 540), (282, 595), (270, 606), (214, 606), (201, 595), (206, 540), (220, 480), (223, 450), (228, 425), (233, 415)], "pivot": (242, 356), "length": 170, "swing": 4.0, "lag": 0.4, "grow": 3, "behind": "fill"},
 ]
 GLINTS = []
+GLINT_PEAK = 0.55
+GLINT_FLOOR = 0.3
+RIPPLES = [
+]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
 FRAME_NAME = re.compile(r"^\d{4}\.png$")
@@ -146,6 +152,9 @@ def fill_holes(premultiplied, hole):
         blurred = np.dstack([ndimage.gaussian_filter(premultiplied[..., c] * known, sigma) for c in range(4)])
         reliable = weight > 0.05
         estimate = np.where(reliable[..., None], blurred / np.maximum(weight, 1e-6)[..., None], estimate)
+    cover = estimate[..., 3]
+    solid = smoothstep(0.35, 0.65, cover)
+    estimate = np.dstack([estimate[..., :3] / np.maximum(cover, 1e-6)[..., None] * solid[..., None], solid])
     return np.where(hole[..., None], estimate, premultiplied)
 
 
@@ -186,7 +195,8 @@ def swayed(layer, part, frame, xs, ys):
     dx, dy = xs - px - shift_x[0], ys - py - shift_y[0]
     bend = angle * smoothstep(0, part["length"], np.hypot(dx, dy))
     cos, sin = np.cos(-bend), np.sin(-bend)
-    return sample(layer, px + cos * dx - sin * dy, py + sin * dx + cos * dy)
+    fold = 1 - part.get("flap", 0.0) * (1 - math.cos(2 * t)) / 2
+    return sample(layer, px + (cos * dx - sin * dy) / fold, py + sin * dx + cos * dy)
 
 
 def glint(frame, xs, ys):
@@ -202,7 +212,7 @@ def glint(frame, xs, ys):
         centre = -1.6 + 3.2 * progress
         streak = np.exp(-((along - centre) / 0.28) ** 2)
         spot = np.exp(-(((xs - cx + 0.25 * rx) / (0.22 * rx)) ** 2 + ((ys - cy + 0.25 * ry) / (0.22 * ry)) ** 2))
-        alpha = np.clip(0.55 * strength * gem * np.maximum(streak, spot * strength), 0, 1)
+        alpha = np.clip(GLINT_PEAK * strength * gem * np.maximum(streak, spot * strength), 0, 1)
         colour = np.array(GLINT_COLOUR) / 255
         layer = np.dstack([colour * alpha[..., None] + layer[..., :3] * (1 - alpha[..., None]), alpha + layer[..., 3] * (1 - alpha)])
     return layer
@@ -229,11 +239,24 @@ def displacement(frame, xs, ys):
     return breath_x + head * head_x, breath_y + head * head_y
 
 
-def warp(premultiplied, frame, xs, ys):
-    source_x, source_y = xs, ys
+def ripple_fields(ys):
+    return [polygon_mask(ripple["polygon"], ripple["feather"], 0) * smoothstep(ripple["top"], ripple["top"] + ripple["ramp"], ys) for ripple in RIPPLES]
+
+
+def ripple_flow(frame, ys, fields):
+    t = phase(frame)
+    flow = np.zeros_like(ys)
+    for ripple, field in zip(RIPPLES, fields):
+        wave = 2 * math.pi * ys / ripple["wavelength"]
+        flow = flow + ripple["amplitude"] * field * (np.sin(wave - ripple["cycles"] * t) - np.sin(wave))
+    return flow
+
+
+def warp(premultiplied, frame, xs, ys, flow):
+    source_x, source_y = xs - flow, ys
     for _ in range(3):
         dx, dy = displacement(frame, source_x, source_y)
-        source_x, source_y = xs - dx, ys - dy
+        source_x, source_y = xs - flow - dx, ys - dy
     return sample(premultiplied, source_x, source_y)
 
 
@@ -254,11 +277,12 @@ def to_image(premultiplied):
     return Image.fromarray(rgba.round().astype(np.uint8), mode="RGBA")
 
 
-def render(frame, bases, layers, xs, ys, ring):
+def render(frame, bases, layers, xs, ys, ring, fields, shine):
     weight = BLINK.get(frame, 0.0)
-    image = warp(bases[0] + weight * (bases[1] - bases[0]), frame, xs, ys)
+    flow = ripple_flow(frame, ys, fields)
+    image = warp(bases[0] + weight * (bases[1] - bases[0]), frame, xs, ys, flow)
     if GLINTS:
-        image = over(warp(glint(frame, xs, ys), frame, xs, ys), image)
+        image = over(warp(glint(frame, xs, ys) * shine[..., None], frame, xs, ys, flow), image)
     for layer, part in layers:
         image = over(swayed(layer, part, frame, xs, ys), image)
     return to_image(downsample(image * ring[..., None]))
@@ -281,8 +305,8 @@ def main():
     parser.add_argument("work")
     parser.add_argument("export")
     arguments = parser.parse_args()
-    canonical = np.asarray(Image.open(os.path.join(arguments.concept, "20261115-01.png")).convert("RGB")).astype(np.float64) / 255
-    edit = np.asarray(Image.open(os.path.join(arguments.concept, "20261115-02.png")).convert("RGB").resize(canonical.shape[1::-1], Image.LANCZOS)).astype(np.float64) / 255
+    canonical = np.asarray(Image.open(os.path.join(arguments.concept, CANONICAL)).convert("RGB")).astype(np.float64) / 255
+    edit = np.asarray(Image.open(os.path.join(arguments.concept, BLINK_EDIT)).convert("RGB").resize(canonical.shape[1::-1], Image.LANCZOS)).astype(np.float64) / 255
     aligned, params, before, after = register(canonical, edit)
     portrait = load_rgba(os.path.join(arguments.work, f"{SLUG}_portrait.png"))
     xs, ys = grid(SUPER)
@@ -298,15 +322,17 @@ def main():
     for layer, part in layers:
         save_layer(layer, os.path.join(arguments.work, f"{SLUG}_{part['name']}.png"))
     ring = circle(xs, ys)
+    fields = ripple_fields(ys)
+    shine = smoothstep(GLINT_FLOOR, GLINT_FLOOR + 0.2, portrait[..., :3].mean(axis=2))
     anim = os.path.join(arguments.export, "anim")
     clear_frames(anim)
     for index in range(1, FRAMES + 1):
-        frame = render(index - 1, (base_open, base_closed), layers, xs, ys, ring)
+        frame = render(index - 1, (base_open, base_closed), layers, xs, ys, ring, fields, shine)
         frame.save(os.path.join(anim, f"{index:04d}.png"))
         if index == STATIC_FRAME:
             frame.save(os.path.join(arguments.export, "static.png"))
     shift = ", ".join(f"{value:.4f}" for value in params)
-    print(f"{SLUG}_loop: blink edit registered (tx, ty, scale, angle) = ({shift}), residual {before:.5f} -> {after:.5f}, eye colour offset {np.round(offset * 255, 1).tolist()}, parts {len(layers)}, filled {int(hole.sum())} px")
+    print(f"{SLUG}_loop: blink edit registered (tx, ty, scale, angle) = ({shift}), residual {before:.5f} -> {after:.5f}, eye colour offset {np.round(offset * 255, 1).tolist()}, parts {len(layers)}, ripples {len(RIPPLES)}, filled {int(hole.sum())} px")
     print(f"{SLUG}_loop: wrote {FRAMES} frames and the static (frame {STATIC_FRAME}) at {CANVAS}x{CANVAS}")
 
 
