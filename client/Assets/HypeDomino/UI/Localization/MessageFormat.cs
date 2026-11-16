@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -9,25 +10,35 @@ namespace HypeDomino.UI.Localization
         const string PluralKind = "plural";
         const string SelectKind = "select";
         const char ExactPrefix = '=';
+        const string DurationKeyPrefix = "duration.";
+        const string DaysName = "days";
+        const string HoursName = "hours";
+        const string MinutesName = "minutes";
+        const string SecondsName = "seconds";
 
         readonly string source;
         readonly string textLanguage;
         readonly string numberLanguage;
         readonly IReadOnlyDictionary<string, object> args;
+        readonly Func<string, string> unitPattern;
         readonly StringBuilder output = new();
         int pos;
 
-        MessageFormat(string source, string textLanguage, string numberLanguage, IReadOnlyDictionary<string, object> args)
+        MessageFormat(string source, string textLanguage, string numberLanguage, IReadOnlyDictionary<string, object> args, Func<string, string> unitPattern)
         {
             this.source = source;
             this.textLanguage = textLanguage;
             this.numberLanguage = numberLanguage;
             this.args = args;
+            this.unitPattern = unitPattern;
         }
 
-        public static bool TryFormat(string pattern, string textLanguage, string numberLanguage, IReadOnlyDictionary<string, object> args, out string text)
+        public static bool TryFormat(string pattern, string textLanguage, string numberLanguage, IReadOnlyDictionary<string, object> args, out string text) =>
+            TryFormat(pattern, textLanguage, numberLanguage, args, null, out text);
+
+        public static bool TryFormat(string pattern, string textLanguage, string numberLanguage, IReadOnlyDictionary<string, object> args, Func<string, string> unitPattern, out string text)
         {
-            var format = new MessageFormat(pattern ?? string.Empty, textLanguage, numberLanguage, args);
+            var format = new MessageFormat(pattern ?? string.Empty, textLanguage, numberLanguage, args, unitPattern);
             var ok = format.Message(true, null) && format.pos == format.source.Length;
             text = ok ? format.output.ToString() : null;
             return ok;
@@ -36,17 +47,72 @@ namespace HypeDomino.UI.Localization
         public static string Number(long number, string language)
         {
             var digits = number.ToString(CultureInfo.InvariantCulture);
-            var separator = GroupSeparator(language);
-            var start = number < 0 ? 1 : 0;
             var builder = new StringBuilder(digits.Length + digits.Length / 3);
+            AppendGrouped(builder, digits, GroupSeparator(language));
+            return builder.ToString();
+        }
+
+        public static string Decimal(decimal number, string language)
+        {
+            var digits = number.ToString(CultureInfo.InvariantCulture);
+            var point = digits.IndexOf('.');
+            var builder = new StringBuilder(digits.Length + digits.Length / 3);
+            AppendGrouped(builder, point < 0 ? digits : digits.Substring(0, point), GroupSeparator(language));
+            if (point >= 0) builder.Append(DecimalSeparator(language)).Append(digits, point + 1, digits.Length - point - 1);
+            return builder.ToString();
+        }
+
+        public static string Timestamp(DateTimeOffset instant, TimeZoneInfo zone, string language)
+        {
+            var local = TimeZoneInfo.ConvertTime(instant, zone);
+            var builder = new StringBuilder(18);
+            if (language == GameLanguage.English)
+            {
+                builder.Append(Digits(local.Month)).Append('/').Append(Digits(local.Day)).Append('/').Append(Digits(local.Year)).Append(", ");
+            }
+            else
+            {
+                AppendTwoDigits(builder, local.Day).Append('.');
+                AppendTwoDigits(builder, local.Month).Append('.').Append(Digits(local.Year)).Append(language == "ru" ? ", " : " ");
+            }
+            AppendTwoDigits(builder, local.Hour).Append(':');
+            AppendTwoDigits(builder, local.Minute);
+            return builder.ToString();
+        }
+
+        public static string Clock(TimeSpan span)
+        {
+            var builder = new StringBuilder(8);
+            builder.Append(((long)span.TotalHours).ToString(CultureInfo.InvariantCulture)).Append(':');
+            AppendTwoDigits(builder, span.Minutes).Append(':');
+            AppendTwoDigits(builder, span.Seconds);
+            return builder.ToString();
+        }
+
+        public static string DurationKey(TimeSpan span)
+        {
+            if (span.Days > 0) return DurationKeyPrefix + DaysName;
+            if (span.Hours > 0) return DurationKeyPrefix + HoursName;
+            return DurationKeyPrefix + (span.Minutes > 0 ? MinutesName : SecondsName);
+        }
+
+        static void AppendGrouped(StringBuilder builder, string digits, char separator)
+        {
+            var start = digits[0] == '-' ? 1 : 0;
             if (start == 1) builder.Append('-');
             for (var i = start; i < digits.Length; i++)
             {
                 if (i > start && (digits.Length - i) % 3 == 0) builder.Append(separator);
                 builder.Append(digits[i]);
             }
-            return builder.ToString();
         }
+
+        static string Digits(int number) => number.ToString(CultureInfo.InvariantCulture);
+
+        static StringBuilder AppendTwoDigits(StringBuilder builder, int number) =>
+            builder.Append((char)('0' + number / 10)).Append((char)('0' + number % 10));
+
+        static char DecimalSeparator(string language) => language is "ru" or "az" or "tr" ? ',' : '.';
 
         static char GroupSeparator(string language) => language switch
         {
@@ -94,13 +160,43 @@ namespace HypeDomino.UI.Localization
         bool AppendValue(string name)
         {
             if (args == null || !args.TryGetValue(name, out var value)) return false;
-            if (value is string text)
+            switch (value)
             {
-                output.Append(text);
+                case string text:
+                    output.Append(text);
+                    return true;
+                case decimal number:
+                    output.Append(Decimal(number, numberLanguage));
+                    return true;
+                case DateTimeOffset instant:
+                    output.Append(Timestamp(instant, TimeZoneInfo.Local, numberLanguage));
+                    return true;
+                case TimeSpan span:
+                    return AppendDuration(span);
+            }
+            if (!TryCount(name, out var count)) return false;
+            output.Append(Number(count, numberLanguage));
+            return true;
+        }
+
+        bool AppendDuration(TimeSpan span)
+        {
+            if (span < TimeSpan.Zero) return false;
+            var pattern = unitPattern?.Invoke(DurationKey(span));
+            if (pattern == null)
+            {
+                output.Append(Clock(span));
                 return true;
             }
-            if (!TryCount(name, out var number)) return false;
-            output.Append(Number(number, numberLanguage));
+            var parts = new Dictionary<string, object>
+            {
+                [DaysName] = (long)span.Days,
+                [HoursName] = (long)span.Hours,
+                [MinutesName] = (long)span.Minutes,
+                [SecondsName] = (long)span.Seconds,
+            };
+            if (!TryFormat(pattern, textLanguage, numberLanguage, parts, out var text)) return false;
+            output.Append(text);
             return true;
         }
 
