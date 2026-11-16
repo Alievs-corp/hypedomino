@@ -355,6 +355,12 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 `Game/Pass/PassLoader.Load` sends `GET /pass` through `ApiClient` (refresh on `access_expired`) and answers one `PassLoadResult`: `Loaded` with the `PassStanding` and `PassTracks` of that one body, or the failure. A second `Load` while one is in flight sends nothing. The server's `404 pass.no_season` is `NoSeason` with the key `pass.no_season`; no response is `pass.load.offline`, `429` is `pass.load.rate_limited`, a lost session has no key and goes back to sign-in, and every other reply, including a body that `PassStanding.TryRead` or `PassTracks.TryRead` refuses, is `notice.generic`. The keys have no built-in texts yet. `PassLoaderTests` cover the request, the single load in flight and every failure.
 
+## Medals
+
+`UI/Medals/MedalCollection.Show` takes the `GET /medals` reply (`MedalCollectionReply`, `JsonUtility`) and gives the medal screen (#130) what the server sent: the medals it lists, which of them are earned, the showcase slots and the showcase. `MedalCollectionTests` cover it.
+
+`Game/Medals/MedalLoader.Load` sends `GET /medals` (`MedalCollection.CollectionPath`) through `ApiClient` (refresh on `access_expired`) and answers one `MedalLoadResult`: `Loaded` with the `MedalCollectionReply` for `MedalCollection.Show`, or the failure. A second `Load` while one is in flight sends nothing. No response is `medal.load.offline`, `429` is `medal.load.rate_limited`, a lost session has no key and goes back to sign-in, and every other reply, including the server's `503 medal.unavailable` and a body that does not read, is `notice.generic`. The keys have no built-in texts yet. `MedalLoaderTests` cover the request, the single load in flight and every failure.
+
 ## Emoji
 
 `UI/Emoji` holds the in-match emoji of `docs/ui-motion.md` (Emoji wheel, #151). It is not attached to a match HUD yet, because the match scene does not exist.
