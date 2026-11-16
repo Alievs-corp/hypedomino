@@ -110,6 +110,7 @@ namespace HypeDomino.Bench
         {
             Screen.orientation = ScreenOrientation.LandscapeLeft;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = TokenGraphics.TargetFpsOfEffectLevel[(int)level];
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -247,6 +248,7 @@ namespace HypeDomino.Bench
             PlaceTiles(faces, shortSide, longSide, width, y, (face, upright, centre) => AddFace(parent, face, scale, upright, centre));
             var label = NewText(caption, parent, TokenColor.TextPrimary, LabelFontSize);
             label.alignment = TextAnchor.MiddleRight;
+            label.text = caption;
             label.rectTransform.sizeDelta = new Vector2(240f, LabelHeight);
             label.rectTransform.anchoredPosition = new Vector2(-width / 2f - 140f, y);
         }
@@ -310,6 +312,7 @@ namespace HypeDomino.Bench
             var sheet = NewSheet("medals", caption);
             var backdrop = NewImage("Backdrop", sheet.Root, white, 0f, CellCentre);
             Stretch(backdrop.rectTransform);
+            backdrop.preserveAspect = false;
             backdrop.color = background;
             var area = Area(sheet.Root);
             for (var at = 0; at < content.medals.Length && at < MedalColumns * MedalRows; at++)
@@ -445,6 +448,7 @@ namespace HypeDomino.Bench
         {
             var hud = NewImage("Hud", screen, white, 0f, CellCentre);
             hud.raycastTarget = true;
+            hud.preserveAspect = false;
             Color backdrop = TokenColor.Scrim;
             backdrop.a = TokenOpacity.Scrim;
             hud.color = backdrop;
@@ -638,6 +642,7 @@ namespace HypeDomino.Bench
             if (content.effectTable == null) return;
             var table = JsonUtility.FromJson<ArtBenchEffectFile>(content.effectTable.text);
             foreach (var entry in table.sprites) effectMaterials[entry.name] = entry.material == "additive" ? content.additive : content.alpha;
+            Debug.Log($"ArtBench effect sprites={effectSprites.Count} materials={effectMaterials.Count} additive={content.additive} alpha={content.alpha} shadowAlpha={content.shadowAlpha}");
         }
 
         Sprite EffectSprite(string name) => effectSprites.TryGetValue(name, out var sprite) ? sprite : null;
