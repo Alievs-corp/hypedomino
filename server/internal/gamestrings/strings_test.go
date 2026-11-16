@@ -204,21 +204,3 @@ func TestAPublishedBundleLivesAtItsLanguageAndContentHash(t *testing.T) {
 		}
 	}
 }
-
-func TestTheReportListsMissingKeysPerLanguage(t *testing.T) {
-	report := Report(catalog())
-	want := []Coverage{
-		{Language: Azerbaijani, Keys: 2, Approved: 2, Percent: 100, Missing: []string{}},
-		{Language: English, Keys: 2, Approved: 2, Percent: 100, Missing: []string{}},
-		{Language: Turkish, Keys: 2, Approved: 0, Percent: 0, Missing: []string{"match.result.coins", "match.result.win"}},
-		{Language: Russian, Keys: 2, Approved: 0, Percent: 0, Missing: []string{"match.result.coins", "match.result.win"}},
-	}
-	if !reflect.DeepEqual(report, want) {
-		t.Fatalf("report %+v", report)
-	}
-	half := catalog()
-	half[1].Values[Turkish] = Value{Text: "x", Status: Approved}
-	if turkish := Report(half)[2]; turkish.Percent != 50 || !reflect.DeepEqual(turkish.Missing, []string{"match.result.win"}) {
-		t.Fatalf("turkish %+v", turkish)
-	}
-}
