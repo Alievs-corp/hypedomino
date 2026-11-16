@@ -17,10 +17,7 @@ namespace HypeDomino.Editor
         const string ArtRoot = SceneFolder + "/Art";
         const string ScenePath = SceneFolder + "/ArtBench.unity";
         const string CosmeticRoot = ArtRoot + "/cosmetic";
-        const string TileFacesFolder = ArtRoot + "/tile/ivory/face";
         const string MedalRoot = ArtRoot + "/medal";
-        const string SfxFolder = ArtRoot + "/sound/sfx";
-        const string MusicFolder = ArtRoot + "/sound/music";
         const string TokensPath = ArtRoot + "/design-tokens.json";
         const string DefaultOutputPath = "Builds/art-bench.apk";
         const string OutputPathArgument = "-customBuildPath";
@@ -84,17 +81,17 @@ namespace HypeDomino.Editor
                 tables = Tables(),
                 emoji = Items("emoji"),
                 tileBacks = Items("tile"),
-                tileFaces = PngPaths(TileFacesFolder).Select(CosmeticContent.ImportSprite).ToArray(),
+                tileFaces = Loaded<Sprite>(PngPaths(TileFaceContent.FacesFolder(TileFaceContent.DefaultSet))),
                 medals = SubFolders(MedalRoot).Select(Item).Where(item => item != null).ToArray(),
-                effectSprites = EffectsContent.SpritePaths().Select(AssetDatabase.LoadAssetAtPath<Sprite>).Where(sprite => sprite != null).ToArray(),
-                kit = UiKitContent.SpritePaths().Select(AssetDatabase.LoadAssetAtPath<Sprite>).Where(sprite => sprite != null).ToArray(),
+                effectSprites = Loaded<Sprite>(EffectsContent.SpritePaths()),
+                kit = Loaded<Sprite>(UiKitContent.SpritePaths()),
                 additive = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AdditiveMaterialPath),
                 alpha = AssetDatabase.LoadAssetAtPath<Material>(EffectsContent.AlphaMaterialPath),
                 effectTable = AssetDatabase.LoadAssetAtPath<TextAsset>(EffectsContent.TablePath),
                 shadowOffsetY = elevation.offsetY,
                 shadowAlpha = elevation.alpha,
-                sfx = Clips(SfxFolder, false),
-                music = Clips(MusicFolder, true),
+                sfx = Loaded<AudioClip>(SoundContent.SfxPaths()),
+                music = Loaded<AudioClip>(SoundContent.MusicPaths()),
             };
         }
 
@@ -137,23 +134,8 @@ namespace HypeDomino.Editor
 
         static Sprite[] LoopFrames(string folder) => AssetDatabase.LoadAssetAtPath<SpriteLoop>(CosmeticContent.BuildLoop(folder)).Frames;
 
-        static AudioClip[] Clips(string folder, bool music) =>
-            Directory.Exists(folder)
-                ? Directory.GetFiles(folder, "*.wav").Select(path => path.Replace('\\', '/')).OrderBy(path => path, StringComparer.Ordinal).Select(path => ImportClip(path, music)).Where(clip => clip != null).ToArray()
-                : Array.Empty<AudioClip>();
-
-        static AudioClip ImportClip(string path, bool music)
-        {
-            var importer = (AudioImporter)AssetImporter.GetAtPath(path);
-            importer.forceToMono = !music;
-            var settings = importer.defaultSampleSettings;
-            settings.loadType = music ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
-            settings.compressionFormat = music ? AudioCompressionFormat.Vorbis : AudioCompressionFormat.ADPCM;
-            settings.preloadAudioData = !music;
-            importer.defaultSampleSettings = settings;
-            importer.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
-        }
+        static T[] Loaded<T>(string[] paths) where T : UnityEngine.Object =>
+            paths.Select(AssetDatabase.LoadAssetAtPath<T>).Where(asset => asset != null).ToArray();
 
         static string[] SubFolders(string folder) =>
             AssetDatabase.IsValidFolder(folder) ? AssetDatabase.GetSubFolders(folder).OrderBy(path => path, StringComparer.Ordinal).ToArray() : Array.Empty<string>();

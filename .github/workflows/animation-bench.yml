@@ -35,14 +35,10 @@ jobs:
         if: inputs.bench == 'art'
         run: |
           art=client/Assets/HypeDomino/Bench/Generated/Art
-          for export in assets-src/cosmetic/*/*/export assets-src/medal/*/export assets-src/tile/ivory/export; do
+          for export in assets-src/cosmetic/*/*/export assets-src/medal/*/export; do
             item=${export%/export}
             mkdir -p "$art/${item#assets-src/}"
             cp -R "$export"/. "$art/${item#assets-src/}"/
-          done
-          for item in assets-src/sound/*; do
-            mkdir -p "$art/sound/${item##*/}"
-            cp "$item"/work/*.wav "$art/sound/${item##*/}"/
           done
           cp docs/design-tokens.json "$art"/
           find "$art" -type f | cut -d/ -f7-8 | sort | uniq -c

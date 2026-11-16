@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.Core.Diagnostics;
+using HypeDomino.UI.Effects;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
@@ -77,6 +78,7 @@ namespace HypeDomino.Bench
         readonly FrameTiming[] latestTiming = new FrameTiming[1];
         readonly Dictionary<string, Sprite> effectSprites = new();
         readonly Dictionary<string, Material> effectMaterials = new();
+        EffectLibrary library;
         Font font;
         Sprite white;
         RectTransform screen;
@@ -368,17 +370,15 @@ namespace HypeDomino.Bench
 
         void BuildEffectSheets()
         {
-            if (content.effectTable == null) return;
-            var table = JsonUtility.FromJson<ArtBenchEffectFile>(content.effectTable.text);
-            foreach (var effect in table.effects)
+            if (library == null) return;
+            var stageSize = new Vector2(ReferenceLongSide / 2f, AreaHeight * 0.75f);
+            for (var kind = 0; kind < TokenEffect.NameOfKind.Length; kind++)
             {
-                var kind = Array.IndexOf(TokenEffect.NameOfKind, effect.name);
-                if (kind < 0) continue;
-                var sheet = NewSheet("effects", $"effect {effect.name} (approximate preview)");
-                var stage = NewRect(effect.name, Area(sheet.Root));
-                stage.gameObject.AddComponent<Canvas>();
+                var sheet = NewSheet("effects", $"effect {TokenEffect.NameOfKind[kind]} (EffectPlayer, team A)");
+                var stage = NewRect(TokenEffect.NameOfKind[kind], Area(sheet.Root));
+                stage.sizeDelta = stageSize;
                 sheet.Effect = stage.gameObject.AddComponent<ArtBenchEffect>();
-                sheet.Effect.Configure(effect, (TokenEffectKind)kind, EffectSprite, MaterialOf);
+                sheet.Effect.Configure((TokenEffectKind)kind, library, content);
             }
         }
 
@@ -577,7 +577,7 @@ namespace HypeDomino.Bench
             var now = Time.unscaledTime;
             foreach (var loop in sheet.Loops) loop.Image.Show(loop.Art, level, reduceMotion, budget, now);
             foreach (var table in sheet.Tables) ShowTable(table, now);
-            if (sheet.Effect != null) Debug.Log($"ArtBench effect={sheet.Effect.Name} level={level} reduceMotion={reduceMotion} {sheet.Effect.Play(level, reduceMotion, now)}");
+            if (sheet.Effect != null) Debug.Log($"ArtBench effect={sheet.Effect.Kind} level={level} reduceMotion={reduceMotion} {sheet.Effect.Play(level, reduceMotion, now)}");
         }
 
         void ShowTable(TableSlot table, float now)
@@ -640,8 +640,9 @@ namespace HypeDomino.Bench
         {
             foreach (var sprite in content.effectSprites) effectSprites[sprite.name] = sprite;
             if (content.effectTable == null) return;
-            var table = JsonUtility.FromJson<ArtBenchEffectFile>(content.effectTable.text);
-            foreach (var entry in table.sprites) effectMaterials[entry.name] = entry.material == "additive" ? content.additive : content.alpha;
+            library = EffectLibrary.Parse(content.effectTable.text);
+            for (var sprite = 0; sprite < library.SpriteCount; sprite++)
+                effectMaterials[library.SpriteName(sprite)] = library.MaterialOf(sprite) == EffectMaterial.Additive ? content.additive : content.alpha;
             Debug.Log($"ArtBench effect sprites={effectSprites.Count} materials={effectMaterials.Count} additive={content.additive} alpha={content.alpha} shadowAlpha={content.shadowAlpha}");
         }
 
