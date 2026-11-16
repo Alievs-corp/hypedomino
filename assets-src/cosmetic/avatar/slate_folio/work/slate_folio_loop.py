@@ -10,27 +10,27 @@ from scipy import ndimage, optimize
 SLUG = "slate_folio"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (58, 0, 1136, 1078)
+CROP = (11, -184, 1183, 988)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (385, 195, 185, 200)
+HEAD = (385, 300, 170, 184)
 HEAD_FALLOFF = 0.3
-NECK_Y = 370
-NECK_BAND = 35
-SHOULDER_Y = 500
+NECK_Y = 461
+NECK_BAND = 32
+SHOULDER_Y = 580
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(362, 178, 36, 20), (452, 194, 36, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(364, 284, 33, 18), (447, 299, 33, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "page_curl", "polygon": [(628, 512), (636, 482), (652, 462), (676, 448), (698, 438), (708, 424), (712, 412), (722, 420), (728, 440), (724, 458), (706, 468), (684, 478), (664, 494), (652, 512)], "pivot": (640, 508), "length": 70, "swing": 12.0, "lag": 0.0, "flutter": 0.4, "behind": "fill"},
+    {"name": "page_curl", "polygon": [(608, 592), (616, 564), (631, 546), (653, 533), (673, 523), (682, 511), (686, 500), (695, 507), (700, 525), (697, 542), (680, 551), (660, 560), (642, 575), (631, 592)], "pivot": (619, 588), "length": 64, "swing": 12.0, "lag": 0.0, "flutter": 0.4, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

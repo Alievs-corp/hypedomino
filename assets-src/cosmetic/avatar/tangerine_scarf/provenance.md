@@ -83,6 +83,62 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `tangerine_scarf: background [209.0, 209.0, 210.0], pockets 1717 px, crop (3, -195, 1175, 977), portrait 768`
+- Crop `(50, 0, 1128, 1078)` to `(3, -195, 1175, 977)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `tangerine_scarf_loop: blink edit registered (tx, ty, scale, angle) = (0.1547, 0.0955, 1.0000, -0.0001), residual 0.00101 -> 0.00099, eye colour offset [-6.1, -0.5, 3.6], parts 2, ripples 1, filled 6051 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.005 before, 0.172 after; highest over the 16 loop frames 0.000 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/tangerine_scarf/work/tangerine_scarf_cleanup.py tangerine_scarf assets-src/cosmetic/avatar/tangerine_scarf/concept/20261115-01.png assets-src/cosmetic/avatar/tangerine_scarf/work
+python -I assets-src/cosmetic/avatar/tangerine_scarf/work/tangerine_scarf_loop.py assets-src/cosmetic/avatar/tangerine_scarf/concept assets-src/cosmetic/avatar/tangerine_scarf/work assets-src/cosmetic/avatar/tangerine_scarf/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/tangerine_scarf` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `87315821e48039f679a8520a89409eefb024501f3321db8e42af5c02890c0a8c` |
+| export/anim/0002.png | `d75adf59c5aa0e88cb43c44a0a88d7f755408cb6eee17e0140af41bc893e1813` |
+| export/anim/0003.png | `96be11d0e3d7510be0fe9c8cc29a3c7dd4c30397ce6aba5c47b26eea60b85b9c` |
+| export/anim/0004.png | `d2f7beb351a20ce8fee1225a264108ac7607d230220b61990d2644edc171c60d` |
+| export/anim/0005.png | `77e535b1cd13e76107581281c9502e09218749545eeafd764c30ff21d6d283b9` |
+| export/anim/0006.png | `8d517e6b35b78a5a239a689d091aec6a75c725c72690d629a879364f0c328764` |
+| export/anim/0007.png | `f37c3740ea8375db334987150250175063bcf63372074c3a48ca16113c1d7861` |
+| export/anim/0008.png | `fc5a010b1f18017b8495d96225d06cfc091cd643b597afab76632f51dbb980d0` |
+| export/anim/0009.png | `e5da9ed7ac4dcdbd0af2d94a469c326d2f1ea5e45267985b85c3a15a6cf1a061` |
+| export/anim/0010.png | `478aae80a67fa6e8fa04cf9045acd8119a03e10e361a65d7bef1d1826d4e4506` |
+| export/anim/0011.png | `6c19d0f75b0bf4b0382839fbb52e9f6afb187a93c1c0c350958c01836760ea59` |
+| export/anim/0012.png | `a155062ae85d0eeb5af5d58606ba6f0a79939f5a4ad4c0a0d3dfab77fdf441ea` |
+| export/anim/0013.png | `339d197495886852fe98a6efcac2fdab9b69cd0eabfbd691712b650baaa37ac2` |
+| export/anim/0014.png | `81ed6523e6ecd80fe300e222b3efa20693ff18f59b0065ca00a3a54e0ae31d6b` |
+| export/anim/0015.png | `1cc92d4b122d93113144bd966ff6fd5ebf7d8aa64decd9aa754b5ca7d166c42e` |
+| export/anim/0016.png | `c2a0726dde1094a566a8cf9775521da3f92752081427f6cede6826c5a7198559` |
+| export/static.png | `e5da9ed7ac4dcdbd0af2d94a469c326d2f1ea5e45267985b85c3a15a6cf1a061` |
+| work/tangerine_scarf_base.png | `202b0ad046c3dab322161bfe2fa6c405cd6e0a078f6396d5d06db2a12eb3baae` |
+| work/tangerine_scarf_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/tangerine_scarf_earring_left.png | `110da3e4eda6c6af9f4a88bf62a6dd05652c3da32d76a12a2d688f5ba83f830a` |
+| work/tangerine_scarf_earring_right.png | `dd3459a9c963b1168eb129154ba9cb09a1d106193ba4fd11ae120239c7030455` |
+| work/tangerine_scarf_eyes_closed.png | `35052d0a5bb3a78dd319e2e56aa66766c1a978aa694e2ebadf0fe1636c4c379c` |
+| work/tangerine_scarf_eyes_open.png | `78d03a497cea97c8d90cd44a3e8947775444ece8219f82f17b3bf1b90320bf20` |
+| work/tangerine_scarf_head.png | `15c8d09fba5082f28dee4676f806b1e32d7c6876e4c964da2673d5552d02a172` |
+| work/tangerine_scarf_loop.py | `08dd20e5e2c68ddd37a78a8a2d9b7b56b848342f0769a5f1ec7420adc1e765f0` |
+| work/tangerine_scarf_portrait.png | `c893518a0868a28c6bb10bb0274a7ec7cdca2c2e522d5e4980f4e5fecfe20168` |
+| work/tangerine_scarf_torso.png | `bca1659e726e9ab366d04c0f33e65fa2bf48d6a440e9ef0b822862b36c69646b` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -108,6 +164,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:31:06 UTC; `c2pa.created` 2026-11-15T17:32:10Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:47:05 UTC; `c2pa.created` 2026-11-15T17:48:09Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/tangerine_scarf_base.png, work/tangerine_scarf_cleanup.py, work/tangerine_scarf_earring_left.png, work/tangerine_scarf_earring_right.png, work/tangerine_scarf_eyes_closed.png, work/tangerine_scarf_eyes_open.png, work/tangerine_scarf_head.png, work/tangerine_scarf_loop.py, work/tangerine_scarf_portrait.png, work/tangerine_scarf_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(50, 0, 1128, 1078)` to `(3, -195, 1175, 977)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

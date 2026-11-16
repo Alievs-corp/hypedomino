@@ -10,29 +10,29 @@ from scipy import ndimage, optimize
 SLUG = "turquoise_pendant"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (76, 0, 1122, 1046)
+CROP = (31, -130, 1168, 1007)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (430, 230, 230, 250)
+HEAD = (426, 299, 212, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 430
-NECK_BAND = 35
-SHOULDER_Y = 540
+NECK_Y = 483
+NECK_BAND = 32
+SHOULDER_Y = 585
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(375, 206, 38, 20), (483, 222, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(375, 277, 35, 18), (475, 292, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "pendant", "polygon": [(272, 452), (284, 450), (414, 597), (466, 462), (476, 466), (424, 602), (432, 612), (438, 640), (446, 668), (448, 710), (440, 741), (406, 741), (398, 710), (398, 668), (404, 640), (404, 612)], "pivot": (374, 440), "length": 300, "swing": 6.0, "lag": 0.0, "flutter": 0.0, "behind": "fill"},
-    {"name": "earring_left", "polygon": [(258, 280), (292, 280), (294, 320), (292, 356), (276, 364), (260, 356), (256, 320)], "pivot": (275, 284), "length": 50, "swing": 6.0, "lag": 0.5, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(502, 304), (530, 304), (532, 340), (530, 374), (516, 380), (502, 374), (500, 340)], "pivot": (516, 308), "length": 45, "swing": 6.0, "lag": 0.9, "grow": 1, "behind": "fill"},
+    {"name": "pendant", "polygon": [(281, 504), (292, 502), (411, 637), (459, 513), (468, 517), (420, 642), (428, 651), (433, 677), (441, 702), (443, 741), (435, 770), (404, 770), (397, 741), (397, 702), (402, 677), (402, 651)], "pivot": (374, 493), "length": 276, "swing": 6.0, "lag": 0.0, "flutter": 0.0, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(268, 345), (299, 345), (301, 382), (299, 415), (284, 423), (270, 415), (266, 382)], "pivot": (283, 349), "length": 46, "swing": 6.0, "lag": 0.5, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(492, 367), (518, 367), (520, 401), (518, 432), (505, 437), (492, 432), (490, 401)], "pivot": (505, 371), "length": 41, "swing": 6.0, "lag": 0.9, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

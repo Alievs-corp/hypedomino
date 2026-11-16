@@ -79,6 +79,63 @@ It printed `ruby_drop_loop: blink edit registered (tx, ty, scale, angle) = (0.34
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `ruby_drop: background [192.0, 192.0, 191.0], pockets 1547 px, crop (17, -141, 1138, 980), portrait 768`
+- Crop `(62, 0, 1093, 1031)` to `(17, -141, 1138, 980)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `ruby_drop_loop: blink edit registered (tx, ty, scale, angle) = (0.3228, 0.1942, 1.0000, -0.0003), residual 0.00209 -> 0.00199, eye colour offset [-6.8, -2.4, -1.0], parts 2, filled 11066 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.052 before, 0.172 after; highest over the 16 loop frames 0.042 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/ruby_drop/work/ruby_drop_cleanup.py ruby_drop assets-src/cosmetic/avatar/ruby_drop/concept/20261115-01.png assets-src/cosmetic/avatar/ruby_drop/work
+python -I assets-src/cosmetic/avatar/ruby_drop/work/ruby_drop_loop.py assets-src/cosmetic/avatar/ruby_drop/concept assets-src/cosmetic/avatar/ruby_drop/work assets-src/cosmetic/avatar/ruby_drop/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/ruby_drop` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `ebef41b228daaf40adb3a481d9cdd148ef4591558cff3eedc397747b5fb70319` |
+| export/anim/0002.png | `a495938bba3d63a88db279dbba91613e5efd384b92579e667fc2826a4d75ad0b` |
+| export/anim/0003.png | `6e853dc7332c0c24df9b45792d8eefa8cdb27552ada9b2da638ef1f486f8f8a6` |
+| export/anim/0004.png | `6663a6e3e9396bae19e9dd202fcaa5f9c2a838b520a99b163bb8aa77cd4f1932` |
+| export/anim/0005.png | `c9d26cefaf77d0355eaccf82c0b4cdc65e6777f3499b5e2fac3078a1e502404c` |
+| export/anim/0006.png | `d0c5bd79498db60b277a7bbe1df1b55d97b823cda1c9e30a924560ac56fbc8a6` |
+| export/anim/0007.png | `f76301ef22e6f3a2c27295debce2d893388a8784245e3cac8514d0cbcb88c6f1` |
+| export/anim/0008.png | `e92feedcfac18a20843171c6062f6687156b50a7e745dbcbd80425b311b6182a` |
+| export/anim/0009.png | `eb4ed084e1b013193dc239fae9ebffdfe78004fac7f7c608440846bc25f69a4f` |
+| export/anim/0010.png | `f543293870285a5c5a2823b9bb189a3a2bdd50fa25ecf8bc8eeb4fb0909106b8` |
+| export/anim/0011.png | `8a200d6d066dc6047aee129061b65d91a1c22c6fce720c8bcbef3321cbad941c` |
+| export/anim/0012.png | `361faf61ef0c05f2c72d37d190717cb54b32622da16f4ba1aa76609f142176ef` |
+| export/anim/0013.png | `ae8718e7a579e11cb9eb2484a59bd775298d51acc3832861ec5513fb212a9567` |
+| export/anim/0014.png | `f663a931f2df057d2249bc8b451e8fece7741ade8c4793ecc88985aa01497d7a` |
+| export/anim/0015.png | `13b1941fc8d9a55303161ab4340cf0836a39b505d6f42326374bb350bb0fb357` |
+| export/anim/0016.png | `d7b393cbc4673e3069767b0d7410da36bbeca9b870ae1c453726972f22cdeb9f` |
+| export/static.png | `eb4ed084e1b013193dc239fae9ebffdfe78004fac7f7c608440846bc25f69a4f` |
+| work/ruby_drop_base.png | `e382053bda6e28ab97b362cb7b016a4d48bf9cacb6ab6b32aacedb5fc429c41c` |
+| work/ruby_drop_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/ruby_drop_earring_left.png | `370fa0b4f99066aa1afaa0fb89bd4f6f8c93ba50ddf108e5f07bdd8c1e741e1e` |
+| work/ruby_drop_earring_right.png | `d0ba077ce43d7541e152056731f9cb61b842cdb58fb95a534b757828eb00f3f8` |
+| work/ruby_drop_eyes_closed.png | `8b9fc0de8d39c3a1b54040259eb3c1c8089ac7b3ca14bff3351951d0554cc2bd` |
+| work/ruby_drop_eyes_open.png | `5151ae5a20c72e3bb6ffa147a56ae5bbd7ae7a09f16b8cb42c446e62fd0933d4` |
+| work/ruby_drop_head.png | `eec6851b15e712541135f6f12c12c3f405b0545fd2a879568769ca1ade3e0e37` |
+| work/ruby_drop_loop.py | `ed1fa34f8414caab16e95226167ebb98bb4e32694de291bfd186de0ba69e73b4` |
+| work/ruby_drop_portrait.png | `7b0807ca3b7f26f5ca85f311ab185eaa0bbab2a2826f4948be98a243240b7b6e` |
+| work/ruby_drop_torso.png | `769d5a4ed26695f00c09f2a215bc9094588b5a51fa3d6319438318dd81f48ada` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -104,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:37:17 UTC; `c2pa.created` 2026-11-15T16:38:13Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:38:36 UTC; `c2pa.created` 2026-11-15T16:39:37Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/ruby_drop_base.png, work/ruby_drop_cleanup.py, work/ruby_drop_earring_left.png, work/ruby_drop_earring_right.png, work/ruby_drop_eyes_closed.png, work/ruby_drop_eyes_open.png, work/ruby_drop_head.png, work/ruby_drop_loop.py, work/ruby_drop_portrait.png, work/ruby_drop_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(62, 0, 1093, 1031)` to `(17, -141, 1138, 980)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

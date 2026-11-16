@@ -10,24 +10,24 @@ from scipy import ndimage, optimize
 SLUG = "coral_jabot"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (70, 0, 1148, 1078)
+CROP = (23, -175, 1195, 997)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (390, 225, 210, 230)
+HEAD = (390, 322, 193, 212)
 HEAD_FALLOFF = 0.3
-NECK_Y = 440
-NECK_BAND = 35
-SHOULDER_Y = 580
+NECK_Y = 519
+NECK_BAND = 32
+SHOULDER_Y = 648
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(370, 228, 38, 20), (470, 220, 36, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(371, 324, 35, 18), (463, 317, 33, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
 ]
@@ -35,7 +35,7 @@ GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(372, 492), (470, 486), (556, 536), (596, 610), (608, 680), (596, 720), (340, 720), (336, 660), (346, 590), (356, 530)], "feather": 14, "top": 470, "ramp": 90, "amplitude": 5.0, "wavelength": 150, "cycles": 2},
+    {"polygon": [(373, 567), (463, 562), (542, 608), (579, 676), (590, 740), (579, 777), (344, 777), (340, 722), (349, 657), (358, 602)], "feather": 13, "top": 547, "ramp": 83, "amplitude": 4.6, "wavelength": 138, "cycles": 2},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4

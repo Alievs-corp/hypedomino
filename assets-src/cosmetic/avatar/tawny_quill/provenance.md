@@ -81,6 +81,61 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.1 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may reach above the top of the concept (transparent canvas), as this item's script already allowed. The bottom and side clamps are as before
+- Printed by the clean-up: `tawny_quill: background [204.0, 203.0, 203.0], pockets 1564 px, crop (47, -182, 1219, 990), portrait 768`
+- Crop `(94, -91, 1172, 987)` to `(47, -182, 1219, 990)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `tawny_quill_loop: blink edit registered (tx, ty, scale, angle) = (0.0085, 0.0039, 1.0000, -0.0001), residual 0.00051 -> 0.00051, eye colour offset [-2.6, 0.1, 1.3], parts 1, ripples 0, filled 12767 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.109 before, 0.177 after; highest over the 16 loop frames 0.094 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/tawny_quill/work/tawny_quill_cleanup.py tawny_quill assets-src/cosmetic/avatar/tawny_quill/concept/20261115-01.png assets-src/cosmetic/avatar/tawny_quill/work
+python -I assets-src/cosmetic/avatar/tawny_quill/work/tawny_quill_loop.py assets-src/cosmetic/avatar/tawny_quill/concept assets-src/cosmetic/avatar/tawny_quill/work assets-src/cosmetic/avatar/tawny_quill/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/tawny_quill` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `4482482a199db2a263f4c8d42ed24898cc3536fb8b4331b5b4939c84721b4fb4` |
+| export/anim/0002.png | `6a05d716ca03ee5bfde7d5839618ce4f7f62d358a95890d62569950afced9503` |
+| export/anim/0003.png | `35d6180ec2683353722b3077b7f83c811a2a97fa90c1cfb9846d59a951188ee1` |
+| export/anim/0004.png | `7fc85440952fd97b1e49950c3b6a959feadbef3d37f7f404c9fb7a18a3c9dce5` |
+| export/anim/0005.png | `768dfe0d61c850f8f5e8fe3873f0b4095920504e82d165e6c78727a2bd5f0707` |
+| export/anim/0006.png | `c01e6df1e2eed14ea43700299fe32d28411686743291226a3713ea8b55323eb0` |
+| export/anim/0007.png | `42afb6c15c560249e322b444208282da1287ce001e340ccc86d2fb4c67baaf2f` |
+| export/anim/0008.png | `00a081e4317ce49c08ae6e6e5121369ebe329cf54773366b36d9b3cd32714854` |
+| export/anim/0009.png | `87b3e3c9cf5c559d926039c620ea8a1318a680a4bf1ac23cc54519389beca2a6` |
+| export/anim/0010.png | `f74542bb316127ff528d0d938e78dc1f7d29970a87d94dc4e8229384af37eaca` |
+| export/anim/0011.png | `b0cf2e3b21851764c10aaa0c3577a7e286d43ffc1914a9aef30763fe2d245b49` |
+| export/anim/0012.png | `a86d8c6253b466a87daa962713357852dae062ca3a7c525eb4b0ed69a21f4d81` |
+| export/anim/0013.png | `633ed6cb49924f9440550a37911d88de05989d08396496969d87577092c44981` |
+| export/anim/0014.png | `3a6d2868b3e66f6ff94a5af31ec0e0d3e3e5720ee54a34249dc7c25527f1d34d` |
+| export/anim/0015.png | `d6f1c1370fd01bd4d7b5a2603f4274058b963139164bdf4238edefb24fa17d8e` |
+| export/anim/0016.png | `9e20cb0d1b62bd317ef3adc2c51105748c84a8b2645ff18f35bf922176607829` |
+| export/static.png | `87b3e3c9cf5c559d926039c620ea8a1318a680a4bf1ac23cc54519389beca2a6` |
+| work/tawny_quill_base.png | `6ae2794963e206831f6ca879b1a914bd2978453d3607c195cba80571014601bf` |
+| work/tawny_quill_cleanup.py | `517634391f9b41099a593ee43224ef8f432bb0363f070449f124ae199b06f473` |
+| work/tawny_quill_eyes_closed.png | `39f8ad6c94c8cef370024aa2f7ad100f5f32d0d70874168da31a5b7e1e0e2c7b` |
+| work/tawny_quill_eyes_open.png | `a23e36b01f19825c1aee9f52b9c0d8f79b8e54eca1ec0804abd26e8172ec1d1a` |
+| work/tawny_quill_head.png | `412266fcc282eb4d02eb6e10fc3b1e2b4bbbdd8d074aa6ca1b644560de3b620e` |
+| work/tawny_quill_loop.py | `47b154eef45cc8b9f017de3ba7a6cea8efe4ea90de9b776f0a1e1bface3f1ea4` |
+| work/tawny_quill_portrait.png | `9ca6fa43bc5a9b0e548c4a513f0719ce7052d0f48fd8f0d2de3a7cea028a059d` |
+| work/tawny_quill_quill.png | `8c61787c2deb6232ec2b5943eca75d7bc3446825bc01ad6bec6868e0a58e5362` |
+| work/tawny_quill_torso.png | `4d54d3a06374191a9a47d44ba49bdd732a702a40f3fd96707269534b5b4ddef4` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -106,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:36:55 UTC; `c2pa.created` 2026-11-15T17:37:43Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:53:15 UTC; `c2pa.created` 2026-11-15T17:54:17Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/tawny_quill_base.png, work/tawny_quill_cleanup.py, work/tawny_quill_eyes_closed.png, work/tawny_quill_eyes_open.png, work/tawny_quill_head.png, work/tawny_quill_loop.py, work/tawny_quill_portrait.png, work/tawny_quill_quill.png, work/tawny_quill_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.1 to 0.17, crop `(94, -91, 1172, 987)` to `(47, -182, 1219, 990)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

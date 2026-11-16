@@ -81,6 +81,61 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `charcoal_peony: background [203.0, 203.0, 203.0], pockets 2444 px, crop (0, -142, 1121, 979), portrait 768`
+- Crop `(0, 0, 1031, 1031)` to `(0, -142, 1121, 979)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `charcoal_peony_loop: blink edit registered (tx, ty, scale, angle) = (0.3459, 0.2073, 1.0004, -0.0001), residual 0.00145 -> 0.00136, eye colour offset [-0.9, 3.3, 5.3], parts 1, ripples 0, filled 31062 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.047 before, 0.172 after; highest over the 16 loop frames 0.042 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/charcoal_peony/work/charcoal_peony_cleanup.py charcoal_peony assets-src/cosmetic/avatar/charcoal_peony/concept/20261116-01.png assets-src/cosmetic/avatar/charcoal_peony/work
+python -I assets-src/cosmetic/avatar/charcoal_peony/work/charcoal_peony_loop.py assets-src/cosmetic/avatar/charcoal_peony/concept assets-src/cosmetic/avatar/charcoal_peony/work assets-src/cosmetic/avatar/charcoal_peony/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/charcoal_peony` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `dd2850e0892cd7b22ecb0e26102a7a25b505a8393891461b1ff42c3b17d35e65` |
+| export/anim/0002.png | `f182a56a696dc23a9fd9220e610ea33db0d0185b09b4908b697fc648352991d1` |
+| export/anim/0003.png | `4a8788f4752c393bc666f0c37fc3bda8cc8d5fcda147b3692388d5f7ef95ec46` |
+| export/anim/0004.png | `7083fecee39b45abd3fb954fedd4c425c3d610c1a3f28b05140246125c29bf17` |
+| export/anim/0005.png | `9b3b9ce546050f159c47073653c6dce6fcc1a7248354c684b8bc68eb73a93c34` |
+| export/anim/0006.png | `89e466c2e828b63808626321027e2cc33220b3a2e0e60ff6402cf60bd8ed09ce` |
+| export/anim/0007.png | `5e77bbe5501ae3671c2b6ebddfc55ea8eabfd58e4bd8013206b7427a6ddeca3b` |
+| export/anim/0008.png | `e94da9c414496960e7a108915d6fe8dc5ba1d59e118a88b19601b241e87cb54a` |
+| export/anim/0009.png | `172307541f38f2791a208ed2a22bb940c48799487e228bcded556f8992bd6dc9` |
+| export/anim/0010.png | `a874d3b01119b8892f5d4cf9d1b468bb2061f8564de89b7af9335331f1125e39` |
+| export/anim/0011.png | `d272407534e88f62168495aa000df8daecb2a9266dc27a33e6c8b3c2538cede7` |
+| export/anim/0012.png | `756592435918fb1c797660d59029eaf58a92a8b15b3e26241b2f6f6e8b6beced` |
+| export/anim/0013.png | `404a38b674d44f4820becaa990d2120bdfbddcdc57afc3ebb43fd595bfca79af` |
+| export/anim/0014.png | `02a89c49e0dacb9d9ff81dcf699ef9854534dd9e7dcfa897db4c8120dbfd1163` |
+| export/anim/0015.png | `6daed1f2c664c289f3a7d099a3ccf736670aecbf4e410e00ca92b1055ad3ccc0` |
+| export/anim/0016.png | `f741b89fd57f5cd4a72793cfa6dd44cbc3bd4e91ef54e436d0e878a4d1fc945b` |
+| export/static.png | `172307541f38f2791a208ed2a22bb940c48799487e228bcded556f8992bd6dc9` |
+| work/charcoal_peony_base.png | `9bf0420ba6e2901f2da667de0fd871f7375c4a7757ae89d44cf9cfbfcc27f8d7` |
+| work/charcoal_peony_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/charcoal_peony_eyes_closed.png | `8b4f6fda2ca771cafa009ec406107dfa13a8cb648d7f930446240e97a0974c28` |
+| work/charcoal_peony_eyes_open.png | `549e4d4e9010cef73302a7527959e7a71be5f752482af730d900fed185dcb961` |
+| work/charcoal_peony_head.png | `a8f3bad7613ee0750c51a4d6472e4095c406faad8c645bc2ea7a48e72c016505` |
+| work/charcoal_peony_loop.py | `6430896d9f3bc33b067ce6db8f900ff4f52d10c0068125961fa638c52ecd472e` |
+| work/charcoal_peony_peony.png | `781bced6d00afa0953f3bb649665cd9b6592af0cbc505467f3a1dc87325383c6` |
+| work/charcoal_peony_portrait.png | `b988fa4d9bddce8755b65e36b9e53b83746fec6eaec8beb3604ae7c4c8c89cc0` |
+| work/charcoal_peony_torso.png | `ea3b6c6898d400b8313d81748d7e376c7a21411a9c1aa5da7a1e46bcf2db4532` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -105,6 +160,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:35:24 UTC; `c2pa.created` 2026-11-16T08:36:19Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:50:36 UTC; `c2pa.created` 2026-11-16T08:51:53Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/charcoal_peony_base.png, work/charcoal_peony_cleanup.py, work/charcoal_peony_eyes_closed.png, work/charcoal_peony_eyes_open.png, work/charcoal_peony_head.png, work/charcoal_peony_loop.py, work/charcoal_peony_peony.png, work/charcoal_peony_portrait.png, work/charcoal_peony_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(0, 0, 1031, 1031)` to `(0, -142, 1121, 979)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 
