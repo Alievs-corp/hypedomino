@@ -76,6 +76,16 @@ Remote bundles are kept in Unity's AssetBundle cache under the app's data folder
 
 The limit and the 30 days were set by the owner on 2026-11-08. They protect the device's storage and are not design values, so they are constants in the client.
 
+What the player is told after a clear (CD-26) is one game string per outcome (`docs/localization.md` 2.1), named by `Game/CacheClearKeys`:
+
+| Outcome | Key |
+|---|---|
+| Cleared now | `settings.cache.cleared` |
+| A bundle is in use, so the clear runs at the next start | `settings.cache.cleared_at_next_start` |
+| Refused in a match | `settings.cache.not_in_match` |
+
+Their texts are not in the built-in bundle; they come from admin like any other key, and until one is published the lookup falls back as `docs/localization.md` 2.3 says.
+
 ## 8. Bucket, upload and CDN
 
 | Id | Rule |
