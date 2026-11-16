@@ -37,6 +37,7 @@ namespace HypeDomino.UI.Cosmetics
     {
         public HeldItemReply[] items;
         public LoadoutReply loadout;
+        public int emoji_slots;
 
         public static InventoryReply FromJson(string json) => JsonUtility.FromJson<InventoryReply>(json);
     }

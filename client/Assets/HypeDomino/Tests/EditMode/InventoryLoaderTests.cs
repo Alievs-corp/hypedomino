@@ -9,7 +9,7 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class InventoryLoaderTests
     {
-        const string InventoryJson = @"{""items"":[{""id"":""avatar.default"",""type"":""avatar"",""source_type"":""default""},{""id"":""frame.s1_gold"",""type"":""frame"",""source_type"":""shop"",""source_ref"":""offer.frame_gold"",""granted_at"":""2026-11-02T10:00:00Z""}],""loadout"":{""avatar"":""avatar.default"",""frame"":""frame.s1_gold"",""emojis"":[""emoji.wave""]}}";
+        const string InventoryJson = @"{""items"":[{""id"":""avatar.default"",""type"":""avatar"",""source_type"":""default""},{""id"":""frame.s1_gold"",""type"":""frame"",""source_type"":""shop"",""source_ref"":""offer.frame_gold"",""granted_at"":""2026-11-02T10:00:00Z""}],""loadout"":{""avatar"":""avatar.default"",""frame"":""frame.s1_gold"",""emojis"":[""emoji.wave""]},""emoji_slots"":6}";
 
         sealed class Sent
         {
@@ -90,6 +90,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual("frame.s1_gold", results[0].Inventory.items[1].id);
             Assert.AreEqual("frame.s1_gold", results[0].Inventory.loadout.frame);
             Assert.AreEqual("emoji.wave", results[0].Inventory.loadout.emojis[0]);
+            Assert.AreEqual(6, results[0].Inventory.emoji_slots);
         }
 
         [Test]
