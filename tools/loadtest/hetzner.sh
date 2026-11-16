@@ -3,7 +3,8 @@ set -euo pipefail
 
 usage="usage: hetzner.sh up | run <name> [loadbot run flags] | fetch <name> | down | all
 env: HCLOUD_TOKEN, HD_LOAD_SSH_KEY (key name in the project), HD_LOAD_SSH_IDENTITY (private key file, default ~/.ssh/id_ed25519),
-     HD_LOAD_WORK (~/hd-load, results and the store password), HD_LOAD_LOCATION (fsn1), HD_LOAD_TYPE (ccx23), HD_LOAD_STORES_TYPE (ccx23), RAMP_MIN (5), HOLD_MIN (30), PROFILE_AT_MIN (ramp + hold / 2)"
+     HD_LOAD_WORK (~/hd-load, results and the store password), HD_LOAD_LOCATION (fsn1), HD_LOAD_TYPE (ccx23), HD_LOAD_NODE_TYPE and HD_LOAD_BOT_TYPE (HD_LOAD_TYPE),
+     HD_LOAD_STORES_TYPE (ccx23), a cax* type gets arm64 binaries, RAMP_MIN (5), HOLD_MIN (30), PROFILE_AT_MIN (ramp + hold / 2)"
 command="${1:?$usage}"
 shift
 
@@ -12,7 +13,8 @@ repo=$(cd "$here/../.." && pwd)
 work="${HD_LOAD_WORK:-$HOME/hd-load}"
 label=purpose=hd-load
 location="${HD_LOAD_LOCATION:-fsn1}"
-server_type="${HD_LOAD_TYPE:-ccx23}"
+node_type="${HD_LOAD_NODE_TYPE:-${HD_LOAD_TYPE:-ccx23}}"
+bot_type="${HD_LOAD_BOT_TYPE:-${HD_LOAD_TYPE:-ccx23}}"
 stores_type="${HD_LOAD_STORES_TYPE:-ccx23}"
 identity="${HD_LOAD_SSH_IDENTITY:-$HOME/.ssh/id_ed25519}"
 ramp_min="${RAMP_MIN:-5}"
@@ -64,9 +66,26 @@ wait_ssh() {
   until on "$1" true 2>/dev/null; do sleep 5; done
 }
 
+arch_of() {
+  case "$1" in
+    cax* | CAX*) echo arm64 ;;
+    *) echo amd64 ;;
+  esac
+}
+
+host_arch() {
+  case "$1" in
+    node) arch_of "$node_type" ;;
+    bot) arch_of "$bot_type" ;;
+  esac
+}
+
 build() {
-  mkdir -p "$work/bin"
-  (cd "$repo/server" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o "$work/bin/" ./cmd/loadbot ./cmd/migrate)
+  local arch
+  for arch in $( (arch_of "$node_type"; arch_of "$bot_type") | sort -u); do
+    mkdir -p "$work/bin/$arch"
+    (cd "$repo/server" && CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -o "$work/bin/$arch/" ./cmd/loadbot ./cmd/migrate)
+  done
   git -C "$repo" rev-parse HEAD > "$work/commit"
 }
 
@@ -77,7 +96,8 @@ up() {
   hcloud network add-subnet hd-load --network-zone eu-central --type cloud --ip-range 10.70.1.0/24 >/dev/null
   echo '[{"direction":"in","protocol":"tcp","port":"22","source_ips":["0.0.0.0/0","::/0"]}]' > "$work/firewall.json"
   hcloud firewall create --name hd-load --label "$label" --rules-file "$work/firewall.json" >/dev/null
-  for host in node bot; do create_server "$host" "$server_type"; done
+  create_server node "$node_type"
+  create_server bot "$bot_type"
   create_server stores "$stores_type"
   for host in node bot stores; do wait_ssh "$host"; done
   local password stores_ip
@@ -90,11 +110,11 @@ up() {
     until docker exec postgres pg_isready -h $stores_ip -U hypedomino >/dev/null 2>&1; do sleep 1; done &&
     docker exec postgres psql -U hypedomino -qc 'create extension if not exists pg_stat_statements'"
   for host in node bot; do
-    copy_to "$host" "$work/bin/loadbot" "$work/bin/migrate" "$here/node.sh" "$here/bot.sh" "$here/check.sh"
+    copy_to "$host" "$work/bin/$(host_arch "$host")/loadbot" "$work/bin/$(host_arch "$host")/migrate" "$here/node.sh" "$here/bot.sh" "$here/check.sh"
     on "$host" "cloud-init status --wait >/dev/null; sysctl -qw net.ipv4.ip_local_port_range='1024 65000' net.core.somaxconn=65535"
   done
   on node "HD_DATABASE_URL='$(database_url)' ./migrate up"
-  echo "up: node $(private_ip node), bot $(private_ip bot), stores $(private_ip stores); commit $(cat "$work/commit")"
+  echo "up: node $(private_ip node) $node_type, bot $(private_ip bot) $bot_type, stores $(private_ip stores) $stores_type; commit $(cat "$work/commit")"
 }
 
 run() {
