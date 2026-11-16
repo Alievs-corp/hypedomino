@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { batchLeads, bundleOf, codeGrants, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, promoApiPath, promoChangeSummary, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+import { batchLeads, bundleOf, codeGrants, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, olderPromoHref, promoApiPath, promoChangeSummary, promoPageSize, readPromoQuery, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
 
 const draft: PromoDraft = {
   ...emptyDraft,
@@ -81,9 +81,21 @@ test("a premium Hype Pass code names the premium track beside its bundle", () =>
   assert.equal(promoChangeSummary({ count: 1, code: { ...code, passPremium: true } }), "multi_use; campaign.launch_week; 300 coins + premium Hype Pass; 2026-11-05T09:00:00Z to 2026-11-12T09:00:00Z");
 });
 
-test("paths encode the campaign and the id", () => {
-  assert.equal(promoApiPath(""), "/admin/promo-codes");
-  assert.equal(promoApiPath("campaign.a&b"), "/admin/promo-codes?campaign=campaign.a%26b");
+test("the list query keeps the campaign, a known state, the id search and a well-formed cursor", () => {
+  assert.deepEqual(readPromoQuery({ campaign: " campaign.a ", state: "pending_approval", id: " promo.gift_ ", before: "promo.gift_2" }), { campaign: "campaign.a", state: "pending_approval", id: "promo.gift_", before: "promo.gift_2" });
+  assert.deepEqual(readPromoQuery({ state: "expired", before: "promo.x' or 1=1" }), { campaign: "", state: "", id: "", before: "" });
+  assert.deepEqual(readPromoQuery({ state: ["disabled", "active"] }), { campaign: "", state: "disabled", id: "", before: "" });
+});
+
+test("the API path always asks for one page and the older link follows the last code", () => {
+  const query = { campaign: "campaign.a&b", state: "active", id: "", before: "" } as const;
+  assert.equal(promoApiPath(query), `/admin/promo-codes?campaign=campaign.a%26b&state=active&limit=${promoPageSize}`);
+  const page = Array.from({ length: promoPageSize }, (_, at) => ({ ...code, id: `promo.c_${at}` }));
+  assert.equal(olderPromoHref(query, page), `/promo?campaign=campaign.a%26b&state=active&before=promo.c_${promoPageSize - 1}`);
+  assert.equal(olderPromoHref(query, page.slice(1)), null);
+});
+
+test("paths encode the id", () => {
   assert.equal(disablePath("promo.x/../y", false), "/admin/promo-codes/promo.x%2F..%2Fy/disable");
   assert.equal(disablePath("promo.gift", true), "/admin/promo-batches/promo.gift/disable");
 });

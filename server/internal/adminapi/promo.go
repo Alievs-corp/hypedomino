@@ -22,6 +22,8 @@ import (
 const (
 	MaxPromoBatchCount = 10000
 	MaxPromoListed     = 200
+	PromoPageSize      = 50
+	PromoPageMax       = 200
 
 	CreatePromoAction   = "create_promo"
 	BatchPromoAction    = "create_promo_batch"
@@ -107,7 +109,19 @@ func (h *Handler) listPromos(w http.ResponseWriter, r *http.Request, p principal
 		h.refuse(w, err)
 		return
 	}
-	codes, err := promos.List(r.Context(), r.URL.Query().Get("campaign"), MaxPromoListed)
+	query := r.URL.Query()
+	limit, err := optionalNumber(query.Get("limit"))
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	if limit == 0 {
+		limit = PromoPageSize
+	}
+	codes, err := promos.List(r.Context(), promo.ListQuery{
+		Campaign: query.Get("campaign"), State: query.Get("state"), IDPrefix: query.Get("id"),
+		Before: query.Get("before"), Limit: int(min(limit, PromoPageMax)),
+	})
 	if err != nil {
 		h.refuse(w, err)
 		return

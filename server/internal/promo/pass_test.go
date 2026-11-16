@@ -154,7 +154,7 @@ func TestAPassPremiumBatchWaitsForASecondAdmin(t *testing.T) {
 	if _, err := f.store.ApproveBatch(context.Background(), "promo.backers", "admin.alice"); !errors.Is(err, promo.ErrApprover) {
 		t.Fatalf("self approval: %v", err)
 	}
-	listed, err := f.store.List(context.Background(), "campaign.ideyanest_2026", 10)
+	listed, err := f.store.List(context.Background(), promo.ListQuery{Campaign: "campaign.ideyanest_2026", Limit: 10})
 	if err != nil || len(listed) != 3 || !listed[0].PassPremium {
 		t.Fatalf("listed %+v, %v", listed, err)
 	}

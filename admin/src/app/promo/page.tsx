@@ -3,19 +3,43 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
+import type { SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
-import { batchLeads, bundleSummary, codeGrants, promoApiPath, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoTemplate } from "@/promo/codes";
+import type { Translate } from "@/i18n/translate";
+import { batchLeads, bundleSummary, codeGrants, olderPromoHref, promoApiPath, promoStates, readPromoQuery, shownState, templatesPath, type CampaignUsage, type PromoCode, type PromoQuery, type PromoTemplate } from "@/promo/codes";
 import { Notice } from "../players/Notice";
 import { DisableCode } from "./DisableCode";
 import { PromoCreator } from "./PromoCreator";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
-
-function campaignOf(params: SearchParams): string {
-  const value = params.campaign;
-  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+function FilterForm({ query, t }: { query: PromoQuery; t: Translate }) {
+  return (
+    <form method="get" action="/promo" className="flex flex-wrap items-end gap-4">
+      {query.campaign && <input type="hidden" name="campaign" value={query.campaign} />}
+      <label className="flex flex-col gap-1 text-sm text-text-secondary">
+        {t("promo.id_column")}
+        <input name="id" defaultValue={query.id} className="rounded-md bg-surface px-3 py-2 font-mono text-text-primary" />
+      </label>
+      <label className="flex flex-col gap-1 text-sm text-text-secondary">
+        {t("promo.state")}
+        <select name="state" defaultValue={query.state} className="rounded-md bg-surface px-3 py-2 text-text-primary">
+          <option value="">{t("promo.any_state")}</option>
+          {promoStates.map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button type="submit" className="rounded-md bg-primary px-4 py-2 font-semibold text-on-primary">
+        {t("promo.search")}
+      </button>
+      <Link href={query.campaign ? `/promo?campaign=${encodeURIComponent(query.campaign)}` : "/promo"} prefetch={false} className="py-2 text-text-secondary">
+        {t("promo.clear")}
+      </Link>
+    </form>
+  );
 }
 
 export default async function PromoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -27,9 +51,10 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
   if (!canView(admin.permissions, "promo_codes")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const campaign = campaignOf(await searchParams);
+  const query = readPromoQuery(await searchParams);
+  const { campaign } = query;
   const [reply, templateReply] = await Promise.all([
-    adminApi<{ campaigns: CampaignUsage[]; codes: PromoCode[] }>("GET", promoApiPath(campaign)),
+    adminApi<{ campaigns: CampaignUsage[]; codes: PromoCode[] }>("GET", promoApiPath(query)),
     adminApi<{ templates: PromoTemplate[] }>("GET", templatesPath),
   ]);
   if (reply.status !== 200 || templateReply.status !== 200) {
@@ -40,6 +65,8 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
   const mayDisable = can(admin.permissions, "promo_codes", "disable_promo");
   const now = new Date();
   const leads = batchLeads(codes);
+  const older = olderPromoHref(query, codes);
+  const filtered = Boolean(query.state || query.id || query.before);
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2">
@@ -129,6 +156,8 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
             </Link>
           )}
         </div>
+        <FilterForm query={query} t={t} />
+        {codes.length === 0 && filtered && <p className="text-text-secondary">{t("promo.empty_match")}</p>}
         {codes.length > 0 && (
           <table className="text-sm">
             <thead className="text-left text-text-muted">
@@ -174,6 +203,11 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
               ))}
             </tbody>
           </table>
+        )}
+        {older && (
+          <Link href={older} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-text-secondary">
+            {t("promo.older")}
+          </Link>
         )}
       </section>
     </main>
