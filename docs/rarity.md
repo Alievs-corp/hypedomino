@@ -54,7 +54,7 @@ A square standing on one corner. Its pips use the layout of a domino half (`docs
 - `RarityDiamond` draws the diamond and picks the pip overlay by tier, and hides itself when its box is under `diamondMinSize`, also after a resize.
 - `RarityHalo` draws the halo or flow halo with the tier's tint, alpha and scale. Around an avatar, `AvatarView` gives it the frame's square and centre, so the scale counts from the frame (`docs/cosmetics.md` 8.3). It turns the flow halo in `Update` by transform only, with no allocation. The tween pool of `docs/ui-motion.md` section 6 does not exist in the client yet, so this turn is not counted against `maxTweens`.
 - A seat or profile avatar takes its tier from the frame it shows: `AvatarLook.Of` resolves it from the manifest (`docs/cosmetics.md` 8.3), so a frame that cannot be shown and gives way to the default frame shows the default frame's tier.
-- The sprites come from the art of #168. A screen sets them, and the additive material of the halo, on its prefab.
+- The halo and flow halo sprites (`halo`, `flow_halo`) and the additive material are in the shared effects atlas (`docs/vfx.md`, #176); the diamond and pip overlays are the UI kit of #168. A screen sets them on its prefab.
 
 ### 2.3 Where marks show
 
