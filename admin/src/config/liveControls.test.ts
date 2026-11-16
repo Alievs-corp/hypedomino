@@ -1,6 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, unpublishedControls, validVersion } from "./liveControls.ts";
+import { breakGlassOf, buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, unpublishedControls, validIncidentId, validVersion } from "./liveControls.ts";
+
+test("an incident id is non-empty, unpadded, short and printable like the API asks", () => {
+  assert.equal(validIncidentId("INC-12"), true);
+  assert.equal(validIncidentId("a".repeat(128)), true);
+  assert.equal(validIncidentId(""), false);
+  assert.equal(validIncidentId(" INC-12"), false);
+  assert.equal(validIncidentId("INC-12\n"), false);
+  assert.equal(validIncidentId("a".repeat(129)), false);
+});
+
+test("a break-glass change reads its incident and version and anything else reads as none", () => {
+  const change = { incident: { severity: "SEV1", id: "INC-12" }, config_version: 4, controls: {} };
+  assert.deepEqual(breakGlassOf(change), { incident: { severity: "SEV1", id: "INC-12" }, config_version: 4 });
+  assert.equal(breakGlassOf({ coins: 5 }), null);
+  assert.equal(breakGlassOf(null), null);
+});
 
 test("a build list drops blanks, spaces and repeats", () => {
   assert.deepEqual(buildsFromText(" abc \n\nabc\ndef\n"), ["abc", "def"]);

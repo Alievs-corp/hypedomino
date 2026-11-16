@@ -153,7 +153,7 @@ The page reloads the record after each change.
 
 ## Approvals
 
-`/live-controls` (A-25, `docs/admin.md` section 4, #210) is in the nav for roles that may view live controls. It edits the purchase and ranked kill switches, the minimum app version and the build allowlist of `docs/anti-cheat.md` 5.2. A change needs a reason and a fresh sign-in. Staging applies it at once; production waits in `/approvals` for a second admin.
+`/live-controls` (A-25, `docs/admin.md` section 4, #210) is in the nav for roles that may view live controls. It edits the purchase and ranked kill switches, the minimum app version and the build allowlist of `docs/anti-cheat.md` 5.2. A change needs a reason and a fresh sign-in. Staging applies it at once; production waits in `/approvals` for a second admin. During a declared SEV1 or SEV2 incident, break-glass (`docs/admin.md` section 8) takes the severity and the incident id and switches production at once; the screen lists every unconfirmed break-glass action from `GET /admin/live-controls/break-glass` and links to `/approvals`, where another `live_ops` or `super_admin` confirms it. There the row shows the incident and the published version and never expires.
 
 `/reviews` (A-31, `docs/admin.md` 6.4, #209) is in the nav for roles that may view queues. It lists the open reviews of `GET /admin/reviews` with their signals and evidence, and links each account to its player record. The list pages on the server, 50 at a time, filters by cause and searches by account id prefix; `/reports` pages, filters by reason and searches the same way. Clear lifts a shadowban and confirm keeps it (`docs/anti-cheat.md` 5.3). Both need a reason and a fresh sign-in. An admin who wants a temporary ban uses the player record first, then confirms.
 
