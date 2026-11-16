@@ -519,6 +519,32 @@ func (s *Store) List(ctx context.Context, q ListQuery) ([]Code, error) {
 	return codes, rows.Err()
 }
 
+type CampaignBundle struct {
+	Campaign string
+	Bundle   reward.Bundle
+}
+
+func (s *Store) CampaignBundles(ctx context.Context) ([]CampaignBundle, error) {
+	rows, err := s.db.Query(ctx, `select distinct campaign_id, bundle from promo_codes order by campaign_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	found := []CampaignBundle{}
+	for rows.Next() {
+		var held CampaignBundle
+		var bundle []byte
+		if err := rows.Scan(&held.Campaign, &bundle); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(bundle, &held.Bundle); err != nil {
+			return nil, err
+		}
+		found = append(found, held)
+	}
+	return found, rows.Err()
+}
+
 func (s *Store) Campaigns(ctx context.Context) ([]CampaignUsage, error) {
 	rows, err := s.db.Query(ctx, `select c.campaign_id, count(*), count(*) filter (where c.state = $1), count(*) filter (where c.state = $2), count(*) filter (where c.state = $3),
 		sum(c.cap), coalesce(sum(r.redemptions), 0), min(c.starts_at), max(c.ends_at)

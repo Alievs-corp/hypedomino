@@ -8,12 +8,12 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
-	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -40,8 +40,15 @@ type bundleRow struct {
 }
 
 type rewardBundlesView struct {
-	Bundles        []bundleRow `json:"bundles"`
-	PromoTruncated bool        `json:"promo_truncated"`
+	Bundles []bundleRow `json:"bundles"`
+}
+
+type bundleListQuery struct {
+	Text      string
+	Domain    string
+	Differing bool
+	After     string
+	Limit     int
 }
 
 type bundleIndex map[string]*bundleRow
@@ -103,12 +110,57 @@ func guideValue(bundle reward.Bundle, items *cosmetics.Catalog, prices reward.Co
 }
 
 func (h *Handler) listRewardBundles(w http.ResponseWriter, r *http.Request, _ principal) {
+	query, err := rewardBundleQuery(r)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
 	view, err := h.rewardBundles(r.Context())
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, view)
+	reply(w, http.StatusOK, rewardBundlesView{Bundles: query.page(view.Bundles)})
+}
+
+func rewardBundleQuery(r *http.Request) (bundleListQuery, error) {
+	query := r.URL.Query()
+	limit, err := queuePageLimit(query.Get("limit"))
+	differing := query.Get("differing")
+	if err != nil || (differing != "" && differing != "true") {
+		return bundleListQuery{}, errMalformed
+	}
+	text := strings.ToLower(strings.TrimSpace(query.Get("q")))
+	return bundleListQuery{Text: text, Domain: query.Get("domain"), Differing: differing == "true", After: query.Get("after"), Limit: limit}, nil
+}
+
+func (q bundleListQuery) page(rows []bundleRow) []bundleRow {
+	page := []bundleRow{}
+	for _, row := range rows {
+		if row.ID <= q.After || !q.keeps(row) {
+			continue
+		}
+		if len(page) >= q.Limit && row.ID != page[len(page)-1].ID {
+			break
+		}
+		page = append(page, row)
+	}
+	return page
+}
+
+func (q bundleListQuery) keeps(row bundleRow) bool {
+	usedInDomain := slices.ContainsFunc(row.UsedBy, func(use bundleUse) bool { return use.Domain == q.Domain })
+	matches := slices.ContainsFunc(row.searchable(), func(value string) bool { return strings.Contains(strings.ToLower(value), q.Text) })
+	return (!q.Differing || row.Differs) && (q.Domain == "" || usedInDomain) && matches
+}
+
+func (r bundleRow) searchable() []string {
+	values := append([]string{r.ID}, r.Cosmetics...)
+	values = append(values, r.Medals...)
+	for _, use := range r.UsedBy {
+		values = append(values, use.Object)
+	}
+	return values
 }
 
 func (h *Handler) rewardBundles(ctx context.Context) (rewardBundlesView, error) {
@@ -119,15 +171,14 @@ func (h *Handler) rewardBundles(ctx context.Context) (rewardBundlesView, error) 
 			return rewardBundlesView{}, err
 		}
 	}
-	truncated, err := h.promoBundles(ctx, index)
-	if err != nil {
+	if err := h.promoBundles(ctx, index); err != nil {
 		return rewardBundlesView{}, err
 	}
 	items, err := cosmetics.Published(ctx, h.pool)
 	if err != nil {
 		return rewardBundlesView{}, err
 	}
-	return rewardBundlesView{Bundles: index.rows(items, reward.DefaultConfig()), PromoTruncated: truncated}, nil
+	return rewardBundlesView{Bundles: index.rows(items, reward.DefaultConfig())}, nil
 }
 
 func (h *Handler) shopBundles(ctx context.Context, index bundleIndex) error {
@@ -246,30 +297,30 @@ func (h *Handler) dailyLoginBundles(ctx context.Context, index bundleIndex) erro
 	return nil
 }
 
-func (h *Handler) promoBundles(ctx context.Context, index bundleIndex) (bool, error) {
+func (h *Handler) promoBundles(ctx context.Context, index bundleIndex) error {
 	if h.promos == nil {
-		return false, nil
+		return nil
 	}
-	codes, err := h.promos.List(ctx, promo.ListQuery{Limit: MaxPromoListed})
+	held, err := h.promos.CampaignBundles(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
-	for _, code := range codes {
+	for _, code := range held {
 		if err := index.add(code.Bundle, bundleUse{Domain: bundleUsePromo, Object: code.Campaign}); err != nil {
-			return false, err
+			return err
 		}
 	}
 	templates, err := h.promos.Templates(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
 	for _, template := range templates {
 		if template.Bundle == nil {
 			continue
 		}
 		if err := index.add(*template.Bundle, bundleUse{Domain: bundleUsePromoTemplate, Object: template.ID}); err != nil {
-			return false, err
+			return err
 		}
 	}
-	return len(codes) == MaxPromoListed, nil
+	return nil
 }
