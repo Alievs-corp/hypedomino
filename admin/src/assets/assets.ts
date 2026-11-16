@@ -1,3 +1,4 @@
+import type { SearchParams } from "../audit/query.ts";
 import type { MessageKey, Translate } from "../i18n/translate.ts";
 
 export type AssetStatus = "awaiting_file" | "passed" | "rejected";
@@ -35,6 +36,8 @@ const statusLabels: Record<AssetStatus, MessageKey> = {
   rejected: "assets.status.rejected",
 };
 
+export const assetStatuses = Object.keys(statusLabels) as AssetStatus[];
+
 export function itemIdValid(id: string): boolean {
   return itemIdPattern.test(id);
 }
@@ -56,4 +59,47 @@ export function sizeLabel(bytes: number): string {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export const assetPageSize = 50;
+
+export type AssetQuery = { status: AssetStatus | ""; item: string; before: string };
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function single(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+export function readAssetQuery(params: SearchParams): AssetQuery {
+  const status = single(params.status);
+  const before = single(params.before);
+  return {
+    status: Object.hasOwn(statusLabels, status) ? (status as AssetStatus) : "",
+    item: single(params.item),
+    before: uuidPattern.test(before) ? before : "",
+  };
+}
+
+function searchOf(query: AssetQuery): URLSearchParams {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value) {
+      search.set(key, value);
+    }
+  }
+  return search;
+}
+
+export function assetsApiPath(query: AssetQuery): string {
+  const search = searchOf(query);
+  search.set("limit", String(assetPageSize));
+  return `/admin/assets?${search}`;
+}
+
+export function olderAssetsHref(query: AssetQuery, assets: readonly Asset[]): string | null {
+  if (assets.length < assetPageSize) {
+    return null;
+  }
+  return `/assets?${searchOf({ ...query, before: assets[assets.length - 1].id })}`;
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Translate } from "../i18n/translate.ts";
-import { failedCheckLabels, itemIdValid, sizeLabel, statusLabel, type Asset } from "./assets.ts";
+import { assetPageSize, assetsApiPath, failedCheckLabels, itemIdValid, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset } from "./assets.ts";
 
 const t = ((key: string) => `<${key}>`) as Translate;
 
@@ -40,6 +40,21 @@ test("only failed checks are named, and an unknown check still shows", () => {
 test("every status has its own label", () => {
   const labels = (["awaiting_file", "passed", "rejected"] as const).map((status) => statusLabel(status, t));
   assert.equal(new Set(labels).size, 3);
+});
+
+test("the list query keeps a known status, the item search and a well-formed cursor", () => {
+  const before = "5f2c9d3e-6d4a-4f4e-9d11-1a2b3c4d5e6f";
+  assert.deepEqual(readAssetQuery({ status: "passed", item: " avatar. ", before }), { status: "passed", item: "avatar.", before });
+  assert.deepEqual(readAssetQuery({ status: "toString", before: "1 or 1=1" }), { status: "", item: "", before: "" });
+  assert.deepEqual(readAssetQuery({ status: ["rejected", "passed"] }), { status: "rejected", item: "", before: "" });
+});
+
+test("the API path always asks for one page and the older link follows the last row", () => {
+  const query = { status: "rejected", item: "avatar.", before: "" } as const;
+  assert.equal(assetsApiPath(query), `/admin/assets?status=rejected&item=avatar.&limit=${assetPageSize}`);
+  const page = Array.from({ length: assetPageSize }, (_, at) => ({ ...asset, id: `a-${at}` }));
+  assert.equal(olderAssetsHref(query, page), `/assets?status=rejected&item=avatar.&before=a-${assetPageSize - 1}`);
+  assert.equal(olderAssetsHref(query, page.slice(1)), null);
 });
 
 test("sizes read in the nearest unit", () => {

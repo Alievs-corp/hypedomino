@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -194,6 +195,45 @@ func TestAnUploadIsRefusedForABadItemOrASlotWithoutAFormat(t *testing.T) {
 	expect(t, status, body, http.StatusNotFound, "not_found")
 	status, body = a.call("POST", "/admin/assets/5f2c9d3e-6d4a-4f4e-9d11-1a2b3c4d5e6f/check", token, nil)
 	expect(t, status, body, http.StatusNotFound, "not_found")
+}
+
+func listedAssetIDs(t *testing.T, a *api, token, query string) []string {
+	t.Helper()
+	status, body := a.call("GET", "/admin/assets"+query, token, nil)
+	expect(t, status, body, http.StatusOK, "")
+	var ids []string
+	for _, asset := range body["assets"].([]any) {
+		ids = append(ids, asset.(map[string]any)["item_id"].(string)+"#"+asset.(map[string]any)["id"].(string))
+	}
+	return ids
+}
+
+func TestTheAssetListPagesFiltersByStatusAndSearchesByItem(t *testing.T) {
+	a, store := newAssetAPI(t)
+	token := a.signIn("ayla")
+	for _, item := range []string{"avatar.fox", "avatar.owl", "frame.gold"} {
+		status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": item, "slot": "static"})
+		expect(t, status, body, http.StatusOK, "")
+	}
+	id, uploadURL := startUpload(t, a, token)
+	store.upload(uploadURL, encodedPNG(t, image.NewNRGBA(image.Rect(0, 0, 8, 8))))
+	status, body := a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+	expect(t, status, body, http.StatusOK, "")
+
+	all := listedAssetIDs(t, a, token, "")
+	first := listedAssetIDs(t, a, token, "?limit=3")
+	rest := listedAssetIDs(t, a, token, "?limit=3&before="+strings.SplitN(first[2], "#", 2)[1])
+	if len(all) != 4 || strings.Join(append(first, rest...), ",") != strings.Join(all, ",") {
+		t.Fatalf("all %v, pages %v %v", all, first, rest)
+	}
+	if passed := listedAssetIDs(t, a, token, "?status=passed"); len(passed) != 1 || passed[0] != "avatar.fox#"+id {
+		t.Fatalf("passed %v", passed)
+	}
+	if avatars := listedAssetIDs(t, a, token, "?item=avatar.&status=awaiting_file"); len(avatars) != 2 || slices.Contains(avatars, "avatar.fox#"+id) {
+		t.Fatalf("avatars %v", avatars)
+	}
+	status, body = a.call("GET", "/admin/assets?before=nope", token, nil)
+	expect(t, status, body, http.StatusBadRequest, "invalid")
 }
 
 func TestWithoutAStoreTheListWorksAndUploadsAreRefused(t *testing.T) {
