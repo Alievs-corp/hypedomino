@@ -81,6 +81,61 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `apricot_fan: background [213.0, 212.0, 212.0], pockets 741 px, crop (16, -165, 1188, 1007), portrait 768`
+- Crop `(63, 0, 1141, 1078)` to `(16, -165, 1188, 1007)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `apricot_fan_loop: blink edit registered (tx, ty, scale, angle) = (0.1987, 0.0668, 1.0003, -0.0002), residual 0.00129 -> 0.00126, eye colour offset [-8.3, -1.8, 2.5], parts 1, ripples 0, filled 61209 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.031 before, 0.172 after; highest over the 16 loop frames 0.026 before, 0.161 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/apricot_fan/work/apricot_fan_cleanup.py apricot_fan assets-src/cosmetic/avatar/apricot_fan/concept/20261116-02.png assets-src/cosmetic/avatar/apricot_fan/work
+python -I assets-src/cosmetic/avatar/apricot_fan/work/apricot_fan_loop.py assets-src/cosmetic/avatar/apricot_fan/concept assets-src/cosmetic/avatar/apricot_fan/work assets-src/cosmetic/avatar/apricot_fan/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/apricot_fan` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `d0be25ff4eca6ed7afc3afe86645b5876595a9e8e44b3278e11f35af3cfb1b78` |
+| export/anim/0002.png | `e06edc1fb053f73c107cb09323792634b4f6dd3f4cb3008aa1225e3ba177367e` |
+| export/anim/0003.png | `62bb603175e6de928794ed1d5bc1bb3d06d48c9c1dbc3a91fb929a551cb7eb54` |
+| export/anim/0004.png | `ccd81fb19b0fc6ef4a7769b7b3c65c48e16ec8ae4717e69950d7d526eb5592b1` |
+| export/anim/0005.png | `66d71e36849b4d765b7d5b2caf331e72b0677a081d05e87e3df270d0011dc21c` |
+| export/anim/0006.png | `57ecf79522f3f95fccfd367b6c5b156bfe4b3b033c3c3bf1b875bf9f6d4ff13f` |
+| export/anim/0007.png | `c7fa55a7cfdf60d082d0a65c94596a6a5f3bddfd88f3caa2f3e80116e85fa5cc` |
+| export/anim/0008.png | `d064bae06173897675c920f9107f723023e1cef4fa3de35463b9f0dc0c1034e8` |
+| export/anim/0009.png | `46c51f42ae9a55b4ade279cfdd1db380701ad0b636ae030527b5d140b1a48415` |
+| export/anim/0010.png | `f8024ec4a72750c7cc45a8b34dae0f09e18897855a528d00913903a7c6fe34b5` |
+| export/anim/0011.png | `87f56bc0d957111afe55a4cd6c6b6032ec9cb49ebd18d5a1de0eccfecf86618d` |
+| export/anim/0012.png | `d144f460a8f723f56a153a6e541b503da311cacee371753f10b6914e5ce719e8` |
+| export/anim/0013.png | `479a834753f0f8a5bb533c78bd2f2a8d996701cd1f1fbcc037dc0670abb74444` |
+| export/anim/0014.png | `7114d4f7c358c42b0930731cb13a1481420e61dbce352329b6cb15baaa249dbf` |
+| export/anim/0015.png | `bf0d311e6b9a8bd3cf7968274e635c53ec5b60440c916b4b00bff515bf3cd840` |
+| export/anim/0016.png | `b79a11c1ac1d434c81dd80f22737cea697c89facf25e659e16afcedda95321be` |
+| export/static.png | `46c51f42ae9a55b4ade279cfdd1db380701ad0b636ae030527b5d140b1a48415` |
+| work/apricot_fan_base.png | `ce9d04e701a8915e607e7ec82e8523f0fd06de30632ef72e6fd789ec456f46f8` |
+| work/apricot_fan_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/apricot_fan_eyes_closed.png | `45f0c093e69aed3abcd4a07f71f002fb05a64d0610e068464249560c5676237e` |
+| work/apricot_fan_eyes_open.png | `553432af56a4076e5ea51e7ac48d8427d08a4c5b81aea5eb5f3dfb4f7f8be13e` |
+| work/apricot_fan_fan.png | `32ceaeb0bfe6a3964a52d4f942168c046c8782a5b67df2b6095df257a3212506` |
+| work/apricot_fan_head.png | `85e9191ca55a82adf7b105b43c5315b8527b0ba97da8cd1a2e1baea3223229f8` |
+| work/apricot_fan_loop.py | `12f9e2c96fae4beaa89fbdcfdf08ff8ba54775e27e934b70e99d724172e1b6fd` |
+| work/apricot_fan_portrait.png | `afe237d2e646ce387e0292df7ca21eea191bbf94c1f9efb0ae18665926660e71` |
+| work/apricot_fan_torso.png | `7a9d9ad2d4b801f8c24a753aba7f1bb51cefdf67d9cc206d018385e8dc3ea96c` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -106,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-02.png | P-3 with the style key, quoted below. Sent 08:28:34 UTC; `c2pa.created` 2026-11-16T08:29:25Z |
 | 2026-11-16 | concept/20261116-03.png | Edit of `concept/20261116-02.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:44:57 UTC; `c2pa.created` 2026-11-16T08:46:00Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/apricot_fan_base.png, work/apricot_fan_cleanup.py, work/apricot_fan_eyes_closed.png, work/apricot_fan_eyes_open.png, work/apricot_fan_fan.png, work/apricot_fan_head.png, work/apricot_fan_loop.py, work/apricot_fan_portrait.png, work/apricot_fan_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(63, 0, 1141, 1078)` to `(16, -165, 1188, 1007)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-02.png`, verbatim:
 

@@ -81,6 +81,60 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `pewter_bowtie: background [181.0, 180.0, 180.0], pockets 1336 px, crop (17, -182, 1189, 990), portrait 768`
+- Crop `(64, 0, 1142, 1078)` to `(17, -182, 1189, 990)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `pewter_bowtie_loop: blink edit registered (tx, ty, scale, angle) = (0.2521, 0.1231, 0.9998, -0.0001), residual 0.00057 -> 0.00055, eye colour offset [-5.6, -1.4, -0.4], parts 0, ripples 1, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/pewter_bowtie/work/pewter_bowtie_cleanup.py pewter_bowtie assets-src/cosmetic/avatar/pewter_bowtie/concept/20261115-01.png assets-src/cosmetic/avatar/pewter_bowtie/work
+python -I assets-src/cosmetic/avatar/pewter_bowtie/work/pewter_bowtie_loop.py assets-src/cosmetic/avatar/pewter_bowtie/concept assets-src/cosmetic/avatar/pewter_bowtie/work assets-src/cosmetic/avatar/pewter_bowtie/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/pewter_bowtie` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `1320f57cab0d63479698eba2f5a6f091b1b6fd8150af98b4e7efe0a89b1213c0` |
+| export/anim/0002.png | `1078c0b86d2ebe5db6044aebb82ae3916abf5a87238992332f819d6162fbc0a5` |
+| export/anim/0003.png | `0d19976cc663d78c5394912823a453643198b294315783b60138ef8389a53890` |
+| export/anim/0004.png | `5e3980dcc0b26498fca362f7aca271ee011e47806404145a79a4b639dc6c4f7e` |
+| export/anim/0005.png | `1e2df85153d2842b8f11ebab4d772c5abf3a3ca69bb46afdf2eb710111643af8` |
+| export/anim/0006.png | `7b3f2a936f906b65a6b3beb503bef100c54af1002ce2f89e4abc70e9bf3bc609` |
+| export/anim/0007.png | `b81a945a3d49e7f67b9b34187502d05425739459514bc1e221c0e21b7596dc42` |
+| export/anim/0008.png | `30a333ac955cad204d78a170a50af85972b1dd6b531047d121338d4b0fef9098` |
+| export/anim/0009.png | `ca2f3937bc9b48a39ece4e10943cc3e0894cde273d7e65b06f442a62eb4a7f88` |
+| export/anim/0010.png | `df6919f031a51d8b62104a70eb48a70a965ef78b321ee09958ca74d41be5149b` |
+| export/anim/0011.png | `edc07a3643d047865d983d5356b0b8a61c7c6c375cd6e281103614c0b2131b07` |
+| export/anim/0012.png | `f41d64d579034aa61aaf89c6dac74ba3c146c1bae9834cfba9f7aca012d5eebf` |
+| export/anim/0013.png | `101ee50fa0fa8a593c08496c7eff932df01a8f7f2b01226882f7089996776bf1` |
+| export/anim/0014.png | `b87a379922e06158e3c13defc794215b1847e8b9514e2b2152be3eaefacb8421` |
+| export/anim/0015.png | `20e3e5dac9f6bc9729cce15f4d0a206d3d4e4a9a96b78ea0361db4d1c62b8348` |
+| export/anim/0016.png | `6ee53e4fb0431ac15501422381b5e27cfe65f047bf6fa07223a788471898ccd7` |
+| export/static.png | `ca2f3937bc9b48a39ece4e10943cc3e0894cde273d7e65b06f442a62eb4a7f88` |
+| work/pewter_bowtie_base.png | `473a4737bbac2aa4f6cfd7010e8d4f4f0a7e7a0d75c2e4b57cd3edef61b03453` |
+| work/pewter_bowtie_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/pewter_bowtie_eyes_closed.png | `01ee4d6bb20c79e8a7d5ce7b1675ad6717b4a95d16658833bbacd63213175548` |
+| work/pewter_bowtie_eyes_open.png | `062f159ef944897492e78dbdb0e9dd737b28626aedd5c6f8facc7f7b19c8fb6a` |
+| work/pewter_bowtie_head.png | `c1b63cf0ef17628d97aadfc14df82c2f481426947e5724237c9575967fc815cf` |
+| work/pewter_bowtie_loop.py | `c93fc914f7bd4aae38f01ee351a92f42b308bf55363c777e7032e8b47b11229b` |
+| work/pewter_bowtie_portrait.png | `4cd726ab623faf079b1c30ce61cbc6201d447ecec1c71aeefff00b044034270c` |
+| work/pewter_bowtie_torso.png | `3d051a349811e54c12e0384d3dfed40e483f0993a4003470eb8f87c0db42416c` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -104,6 +158,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:34:07 UTC; `c2pa.created` 2026-11-15T17:34:42Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:49:40 UTC; `c2pa.created` 2026-11-15T17:50:42Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/pewter_bowtie_base.png, work/pewter_bowtie_cleanup.py, work/pewter_bowtie_eyes_closed.png, work/pewter_bowtie_eyes_open.png, work/pewter_bowtie_head.png, work/pewter_bowtie_loop.py, work/pewter_bowtie_portrait.png, work/pewter_bowtie_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(64, 0, 1142, 1078)` to `(17, -182, 1189, 990)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

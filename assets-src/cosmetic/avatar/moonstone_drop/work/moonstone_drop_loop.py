@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "moonstone_drop"
-CROP = (88, 0, 1119, 1031)
+CROP = (43, -176, 1164, 945)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (390, 250, 240, 265)
+HEAD = (390, 351, 221, 244)
 HEAD_FALLOFF = 0.3
-NECK_Y = 510
-NECK_BAND = 40
-SHOULDER_Y = 650
+NECK_Y = 590
+NECK_BAND = 37
+SHOULDER_Y = 718
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.5
-NOD = 2.0
-EYES = [(300, 272, 44, 25), (432, 248, 44, 25)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(307, 371, 40, 23), (428, 349, 40, 23)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "earring", "polygon": [(543, 326), (556, 326), (560, 360), (562, 392), (565, 410), (564, 440), (556, 453), (544, 453), (535, 440), (535, 410), (539, 392), (540, 360)], "pivot": (550, 324), "length": 100, "swing": 3.5, "lag": 0.6, "grow": 1, "behind": "fill"},
+    {"name": "earring", "polygon": [(530, 420), (542, 420), (546, 452), (548, 481), (550, 498), (550, 525), (542, 537), (531, 537), (523, 525), (523, 498), (527, 481), (527, 452)], "pivot": (537, 419), "length": 92, "swing": 3.5, "lag": 0.6, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -89,7 +89,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

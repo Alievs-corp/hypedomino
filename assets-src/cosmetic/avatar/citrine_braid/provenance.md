@@ -79,6 +79,61 @@ It printed `citrine_braid_loop: blink edit registered (tx, ty, scale, angle) = (
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `citrine_braid: background [199.0, 199.0, 200.0], pockets 4989 px, crop (36, -180, 1174, 958), portrait 768`
+- Crop `(81, 0, 1128, 1047)` to `(36, -180, 1174, 958)` on the concept
+- Scale k = 0.9200. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `citrine_braid_loop: blink edit registered (tx, ty, scale, angle) = (0.1086, 0.0662, 0.9993, -0.0002), residual 0.00105 -> 0.00099, eye colour offset [-6.2, -1.7, -1.2], parts 0, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.005 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/citrine_braid/work/citrine_braid_cleanup.py citrine_braid assets-src/cosmetic/avatar/citrine_braid/concept/20261115-01.png assets-src/cosmetic/avatar/citrine_braid/work
+python -I assets-src/cosmetic/avatar/citrine_braid/work/citrine_braid_loop.py assets-src/cosmetic/avatar/citrine_braid/concept assets-src/cosmetic/avatar/citrine_braid/work assets-src/cosmetic/avatar/citrine_braid/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/citrine_braid` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `d141c02ec1b0765d7349af7e22a157f249680bcb8f1bfe15a18268926f1ea7fd` |
+| export/anim/0002.png | `e186daf0910d97be43f8a5b3bcc739a16e0d886f4802a67d1eb651b7fa9ab215` |
+| export/anim/0003.png | `c6a064edaea0222aa205aa81dd4223f1cbe90e596735579d2e5c462d877814ef` |
+| export/anim/0004.png | `3d66b5b66cb2b6b0378268e312de57513cb0b415762958a5a92166258ba72c71` |
+| export/anim/0005.png | `9dae2c5be4523dde7d1372e3d897e3db167efa8f6369b3775d7d2f82bb5da8d0` |
+| export/anim/0006.png | `fdeeec810099b1f6144a5e261ceb416d8fe9abc3f32d74351e9f26690bdd901c` |
+| export/anim/0007.png | `48a7e4390b45e1a64a1f1db92427068a7847d11d653bfe0fe8d4e8ba224597ac` |
+| export/anim/0008.png | `a3288b3088d0a4952c0f22024c6aa5b42582bdfcb89773a116923487e435d460` |
+| export/anim/0009.png | `ba847783805669885ec8674dc14305cde41dcbeaced8851a8c2f35a44c6d7766` |
+| export/anim/0010.png | `d8435ce45999a15016768ded823b38e17353b0e1c7cb1336f143c1808a35873b` |
+| export/anim/0011.png | `9a1533dcef9f89c2fc1cf034816d7638bb93b6a1d8cdb318bdf6f5f8dc3f641a` |
+| export/anim/0012.png | `6c0c7de66e107e9c2f5c5a1d334357d00b4ef7e293369fb9b4f373e52636918d` |
+| export/anim/0013.png | `736aa5872b90e7568eb4aae7c70c262cf0610f489fa6b3cceea5d2d71fccc03e` |
+| export/anim/0014.png | `29175afc234e4f617cace03e5b148a2c5c9ac0ef1f0a03ea492a871f41e01169` |
+| export/anim/0015.png | `43e1682094b82f4f6ab19598283256b312913023cc0778f1505bad939723d90d` |
+| export/anim/0016.png | `7e7c338a9e74e18f79ffb57773baa5c752ebcea3037b0d415714c5125fb03c99` |
+| export/static.png | `ba847783805669885ec8674dc14305cde41dcbeaced8851a8c2f35a44c6d7766` |
+| work/citrine_braid_base.png | `a4b7614c20be757ce3f5272a9fd542f27ac4cd3fa41b7394419aae765bca0174` |
+| work/citrine_braid_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/citrine_braid_eyes_closed.png | `4ab6a2cebae1a3fe27784f5ab807b83ac48df0b0a116691b82d31b999a73186f` |
+| work/citrine_braid_eyes_open.png | `4467d826b62c828f9c913e87c671bc0ffc8cca86a9b66458407241be98af4409` |
+| work/citrine_braid_head.png | `889a0b232bb5eed9cd1caa15c849d1a796f229e54b3d0f8400b6ee37bec93cb6` |
+| work/citrine_braid_loop.py | `9a500bee308f1eee7bd4ad24506edbb77b4ddc14fc19aae866f6519a68a6c878` |
+| work/citrine_braid_portrait.png | `193c1dc29d7d103999223e2690438416e0d165d901d135ff022ca9031b26bef9` |
+| work/citrine_braid_torso.png | `b13a3c18bf655c97b610fa660bd2cc90afdff34de208668ae13c9c95d345a914` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -102,6 +157,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:55:41 UTC; `c2pa.created` 2026-11-15T16:56:30Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:57:00 UTC; `c2pa.created` 2026-11-15T16:58:02Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/citrine_braid_base.png, work/citrine_braid_cleanup.py, work/citrine_braid_eyes_closed.png, work/citrine_braid_eyes_open.png, work/citrine_braid_head.png, work/citrine_braid_loop.py, work/citrine_braid_portrait.png, work/citrine_braid_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(81, 0, 1128, 1047)` to `(36, -180, 1174, 958)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

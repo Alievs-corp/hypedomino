@@ -84,6 +84,62 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `rose_monocle: background [203.0, 204.0, 206.0], pockets 1494 px, crop (65, -173, 1186, 948), portrait 768`
+- Crop `(110, 0, 1141, 1031)` to `(65, -173, 1186, 948)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `rose_monocle_loop: blink edit registered (tx, ty, scale, angle) = (0.2756, 0.1857, 0.9999, -0.0003), residual 0.00103 -> 0.00099, eye colour offset [-11.9, -3.0, 0.5], parts 2, ripples 1, filled 3390 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.021 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/rose_monocle/work/rose_monocle_cleanup.py rose_monocle assets-src/cosmetic/avatar/rose_monocle/concept/20261115-01.png assets-src/cosmetic/avatar/rose_monocle/work
+python -I assets-src/cosmetic/avatar/rose_monocle/work/rose_monocle_loop.py assets-src/cosmetic/avatar/rose_monocle/concept assets-src/cosmetic/avatar/rose_monocle/work assets-src/cosmetic/avatar/rose_monocle/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/rose_monocle` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `055e00e19f299ab79b082477317c0821e412f72676eeb9f5e12729593ab885c5` |
+| export/anim/0002.png | `b9c8c0baacf1b6eea104df2f236975c8efa2578fab6a57e4a979755dcd200276` |
+| export/anim/0003.png | `ba92790e49eb59108fe1a8969387cd6de4dba28ed7fc09c74ae675400836bc89` |
+| export/anim/0004.png | `cd57eb956cea25f06a4e6b0a47a3214aa0f806c328373ec34b97a97f8d11d5d7` |
+| export/anim/0005.png | `e5fd82d5eed776feebc76686863a9e11d496d09132d3bcaf7cd6e5ad0c2560df` |
+| export/anim/0006.png | `0bfa13644664ed9310133935b874a3344b81766ec8e5df08d949ebda9c817bc2` |
+| export/anim/0007.png | `86f99f258740aefede6da8f9ee2f818952f121a13ee0985f6f85f3d2f10a919a` |
+| export/anim/0008.png | `f7e9526ce6f151d2f0c8bba630de115187260a87d04e27148a5a33598f68def0` |
+| export/anim/0009.png | `43f89afcf1060bc35d120a942fcac86df84c73bfcf9b8ecc015c2e62f1e442cf` |
+| export/anim/0010.png | `a97e6c36c6ea83a7c04176c3ac858a19492b64f2dc04d34d3c893f1151fd2c5f` |
+| export/anim/0011.png | `8fe2385abe0be1af716fbdea635ecf6de2d241b528dd33d51ce1117a8d05fe47` |
+| export/anim/0012.png | `f4e63e59bdeaccf4707836d6e80ae037cd60a2ca38840a976d05e003158ab243` |
+| export/anim/0013.png | `07c8dc1676174bf2dd8cf6bdac6be9330933ac32ed98cdc2886281af0edfcddf` |
+| export/anim/0014.png | `8589c8f74c53e95a6201ffe9968e38731db24d4706bc82d02e99d380b8f7999f` |
+| export/anim/0015.png | `fa3baa74aee8a8d5ce1d03a9d2b37383291977fe6172d7451084868fa43e293e` |
+| export/anim/0016.png | `05f836d2662d7f58246634b7ff259fc015859dd71d8088fbadcab28f2ffb1934` |
+| export/static.png | `43f89afcf1060bc35d120a942fcac86df84c73bfcf9b8ecc015c2e62f1e442cf` |
+| work/rose_monocle_base.png | `f97526252c1a35bc877f0bf425d8f8882d88fba470f611a1490d7555efb11795` |
+| work/rose_monocle_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/rose_monocle_earring_left.png | `d244b129175ad43cd2e7161246819cf42b88853631f20acd312a25f11246f9f9` |
+| work/rose_monocle_earring_right.png | `37f848e06afc57fc3ce72bbced5a85a6908dd8830adb983b7a5e4681a13fec10` |
+| work/rose_monocle_eyes_closed.png | `9624ded87a51588eeb9baabe636477320997b9f46e9c06f88d29312ce0683575` |
+| work/rose_monocle_eyes_open.png | `3bbd3b7052842bafea8cc4653ba2aab461b85092424f85b299e94d53010be440` |
+| work/rose_monocle_head.png | `d73102346413b8606cd7da30ce14a52b95a8b9a869dfee24a0fad6af5f30f686` |
+| work/rose_monocle_loop.py | `e084ea8090d7bf835fad4f8a4b8d52b0c093e665e66943f8468c3808705e2eb6` |
+| work/rose_monocle_portrait.png | `d7b8423a240b4bd043af1a8c938987005026ce2a0047c53da4a5b086d518c01b` |
+| work/rose_monocle_torso.png | `c73919c56ee1c4c7f1b99b80bdaa25e48a54ad1ff56ab4ec4dd112e4f65174bf` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -109,6 +165,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:32:35 UTC; `c2pa.created` 2026-11-15T17:33:43Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:48:37 UTC; `c2pa.created` 2026-11-15T17:49:19Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/rose_monocle_base.png, work/rose_monocle_cleanup.py, work/rose_monocle_earring_left.png, work/rose_monocle_earring_right.png, work/rose_monocle_eyes_closed.png, work/rose_monocle_eyes_open.png, work/rose_monocle_head.png, work/rose_monocle_loop.py, work/rose_monocle_portrait.png, work/rose_monocle_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(110, 0, 1141, 1031)` to `(65, -173, 1186, 948)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

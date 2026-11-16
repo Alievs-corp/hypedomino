@@ -11,8 +11,8 @@ EDGE_SIGMA = 1.0
 MASK_OPENING = 3
 MASK_EROSION = 2
 HEAD_SHARE = 0.35
-CROP_SHARE = 0.86
-HEADROOM = 0.07
+CROP_SHARE = 0.935
+HEADROOM = 0.17
 PORTRAIT = 768
 POCKET_TOLERANCE = 24
 POCKET_MIN_PIXELS = 20
@@ -117,7 +117,7 @@ def crop_box(alpha):
     centre_x = (columns[0] + columns[-1]) / 2
     side = CROP_SHARE * min(alpha.shape)
     left = int(round(np.clip(centre_x - side / 2, 0, alpha.shape[1] - side)))
-    upper = int(round(np.clip(top - HEADROOM * side, 0, alpha.shape[0] - side)))
+    upper = int(round(min(top - HEADROOM * side, alpha.shape[0] - side)))
     return left, upper, left + int(side), upper + int(side)
 
 

@@ -10,34 +10,34 @@ from scipy import ndimage, optimize
 SLUG = "rose_monocle"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (110, 0, 1141, 1031)
+CROP = (65, -173, 1186, 948)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (385, 280, 250, 280)
+HEAD = (385, 376, 230, 258)
 HEAD_FALLOFF = 0.3
-NECK_Y = 500
-NECK_BAND = 35
-SHOULDER_Y = 640
+NECK_Y = 578
+NECK_BAND = 32
+SHOULDER_Y = 707
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(372, 332, 36, 20), (484, 322, 36, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(373, 424, 33, 18), (476, 415, 33, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "earring_left", "polygon": [(282, 500), (302, 500), (306, 540), (304, 590), (282, 594), (276, 540)], "pivot": (292, 504), "length": 60, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(556, 496), (576, 496), (580, 530), (578, 564), (556, 566), (552, 530)], "pivot": (566, 500), "length": 50, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(290, 578), (309, 578), (312, 615), (310, 661), (290, 665), (285, 615)], "pivot": (299, 582), "length": 55, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(542, 575), (561, 575), (564, 606), (562, 637), (542, 639), (539, 606)], "pivot": (551, 578), "length": 46, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
 ]
-GLINTS = [(372, 334, 46, 46, 10, 5)]
+GLINTS = [(373, 426, 42, 42, 10, 5)]
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(292, 384), (330, 384), (346, 480), (362, 570), (396, 630), (378, 650), (330, 600), (302, 500)], "feather": 8, "top": 380, "ramp": 120, "amplitude": 4.0, "wavelength": 260, "cycles": 1},
+    {"polygon": [(299, 472), (334, 472), (349, 560), (364, 643), (395, 698), (378, 716), (334, 670), (309, 578)], "feather": 7, "top": 468, "ramp": 110, "amplitude": 3.68, "wavelength": 239, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
