@@ -18,6 +18,7 @@ type Inventory interface {
 	Owned(ctx context.Context, account string) ([]Owned, error)
 	Equip(ctx context.Context, account, slot string, ids []string, now time.Time) (profile.Loadout, error)
 	Freeze(ctx context.Context, account string) (profile.Loadout, error)
+	EmojiSlots() int
 }
 
 type UnownedObserver interface {
@@ -57,8 +58,9 @@ type itemView struct {
 }
 
 type listView struct {
-	Items   []itemView      `json:"items"`
-	Loadout profile.Loadout `json:"loadout"`
+	Items      []itemView      `json:"items"`
+	Loadout    profile.Loadout `json:"loadout"`
+	EmojiSlots int             `json:"emoji_slots"`
 }
 
 type equipRequest struct {
@@ -97,7 +99,7 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		}
 		items = append(items, view)
 	}
-	reply(w, http.StatusOK, listView{Items: items, Loadout: loadout})
+	reply(w, http.StatusOK, listView{Items: items, Loadout: loadout, EmojiSlots: h.inventory.EmojiSlots()})
 }
 
 func (h *Handler) equip(w http.ResponseWriter, r *http.Request) {

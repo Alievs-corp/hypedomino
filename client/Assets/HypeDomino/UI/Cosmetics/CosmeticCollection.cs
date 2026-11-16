@@ -34,6 +34,7 @@ namespace HypeDomino.UI.Cosmetics
         readonly HashSet<string> held = new();
         readonly List<CollectionEntry> shown = new();
         LoadoutReply loadout = NothingWorn;
+        int emojiSlots;
         string type;
         string rarityId;
 
@@ -50,6 +51,7 @@ namespace HypeDomino.UI.Cosmetics
                 foreach (var item in reply.items)
                     if (item != null && !string.IsNullOrEmpty(item.id)) held.Add(item.id);
             loadout = reply?.loadout ?? NothingWorn;
+            emojiSlots = reply?.emoji_slots ?? 0;
             Refresh();
         }
 
@@ -72,8 +74,21 @@ namespace HypeDomino.UI.Cosmetics
             request = null;
             if (index < 0 || index >= shown.Count) return false;
             var entry = shown[index];
-            if (!entry.Held || entry.Equipped || entry.Item.Type == CosmeticAddresses.Emoji) return false;
+            if (!entry.Held) return false;
+            if (entry.Item.Type == CosmeticAddresses.Emoji) return TryToggleEmoji(entry, out request);
+            if (entry.Equipped) return false;
             request = new EquipRequest { slot = entry.Item.Type, items = new[] { entry.Item.Id } };
+            return true;
+        }
+
+        bool TryToggleEmoji(CollectionEntry entry, out EquipRequest request)
+        {
+            request = null;
+            var worn = new List<string>(loadout.emojis ?? Array.Empty<string>());
+            if (entry.Equipped) worn.Remove(entry.Item.Id);
+            else if (worn.Count >= emojiSlots) return false;
+            else worn.Add(entry.Item.Id);
+            request = new EquipRequest { slot = CosmeticAddresses.Emoji, items = worn.ToArray() };
             return true;
         }
 
