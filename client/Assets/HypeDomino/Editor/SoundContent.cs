@@ -13,6 +13,7 @@ namespace HypeDomino.Editor
         public const string SfxFolder = Root + "/Clips/Sfx";
         public const string MusicFolder = Root + "/Clips/Music";
         public const string ResourcesFolder = Root + "/Resources";
+        const string NormalizeProperty = "normalize";
         public const string BankPath = ResourcesFolder + "/" + SoundBank.ResourceName + ".asset";
 
         [MenuItem("HypeDomino/Import Sounds")]
@@ -71,7 +72,17 @@ namespace HypeDomino.Editor
             settings.preloadAudioData = !music;
             settings.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
             importer.defaultSampleSettings = settings;
+            KeepLevels(importer);
             importer.SaveAndReimport();
+        }
+
+        public static bool Normalizes(AudioImporter importer) => new SerializedObject(importer).FindProperty(NormalizeProperty).boolValue;
+
+        static void KeepLevels(AudioImporter importer)
+        {
+            var serialized = new SerializedObject(importer);
+            serialized.FindProperty(NormalizeProperty).boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static void SaveBank()

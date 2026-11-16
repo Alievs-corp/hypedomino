@@ -33,6 +33,7 @@ namespace HypeDomino.Tests.EditMode
                 var importer = (AudioImporter)AssetImporter.GetAtPath(path);
                 var settings = importer.defaultSampleSettings;
                 Assert.IsTrue(importer.forceToMono, path);
+                Assert.IsFalse(SoundContent.Normalizes(importer), path);
                 Assert.AreEqual(AudioClipLoadType.DecompressOnLoad, settings.loadType, path);
                 Assert.AreEqual(AudioCompressionFormat.ADPCM, settings.compressionFormat, path);
                 Assert.IsTrue(settings.preloadAudioData, path);

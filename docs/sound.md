@@ -79,6 +79,7 @@ The masters are copied into `client/Assets/HypeDomino/UI/Audio/Clips/Sfx/<name>.
 | Load Type | Decompress On Load | Streaming |
 | Compression Format | ADPCM | Vorbis |
 | Force To Mono | On | Off |
+| Normalize | Off, so the mastered peaks of section 4 stay | Off |
 | Preload Audio Data | On | Off |
 
 Short clips decompressed at load cost no decode time during a match, which matters for the 0 B per frame and frame-time budgets (`docs/performance.md`); streaming keeps the two music loops out of memory. The Vorbis quality stays at Unity's default until the sizes in the build are measured on the device check (S-2).
