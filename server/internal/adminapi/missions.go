@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	errMissionRemoved = errors.New("adminapi: a published mission stays in the catalog; retire it instead")
-	errMedalRemoved   = errors.New("adminapi: a published medal stays in the catalog; retire or disable it instead")
+	errMissionRemoved  = errors.New("adminapi: a published mission stays in the catalog; retire it instead")
+	errMedalRemoved    = errors.New("adminapi: a published medal stays in the catalog; retire or disable it instead")
+	errMedalArtMissing = errors.New("adminapi: a medal is published only after its static upload passed its checks")
 )
 
 type missionRulesView struct {
@@ -119,6 +120,9 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 			if err != nil {
 				return nil, err
 			}
+			if err := medalArtPassed(ctx, tx, medals); err != nil {
+				return nil, err
+			}
 			ranked, err := publishedRating(ctx, tx)
 			if err != nil {
 				return nil, err
@@ -143,6 +147,24 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 			return err
 		},
 	}
+}
+
+func medalArtPassed(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
+	ids := make([]string, 0, len(medals.Medals))
+	for _, m := range medals.Medals {
+		ids = append(ids, m.ID)
+	}
+	rows, err := tx.Query(ctx, `select listed.id from unnest($1::text[]) as listed(id)
+		where not exists (select 1 from cosmetic_assets art where art.item_id = listed.id and art.slot = $2 and art.status = $3)
+		order by listed.id`, ids, assetSlotStatic, assetPassed)
+	if err != nil {
+		return err
+	}
+	missing, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil || len(missing) == 0 {
+		return err
+	}
+	return fmt.Errorf("%w: %s", errMedalArtMissing, strings.Join(missing, ", "))
 }
 
 func publishedMedals(ctx context.Context, tx pgx.Tx) (*medal.Catalog, error) {
@@ -242,7 +264,7 @@ func stampMedals(before, after []byte, rollback bool) ([]byte, error) {
 		m := &next.Medals[i]
 		listed[m.ID] = true
 		if slug, ok := strings.CutPrefix(m.ID, "medal."); ok {
-			m.NameKey, m.DescriptionKey, m.StaticAddress = "medal."+slug+".name", "medal."+slug+".description", "medal/"+slug+"/static"
+			m.NameKey, m.DescriptionKey, m.StaticAddress = "medal."+slug+".name", "medal."+slug+".description", medal.StaticAddress(m.ID)
 		}
 		old, existed := previous[m.ID]
 		m.Revision = old.Revision
