@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readReportQuery, readReviewQuery, signalWeight } from "./reviews.ts";
+import { evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readReportQuery, readReviewQuery, readSuspiciousQuery, signalWeight } from "./reviews.ts";
 
 test("the listed signals add up to their weight", () => {
   assert.equal(signalWeight([]), 0);
@@ -21,6 +21,9 @@ test("the queue queries keep a known cause or reason, the account search and a w
   assert.deepEqual(readReviewQuery({ cause: "toString", after: "0" }), { cause: "", account: "", after: "" });
   assert.deepEqual(readReportQuery({ reason: ["impersonation", "other"], after: account }), { reason: "impersonation", account: "", after: account });
   assert.deepEqual(readReportQuery({ reason: "spam", after: "42" }), { reason: "", account: "", after: "" });
+  assert.deepEqual(readSuspiciousQuery({ signal: "feeding", account: "5f2c", after: account }), { signal: "feeding", account: "5f2c", after: account });
+  assert.deepEqual(readSuspiciousQuery({ signal: "pair_frequency", after: "42" }), { signal: "", account: "", after: "" });
+  assert.equal(queueApiPath("/admin/matches/suspicious", { signal: "win_trade", account: "", after: account }), `/admin/matches/suspicious?signal=win_trade&after=${account}&limit=${queuePageSize}`);
 });
 
 test("the API path always asks for one page and the next link follows the last entry", () => {
