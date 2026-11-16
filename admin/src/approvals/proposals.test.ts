@@ -23,7 +23,8 @@ test("a proposal is the admin's own only when they proposed it", () => {
 
 test("player proposals link to the player record and others link nowhere", () => {
   assert.equal(objectHref(grant), "/players/11111111-2222-3333-4444-555555555555");
-  assert.equal(objectHref({ ...grant, object_type: "admin_accounts" }), null);
+  assert.equal(objectHref({ ...grant, object_type: "admin_accounts" }), "/accounts");
+  assert.equal(objectHref({ ...grant, object_type: "live_controls" }), null);
 });
 
 test("the change summary shows what changes and hides bookkeeping ids", () => {
