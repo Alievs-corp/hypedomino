@@ -28,17 +28,23 @@ type Owned struct {
 	EarnedAt time.Time `json:"earned_at"`
 }
 
+type ShownMedal struct {
+	Medal
+	Group string `json:"group,omitempty"`
+}
+
 type Collection struct {
-	Version  int64    `json:"version"`
-	Medals   []Medal  `json:"medals"`
-	Owned    []Owned  `json:"owned"`
-	Showcase []string `json:"showcase"`
-	Slots    int      `json:"slots"`
+	Version  int64        `json:"version"`
+	Medals   []ShownMedal `json:"medals"`
+	Owned    []Owned      `json:"owned"`
+	Showcase []string     `json:"showcase"`
+	Slots    int          `json:"slots"`
 }
 
 type Store struct {
-	pool    *pgxpool.Pool
-	catalog *snapshot.Watcher[*Catalog]
+	pool        *pgxpool.Pool
+	catalog     *snapshot.Watcher[*Catalog]
+	missionType func(id string) string
 }
 
 func NewWatcher(pool *pgxpool.Pool, logger *slog.Logger) *snapshot.Watcher[*Catalog] {
@@ -49,6 +55,10 @@ func NewWatcher(pool *pgxpool.Pool, logger *slog.Logger) *snapshot.Watcher[*Cata
 
 func NewStore(pool *pgxpool.Pool, catalog *snapshot.Watcher[*Catalog]) *Store {
 	return &Store{pool: pool, catalog: catalog}
+}
+
+func (s *Store) SetMissionTypes(missionType func(id string) string) {
+	s.missionType = missionType
 }
 
 func (s *Store) current() (*Catalog, int64, error) {
@@ -116,10 +126,10 @@ func (s *Store) Collection(ctx context.Context, account string) (Collection, err
 	for _, o := range owned {
 		held[o.Medal] = true
 	}
-	out := Collection{Version: version, Owned: owned, Slots: catalog.ProfileMedalSlots, Medals: []Medal{}, Showcase: []string{}}
+	out := Collection{Version: version, Owned: owned, Slots: catalog.ProfileMedalSlots, Medals: []ShownMedal{}, Showcase: []string{}}
 	for _, medal := range catalog.Medals {
 		if medal.Availability == cosmetics.Live || (medal.Availability == cosmetics.Retired && held[medal.ID]) {
-			out.Medals = append(out.Medals, medal)
+			out.Medals = append(out.Medals, ShownMedal{Medal: medal, Group: medal.Group(s.missionType)})
 		}
 	}
 	err = tx.QueryRow(ctx, `select medals from medal_showcases where account_id = $1`, account).Scan(&out.Showcase)
