@@ -16,6 +16,9 @@ const (
 	Schema           = 1
 	SourceMission    = "mission"
 	SourceRankReward = "rank_reward"
+	GroupAchievement = "achievement"
+	GroupEvent       = "event"
+	GroupRankReward  = "rank_reward"
 )
 
 var (
@@ -36,6 +39,21 @@ type Medal struct {
 
 func (m Medal) Lists(source cosmetics.Source) bool {
 	return slices.Contains(m.Sources, source)
+}
+
+func (m Medal) Group(missionType func(id string) string) string {
+	for _, source := range m.Sources {
+		if source.Type == SourceRankReward {
+			return GroupRankReward
+		}
+		if source.Type != SourceMission || missionType == nil {
+			continue
+		}
+		if group := missionType(source.Ref); group == GroupAchievement || group == GroupEvent {
+			return group
+		}
+	}
+	return ""
 }
 
 type Catalog struct {

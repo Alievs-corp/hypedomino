@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.UI.Missions;
+using HypeDomino.UI.Rarity;
 
 namespace HypeDomino.UI.Medals
 {
@@ -26,12 +27,24 @@ namespace HypeDomino.UI.Medals
         public const string ShowcasePath = "/medals/showcase";
 
         const string MissionSource = "mission";
+        static readonly string[] GroupOrder = { "achievement", "event", "rank_reward" };
 
         readonly Dictionary<string, MedalReply> shown = new();
         readonly Dictionary<string, string> earnedAt = new();
         readonly List<MedalReply> showcase = new();
+        readonly List<MedalReply> grid = new();
+        readonly RarityTable rarities;
+        readonly Comparison<MedalReply> gridOrder;
+
+        public MedalCollection(RarityTable rarities = null)
+        {
+            this.rarities = rarities;
+            gridOrder = CompareInGrid;
+        }
 
         public int ShownCount => shown.Count;
+
+        public MedalReply ShownAt(int index) => grid[index];
 
         public int EarnedCount => earnedAt.Count;
 
@@ -49,6 +62,9 @@ namespace HypeDomino.UI.Medals
             if (reply?.medals != null)
                 foreach (var medal in reply.medals)
                     if (medal != null && !string.IsNullOrEmpty(medal.id)) shown[medal.id] = medal;
+            grid.Clear();
+            grid.AddRange(shown.Values);
+            grid.Sort(gridOrder);
             if (reply?.owned != null)
                 foreach (var owned in reply.owned)
                     if (owned != null && !string.IsNullOrEmpty(owned.medal) && shown.ContainsKey(owned.medal)) earnedAt[owned.medal] = owned.earned_at;
@@ -145,6 +161,22 @@ namespace HypeDomino.UI.Medals
             }
             mission = default;
             return false;
+        }
+
+        int CompareInGrid(MedalReply a, MedalReply b)
+        {
+            var byGroup = GroupRank(a.group).CompareTo(GroupRank(b.group));
+            if (byGroup != 0) return byGroup;
+            var byRarity = RarityOrdinal(b.rarityId).CompareTo(RarityOrdinal(a.rarityId));
+            return byRarity != 0 ? byRarity : string.CompareOrdinal(a.id, b.id);
+        }
+
+        int RarityOrdinal(string rarityId) => rarities != null && rarities.TryGet(rarityId, out var tier) ? tier.Ordinal : int.MinValue;
+
+        static int GroupRank(string group)
+        {
+            var rank = Array.IndexOf(GroupOrder, group);
+            return rank < 0 ? GroupOrder.Length : rank;
         }
 
         static MedalShowcaseRequest Request(List<string> draft) => new() { medals = draft.ToArray() };
