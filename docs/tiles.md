@@ -1,6 +1,6 @@
 # Tiles
 
-Status: proposal; the owner approves it by merging. The class spec of the tile (#169): the shared face art, its canvas, pivot, smallest display size, export layout and addresses, how a new face set is made, and the runtime shadow and sheen sprites. Look and material rules are `docs/art-direction.md` sections 3 and 4; the pipeline, naming and provenance are `docs/asset-workflow.md`; the board layout that decides a tile's size on screen is `docs/ui-motion.md` (Match layout, Board); the client side is `UI/Board/TileFaces` and `UI/Board/TileFaceSet`. Tile back skins are cosmetics (`docs/cosmetics.md`); this document sets only the canvas they share with the face.
+Status: proposal; the owner approves it by merging. The class spec of the tile (#169): the shared face art, its canvas, pivot, smallest display size, export layout and addresses, how a new face set is made, and the runtime shadow and sheen sprites. Look and material rules are `docs/art-direction.md` sections 3 and 4; the pipeline, naming and provenance are `docs/asset-workflow.md`; the board layout that decides a tile's size on screen is `docs/ui-motion.md` (Match layout, Board); the client side is `UI/Board/TileFaces`, `UI/Board/TileFaceSet`, `UI/Board/BoardTilesView` and the set folders under `UI/Board/Tiles/` (section 2). Tile back skins are cosmetics (`docs/cosmetics.md`); this document sets only the canvas they share with the face.
 
 ## 1. Face set
 
@@ -61,13 +61,15 @@ Layout constants (canvas, proportions, pip grid) live at the top of `<slug>_rend
 
 ## 2. Addresses
 
-Proposed here, built with the client integration (follow-up of #169):
-
 | Asset | Address | Group | Notes |
 |---|---|---|---|
-| Face set `<slug>` | `tile/<slug>/faces`, a `TileFaceSet` asset with the 28 sprites in set order | `tile-<slug>`; the default set `ivory` is built in (local), as every match needs it before the first deal | The 28 faces in one Sprite Atlas, `tile/<slug>/faces.spriteatlasv2`, drawn with the default UI material so the board batches (`docs/ui-motion.md`, Board) |
+| Face set `<slug>` | `tile/<slug>/faces`, a `TileFaceSet` asset with the 28 sprites in set order | `tile-<slug>`; the default set `ivory` is built in, in the local group `cosmetic-builtin`, as every match needs it before the first deal | The 28 faces in one Sprite Atlas, `faces.spriteatlasv2`, drawn with the default UI material so the board batches (`docs/ui-motion.md`, Board) |
 | Tile shadow | `effect/tile_shadow/static` | The shared effects atlas (#176) | Section 5 |
 | Sheen | `effect/sheen/static` | The shared effects atlas (#176) | Section 5 |
+
+In the client a set lives in `client/Assets/HypeDomino/UI/Board/Tiles/<slug>/`: the faces copied from `export/face/` into `face/`, the atlas `faces.spriteatlasv2` and the set `faces.asset`. `HypeDomino.Editor.TileFaceContent` (menu HypeDomino > Import Tile Faces; batch `ImportAllAndExit` through the `unity-editor.yml` workflow) imports the default set: every face a single, full-rect, centre-pivot sprite, sRGB, alpha is transparency, ASTC with the block of `ProjectSetup.SpriteFormat` (6x6) on Android and iOS; the atlas without rotation or tight packing, padding 4, largest page 2048; the set in set order; the address above. `TileFaceContentTests` check it. `UI/Board/BoardTilesView` puts the faces on the laid tiles of `ChainLayout`.
+
+Mipmaps: off, on the faces and the atlas. The board is a screen space overlay at the native resolution (section 3), so a face is drawn at one size per board and never recedes in depth, where mipmaps help most. The readability check of section 3 already samples the 128 px sprite without mipmaps and counts every face right at 32, 28, 24, 20 and 16 px, so mipmaps buy no readability the faces need. Without them the atlas is a third smaller, and the lower mip levels cannot bleed one face into its neighbour across the 4 px padding. This is the import of every UI sprite in the project (`docs/asset-workflow.md` 5.4). If a device check (#191) shows shimmer on a moving tile at the smallest size, mipmaps are the change to try, with the padding raised to match.
 
 Atlas size: 28 sprites of 128 x 256 fill 7 of 8 columns and 4 rows of a 1024 x 1024 page only with no padding; with the default padding they need a 2048 x 1024 page. Texture estimate by the size rule of `docs/asset-workflow.md` 5.4 (each sprite at 16 bytes per ASTC 6x6 block): 28 x 22 x 43 x 16 = 423,808 bytes. No tile limit is set yet (O-5).
 
@@ -114,8 +116,8 @@ Authored white or greyscale and tinted at runtime (`docs/art-direction.md` secti
 
 ## 6. Open items
 
-- Client integration: the `TileFaceSet` asset for `ivory`, its atlas, the import settings and wiring the set into the board. The faces are not in `client/` yet.
-- Mipmaps on the face atlas: section 3 gives the result without them; turning them on is decided with the integration and O-5.
+- Wiring `BoardTilesView` into the match screen with the board's `Image` pool and `TilePlaceLayer`; the match screen is not assembled yet.
+- The tile shadow under each laid tile: `elevation` is not in the client tokens yet, so the shadow waits for the effect player (#176) or the tokens.
 - Size and placement of the face-down rows beside each seat and the hand tile size (`docs/art-direction.md` section 10).
 - The board's scale cap (`docs/ui-motion.md` section 9).
 - The shared effects atlas and the sheen's sweep timing (#176).
