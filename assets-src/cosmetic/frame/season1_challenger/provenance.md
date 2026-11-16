@@ -18,6 +18,8 @@ Animated rank frame of #173 (Rank çərçivələri, 10 pillə), the Challenger t
 
 Proposed for the admin draft, not decided: rarity `mythic`, source `rank_reward:bundle.season1_rank_challenger`. The bundle id follows the example of `docs/economy.md` section 4 and is a placeholder until the `season_1` rank rewards exist (#120, V-15); `RankRewards` holds a bundle per mode and final tier (`docs/ranking.md` 7.1), so the ids per mode are #120's call. Rarity across the ten frames rises with the tier: Iron and Bronze `common`, Silver, Gold and Platinum `rare`, Emerald and Diamond `epic`, Master and Grandmaster `legendary`, Challenger `mythic`; static frames stay at `epic` or below, as `docs/economy.md` section 3 expects a `legendary` or `mythic` item to be animated.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 3 animated details (rustling leaves, rising sparks, diamond glint), so `mythic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261116-01.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-16; the signature was not validated with a C2PA tool.
