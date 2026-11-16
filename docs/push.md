@@ -19,6 +19,7 @@ Scope: device tokens, notification categories and the server's send path (#132).
 - **PN-4** A device registers its FCM (Android) or APNs (iOS) token after sign-in and whenever the OS rotates it. A token belongs to one account; registering it again under another account moves it.
 - **PN-5** The client removes its token before logout. Logout from every device (`POST /auth/logout-all`) and an account deletion request delete all of the account's tokens on the server. A token that FCM or APNs reports as invalid is deleted at once (D-22 retention).
 - **PN-6** Payloads carry game string keys (`titleKey`, `bodyKey`), never resolved text; the device shows them in the player's language (`docs/localization.md`).
+- **PN-10** The client keeps the token in memory only. `Game/Push/PushDevice` sends `PUT /push/devices` for a token the server has not yet accepted, one request at a time; a token rotated while a request is in flight is sent after it, and a failed registration is retried on the next `Register` (sign-in or rotation). `Unregister` sends `DELETE /push/devices` and finishes whatever the server answers, so logout is never blocked.
 
 ## 3. API
 
