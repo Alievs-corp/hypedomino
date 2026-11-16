@@ -79,7 +79,7 @@ func (i strictItem) checkShared(rarities Rarities) error {
 	if _, known := rarities[i.RarityID]; !known {
 		return fmt.Errorf("V-14 rarity %q", i.RarityID)
 	}
-	if i.NameKey != nameKeyOf(i.ID) {
+	if i.NameKey != NameKeyOf(i.ID) {
 		return fmt.Errorf("V-9 nameKey %q", i.NameKey)
 	}
 	if i.Animated == nil {
@@ -153,7 +153,7 @@ func (i strictItem) checkAddresses() error {
 	return nil
 }
 
-func nameKeyOf(id string) string {
+func NameKeyOf(id string) string {
 	return "cosmetic." + id + ".name"
 }
 
@@ -210,7 +210,7 @@ func stampItem(raw json.RawMessage, before map[string]publishedItem) (json.RawMe
 }
 
 func deriveFields(fields map[string]any, id string) {
-	fields["nameKey"] = nameKeyOf(id)
+	fields["nameKey"] = NameKeyOf(id)
 	fields["staticAddress"] = AddressOf(id, "static")
 	animated, _ := fields["animated"].(bool)
 	switch TypeOf(id) {
