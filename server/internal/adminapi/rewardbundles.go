@@ -13,6 +13,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
+	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -249,7 +250,7 @@ func (h *Handler) promoBundles(ctx context.Context, index bundleIndex) (bool, er
 	if h.promos == nil {
 		return false, nil
 	}
-	codes, err := h.promos.List(ctx, "", MaxPromoListed)
+	codes, err := h.promos.List(ctx, promo.ListQuery{Limit: MaxPromoListed})
 	if err != nil {
 		return false, err
 	}
