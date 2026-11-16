@@ -69,6 +69,31 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(new[] { "avatar.comet_fox", "frame.paper_kite" }, result.Cosmetics);
             Assert.AreEqual(300, result.PassXp);
             Assert.AreEqual(0, result.PassXpDropped);
+            Assert.AreEqual(1, result.Duplicates.Count);
+            Assert.AreEqual(40, result.Duplicates["tile.moon_owl"]);
+        }
+
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"cosmetics\":[]}}")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"cosmetics\":[],\"duplicates\":null}}")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"cosmetics\":[],\"duplicates\":{}}}")]
+        public void AGrantWithoutDuplicatesHasNone(string body)
+        {
+            var result = PromoRedeemResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
+            Assert.AreEqual(PromoRedeemOutcome.Granted, result.Outcome);
+            Assert.AreEqual(500, result.Coins);
+            Assert.IsEmpty(result.Duplicates);
+        }
+
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"duplicates\":[\"tile.moon_owl\"]}}")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"duplicates\":{\"tile.moon_owl\":\"40\"}}}")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"duplicates\":{\"tile.moon_owl\":-40}}}")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"duplicates\":{\"tile.moon_owl\":40.5}}}")]
+        public void AGrantWithUnreadableDuplicatesIsAFailure(string body)
+        {
+            var result = PromoRedeemResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
+            Assert.AreEqual(PromoRedeemOutcome.Failed, result.Outcome);
+            Assert.AreEqual(0, result.Coins);
+            Assert.IsEmpty(result.Duplicates);
         }
 
         [Test]
@@ -78,6 +103,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(PromoRedeemOutcome.Failed, result.Outcome);
             Assert.AreEqual(0, result.Coins);
             Assert.IsEmpty(result.Cosmetics);
+            Assert.IsEmpty(result.Duplicates);
         }
 
         [TestCase(400, "promo.code_invalid", PromoRedeemOutcome.CodeInvalid, "promo.redeem.code_invalid")]

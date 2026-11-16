@@ -28,6 +28,10 @@ An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md
 
 `/audit` (A-38) searches `GET /admin/audit` by actor, object type and id, action, reason text and a time range, newest first, 50 per page; "older entries" continues below the last id shown (`before_id`). The form takes and shows times in UTC (AP-8): a `datetime-local` value is sent as that minute in UTC. Each entry shows the actor with the roles it used, environment, reason, reference, config version, source (address, user agent, session) and its before and after values. Which entries a role sees is decided by the API (`docs/admin.md` section 7); a malformed filter shows a notice instead of results.
 
+## Admin accounts
+
+`/accounts` (A-37, `docs/admin.md` 5.18) is in the nav for roles that may view admin accounts, which is `super_admin` only. It lists `GET /admin/accounts` with display name, email, roles by their localized names, state and last sign-in. With C on admin accounts a form creates an account from a company email, a display name and roles; `super_admin` is not offered there, because the API grants it only to an existing account. On every other active account, E edits the roles and R disables it; both take a reason and an optional ticket or incident id, and disabling needs the reason. Adding `super_admin` needs S: grant `super_admin`, a reason and a fresh sign-in, and becomes a proposal another `super_admin` decides in `/approvals`, which links it back here. An admin's own row shows no actions; the API refuses changes to one's own account as well.
+
 ## Cosmetics
 
 `/cosmetics` (A-5 and A-6, #136, `docs/admin.md` 5.1) edits the manifest of `GET /admin/config/cosmetics` without a code change. With no published manifest it starts from the built-in one.
