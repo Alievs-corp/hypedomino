@@ -13,7 +13,7 @@ namespace HypeDomino.Editor
         public const string SfxFolder = Root + "/Clips/Sfx";
         public const string MusicFolder = Root + "/Clips/Music";
         public const string ResourcesFolder = Root + "/Resources";
-        const string NormalizeProperty = "normalize";
+        static readonly string[] NormalizeProperties = { "m_Normalize", "normalize" };
         public const string BankPath = ResourcesFolder + "/" + SoundBank.ResourceName + ".asset";
 
         [MenuItem("HypeDomino/Import Sounds")]
@@ -76,13 +76,25 @@ namespace HypeDomino.Editor
             importer.SaveAndReimport();
         }
 
-        public static bool Normalizes(AudioImporter importer) => new SerializedObject(importer).FindProperty(NormalizeProperty).boolValue;
+        public static bool Normalizes(AudioImporter importer) => NormalizeOf(new SerializedObject(importer)).boolValue;
 
         static void KeepLevels(AudioImporter importer)
         {
             var serialized = new SerializedObject(importer);
-            serialized.FindProperty(NormalizeProperty).boolValue = false;
+            NormalizeOf(serialized).boolValue = false;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static SerializedProperty NormalizeOf(SerializedObject serialized) =>
+            NormalizeProperties.Select(serialized.FindProperty).FirstOrDefault(property => property != null)
+            ?? throw new InvalidOperationException("the audio importer has no normalize setting; it has " + string.Join(", ", PropertyNames(serialized)));
+
+        static string[] PropertyNames(SerializedObject serialized)
+        {
+            var names = new System.Collections.Generic.List<string>();
+            var property = serialized.GetIterator();
+            while (property.NextVisible(true)) names.Add(property.propertyPath);
+            return names.ToArray();
         }
 
         static void SaveBank()
