@@ -224,6 +224,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
 	h.mux.HandleFunc("POST /admin/config/medals/rollback", h.allowed(rbac.Medals, rbac.Publish, h.rollbackDomain(func() configDomain { return h.medalDomain(true) })))
 	h.mux.HandleFunc("GET /admin/live-controls", h.allowed(rbac.LiveControls, rbac.View, h.liveControls))
+	h.mux.HandleFunc("GET /admin/live-controls/break-glass", h.allowed(rbac.LiveControls, rbac.View, h.unconfirmedBreakGlass))
 	h.mux.HandleFunc("GET /admin/calendar", h.allowed(rbac.LiveEvents, rbac.View, h.calendar))
 	h.mux.HandleFunc("PUT /admin/live-controls", h.allowed(rbac.LiveControls, rbac.SwitchLiveControl, h.switchLiveControls))
 	h.mux.HandleFunc("GET /admin/reviews", h.allowed(rbac.Queues, rbac.View, h.listReviews))
@@ -574,6 +575,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "frozen"
 	case errors.Is(err, errStaleLiveControls):
 		return http.StatusConflict, "stale_proposal"
+	case errors.Is(err, livecontrol.ErrIncident):
+		return http.StatusBadRequest, "incident_required"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):

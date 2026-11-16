@@ -20,12 +20,14 @@ import (
 const (
 	ProposeLiveControlsAction = "propose_live_controls"
 	SwitchLiveControlsAction  = "switch_live_controls"
+	BreakGlassAction          = "break_glass_live_controls"
 )
 
 var errStaleLiveControls = errors.New("adminapi: live controls changed after this proposal")
 
 type liveControlsRequest struct {
-	Controls json.RawMessage `json:"controls"`
+	Controls   json.RawMessage       `json:"controls"`
+	BreakGlass *livecontrol.Incident `json:"break_glass"`
 	changeNote
 }
 
@@ -34,10 +36,17 @@ type liveControlsChange struct {
 	Controls    json.RawMessage `json:"controls"`
 }
 
+type breakGlassChange struct {
+	Incident      livecontrol.Incident `json:"incident"`
+	ConfigVersion int64                `json:"config_version"`
+	Controls      json.RawMessage      `json:"controls"`
+}
+
 type liveControlsView struct {
 	ConfigVersion int64           `json:"config_version"`
 	Controls      json.RawMessage `json:"controls"`
 	ApprovalID    int64           `json:"approval_id,omitempty"`
+	BreakGlassID  int64           `json:"break_glass_id,omitempty"`
 }
 
 func (h *Handler) liveControls(w http.ResponseWriter, r *http.Request, p principal) {
@@ -76,6 +85,9 @@ func (h *Handler) switchLiveControls(w http.ResponseWriter, r *http.Request, p p
 			}
 			return []audit.Entry{liveControlsEntry(SwitchLiveControlsAction, before, request.Controls, view.ConfigVersion, request.changeNote)}, nil
 		}
+		if request.BreakGlass != nil {
+			return h.breakGlass(r.Context(), tx, p, request, before, now, &view)
+		}
 		view.ConfigVersion, view.Controls = version, viewCatalog(version, before).Catalog
 		change := marshal(liveControlsChange{BaseVersion: version, Controls: request.Controls})
 		proposal, err := h.approvals.In(tx).Propose(r.Context(), approval.LiveControl, livecontrol.Domain, change, request.Reason, p.actor(), now)
@@ -94,6 +106,47 @@ func (h *Handler) switchLiveControls(w http.ResponseWriter, r *http.Request, p p
 		status = http.StatusAccepted
 	}
 	reply(w, status, view)
+}
+
+func (h *Handler) breakGlass(ctx context.Context, tx pgx.Tx, p principal, request liveControlsRequest, before []byte, now time.Time, view *liveControlsView) ([]audit.Entry, error) {
+	incident := *request.BreakGlass
+	if err := incident.Validate(); err != nil {
+		return nil, err
+	}
+	version, err := snapshot.Publish(ctx, tx, livecontrol.Domain, request.Controls)
+	if err != nil {
+		return nil, err
+	}
+	change := marshal(breakGlassChange{Incident: incident, ConfigVersion: version, Controls: request.Controls})
+	proposal, err := h.approvals.In(tx).Propose(ctx, approval.BreakGlass, livecontrol.Domain, change, request.Reason, p.actor(), now)
+	if err != nil {
+		return nil, err
+	}
+	view.ConfigVersion, view.Controls, view.BreakGlassID = version, request.Controls, proposal.ID
+	return []audit.Entry{liveControlsEntry(BreakGlassAction, before, request.Controls, version, changeNote{Reason: request.Reason, Ref: incident.ID})}, nil
+}
+
+func (h *Handler) confirmBreakGlass(ctx context.Context, tx pgx.Tx, p principal, proposal approval.Proposal, note changeNote, now time.Time) error {
+	var change breakGlassChange
+	if err := json.Unmarshal(proposal.Change, &change); err != nil {
+		return err
+	}
+	confirmation := audit.Entry{Action: "approve", Object: proposal.Object, After: proposal.Change, ConfigVersion: change.ConfigVersion, Reason: note.Reason, Ref: change.Incident.ID}
+	_, err := h.audit.In(tx).Append(ctx, h.stamp(p, confirmation), now)
+	return err
+}
+
+func (h *Handler) unconfirmedBreakGlass(w http.ResponseWriter, r *http.Request, p principal) {
+	unconfirmed, err := h.approvals.Unconfirmed(r.Context())
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	views := make([]proposalView, 0, len(unconfirmed))
+	for _, proposal := range unconfirmed {
+		views = append(views, viewProposal(proposal))
+	}
+	reply(w, http.StatusOK, proposalsResponse{Proposals: views})
 }
 
 func liveControlsEntry(action string, before, after []byte, version int64, note changeNote) audit.Entry {
