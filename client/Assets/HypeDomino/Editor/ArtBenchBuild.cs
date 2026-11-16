@@ -94,24 +94,25 @@ namespace HypeDomino.Editor
 
         static ArtBenchTable Table(string folder)
         {
-            var item = Item(folder);
-            if (item == null) return null;
+            var still = $"{folder}/{CosmeticContent.StaticFile}";
+            if (!File.Exists(still)) return null;
+            var border = CosmeticContent.SliceBorder(folder, still);
             var layers = $"{folder}/{CosmeticContent.LayerSlot}";
             return new ArtBenchTable
             {
-                name = item.name,
-                still = item.still,
-                layers = SubFolders(layers).Where(CosmeticContent.HasFrames).Select(Layer).ToArray(),
+                name = Path.GetFileName(folder),
+                still = CosmeticContent.ImportSprite(still, border),
+                layers = SubFolders(layers).Where(CosmeticContent.HasFrames).Select(layer => Layer(layer, border)).ToArray(),
             };
         }
 
-        static ArtBenchLoop Layer(string folder)
+        static ArtBenchLoop Layer(string folder, Vector4 border)
         {
-            var frames = LoopFrames(folder);
+            var frames = LoopFrames(folder, border);
             return new ArtBenchLoop { name = Path.GetFileName(folder), still = frames[0], frames = frames };
         }
 
-        static Sprite[] LoopFrames(string folder) => AssetDatabase.LoadAssetAtPath<SpriteLoop>(CosmeticContent.BuildLoop(folder)).Frames;
+        static Sprite[] LoopFrames(string folder, Vector4 border = default) => AssetDatabase.LoadAssetAtPath<SpriteLoop>(CosmeticContent.BuildLoop(folder, border)).Frames;
 
         static T[] Loaded<T>(string[] paths) where T : UnityEngine.Object =>
             paths.Select(AssetDatabase.LoadAssetAtPath<T>).Where(asset => asset != null).ToArray();

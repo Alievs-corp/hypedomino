@@ -41,10 +41,10 @@ Not generated for this table. Two P-5 middle-layer prompts for `table.crimson_ca
 Run on 2026-11-14 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
 
 ```bash
-python -I assets-src/cosmetic/table/indigo_carpet/work/indigo_carpet_cleanup.py indigo_carpet assets-src/cosmetic/table/indigo_carpet/concept/20261114-01.png assets-src/cosmetic/table/indigo_carpet/work assets-src/cosmetic/table/indigo_carpet/export
+python -I assets-src/cosmetic/table/indigo_carpet/work/indigo_carpet_cleanup.py indigo_carpet 138 assets-src/cosmetic/table/indigo_carpet/concept/20261114-01.png assets-src/cosmetic/table/indigo_carpet/work assets-src/cosmetic/table/indigo_carpet/export
 ```
 
-It printed trim `(5, 10, 1528, 1014)`, stretch `1.100`, crop `(0, 30.8, 1523, 973.2)`, canvas 1920x1080. A second run into an empty folder wrote byte-identical files.
+It printed `indigo_carpet: trim (5, 10, 1528, 1014), stretch 1.100, crop (0, 30.8, 1523, 973.2), edges depth 138 step 396 start 366 score 1.9292, canvas 1920x1080` (run again on 2026-11-16 with the ring depth `138`). A second run into an empty folder wrote byte-identical files.
 
 | Layer | File | How it is made |
 |---|---|---|
@@ -67,21 +67,33 @@ The middle and front layers are the same for every table of this set, so the lay
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/indigo_carpet_cleanup.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 138 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides. The corner spandrels stay in the field and may be cropped on a shape other than 16:9.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 396 px, corner pieces 0 to 366 px and 1554 to 1920 px, score 1.9292. Between the corner pieces both bands are the run from 366 to 762 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 138, "step": 396}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.036; 21:9 steps +2 x0.929; 4:3 steps -1 x0.945 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261114-01.png | `bbc74993fa5e7b9023521298c30bd72c2d4689a02937e957ac947ce0fd999736` | 1536 x 1024 RGB, the generator's download, unchanged | ChatGPT image viewer Download button, copied byte for byte |
-| work/indigo_carpet_cleanup.py | `e4572f28aabedf8539ac8147cb6a19c28a7fe9eb1e952eecbe7faf9fe8fdf8f4` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of this PR |
-| work/indigo_carpet_back.png | `2eead0152fdb08b769a60146c6086ca4fa083dbfa872aa181efd144b8dac1412` | 1920 x 1080 RGBA, back layer | `indigo_carpet_cleanup.py` |
+| work/indigo_carpet_cleanup.py | `177ba86969d96ce4d799c74638b6a721a9ca7790484c6a2fb578f76b07e01d40` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of this PR. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/indigo_carpet_back.png | `e3b62881fd27513005dd0c55ecef4199bdd0bddfb084df136b107f2203fa9427` | 1920 x 1080 RGBA, back layer | `indigo_carpet_cleanup.py` |
 | work/indigo_carpet_middle.png | `bf002a633c302a3d7b799119253bb820e9e5220232919a6c245c23d1d319cf1c` | 1920 x 1080 RGBA, middle layer | `indigo_carpet_cleanup.py` |
 | work/indigo_carpet_front.png | `7c5379bb0f1fb5766c32a4b9d171e1df2ddb7a3a5c6f3b8296a42fd1c928192d` | 1920 x 1080 RGBA, front layer | `indigo_carpet_cleanup.py` |
-| export/static.png | `835ad88cea26c6341a1b385c4eb58cb2dfcfb7f73dfa101360ebe86b3500a386` | 1920 x 1080 RGBA static, flattened layers | `indigo_carpet_cleanup.py` |
+| export/static.png | `7838a27d6306dd0befaa0f110017b4f0a264017f813df428c70b5cff54b063d7` | 1920 x 1080 RGBA static, flattened layers | `indigo_carpet_cleanup.py` |
+| export/slice.json | `a44f9031214d585e8577ea7871e23caeabb347e591b6e2cd4bbb14de0651f4fe` | `{"depth": 138, "step": 396}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `indigo_carpet_cleanup.py`, 2026-11-16 |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-14 | concept/20261114-01.png | P-5 back layer with the style key, the first prompt of its conversation, quoted below. Sent 12:30:15 UTC by Claude Code; `c2pa.created` 2026-11-14T12:30:31Z |
 | 2026-11-14 | work/indigo_carpet_back.png, work/indigo_carpet_middle.png, work/indigo_carpet_front.png, export/static.png | `indigo_carpet_cleanup.py` on the concept |
+| 2026-11-16 | work/, export/ | `indigo_carpet_cleanup.py` with the repeated top and bottom borders and `export/slice.json` (section Any screen shape) |
 
 Prompt of `concept/20261114-01.png`, verbatim:
 

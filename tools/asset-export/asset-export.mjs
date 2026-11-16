@@ -53,6 +53,21 @@ function canvasErrors(still, loops) {
     .map(({ name, png }) => `export/${slot}/${name} is ${png.width}x${png.height}, the static is ${still.width}x${still.height}; frames keep the canvas of the static (docs/art-direction.md section 7)`));
 }
 
+export function sliceErrors(text, still) {
+  let slice;
+  try {
+    slice = JSON.parse(text);
+  } catch {
+    return ["export/slice.json is not JSON"];
+  }
+  const whole = (value) => Number.isInteger(value) && value > 0;
+  if (!whole(slice?.depth) || !whole(slice?.step)) return ["export/slice.json needs a whole positive depth and step in pixels of the static (docs/cosmetics.md 8.4)"];
+  const errors = [];
+  if (slice.depth * 2 >= still.height) errors.push(`export/slice.json depth ${slice.depth} leaves no field in the static height ${still.height}`);
+  if (slice.step >= still.width || (still.width - slice.step) % 2 !== 0) errors.push(`export/slice.json step ${slice.step} must be shorter than the static width ${still.width} and leave an even remainder`);
+  return errors;
+}
+
 function readExportPng(item, path, errors) {
   const png = readPng(readFileSync(join(item.directory, path)));
   if (png.error) errors.push(`${path} ${png.error}`);
@@ -77,6 +92,8 @@ export function inspectItem(directory) {
   const loops = [...loopsBySlot.values()];
   errors.push(...loops.flatMap(({ slot, frames }) => frameNameErrors(slot, frames)));
   if (!still.error) errors.push(...canvasErrors(still, loops.map(({ slot, frames }) => ({ slot, frames: frames.filter(({ png }) => !png.error) }))));
+  if (item.type === "table" && !files.includes("export/slice.json")) errors.push(`${item.root}: missing export/slice.json, the table's ring depth and edge step (docs/cosmetics.md 8.4)`);
+  else if (item.type === "table" && !still.error) errors.push(...sliceErrors(readFileSync(join(item.directory, "export/slice.json"), "utf8"), still));
   return { ...item, errors, still, loops };
 }
 

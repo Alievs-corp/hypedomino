@@ -46,12 +46,23 @@ The carpet's own palette (art-direction section 2, cosmetic illustration art) is
 
 Not done: W-6 and W-7. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/starter_carpet.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 168 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides. The lozenge medallion stays in the field; on 4:3 and narrower its left and right points are cropped.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 372 px, corner pieces 0 to 402 px and 1518 to 1920 px, score 0.3282. Between the corner pieces both bands are the run from 402 to 774 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 168, "step": 372}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.047; 21:9 steps +2 x0.946; 4:3 steps -1 x0.930 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is |
 |---|---|---|
-| work/starter_carpet.py | `167a982ee6f2d094d2846589154ff55548d015e3b77254bbc0eae21d223eb8d6` | The W-3 and W-5 script |
-| work/starter_back.png | `f0d40be0e14bddf3fb993bfa0c215658e1e7de7c31acf8d8d0c5e346474231e3` | 1920 x 1080 RGBA, back layer |
+| work/starter_carpet.py | `a0f2f52a3ba0aa334122da51cbd04077b02ffed0801da253075c8fe9b573aba3` | The W-3 and W-5 script; `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/starter_back.png | `f41ace75aa5da3fc9cd26de93f36b9f792e1e311fc47ad943f20d5fbb1e2326d` | 1920 x 1080 RGBA, back layer |
 | work/starter_middle.png | `1d1dbaf8ca4b737007b8a911d7f1b77afc24b2939e243d44a683be0518d41b6d` | 1920 x 1080 RGBA, middle layer |
 | work/starter_front.png | `54646a5f296f37b72713f58da1cfbc969456c26e712620bb46450f0f0c266e11` | 1920 x 1080 RGBA, front layer |
-| export/static.png | `b38571cea052771fd5d5adeb74eec8f52f015d361aa468031bab9053bc059856` | 1920 x 1080 RGBA static, flattened layers |
+| export/static.png | `8b6e0b70ff0b7f6a2f5f150446f724518edab99dbfc842f0eef9477a98310ad9` | 1920 x 1080 RGBA static, flattened layers |
+| export/slice.json | `b072b29b49d7e3e4bab9d89d5b65ec3b825e2afd2dc459aa46fff328361e6011` | `{"depth": 168, "step": 372}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) |

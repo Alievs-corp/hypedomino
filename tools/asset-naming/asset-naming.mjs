@@ -26,6 +26,7 @@ function itemRoot(segments) {
 
 function cosmeticExportErrors(type, rest) {
   if (rest.length === 2 && rest[1] === "static.png") return [];
+  if (rest.length === 2 && rest[1] === "slice.json" && type === "table") return [];
   const folder = rest[1];
   if (!exportFoldersByType[type].includes(folder)) return [`export/${folder} is not allowed for ${type}`];
   const depth = folder === "layer" ? 3 : 2;

@@ -23,7 +23,7 @@ Run on 2026-11-15 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 
 python -I assets-src/cosmetic/table/rosewood_medallion/work/rosewood_medallion_table.py assets-src/cosmetic/table/rosewood_medallion/work/rosewood_medallion_table.json docs/design-tokens.json assets-src/cosmetic/table/rosewood_medallion assets-src/cosmetic/table/rosewood_medallion
 ```
 
-It printed `rosewood_medallion: knot 4 px, canvas 1920x1080, seed 17403, static`. Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
+It printed `rosewood_medallion: knot 4 px, edges depth 192 step 210 start 435 score 0.5393, canvas 1920x1080, seed 17403, static` (run again on 2026-11-16). Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
 
 The script reads its settings from `work/rosewood_medallion_table.json`; every table of this set uses the same script with its own settings file. Wood and gold come only from `docs/design-tokens.json`, so the rim and the inlay line are those of `table.starter` and the set-1 tables at every canvas size (`docs/art-direction.md` 5.4: the same layout on every table).
 
@@ -52,7 +52,7 @@ python -I assets-src/cosmetic/table/rosewood_medallion/work/rosewood_medallion_c
 
 The check measures the static. Centre: the 2v2 landscape board region of `docs/tiles.md` section 3 (1516 x 521 of the 1080-unit canvas), centred on the table. Ivory: the median relative luminance (WCAG) of the opaque pixels of the 28 `tile.ivory` faces, box-filtered to 32 x 64 px, the smallest display size of `docs/tiles.md` section 3; this gives 0.743, lower and so stricter than the 0.765 of the full-size face. Pass rule of this set: ivory against the median of the centre at least 7:1, and against its 90th percentile (the light motifs) at least 4.5:1. The same measure gives `table.starter` 9.2:1 and 8.3:1.
 
-Output on 2026-11-15: `ivory face 0.743; worst scene static: centre median 0.024, 90th percentile 0.029; contrast 10.7:1 against the median (needs 7.0:1), 10.0:1 against the 90th percentile (needs 4.5:1): pass`
+Output on 2026-11-16: `ivory face 0.743; worst scene static: centre median 0.024, 90th percentile 0.029; contrast 10.7:1 against the median (needs 7.0:1), 10.0:1 against the 90th percentile (needs 4.5:1): pass`
 
 The script also writes `check.png`: the static scaled to the 828 px short side of the iPhone XR with a chain of nine `tile.ivory` faces at 32 x 64 px and their runtime shadow (`effect.tile_shadow`, `color.shadow` at `elevation.e1`) in the centre, and `check_x3.png`, its centre enlarged three times. The agent looked at both: pips and faces read on the carpet, and no motif in the centre competes with them.
 
@@ -62,14 +62,25 @@ Team hues (`docs/art-direction.md` section 2): share of static pixels with satur
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/rosewood_medallion_table.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 192 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides. The octagon medallion and the dark corners of the field stay in the field; the corners may be cropped on a shape other than 16:9.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 210 px, corner pieces 0 to 435 px and 1485 to 1920 px, score 0.5393. Between the corner pieces both bands are the run from 435 to 645 px repeated 5 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 192, "step": 210}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +2 x1.026; 21:9 steps +3 x0.988; 4:3 steps -2 x0.960 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
-| work/rosewood_medallion_table.py | `82dda447dd99dcf47e07a049f114a8f169e87e96555766d3eda1d4bf88a4f48a` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set |
-| work/rosewood_medallion_table.json | `f5f6ed9f807ceab0f1dc687f1a6fc99495f3ab49a10556410eb0e4fa587eb33a` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
+| work/rosewood_medallion_table.py | `f194b3c59457057f156fd4c8a77a477594a7c9d29783f205825c38e023cf07ba` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/rosewood_medallion_table.json | `ff292c43e3bf881732e7f454f595fb246034a56808c89dad663adad1ca695de8` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
 | work/rosewood_medallion_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | The readability check | Written by Claude Code, 2026-11-15; the same script for every table of this set |
-| work/rosewood_medallion_back.png | `d9705d69796e54c5c9ee05f4850f7b4f1eb9edb234730434dcc90ffa55999638` | 1920 x 1080 RGBA, back layer | `rosewood_medallion_table.py` |
+| work/rosewood_medallion_back.png | `a78faa1aa40452508eb7004ba3bbfc20cbdbed8055c7b553ccd17d4ec28ec89f` | 1920 x 1080 RGBA, back layer | `rosewood_medallion_table.py` |
 | work/rosewood_medallion_middle.png | `1d1dbaf8ca4b737007b8a911d7f1b77afc24b2939e243d44a683be0518d41b6d` | 1920 x 1080 RGBA, middle layer, gold inlay | `rosewood_medallion_table.py` |
 | work/rosewood_medallion_front.png | `54646a5f296f37b72713f58da1cfbc969456c26e712620bb46450f0f0c266e11` | 1920 x 1080 RGBA, front layer, wood rim | `rosewood_medallion_table.py` |
-| export/static.png | `021483ae088c1be8ba49522ce8097fbe4c9398d41b712fafe1c65b4a51fda7f0` | 1920 x 1080 RGBA static, flattened layers | `rosewood_medallion_table.py` |
+| export/static.png | `b56131d1aaafed715e3ba0cc6df5ef4e031aa7b65339c49b7285ffb81689fb5b` | 1920 x 1080 RGBA static, flattened layers | `rosewood_medallion_table.py` |
+| export/slice.json | `6308037bee79bef3ec697afff48c5fabd3f4f71e0ec61c6c33059f1d91943f73` | `{"depth": 192, "step": 210}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `rosewood_medallion_table.py`, 2026-11-16 |

@@ -23,7 +23,7 @@ Run on 2026-11-15 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 
 python -I assets-src/cosmetic/table/olive_lattice/work/olive_lattice_table.py assets-src/cosmetic/table/olive_lattice/work/olive_lattice_table.json docs/design-tokens.json assets-src/cosmetic/table/olive_lattice assets-src/cosmetic/table/olive_lattice
 ```
 
-It printed `olive_lattice: knot 4 px, canvas 1920x1080, seed 17402, static`. Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
+It printed `olive_lattice: knot 4 px, edges depth 198 step 420 start 330 score 0.3200, canvas 1920x1080, seed 17402, static` (run again on 2026-11-16). Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
 
 The script reads its settings from `work/olive_lattice_table.json`; every table of this set uses the same script with its own settings file. Wood and gold come only from `docs/design-tokens.json`, so the rim and the inlay line are those of `table.starter` and the set-1 tables at every canvas size (`docs/art-direction.md` 5.4: the same layout on every table).
 
@@ -52,7 +52,7 @@ python -I assets-src/cosmetic/table/olive_lattice/work/olive_lattice_check.py as
 
 The check measures the static. Centre: the 2v2 landscape board region of `docs/tiles.md` section 3 (1516 x 521 of the 1080-unit canvas), centred on the table. Ivory: the median relative luminance (WCAG) of the opaque pixels of the 28 `tile.ivory` faces, box-filtered to 32 x 64 px, the smallest display size of `docs/tiles.md` section 3; this gives 0.743, lower and so stricter than the 0.765 of the full-size face. Pass rule of this set: ivory against the median of the centre at least 7:1, and against its 90th percentile (the light motifs) at least 4.5:1. The same measure gives `table.starter` 9.2:1 and 8.3:1.
 
-Output on 2026-11-15: `ivory face 0.743; worst scene static: centre median 0.032, 90th percentile 0.038; contrast 9.7:1 against the median (needs 7.0:1), 9.0:1 against the 90th percentile (needs 4.5:1): pass`
+Output on 2026-11-16: `ivory face 0.743; worst scene static: centre median 0.032, 90th percentile 0.038; contrast 9.7:1 against the median (needs 7.0:1), 9.0:1 against the 90th percentile (needs 4.5:1): pass`
 
 The script also writes `check.png`: the static scaled to the 828 px short side of the iPhone XR with a chain of nine `tile.ivory` faces at 32 x 64 px and their runtime shadow (`effect.tile_shadow`, `color.shadow` at `elevation.e1`) in the centre, and `check_x3.png`, its centre enlarged three times. The agent looked at both: pips and faces read on the carpet, and no motif in the centre competes with them.
 
@@ -62,14 +62,25 @@ Team hues (`docs/art-direction.md` section 2): share of static pixels with satur
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/olive_lattice_table.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 198 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides. The lozenge medallion stays in the field; on 4:3 and narrower its left and right points are cropped.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 420 px, corner pieces 0 to 330 px and 1590 to 1920 px, score 0.3200. Between the corner pieces both bands are the run from 330 to 750 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 198, "step": 420}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.026; 21:9 steps +1 x1.077; 4:3 steps -1 x0.960 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
-| work/olive_lattice_table.py | `82dda447dd99dcf47e07a049f114a8f169e87e96555766d3eda1d4bf88a4f48a` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set |
-| work/olive_lattice_table.json | `8ea536013ad2aa6e39c38eb737b0d2caeaeefc31593bd9649f69337903cd5d7d` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
+| work/olive_lattice_table.py | `f194b3c59457057f156fd4c8a77a477594a7c9d29783f205825c38e023cf07ba` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/olive_lattice_table.json | `883bb257be7185daad2f2b46ffaf32287641806a4b74834beab8dde7f98a8f3f` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
 | work/olive_lattice_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | The readability check | Written by Claude Code, 2026-11-15; the same script for every table of this set |
-| work/olive_lattice_back.png | `1620c1cead17f093d1badb79a681d54e0d6d7d68b2ff0f5e0cb5de57dfec26f8` | 1920 x 1080 RGBA, back layer | `olive_lattice_table.py` |
+| work/olive_lattice_back.png | `299bde9d799acdf8771720508738e603ca30cad59666c402258577568c215b65` | 1920 x 1080 RGBA, back layer | `olive_lattice_table.py` |
 | work/olive_lattice_middle.png | `1d1dbaf8ca4b737007b8a911d7f1b77afc24b2939e243d44a683be0518d41b6d` | 1920 x 1080 RGBA, middle layer, gold inlay | `olive_lattice_table.py` |
 | work/olive_lattice_front.png | `54646a5f296f37b72713f58da1cfbc969456c26e712620bb46450f0f0c266e11` | 1920 x 1080 RGBA, front layer, wood rim | `olive_lattice_table.py` |
-| export/static.png | `ce6a6ddb419ffa821a6e23d8e106eb9f819359bf877752fd1da216029df5df6b` | 1920 x 1080 RGBA static, flattened layers | `olive_lattice_table.py` |
+| export/static.png | `df12e13d80c8ce0a0f7b69593380f453b07c8e66cac4c69e5353179f40095e87` | 1920 x 1080 RGBA static, flattened layers | `olive_lattice_table.py` |
+| export/slice.json | `33e4c70053e8a5e28d8142063ff0c2cc87c6771996b32e8fca9559e74d239635` | `{"depth": 198, "step": 420}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `olive_lattice_table.py`, 2026-11-16 |

@@ -25,6 +25,14 @@ namespace HypeDomino.Editor
         public const string AtlasExtension = ".spriteatlasv2";
         public const string CosmeticLabel = "cosmetic";
         public const string StaticLabel = "cosmetic-static";
+        public const string SliceFile = "slice.json";
+
+        [Serializable]
+        public sealed class TableSlice
+        {
+            public int depth;
+            public int step;
+        }
 
         static readonly string[] TexturePlatforms = { "Android", "iPhone" };
 
@@ -70,10 +78,11 @@ namespace HypeDomino.Editor
             var addressBase = $"cosmetic/{type}/{slug}";
             RemoveEntries(settings, addressBase);
 
-            ImportSprite(stillPath);
+            var border = SliceBorder(itemFolder, stillPath);
+            ImportSprite(stillPath, border);
             AddEntry(settings, group, stillPath, $"{addressBase}/static", Labels(type, true));
             foreach (var (slot, folder) in Loops(itemFolder))
-                AddEntry(settings, group, BuildLoop(folder), $"{addressBase}/{slot}", Labels(type, false));
+                AddEntry(settings, group, BuildLoop(folder, border), $"{addressBase}/{slot}", Labels(type, false));
             EditorUtility.SetDirty(group);
             return group;
         }
@@ -101,6 +110,21 @@ namespace HypeDomino.Editor
             var stale = new List<AddressableAssetEntry>();
             settings.GetAllAssets(stale, false, null, entry => entry.address.StartsWith(prefix, StringComparison.Ordinal));
             foreach (var entry in stale) settings.RemoveAssetEntry(entry.guid);
+        }
+
+        public static Vector4 Border(TableSlice slice, int width)
+        {
+            var side = (width - slice.step) / 2f;
+            return new Vector4(side, slice.depth, side, slice.depth);
+        }
+
+        public static Vector4 SliceBorder(string itemFolder, string stillPath)
+        {
+            var path = $"{itemFolder}/{SliceFile}";
+            if (!File.Exists(path)) return Vector4.zero;
+            var importer = (TextureImporter)AssetImporter.GetAtPath(stillPath);
+            importer.GetSourceTextureWidthAndHeight(out var width, out _);
+            return Border(JsonUtility.FromJson<TableSlice>(File.ReadAllText(path)), width);
         }
 
         static IEnumerable<(string slot, string folder)> Loops(string itemFolder)
@@ -143,9 +167,9 @@ namespace HypeDomino.Editor
 
         static bool IsGenerated(string path) => path.EndsWith(LoopExtension, StringComparison.Ordinal) || path.EndsWith(AtlasExtension, StringComparison.Ordinal);
 
-        internal static string BuildLoop(string folder)
+        internal static string BuildLoop(string folder, Vector4 border = default)
         {
-            var frames = Frames(folder).Select(ImportSprite).ToArray();
+            var frames = Frames(folder).Select(path => ImportSprite(path, border)).ToArray();
             var loopPath = folder + LoopExtension;
             var loop = AssetDatabase.LoadAssetAtPath<SpriteLoop>(loopPath);
             if (loop == null)
@@ -159,7 +183,7 @@ namespace HypeDomino.Editor
             return loopPath;
         }
 
-        internal static Sprite ImportSprite(string path)
+        internal static Sprite ImportSprite(string path, Vector4 border = default)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             var texture = new TextureImporterSettings();
@@ -167,6 +191,7 @@ namespace HypeDomino.Editor
             texture.textureType = TextureImporterType.Sprite;
             texture.spriteMode = (int)SpriteImportMode.Single;
             texture.spriteMeshType = SpriteMeshType.FullRect;
+            texture.spriteBorder = border;
             texture.mipmapEnabled = false;
             texture.alphaIsTransparency = true;
             texture.sRGBTexture = true;

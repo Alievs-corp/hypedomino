@@ -23,7 +23,7 @@ Run on 2026-11-15 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 
 python -I assets-src/cosmetic/table/slate_flatweave/work/slate_flatweave_table.py assets-src/cosmetic/table/slate_flatweave/work/slate_flatweave_table.json docs/design-tokens.json assets-src/cosmetic/table/slate_flatweave assets-src/cosmetic/table/slate_flatweave
 ```
 
-It printed `slate_flatweave: knot 4 px, canvas 1920x1080, seed 17401, static`. Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
+It printed `slate_flatweave: knot 4 px, edges depth 174 step 384 start 384 score 0.5222, canvas 1920x1080, seed 17401, static` (run again on 2026-11-16). Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
 
 The script reads its settings from `work/slate_flatweave_table.json`; every table of this set uses the same script with its own settings file. Wood and gold come only from `docs/design-tokens.json`, so the rim and the inlay line are those of `table.starter` and the set-1 tables at every canvas size (`docs/art-direction.md` 5.4: the same layout on every table).
 
@@ -52,7 +52,7 @@ python -I assets-src/cosmetic/table/slate_flatweave/work/slate_flatweave_check.p
 
 The check measures the static. Centre: the 2v2 landscape board region of `docs/tiles.md` section 3 (1516 x 521 of the 1080-unit canvas), centred on the table. Ivory: the median relative luminance (WCAG) of the opaque pixels of the 28 `tile.ivory` faces, box-filtered to 32 x 64 px, the smallest display size of `docs/tiles.md` section 3; this gives 0.743, lower and so stricter than the 0.765 of the full-size face. Pass rule of this set: ivory against the median of the centre at least 7:1, and against its 90th percentile (the light motifs) at least 4.5:1. The same measure gives `table.starter` 9.2:1 and 8.3:1.
 
-Output on 2026-11-15: `ivory face 0.743; worst scene static: centre median 0.030, 90th percentile 0.038; contrast 9.8:1 against the median (needs 7.0:1), 9.1:1 against the 90th percentile (needs 4.5:1): pass`
+Output on 2026-11-16: `ivory face 0.743; worst scene static: centre median 0.030, 90th percentile 0.038; contrast 9.8:1 against the median (needs 7.0:1), 9.1:1 against the 90th percentile (needs 4.5:1): pass`
 
 The script also writes `check.png`: the static scaled to the 828 px short side of the iPhone XR with a chain of nine `tile.ivory` faces at 32 x 64 px and their runtime shadow (`effect.tile_shadow`, `color.shadow` at `elevation.e1`) in the centre, and `check_x3.png`, its centre enlarged three times. The agent looked at both: pips and faces read on the carpet, and no motif in the centre competes with them.
 
@@ -62,14 +62,25 @@ Team hues (`docs/art-direction.md` section 2): share of static pixels with satur
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/slate_flatweave_table.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 174 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 384 px, corner pieces 0 to 384 px and 1536 to 1920 px, score 0.5222. Between the corner pieces both bands are the run from 384 to 768 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 174, "step": 384}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.042; 21:9 steps +2 x0.938; 4:3 steps -1 x0.938 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
-| work/slate_flatweave_table.py | `82dda447dd99dcf47e07a049f114a8f169e87e96555766d3eda1d4bf88a4f48a` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set |
-| work/slate_flatweave_table.json | `1d3aafd3d420c0133350683d9a614b78e73890fd6b8c745fcb5cf4af920b8659` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
+| work/slate_flatweave_table.py | `f194b3c59457057f156fd4c8a77a477594a7c9d29783f205825c38e023cf07ba` | W-3 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/slate_flatweave_table.json | `0c601fab47110402e93300c2d095e116abe016ae005f299c5e3338065a2615d2` | The item's settings: canvas, seed, pattern and palette | Written by Claude Code, 2026-11-15 |
 | work/slate_flatweave_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | The readability check | Written by Claude Code, 2026-11-15; the same script for every table of this set |
-| work/slate_flatweave_back.png | `88eeba3875299bca3ae7c305efcd0f06553a5d29f16abe23ef97e4a7df6c894d` | 1920 x 1080 RGBA, back layer | `slate_flatweave_table.py` |
+| work/slate_flatweave_back.png | `e8b28e7f315a6d66f8e3e4db7ac51666b566dbf98890249f833a8f38545ee749` | 1920 x 1080 RGBA, back layer | `slate_flatweave_table.py` |
 | work/slate_flatweave_middle.png | `1d1dbaf8ca4b737007b8a911d7f1b77afc24b2939e243d44a683be0518d41b6d` | 1920 x 1080 RGBA, middle layer, gold inlay | `slate_flatweave_table.py` |
 | work/slate_flatweave_front.png | `54646a5f296f37b72713f58da1cfbc969456c26e712620bb46450f0f0c266e11` | 1920 x 1080 RGBA, front layer, wood rim | `slate_flatweave_table.py` |
-| export/static.png | `08c29d07015a2eca50ca5e470193df781b8c9b4a80bd1a68886116b731832890` | 1920 x 1080 RGBA static, flattened layers | `slate_flatweave_table.py` |
+| export/static.png | `c26603f9df452eec5ba175c71d81b4602346d458c8c8fdca03bbcfdd7ba45e6f` | 1920 x 1080 RGBA static, flattened layers | `slate_flatweave_table.py` |
+| export/slice.json | `2348c30225cd3681940e4d507b2189452934c0bebb397ba54a952561ee760a7c` | `{"depth": 174, "step": 384}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `slate_flatweave_table.py`, 2026-11-16 |

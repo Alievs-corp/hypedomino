@@ -126,6 +126,7 @@ assets-src/
     export/static.png
     export/anim/...           avatar, frame, tile, emoji
     export/layer/<layer>/...  table
+    export/slice.json         table
   medal/<slug>/               same item layout: provenance.md, concept/, work/, export/
   effect/<slug>/
   ui/<slug>/
@@ -153,6 +154,7 @@ For cosmetics the path under `export/` is the address tail, so the mapping needs
 | `export/static.png` | `cosmetic/<type>/<slug>/static` | `staticAddress` | The sprite `static.png`, not packed in an atlas |
 | `export/anim/<nnnn>.png` | `cosmetic/<type>/<slug>/anim` | `animationAddress` | `anim.asset`, a `SpriteLoop` of the frames in name order, packed in `anim.spriteatlasv2` |
 | `export/layer/<layer>/<nnnn>.png` | `cosmetic/table/<slug>/layer/<layer>` | `layers[].address` | `layer/<layer>.asset`, a `SpriteLoop` packed in `layer/<layer>.spriteatlasv2`; a layer of one frame is a static layer |
+| `export/slice.json` (table only) | No address | No field | Read by `CosmeticContent` on import: the ring depth and edge step of the table, set as the border of the static and of every layer frame (`docs/cosmetics.md` 8.4) |
 
 Item id `<type>.<slug>`, group `cosmetic-<type>-<slug>` (or `cosmetic-builtin` for a `default` item), labels `cosmetic`, `cosmetic-<type>` and `cosmetic-static` on the static sprite (`docs/cosmetics.md` 8.2). Once `export/` exists it holds `export/static.png`, as V-2 requires `staticAddress` for every item. The format is the sprite sheet loop of ADR 0012: loop frames are whole PNGs named `0001.png`, `0002.png` and on without gaps, each at the canvas of the static (`docs/art-direction.md` section 7).
 
@@ -165,7 +167,7 @@ npm run asset:add -- assets-src/cosmetic/avatar/comet_fox --manifest <manifest.j
 `tools/asset-export` runs these steps in order and writes nothing when one fails:
 
 1. Naming of the item folder (section 4.1, `tools/asset-naming`).
-2. Export: `export/static.png` is present, every PNG has an alpha channel, loop frames are numbered without gaps and share the canvas of the static. A Git LFS pointer instead of a PNG is reported as such.
+2. Export: `export/static.png` is present, every PNG has an alpha channel, loop frames are numbered without gaps and share the canvas of the static. A table has `export/slice.json` with a whole positive `depth` that leaves a field and a whole positive `step` shorter than the static, with an even remainder (`docs/cosmetics.md` 8.4). A Git LFS pointer instead of a PNG is reported as such.
 3. Size: the budget of 5.4.
 4. `provenance.md` (section 3): `artSource` is `handmade` or `ai_assisted`, and the Cultural review line ends in `approved`. A manifest only holds reviewed items (`culturalReview` is `approved`, V-1).
 5. Entry: the id, `nameKey`, `animated`, the addresses and `layers` follow from the folder, and `artSource` from `provenance.md`. `rarityId` (`--rarity`), `availability` (`--availability`), `sources` (`--source <type>[:<ref>]`, repeated per source), `group` (`--group`, emoji) and the layer order (`--layers <back>,...,<front>`, a table with more than one layer) come from the options; an item already in the manifest keeps its values for the options left out. `revision` is 1 for a new item and rises by one when the entry changed (V-13). `manifestVersion` stays as it is, as the server sets it at publish (`docs/admin.md`, Cosmetics manifest note).

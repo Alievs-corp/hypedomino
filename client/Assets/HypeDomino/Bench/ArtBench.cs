@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Board;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Effects;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
@@ -46,6 +47,7 @@ namespace HypeDomino.Bench
         const float CaptionWidth = 240f;
 
         static readonly float[] LoopRates = { 8f, 12f };
+        static readonly (string name, float aspect, bool belowHud)[] TableShapes = { ("screen", 0f, false), ("under HUD", 0f, true), ("16:9", 16f / 9f, true), ("4:3", 4f / 3f, true) };
         static readonly float[] FrameSides = { TokenSize.TouchTargetMin, TokenSize.SeatPanelHeight, LargestFrameSide };
         static readonly Domino[] TableChain = { new Domino(5, 1), new Domino(1, 3), new Domino(3, 6), new Domino(6, 6), new Domino(6, 4), new Domino(4, 4), new Domino(4, 2) };
         static readonly Vector2 ChainBoard = new Vector2(ReferenceLongSide, ReferenceShortSide / 3f);
@@ -61,6 +63,9 @@ namespace HypeDomino.Bench
 
         sealed class TableSlot
         {
+            public RectTransform Area;
+            public RectTransform Surface;
+            public AspectRatioFitter Fitter;
             public Image Still;
             public readonly List<LoopSlot> Layers = new();
         }
@@ -91,6 +96,8 @@ namespace HypeDomino.Bench
         Text levelLabel;
         Text motionLabel;
         Text rateLabel;
+        Text shapeLabel;
+        int shapeIndex;
         AudioSource sfxSource;
         AudioSource musicSource;
         AnimationBudget budget;
@@ -215,17 +222,17 @@ namespace HypeDomino.Bench
             foreach (var table in content.tables)
             {
                 var sheet = NewSheet("tables", table.layers.Length > 0 ? $"table {table.name} ({table.layers.Length} layers)" : $"table {table.name}");
-                var surface = NewRect("Table", sheet.Root);
+                var area = NewRect("TableArea", sheet.Root);
+                Stretch(area);
+                var surface = NewRect("Table", area);
                 Stretch(surface);
                 var fitter = surface.gameObject.AddComponent<AspectRatioFitter>();
-                fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-                fitter.aspectRatio = table.still.rect.width / table.still.rect.height;
-                var slot = new TableSlot { Still = NewImage("Static", surface, table.still, 0f, CellCentre) };
-                Stretch(slot.Still.rectTransform);
+                fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                fitter.enabled = false;
+                var slot = new TableSlot { Area = area, Surface = surface, Fitter = fitter, Still = NewTable("Static", surface, table.still) };
                 foreach (var layer in table.layers)
                 {
-                    var image = NewImage(layer.name, surface, layer.still, 0f, CellCentre);
-                    Stretch(image.rectTransform);
+                    var image = NewTable(layer.name, surface, layer.still);
                     image.gameObject.SetActive(false);
                     slot.Layers.Add(new LoopSlot { Image = image.gameObject.AddComponent<AnimatedImage>(), Source = layer, Art = ArtOf(layer) });
                 }
@@ -436,8 +443,9 @@ namespace HypeDomino.Bench
             levelLabel = AddToggle(rect, 2, NextLevel);
             motionLabel = AddToggle(rect, 1, ToggleMotion);
             rateLabel = AddToggle(rect, 0, NextRate);
+            shapeLabel = AddToggle(rect, 3, NextShape);
             var left = 4f * (NavButtonWidth + Gap) + Gap;
-            var right = 3f * (ToggleWidth + Gap) + Gap;
+            var right = 4f * (ToggleWidth + Gap) + Gap;
             title = HudText(rect, left, right, 0.5f, 1f);
             stats = HudText(rect, left, right, 0f, 0.5f);
             RefreshLabels();
@@ -499,6 +507,23 @@ namespace HypeDomino.Bench
             Refresh();
         }
 
+        void NextShape()
+        {
+            shapeIndex = (shapeIndex + 1) % TableShapes.Length;
+            foreach (var sheet in sheets)
+            foreach (var table in sheet.Tables) ApplyShape(table);
+            Refresh();
+        }
+
+        void ApplyShape(TableSlot table)
+        {
+            var shape = TableShapes[shapeIndex];
+            table.Area.offsetMax = new Vector2(0f, shape.belowHud ? -HudHeight : 0f);
+            table.Fitter.enabled = shape.aspect > 0f;
+            if (shape.aspect > 0f) table.Fitter.aspectRatio = shape.aspect;
+            else Stretch(table.Surface);
+        }
+
         void Refresh()
         {
             RefreshLabels();
@@ -510,6 +535,7 @@ namespace HypeDomino.Bench
             levelLabel.text = $"effects {level}";
             motionLabel.text = reduceMotion ? "reduce motion on" : "reduce motion off";
             rateLabel.text = $"loops {LoopRates[rateIndex]:F0} fps";
+            shapeLabel.text = $"table {TableShapes[shapeIndex].name}";
             if (sheets.Count > 0) title.text = $"{current + 1}/{sheets.Count}  {sheets[current].Title}";
         }
 
@@ -744,6 +770,16 @@ namespace HypeDomino.Bench
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.text = text;
             return button;
+        }
+
+        static TableImage NewTable(string name, Transform parent, Sprite sprite)
+        {
+            var image = new GameObject(name, typeof(RectTransform), typeof(TableImage)).GetComponent<TableImage>();
+            image.raycastTarget = false;
+            image.sprite = sprite;
+            image.transform.SetParent(parent, false);
+            Stretch(image.rectTransform);
+            return image;
         }
 
         static RectTransform NewRect(string name, Transform parent)
