@@ -81,6 +81,60 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `terracotta_cape: background [183.0, 183.0, 183.0], pockets 147 px, crop (0, -182, 1172, 990), portrait 768`
+- Crop `(34, 0, 1112, 1078)` to `(0, -182, 1172, 990)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `terracotta_cape_loop: blink edit registered (tx, ty, scale, angle) = (0.0090, 0.1338, 0.9996, -0.0003), residual 0.00071 -> 0.00070, eye colour offset [-10.0, -5.9, -2.8], parts 0, ripples 1, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/terracotta_cape/work/terracotta_cape_cleanup.py terracotta_cape assets-src/cosmetic/avatar/terracotta_cape/concept/20261116-01.png assets-src/cosmetic/avatar/terracotta_cape/work
+python -I assets-src/cosmetic/avatar/terracotta_cape/work/terracotta_cape_loop.py assets-src/cosmetic/avatar/terracotta_cape/concept assets-src/cosmetic/avatar/terracotta_cape/work assets-src/cosmetic/avatar/terracotta_cape/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/terracotta_cape` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `d08ffe18ca0a7d35513029dbeaa148bfbc73514ecadce1351beebb368cd7a323` |
+| export/anim/0002.png | `f37838ba7b95b6848d9469b842a5990ed85af65626d77a81bb551e66fde91feb` |
+| export/anim/0003.png | `462bcb82c0b41f20a3db0fd0638ec7e3d8413657cf44dc850a3923556189a455` |
+| export/anim/0004.png | `0254611c06604fc375fd86452792551deff9095b0841d2cc0c46d0b4e70eaaa8` |
+| export/anim/0005.png | `20f9d9af237de5ac28918de83f110f0ce123022c0af6d5ae850215279c6b5956` |
+| export/anim/0006.png | `217d341270a06764877698d8ebd30a2d0fe036818b64c7d0eb43a991e510fb7b` |
+| export/anim/0007.png | `c59ee40cbadb7c09b60ae4e4ce0f4e287715cd4b862956d636edd580644ecfbc` |
+| export/anim/0008.png | `0fab3dab7cbfd0351350b5cff75daa1ab93306fb7b7cd3e494301f6804c96f97` |
+| export/anim/0009.png | `b38bd98f65e1a8d7492edcc6d885c7a5fb43a0c893c55f06b7fc67c9271d4b72` |
+| export/anim/0010.png | `6314bcf42e87455c01199e9887f09e59c9ab401cb2e14670c3aadd69b77fdbbc` |
+| export/anim/0011.png | `c71c919dba5e63460cf9f48e9e02db5e10b4c5d72abcfe94c44243d029b48c72` |
+| export/anim/0012.png | `918745c04d81131adde8fa1bb990e4d2e0663ecb29846529d3a548dc74865408` |
+| export/anim/0013.png | `7381591f0b35f675bd24486412eb3179694c567c023d69bddd3aa731b68658be` |
+| export/anim/0014.png | `4db5f341aa9e67177d54f070595368a869a2988a0e11c6d8a923de27746c8b93` |
+| export/anim/0015.png | `e5a590ae24b7d0c92e8c04a2ccca8e9092c63e4b8eba2b6a9400e2d83ea67e98` |
+| export/anim/0016.png | `6f10ccae1900be25d4b2fce786d80272ba3bf8fa6c88669bb00120644150c0ec` |
+| export/static.png | `b38bd98f65e1a8d7492edcc6d885c7a5fb43a0c893c55f06b7fc67c9271d4b72` |
+| work/terracotta_cape_base.png | `411317d0c4472973b9672291e240978de2efc64f92e4ca591b9f963bdff1ec02` |
+| work/terracotta_cape_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/terracotta_cape_eyes_closed.png | `0c5a5718a594ccb209577137b2bcdfdb67217897428361af25c37e7574878aeb` |
+| work/terracotta_cape_eyes_open.png | `3215bdd1af7670a01ce81eb376c0ea628e912b49a29d3ba554eebef49355202b` |
+| work/terracotta_cape_head.png | `fc19f610b26b5bfb2a622dff33dded5613d6f18927a263740f1ac35f852fbfa6` |
+| work/terracotta_cape_loop.py | `c9923a0a90ccc50327879340d25af89f7c3f38a174f393d8c1603543f58c1800` |
+| work/terracotta_cape_portrait.png | `feed9b9f2fa47dc6e7d85abf1bdb806a26e33529d1d6cac7b9107c88302e276f` |
+| work/terracotta_cape_torso.png | `9588d181920991f0ed4df4396c1581b5d28ba816984e1f58315c18f7865028d0` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -104,6 +158,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:29:46 UTC; `c2pa.created` 2026-11-16T08:30:39Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:46:20 UTC; `c2pa.created` 2026-11-16T08:46:57Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/terracotta_cape_base.png, work/terracotta_cape_cleanup.py, work/terracotta_cape_eyes_closed.png, work/terracotta_cape_eyes_open.png, work/terracotta_cape_head.png, work/terracotta_cape_loop.py, work/terracotta_cape_portrait.png, work/terracotta_cape_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(34, 0, 1112, 1078)` to `(0, -182, 1172, 990)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 

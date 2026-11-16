@@ -82,6 +82,60 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `teal_boa: background [196.0, 195.0, 195.0], pockets 15704 px, crop (12, -178, 1096, 906), portrait 768`
+- Crop `(56, 0, 1053, 997)` to `(12, -178, 1096, 906)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `teal_boa_loop: blink edit registered (tx, ty, scale, angle) = (0.2491, -0.1323, 1.0000, -0.0002), residual 0.00138 -> 0.00131, eye colour offset [-6.3, -2.1, -0.8], parts 0, ripples 2, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.005 before, 0.172 after; highest over the 16 loop frames 0.000 before, 0.161 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/teal_boa/work/teal_boa_cleanup.py teal_boa assets-src/cosmetic/avatar/teal_boa/concept/20261116-01.png assets-src/cosmetic/avatar/teal_boa/work
+python -I assets-src/cosmetic/avatar/teal_boa/work/teal_boa_loop.py assets-src/cosmetic/avatar/teal_boa/concept assets-src/cosmetic/avatar/teal_boa/work assets-src/cosmetic/avatar/teal_boa/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/teal_boa` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `eaf562fdf7a69bda963f53fbf2635d824193fab73b88678b6d7c034593cbb2be` |
+| export/anim/0002.png | `4b2fafa14a90394389de36ec72f722f2f0ce6d1bd0e0af407e21d51b844d0821` |
+| export/anim/0003.png | `3602e80c953acc8aa9a2d46bc8e3a7a85003989b860e66104665356668d98e74` |
+| export/anim/0004.png | `653551b51bbc684d8f802557f64327c278a2cbcd9365d2ed40fdec16411dd580` |
+| export/anim/0005.png | `9be3a16437291945c5f3aa3d19c7287956007d0872573a09d0f6294c80c31cd3` |
+| export/anim/0006.png | `21394b81f92687d415c2bc626ba6238c1a7658837d551a52e22c3a0d7a2daabd` |
+| export/anim/0007.png | `5deb91037a683d7c1f1b2ff9e71139c47a9c9ad8d576e31c5a83abcb41ddcfa6` |
+| export/anim/0008.png | `c5fbfd0a9f4a97606da2f021d005934a2d5a6b0c8cf4acf0fb374d9d5476e917` |
+| export/anim/0009.png | `b4610138843f0157cf986ad60d850e56a46940ee1a9b4b76385039d4d2127544` |
+| export/anim/0010.png | `33247162d62f4f8d52590f13ee83d365ac44cb4e5bfada11e24f00ac73e4a76b` |
+| export/anim/0011.png | `f5a76c809baaa353217f6c7cb6f0c65095af21f3ec4ede0492099a603518cb61` |
+| export/anim/0012.png | `f72979a9c31f099ace76e3ff51cd0622b5f94735fd8928a16c3bd1e555925664` |
+| export/anim/0013.png | `108de1d4bfe20099c7e994d731b2a8cd7ba11fddf9cdb79644512dce1784dda5` |
+| export/anim/0014.png | `03180a9b111e6b7600c7f6221d79637b8caa28e8584de8f117c47128e0642e00` |
+| export/anim/0015.png | `3fe58d594c0ed9913dc6be49f03636ffcca313a1bf58e66fe3e86cb915371921` |
+| export/anim/0016.png | `9d710004e625a662f29ab15201e2a34cada9733aa0c0ef2022ebd616b2e0be1b` |
+| export/static.png | `b4610138843f0157cf986ad60d850e56a46940ee1a9b4b76385039d4d2127544` |
+| work/teal_boa_base.png | `72e814a39e22fac4339d96ca7a479d4ff93d057a6003bfee695616c9753e6564` |
+| work/teal_boa_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/teal_boa_eyes_closed.png | `742760064272a5e6f67c3e421f2231f55ca3d75382ea704ef0acabb338d51a6c` |
+| work/teal_boa_eyes_open.png | `1efbebcbbf8198b3f3517f547ec46932fbf55d52648c071872bbc294af024721` |
+| work/teal_boa_head.png | `665fa00d796831a667d9977558a1f2b77c91fadd9d257eb0b2528e21cee6e303` |
+| work/teal_boa_loop.py | `64a3ee782279e117619b5c8963fddf11efa806e0788c605307569298a315880c` |
+| work/teal_boa_portrait.png | `e65186e546156ac85d49913b8050a94ff5a5e1e11bb7adad0ff986db5f28323a` |
+| work/teal_boa_torso.png | `357a101cadcf37c89bf4e7299162e98dba0ae07472ad900899d0875dfd2f91ed` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -105,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:38:09 UTC; `c2pa.created` 2026-11-16T08:38:47Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:53:45 UTC; `c2pa.created` 2026-11-16T08:54:32Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/teal_boa_base.png, work/teal_boa_cleanup.py, work/teal_boa_eyes_closed.png, work/teal_boa_eyes_open.png, work/teal_boa_head.png, work/teal_boa_loop.py, work/teal_boa_portrait.png, work/teal_boa_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(56, 0, 1053, 997)` to `(12, -178, 1096, 906)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 

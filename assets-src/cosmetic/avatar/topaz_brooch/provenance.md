@@ -79,6 +79,61 @@ It printed `topaz_brooch_loop: blink edit registered (tx, ty, scale, angle) = (0
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `topaz_brooch: background [186.0, 186.0, 185.0], pockets 258 px, crop (45, -98, 1217, 1074), portrait 768`
+- Crop `(92, 26, 1170, 1104)` to `(45, -98, 1217, 1074)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `topaz_brooch_loop: blink edit registered (tx, ty, scale, angle) = (-0.1894, 0.2223, 0.9997, -0.0000), residual 0.00089 -> 0.00084, eye colour offset [-4.4, -1.5, -1.2], parts 0, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.068 before, 0.172 after; highest over the 16 loop frames 0.062 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/topaz_brooch/work/topaz_brooch_cleanup.py topaz_brooch assets-src/cosmetic/avatar/topaz_brooch/concept/20261115-01.png assets-src/cosmetic/avatar/topaz_brooch/work
+python -I assets-src/cosmetic/avatar/topaz_brooch/work/topaz_brooch_loop.py assets-src/cosmetic/avatar/topaz_brooch/concept assets-src/cosmetic/avatar/topaz_brooch/work assets-src/cosmetic/avatar/topaz_brooch/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/topaz_brooch` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `1eae55da1e7e7e6bddc155faccbc930da271b7bcb387708f208324f9c5b90311` |
+| export/anim/0002.png | `e0d57f07367d6bc5f625efb10e02f23d8dbc0e9e898e6371e546e5567560f62a` |
+| export/anim/0003.png | `8caa0322b439b2f63b3ef72bd3fafc1941136e9baca3c9eb2bd27c3b77333544` |
+| export/anim/0004.png | `c8728ad68d5d60e5c3355e5934f1593f92bb724ca7789e1150cc5e2fc79bbdbd` |
+| export/anim/0005.png | `285bfb184a9ca6adbf6356e8fd3b3f978ba0856a9296e1eddb5d0ec254ad1a5e` |
+| export/anim/0006.png | `df35bd8cc9ed457b8dd7ad804fdee0fa2f80d65df38984660121815fffe48675` |
+| export/anim/0007.png | `e7bef1f647c2c3de5f3992a0f49285ff44c2f02da3b0dac7cf178182c578e570` |
+| export/anim/0008.png | `d845cf9418f95ac654bcae548e2444abdadd6b0f85ee9d0edbcde2632b92cd24` |
+| export/anim/0009.png | `a79a939c41ad13a18dd2feaffd620279c377845ddaed138d1289abff16235819` |
+| export/anim/0010.png | `2cc2b64b24d9b2e5c6cfe437c8a394e1d4eb2a319b1cb9755d5e8b73bfbb22e3` |
+| export/anim/0011.png | `811bb9770289fcee7b5424a0c674d9377a24cee6a9464c2a501cae6f30ace49e` |
+| export/anim/0012.png | `98ee29c1c2c5c89d6584b84263c2645bc2c4974403be542944bf225857fb6ab0` |
+| export/anim/0013.png | `1f5a864efc9afa7a10e44e0942f98486961770770d93f3d5f67518c1108a5d57` |
+| export/anim/0014.png | `2395d14ee788da42028b9ff7d317a6e72f7cf21c3a8da8f1abab53f742d76a2f` |
+| export/anim/0015.png | `400a7fa16cbc32618a59cbd58b17f1cdd3a8d5a2631d813e5ed463e1b5707000` |
+| export/anim/0016.png | `24cdef293d703736266d5255821dfb43610c64d400610b67d50f403e7cb07c63` |
+| export/static.png | `a79a939c41ad13a18dd2feaffd620279c377845ddaed138d1289abff16235819` |
+| work/topaz_brooch_base.png | `3d2e39656ca0dc4ad9959afb10ff48f5e4678a17f38e057699a4873315be7fc1` |
+| work/topaz_brooch_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/topaz_brooch_eyes_closed.png | `16086b4bd0936c9f72d6876bc69011e5a729b6bc1a703096fef0c3e3564636cd` |
+| work/topaz_brooch_eyes_open.png | `2ff3400d274afb84ced469917f9a0408bf72c71eb1d3a58b0df7959324035041` |
+| work/topaz_brooch_head.png | `aef4a013fd06ba8639fb7b1867a3d11ea6da8c1e5e9ed1446ea77ea4cc051b5d` |
+| work/topaz_brooch_loop.py | `2fc67c96cf3f5a117c1f8b0be90647e286533409273f0de2c9025cb506641bc3` |
+| work/topaz_brooch_portrait.png | `30d7451a4300fd5c6eb564c3bfec3e599f5d8fcaa45f89d456103e929f74c48f` |
+| work/topaz_brooch_torso.png | `e865ec808010b7f2a01f11b51c7894bb269fef618986d47698d89341c6ce54cd` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -102,6 +157,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:52:57 UTC; `c2pa.created` 2026-11-15T16:53:38Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:54:04 UTC; `c2pa.created` 2026-11-15T16:54:40Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/topaz_brooch_base.png, work/topaz_brooch_cleanup.py, work/topaz_brooch_eyes_closed.png, work/topaz_brooch_eyes_open.png, work/topaz_brooch_head.png, work/topaz_brooch_loop.py, work/topaz_brooch_portrait.png, work/topaz_brooch_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(92, 26, 1170, 1104)` to `(45, -98, 1217, 1074)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "topaz_brooch"
-CROP = (92, 26, 1170, 1104)
+CROP = (45, -98, 1217, 1074)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (385, 235, 175, 245)
+HEAD = (385, 297, 161, 225)
 HEAD_FALLOFF = 0.3
-NECK_Y = 460
-NECK_BAND = 40
-SHOULDER_Y = 570
+NECK_Y = 504
+NECK_BAND = 37
+SHOULDER_Y = 606
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(375, 216, 40, 23), (482, 238, 38, 23)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(376, 280, 37, 21), (474, 300, 35, 21)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = []
-GLINTS = [(433, 532, 27, 37, 10, 5)]
+GLINTS = [(429, 571, 25, 34, 10, 5)]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
 FRAME_NAME = re.compile(r"^\d{4}\.png$")
@@ -87,7 +87,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

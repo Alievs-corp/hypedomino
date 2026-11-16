@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "ginkgo_pin"
-CROP = (36, 0, 1114, 1078)
+CROP = (0, -189, 1172, 983)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (440, 270, 270, 280)
+HEAD = (428, 372, 248, 258)
 HEAD_FALLOFF = 0.3
-NECK_Y = 525
-NECK_BAND = 40
-SHOULDER_Y = 650
+NECK_Y = 607
+NECK_BAND = 37
+SHOULDER_Y = 722
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.5
-NOD = 2.0
-EYES = [(432, 287, 44, 25), (552, 305, 42, 25)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(421, 388, 40, 23), (531, 404, 39, 23)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "ginkgo_dangles", "polygon": [(106, 150), (196, 150), (199, 250), (204, 360), (190, 388), (138, 390), (106, 300), (103, 200)], "pivot": (150, 142), "length": 240, "swing": 3.5, "lag": 0.6, "behind": "clear"},
+    {"name": "ginkgo_dangles", "polygon": [(121, 262), (204, 262), (207, 354), (211, 455), (198, 481), (151, 483), (121, 400), (118, 308)], "pivot": (162, 254), "length": 221, "swing": 3.5, "lag": 0.6, "behind": "clear"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -89,7 +89,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

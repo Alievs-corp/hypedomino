@@ -10,27 +10,27 @@ from scipy import ndimage, optimize
 SLUG = "apricot_fan"
 CANONICAL = "20261116-02.png"
 BLINK_EDIT = "20261116-03.png"
-CROP = (63, 0, 1141, 1078)
+CROP = (16, -165, 1188, 1007)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (430, 220, 220, 220)
+HEAD = (426, 310, 202, 202)
 HEAD_FALLOFF = 0.3
-NECK_Y = 420
-NECK_BAND = 35
-SHOULDER_Y = 540
+NECK_Y = 494
+NECK_BAND = 32
+SHOULDER_Y = 605
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(412, 217, 38, 20), (503, 234, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(410, 308, 35, 18), (493, 323, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "fan", "polygon": [(132, 590), (126, 548), (150, 520), (190, 488), (235, 460), (300, 428), (370, 428), (440, 446), (500, 488), (548, 540), (562, 590), (500, 612), (452, 636), (410, 650), (372, 656), (350, 634), (300, 622), (250, 622), (200, 612)], "pivot": (355, 668), "length": 80, "swing": 4.0, "lag": 0.0, "flutter": 0.6, "flap": 0.1, "behind": "fill"},
+    {"name": "fan", "polygon": [(152, 651), (147, 612), (169, 586), (206, 557), (247, 531), (307, 502), (371, 502), (436, 518), (491, 557), (535, 605), (548, 651), (491, 671), (447, 693), (408, 706), (373, 712), (353, 691), (307, 680), (261, 680), (215, 671)], "pivot": (357, 723), "length": 74, "swing": 4.0, "lag": 0.0, "flutter": 0.6, "flap": 0.1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

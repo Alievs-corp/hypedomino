@@ -82,6 +82,60 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `cornflower_ribbon: background [201.0, 201.0, 202.0], pockets 8592 px, crop (0, -177, 1121, 944), portrait 768`
+- Crop `(37, 0, 1068, 1031)` to `(0, -177, 1121, 944)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `cornflower_ribbon_loop: blink edit registered (tx, ty, scale, angle) = (0.0991, -0.1840, 1.0001, 0.0000), residual 0.00079 -> 0.00077, eye colour offset [-1.5, 0.9, 1.2], parts 0, ripples 2, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/cornflower_ribbon/work/cornflower_ribbon_cleanup.py cornflower_ribbon assets-src/cosmetic/avatar/cornflower_ribbon/concept/20261115-01.png assets-src/cosmetic/avatar/cornflower_ribbon/work
+python -I assets-src/cosmetic/avatar/cornflower_ribbon/work/cornflower_ribbon_loop.py assets-src/cosmetic/avatar/cornflower_ribbon/concept assets-src/cosmetic/avatar/cornflower_ribbon/work assets-src/cosmetic/avatar/cornflower_ribbon/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/cornflower_ribbon` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `86641294540577fdb002541259187e947b80e698e9ca78832c0a756d39517db6` |
+| export/anim/0002.png | `18870b775f2e8ad83a17b146daaddd59a8ff26b03d6ff4dce364157c57dcac5c` |
+| export/anim/0003.png | `3698663c21d5a93ffd6e37bcc55a46e745d62efed0a5687d1c2bc682e594584b` |
+| export/anim/0004.png | `2b5968e450a5f592e0ff4bbe67c9337dacf56f47e8262a6bf73e86bc3bd71f2e` |
+| export/anim/0005.png | `14b20afe63fe79ff6e2e3b3f446c33f8164e86b6c0c57d2875bc1ee8fdc2f324` |
+| export/anim/0006.png | `192140e05f80792f9a90a751e510c448e30fb17a44f188c9ef63920308921985` |
+| export/anim/0007.png | `9f07851a721cce8a75b31e9c54b8c0d1118978fa83931e5b7d0c206fe851c045` |
+| export/anim/0008.png | `65cfe7a5bcd42153d0d7761d371cfe9ad4f11c6012fef0d93404bcdda0c84dc3` |
+| export/anim/0009.png | `46a544b60b0b979420d87dd1a847c97083d0275ecffe42c7bb02b97c97f0daf4` |
+| export/anim/0010.png | `146bd34c5b0cbd295d262618a518ed077c63f96cc668759c77ee18a19e62a5cf` |
+| export/anim/0011.png | `ee054e9b4c58e26b750fffdb8f84941d0bc9c1d8fa60d7eb1c473935eb7a814e` |
+| export/anim/0012.png | `a105c6507f00d096181700673e3799e61be3722889072a6b2496cf09b85d95bf` |
+| export/anim/0013.png | `897d1280d38525c62f66615902cc635aefb2126bf2b07685403cc8a2c8a283bc` |
+| export/anim/0014.png | `c2283f28362f9c32d9bb8028e1b7831b449a9a955dfdf6bae42b994ab6d1e49c` |
+| export/anim/0015.png | `7ff710ad2317dc15950e6ab266cb58cef639f162ecec75ccf535efd42347a454` |
+| export/anim/0016.png | `7641042674e3261b22e4b5bc6a40059ab8dc27e0dea4d7cf3c71b6e0b0f28642` |
+| export/static.png | `46a544b60b0b979420d87dd1a847c97083d0275ecffe42c7bb02b97c97f0daf4` |
+| work/cornflower_ribbon_base.png | `77e087da2b262e07697f36b09c2c2b77420ecccaf44b854701e5d313ed46078f` |
+| work/cornflower_ribbon_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/cornflower_ribbon_eyes_closed.png | `2f6fae8fecd5835a58b91156664d571519d5f0f47409235ec4ae4511be67bad3` |
+| work/cornflower_ribbon_eyes_open.png | `8651dd81e0e4079165f15622105d58b8ae2d1d5502b561030f441d3d5ede6c81` |
+| work/cornflower_ribbon_head.png | `e32fbac43b4ed1c3bf3690d9164e2de40ac789f7e0b66abed71c2def319acf3f` |
+| work/cornflower_ribbon_loop.py | `0b8a38c9ef8e38536b61d89be350af0698a187ffccdccd51d90b741dc91a7b33` |
+| work/cornflower_ribbon_portrait.png | `9849f8991b8e74d8f2d56c846d7beb96a7d54310bfc7a65fca867af93b81cc20` |
+| work/cornflower_ribbon_torso.png | `d5817aae60a2cf4a43efe4ebdba6f6615fc8a0706702eb503fddadfe0d534f1c` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -105,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:28:19 UTC; `c2pa.created` 2026-11-15T17:29:28Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:44:06 UTC; `c2pa.created` 2026-11-15T17:45:09Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/cornflower_ribbon_base.png, work/cornflower_ribbon_cleanup.py, work/cornflower_ribbon_eyes_closed.png, work/cornflower_ribbon_eyes_open.png, work/cornflower_ribbon_head.png, work/cornflower_ribbon_loop.py, work/cornflower_ribbon_portrait.png, work/cornflower_ribbon_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(37, 0, 1068, 1031)` to `(0, -177, 1121, 944)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

@@ -79,6 +79,62 @@ It printed `heron_plume_loop: blink edit registered (tx, ty, scale, angle) = (0.
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `heron_plume: background [200.0, 199.0, 199.0], pockets 1290 px, crop (80, -170, 1226, 976), portrait 768`
+- Crop `(150, 0, 1204, 1054)` to `(80, -170, 1226, 976)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `heron_plume_loop: blink edit registered (tx, ty, scale, angle) = (0.1368, 0.0836, 0.9996, 0.0002), residual 0.00125 -> 0.00122, eye colour offset [-1.2, 1.3, 1.8], parts 1, filled 24071 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.031 before, 0.172 after; highest over the 16 loop frames 0.031 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/heron_plume/work/heron_plume_cleanup.py heron_plume assets-src/cosmetic/avatar/heron_plume/concept/20261115-01.png assets-src/cosmetic/avatar/heron_plume/work
+python -I assets-src/cosmetic/avatar/heron_plume/work/heron_plume_loop.py assets-src/cosmetic/avatar/heron_plume/concept assets-src/cosmetic/avatar/heron_plume/work assets-src/cosmetic/avatar/heron_plume/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/heron_plume` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `41291d30edf7c36662915d6a9c9c3fae101de302b46521011e8306b1d0c50d72` |
+| export/anim/0002.png | `4b6be1f6d7240b8cf18cb39b6ede7f234d4ba97ff695f0fe312801ffe977e02e` |
+| export/anim/0003.png | `225b24c22152e754d1afe83ecbf0fbf238cb531a418ea66735a0fc7d0ac1085a` |
+| export/anim/0004.png | `27d97549b29c3281cf765cc57198f059628261976089af330d8ab4bdf321d46f` |
+| export/anim/0005.png | `caac628699933aff60e7c598a98987f8609c85d36567fcfe940ad0fdbf52ce6b` |
+| export/anim/0006.png | `7e202badc489a1d574d1e24b1227795ba2c6b3b534c3ea4eeb43abe5b90b9e1f` |
+| export/anim/0007.png | `3231b04cf9592576acb4c463f57db613deceb669ffab3386660394883bcd78a8` |
+| export/anim/0008.png | `fc0beeb0fc2780e07042e877114b9aeffdfbe361617f8caf115ee55148421fd3` |
+| export/anim/0009.png | `ba9ef8268499682b56ed12b8e28c49103c1a3da7eb8f7741aeb54ce7e90cc5c5` |
+| export/anim/0010.png | `271a14d9ab3e7472a355801dcd9810a327cb245102d84b3a6124502851152ba3` |
+| export/anim/0011.png | `94462bd4eb9426a1c58bfe3fe840f79381da1fe2ef38812f8060f83108fb1400` |
+| export/anim/0012.png | `cdba933d96410c8a7f751829bcbc848cda3be951e941f48677efb06a962bb616` |
+| export/anim/0013.png | `69a2fd64b9f4a46bac3b8e6ee68f875da532f585cc4e81e10630858a218e9788` |
+| export/anim/0014.png | `08b341eac0519ef52ff8d78e8072786d0199ac91444dd93644323883a71bde90` |
+| export/anim/0015.png | `6c175f01f589908747a23b088c1979dd3de87067118ca2eb5e5088e2e9042758` |
+| export/anim/0016.png | `d44423d7fc3d3ad28af4083979bf72c09b03790ab3c8f0979c8e7f1293f776bf` |
+| export/static.png | `ba9ef8268499682b56ed12b8e28c49103c1a3da7eb8f7741aeb54ce7e90cc5c5` |
+| work/heron_plume_base.png | `a48176ca836348a336b81e30aabbf5ae6eea5f9809dd416f4275c26b8f99746f` |
+| work/heron_plume_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/heron_plume_eyes_closed.png | `0d77c2d3925a1f4dfb34312feeac46d63c74161d0419de2e6acb65397fb29da2` |
+| work/heron_plume_eyes_open.png | `53039c8f5de0eb5d4742f5ca874a001ca0baa1c5de7b5c86afa5b76817178aca` |
+| work/heron_plume_feather.png | `13b9852913ee376a29e77671470d2ac94aa02ed01eabbe5fec8990ee28504adf` |
+| work/heron_plume_head.png | `22d509c0cb4d51895a44b0adcf5d8d6d19be12010f007657783ad2183140261b` |
+| work/heron_plume_loop.py | `c2e4bd17727d458a66d54da1a228877b79f1357a750fcc4770a01a0b885e211b` |
+| work/heron_plume_portrait.png | `135aa0761415d3f0a8baa8967b3e854c23ef6fa1238a8d9a9f49e25ab1192d81` |
+| work/heron_plume_torso.png | `fc545fa66e485784eb5deb58d3b2651568bc9fe480617a7e8f27c72beeaa314e` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -103,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:40:03 UTC; `c2pa.created` 2026-11-15T16:40:45Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:41:11 UTC; `c2pa.created` 2026-11-15T16:42:19Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/heron_plume_base.png, work/heron_plume_cleanup.py, work/heron_plume_eyes_closed.png, work/heron_plume_eyes_open.png, work/heron_plume_feather.png, work/heron_plume_head.png, work/heron_plume_loop.py, work/heron_plume_portrait.png, work/heron_plume_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(150, 0, 1204, 1054)` to `(80, -170, 1226, 976)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

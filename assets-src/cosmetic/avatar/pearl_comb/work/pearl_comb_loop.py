@@ -8,29 +8,29 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "pearl_comb"
-CROP = (116, 0, 1147, 1031)
+CROP = (71, -177, 1192, 944)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (410, 260, 250, 270)
+HEAD = (408, 360, 230, 248)
 HEAD_FALLOFF = 0.3
-NECK_Y = 510
-NECK_BAND = 40
-SHOULDER_Y = 640
+NECK_Y = 590
+NECK_BAND = 37
+SHOULDER_Y = 710
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(380, 295, 44, 25), (497, 280, 42, 25)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(380, 393, 40, 23), (488, 379, 39, 23)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "pearl_strands", "polygon": [(184, 166), (240, 160), (241, 310), (226, 321), (210, 323), (185, 321), (179, 300)], "pivot": (212, 160), "length": 150, "swing": 4.0, "lag": 0.5, "grow": 2, "behind": "fill"},
-    {"name": "earring_left", "polygon": [(300, 382), (320, 382), (326, 395), (329, 440), (321, 450), (321, 473), (299, 473), (298, 450), (293, 440), (293, 395)], "pivot": (310, 380), "length": 70, "swing": 4.0, "lag": 0.3, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(530, 356), (545, 356), (553, 370), (556, 405), (551, 412), (553, 448), (525, 448), (525, 412), (521, 405), (522, 370)], "pivot": (537, 352), "length": 70, "swing": 4.0, "lag": 0.8, "grow": 1, "behind": "fill"},
+    {"name": "pearl_strands", "polygon": [(200, 274), (252, 268), (252, 406), (239, 416), (224, 418), (201, 416), (195, 397)], "pivot": (226, 268), "length": 138, "swing": 4.0, "lag": 0.5, "grow": 2, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(307, 473), (325, 473), (331, 485), (333, 526), (326, 535), (326, 556), (306, 556), (305, 535), (300, 526), (300, 485)], "pivot": (316, 471), "length": 64, "swing": 4.0, "lag": 0.3, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(518, 449), (532, 449), (539, 462), (542, 494), (538, 500), (539, 533), (514, 533), (514, 500), (510, 494), (511, 462)], "pivot": (525, 445), "length": 64, "swing": 4.0, "lag": 0.8, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -91,7 +91,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

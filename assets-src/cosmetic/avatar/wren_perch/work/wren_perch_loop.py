@@ -10,28 +10,28 @@ from scipy import ndimage, optimize
 SLUG = "wren_perch"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (17, 0, 1183, 1166)
+CROP = (0, -193, 1254, 1061)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (382, 215, 175, 215)
+HEAD = (366, 318, 163, 200)
 HEAD_FALLOFF = 0.3
-NECK_Y = 425
-NECK_BAND = 35
-SHOULDER_Y = 560
+NECK_Y = 513
+NECK_BAND = 33
+SHOULDER_Y = 639
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.44
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(326, 204, 40, 22), (425, 186, 40, 22)]
-EYE_FEATHER = 5.0
+NOD = 1.86
+EYES = [(314, 308, 37, 20), (406, 291, 37, 20)]
+EYE_FEATHER = 4.65
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "bird_head", "polygon": [(550, 327), (566, 317), (590, 314), (610, 320), (623, 335), (626, 356), (616, 373), (596, 380), (576, 376), (562, 363), (557, 342)], "pivot": (596, 374), "length": 45, "swing": 12.0, "lag": 0.0, "flutter": 0.7, "behind": "clear"},
-    {"name": "bird_tail", "polygon": [(634, 404), (652, 398), (676, 422), (700, 452), (718, 480), (714, 494), (700, 490), (680, 466), (656, 440), (636, 424)], "pivot": (642, 410), "length": 40, "swing": 6.0, "lag": 1.2, "flutter": 0.5, "behind": "clear"},
+    {"name": "bird_head", "polygon": [(522, 422), (537, 413), (559, 410), (578, 416), (590, 430), (592, 449), (583, 465), (565, 472), (546, 468), (533, 456), (528, 436)], "pivot": (565, 466), "length": 42, "swing": 12.0, "lag": 0.0, "flutter": 0.7, "behind": "clear"},
+    {"name": "bird_tail", "polygon": [(600, 494), (617, 488), (639, 511), (661, 538), (678, 565), (674, 578), (661, 574), (643, 551), (620, 527), (602, 512)], "pivot": (607, 499), "length": 37, "swing": 6.0, "lag": 1.2, "flutter": 0.5, "behind": "clear"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

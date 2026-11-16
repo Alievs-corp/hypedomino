@@ -10,30 +10,30 @@ from scipy import ndimage, optimize
 SLUG = "lilac_butterfly"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (122, 0, 1200, 1078)
+CROP = (75, -182, 1247, 990)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (380, 250, 230, 250)
+HEAD = (380, 349, 212, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 470
-NECK_BAND = 35
-SHOULDER_Y = 610
+NECK_Y = 552
+NECK_BAND = 32
+SHOULDER_Y = 680
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(272, 292, 38, 20), (395, 282, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(281, 388, 35, 18), (394, 379, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "butterfly", "polygon": [(460, 160), (480, 150), (500, 138), (522, 136), (540, 148), (558, 118), (584, 108), (600, 124), (592, 170), (578, 200), (572, 230), (556, 246), (534, 242), (524, 222), (500, 216), (474, 202), (460, 182)], "pivot": (542, 186), "length": 1, "swing": 0.0, "flap": 0.28, "grow": 2, "behind": "fill"},
-    {"name": "pin_pearls", "polygon": [(552, 286), (570, 286), (574, 320), (576, 352), (566, 362), (550, 360), (546, 330), (550, 300)], "pivot": (561, 288), "length": 50, "swing": 5.0, "lag": 0.6, "grow": 1, "behind": "fill"},
-    {"name": "earring_left", "polygon": [(232, 378), (248, 378), (252, 410), (250, 440), (252, 462), (240, 470), (228, 462), (230, 440), (228, 410)], "pivot": (240, 380), "length": 70, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(494, 348), (512, 348), (516, 380), (514, 412), (516, 440), (504, 450), (492, 440), (494, 412), (490, 380)], "pivot": (503, 350), "length": 70, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
+    {"name": "butterfly", "polygon": [(454, 266), (472, 257), (491, 246), (511, 244), (527, 255), (544, 228), (568, 219), (583, 233), (575, 276), (562, 303), (557, 331), (542, 346), (522, 342), (513, 323), (491, 318), (467, 305), (454, 287)], "pivot": (529, 290), "length": 1, "swing": 0.0, "flap": 0.28, "grow": 2, "behind": "fill"},
+    {"name": "pin_pearls", "polygon": [(539, 382), (555, 382), (559, 414), (561, 443), (551, 452), (537, 450), (533, 423), (537, 395)], "pivot": (547, 384), "length": 46, "swing": 5.0, "lag": 0.6, "grow": 1, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(244, 467), (259, 467), (263, 496), (261, 524), (263, 544), (252, 552), (241, 544), (242, 524), (241, 496)], "pivot": (252, 469), "length": 64, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(485, 439), (502, 439), (505, 469), (504, 498), (505, 524), (494, 533), (483, 524), (485, 498), (481, 469)], "pivot": (493, 441), "length": 64, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

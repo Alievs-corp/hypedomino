@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "tassel_cap"
-CROP = (76, 0, 1154, 1078)
+CROP = (29, -182, 1201, 990)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (395, 265, 235, 265)
+HEAD = (394, 363, 216, 244)
 HEAD_FALLOFF = 0.3
-NECK_Y = 525
-NECK_BAND = 40
-SHOULDER_Y = 640
+NECK_Y = 602
+NECK_BAND = 37
+SHOULDER_Y = 708
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(362, 298, 44, 25), (488, 280, 42, 25)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(364, 393, 40, 23), (480, 377, 39, 23)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "tassel", "polygon": [(166, 282), (188, 282), (195, 330), (205, 350), (213, 420), (221, 532), (135, 534), (141, 420), (150, 350), (158, 330)], "pivot": (177, 280), "length": 200, "swing": 4.0, "lag": 0.4, "grow": 3, "behind": "fill"},
+    {"name": "tassel", "polygon": [(183, 379), (204, 379), (210, 423), (219, 441), (227, 506), (234, 609), (155, 610), (160, 506), (169, 441), (176, 423)], "pivot": (194, 377), "length": 184, "swing": 4.0, "lag": 0.4, "grow": 3, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -89,7 +89,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

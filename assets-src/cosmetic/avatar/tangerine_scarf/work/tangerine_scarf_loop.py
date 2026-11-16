@@ -10,34 +10,34 @@ from scipy import ndimage, optimize
 SLUG = "tangerine_scarf"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (50, 0, 1128, 1078)
+CROP = (3, -195, 1175, 977)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (420, 250, 230, 250)
+HEAD = (417, 358, 212, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 490
-NECK_BAND = 35
-SHOULDER_Y = 640
+NECK_Y = 578
+NECK_BAND = 32
+SHOULDER_Y = 716
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(369, 262, 40, 22), (503, 274, 40, 22)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(370, 369, 37, 20), (493, 380, 37, 20)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "earring_left", "polygon": [(246, 360), (266, 360), (270, 400), (276, 430), (272, 466), (250, 470), (242, 432), (246, 400)], "pivot": (256, 364), "length": 60, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(546, 396), (566, 396), (570, 430), (574, 462), (566, 480), (544, 480), (538, 462), (544, 430)], "pivot": (556, 400), "length": 60, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(257, 459), (275, 459), (279, 496), (285, 523), (281, 556), (261, 560), (253, 525), (257, 496)], "pivot": (266, 463), "length": 55, "swing": 5.0, "lag": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(533, 492), (551, 492), (555, 523), (559, 553), (551, 569), (531, 569), (526, 553), (531, 523)], "pivot": (542, 496), "length": 55, "swing": 5.0, "lag": 0.9, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(560, 590), (620, 560), (660, 600), (680, 640), (660, 680), (610, 700), (570, 680), (550, 630)], "feather": 14, "top": 570, "ramp": 70, "amplitude": 5.0, "wavelength": 180, "cycles": 1},
+    {"polygon": [(546, 670), (601, 643), (638, 680), (656, 716), (638, 753), (592, 772), (555, 753), (537, 707)], "feather": 13, "top": 652, "ramp": 64, "amplitude": 4.6, "wavelength": 166, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4
