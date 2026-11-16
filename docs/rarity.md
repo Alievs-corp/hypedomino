@@ -43,8 +43,8 @@ Owner decisions of 2026-11-16 for the tier an item's admin draft proposes. The a
 | Emoji | 0 | 1 or 2 | 3 | 4 or more |
 
 - An emoji is the cheapest class (`GuidePriceTypePercent` 50, `docs/economy.md` 3.1) and three animated emoji move only as a whole medallion, so animated emoji start at `rare`.
-- Set 1 under these thresholds: avatars 21 `epic`, 6 `legendary`, 3 `mythic`; frames 1 `epic`, 9 `legendary`, 2 `mythic`; tables 3 `epic`, 1 `legendary`, 2 `mythic`; emoji 3 `rare`, 10 `epic`, 2 `legendary`, 1 `mythic`. Each item's count and tier is in its `provenance.md`.
-- The four animated rank frames follow this rule too, so their tiers no longer rise with the rank: `season1_diamond` and `season1_master` are `legendary`, `season1_grandmaster` `epic` and `season1_challenger` `mythic`.
+- Set 1 under these thresholds: avatars 21 `epic`, 6 `legendary`, 3 `mythic`; the eight animated shop frames 7 `legendary`, 1 `mythic`; tables 3 `epic`, 1 `legendary`, 2 `mythic`; emoji 3 `rare`, 10 `epic`, 2 `legendary`, 1 `mythic`. Each item's count and tier is in its `provenance.md`.
+- Exception, owner decision of 2026-11-16: the ten season rank frames (`frame.season1_*`, `docs/ranking.md` section 3) keep the tier ladder, so their tier rises with the rank and not with their animated detail: `season1_iron` and `season1_bronze` `common`; `season1_silver`, `season1_gold` and `season1_platinum` `rare`; `season1_emerald` and `season1_diamond` `epic`; `season1_master` and `season1_grandmaster` `legendary`; `season1_challenger` `mythic`.
 
 ## 2. Marks
 

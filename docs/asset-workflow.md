@@ -233,7 +233,7 @@ Size:
 | Table | Under 1,000,000 bytes | Under 5,000,000 bytes, at most 2 layers of which at most 1 animated | Owner decision 2026-11-16 |
 | Tile skin | No limit | No limit | O-5 |
 
-- The animated frame limit leaves margin over the 256 px canvas of set 1: 17 sprites, 502,928 bytes. The owner named about 100,000 bytes for a static frame; the limit is 125,000 so the four 512 px statics of set 1 (118,336 bytes each) pass, while the other static frames are 256 px (29,584 bytes). An animated frame on a 512 px canvas (about 2,000,000 bytes) does not fit.
+- The animated frame limit leaves margin over the 256 px canvas of set 1: 17 sprites, 502,928 bytes. Owner decision 2026-11-16: the static frame limit is 125,000 bytes, raised from the first-named 100,000, and the four 512 px static frames of set 1 (118,336 bytes each) stay at 512 px and pass it; the other static frames are 256 px (29,584 bytes). A frame is never drawn larger than its canvas (`docs/art-direction.md` 5.2). An animated frame on a 512 px canvas (about 2,000,000 bytes) does not fit.
 - A layer of an animated table is a folder under `export/layer/`; it is animated when it holds more than one frame. The tool counts both and fails a table over either limit. Set 1's animated tables have a one-frame `base` layer and a 10-frame `motion` layer, 4,930,560 bytes.
 - A type and kind without a limit is reported and never fails.
 - CI job `assets`, part of `CI complete`, runs when `assets-src/` or these tools change: the naming check over all of `assets-src/`, then the export and size checks over every cosmetic item the change touches, with Git LFS files pulled for those items only. The estimates go to the job summary.

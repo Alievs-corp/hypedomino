@@ -108,6 +108,7 @@ All-ages: no sexualised proportions, poses or outfits, no likeness of a real per
 - Every frame has its own theme, silhouette and motion; two frames never differ only in colour.
 - Motion: the sheen of section 4 across the metal, a runtime aura behind the frame (a pulse, a slow turn or a flicker), and the frame's own ambient detail (embers, snow, stars, sparks, bolts) authored into its animation (ADR 0012). Ambient detail is never a live particle system per seat; it is counted with the seat in the base scene and measured (ui-motion section 7).
 - On the low effect level (`effects.levels.low.animatedCosmetics` false) and with reduce motion on, only the static frame shows (section 7).
+- Display size, owner decision 2026-11-16: a frame is never drawn larger than its canvas, so it is never upscaled. An animated frame (256 px canvas) covers at most 256 screen pixels across at the device's scale, and a 512 px static frame at most 512; a layout may draw either smaller. `AvatarView` caps the one square of avatar, frame and halo at the pixel size of the frame sprite it shows (`docs/cosmetics.md` 8.3).
 
 ### 5.3 Tile back skins
 

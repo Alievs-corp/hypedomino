@@ -18,7 +18,7 @@ Animated rank frame of #173 (Rank çərçivələri, 10 pillə), the Master tier 
 
 Proposed for the admin draft, not decided: rarity `legendary`, source `rank_reward:bundle.season1_rank_master`. The bundle id follows the example of `docs/economy.md` section 4 and is a placeholder until the `season_1` rank rewards exist (#120, V-15); `RankRewards` holds a bundle per mode and final tier (`docs/ranking.md` 7.1), so the ids per mode are #120's call. Rarity across the ten frames rises with the tier: Iron and Bronze `common`, Silver, Gold and Platinum `rare`, Emerald and Diamond `epic`, Master and Grandmaster `legendary`, Challenger `mythic`; static frames stay at `epic` or below, as `docs/economy.md` section 3 expects a `legendary` or `mythic` item to be animated.
 
-2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 2 animated details (scroll sway, amethyst glints), so `legendary`. Any tier split stated above is superseded.
+2026-11-16: owner decision — the ten rank frames keep the tier ladder stated above, an exception to the animated-detail rule of `docs/rarity.md` 1.1, so `legendary`. The earlier note of the same day reached the same tier from its 2 animated details (scroll sway, amethyst glints); that rule no longer applies to this frame.
 
 ## Embedded C2PA manifest
 
