@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
@@ -19,6 +20,52 @@ func foxAvatar() map[string]any {
 	return map[string]any{
 		"id": "avatar.fox", "type": "avatar", "rarityId": "rare", "animated": true, "availability": "live",
 		"sources": []any{map[string]any{"type": "shop", "ref": "offer.fox"}}, "artSource": "handmade", "culturalReview": "approved",
+	}
+}
+
+func (a *api) nameItems(status gamestrings.Status, items ...any) {
+	a.t.Helper()
+	store := gamestrings.NewStore(a.pool)
+	for _, item := range items {
+		key := "cosmetic." + item.(map[string]any)["id"].(string) + ".name"
+		if err := store.SaveEntry(context.Background(), gamestrings.Entry{Key: key, Note: "Cosmetic item name.", MaxLength: 40}, "content-1", start); err != nil {
+			a.t.Fatal(err)
+		}
+		if err := store.SetValue(context.Background(), key, gamestrings.English, gamestrings.Value{Text: "Item", Status: status}, "content-1", start); err != nil {
+			a.t.Fatal(err)
+		}
+	}
+}
+
+func TestCosmeticsPublishNeedsAnApprovedEnglishName(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
+	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)
+	catalog := map[string]any{"items": append(append([]any{}, builtin...), foxAvatar())}
+	a.nameItems(gamestrings.Approved, builtin...)
+
+	steps := []struct {
+		name   string
+		status gamestrings.Status
+		want   int
+	}{
+		{"no value", "", http.StatusBadRequest},
+		{"a draft value", gamestrings.Draft, http.StatusBadRequest},
+		{"an approved value", gamestrings.Approved, http.StatusOK},
+	}
+	for _, step := range steps {
+		if step.status != "" {
+			a.nameItems(step.status, foxAvatar())
+		}
+		status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox avatar"})
+		if step.want == http.StatusOK {
+			expect(t, status, body, http.StatusOK, "")
+			continue
+		}
+		if status != step.want || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "V-16 no approved en name for avatar.fox") {
+			t.Errorf("%s: %d %v", step.name, status, body)
+		}
 	}
 }
 
@@ -37,6 +84,7 @@ func TestCosmeticsPublishStampsItemsAndKeepsThemForever(t *testing.T) {
 	expect(t, status, body, http.StatusForbidden, "forbidden")
 
 	first := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+	a.nameItems(gamestrings.Approved, first["items"].([]any)...)
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": first, "reason": "fox avatar"})
 	expect(t, status, body, http.StatusOK, "")
 	published := body["catalog"].(map[string]any)
@@ -140,6 +188,7 @@ func TestTheUploaderOfANewItemsArtCannotPublishItsReview(t *testing.T) {
 	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
 	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
 	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
 
 	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "my own fox"})
 	expect(t, status, body, http.StatusForbidden, "own_upload")
@@ -158,8 +207,10 @@ func TestLiveOpsSwitchesOffAnItemForAnIncident(t *testing.T) {
 	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
 	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
 	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
 	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox avatar"})
 	expect(t, status, body, http.StatusOK, "")
+	a.nameItems(gamestrings.Draft, foxAvatar())
 
 	path := "/admin/cosmetics/items/avatar.fox/switch-off"
 	incident := map[string]any{"reason": "offensive art reported", "ref": "SEV2-17"}
