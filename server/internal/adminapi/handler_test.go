@@ -207,6 +207,7 @@ func TestEveryRouteRefusesAMissingSessionAndARoleWithoutTheAction(t *testing.T) 
 		{"PUT", "/admin/accounts/" + target.ID + "/roles", map[string]any{"roles": []string{"analyst"}}, http.StatusForbidden},
 		{"POST", "/admin/accounts/" + target.ID + "/disable", map[string]any{}, http.StatusForbidden},
 		{"GET", "/admin/live-controls/break-glass", nil, http.StatusForbidden},
+		{"GET", "/admin/config/version", nil, http.StatusOK},
 		{"POST", "/admin/session/step-up", map[string]any{"id_token": "ayla", "nonce": "nonce"}, http.StatusOK},
 		{"DELETE", "/admin/session", nil, http.StatusNoContent},
 	}
