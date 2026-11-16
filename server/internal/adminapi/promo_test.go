@@ -140,7 +140,7 @@ func TestAPromoAboveTheThresholdWaitsForASecondLiveOps(t *testing.T) {
 		t.Fatalf("create %d %v", status, body)
 	}
 	id := strconv.FormatFloat(body["approval_id"].(float64), 'f', 0, 64)
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", proposer, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", proposer, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
 	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"reason": "checked"})
 	if status != http.StatusOK || body["state"] != "approved" {
@@ -167,7 +167,7 @@ func TestAPassPremiumPromoWaitsForASecondLiveOpsAndShowsItsFlag(t *testing.T) {
 		t.Fatalf("code %v", code)
 	}
 	id := strconv.FormatFloat(body["approval_id"].(float64), 'f', 0, 64)
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", proposer, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", proposer, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
 	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"reason": "backer rewards"})
 	if status != http.StatusOK || body["state"] != "approved" {

@@ -98,7 +98,7 @@ func TestAnApprovedBanIsRefusedWhenTheReviewWasClearedMeanwhile(t *testing.T) {
 		t.Fatalf("clear %d %v", status, body)
 	}
 
-	status, body = a.call("POST", proposal+"/approve", root, map[string]any{})
+	status, body = a.call("POST", proposal+"/approve", root, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "decided")
 	if err := a.playerSignIn("g-1"); err != nil {
 		t.Fatalf("a refused approval banned the player: %v", err)

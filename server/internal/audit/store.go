@@ -77,6 +77,7 @@ type Filter struct {
 	Action         string
 	From, To       time.Time
 	ReasonContains string
+	ConfigVersion  int64
 	BeforeID       int64
 	Limit          int
 }
@@ -203,6 +204,9 @@ func (f Filter) conditions(visible []rbac.Object) (string, []any) {
 	}
 	if f.ReasonContains != "" {
 		add("strpos(lower(reason), lower(?)) > 0", f.ReasonContains)
+	}
+	if f.ConfigVersion > 0 {
+		add("config_version = ?", f.ConfigVersion)
 	}
 	if f.BeforeID > 0 {
 		add("id < ?", f.BeforeID)

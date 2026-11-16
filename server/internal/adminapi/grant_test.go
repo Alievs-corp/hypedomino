@@ -150,9 +150,9 @@ func TestAMythicOrLargeGrantWaitsForASecondAdmin(t *testing.T) {
 		t.Fatalf("owned before approval %v", got)
 	}
 
-	status, body = a.call("POST", "/admin/approvals/"+mythic+"/approve", proposer, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+mythic+"/approve", proposer, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
-	status, body = a.call("POST", "/admin/approvals/"+mythic+"/approve", approver, map[string]any{"ref": "SUP-12"})
+	status, body = a.call("POST", "/admin/approvals/"+mythic+"/approve", approver, map[string]any{"reason": "checked", "ref": "SUP-12"})
 	if status != http.StatusOK || body["state"] != "approved" {
 		t.Fatalf("approve %d %v", status, body)
 	}

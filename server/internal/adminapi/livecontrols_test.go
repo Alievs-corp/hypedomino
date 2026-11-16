@@ -180,6 +180,10 @@ func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
 	if len(switched) != 1 || switched[0]["ref"] != "INC-12" || switched[0]["reason"] != "incident" || switched[0]["config_version"] != float64(1) {
 		t.Fatalf("break-glass entries %v", switched)
 	}
+	if record := switched[0]["after"].(map[string]any); record["approval_id"] != body["break_glass_id"] ||
+		record["incident"].(map[string]any)["severity"] != "SEV1" || record["controls"].(map[string]any)["minimum_app_version"] != "1.4.0" {
+		t.Fatalf("break-glass record %v", record)
+	}
 	if listed := a.unconfirmedBreakGlass(support); len(listed) != 1 || listed[0].(map[string]any)["proposer_id"] == "" {
 		t.Fatalf("unconfirmed %v", listed)
 	}
@@ -198,7 +202,8 @@ func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
 		t.Fatalf("confirmed still listed %v", listed)
 	}
 	confirmed := a.entries(root, "object_type=live_controls&action=approve")
-	if len(confirmed) != 1 || confirmed[0]["ref"] != "INC-12" || confirmed[0]["actor_id"] == switched[0]["actor_id"] {
+	if len(confirmed) != 1 || confirmed[0]["ref"] != "INC-12" || confirmed[0]["actor_id"] == switched[0]["actor_id"] ||
+		confirmed[0]["approval_id"] != switched[0]["id"] || confirmed[0]["after"].(map[string]any)["approval_id"] != switched[0]["after"].(map[string]any)["approval_id"] {
 		t.Fatalf("confirmation entries %v", confirmed)
 	}
 	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.4.0" {

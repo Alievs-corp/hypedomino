@@ -430,7 +430,7 @@ export const en = {
   "approvals.proposer": "Proposed by",
   "approvals.expires_at": "Expires",
   "approvals.own": "Your proposal: another admin decides",
-  "approvals.note": "Note (optional)",
+  "approvals.note": "Reason for the decision (required)",
   "approvals.approve": "Approve",
   "approvals.reject": "Reject",
   "approvals.refused": "Refused",
