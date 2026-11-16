@@ -94,7 +94,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(ShopLoadOutcome.Loaded, results[0].Outcome);
             Assert.IsNull(results[0].MessageKey);
             Assert.AreEqual(3, results[0].Showcase.Version);
-            Assert.AreEqual("offer.x", results[0].Showcase.Sections[0].Offers[0].Id);
+            Assert.AreEqual("offer.x", results[0].Showcase.Sections[0].Offers[0].OfferId);
             Assert.AreEqual(1500, results[0].Balances.Coins.Amount);
             Assert.AreEqual(-20, results[0].Balances.Crystals.Amount);
         }
