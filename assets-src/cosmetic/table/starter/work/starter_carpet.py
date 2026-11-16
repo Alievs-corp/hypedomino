@@ -15,6 +15,14 @@ RIM_RADIUS = 28
 INLAY_INSET = 54
 INLAY_WIDTH = 4
 INLAY_CORNER = 11
+REFERENCE = CANVAS
+EDGE_DEPTH = 168
+EDGE_FADE = 16
+EDGE_LIGHT = 120
+EDGE_STEPS = range(150, 486, 6)
+EDGE_SHORTLIST = 40
+CORNER_MARGIN = 30
+SQUARE_REACH = 520
 PALETTE = {
     "field": (118, 22, 30),
     "fieldDeep": (98, 16, 25),
@@ -143,8 +151,77 @@ def back_layer():
     field(u, v, columns, rows, knots)
     border(u, v, columns, rows, knots)
     pixels = wool(knots, rows, rng) * lamp(CANVAS)[..., None]
+    pixels, step, start, score = periodic_edges(pixels, EDGE_DEPTH)
     opaque = np.full(pixels.shape[:2], 255.0)
-    return Image.fromarray(np.dstack([pixels, opaque]).round().clip(0, 255).astype(np.uint8), mode="RGBA")
+    return Image.fromarray(np.dstack([pixels, opaque]).round().clip(0, 255).astype(np.uint8), mode="RGBA"), step, start, score
+
+
+def edge_light(band):
+    low = ndimage.gaussian_filter1d(band, EDGE_LIGHT, axis=1, mode="reflect") + 1
+    return band / low, (low + low[:, ::-1]) / 2
+
+
+def seam_cost(detail, step, start, reach):
+    return np.abs(detail[:, start + step - reach:start + step + reach] - detail[:, start - reach:start + reach]).mean()
+
+
+def mirror_cost(detail, start, reach=24):
+    return np.abs(detail[:, start - reach:start][:, ::-1] - detail[:, start:start + reach]).mean()
+
+
+def repeat_band(detail, step, start):
+    width = detail.shape[1]
+    end = width - start
+    xs = np.arange(width)
+    inside = (xs >= start) & (xs < end)
+    result = detail[:, np.where(inside, start + (xs - start) % step, xs)]
+    offsets = np.arange(-EDGE_FADE, EDGE_FADE)
+    weight = ((offsets + EDGE_FADE + 0.5) / (2 * EDGE_FADE)).reshape((1, -1) + (1,) * (detail.ndim - 2))
+    carried = detail[:, start + step + offsets]
+    for seam in [*range(start + step, end, step), end]:
+        arriving = detail[:, (start if seam < end else end) + offsets]
+        result[:, seam + offsets] = carried * (1 - weight) + arriving * weight
+    return result
+
+
+def best_edges(details, depth, width):
+    candidates = []
+    for step in EDGE_STEPS:
+        for count in range(2, width // step + 1):
+            start, odd = divmod(width - count * step, 2)
+            if odd or start < depth + CORNER_MARGIN or start > SQUARE_REACH - step // 4:
+                continue
+            cost = sum(seam_cost(detail, step, start, 12) + seam_cost(detail, step, start, 48) / 2 + mirror_cost(detail, start) / 2 for detail in details)
+            candidates.append((cost, step, start))
+    scored = []
+    for cost, step, start in sorted(candidates)[:EDGE_SHORTLIST]:
+        drift = sum(np.abs(repeat_band(detail, step, start) - detail)[:, start:width - start].mean() for detail in details)
+        scored.append((cost + drift / 2, step, start))
+    return min(scored)
+
+
+def periodic_edges(pixels, depth):
+    height, width = pixels.shape[:2]
+    bands = (slice(0, depth), slice(height - depth, height))
+    parts = [edge_light(pixels[rows]) for rows in bands]
+    score, step, start = best_edges([detail.mean(axis=2) for detail, _ in parts], depth, width)
+    inward = np.clip((depth - np.arange(depth) - 0.5) / EDGE_FADE, 0, 1)
+    result = pixels.copy()
+    for rows, (detail, light), weight in zip(bands, parts, (inward, inward[::-1])):
+        rebuilt = repeat_band(detail, step, start) * light
+        result[rows] = rebuilt * weight[:, None, None] + pixels[rows] * (1 - weight[:, None, None])
+    return result, step, start, score
+
+
+def write_slice(export, depth, step, size):
+    across, down = size[0] / REFERENCE[0], size[1] / REFERENCE[1]
+    values = {"depth": depth * down, "step": step * across}
+    if any(value != int(value) for value in values.values()):
+        raise ValueError(f"slice {values} is not whole pixels on the {size[0]}x{size[1]} canvas")
+    os.makedirs(export, exist_ok=True)
+    with open(os.path.join(export, "slice.json"), "w", encoding="utf-8", newline="\n") as target:
+        json.dump({key: int(value) for key, value in values.items()}, target)
+        target.write("\n")
 
 
 def rounded_rectangle(size, inset, radius):
@@ -214,7 +291,8 @@ def main():
     arguments = parser.parse_args()
     with open(arguments.tokens, encoding="utf-8") as source:
         tokens = json.load(source)
-    layers = (("back", back_layer()), ("middle", middle_layer(tokens)), ("front", front_layer(tokens)))
+    back, step, start, score = back_layer()
+    layers = (("back", back), ("middle", middle_layer(tokens)), ("front", front_layer(tokens)))
     os.makedirs(arguments.work, exist_ok=True)
     os.makedirs(arguments.export, exist_ok=True)
     for name, layer in layers:
@@ -223,7 +301,8 @@ def main():
     for _, layer in layers[1:]:
         flattened = Image.alpha_composite(flattened, layer)
     flattened.save(os.path.join(arguments.export, "static.png"), optimize=True)
-    print(f"starter: canvas {CANVAS[0]}x{CANVAS[1]}, knot {KNOT} px, seed {SEED}")
+    write_slice(arguments.export, EDGE_DEPTH, step, CANVAS)
+    print(f"starter: canvas {CANVAS[0]}x{CANVAS[1]}, knot {KNOT} px, seed {SEED}, edges depth {EDGE_DEPTH} step {step} start {start} score {score:.4f}")
 
 
 main()

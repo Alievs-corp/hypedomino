@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { crc32, deflateSync } from "node:zlib";
-import { addItem, astcBytes, budgetLine, changedItems, checkItems, inspectItem, itemBudget, loadBudgets, parseArguments, readPng, readProvenance } from "./asset-export.mjs";
+import { addItem, astcBytes, budgetLine, changedItems, checkItems, inspectItem, itemBudget, loadBudgets, parseArguments, readPng, readProvenance, sliceErrors } from "./asset-export.mjs";
 import { loadSchema } from "../cosmetics-schema/cosmetics-schema.mjs";
 
 const repoRoot = new URL("../../", import.meta.url);
@@ -215,7 +215,7 @@ test("add raises the revision when the item becomes animated", () => {
 });
 
 test("add writes table layers back to front and needs the order for a new table", () => {
-  const files = { "export/static.png": png(64, 64), ...loop(3, 64, "export/layer/sky"), ...loop(1, 64, "export/layer/cloth") };
+  const files = { "export/static.png": png(64, 64), "export/slice.json": '{"depth":8,"step":16}', ...loop(3, 64, "export/layer/sky"), ...loop(1, 64, "export/layer/cloth") };
   const { root, directory } = makeItem(files, { type: "table", slug: "garden" });
   const manifest = manifestCopy(root);
   assertReported(addItem(directory, addOptions(manifest), { schema, budgets }).errors, "--layers must name every layer");
@@ -227,6 +227,18 @@ test("add writes table layers back to front and needs the order for a new table"
   ]);
   const again = addItem(directory, { manifest, sources: [], client: undefined }, { schema, budgets });
   assert.deepEqual(again.entry.layers.map(({ name }) => name), ["sky", "cloth"]);
+});
+
+test("a table needs a slice that fits its static", () => {
+  const { directory } = makeItem({ "export/static.png": png(64, 36) }, { type: "table", slug: "plain" });
+  assertReported(inspectItem(directory).errors, "missing export/slice.json");
+  const still = { width: 64, height: 36 };
+  assert.deepEqual(sliceErrors('{"depth":8,"step":16}', still), []);
+  assertReported(sliceErrors("{", still), "is not JSON");
+  assertReported(sliceErrors('{"depth":8.5,"step":16}', still), "whole positive depth and step");
+  assertReported(sliceErrors('{"depth":18,"step":16}', still), "leaves no field");
+  assertReported(sliceErrors('{"depth":8,"step":15}', still), "even remainder");
+  assertReported(sliceErrors('{"depth":8,"step":64}', still), "shorter than the static width");
 });
 
 test("add refuses without the choices a new item needs, an unreviewed item and an invalid manifest result", () => {

@@ -121,6 +121,7 @@ All-ages: no sexualised proportions, poses or outfits, no likeness of a real per
 
 - The table art is the carpet cloth inside a wood rim (`color.wood.*` on the default table) with a gold inlay line. The carpet is an original geometric and floral pattern with a calm centre where tiles are played; it holds no script, emblem or religious symbol (localization 6).
 - Tables are cosmetics (`docs/cosmetics.md`); every table follows the same layout so tiles and seats read on all of them.
+- One table fits every screen shape (owner decision 2026-11-16, `docs/cosmetics.md` 8.4): the ring (rim, inlay, carpet border and its guards) has the same depth on all four sides and is never cut; the field inside it may be cropped, so it holds nothing that must show whole near its edge, and a centre medallion keeps clear of the field's left and right ends. The top and bottom borders repeat one step between their corner pieces, and a screen wider or narrower than the art gains or loses whole steps in the middle of those edges. A unique motif in the middle of a long edge (a cartouche) is therefore not used; a corner piece may be as rich as the art wants. Motion on the ring sits in the corners and on the side bands, or repeats with the step.
 
 ### 5.5 The seat
 

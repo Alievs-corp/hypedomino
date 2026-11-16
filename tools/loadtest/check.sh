@@ -24,6 +24,8 @@ awk -v d="$drift" 'BEGIN { exit !(d > 5 || d < -5) }' && { echo "FAIL heap drift
 cpu=$(awk -v skip="$(( ramp * 6 + 2 ))" -v take="$(( hold * 6 ))" 'NR > skip && NR <= skip + take { busy += 100 - $15; n++ } END { if (n) printf "%.1f", busy / n }' "$run_dir/vmstat.log")
 echo "average CPU during the hold: $cpu%"
 awk -v c="$cpu" 'BEGIN { exit !(c == "" || c >= 80) }' && { echo "FAIL average CPU not under 80%"; failed=1; }
+steal=$(awk -v skip="$(( ramp * 6 + 2 ))" -v take="$(( hold * 6 ))" 'NR > skip && NR <= skip + take { stolen += $17; n++ } END { if (n) printf "%.1f", stolen / n }' "$run_dir/vmstat.log")
+echo "average CPU steal during the hold: $steal%"
 
 awk -F'[{}" ]+' '
   $1 ~ /_seconds_bucket$/ { name = $1; sub(/_bucket$/, "", name); if (!(name in rows)) order[k++] = name; row = rows[name]++ + 0; bound[name, row] = $3; cum[name, row] = $NF }
