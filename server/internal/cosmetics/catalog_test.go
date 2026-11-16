@@ -23,6 +23,28 @@ func TestTheBuiltinManifestIsTheDocumentedMinimalExample(t *testing.T) {
 	}
 }
 
+func TestAManifestLivesOnTheCDNUnderTheHashOfItsBytes(t *testing.T) {
+	cases := []struct {
+		raw  []byte
+		hash string
+	}{
+		{[]byte(""), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+		{[]byte("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"},
+	}
+	for _, c := range cases {
+		if got := Hash(c.raw); got != c.hash {
+			t.Errorf("%q: %s, want %s", c.raw, got, c.hash)
+		}
+		if got, want := File(c.hash), "cosmetics/"+c.hash+".json"; got != want {
+			t.Errorf("file %s, want %s", got, want)
+		}
+	}
+	catalog, err := Parse(builtin)
+	if err != nil || catalog.Hash != Hash(builtin) {
+		t.Fatalf("parsed hash %v %v", catalog, err)
+	}
+}
+
 func TestTheExampleCatalogParsesWithItsAvailabilityAndSources(t *testing.T) {
 	catalog, err := Load("../../../docs/cosmetics/examples/catalog.json")
 	if err != nil {

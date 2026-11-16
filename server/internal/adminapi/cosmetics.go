@@ -12,8 +12,10 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/contentpublish"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -91,13 +93,28 @@ func (h *Handler) cosmeticsDomain(rollback bool, publisher string) configDomain 
 			if err := cosmetics.CheckSuccessor(previous, next); err != nil {
 				return nil, err
 			}
-			return raw, h.grantsStayListed(ctx, tx, items)
+			if err := h.grantsStayListed(ctx, tx, items); err != nil {
+				return nil, err
+			}
+			return raw, h.uploadManifest(ctx, raw)
 		},
 		accept: func(_, after []byte) error {
 			_, err := cosmetics.ParseManifest(after)
 			return err
 		},
 	}
+}
+
+func (h *Handler) uploadManifest(ctx context.Context, raw []byte) error {
+	if h.config.Content == nil {
+		return errContentStoreOff
+	}
+	file := cosmetics.File(cosmetics.Hash(raw))
+	object := objectstore.Object{ContentType: "application/json", CacheControl: contentpublish.ImmutableCacheControl, Body: raw}
+	if err := h.config.Content.PutObject(ctx, file, object, h.now()); err != nil {
+		return fmt.Errorf("%w: %s: %v", errContentUpload, file, err)
+	}
+	return nil
 }
 
 func reviewedByAnother(ctx context.Context, tx pgx.Tx, previous, next cosmetics.Manifest, publisher string) error {

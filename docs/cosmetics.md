@@ -136,7 +136,8 @@ Rules:
 | Item | Rule |
 |---|---|
 | Published file | One JSON file per `manifestVersion`, immutable and content-hashed on the CDN (ADR 0002). The admin publishes it after validation; the server reads the same version from its config snapshot (ADR 0006) |
-| Active version | Sent by the server after the handshake (ADR 0004). URLs come from server config |
+| File | `<content_base_url>/cosmetics/<hash>.json`, where `content_base_url` is the CDN root of `docs/content-delivery.md` section 2 and `<hash>` the lowercase SHA-256 hex of the file. The admin API uploads it in the same step as every publish, rollback and switch-off; a manifest the content store does not take is not published |
+| Active version | Sent by the server after the handshake (ADR 0004) as `ServerHello.cosmetics_manifest`: `manifestVersion` and `hash` of the newest `cosmetics` snapshot, absent before the first publish. URLs come from server config |
 | Built-in manifest | The install package ships a manifest with at least every `default` item, so a first or offline start works without a download |
 | Update | Downloaded in the background and swapped in at the next screen load, never mid-match. A download, parse or validation failure keeps the previous manifest and is reported to telemetry |
 | Match record | Each match records the manifest version in use, with the config version (ADR 0006) |
