@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
@@ -26,7 +27,7 @@ func (h *Handler) searchPlayers(w http.ResponseWriter, r *http.Request, p princi
 	var err error
 	switch {
 	case !query.Has("subject"):
-		found, err = playerrecord.Search(r.Context(), h.pool, query.Get("q"))
+		found, err = h.searchPlayerList(r)
 	case !slices.Contains(p.account.Roles, rbac.SuperAdmin):
 		err = errForbidden
 	default:
@@ -37,6 +38,18 @@ func (h *Handler) searchPlayers(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	reply(w, http.StatusOK, playersView{Players: found})
+}
+
+var accountStates = []string{account.StateActive, account.StateDeleting, account.StateDeleted, account.StateBanned}
+
+func (h *Handler) searchPlayerList(r *http.Request) ([]playerrecord.Summary, error) {
+	query := r.URL.Query()
+	state, after := query.Get("state"), query.Get("after")
+	limit, err := queuePageLimit(query.Get("limit"))
+	if err != nil || (state != "" && !slices.Contains(accountStates, state)) || (after != "" && uuid.Validate(after) != nil) {
+		return nil, errMalformed
+	}
+	return playerrecord.Search(r.Context(), h.pool, playerrecord.SearchQuery{Text: query.Get("q"), State: state, After: after, Limit: limit})
 }
 
 func (h *Handler) playerRecord(w http.ResponseWriter, r *http.Request, p principal) {
