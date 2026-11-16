@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bundlesOf, chainError, chainFromText, placeholdersFromText, placeholdersText, problemsText, valueOf, visibleStrings, type GameString } from "./strings.ts";
+import { bundlesApiPath, chainError, chainFromText, nextStringsHref, olderBundlesHref, placeholdersFromText, placeholdersText, problemsText, readStringsQuery, stringsApiPath, stringsPageSize, valueOf, type GameString } from "./strings.ts";
 
 function entry(key: string, fields: Partial<GameString> = {}): GameString {
   return { key, note: "", max_length: 40, placeholders: [], deprecated: false, values: {}, ...fields };
@@ -12,18 +12,23 @@ const strings = [
   entry("quick.hello"),
 ];
 
-test("search matches the key, the note and any language's text, ignoring case", () => {
-  assert.deepEqual(visibleStrings(strings, "RESULT", null).map((s) => s.key), ["match.result.win"]);
-  assert.deepEqual(visibleStrings(strings, "after a", null).map((s) => s.key), ["match.result.win"]);
-  assert.deepEqual(visibleStrings(strings, "təklif", null).map((s) => s.key), ["shop.offer.title"]);
-  assert.equal(visibleStrings(strings, "  ", null).length, 3);
+test("the strings query keeps known languages and a numeric version, defaulting the bundle language", () => {
+  const languages = ["az", "en"];
+  assert.deepEqual(readStringsQuery({ q: " win ", missing: "en", after: "match.a", bundles: "en", before: "3" }, languages), { q: "win", missing: "en", after: "match.a", bundles: "en", before: "3" });
+  assert.deepEqual(readStringsQuery({ missing: "de", bundles: "toString", before: "0" }, languages), { q: "", missing: "", after: "", bundles: "az", before: "" });
 });
 
-test("the missing filter keeps only the keys the report lists for that language", () => {
-  assert.deepEqual(visibleStrings(strings, "", ["shop.offer.title", "quick.hello"]).map((s) => s.key), ["shop.offer.title", "quick.hello"]);
-  assert.deepEqual(visibleStrings(strings, "quick", ["shop.offer.title", "quick.hello"]).map((s) => s.key), ["quick.hello"]);
+test("keys and bundle versions page on the server with their own cursors", () => {
+  const query = { q: "a&b", missing: "en", after: "", bundles: "az", before: "" };
+  assert.equal(stringsApiPath(query), `/admin/strings?q=a%26b&missing=en&limit=${stringsPageSize}`);
+  assert.equal(bundlesApiPath({ ...query, before: "7" }), `/admin/strings/bundles?language=az&before=7&limit=${stringsPageSize}`);
+  const keys = Array.from({ length: stringsPageSize }, (_, at) => `key.${at}`);
+  assert.equal(nextStringsHref(query, keys), `/strings?q=a%26b&missing=en&after=key.${stringsPageSize - 1}&bundles=az`);
+  assert.equal(nextStringsHref(query, keys.slice(1)), null);
+  const versions = Array.from({ length: stringsPageSize }, (_, at) => stringsPageSize - at);
+  assert.equal(olderBundlesHref(query, versions), "/strings?q=a%26b&missing=en&bundles=az&before=1");
+  assert.equal(olderBundlesHref(query, versions.slice(1)), null);
 });
-
 test("a language without a value reads as missing", () => {
   assert.deepEqual(valueOf(strings[2], "ru"), { text: "", status: "missing" });
   assert.deepEqual(valueOf(strings[0], "en"), { text: "You won", status: "approved" });
@@ -34,15 +39,6 @@ test("placeholders round-trip through name:type text", () => {
   assert.deepEqual(placeholders, [{ name: "name", type: "string" }, { name: "count", type: "integer" }]);
   assert.equal(placeholdersText(placeholders), "name:string, count:integer");
   assert.deepEqual(placeholdersFromText("bare"), [{ name: "bare", type: "" }]);
-});
-
-test("bundles of one language come newest first", () => {
-  const bundles = [
-    { language: "en", version: 1, hash: "a", by: "x", at: "" },
-    { language: "az", version: 3, hash: "b", by: "x", at: "" },
-    { language: "en", version: 2, hash: "c", by: "x", at: "" },
-  ];
-  assert.deepEqual(bundlesOf(bundles, "en").map((b) => b.version), [2, 1]);
 });
 
 test("blocked problems read as key: error", () => {

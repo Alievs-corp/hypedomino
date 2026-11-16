@@ -1,3 +1,5 @@
+import type { SearchParams } from "../audit/query.ts";
+
 export type Status = "missing" | "draft" | "approved";
 
 export type Placeholder = { name: string; type: string };
@@ -13,7 +15,7 @@ export type GameString = {
   values: Partial<Record<string, StringValue>>;
 };
 
-export type Coverage = { language: string; keys: number; approved: number; percent: number; missing: string[] };
+export type Coverage = { language: string; keys: number; approved: number; percent: number };
 
 export type Bundle = { language: string; version: number; hash: string; by: string; at: string };
 
@@ -23,18 +25,55 @@ export const editableStatuses = ["draft", "approved"] as const;
 
 export const transferFormats = ["csv", "json"] as const;
 
+export const stringsPageSize = 50;
+
+export type StringsQuery = { q: string; missing: string; after: string; bundles: string; before: string };
+
+const versionPattern = /^[1-9][0-9]{0,8}$/;
+
+function single(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
+
+export function readStringsQuery(params: SearchParams, languages: readonly string[]): StringsQuery {
+  const missing = single(params.missing);
+  const bundles = single(params.bundles);
+  const before = single(params.before);
+  return {
+    q: single(params.q),
+    missing: languages.includes(missing) ? missing : "",
+    after: single(params.after),
+    bundles: languages.includes(bundles) ? bundles : (languages[0] ?? ""),
+    before: versionPattern.test(before) ? before : "",
+  };
+}
+
+function searchOf(fields: Record<string, string>): URLSearchParams {
+  return new URLSearchParams(Object.entries(fields).filter(([, value]) => value));
+}
+
+export function stringsApiPath(query: StringsQuery): string {
+  return `/admin/strings?${searchOf({ q: query.q, missing: query.missing, after: query.after, limit: String(stringsPageSize) })}`;
+}
+
+export function bundlesApiPath(query: StringsQuery): string {
+  return `/admin/strings/bundles?${searchOf({ language: query.bundles, before: query.before, limit: String(stringsPageSize) })}`;
+}
+
+export function stringsHref(query: StringsQuery, change: Partial<StringsQuery>): string {
+  return `/strings?${searchOf({ ...query, ...change })}`;
+}
+
+export function nextStringsHref(query: StringsQuery, keys: readonly string[]): string | null {
+  return keys.length < stringsPageSize ? null : stringsHref(query, { after: keys[keys.length - 1] });
+}
+
+export function olderBundlesHref(query: StringsQuery, versions: readonly number[]): string | null {
+  return versions.length < stringsPageSize ? null : stringsHref(query, { before: String(versions[versions.length - 1]) });
+}
+
 export function valueOf(entry: GameString, language: string): StringValue {
   return entry.values[language] ?? { text: "", status: "missing" };
-}
-
-export function visibleStrings(strings: readonly GameString[], search: string, missing: readonly string[] | null): GameString[] {
-  const needle = search.trim().toLowerCase();
-  const wanted = missing === null ? null : new Set(missing);
-  return strings.filter((entry) => (wanted === null || wanted.has(entry.key)) && (needle === "" || matches(entry, needle)));
-}
-
-function matches(entry: GameString, needle: string): boolean {
-  return [entry.key, entry.note, ...Object.values(entry.values).map((value) => value?.text ?? "")].some((text) => text.toLowerCase().includes(needle));
 }
 
 export function placeholdersFromText(text: string): Placeholder[] {
@@ -50,10 +89,6 @@ export function placeholdersFromText(text: string): Placeholder[] {
 
 export function placeholdersText(placeholders: readonly Placeholder[]): string {
   return placeholders.map((placeholder) => `${placeholder.name}:${placeholder.type}`).join(", ");
-}
-
-export function bundlesOf(bundles: readonly Bundle[], language: string): Bundle[] {
-  return bundles.filter((bundle) => bundle.language === language).sort((a, b) => b.version - a.version);
 }
 
 export function problemsText(problems: readonly Problem[]): string {

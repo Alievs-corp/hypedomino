@@ -69,12 +69,13 @@ func TestStringRoutesFollowTheRoleMatrix(t *testing.T) {
 		content, liveOps, support int
 	}{
 		{"list", "GET", "/admin/strings", nil, 200, 200, 200},
+		{"coverage", "GET", "/admin/strings/coverage", nil, 200, 200, 200},
 		{"create a key", "PUT", "/admin/strings/match.result.win", winKey, 200, 200, 403},
 		{"edit a key", "PUT", "/admin/strings/match.result.win", map[string]any{"note": "Title.", "max_length": 12}, 200, 200, 403},
 		{"save a draft", "PUT", "/admin/strings/match.result.win/values/en", map[string]any{"text": "Victory!", "status": "draft"}, 200, 200, 403},
 		{"approve", "PUT", "/admin/strings/match.result.win/values/en", map[string]any{"text": "Victory!", "status": "approved"}, 200, 403, 403},
 		{"export", "GET", "/admin/strings/export?language=en&format=json", nil, 200, 200, 200},
-		{"bundles", "GET", "/admin/strings/bundles", nil, 200, 200, 200},
+		{"bundles", "GET", "/admin/strings/bundles?language=en", nil, 200, 200, 200},
 		{"publish", "POST", "/admin/strings/bundles/en", map[string]any{}, 200, 403, 403},
 		{"deprecate", "PUT", "/admin/strings/match.result.win", map[string]any{"note": "Title.", "max_length": 12, "deprecated": true}, 200, 403, 403},
 	}
@@ -91,6 +92,45 @@ func TestStringRoutesFollowTheRoleMatrix(t *testing.T) {
 	a.create("vusal@example.com", rbac.Analyst)
 	status, body := a.call("GET", "/admin/strings", a.signIn("vusal"), nil)
 	expect(t, status, body, http.StatusForbidden, "forbidden")
+}
+
+func listedKeys(a *api, token, query string) string {
+	a.t.Helper()
+	status, body := a.call("GET", "/admin/strings?"+query, token, nil)
+	if status != http.StatusOK {
+		a.t.Fatalf("strings %q: %d %v", query, status, body)
+	}
+	var keys []string
+	for _, entry := range body["strings"].([]any) {
+		keys = append(keys, entry.(map[string]any)["key"].(string))
+	}
+	return strings.Join(keys, ",")
+}
+
+func TestStringsPageAndCoverageIsItsOwnReport(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	a.approveEnglishWin(content)
+	a.call("PUT", "/admin/strings/match.result.lose", content, winKey)
+
+	if first, rest := listedKeys(a, content, "limit=1"), listedKeys(a, content, "limit=1&after=match.result.lose"); first != "match.result.lose" || rest != "match.result.win" {
+		t.Fatalf("pages %q %q", first, rest)
+	}
+	if found := listedKeys(a, content, "q=WIN"); found != "match.result.win" {
+		t.Fatalf("search %q", found)
+	}
+	if missing := listedKeys(a, content, "missing=en"); missing != "match.result.lose" {
+		t.Fatalf("missing in en %q", missing)
+	}
+	status, body := a.call("GET", "/admin/strings/coverage", content, nil)
+	english := body["coverage"].([]any)[1].(map[string]any)
+	if status != http.StatusOK || english["language"] != "en" || english["keys"] != float64(2) || english["approved"] != float64(1) || english["percent"] != float64(50) {
+		t.Fatalf("coverage %d %v", status, body)
+	}
+	for _, path := range []string{"/admin/strings?missing=de", "/admin/strings?limit=x", "/admin/strings/bundles", "/admin/strings/bundles?language=de", "/admin/strings/bundles?language=en&before=x"} {
+		status, body := a.call("GET", path, content, nil)
+		expect(t, status, body, http.StatusBadRequest, "invalid")
+	}
 }
 
 func TestKeyAndValueChangesAreAudited(t *testing.T) {
@@ -218,7 +258,7 @@ func TestPublishingIsAuditedAndBlockedByFailingValues(t *testing.T) {
 	if status != http.StatusUnprocessableEntity || body["error"] != "blocked" || body["problems"].([]any)[0].(map[string]any)["key"] != "match.result.win" {
 		t.Fatalf("blocked publish %d %v", status, body)
 	}
-	status, body = a.call("GET", "/admin/strings/bundles", content, nil)
+	status, body = a.call("GET", "/admin/strings/bundles?language=en", content, nil)
 	bundles := body["bundles"].([]any)
 	if status != http.StatusOK || len(bundles) != 1 || bundles[0].(map[string]any)["by"] == "" {
 		t.Fatalf("bundles %d %v", status, body)
@@ -287,7 +327,7 @@ func TestABundleTheContentStoreRefusesIsNotPublished(t *testing.T) {
 			if status != http.StatusServiceUnavailable || body["error"] != c.want {
 				t.Fatalf("publish %d %v", status, body)
 			}
-			if _, body := a.call("GET", "/admin/strings/bundles", content, nil); len(body["bundles"].([]any)) != 0 {
+			if _, body := a.call("GET", "/admin/strings/bundles?language=en", content, nil); len(body["bundles"].([]any)) != 0 {
 				t.Fatalf("bundles %v", body)
 			}
 			if entries := a.entries(content, "object_type=game_strings&action=publish"); len(entries) != 0 {

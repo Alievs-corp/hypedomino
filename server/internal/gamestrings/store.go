@@ -147,15 +147,41 @@ func (s *Store) Entries(ctx context.Context) ([]Entry, error) {
 	if err != nil {
 		return nil, err
 	}
+	return s.withValues(ctx, rows)
+}
+
+type EntryQuery struct {
+	Text    string
+	Missing Language
+	After   string
+	Limit   int
+}
+
+func (s *Store) Page(ctx context.Context, q EntryQuery) ([]Entry, error) {
+	rows, err := s.db.Query(ctx, `select `+entryColumns+` from game_strings s
+		where (strpos(s.key, lower($1)) > 0 or strpos(lower(s.note), lower($1)) > 0
+				or exists (select 1 from game_string_values t where t.key = s.key and strpos(lower(t.text), lower($1)) > 0))
+			and s.key > $2
+			and ($3 = '' or (not s.deprecated and not exists (select 1 from game_string_values v where v.key = s.key and v.language = $3 and v.status = $4)))
+		order by s.key limit $5`, q.Text, q.After, q.Missing, Approved, q.Limit)
+	if err != nil {
+		return nil, err
+	}
+	return s.withValues(ctx, rows)
+}
+
+func (s *Store) withValues(ctx context.Context, rows pgx.Rows) ([]Entry, error) {
 	entries, err := pgx.CollectRows(rows, scanEntry)
 	if err != nil {
 		return nil, err
 	}
 	byKey := make(map[string]Entry, len(entries))
+	keys := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		byKey[entry.Key] = entry
+		keys = append(keys, entry.Key)
 	}
-	rows, err = s.db.Query(ctx, `select key, language, text, status from game_string_values`)
+	rows, err = s.db.Query(ctx, `select key, language, text, status from game_string_values where key = any($1)`, keys)
 	if err != nil {
 		return nil, err
 	}
@@ -169,6 +195,37 @@ func (s *Store) Entries(ctx context.Context) ([]Entry, error) {
 	return entries, err
 }
 
+type Coverage struct {
+	Language Language
+	Keys     int
+	Approved int
+	Percent  float64
+}
+
+func (s *Store) Coverage(ctx context.Context) ([]Coverage, error) {
+	languages := make([]string, 0, len(Languages))
+	for _, language := range Languages {
+		languages = append(languages, string(language))
+	}
+	rows, err := s.db.Query(ctx, `select l.language, count(s.key), count(v.key)
+		from unnest($1::text[]) with ordinality l(language, place)
+		left join game_strings s on not s.deprecated
+		left join game_string_values v on v.key = s.key and v.language = l.language and v.status = $2
+		group by l.language, l.place order by l.place`, languages, Approved)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (Coverage, error) {
+		var c Coverage
+		if err := row.Scan(&c.Language, &c.Keys, &c.Approved); err != nil {
+			return Coverage{}, err
+		}
+		if c.Keys > 0 {
+			c.Percent = float64(c.Approved) * 100 / float64(c.Keys)
+		}
+		return c, nil
+	})
+}
 func (s *Store) Publish(ctx context.Context, language Language, by string, now time.Time) (Published, []Problem, error) {
 	if !slices.Contains(Languages, language) {
 		return Published{}, nil, fmt.Errorf("%w: unknown language %q", ErrInvalidValue, language)
@@ -261,8 +318,9 @@ func scanBundle(row pgx.Row) (Published, error) {
 	return p, nil
 }
 
-func (s *Store) Bundles(ctx context.Context) ([]Published, error) {
-	rows, err := s.db.Query(ctx, `select language, version, hash, ''::bytea, published_by, published_at from game_string_bundles order by language, version desc`)
+func (s *Store) Bundles(ctx context.Context, language Language, before, limit int) ([]Published, error) {
+	rows, err := s.db.Query(ctx, `select language, version, hash, ''::bytea, published_by, published_at from game_string_bundles
+		where language = $1 and ($2 = 0 or version < $2) order by version desc limit $3`, language, before, limit)
 	if err != nil {
 		return nil, err
 	}
