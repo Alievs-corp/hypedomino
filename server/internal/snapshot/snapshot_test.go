@@ -108,6 +108,20 @@ func TestTheWatcherAppliesEveryNewPublishedVersion(t *testing.T) {
 	}
 }
 
+func TestNewestIsTheLatestPublishOfAnyDomain(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	if _, err := snapshot.Newest(ctx, pool); !errors.Is(err, snapshot.ErrNone) {
+		t.Fatalf("newest before any publish: %v", err)
+	}
+	_, _ = snapshot.Publish(ctx, pool, "rules", []byte(`{}`))
+	latest, _ := snapshot.Publish(ctx, pool, "shop", []byte(`{}`))
+	got, err := snapshot.Newest(ctx, pool)
+	if err != nil || got.Version != latest || got.Domain != "shop" || got.At.IsZero() {
+		t.Fatalf("newest %+v %v", got, err)
+	}
+}
+
 func TestVersionAndHistoryReadOneDomain(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	ctx := context.Background()

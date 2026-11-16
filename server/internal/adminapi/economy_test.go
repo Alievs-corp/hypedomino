@@ -13,6 +13,27 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
 
+func TestTheActiveConfigVersionIsTheNewestPublish(t *testing.T) {
+	a := newAPI(t)
+	a.create("orxan@example.com", rbac.Analyst)
+	analyst := a.signIn("orxan")
+	status, body := a.call("GET", "/admin/config/version", analyst, nil)
+	if status != http.StatusOK || body["config_version"] != float64(0) || body["domain"] != nil {
+		t.Fatalf("before any publish %d %v", status, body)
+	}
+	if _, err := snapshot.Publish(context.Background(), a.pool, "rules", []byte(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+	version, err := snapshot.Publish(context.Background(), a.pool, "shop", []byte(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, body = a.call("GET", "/admin/config/version", analyst, nil)
+	if status != http.StatusOK || body["config_version"] != float64(version) || body["domain"] != "shop" || body["published_at"] == nil {
+		t.Fatalf("active %d %v", status, body)
+	}
+}
+
 func TestEconomyMonitorsAndTheirComparisonAroundAPublish(t *testing.T) {
 	a := newAPIWith(t, func(c *adminapi.Config) { c.Economy = economy.DefaultConfig() })
 	a.create("orxan@example.com", rbac.Analyst)

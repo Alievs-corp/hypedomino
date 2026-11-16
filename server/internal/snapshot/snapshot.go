@@ -148,6 +148,21 @@ func Version(ctx context.Context, q Querier, domain string, version int64) (Publ
 	return published, err
 }
 
+type Active struct {
+	Published
+	Domain string
+}
+
+func Newest(ctx context.Context, q Querier) (Active, error) {
+	var active Active
+	err := q.QueryRow(ctx, `select version, domain, published_at from config_snapshots order by version desc limit 1`).Scan(&active.Version, &active.Domain, &active.At)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Active{}, ErrNone
+	}
+	active.At = active.At.UTC()
+	return active, err
+}
+
 type Lister interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
