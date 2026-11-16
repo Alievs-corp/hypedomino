@@ -82,7 +82,7 @@ namespace HypeDomino.UI.Localization
         {
             text = null;
             var value = Value(key, language);
-            return value != null && MessageFormat.TryFormat(value, language, Language, args, out text);
+            return value != null && MessageFormat.TryFormat(value, language, Language, args, unitKey => Value(unitKey, language), out text);
         }
 
         string Value(string key, string language)
