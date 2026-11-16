@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
@@ -95,7 +96,9 @@ namespace HypeDomino.Bench
         int statFrames;
         float statSeconds;
         float statWorst;
-        double cpuSum;
+        double workSum;
+        double workWorst;
+        double mainSum;
         double gpuSum;
         int timedFrames;
         int statReports;
@@ -107,6 +110,8 @@ namespace HypeDomino.Bench
         {
             Screen.orientation = ScreenOrientation.LandscapeLeft;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = TokenGraphics.TargetFpsOfEffectLevel[(int)level];
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             white = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
             budget = AnimationBudget.For(level);
@@ -117,7 +122,9 @@ namespace HypeDomino.Bench
 
         void Start()
         {
-            new GameObject("Camera", typeof(Camera)).GetComponent<Camera>().backgroundColor = TokenColor.BackgroundBase;
+            var camera = new GameObject("Camera", typeof(Camera)).GetComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = TokenColor.BackgroundBase;
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             BuildScreen();
             IndexEffects();
@@ -589,19 +596,24 @@ namespace HypeDomino.Bench
             statWorst = Mathf.Max(statWorst, delta);
             if (FrameTimingManager.GetLatestTimings(1, latestTiming) > 0)
             {
-                cpuSum += latestTiming[0].cpuFrameTime;
+                var work = FrameWindow.WorkMs(latestTiming[0]);
+                workSum += work;
+                workWorst = Math.Max(workWorst, work);
+                mainSum += latestTiming[0].cpuMainThreadFrameTime;
                 gpuSum += latestTiming[0].gpuFrameTime;
                 timedFrames++;
             }
             if (statSeconds < StatsIntervalSeconds || stats == null) return;
-            var line = $"{statFrames / statSeconds:F1} fps  frame {statSeconds * 1000f / statFrames:F1} ms  worst {statWorst * 1000f:F1} ms  " +
-                       $"cpu {Average(cpuSum):F1}  gpu {Average(gpuSum):F1}  playing {budget.Active}";
+            var line = $"{statFrames / statSeconds:F1} fps  frame {statSeconds * 1000f / statFrames:F1}/{statWorst * 1000f:F1} ms  " +
+                       $"work {Average(workSum):F1}/{workWorst:F1} ms  main {Average(mainSum):F1}  gpu {Average(gpuSum):F1}  playing {budget.Active}";
             stats.text = line;
             if (++statReports % StatsLogEvery == 0) Debug.Log($"ArtBench stats sheet={current + 1} level={level} reduceMotion={reduceMotion} {line}");
             statFrames = 0;
             statSeconds = 0f;
             statWorst = 0f;
-            cpuSum = 0;
+            workSum = 0;
+            workWorst = 0;
+            mainSum = 0;
             gpuSum = 0;
             timedFrames = 0;
         }
