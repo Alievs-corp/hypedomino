@@ -7,8 +7,6 @@ namespace HypeDomino.UI.Board
 {
     public sealed class BoardTilesView : MonoBehaviour
     {
-        static readonly Color32 RestingShadowTint = new Color32(TokenColor.Shadow.r, TokenColor.Shadow.g, TokenColor.Shadow.b, (byte)Mathf.RoundToInt(TokenElevation.E1Alpha * byte.MaxValue));
-
         [SerializeField] TileFaceSet faceSet;
         [SerializeField] Image[] tiles = Array.Empty<Image>();
         [SerializeField] Sprite shadowSprite;
@@ -25,12 +23,14 @@ namespace HypeDomino.UI.Board
             shadowSprite = shadow;
             shadows = shadowImages ?? Array.Empty<Image>();
             if (shadows.Length != tiles.Length) throw new ArgumentException($"{shadows.Length} shadows for {tiles.Length} tiles", nameof(shadowImages));
+            Color restingShadow = TokenColor.Shadow;
+            restingShadow.a = TokenElevation.E1Alpha;
             for (var i = 0; i < tiles.Length; i++)
             {
                 tiles[i].raycastTarget = false;
                 shadows[i].raycastTarget = false;
                 shadows[i].sprite = shadowSprite;
-                shadows[i].color = RestingShadowTint;
+                shadows[i].color = restingShadow;
             }
         }
 
