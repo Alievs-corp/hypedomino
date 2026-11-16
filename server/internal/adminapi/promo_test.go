@@ -233,6 +233,47 @@ func TestABatchIsHandedOutOnceAndDecidedAsOne(t *testing.T) {
 	}
 }
 
+func listedPromoIDs(a *api, token, query string) []string {
+	a.t.Helper()
+	var ids []string
+	for _, code := range a.promoCodes(token, query)["codes"].([]any) {
+		ids = append(ids, code.(map[string]any)["id"].(string))
+	}
+	return ids
+}
+
+func TestThePromoListPagesFiltersByStateAndSearchesByID(t *testing.T) {
+	a := newPromoAPI(t)
+	liveOps := a.signIn("leyla")
+	if response := a.batch(liveOps, promoBody("promo.cheap", 300, map[string]any{"count": 3, "cap": 0})); response.Code != http.StatusCreated {
+		t.Fatalf("batch %d %s", response.Code, response.Body)
+	}
+	for _, code := range []struct {
+		id    string
+		coins int
+	}{{"promo.launch", 300}, {"promo.big", 2001}} {
+		status, body := a.call("POST", "/admin/promo-codes", liveOps, promoBody(code.id, code.coins, nil))
+		if status != http.StatusCreated {
+			t.Fatalf("create %s %d %v", code.id, status, body)
+		}
+	}
+
+	all := listedPromoIDs(a, liveOps, "")
+	first := listedPromoIDs(a, liveOps, "?limit=3")
+	rest := listedPromoIDs(a, liveOps, "?limit=3&before="+first[2])
+	if len(all) != 5 || strings.Join(append(first, rest...), ",") != strings.Join(all, ",") {
+		t.Fatalf("all %v, pages %v %v", all, first, rest)
+	}
+	if pending := listedPromoIDs(a, liveOps, "?state=pending_approval"); len(pending) != 1 || pending[0] != "promo.big" {
+		t.Fatalf("pending %v", pending)
+	}
+	if batch := listedPromoIDs(a, liveOps, "?id=promo.cheap_&state=active&campaign=campaign.launch_week"); strings.Join(batch, ",") != "promo.cheap_3,promo.cheap_2,promo.cheap_1" {
+		t.Fatalf("batch %v", batch)
+	}
+	status, body := a.call("GET", "/admin/promo-codes?limit=nope", liveOps, nil)
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+}
+
 func TestDisablingACodeIsImmediateAndAudited(t *testing.T) {
 	a := newPromoAPI(t)
 	liveOps, root := a.signIn("leyla"), a.signIn("root")

@@ -10,24 +10,24 @@ from scipy import ndimage, optimize
 SLUG = "pewter_bowtie"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (64, 0, 1142, 1078)
+CROP = (17, -182, 1189, 990)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (390, 230, 200, 240)
+HEAD = (390, 331, 184, 221)
 HEAD_FALLOFF = 0.3
-NECK_Y = 455
-NECK_BAND = 35
-SHOULDER_Y = 580
+NECK_Y = 538
+NECK_BAND = 32
+SHOULDER_Y = 653
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(358, 236, 40, 22), (472, 222, 40, 22)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(360, 336, 37, 20), (465, 323, 37, 20)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
 ]
@@ -35,7 +35,7 @@ GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(384, 556), (556, 556), (588, 640), (590, 700), (362, 700), (360, 640)], "feather": 14, "top": 545, "ramp": 80, "amplitude": 5.0, "wavelength": 200, "cycles": 1},
+    {"polygon": [(384, 631), (542, 631), (572, 708), (573, 763), (364, 763), (362, 708)], "feather": 13, "top": 621, "ramp": 74, "amplitude": 4.6, "wavelength": 184, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4

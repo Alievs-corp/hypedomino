@@ -7,6 +7,7 @@ using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
+using HypeDomino.UI.Audio;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using Hypedomino.V1;
@@ -106,13 +107,14 @@ namespace HypeDomino.Tests.EditMode
             public readonly GameStrings Strings;
             public readonly CatalogUpdater Catalog;
             public HapticCue Felt;
+            public MatchSounds Heard;
 
             public Listened()
             {
                 Strings = new GameStrings(BuiltinStrings.Parse(Builtin), Choice, false);
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
-                AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), cue => Felt = cue);
+                AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), cue => Felt = cue, sounds => Heard = sounds);
                 Session.Hello(Server, new ClientHello());
             }
 
@@ -265,7 +267,7 @@ namespace HypeDomino.Tests.EditMode
             var session = new Session();
             var flow = new AppFlow();
             var server = new ServerFrames();
-            AppBoot.Listen(session, flow, null, Strings("az"), null, _ => { });
+            AppBoot.Listen(session, flow, null, Strings("az"), null, _ => { }, _ => { });
             session.Hello(server, new ClientHello());
             server.Deliver(FrameOf(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false)));
             session.Poll();
@@ -415,6 +417,28 @@ namespace HypeDomino.Tests.EditMode
             app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.West, 2));
             Assert.AreEqual(HapticCue.TilePlace, app.Felt);
         }
+
+        [Test]
+        public void APlacementInAViewFromTheSessionPlaysTheTileSoundForAnySeat()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.South, 1));
+            Assert.AreEqual(MatchSounds.None, app.Heard);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.North, 2));
+            Assert.AreEqual(MatchSounds.TilePlace, app.Heard);
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.East, 3));
+            Assert.AreEqual(MatchSounds.None, app.Heard, "first view after a reconnect");
+        }
+
+        [TestCase(AppState.Match, Music.Match)]
+        [TestCase(AppState.Lobby, Music.Lobby)]
+        [TestCase(AppState.Login, Music.Lobby)]
+        [TestCase(AppState.Boot, Music.None)]
+        [TestCase(AppState.UpdateRequired, Music.None)]
+        [TestCase(AppState.Maintenance, Music.None)]
+        public void EachScreenHasItsMusic(AppState state, Music music) => Assert.AreEqual(music, AudioBoot.MusicFor(state));
 
         [Test]
         public void TheFirstViewAfterAReconnectPlaysNothing()

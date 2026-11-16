@@ -81,6 +81,61 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `silver_masque: background [193.0, 192.0, 192.0], pockets 39715 px, crop (0, -98, 1121, 1023), portrait 768`
+- Crop `(0, 21, 1031, 1052)` to `(0, -98, 1121, 1023)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `silver_masque_loop: blink edit registered (tx, ty, scale, angle) = (0.2951, 0.1873, 1.0001, -0.0001), residual 0.00169 -> 0.00161, eye colour offset [-6.7, -2.8, -0.4], parts 1, ripples 0, filled 37301 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.068 before, 0.172 after; highest over the 16 loop frames 0.062 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/silver_masque/work/silver_masque_cleanup.py silver_masque assets-src/cosmetic/avatar/silver_masque/concept/20261116-02.png assets-src/cosmetic/avatar/silver_masque/work
+python -I assets-src/cosmetic/avatar/silver_masque/work/silver_masque_loop.py assets-src/cosmetic/avatar/silver_masque/concept assets-src/cosmetic/avatar/silver_masque/work assets-src/cosmetic/avatar/silver_masque/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/silver_masque` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `6782a2e706f92f70c88fe904b0ee4735e1f17578b06557622818ececd808fac3` |
+| export/anim/0002.png | `bfb0606244a4fbdbe34defee50fda775c73c15e02a3cd2cacaed4a43b19dfa5e` |
+| export/anim/0003.png | `5114cc769049bfebf5fcd7a7aa7e1724ef64db56afa54c8b5c7ae80da14309dd` |
+| export/anim/0004.png | `46db658f251c9ee3f6fc9b6cbc0ff2412eb47838d40bf4b1e16ac8b7bf1ac1d3` |
+| export/anim/0005.png | `df1f8c967e13ef6b7b0c6fcc5393ae815cbb2e8175b778eb24e5b9e6ef835f6b` |
+| export/anim/0006.png | `9056ffb5707eddd4f0a2754e65dbf344dd8a53c036f8a0dd6d024c8640faab4a` |
+| export/anim/0007.png | `9486d2e1be9e09b846b513e91b718e7283f3d34ef8ca4f63e9025e3ff75abf29` |
+| export/anim/0008.png | `d510713afcd6f9d32441481ab07ed2f326121d2632659a27212681a748ceca60` |
+| export/anim/0009.png | `318258efade6e4d1bf37669c2869fa54866cd7557b76398f77a5c8cc375faac6` |
+| export/anim/0010.png | `417ea4988328768ee283bfa8597f84412276f44bbfcd8cce281fd1260f5e3456` |
+| export/anim/0011.png | `e6ae0c7b1d60b85f950002d3b1a5c3b10e4b12b0bea93cf61b4ef9f5a514e8f4` |
+| export/anim/0012.png | `0210ef6e1b08838090b8fdf41f79e2bee6801d4a315577fb753264f65c4d0808` |
+| export/anim/0013.png | `cb884116d384b486205702644c5b62860702b9388fea75c7abf13a2df1002fc5` |
+| export/anim/0014.png | `816e7d84e2434801211ca033fe4d1b943d84a6332315b66f5c47635fc78088d8` |
+| export/anim/0015.png | `ae42030c51838c1cf1c3bf1ebdece6a617a16c32e7f93beeab690fb801829e01` |
+| export/anim/0016.png | `854277da80e667d8c87f069d3010f1a4a32178128486a2b95e10cf11f0c6bc84` |
+| export/static.png | `318258efade6e4d1bf37669c2869fa54866cd7557b76398f77a5c8cc375faac6` |
+| work/silver_masque_base.png | `b00f650683cc7a0d01bdbe0a8c90d8fd7c568b8266190de8c61d03e11d43bd9a` |
+| work/silver_masque_cleanup.py | `a4e94d8b0b0a712fe5512e007e17e394692fac745bf8e2a378ae76972265e402` |
+| work/silver_masque_eyes_closed.png | `0f0a8903c1a06db43d1f806e83080ec618b0a6276dff4f15b54c44168703f913` |
+| work/silver_masque_eyes_open.png | `cd1f507e9448e811f35350332c3ef45b5e8175e97c3db534e8bf756414735651` |
+| work/silver_masque_head.png | `0625962d0011600f6a939c711cdda9d7a6359a3d3e6eb188c4f38132686925b5` |
+| work/silver_masque_loop.py | `e8f1be45e3c7f8827f240f18ed1dc404e56be9768208278d7d7facd7effb4910` |
+| work/silver_masque_masque.png | `01974384f753378a4ae95840d1d00d33be8cad114ddea391f6c16de868ced2b0` |
+| work/silver_masque_portrait.png | `0ebaa4c082985530d405205d678b99a3ae964c80f9f356c9fb131d12d267ae47` |
+| work/silver_masque_torso.png | `185556e13dafe2377bd4292b2fc0167f3402a0329b5f0d6172f0dc6107764550` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -106,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-02.png | P-3 with the style key, quoted below. Sent 08:39:31 UTC; `c2pa.created` 2026-11-16T08:40:25Z |
 | 2026-11-16 | concept/20261116-03.png | Edit of `concept/20261116-02.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:49:10 UTC; `c2pa.created` 2026-11-16T08:50:12Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/silver_masque_base.png, work/silver_masque_cleanup.py, work/silver_masque_eyes_closed.png, work/silver_masque_eyes_open.png, work/silver_masque_head.png, work/silver_masque_loop.py, work/silver_masque_masque.png, work/silver_masque_portrait.png, work/silver_masque_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(0, 21, 1031, 1052)` to `(0, -98, 1121, 1023)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-02.png`, verbatim:
 

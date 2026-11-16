@@ -10,27 +10,27 @@ from scipy import ndimage, optimize
 SLUG = "tawny_quill"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (94, -91, 1172, 987)
+CROP = (47, -182, 1219, 990)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (400, 330, 210, 260)
+HEAD = (399, 363, 193, 239)
 HEAD_FALLOFF = 0.3
-NECK_Y = 565
-NECK_BAND = 35
-SHOULDER_Y = 680
+NECK_Y = 579
+NECK_BAND = 32
+SHOULDER_Y = 685
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(370, 340, 38, 20), (490, 355, 38, 20)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(371, 372, 35, 18), (481, 386, 35, 18)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "quill", "polygon": [(174, 180), (194, 138), (224, 94), (248, 78), (256, 100), (252, 160), (248, 230), (250, 300), (246, 332), (226, 332), (206, 300), (186, 262), (174, 220)], "pivot": (238, 322), "length": 200, "swing": 3.0, "lag": 0.0, "grow": 2, "behind": "fill"},
+    {"name": "quill", "polygon": [(191, 225), (209, 187), (237, 146), (259, 131), (266, 152), (263, 207), (259, 271), (261, 336), (257, 365), (239, 365), (220, 336), (202, 301), (191, 262)], "pivot": (250, 356), "length": 184, "swing": 3.0, "lag": 0.0, "grow": 2, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

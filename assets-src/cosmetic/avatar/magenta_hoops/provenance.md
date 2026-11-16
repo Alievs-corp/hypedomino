@@ -82,6 +82,62 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `magenta_hoops: background [208.0, 207.0, 207.0], pockets 6895 px, crop (76, -125, 1197, 996), portrait 768`
+- Crop `(121, 0, 1152, 1031)` to `(76, -125, 1197, 996)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `magenta_hoops_loop: blink edit registered (tx, ty, scale, angle) = (0.0497, -0.1873, 1.0007, -0.0004), residual 0.00060 -> 0.00057, eye colour offset [6.0, 5.5, 5.6], parts 2, ripples 0, filled 9705 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.062 before, 0.172 after; highest over the 16 loop frames 0.057 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/magenta_hoops/work/magenta_hoops_cleanup.py magenta_hoops assets-src/cosmetic/avatar/magenta_hoops/concept/20261115-01.png assets-src/cosmetic/avatar/magenta_hoops/work
+python -I assets-src/cosmetic/avatar/magenta_hoops/work/magenta_hoops_loop.py assets-src/cosmetic/avatar/magenta_hoops/concept assets-src/cosmetic/avatar/magenta_hoops/work assets-src/cosmetic/avatar/magenta_hoops/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/magenta_hoops` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `3753868a09f29ce2390f72fd64f0ae29f9540b3a89e257daadc45304251c7a98` |
+| export/anim/0002.png | `4c8e4268a1f538cca70ac3f7872ff93a0cdc19ec1d547a349115ef870680a40a` |
+| export/anim/0003.png | `a523101a2417f3e7d5ef38b5728b346821599613e65e42efc996c7cded01ab7c` |
+| export/anim/0004.png | `61c182ea7a376a82a6b4181e236d36d7b1557c32c344b41ca8b4789a35593a34` |
+| export/anim/0005.png | `dacd77756b47bee10ff31d17568040eb003457bbb9d2294054270297d1a64d46` |
+| export/anim/0006.png | `8e3b65964bd96a94b93630f73cac2187b8b7cad239cddab7efe17500589f51bb` |
+| export/anim/0007.png | `75e214f33ed88e5d1416b7698b962a11df7f56a7dd2246e43cfdda7e10d1c1e6` |
+| export/anim/0008.png | `13ce5cdfce62a6982bf35a2cc4958140ec817a7228b4f347f1c68e9a6ab90f60` |
+| export/anim/0009.png | `80238e3053b2b7c75d82e1427b0dc774dd6c5fc151f07f62a482395dc44cb1ee` |
+| export/anim/0010.png | `34f88a2c672ef9936ce91deff7849713c715d795934580eb3a7ec74f9abfef1f` |
+| export/anim/0011.png | `fc6bf6784607c8bf2a75420837b8511ea346b8473b8fd10f58bc65bc07cf78bb` |
+| export/anim/0012.png | `06cdfa51f2ce768c9f3f1ce4e4645cc5516ff9d47ef0ead3a1630b5a0fdd194f` |
+| export/anim/0013.png | `4d747975bffbf326a9cd4e59d2c793f4f3e3ee608f1076a61e274db88f9eb258` |
+| export/anim/0014.png | `3491975992b4b1305c30d88fdc0191ab3e3c9b8ddcba08450eb49f8c03050d10` |
+| export/anim/0015.png | `568bcb087834ffaf45d1046817f79bfdcceb9facbfeb1f09ae7e8814caca982c` |
+| export/anim/0016.png | `71861f7118e8e189eeabd9dc89b957efcdadeaa1c4df2aaa320d4de67dbf60ab` |
+| export/static.png | `80238e3053b2b7c75d82e1427b0dc774dd6c5fc151f07f62a482395dc44cb1ee` |
+| work/magenta_hoops_base.png | `eb90710e99767ce76ffd97b7b3b930e0d00901706d8d47896de6e46937eb5cf6` |
+| work/magenta_hoops_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/magenta_hoops_eyes_closed.png | `2c0ae3737aa508220aee033ffcce25a4801e465798aa5c673b1426d88544a231` |
+| work/magenta_hoops_eyes_open.png | `329f3a7b77064a519f9effe5b4671f356f659ce43267ad4c07eebb7486b6b95a` |
+| work/magenta_hoops_head.png | `6a2b60f83467aab147684679a54c061a472e6adc381dd2b2a4c948b79394036e` |
+| work/magenta_hoops_hoop_left.png | `ba377aed91af9d5e5911da360351d0597aafae9528cc50df71c750ca0fd17bbb` |
+| work/magenta_hoops_hoop_right.png | `c47db4a48f0ce76c6f24d3600e38c8edc09651d4174a5884d90106a92b696264` |
+| work/magenta_hoops_loop.py | `01f94f8ffdb03a109a70d2eeb4155ac8868f562d56ce4606c87a9cd7a1ff7c89` |
+| work/magenta_hoops_portrait.png | `e73216bd1acc24a49bfe11348ca55b8ee73f6272a1054844feb53d104490bf72` |
+| work/magenta_hoops_torso.png | `d9d6dfaafde900f375f208cc7d390305d3d16d5a337e1d32fce9e88709b330bd` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -107,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:29:50 UTC; `c2pa.created` 2026-11-15T17:30:43Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:45:31 UTC; `c2pa.created` 2026-11-15T17:46:37Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/magenta_hoops_base.png, work/magenta_hoops_cleanup.py, work/magenta_hoops_eyes_closed.png, work/magenta_hoops_eyes_open.png, work/magenta_hoops_head.png, work/magenta_hoops_hoop_left.png, work/magenta_hoops_hoop_right.png, work/magenta_hoops_loop.py, work/magenta_hoops_portrait.png, work/magenta_hoops_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(121, 0, 1152, 1031)` to `(76, -125, 1197, 996)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

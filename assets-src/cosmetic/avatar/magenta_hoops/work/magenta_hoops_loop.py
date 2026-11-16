@@ -10,28 +10,28 @@ from scipy import ndimage, optimize
 SLUG = "magenta_hoops"
 CANONICAL = "20261115-01.png"
 BLINK_EDIT = "20261115-02.png"
-CROP = (121, 0, 1152, 1031)
+CROP = (76, -125, 1197, 996)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (395, 250, 200, 250)
+HEAD = (394, 316, 184, 230)
 HEAD_FALLOFF = 0.3
-NECK_Y = 490
-NECK_BAND = 35
-SHOULDER_Y = 620
+NECK_Y = 536
+NECK_BAND = 32
+SHOULDER_Y = 656
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(353, 300, 40, 22), (477, 284, 40, 22)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(355, 362, 37, 20), (470, 347, 37, 20)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "hoop_left", "polygon": [(262, 380), (292, 380), (312, 410), (314, 452), (300, 480), (292, 500), (290, 544), (260, 548), (256, 500), (246, 482), (232, 452), (234, 404)], "pivot": (276, 388), "length": 40, "swing": 6.0, "lag": 0.4, "grow": 1, "behind": "fill"},
-    {"name": "hoop_right", "polygon": [(540, 358), (572, 358), (590, 394), (590, 446), (574, 482), (568, 522), (544, 522), (538, 482), (526, 450), (526, 398)], "pivot": (556, 366), "length": 40, "swing": 6.0, "lag": 0.9, "grow": 1, "behind": "fill"},
+    {"name": "hoop_left", "polygon": [(272, 435), (299, 435), (318, 463), (320, 501), (307, 527), (299, 545), (298, 586), (270, 590), (266, 545), (257, 529), (244, 501), (246, 457)], "pivot": (285, 442), "length": 37, "swing": 6.0, "lag": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "hoop_right", "polygon": [(527, 415), (557, 415), (573, 448), (573, 496), (559, 529), (553, 566), (531, 566), (526, 529), (515, 500), (515, 452)], "pivot": (542, 422), "length": 37, "swing": 6.0, "lag": 0.9, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55

@@ -57,6 +57,34 @@ The script is `teal_ambassador_cleanup.py` of batch B, copied unchanged. That sc
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `ginger_houndstooth: background [197.0, 196.0, 196.0], pockets 1003 px, crop (47, -186, 1168, 935), canvas 512`
+- Crop `(92, 0, 1123, 1031)` to `(47, -186, 1168, 935)` on the concept
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.006 before, 0.170 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/ginger_houndstooth/work/ginger_houndstooth_cleanup.py ginger_houndstooth assets-src/cosmetic/avatar/ginger_houndstooth/concept/20261115-01.png assets-src/cosmetic/avatar/ginger_houndstooth/work assets-src/cosmetic/avatar/ginger_houndstooth/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 2 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/ginger_houndstooth` after the re-crop: 1 sprites, ASTC 6x6 estimate 118,336 bytes, no size limit set for this type and kind (docs/asset-workflow.md O-5).
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/static.png | `0a6e663a0c06e7796d431a185ada7d733c15ae7c5c0b507e6d08a74c51be74e6` |
+| work/ginger_houndstooth_cleanup.py | `2203d04a41dd2a85e740e8c685588424e4a4f9a50ad8c48b7f8a7c447371edc0` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -70,6 +98,7 @@ Not done: W-6. `npm run asset:add` refuses the item until the Cultural review li
 |---|---|---|
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:58:37 UTC by Claude Code, Codex session `01a1e025-86e7-71e3-9169-5cd1a1974ceb`; `c2pa.created` 2026-11-15T16:59:17Z |
 | 2026-11-15 | work/ginger_houndstooth_master.png, export/static.png | `ginger_houndstooth_cleanup.py` on the concept |
+| 2026-11-16 | export/static.png, work/ginger_houndstooth_cleanup.py | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(92, 0, 1123, 1031)` to `(47, -186, 1168, 935)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim (the Codex call wraps it in `$imagegen <prompt> Generate exactly one image. Save the final PNG in the current working directory as 20261115-01.png. Do not use any API key and do not edit the image.`):
 

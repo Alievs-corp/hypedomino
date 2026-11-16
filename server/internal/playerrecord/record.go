@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	SearchLimit = 20
-	ListLimit   = 50
+	ListLimit = 50
 )
 
 var (
@@ -167,21 +166,36 @@ type Record struct {
 const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
 	from accounts a left join profiles p on p.account_id = a.id `
 
-func Search(ctx context.Context, db Querier, query string) ([]Summary, error) {
-	query = strings.TrimSpace(query)
+type SearchQuery struct {
+	Text  string
+	State string
+	After string
+	Limit int
+}
+
+func Search(ctx context.Context, db Querier, q SearchQuery) ([]Summary, error) {
+	text := strings.TrimSpace(q.Text)
 	var rows pgx.Rows
 	var err error
 	switch {
-	case query == "":
+	case text == "" && q.State == "":
 		return nil, ErrEmptyQuery
-	case isAccountID(query):
-		rows, err = db.Query(ctx, summaryColumns+`where a.id = $1::uuid`, query)
-	case strings.Contains(query, "@"):
+	case text == "":
+		rows, err = db.Query(ctx, summaryColumns+`where a.state = $1
+			and ($2 = '' or (a.created_at, a.id) < (select created_at, id from accounts where id = nullif($2, '')::uuid))
+			order by a.created_at desc, a.id desc limit $3`, q.State, q.After, q.Limit)
+	case isAccountID(text):
+		rows, err = db.Query(ctx, summaryColumns+`where a.id = $1::uuid and ($2 = '' or a.state = $2) and $3 = ''`, text, q.State, q.After)
+	case strings.Contains(text, "@"):
 		rows, err = db.Query(ctx, summaryColumns+`where a.id in (select account_id from auth_identities where lower(email) = lower($1))
-			order by a.created_at limit $2`, query, SearchLimit)
+			and ($2 = '' or a.state = $2)
+			and ($3 = '' or (a.created_at, a.id) > (select created_at, id from accounts where id = nullif($3, '')::uuid))
+			order by a.created_at, a.id limit $4`, text, q.State, q.After, q.Limit)
 	default:
-		rows, err = db.Query(ctx, summaryColumns+`where p.nickname_key like $1 escape '\' order by p.nickname_key limit $2`,
-			likeWildcards.Replace(profile.Key(query))+"%", SearchLimit)
+		rows, err = db.Query(ctx, summaryColumns+`where p.nickname_key like $1 escape '\' and ($2 = '' or a.state = $2)
+			and ($3 = '' or p.nickname_key > (select nickname_key from profiles where account_id = nullif($3, '')::uuid))
+			order by p.nickname_key limit $4`,
+			likeWildcards.Replace(profile.Key(text))+"%", q.State, q.After, q.Limit)
 	}
 	if err != nil {
 		return nil, err

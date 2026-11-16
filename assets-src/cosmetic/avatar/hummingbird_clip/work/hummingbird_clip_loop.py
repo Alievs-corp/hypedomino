@@ -8,28 +8,28 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "hummingbird_clip"
-CROP = (137, 0, 1168, 1031)
+CROP = (92, -183, 1213, 938)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (385, 285, 365, 290)
+HEAD = (385, 387, 336, 267)
 HEAD_FALLOFF = 0.3
-NECK_Y = 565
-NECK_BAND = 40
-SHOULDER_Y = 660
+NECK_Y = 645
+NECK_BAND = 37
+SHOULDER_Y = 732
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.4
-NOD = 2.0
-EYES = [(290, 376, 42, 24), (420, 350, 42, 24)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(298, 471, 39, 22), (417, 447, 39, 22)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "earring_left", "polygon": [(245, 475), (257, 475), (262, 488), (266, 500), (266, 518), (258, 527), (246, 527), (240, 518), (239, 500), (242, 488)], "pivot": (251, 474), "length": 50, "swing": 6.0, "lag": 0.4, "grow": 1, "behind": "fill"},
-    {"name": "earring_right", "polygon": [(516, 432), (530, 432), (533, 446), (538, 460), (538, 477), (530, 485), (516, 485), (510, 477), (510, 460), (514, 446)], "pivot": (523, 431), "length": 50, "swing": 6.0, "lag": 0.8, "grow": 1, "behind": "fill"},
+    {"name": "earring_left", "polygon": [(256, 562), (267, 562), (272, 574), (275, 585), (275, 602), (268, 610), (257, 610), (252, 602), (251, 585), (253, 574)], "pivot": (262, 561), "length": 46, "swing": 6.0, "lag": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "earring_right", "polygon": [(505, 523), (518, 523), (521, 536), (526, 548), (526, 564), (518, 571), (505, 571), (500, 564), (500, 548), (504, 536)], "pivot": (512, 522), "length": 46, "swing": 6.0, "lag": 0.8, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -90,7 +90,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

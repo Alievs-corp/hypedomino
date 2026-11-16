@@ -221,7 +221,7 @@ namespace HypeDomino.Tests.PlayMode
                 Player(Seat.X, "avatar.fox", "frame.gold"),
                 Player(Seat.Y, "avatar.owl", "frame.gold"));
             var prefetch = new MatchPrefetch(stage.Stills);
-            prefetch.Start(view);
+            prefetch.Start(view, manifest);
             FinishStill(FoxStatic);
             FinishStill(OwlStatic);
             FinishStill(GoldStatic);

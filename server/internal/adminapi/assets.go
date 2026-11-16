@@ -18,6 +18,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
@@ -34,7 +35,7 @@ const (
 
 var (
 	errAssetStoreOff = errors.New("adminapi: no asset store is configured")
-	errAssetItem     = errors.New("adminapi: not a cosmetic item id")
+	errAssetItem     = errors.New("adminapi: not a cosmetic item or medal id")
 	errAssetSlot     = errors.New("adminapi: this slot has no agreed file format yet")
 	errAssetUnknown  = errors.New("adminapi: no such asset")
 	errAssetChecked  = errors.New("adminapi: the asset was already checked")
@@ -122,7 +123,7 @@ func (h *Handler) startAssetUpload(w http.ResponseWriter, r *http.Request, p pri
 		return
 	}
 	id := uuid.NewString()
-	address := cosmetics.AddressOf(request.ItemID, request.Slot)
+	address := assetAddress(request.ItemID, request.Slot)
 	key := address + "/" + id + ".png"
 	var asset assetView
 	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
@@ -145,12 +146,19 @@ func (h *Handler) acceptsUpload(itemID, slot string) error {
 	switch {
 	case h.config.Assets == nil:
 		return errAssetStoreOff
-	case !cosmetics.ValidItemID(itemID):
+	case !cosmetics.ValidItemID(itemID) && !medal.ValidID(itemID):
 		return fmt.Errorf("%w: %q", errAssetItem, itemID)
 	case slot != assetSlotStatic:
 		return fmt.Errorf("%w: %q", errAssetSlot, slot)
 	}
 	return nil
+}
+
+func assetAddress(itemID, slot string) string {
+	if medal.ValidID(itemID) {
+		return medal.StaticAddress(itemID)
+	}
+	return cosmetics.AddressOf(itemID, slot)
 }
 
 func (h *Handler) checkAsset(w http.ResponseWriter, r *http.Request, p principal) {
