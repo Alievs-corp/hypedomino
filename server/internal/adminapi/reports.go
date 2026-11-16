@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
@@ -13,7 +14,6 @@ import (
 )
 
 const (
-	ReportTargetLimit   = 100
 	UpholdReportsAction = "uphold_reports"
 	RejectReportsAction = "reject_reports"
 )
@@ -29,7 +29,16 @@ type reportsDecision struct {
 }
 
 func (h *Handler) listReports(w http.ResponseWriter, r *http.Request, p principal) {
-	targets, err := report.Open(r.Context(), h.pool, ReportTargetLimit)
+	query := r.URL.Query()
+	after := query.Get("after")
+	limit, err := queuePageLimit(query.Get("limit"))
+	if err != nil || (after != "" && uuid.Validate(after) != nil) {
+		h.refuse(w, errMalformed)
+		return
+	}
+	targets, err := report.Open(r.Context(), h.pool, report.Query{
+		Reason: query.Get("reason"), Account: query.Get("account"), After: after, Limit: limit,
+	})
 	if err != nil {
 		h.refuse(w, err)
 		return
