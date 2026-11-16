@@ -19,6 +19,7 @@ namespace HypeDomino.UI.Medals
         public string rarityId;
         public string staticAddress;
         public MedalSourceReply[] sources;
+        public string group;
     }
 
     [Serializable]
