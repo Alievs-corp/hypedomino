@@ -45,6 +45,8 @@ namespace HypeDomino.UI.Tokens
         public static readonly Color32 WoodHi = new Color32(0x5A, 0x24, 0x14, 0xFF);
         public static readonly Color32 WoodDefault = new Color32(0x3A, 0x15, 0x0B, 0xFF);
         public static readonly Color32 WoodLo = new Color32(0x24, 0x0C, 0x06, 0xFF);
+        public static readonly string[] Paths = { @"color.background.base", @"color.background.raised", @"color.surface.default", @"color.surface.raised", @"color.scrim", @"color.shadow", @"color.text.primary", @"color.text.secondary", @"color.text.muted", @"color.role.primary.fill", @"color.role.primary.on", @"color.role.primary.text", @"color.role.secondary.fill", @"color.role.secondary.on", @"color.role.secondary.text", @"color.role.success.fill", @"color.role.success.on", @"color.role.success.text", @"color.role.warning.fill", @"color.role.warning.on", @"color.role.warning.text", @"color.role.danger.fill", @"color.role.danger.on", @"color.role.danger.text", @"color.role.score.fill", @"color.role.score.on", @"color.role.score.text", @"color.role.teamA.fill", @"color.role.teamA.on", @"color.role.teamA.text", @"color.role.teamB.fill", @"color.role.teamB.on", @"color.role.teamB.text", @"color.gold.hi", @"color.gold.default", @"color.gold.mid", @"color.gold.lo", @"color.wood.hi", @"color.wood.default", @"color.wood.lo" };
+        public static readonly Color32[] OfPath = { BackgroundBase, BackgroundRaised, SurfaceDefault, SurfaceRaised, Scrim, Shadow, TextPrimary, TextSecondary, TextMuted, RolePrimaryFill, RolePrimaryOn, RolePrimaryText, RoleSecondaryFill, RoleSecondaryOn, RoleSecondaryText, RoleSuccessFill, RoleSuccessOn, RoleSuccessText, RoleWarningFill, RoleWarningOn, RoleWarningText, RoleDangerFill, RoleDangerOn, RoleDangerText, RoleScoreFill, RoleScoreOn, RoleScoreText, RoleTeamAFill, RoleTeamAOn, RoleTeamAText, RoleTeamBFill, RoleTeamBOn, RoleTeamBText, GoldHi, GoldDefault, GoldMid, GoldLo, WoodHi, WoodDefault, WoodLo };
     }
 
     public static class TokenOpacity
@@ -148,6 +150,13 @@ namespace HypeDomino.UI.Tokens
         public static readonly Vector4 Linear = new Vector4(0f, 0f, 1f, 1f);
     }
 
+    public static class TokenGlow
+    {
+        public static readonly string[] NameOfLevel = { @"none", @"soft", @"strong", @"intense" };
+        public static readonly float[] AlphaOfLevel = { 0f, 0.35f, 0.55f, 0.8f };
+        public static readonly float[] ScaleOfLevel = { 1f, 1.15f, 1.3f, 1.5f };
+    }
+
     public static class TokenMotion
     {
         public const float PressScale = 0.94f;
@@ -161,14 +170,17 @@ namespace HypeDomino.UI.Tokens
         public const float LowWorkTimeP95Ms = 28f;
         public const int LowMaxTweens = 32;
         public const int LowMaxParticles = 150;
+        public const int LowMaxOverdrawLayers = 2;
         public const int MediumMaxAnimatedCosmetics = 10;
         public const float MediumWorkTimeP95Ms = 14f;
         public const int MediumMaxTweens = 64;
         public const int MediumMaxParticles = 400;
+        public const int MediumMaxOverdrawLayers = 3;
         public const int HighMaxAnimatedCosmetics = 10;
         public const float HighWorkTimeP95Ms = 7f;
         public const int HighMaxTweens = 96;
         public const int HighMaxParticles = 800;
+        public const int HighMaxOverdrawLayers = 4;
     }
 
     public enum TokenEffectKind
@@ -243,6 +255,7 @@ namespace HypeDomino.UI.Tokens
         public static readonly int[] StepShakeDurationMs = { 0, 0, 0, 180, 180, 240 };
         public static readonly int[] ChainBoostSteps = { 0, 1, 2 };
         public static readonly int[] ParticlesOfEffectLevel = { 30, 90, 180 };
+        public static readonly int[] StepGlowLevel = { 1, 1, 2, 2, 3, 3 };
         public const int ChainStepGapMs = 120;
         public const int RollMsPer5Points = 40;
         public const int RollMaxMs = 1200;
