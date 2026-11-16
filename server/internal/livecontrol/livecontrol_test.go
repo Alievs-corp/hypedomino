@@ -2,11 +2,43 @@ package livecontrol_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 )
+
+func TestBreakGlassNeedsASevereIncidentWithAnId(t *testing.T) {
+	cases := []struct {
+		name     string
+		incident livecontrol.Incident
+		valid    bool
+	}{
+		{"sev1", livecontrol.Incident{Severity: "SEV1", ID: "INC-12"}, true},
+		{"sev2", livecontrol.Incident{Severity: "SEV2", ID: "INC-12"}, true},
+		{"longest id", livecontrol.Incident{Severity: "SEV1", ID: strings.Repeat("a", 128)}, true},
+		{"sev3", livecontrol.Incident{Severity: "SEV3", ID: "INC-12"}, false},
+		{"lower case severity", livecontrol.Incident{Severity: "sev1", ID: "INC-12"}, false},
+		{"no severity", livecontrol.Incident{ID: "INC-12"}, false},
+		{"no id", livecontrol.Incident{Severity: "SEV1"}, false},
+		{"blank id", livecontrol.Incident{Severity: "SEV1", ID: "   "}, false},
+		{"padded id", livecontrol.Incident{Severity: "SEV1", ID: " INC-12"}, false},
+		{"control character", livecontrol.Incident{Severity: "SEV1", ID: "INC-12\n"}, false},
+		{"too long", livecontrol.Incident{Severity: "SEV1", ID: strings.Repeat("a", 129)}, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			err := c.incident.Validate()
+			if c.valid && err != nil {
+				t.Fatalf("refused: %v", err)
+			}
+			if !c.valid && !errors.Is(err, livecontrol.ErrIncident) {
+				t.Fatalf("got %v, want ErrIncident", err)
+			}
+		})
+	}
+}
 
 func TestParseChecksTheControls(t *testing.T) {
 	cases := []struct {

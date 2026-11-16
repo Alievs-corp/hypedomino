@@ -61,7 +61,7 @@ export default async function ApprovalsPage() {
                   <td className="py-2 pr-4 break-all">
                     {proposal.proposer_id} ({proposal.proposer_roles.join(", ")})
                   </td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(proposal.expires_at)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{proposal.kind === "break_glass" ? t("approvals.no_expiry") : t.when(proposal.expires_at)}</td>
                   <td className="py-2 pr-4">
                     {ownProposal(proposal, admin.account.id) ? (
                       <span className="text-text-muted">{t("approvals.own")}</span>

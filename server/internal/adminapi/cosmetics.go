@@ -12,8 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/contentpublish"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
+	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -63,7 +66,7 @@ func asPublisher(handle func(func() configDomain) func(http.ResponseWriter, *htt
 	}
 }
 
-func (h *Handler) cosmeticsDomain(rollback bool, publisher string) configDomain {
+func (h *Handler) cosmeticsDomain(rollback, incident bool, publisher string) configDomain {
 	return configDomain{name: cosmetics.Domain, object: rbac.CosmeticItems,
 		prepare: func(ctx context.Context, tx pgx.Tx, before, after []byte) ([]byte, error) {
 			previous, err := publishedManifest(before)
@@ -91,13 +94,51 @@ func (h *Handler) cosmeticsDomain(rollback bool, publisher string) configDomain 
 			if err := cosmetics.CheckSuccessor(previous, next); err != nil {
 				return nil, err
 			}
-			return raw, h.grantsStayListed(ctx, tx, items)
+			if err := h.grantsStayListed(ctx, tx, items); err != nil {
+				return nil, err
+			}
+			if !incident {
+				if err := h.namedInEnglish(ctx, tx, items); err != nil {
+					return nil, err
+				}
+			}
+			return raw, h.uploadManifest(ctx, raw)
 		},
 		accept: func(_, after []byte) error {
 			_, err := cosmetics.ParseManifest(after)
 			return err
 		},
 	}
+}
+
+func (h *Handler) uploadManifest(ctx context.Context, raw []byte) error {
+	if h.config.Content == nil {
+		return errContentStoreOff
+	}
+	file := cosmetics.File(cosmetics.Hash(raw))
+	object := objectstore.Object{ContentType: "application/json", CacheControl: contentpublish.ImmutableCacheControl, Body: raw}
+	if err := h.config.Content.PutObject(ctx, file, object, h.now()); err != nil {
+		return fmt.Errorf("%w: %s: %v", errContentUpload, file, err)
+	}
+	return nil
+}
+
+func (h *Handler) namedInEnglish(ctx context.Context, tx pgx.Tx, items *cosmetics.Catalog) error {
+	store := h.strings.In(tx)
+	var unnamed []string
+	for _, item := range items.Items() {
+		value, err := store.Value(ctx, cosmetics.NameKeyOf(item.ID), gamestrings.English)
+		if err != nil {
+			return err
+		}
+		if value.Status != gamestrings.Approved {
+			unnamed = append(unnamed, item.ID)
+		}
+	}
+	if len(unnamed) > 0 {
+		return fmt.Errorf("%w: V-16 no approved en name for %s", cosmetics.ErrInvalid, strings.Join(unnamed, ", "))
+	}
+	return nil
 }
 
 func reviewedByAnother(ctx context.Context, tx pgx.Tx, previous, next cosmetics.Manifest, publisher string) error {
@@ -131,7 +172,7 @@ func (h *Handler) switchOffCosmetic(w http.ResponseWriter, r *http.Request, p pr
 		if err != nil {
 			return nil, err
 		}
-		entry, raw, err := publishIn(r.Context(), tx, h.cosmeticsDomain(false, p.account.ID), string(rbac.Retire), raw, note)
+		entry, raw, err := publishIn(r.Context(), tx, h.cosmeticsDomain(false, true, p.account.ID), string(rbac.Retire), raw, note)
 		version, published = entry.ConfigVersion, raw
 		return []audit.Entry{entry}, err
 	})

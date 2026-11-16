@@ -41,6 +41,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
+	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
@@ -155,6 +156,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	manifests := snapshot.New(pool, cosmetics.Domain, cosmetics.Parse, logger)
 	watchConfig(ctx, a.AwaitBeforeReady, "cosmetics", config.ConfigPoll, manifests)
 	inventoryStore.Follow(manifests.Current)
+	a.AnnounceCosmetics(func() *pb.CosmeticsManifest {
+		published, _, ok := manifests.Current()
+		if !ok {
+			return nil
+		}
+		return &pb.CosmeticsManifest{Version: uint32(published.Version), Hash: published.Hash}
+	})
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
 	inventoryHandler.FlagUnowned(unowned)
@@ -190,6 +198,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	missionCatalog := mission.NewWatcher(pool, logger)
 	watchConfig(ctx, a.AwaitBeforeReady, "missions", config.ConfigPoll, missionCatalog)
 	missions := mission.NewStore(pool, missionCatalog, engine)
+	medals.SetMissionTypes(func(id string) string {
+		catalog, _, ok := missionCatalog.Current()
+		if !ok {
+			return ""
+		}
+		found, _ := catalog.Mission(id)
+		return found.Type
+	})
 	calendar := dailylogin.NewWatcher(pool, logger)
 	watchConfig(ctx, a.AwaitBeforeReady, "daily login", config.ConfigPoll, calendar)
 	matchRewardConfigs := matchreward.NewWatcher(pool, logger)

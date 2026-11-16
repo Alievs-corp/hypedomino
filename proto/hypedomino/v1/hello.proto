@@ -52,12 +52,18 @@ message ServerHello {
   fixed64 session_nonce = 8;
   string content_base_url = 9;
   uint64 maintenance_ends_unix_ms = 10;
+  CosmeticsManifest cosmetics_manifest = 11;
 }
 
 message StringBundle {
   string language = 1;
   uint32 version = 2;
   string hash = 3;
+}
+
+message CosmeticsManifest {
+  uint32 version = 1;
+  string hash = 2;
 }
 
 message FallbackChain {
