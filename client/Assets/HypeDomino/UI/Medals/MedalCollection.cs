@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.UI.Missions;
 
 namespace HypeDomino.UI.Medals
 {
@@ -23,6 +24,8 @@ namespace HypeDomino.UI.Medals
     {
         public const string CollectionPath = "/medals";
         public const string ShowcasePath = "/medals/showcase";
+
+        const string MissionSource = "mission";
 
         readonly Dictionary<string, MedalReply> shown = new();
         readonly Dictionary<string, string> earnedAt = new();
@@ -64,6 +67,15 @@ namespace HypeDomino.UI.Medals
             if (string.IsNullOrEmpty(id) || !shown.TryGetValue(id, out var medal)) return false;
             entry = new MedalEntry(medal, earnedAt.TryGetValue(id, out var at), at);
             return true;
+        }
+
+        public bool TryMissionProgress(string id, MissionBoard board, out MissionCard mission)
+        {
+            mission = default;
+            if (board == null || string.IsNullOrEmpty(id) || earnedAt.ContainsKey(id) || !shown.TryGetValue(id, out var medal) || medal.sources == null) return false;
+            foreach (var source in medal.sources)
+                if (source?.type == MissionSource && TryAchievement(board, source.@ref, out mission)) return true;
+            return false;
         }
 
         public bool IsShowcased(string id) => ShowcaseIndexOf(id) >= 0;
@@ -122,6 +134,17 @@ namespace HypeDomino.UI.Medals
             var draft = new List<string>(showcase.Count + 1);
             foreach (var medal in showcase) draft.Add(medal.id);
             return draft;
+        }
+
+        static bool TryAchievement(MissionBoard board, string missionId, out MissionCard mission)
+        {
+            for (var at = 0; at < board.Count(MissionTab.Achievement); at++)
+            {
+                mission = board.Card(MissionTab.Achievement, at);
+                if (mission.Id == missionId) return true;
+            }
+            mission = default;
+            return false;
         }
 
         static MedalShowcaseRequest Request(List<string> draft) => new() { medals = draft.ToArray() };
