@@ -17,6 +17,16 @@ namespace HypeDomino.Tests.EditMode
         const string FoxAvatar = "cosmetic/avatar/fox/static";
         const string GoldFrame = "cosmetic/frame/gold/static";
         const string JadeTile = "cosmetic/tile/jade/static";
+        const string StarterAvatar = "cosmetic/avatar/starter/static";
+        const string OwlAvatar = "cosmetic/avatar/owl/static";
+        const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
+{""id"":""avatar.starter"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/starter/static"",""sources"":[{""type"":""default""}]},
+{""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
+{""id"":""avatar.owl"",""type"":""avatar"",""rarityId"":""common"",""availability"":""retired"",""staticAddress"":""cosmetic/avatar/owl/static""},
+{""id"":""avatar.gone"",""type"":""avatar"",""rarityId"":""common"",""availability"":""disabled"",""staticAddress"":""cosmetic/avatar/gone/static""},
+{""id"":""frame.gold"",""type"":""frame"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/frame/gold/static""},
+{""id"":""table.neon"",""type"":""table"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""},
+{""id"":""tile.jade"",""type"":""tile"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/tile/jade/static""}]}";
 
         sealed class Source : ICosmeticArtSource<Sprite>
         {
@@ -43,6 +53,7 @@ namespace HypeDomino.Tests.EditMode
 
         Source source;
         MatchPrefetch prefetch;
+        CosmeticManifest manifest;
         Texture2D texture;
         Sprite art;
 
@@ -50,6 +61,7 @@ namespace HypeDomino.Tests.EditMode
         public void CreatePrefetch()
         {
             source = new Source();
+            Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out manifest));
             prefetch = new MatchPrefetch(new CosmeticArtCache<Sprite>(source));
             texture = new Texture2D(4, 4);
             art = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.zero);
@@ -73,21 +85,32 @@ namespace HypeDomino.Tests.EditMode
 
         static RosterEntry Player(Seat seat, string avatar, string frame, string tile) => new() { Seat = seat, Avatar = avatar, Frame = frame, Tile = tile };
 
-        [TestCase("avatar", "avatar.fox", ExpectedResult = FoxAvatar)]
-        [TestCase("table", "table.neon", ExpectedResult = NeonTable)]
-        [TestCase("avatar", "frame.gold", ExpectedResult = null)]
-        [TestCase("avatar", "avatarfox", ExpectedResult = null)]
-        [TestCase("avatar", "avatar.", ExpectedResult = null)]
-        [TestCase("avatar", "avatar.fox.big", ExpectedResult = null)]
-        [TestCase("avatar", "avatar.fox/static", ExpectedResult = null)]
-        [TestCase("avatar", "", ExpectedResult = null)]
-        [TestCase("avatar", null, ExpectedResult = null)]
-        public string AnItemIdGivesTheStaticAddressOfItsType(string type, string itemId) => CosmeticAddresses.Static(type, itemId);
+        void Start(MatchSnapshot view) => prefetch.Start(view, manifest);
+
+        [TestCase("avatar.gone")]
+        [TestCase("avatar.ghost")]
+        [TestCase("frame.gold")]
+        public void AnAvatarTheSeatDoesNotShowLoadsTheDefaultInstead(string avatarId)
+        {
+            Start(Snapshot(string.Empty,
+                Player(Seat.X, avatarId, string.Empty, string.Empty),
+                Player(Seat.Y, "avatar.starter", string.Empty, string.Empty)));
+
+            CollectionAssert.AreEqual(new[] { StarterAvatar }, source.Loads);
+        }
+
+        [Test]
+        public void ARetiredAvatarLoadsItsOwnStatic()
+        {
+            Start(Snapshot(string.Empty, Player(Seat.X, "avatar.owl", string.Empty, string.Empty)));
+
+            CollectionAssert.AreEqual(new[] { OwlAvatar }, source.Loads);
+        }
 
         [Test]
         public void TheTableAndEachPlayersAvatarFrameAndTileAreLoadedOnce()
         {
-            prefetch.Start(Snapshot("table.neon",
+            Start(Snapshot("table.neon",
                 Player(Seat.X, "avatar.fox", "frame.gold", "tile.jade"),
                 Player(Seat.Y, "avatar.fox", "frame.gold", "tile.jade")));
 
@@ -99,7 +122,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void EmptyAndMalformedIdsAreSkipped()
         {
-            prefetch.Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, "frame.gold")));
+            Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, "frame.gold")));
 
             CollectionAssert.AreEqual(new[] { FoxAvatar }, source.Loads);
         }
@@ -107,7 +130,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void LoadedRisesAsEachStaticSettles()
         {
-            prefetch.Start(Snapshot("table.neon", Player(Seat.X, "avatar.fox", "frame.gold", "tile.jade")));
+            Start(Snapshot("table.neon", Player(Seat.X, "avatar.fox", "frame.gold", "tile.jade")));
             Assert.AreEqual(0f, prefetch.Loaded);
 
             source.Finish(NeonTable, art);
@@ -123,7 +146,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AFailedLoadCountsAsSettledSoTheMatchNeverWaitsForIt()
         {
-            prefetch.Start(Snapshot("table.neon"));
+            Start(Snapshot("table.neon"));
 
             source.Finish(NeonTable, null);
 
@@ -133,7 +156,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void NothingToLoadIsDoneAtOnce()
         {
-            prefetch.Start(Snapshot(string.Empty));
+            Start(Snapshot(string.Empty));
 
             Assert.IsTrue(prefetch.Done);
             Assert.AreEqual(1f, prefetch.Loaded);
@@ -142,7 +165,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ReleaseFreesTheLoadedArt()
         {
-            prefetch.Start(Snapshot("table.neon"));
+            Start(Snapshot("table.neon"));
             source.Finish(NeonTable, art);
 
             prefetch.Release();
@@ -154,9 +177,9 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ALoadFinishingAfterReleaseIsFreedAndNotCounted()
         {
-            prefetch.Start(Snapshot("table.neon", Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
+            Start(Snapshot("table.neon", Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
             prefetch.Release();
-            prefetch.Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
+            Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
 
             source.Finish(NeonTable, art);
 
@@ -167,10 +190,10 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void StartingAgainReleasesThePreviousMatch()
         {
-            prefetch.Start(Snapshot("table.neon"));
+            Start(Snapshot("table.neon"));
             source.Finish(NeonTable, art);
 
-            prefetch.Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
+            Start(Snapshot(string.Empty, Player(Seat.X, "avatar.fox", string.Empty, string.Empty)));
 
             CollectionAssert.AreEqual(new[] { NeonTable }, source.Releases);
             CollectionAssert.AreEqual(new[] { NeonTable, FoxAvatar }, source.Loads);

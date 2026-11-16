@@ -25,17 +25,17 @@ namespace HypeDomino.Game.Match
 
         public string this[int index] => held[index];
 
-        public void Start(MatchSnapshot view)
+        public void Start(MatchSnapshot view, CosmeticManifest manifest)
         {
             Release();
-            Hold(CosmeticAddresses.Table, view.Table);
+            Hold(manifest.ShownOf(CosmeticAddresses.Table, view.Table));
             var roster = view.Roster;
             for (var at = 0; at < roster.Count; at++)
             {
                 var entry = roster[at];
-                Hold(CosmeticAddresses.Avatar, entry.Avatar);
-                Hold(CosmeticAddresses.Frame, entry.Frame);
-                Hold(CosmeticAddresses.Tile, entry.Tile);
+                Hold(manifest.ShownOf(CosmeticAddresses.Avatar, entry.Avatar));
+                Hold(manifest.ShownOf(CosmeticAddresses.Frame, entry.Frame));
+                Hold(manifest.ShownOf(CosmeticAddresses.Tile, entry.Tile));
             }
             var current = ticket;
             for (var at = 0; at < held.Count; at++) stills.Acquire(held[at], _ => OnSettled(current));
@@ -49,10 +49,10 @@ namespace HypeDomino.Game.Match
             Settled = 0;
         }
 
-        void Hold(string type, string itemId)
+        void Hold(CosmeticItem item)
         {
-            var address = CosmeticAddresses.Static(type, itemId);
-            if (address != null && !held.Contains(address)) held.Add(address);
+            var address = item?.Art.StaticAddress;
+            if (!string.IsNullOrEmpty(address) && !held.Contains(address)) held.Add(address);
         }
 
         void OnSettled(int from)
