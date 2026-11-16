@@ -2,6 +2,8 @@ package adminapi_test
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +12,7 @@ import (
 
 func bundleRows(t *testing.T, a *api, token, id string) []map[string]any {
 	t.Helper()
-	status, body := a.call("GET", "/admin/reward-bundles", token, nil)
+	status, body := a.call("GET", "/admin/reward-bundles?limit=200&q="+url.QueryEscape(id), token, nil)
 	expect(t, status, body, http.StatusOK, "")
 	var rows []map[string]any
 	for _, row := range body["bundles"].([]any) {
@@ -50,6 +52,45 @@ func TestRewardBundlesListTheDefaultsAnyRoleCanSee(t *testing.T) {
 	}
 }
 
+func bundleIDs(t *testing.T, a *api, token, query string) []string {
+	t.Helper()
+	status, body := a.call("GET", "/admin/reward-bundles?"+query, token, nil)
+	expect(t, status, body, http.StatusOK, "")
+	var ids []string
+	for _, row := range body["bundles"].([]any) {
+		ids = append(ids, row.(map[string]any)["id"].(string))
+	}
+	return ids
+}
+
+func TestRewardBundlesPageAndFilterOnTheServer(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.Analyst)
+	analyst := a.signIn("leyla")
+
+	every := bundleIDs(t, a, analyst, "limit=200")
+	if len(every) < 3 {
+		t.Fatalf("too few default bundles to page: %v", every)
+	}
+	first, second := bundleIDs(t, a, analyst, "limit=1"), bundleIDs(t, a, analyst, "limit=1&after="+url.QueryEscape(every[0]))
+	if strings.Join(first, ",") != every[0] || strings.Join(second, ",") != every[1] {
+		t.Fatalf("pages %v %v of %v", first, second, every)
+	}
+	if gold := bundleIDs(t, a, analyst, "q=RANK_GOLD"); strings.Join(gold, ",") != "bundle.rank_gold" {
+		t.Fatalf("search %v", gold)
+	}
+	if rated := bundleIDs(t, a, analyst, "domain=rating&q=rank_gold"); strings.Join(rated, ",") != "bundle.rank_gold" {
+		t.Fatalf("rating %v", rated)
+	}
+	if none := bundleIDs(t, a, analyst, "domain=shop"); len(none) != 0 {
+		t.Fatalf("shop %v", none)
+	}
+	for _, query := range []string{"limit=x", "differing=yes"} {
+		status, body := a.call("GET", "/admin/reward-bundles?"+query, analyst, nil)
+		expect(t, status, body, http.StatusBadRequest, "invalid")
+	}
+}
+
 func TestRewardBundlesTrackUsesValueAndDifferingContent(t *testing.T) {
 	a := newAPI(t)
 	a.create("leyla@example.com", rbac.LiveOps)
@@ -86,6 +127,9 @@ func TestRewardBundlesTrackUsesValueAndDifferingContent(t *testing.T) {
 	if len(rows) != 2 || rows[0]["differs"] != true || rows[1]["differs"] != true {
 		t.Fatalf("differing content %v", rows)
 	}
+	if differing := bundleIDs(t, a, liveOps, "differing=true&q=bundle.wins&limit=1"); strings.Join(differing, ",") != "bundle.wins,bundle.wins" {
+		t.Fatalf("a page keeps every row of its last id: %v", differing)
+	}
 }
 
 func TestRewardBundlesCoverTheShopThePassAndPromoCampaigns(t *testing.T) {
@@ -110,7 +154,7 @@ func TestRewardBundlesCoverTheShopThePassAndPromoCampaigns(t *testing.T) {
 	if len(codes) != 1 || len(codes[0]["usedBy"].([]any)) != 1 || codes[0]["usedBy"].([]any)[0].(map[string]any)["object"] != "campaign.launch_week" {
 		t.Fatalf("a campaign is one use however many codes it has: %v", codes)
 	}
-	status, body = a.call("GET", "/admin/reward-bundles", liveOps, nil)
+	status, body = a.call("GET", "/admin/reward-bundles?domain=pass&limit=200", liveOps, nil)
 	expect(t, status, body, http.StatusOK, "")
 	if !grantsFrom(body, "pass", "premium.30") {
 		t.Fatalf("no pass level use in %v", body)
@@ -213,7 +257,7 @@ func TestARewardBundleWithAnotherHolderOrDifferingContentIsNotEditedHere(t *test
 
 func passBundleWithCoins(t *testing.T, a *api, token string) map[string]any {
 	t.Helper()
-	status, body := a.call("GET", "/admin/reward-bundles", token, nil)
+	status, body := a.call("GET", "/admin/reward-bundles?domain=pass&limit=200", token, nil)
 	expect(t, status, body, http.StatusOK, "")
 	for _, row := range body["bundles"].([]any) {
 		entry := row.(map[string]any)

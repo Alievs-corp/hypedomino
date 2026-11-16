@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -48,11 +50,13 @@ type coverageView struct {
 	Keys     int                  `json:"keys"`
 	Approved int                  `json:"approved"`
 	Percent  float64              `json:"percent"`
-	Missing  []string             `json:"missing"`
 }
 
 type stringsResponse struct {
-	Strings  []stringView   `json:"strings"`
+	Strings []stringView `json:"strings"`
+}
+
+type coverageResponse struct {
 	Coverage []coverageView `json:"coverage"`
 }
 
@@ -169,7 +173,12 @@ func (h *Handler) refuseStrings(w http.ResponseWriter, err error, problems []gam
 }
 
 func (h *Handler) listStrings(w http.ResponseWriter, r *http.Request, p principal) {
-	entries, err := h.strings.Entries(r.Context())
+	query, err := stringsQuery(r)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	entries, err := h.strings.Page(r.Context(), query)
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -178,12 +187,30 @@ func (h *Handler) listStrings(w http.ResponseWriter, r *http.Request, p principa
 	for _, entry := range entries {
 		views = append(views, viewString(entry))
 	}
-	report := gamestrings.Report(entries)
+	reply(w, http.StatusOK, stringsResponse{Strings: views})
+}
+
+func stringsQuery(r *http.Request) (gamestrings.EntryQuery, error) {
+	query := r.URL.Query()
+	limit, err := queuePageLimit(query.Get("limit"))
+	missing := gamestrings.Language(query.Get("missing"))
+	if err != nil || (missing != "" && !slices.Contains(gamestrings.Languages, missing)) {
+		return gamestrings.EntryQuery{}, errMalformed
+	}
+	return gamestrings.EntryQuery{Text: strings.TrimSpace(query.Get("q")), Missing: missing, After: query.Get("after"), Limit: limit}, nil
+}
+
+func (h *Handler) stringsCoverage(w http.ResponseWriter, r *http.Request, p principal) {
+	report, err := h.strings.Coverage(r.Context())
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
 	coverage := make([]coverageView, 0, len(report))
 	for _, c := range report {
-		coverage = append(coverage, coverageView{Language: c.Language, Keys: c.Keys, Approved: c.Approved, Percent: c.Percent, Missing: c.Missing})
+		coverage = append(coverage, coverageView{Language: c.Language, Keys: c.Keys, Approved: c.Approved, Percent: c.Percent})
 	}
-	reply(w, http.StatusOK, stringsResponse{Strings: views, Coverage: coverage})
+	reply(w, http.StatusOK, coverageResponse{Coverage: coverage})
 }
 
 func (h *Handler) saveString(w http.ResponseWriter, r *http.Request, p principal) {
@@ -334,7 +361,15 @@ func importEntries(entries []gamestrings.Entry, language gamestrings.Language, c
 }
 
 func (h *Handler) listBundles(w http.ResponseWriter, r *http.Request, p principal) {
-	bundles, err := h.strings.Bundles(r.Context())
+	query := r.URL.Query()
+	language := gamestrings.Language(query.Get("language"))
+	limit, limitErr := queuePageLimit(query.Get("limit"))
+	before, beforeErr := optionalNumber(query.Get("before"))
+	if limitErr != nil || beforeErr != nil || !slices.Contains(gamestrings.Languages, language) {
+		h.refuse(w, errMalformed)
+		return
+	}
+	bundles, err := h.strings.Bundles(r.Context(), language, int(before), limit)
 	if err != nil {
 		h.refuse(w, err)
 		return
