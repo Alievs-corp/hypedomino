@@ -1057,7 +1057,7 @@ export const az: Messages = {
   "assets.recheck": "Yoxla",
   "assets.upload_failed": "Fayl storage-ə çatmadı. Sətir gözləmədə qalır: bağlantını və storage CORS ayarını yoxlayıb yenidən yükləyin.",
   "assets.refused": "Rədd edildi",
-  "assets.issue.item": "Item id tip və slug-dan ibarətdir, məsələn avatar.fox: kiçik hərf, rəqəm və alt xətt.",
+  "assets.issue.item": "Item id tip və slug-dan ibarətdir, məsələn avatar.fox və ya medal.wins_50: kiçik hərf, rəqəm və alt xətt.",
   "assets.empty": "Hələ yüklənmiş asset yoxdur.",
   "assets.preview": "Görünüş",
   "assets.address": "Ünvan",

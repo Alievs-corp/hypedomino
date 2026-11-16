@@ -219,7 +219,7 @@ Lifecycle: create and edit as drafts; publish adds the item to the next manifest
 
 | Field | Rule |
 |---|---|
-| `address` | Server: from item id and slot (`docs/cosmetics.md` 8.1) |
+| `address` | Server: from item id and slot (`docs/cosmetics.md` 8.1); for a medal, `medal/<slug>/static` (5.9) |
 | `slot` | `static`, `anim`, `clip/<name>`, `layer/<name>` |
 | `file` | Uploaded through a signed URL to object storage (#135) |
 | `format`, `width`, `height`, `bytes`, `frames` | Server: measured and checked against the limits of #93 and #135 |
@@ -229,7 +229,7 @@ Lifecycle: create and edit as drafts; publish adds the item to the next manifest
 
 Lifecycle: upload, check, include in a catalog build, publish with the item. An asset of a published item is never deleted; a new upload makes a new item revision.
 
-Built so far (#135): the `static` slot only, through `/assets`. `POST /admin/assets/uploads` records the row and returns a signed `PUT` URL; `POST /admin/assets/{id}/check` reads the object back and records `format`, `width`, `height`, `bytes`, `frames` and `contentHash`, with `format` (a PNG) and `alpha` (straight alpha, `docs/asset-workflow.md` 5.3) as the checks that can refuse. A rejected row stays listed; a new upload makes a new row. `GET /admin/assets` lists the newest rows first, 50 a page (at most 200 through `limit`), with `status` as the state filter, `item` as an item id prefix search and `before=<asset id>` for the next page (#148). Every step is audited; a signed URL is never stored. Other slots answer `asset_slot_unsupported`; their format is proposed in ADR 0012 and their upload is not built. Size, atlas and frame limits are measured where possible but refuse nothing until O-5 and O-6 of `docs/asset-workflow.md` set them. `catalogVersion`, the catalog build and publishing with the item are not built, so an uploaded file does not reach players yet.
+Built so far (#135): the `static` slot only, through `/assets`. `POST /admin/assets/uploads` takes a cosmetic item id or a medal id (`medal.<slug>`, #178), records the row and returns a signed `PUT` URL; `POST /admin/assets/{id}/check` reads the object back and records `format`, `width`, `height`, `bytes`, `frames` and `contentHash`, with `format` (a PNG) and `alpha` (straight alpha, `docs/asset-workflow.md` 5.3) as the checks that can refuse. A rejected row stays listed; a new upload makes a new row. `GET /admin/assets` lists the newest rows first, 50 a page (at most 200 through `limit`), with `status` as the state filter, `item` as an item id prefix search and `before=<asset id>` for the next page (#148). Every step is audited; a signed URL is never stored. Other slots answer `asset_slot_unsupported`; their format is proposed in ADR 0012 and their upload is not built. Size, atlas and frame limits are measured where possible but refuse nothing until O-5 and O-6 of `docs/asset-workflow.md` set them. `catalogVersion`, the catalog build and publishing with the item are not built, so an uploaded file does not reach players yet.
 
 ### 5.3 Rarity table
 
@@ -343,11 +343,13 @@ Rules: `docs/pass-missions-medals.md` section 5.
 | `revision` | Server: +1 on every published change |
 | `nameKey`, `descriptionKey` | Server: `medal.<slug>.name`, `medal.<slug>.description`; the values are edited as game strings (5.15); the description says how the medal is earned |
 | `rarityId` | Picked from the published rarity table, guided by the expected earn share (`docs/pass-missions-medals.md` 5.3); the list shows the measured share from #147 |
-| `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2) |
+| `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2): a publish or rollback is refused (`medal_art_missing`, naming the medals) while a listed medal has no `static` upload that passed its checks |
 | `sources` | At least one: `mission` (achievement or event mission id) or `rank_reward` (#120 reward id) |
 | `availability` | `live`, `retired`, `disabled` (`docs/cosmetics.md` section 6) |
 
 Medals are granted only through a bundle of a listed source (`docs/economy.md` section 4); pass tracks, shop offers and promo codes never carry one. Grant rules are #129.
+
+Medal art is uploaded on `/assets` with the medal id as the item id, before the medal is published. The file of `medal.<slug>` is `assets-src/medal/<slug>/export/static.png` (`docs/pass-missions-medals.md` 5.6).
 
 ### 5.10 Leaderboard emblems
 
