@@ -450,6 +450,7 @@ function scoreCascadeMembers(tokens) {
     intArray("StepShakeDurationMs", stepInts("shake", (step) => shake(step).durationMs)),
     intArray("ChainBoostSteps", chainBoost.map((boost, index) => intLiteral(["scoreCascade", "chainBoost", index, "addSteps"], boost.addSteps))),
     intArray("ParticlesOfEffectLevel", levels.map((name) => intLiteral(["effects", "budgets", "scoreCascade", name, "particles"], tokens.effects.budgets.scoreCascade[name].particles))),
+    intArray("StepGlowLevel", steps.map((step) => Object.keys(tokens.glow).indexOf(step.glow))),
     `public const int ChainStepGapMs = ${intLiteral(["scoreCascade", "chainStepGapMs"], chainStepGapMs)};`,
     `public const int RollMsPer5Points = ${intLiteral(["scoreCascade", "handPoints", "rollMsPer5Points"], handPoints.rollMsPer5Points)};`,
     `public const int RollMaxMs = ${intLiteral(["scoreCascade", "handPoints", "rollMaxMs"], handPoints.rollMaxMs)};`,
@@ -472,6 +473,24 @@ function effectMembers(budgets) {
   ];
 }
 
+function colorMembers(color) {
+  const entries = flatten(color);
+  return [
+    ...entries.map(([path, hex]) => `public static readonly Color32 ${memberName(path)} = ${color32(hex)};`),
+    stringArray("Paths", entries.map(([path]) => ["color", ...path].join("."))),
+    `public static readonly Color32[] OfPath = { ${entries.map(([path]) => memberName(path)).join(", ")} };`,
+  ];
+}
+
+function glowMembers(glow) {
+  const entries = Object.entries(glow);
+  return [
+    stringArray("NameOfLevel", entries.map(([name]) => name)),
+    floatArray("AlphaOfLevel", entries.map(([, level]) => level.alpha)),
+    floatArray("ScaleOfLevel", entries.map(([, level]) => level.scale)),
+  ];
+}
+
 function csharpEnum(name, keys) {
   return [`    public enum ${name}`, "    {", ...keys.map((key) => `        ${pascal(key)},`), "    }"].join("\n");
 }
@@ -489,7 +508,7 @@ function typographyMembers(typography) {
 export function csharpTokens(tokens) {
   const { motion } = tokens;
   const classes = [
-    csharpClass("TokenColor", flatten(tokens.color).map(([path, hex]) => `public static readonly Color32 ${memberName(path)} = ${color32(hex)};`)),
+    csharpClass("TokenColor", colorMembers(tokens.color)),
     csharpClass("TokenOpacity", constants(tokens.opacity, "float", (_, value) => floatLiteral(value))),
     csharpClass("TokenSpacing", constants(tokens.spacing, "int", intLiteral)),
     csharpClass("TokenRadius", constants(tokens.radius, "int", intLiteral)),
@@ -500,12 +519,14 @@ export function csharpTokens(tokens) {
     csharpClass("TokenTypography", typographyMembers(tokens.typography)),
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
+    csharpClass("TokenGlow", glowMembers(tokens.glow)),
     csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`, `public const int MaxPresentationLagMs = ${intLiteral(["motion", "maxPresentationLagMs"], motion.maxPresentationLagMs)};`]),
     csharpClass("TokenEffectLevel", levels.flatMap((name) => [
       `public const int ${pascal(name)}MaxAnimatedCosmetics = ${intLiteral(["effects", "levels", name, "maxAnimatedCosmetics"], tokens.effects.levels[name].maxAnimatedCosmetics)};`,
       `public const float ${pascal(name)}WorkTimeP95Ms = ${floatLiteral(tokens.effects.levels[name].workTimeP95Ms)};`,
       `public const int ${pascal(name)}MaxTweens = ${intLiteral(["effects", "levels", name, "maxTweens"], tokens.effects.levels[name].maxTweens)};`,
       `public const int ${pascal(name)}MaxParticles = ${intLiteral(["effects", "levels", name, "maxParticles"], tokens.effects.levels[name].maxParticles)};`,
+      `public const int ${pascal(name)}MaxOverdrawLayers = ${intLiteral(["effects", "levels", name, "maxOverdrawLayers"], tokens.effects.levels[name].maxOverdrawLayers)};`,
     ])),
     csharpEnum("TokenEffectKind", Object.keys(tokens.effects.budgets)),
     csharpClass("TokenEffect", effectMembers(tokens.effects.budgets)),

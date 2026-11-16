@@ -208,6 +208,21 @@ test("C# tokens carry each effect's particles per level by kind and each level's
   assert.ok(source.includes("public static readonly int[] PooledOfKind = { 4, 6, 2, 1, 1, 1, 1, 1, 4 };"));
 });
 
+test("C# tokens carry what the effect player resolves at load: colour paths, glow levels, overdraw caps and step glows", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes(`@"color.gold.hi"`));
+  assert.ok(source.includes("public static readonly Color32[] OfPath = { BackgroundBase,"));
+  const glows = Object.keys(tokens.glow);
+  assert.ok(source.includes(`public static readonly string[] NameOfLevel = { ${glows.map((name) => `@"${name}"`).join(", ")} };`));
+  assert.ok(source.includes(`public static readonly float[] AlphaOfLevel = { ${glows.map((name) => `${tokens.glow[name].alpha}f`).join(", ")} };`));
+  for (const level of ["low", "medium", "high"]) {
+    const name = level[0].toUpperCase() + level.slice(1);
+    assert.ok(source.includes(`public const int ${name}MaxOverdrawLayers = ${tokens.effects.levels[level].maxOverdrawLayers};`), level);
+  }
+  const stepGlows = tokens.scoreCascade.steps.map((step) => glows.indexOf(step.glow));
+  assert.ok(source.includes(`public static readonly int[] StepGlowLevel = { ${stepGlows.join(", ")} };`));
+});
+
 test("the built-in rarity defaults of the client match the tokens", () => {
   const committed = readFileSync(fileURLToPath(new URL(rarityDefaultsPath, repoRoot)), "utf8");
   assert.equal(committed, rarityDefaults(tokens), "run npm run tokens:gen and commit the result");
