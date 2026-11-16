@@ -30,7 +30,7 @@ namespace HypeDomino.Bench
         const float SwipeMinUnits = 200f;
         const float SmallestTileShortSide = 41.7f;
         const float MedianTileShortSide = 65f;
-        const float LargestFrameSide = 400f;
+        const float LargestFrameSide = 256f;
         const int AvatarColumns = 5;
         const int AvatarRows = 3;
         const int FrameColumns = 5;

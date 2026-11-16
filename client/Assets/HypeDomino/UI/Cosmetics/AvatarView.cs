@@ -1,3 +1,4 @@
+using System;
 using HypeDomino.UI.Rarity;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,15 +17,20 @@ namespace HypeDomino.UI.Cosmetics
 
         CosmeticStage stage;
         string markRarityId;
+        Action fitArt;
 
         public CosmeticImage Avatar => avatar;
 
         public CosmeticImage Frame => frame;
 
+        Action FitArtAction => fitArt ??= FitArt;
+
         public void Configure(CosmeticImage avatarImage, CosmeticImage frameImage, RarityHalo haloMark, RarityDiamond diamondMark)
         {
+            StopWatchingFrame();
             avatar = avatarImage;
             frame = frameImage;
+            if (isActiveAndEnabled) WatchFrame();
             halo = haloMark;
             diamond = diamondMark;
             FitArt();
@@ -47,17 +53,42 @@ namespace HypeDomino.UI.Cosmetics
             ShowMarks();
         }
 
-        void OnEnable() => FitArt();
+        void OnEnable()
+        {
+            WatchFrame();
+            FitArt();
+        }
+
+        void OnDisable() => StopWatchingFrame();
 
         void OnRectTransformDimensionsChange() => FitArt();
+
+        void WatchFrame()
+        {
+            if (frame != null) frame.Rested += FitArtAction;
+        }
+
+        void StopWatchingFrame()
+        {
+            if (frame != null) frame.Rested -= FitArtAction;
+        }
 
         void FitArt()
         {
             var box = ((RectTransform)transform).rect;
-            var side = Mathf.Max(0f, Mathf.Min(box.width, box.height));
+            var side = Mathf.Clamp(Mathf.Min(box.width, box.height), 0f, LargestFrameSide());
             FitSquare(avatar, side);
             FitSquare(frame, side);
             FitSquare(halo, side);
+        }
+
+        float LargestFrameSide()
+        {
+            var sprite = frame != null ? frame.Shown : null;
+            if (sprite == null) return float.PositiveInfinity;
+            var canvas = GetComponentInParent<Canvas>();
+            var scale = canvas != null && canvas.rootCanvas.scaleFactor > 0f ? canvas.rootCanvas.scaleFactor : 1f;
+            return Mathf.Max(sprite.rect.width, sprite.rect.height) / scale;
         }
 
         static void FitSquare(Component art, float side)
