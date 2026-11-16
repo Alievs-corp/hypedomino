@@ -150,6 +150,18 @@ namespace HypeDomino.UI.Tokens
         public static readonly Vector4 Linear = new Vector4(0f, 0f, 1f, 1f);
     }
 
+    public static class TokenElevation
+    {
+        public const int E0OffsetY = 0;
+        public const float E0Alpha = 0f;
+        public const int E1OffsetY = 4;
+        public const float E1Alpha = 0.35f;
+        public const int E2OffsetY = 8;
+        public const float E2Alpha = 0.45f;
+        public const int E3OffsetY = 16;
+        public const float E3Alpha = 0.55f;
+    }
+
     public static class TokenGlow
     {
         public static readonly string[] NameOfLevel = { @"none", @"soft", @"strong", @"intense" };

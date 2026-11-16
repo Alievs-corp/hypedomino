@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.UI.Tokens;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,18 +7,31 @@ namespace HypeDomino.UI.Board
 {
     public sealed class BoardTilesView : MonoBehaviour
     {
+        static readonly Color32 RestingShadowTint = new Color32(TokenColor.Shadow.r, TokenColor.Shadow.g, TokenColor.Shadow.b, (byte)Mathf.RoundToInt(TokenElevation.E1Alpha * byte.MaxValue));
+
         [SerializeField] TileFaceSet faceSet;
         [SerializeField] Image[] tiles = Array.Empty<Image>();
+        [SerializeField] Sprite shadowSprite;
+        [SerializeField] Image[] shadows = Array.Empty<Image>();
 
         public int Count { get; private set; }
 
         public int Capacity => tiles.Length;
 
-        public void Configure(TileFaceSet faces, Image[] tileImages)
+        public void Configure(TileFaceSet faces, Image[] tileImages, Sprite shadow, Image[] shadowImages)
         {
             faceSet = faces;
             tiles = tileImages ?? Array.Empty<Image>();
-            for (var i = 0; i < tiles.Length; i++) tiles[i].raycastTarget = false;
+            shadowSprite = shadow;
+            shadows = shadowImages ?? Array.Empty<Image>();
+            if (shadows.Length != tiles.Length) throw new ArgumentException($"{shadows.Length} shadows for {tiles.Length} tiles", nameof(shadowImages));
+            for (var i = 0; i < tiles.Length; i++)
+            {
+                tiles[i].raycastTarget = false;
+                shadows[i].raycastTarget = false;
+                shadows[i].sprite = shadowSprite;
+                shadows[i].color = RestingShadowTint;
+            }
         }
 
         public void Show(ChainLayout layout)
@@ -27,17 +41,25 @@ namespace HypeDomino.UI.Board
             {
                 var shown = i < Count;
                 tiles[i].enabled = shown;
-                if (shown) Place(tiles[i], layout[i], layout.OnBoard(layout[i].Center), layout.Scale);
+                shadows[i].enabled = shown;
+                if (shown) Place(i, layout[i], layout.OnBoard(layout[i].Center), layout.Scale);
             }
         }
 
-        void Place(Image image, PlacedDomino tile, Vector2 position, float shortSide)
+        void Place(int slot, PlacedDomino tile, Vector2 position, float shortSide)
         {
-            image.sprite = faceSet.Face(new Domino(tile.Near, tile.Far));
+            var face = faceSet.Face(new Domino(tile.Near, tile.Far));
+            var rotation = Quaternion.Euler(0f, 0f, TileFaces.Angle(tile));
+            var image = tiles[slot];
+            image.sprite = face;
             var rect = image.rectTransform;
             rect.anchoredPosition = position;
             rect.sizeDelta = new Vector2(shortSide, shortSide * 2f);
-            rect.localRotation = Quaternion.Euler(0f, 0f, TileFaces.Angle(tile));
+            rect.localRotation = rotation;
+            var shadow = shadows[slot].rectTransform;
+            shadow.anchoredPosition = new Vector2(position.x, position.y - TokenElevation.E1OffsetY);
+            shadow.sizeDelta = shadowSprite.rect.size * (shortSide / face.rect.width);
+            shadow.localRotation = rotation;
         }
     }
 }
