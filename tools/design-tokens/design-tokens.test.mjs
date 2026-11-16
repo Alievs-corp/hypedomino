@@ -187,6 +187,21 @@ test("C# tokens carry hex colours, nested names and float easing points", () => 
   assert.ok(!source.includes("Legendary"), "rarity colours come from admin config, not constants");
 });
 
+test("C# elevation tokens carry each level's Y offset and shadow alpha", () => {
+  const source = csharpTokens(tokens);
+  assert.ok(source.includes("public static class TokenElevation"));
+  assert.ok(source.includes("public const int E0OffsetY = 0;"));
+  assert.ok(source.includes("public const int E1OffsetY = 4;"));
+  assert.ok(source.includes("public const float E1Alpha = 0.35f;"));
+  assert.ok(source.includes("public const int E3OffsetY = 16;"));
+});
+
+test("an elevation offset that is not a whole unit is reported", () => {
+  const copy = structuredClone(tokens);
+  copy.elevation.e1.offsetY = 4.5;
+  assert.throws(() => csharpTokens(copy), /elevation\.e1\.offsetY: 4\.5 is not an integer/);
+});
+
 test("C# tokens carry each effect's duration and pool size", () => {
   const source = csharpTokens(tokens);
   assert.ok(source.includes("public const int EmojiDurationMs = 1800;"));

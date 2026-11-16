@@ -49,7 +49,14 @@ def scaled_star(stars, centre, scale):
     return grown, box[:2]
 
 
-def compose(frame, master, stars, sparkles, groups):
+def silhouette_alpha(face):
+    alpha = Image.open(face).convert("RGBA").getchannel("A")
+    if alpha.size != CANVAS:
+        raise SystemExit(f"sema_loop: silhouette {face} is {alpha.size[0]}x{alpha.size[1]}, the canvas is {CANVAS[0]}x{CANVAS[1]}")
+    return alpha
+
+
+def compose(frame, master, stars, sparkles, groups, silhouette):
     pixels = np.asarray(master).astype(np.float64)
     weight = np.asarray(sparkles)[..., 3].astype(np.float64) / 255
     pixels *= (1 - weight * sparkle_dim(frame, groups))[..., None]
@@ -60,7 +67,9 @@ def compose(frame, master, stars, sparkles, groups):
             continue
         grown, origin = scaled_star(stars, STAR_CENTRES[star], 1 + STAR_PULSE_SCALE * strength)
         image.alpha_composite(grown, origin)
-    return image.resize(CANVAS, Image.Resampling.LANCZOS)
+    frame_image = image.resize(CANVAS, Image.Resampling.LANCZOS)
+    frame_image.putalpha(silhouette)
+    return frame_image
 
 
 def clear_frames(folder):
@@ -74,19 +83,21 @@ def main():
     parser = argparse.ArgumentParser(prog="sema_loop.py")
     parser.add_argument("work")
     parser.add_argument("export")
+    parser.add_argument("silhouette")
     arguments = parser.parse_args()
     master = Image.open(os.path.join(arguments.work, "sema_master.png")).convert("RGB")
     stars = Image.open(os.path.join(arguments.work, "sema_stars.png")).convert("RGBA")
     sparkles = Image.open(os.path.join(arguments.work, "sema_sparkles.png")).convert("RGBA")
     groups = sparkle_groups((master.height, master.width))
+    silhouette = silhouette_alpha(arguments.silhouette)
     anim = os.path.join(arguments.export, "anim")
     clear_frames(anim)
     for index in range(1, FRAMES + 1):
-        frame = compose(index - 1, master, stars, sparkles, groups)
+        frame = compose(index - 1, master, stars, sparkles, groups, silhouette)
         frame.save(os.path.join(anim, f"{index:04d}.png"))
         if index == STATIC_FRAME:
             frame.save(os.path.join(arguments.export, "static.png"))
-    print(f"sema_loop: wrote {FRAMES} frames and the static (frame {STATIC_FRAME}) at {CANVAS[0]}x{CANVAS[1]}")
+    print(f"sema_loop: wrote {FRAMES} frames and the static (frame {STATIC_FRAME}) at {CANVAS[0]}x{CANVAS[1]}, masked by {arguments.silhouette}")
 
 
 main()
