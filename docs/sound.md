@@ -12,8 +12,8 @@ Every sound belongs to one group of `docs/ui-motion.md` (Sound). Match sounds fo
 | `tile_draw` | sfx | A 1v1 player draws a tile from the boneyard (R-22) | 0.36 s |
 | `pass` | sfx | A seat passes (R-21, R-23), with the pass label | 0.45 s |
 | `turn_warning` | sfx | The local player's turn timer reaches `TurnWarningSeconds` (`docs/rules.md` section 11), once per turn | 0.12 s |
-| `score` | sfx | The local team's score rose, the same condition as the Score haptic | 0.90 s |
-| `combo_1` to `combo_5` | sfx | Not decided (S-1). An ascending set of five steps on one scale, made for a run of scoring turns | 0.75 s |
+| `score` | sfx | The local team's score rose by less than the first score cascade step. With the default steps every rise reaches a step, so `combo_<step>` plays instead | 0.90 s |
+| `combo_1` to `combo_5` | sfx | The local team's score rose: the step of the score cascade (`docs/vfx.md` section 5, `docs/ui-motion.md` section 8; chain boost included, as the VFX use it) picks `combo_<step>`, and step 6 (30 points or more) reuses `combo_5`. An ascending set of five steps on one scale. Owner decision 2026-11-16 (S-1) | 0.75 s |
 | `hand_end` | sfx | A hand ends (domino or block, `docs/rules.md` sections 7 and 8), when the hand summary opens | 1.60 s |
 | `match_win` | sfx | The results screen opens with the outcome won (`docs/ui-motion.md`, Match result) | 2.80 s |
 | `match_lose` | sfx | The results screen opens with the outcome lost. A viewer without an outcome hears neither | 2.20 s |
@@ -71,7 +71,7 @@ A music loop is rendered as one period of a periodic signal: notes, reverb tails
 
 ## 6. Client import
 
-The masters are copied into `client/Assets/HypeDomino/UI/Audio/Clips/Sfx/<name>.wav` and `Clips/Music/<name>.wav` (Git LFS) and imported by `HypeDomino.Editor.SoundContent` (menu HypeDomino > Import Sounds; batch `ImportAllAndExit` through the `unity-editor.yml` workflow), which also writes `UI/Audio/Resources/SoundBank.asset`, the clip of each sound and track. `combo_1` to `combo_5` are not copied until S-1 decides when they play. The import, one setting for every platform:
+The masters are copied into `client/Assets/HypeDomino/UI/Audio/Clips/Sfx/<name>.wav` and `Clips/Music/<name>.wav` (Git LFS) and imported by `HypeDomino.Editor.SoundContent` (menu HypeDomino > Import Sounds; batch `ImportAllAndExit` through the `unity-editor.yml` workflow), which also writes `UI/Audio/Resources/SoundBank.asset`, the clip of each sound and track. The import, one setting for every platform:
 
 | Setting | sfx, ui | music |
 |---|---|---|
@@ -92,6 +92,7 @@ Short clips decompressed at load cost no decode time during a match, which matte
 - A volume change applies at once to the playing voices and the music. An app pause stops the voices, ends a crossfade and pauses the music, and nothing starts until the app resumes.
 - Match sounds come from `Game/Match/SoundCues`, which reads each server view as the haptics do: the first view of a connection plays nothing. The client sees no pass or draw event, so it reads them from two views of the same hand: a draw is a smaller boneyard; a pass is a turn that moved to another seat with no new tile, no draw and no placement earlier in the turn (so ending a turn of several doubles, R-31, is no pass). The last placement of a hand arrives in the same view as the next deal, so it plays `hand_end`, not `tile_place`. `tile_place` plays when the view arrives; it moves to the settle of the tile (section 1) when the match screen drives `TilePlaceLayer`.
 - A view that ends the match plays only `match_win` or `match_lose`, and a view that ends a hand plays only `hand_end`, so the short sounds of that view do not stack on the longer one ("No sudden loud sounds").
+- A view in which the local team scores plays one scoring sound: `combo_<step>` from `EffectCues.StepOf`, the step the score cascade of `MatchEffects` shows, or `score` when the rise is below the first step. The combo replaces `score`, so the two never stack.
 - `turn_warning` plays once per local turn when `TurnTimer.IsWarning` becomes true (`SoundCues.ReadTurnWarning`), from the match screen's timer tick.
 - `ui_click` plays from `UI/Audio/ClickSound`, added to a button; a button that is not interactable is silent.
 
@@ -112,7 +113,7 @@ Short clips decompressed at load cost no decode time during a match, which matte
 
 | Id | Item | Owner |
 |---|---|---|
-| S-1 | When `combo_1` to `combo_5` play: the rules have no combo, so the trigger (for example consecutive turns in which the local team scores) is a design decision | Owner, game design |
+| S-1 | Decided 2026-11-16 by the owner: `combo_1` to `combo_5` play on the score cascade steps (section 1) | Done |
 | S-2 | Listening check by a person on Mid and High devices, speaker and headphones: levels between groups, "No sudden loud sounds", the loop seams after Unity's encoding, Vorbis quality and build size | Art team, with the wiring issue |
 | S-3 | Listening check that no melody resembles an existing work | Owner or delegate, with the cultural review |
 | S-4 | Self-check and cultural review of the sounds (`docs/localization.md` 6.1 steps 1 and 3) | Asset author, owner or delegate |

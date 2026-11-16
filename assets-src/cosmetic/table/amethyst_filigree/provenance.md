@@ -15,7 +15,9 @@ Animated table of set 1 (#174). The carpet cloth is a concept made with template
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 has no human author yet. Notes from the agent for whoever signs: no script, letters, numbers, flags, emblems, religious symbols or casino cues seen in the carpet; no team hue dominates; the pattern is geometric and floral (`docs/art-direction.md` 5.4)
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `legendary` (a painted carpet with gold-thread shimmer; #174 asks for richer art at higher rarity), source `shop:offer.table_amethyst_filigree`. The offer id is a placeholder until the shop record exists (V-15). `table.starter` stays the `common` default table.
+Proposed for the admin draft, not decided: rarity `mythic` (a painted carpet with gold-thread shimmer; #174 asks for richer art at higher rarity), source `shop:offer.table_amethyst_filigree`. The offer id is a placeholder until the shop record exists (V-15). `table.starter` stays the `common` default table.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 3 animated details (gold-thread light bands, knot twinkle, dust motes), so `mythic`, was `legendary`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifest
 

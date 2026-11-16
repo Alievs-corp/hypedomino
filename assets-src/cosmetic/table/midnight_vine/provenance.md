@@ -17,6 +17,8 @@ Animated table of set 1 (#174). The carpet cloth is a concept made with template
 
 Proposed for the admin draft, not decided: rarity `mythic` (the richest of the set, a painted carpet with two motions, tassels and shimmer; #174 asks for richer art at higher rarity), source `shop:offer.table_midnight_vine`. The offer id is a placeholder until the shop record exists (V-15). `table.starter` stays the `common` default table.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 3 animated details (tassels, gold-thread light bands, knot twinkle), so `mythic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261115-01.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signature was not validated with a C2PA tool.

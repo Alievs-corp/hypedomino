@@ -12,6 +12,7 @@ namespace HypeDomino.Tests.EditMode
     {
         static readonly string[] SfxNames =
         {
+            "combo_1", "combo_2", "combo_3", "combo_4", "combo_5",
             "hand_end", "match_lose", "match_win", "pass", "score", "tile_draw",
             "tile_place_01", "tile_place_02", "tile_place_03", "tile_place_04", "turn_warning", "ui_click",
         };
@@ -19,7 +20,7 @@ namespace HypeDomino.Tests.EditMode
         static readonly string[] MusicNames = { "lobby", "match" };
 
         [Test]
-        public void TheClientHoldsTheSoundsOfTheSpecWithoutTheUndecidedCombos()
+        public void TheClientHoldsEverySoundOfTheSpec()
         {
             CollectionAssert.AreEqual(SfxNames, SoundContent.SfxPaths().Select(Path.GetFileNameWithoutExtension).ToArray());
             CollectionAssert.AreEqual(MusicNames, SoundContent.MusicPaths().Select(Path.GetFileNameWithoutExtension).ToArray());
@@ -64,7 +65,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(SoundBank.TilePlaceVariants, bank.Variants(Sound.TilePlace));
             for (var i = 0; i < SoundBank.TilePlaceVariants; i++)
                 Assert.AreSame(Clip(SoundContent.TilePlacePath(i)), bank.Clip(Sound.TilePlace, i), $"tile_place {i}");
-            for (var sound = Sound.TileDraw; sound <= Sound.UiClick; sound++)
+            for (var sound = Sound.TileDraw; sound <= Sound.Combo5; sound++)
                 Assert.AreSame(Clip(SoundContent.SoundPath(sound)), bank.Clip(sound, 0), sound.ToString());
             Assert.AreSame(Clip(SoundContent.TrackPath(Music.Lobby)), bank.Track(Music.Lobby));
             Assert.AreSame(Clip(SoundContent.TrackPath(Music.Match)), bank.Track(Music.Match));

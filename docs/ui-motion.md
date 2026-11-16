@@ -398,7 +398,7 @@ Base scene plus effects stays within the p95 work-time gate; the checker enforce
 | `scoreCascade` | Same, scaled by step | Particle burst and glow at the popup; points fly to the team meter |
 | `spinnerFormation` | A double becomes the spinner (R-17, R-18) | Ring pulse on the double, arm markers slide out on the two new ends |
 | `domino` | Hand ends in a domino (R-32) | Localised banner in the winning team colour, burst from the last tile |
-| `block` | Hand ends in a block (R-36) | Lock stamp across the board, board dims with the scrim colour at low alpha |
+| `block` | Hand ends in a block (R-36) | Lock stamp across the board, board dims toward `color.scrim` by `opacity.disabled` (owner decision 2026-11-16, `docs/vfx.md` section 4) |
 | `matchWin` | Match ends (R-46) | Banner, confetti in the winning team colour |
 | `rankUp` | Results screen, rank rises | Rank badge scales in, rays |
 | `emoji` | A player sends an emoji | Emoji pops at the sender's avatar; one live emoji per seat, a new one replaces it |

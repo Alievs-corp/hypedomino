@@ -104,3 +104,32 @@ func TestAMedalIdNamesItsStaticAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestAMedalIsGroupedByItsFirstSourceWithAGroup(t *testing.T) {
+	types := func(id string) string {
+		return map[string]string{"mission.win_50": "achievement", "mission.spring": "event", "mission.daily_win": "daily"}[id]
+	}
+	mission := func(ref string) cosmetics.Source { return cosmetics.Source{Type: SourceMission, Ref: ref} }
+	rank := cosmetics.Source{Type: SourceRankReward, Ref: "bundle.rank_gold"}
+	cases := []struct {
+		name        string
+		sources     []cosmetics.Source
+		missionType func(string) string
+		want        string
+	}{
+		{"achievement mission", []cosmetics.Source{mission("mission.win_50")}, types, GroupAchievement},
+		{"event mission", []cosmetics.Source{mission("mission.spring")}, types, GroupEvent},
+		{"rank reward", []cosmetics.Source{rank}, types, GroupRankReward},
+		{"first source wins", []cosmetics.Source{mission("mission.spring"), rank}, types, GroupEvent},
+		{"unknown mission falls through", []cosmetics.Source{mission("mission.gone"), rank}, types, GroupRankReward},
+		{"periodic mission has no group", []cosmetics.Source{mission("mission.daily_win")}, types, ""},
+		{"no mission catalog", []cosmetics.Source{mission("mission.win_50")}, nil, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := (Medal{Sources: c.sources}).Group(c.missionType); got != c.want {
+				t.Fatalf("Group = %q, want %q", got, c.want)
+			}
+		})
+	}
+}

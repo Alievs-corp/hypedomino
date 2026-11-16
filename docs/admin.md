@@ -618,6 +618,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
 | `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
 | `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
+| `GET /admin/config/version` | V on dashboards | The active `configVersion`: the newest snapshot of any domain, with that `domain` and its `published_at`; 0 and no domain before the first publish |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
 | `GET /admin/accounts` | V on admin accounts | Every account |
@@ -648,7 +649,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/config/store-prices/sync/apply` `{"reason","ref"}` | S: push to stores on store products | Runs the plan again and writes only the `change` rows, each becoming `written` or `failed`; answers like the plan. One `push` audit entry per configured store with the counts in `after` and the config version. The run finishes even if the admin web drops the request. Needs a reason (400 `reason_required`) and a recent sign-in (403 `step_up_required`) |
 | `POST /admin/config/shop/preview` `{"catalog","at"}` | V on shop offers | Checks a draft catalog like the game servers and answers `{"at","sections":[{"section","ends_at","offers"}]}`: the offer ids each shop section shows at `at` (server time when omitted), computed by the game server's section logic. Writes nothing |
 | `GET /admin/config/cosmetics` | V on cosmetic items | The published manifest (5.1), its `config_version`, and `rules`: `types`, `rarities`, `availability`, `source_types`, `art_sources` and the `builtin` manifest; `catalog` is null before the first publish |
-| `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) |
+| `PUT /admin/config/cosmetics` `{"catalog"}` | P on cosmetic items | Publishes the items as the next manifest (Cosmetics manifest note) and uploads its file to the CDN (`docs/cosmetics.md` 7.3) in the same step, as do switch-off and rollback. Without a content store 503 `content_store_off`; when the store does not take the file 503 `content_store_unavailable`, and nothing is published |
 | `GET /admin/config/cosmetics/history` | V on cosmetic items | The last 50 manifests, newest first |
 | `POST /admin/cosmetics/items/{id}/switch-off` `{"reason","ref"}` | S: R and P for an incident switch-off on cosmetic items | Publishes the next manifest with the item `disabled` (5.1); `ref` is the incident id |
 | `POST /admin/config/cosmetics/rollback` `{"version"}` | P on cosmetic items and S: rollback on snapshots | Republishes the content of an earlier manifest under new revisions (`docs/cosmetics.md` 9) |
@@ -765,7 +766,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 
 | Group | Screen | Roles | Section |
 |---|---|---|---|
-| Home | A-1 Dashboard: active `configVersion`, scheduled change sets, pending approvals, unconfirmed break-glass actions, live control states, economy monitors (`docs/economy.md` section 10) | All | 3, 4, 8 |
+| Home | A-1 Dashboard: active `configVersion`, scheduled change sets, pending approvals, unconfirmed break-glass actions, live control states, economy monitors (`docs/economy.md` section 10). Built at `/` without scheduled change sets, which wait for A-2 (`admin/README.md`) | All | 3, 4, 8 |
 | Publishing | A-2 Change sets: list, editor, diff, validation report | `super_admin`, `content`, `live_ops` | 3.2 to 3.4 |
 | | A-3 Approvals | Accounts with P | 3.5, 8 |
 | | A-4 Snapshots and rollback | All but `analyst` | 3.7, 5.17 |

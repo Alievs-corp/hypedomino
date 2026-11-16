@@ -19,6 +19,8 @@ Animated avatar of set 1 (#171), batch C, a painted portrait made with template 
 
 Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_slate_folio`. The offer id is a placeholder until the shop record exists (V-15). One ambient motion, the curled page corner lifting and settling. Animated avatars stay at `epic` and above as in batches A and B; batch C proposes 5 epic, 3 legendary, 2 mythic, which brings the 30 animated avatars of set 1 to 15 epic, 11 legendary and 4 mythic.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (page curl), so `epic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifests
 
 Both concept files carry a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-16; the signatures were not validated with a C2PA tool.

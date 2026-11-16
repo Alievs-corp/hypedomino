@@ -491,6 +491,13 @@ function glowMembers(glow) {
   ];
 }
 
+function elevationMembers(elevation) {
+  return Object.entries(elevation).flatMap(([name, level]) => [
+    `public const int ${pascal(name)}OffsetY = ${intLiteral(["elevation", name, "offsetY"], level.offsetY)};`,
+    `public const float ${pascal(name)}Alpha = ${floatLiteral(level.alpha)};`,
+  ]);
+}
+
 function csharpEnum(name, keys) {
   return [`    public enum ${name}`, "    {", ...keys.map((key) => `        ${pascal(key)},`), "    }"].join("\n");
 }
@@ -519,6 +526,7 @@ export function csharpTokens(tokens) {
     csharpClass("TokenTypography", typographyMembers(tokens.typography)),
     csharpClass("TokenDurationMs", constants(motion.duration, "int", intLiteral)),
     csharpClass("TokenEasing", Object.entries(motion.easing).map(([name, points]) => `public static readonly Vector4 ${pascal(name)} = new Vector4(${points.map(floatLiteral).join(", ")});`)),
+    csharpClass("TokenElevation", elevationMembers(tokens.elevation)),
     csharpClass("TokenGlow", glowMembers(tokens.glow)),
     csharpClass("TokenMotion", [`public const float PressScale = ${floatLiteral(motion.pressScale)};`, `public const float PanelEnterScale = ${floatLiteral(motion.panelEnterScale)};`, `public const int MaxPresentationLagMs = ${intLiteral(["motion", "maxPresentationLagMs"], motion.maxPresentationLagMs)};`]),
     csharpClass("TokenEffectLevel", levels.flatMap((name) => [

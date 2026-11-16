@@ -139,6 +139,25 @@ func (h *Handler) publishNoted(domain func(note changeNote) configDomain) func(h
 	}
 }
 
+type activeVersionView struct {
+	ConfigVersion int64      `json:"config_version"`
+	Domain        string     `json:"domain,omitempty"`
+	PublishedAt   *time.Time `json:"published_at,omitempty"`
+}
+
+func (h *Handler) activeConfigVersion(w http.ResponseWriter, r *http.Request, p principal) {
+	active, err := snapshot.Newest(r.Context(), h.pool)
+	if errors.Is(err, snapshot.ErrNone) {
+		reply(w, http.StatusOK, activeVersionView{})
+		return
+	}
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	reply(w, http.StatusOK, activeVersionView{ConfigVersion: active.Version, Domain: active.Domain, PublishedAt: &active.At})
+}
+
 func (h *Handler) rollbackDomain(domain func() configDomain) func(http.ResponseWriter, *http.Request, principal) {
 	return func(w http.ResponseWriter, r *http.Request, p principal) {
 		var request rollbackRequest

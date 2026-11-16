@@ -24,6 +24,10 @@ Every page reads `GET /admin/me` once per request (`currentAdmin` in `src/admin/
 
 An `S` action needs a sign-in no older than `AdminStepUpMinutes` (`docs/admin.md` 9). When the API answers `step_up_required`, the screen shows `StepUpPrompt`: the same Google button, whose ID token and a new nonce go to `POST /admin/session/step-up` from a server action. The session keeps its token, and a sign-in with another account is refused (`different_account`). Once it succeeds, the action is sent again with what the admin entered. `GoogleButton` holds the shared Google Identity Services code for both. Calls to the admin API forward the browser's `X-Forwarded-For` and `User-Agent`, so the audit source is the admin's browser, not the web server.
 
+## Dashboard
+
+Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the account with its roles by their localized names and, in parallel and each only when the roles allow it: unconfirmed break-glass actions and the live control states (V on live controls, `GET /admin/live-controls/break-glass` and `GET /admin/live-controls`), the number of pending approvals with a link to `/approvals` (every admin), the active config version with its domain and publish time (`GET /admin/config/version`) and the economy monitors with their alerts and a link to `/analytics` (V on dashboards). A section whose call fails says so without hiding the others. Scheduled change sets are not shown; they come with A-2.
+
 ## Audit log
 
 `/audit` (A-38) searches `GET /admin/audit` by actor, object type and id, action, reason text and a time range, newest first, 50 per page; "older entries" continues below the last id shown (`before_id`). The form takes and shows times in UTC (AP-8): a `datetime-local` value is sent as that minute in UTC. Each entry shows the actor with the roles it used, environment, reason, reference, config version, source (address, user agent, session) and its before and after values. Which entries a role sees is decided by the API (`docs/admin.md` section 7); a malformed filter shows a notice instead of results.

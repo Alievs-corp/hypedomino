@@ -23,7 +23,7 @@ namespace HypeDomino.Game
             new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
-        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, Action<HapticCue> playHaptic, Action<MatchSounds> playSounds)
+        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, CosmeticManifestUpdater cosmetics, Action<HapticCue> playHaptic, Action<MatchSounds> playSounds)
         {
             var cues = new HapticCues();
             var sounds = new SoundCues();
@@ -33,7 +33,7 @@ namespace HypeDomino.Game
             {
                 cues.StartConnection();
                 sounds.StartConnection();
-                if (Hello(hello, flow, catalog, strings, bundles)) announced = hello;
+                if (Hello(hello, flow, catalog, strings, bundles, cosmetics)) announced = hello;
             };
             strings.Changed += () =>
             {
@@ -75,12 +75,14 @@ namespace HypeDomino.Game
 
         static bool IsWanted(string language, string selected) => language == selected || language == GameLanguage.English;
 
-        static bool Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles)
+        static bool Hello(ServerHello hello, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, CosmeticManifestUpdater cosmetics)
         {
             flow.Hello(hello);
             if (hello.Status != HelloStatus.Accepted) return false;
             catalog?.Announce(hello.CatalogVersion, hello.ContentBaseUrl);
             Fetch(hello.ContentBaseUrl, FollowStrings(hello, strings), bundles);
+            var manifest = hello.CosmeticsManifest;
+            if (manifest != null) cosmetics?.Fetch(hello.ContentBaseUrl, (int)manifest.Version, manifest.Hash);
             return true;
         }
 
@@ -102,6 +104,7 @@ namespace HypeDomino.Game
         static void OnChanged(AppState state)
         {
             FollowMatch(state, GraphicsBoot.FrameRate, ContentBoot.Catalog);
+            ContentBoot.Cosmetics?.ApplyStaged(state == AppState.Match);
             AudioBoot.FollowState(state);
             Debug.Log($"App state={state}");
         }
