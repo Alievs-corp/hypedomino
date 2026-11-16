@@ -23,6 +23,9 @@ export function objectHref(proposal: Proposal): string | null {
   if (proposal.object_type === "promo_codes") {
     return "/promo";
   }
+  if (proposal.object_type === "admin_accounts") {
+    return "/accounts";
+  }
   return proposal.object_type === "players" ? `/players/${encodeURIComponent(proposal.object_id)}` : null;
 }
 
