@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { MessageKey, Translate } from "@/i18n/translate";
 
 type QueueFilterProps = {
-  screen: "/reviews" | "/reports";
-  name: "cause" | "reason";
+  screen: "/reviews" | "/reports" | "/matches";
+  name: "cause" | "reason" | "signal";
   label: MessageKey;
   options: readonly string[];
   selected: string;
