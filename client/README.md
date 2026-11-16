@@ -232,7 +232,9 @@ Outcomes:
   - `Tick(nowMs)` ends instances that reached the effect's `DurationMsOfKind`. It runs inside the `Effect.<name>` profiler marker (`MarkerNameOf(kind)`, also `Marker`), so a component that draws the effect does its per-frame work in that marker.
   - `End(slot)` ends one instance early and `EndAll` is the jump to the final state of `docs/ui-motion.md` 6 rule 5. Both give the particles back.
 
-The `EffectPoolTests` EditMode tests check every effect's particles and pool size against the budget table, the level caps, reduce motion, eviction, expiry, the `turn` set and 0 B per frame. Drawing the particles waits for the effect art (#176).
+The `EffectPoolTests` EditMode tests check every effect's particles and pool size against the budget table, the level caps, reduce motion, eviction, expiry, the `turn` set and 0 B per frame. Drawing the particles waits for an effect player (`docs/vfx.md` section 7); the art is in `UI/Effects`.
+
+`UI/Effects` holds the shared effect sprites, their one atlas, the additive and alpha effect materials and `effects.json`, the definition of every effect per level (`docs/vfx.md`). `Editor/EffectsContent.ImportAllAndExit` (menu HypeDomino > Import Effects, or the `Unity editor method` workflow) sets the sprite import, the atlas and the materials; `EffectsContentTests` check them and `node tools/vfx/vfx.mjs` checks `effects.json` against the budgets. No effect player reads `effects.json` yet (`docs/vfx.md` section 7).
 
 ## Canvas bench
 
