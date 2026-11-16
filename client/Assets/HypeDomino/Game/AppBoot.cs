@@ -23,14 +23,16 @@ namespace HypeDomino.Game
             new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
         }
 
-        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, Action<HapticCue> playHaptic)
+        public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, Action<HapticCue> playHaptic, Action<MatchSounds> playSounds)
         {
             var cues = new HapticCues();
+            var sounds = new SoundCues();
             ServerHello announced = null;
             var followed = strings.Language;
             session.HelloReceived += hello =>
             {
                 cues.StartConnection();
+                sounds.StartConnection();
                 if (Hello(hello, flow, catalog, strings, bundles)) announced = hello;
             };
             strings.Changed += () =>
@@ -43,6 +45,7 @@ namespace HypeDomino.Game
             {
                 flow.View(view.State);
                 playHaptic(cues.Read(view));
+                playSounds(sounds.Read(view));
             };
         }
 
@@ -99,6 +102,7 @@ namespace HypeDomino.Game
         static void OnChanged(AppState state)
         {
             FollowMatch(state, GraphicsBoot.FrameRate, ContentBoot.Catalog);
+            AudioBoot.FollowState(state);
             Debug.Log($"App state={state}");
         }
     }

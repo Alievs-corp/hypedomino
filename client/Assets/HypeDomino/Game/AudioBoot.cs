@@ -1,3 +1,4 @@
+using HypeDomino.Game.Match;
 using HypeDomino.UI.Audio;
 using UnityEngine;
 
@@ -11,6 +12,8 @@ namespace HypeDomino.Game
 
         public static AudioVolumes Volumes { get; private set; }
 
+        public static SoundPlayer Player { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
@@ -20,12 +23,30 @@ namespace HypeDomino.Game
                 PlayerPrefs.GetFloat(UiKey, AudioVolumes.Full));
             Volumes.Changed += OnChanged;
             Log();
-            if (Application.isEditor) return;
-            ApplyOutput();
             var driver = new GameObject(nameof(AudioBoot)) { hideFlags = HideFlags.HideInHierarchy };
             Object.DontDestroyOnLoad(driver);
+            Player = driver.AddComponent<SoundPlayer>();
+            Player.Configure(SoundBank.Load(), Volumes, SoundPlayer.Voices, () => Time.unscaledTime * 1000f);
+            Player.MakeMain();
+            if (Application.isEditor) return;
+            ApplyOutput();
             driver.AddComponent<Driver>();
         }
+
+        public static void FollowState(AppState state)
+        {
+            if (Player != null) Player.PlayMusic(MusicFor(state));
+        }
+
+        public static Music MusicFor(AppState state) => state switch
+        {
+            AppState.Match => Music.Match,
+            AppState.Lobby => Music.Lobby,
+            AppState.Login => Music.Lobby,
+            _ => Music.None,
+        };
+
+        public static void PlayMatch(MatchSounds sounds) => SoundCues.Play(sounds, Player);
 
         static void OnChanged()
         {
