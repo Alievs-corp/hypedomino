@@ -23,6 +23,8 @@ import (
 )
 
 const (
+	AssetPageSize     = 50
+	AssetPageMax      = 200
 	assetSlotStatic   = "static"
 	assetAwaitingFile = "awaiting_file"
 	assetPassed       = "passed"
@@ -71,7 +73,20 @@ func scanAsset(row pgx.Row) (assetView, error) {
 }
 
 func (h *Handler) listAssets(w http.ResponseWriter, r *http.Request, _ principal) {
-	rows, err := h.pool.Query(r.Context(), `select `+assetColumns+` from cosmetic_assets order by created_at desc, id`)
+	query := r.URL.Query()
+	before := query.Get("before")
+	limit, err := optionalNumber(query.Get("limit"))
+	if err != nil || (before != "" && uuid.Validate(before) != nil) {
+		h.refuse(w, errMalformed)
+		return
+	}
+	if limit == 0 {
+		limit = AssetPageSize
+	}
+	rows, err := h.pool.Query(r.Context(), `select `+assetColumns+` from cosmetic_assets
+		where ($1 = '' or status = $1) and starts_with(item_id, $2)
+			and ($3 = '' or (created_at, id) < (select created_at, id from cosmetic_assets where id = nullif($3, '')::uuid))
+		order by created_at desc, id desc limit $4`, query.Get("status"), query.Get("item"), before, min(limit, AssetPageMax))
 	if err != nil {
 		h.refuse(w, err)
 		return

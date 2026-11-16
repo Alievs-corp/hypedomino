@@ -1057,6 +1057,11 @@ export const az: Messages = {
   "assets.status.awaiting_file": "Fayl gözlənilir",
   "assets.status.passed": "Keçdi",
   "assets.status.rejected": "Rədd edildi",
+  "assets.any_status": "Hər status",
+  "assets.search": "Axtar",
+  "assets.clear": "Təmizlə",
+  "assets.older": "Köhnə asset-lər",
+  "assets.empty_match": "Bu filtrə uyğun asset yoxdur.",
   "assets.check.format": "Fayl PNG deyil",
   "assets.check.alpha": "PNG-də alpha kanalı yoxdur",
 };
