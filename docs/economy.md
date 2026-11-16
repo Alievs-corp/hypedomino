@@ -116,6 +116,7 @@ guide price = GuidePriceCoins[rarity] x GuidePriceTypePercent[type] / 100
 - `GuidePriceTypePercent` per type in order `avatar`, `frame`, `table`, `tile`, `emoji`: 100, 100, 150, 125, 50. A table fills the match scene; a tile skin is on every face-down tile of its seat in every match, more visible than a frame and smaller than the table (OQ-16); an emoji is a small, frequent item. The `character` and `action` types were removed by owner decision 2026-11-12 (no 3D characters, no lobby actions).
 - `mythic` items are sold only in time-limited offers (rotation, featured, event), never as a permanent offer. A rotation offer is time-limited by its period; a featured or event offer only when its window has an end. Admin publish and `config-publish` reject a shop catalog with a `mythic` item in any other offer.
 - An animated item is priced by its rarity like a static one. The admin may set an animated `epic` offer up to half above its guide price; a `legendary` or `mythic` item is expected to be animated, so its guide price already includes the animation.
+- A static avatar is `common` or `rare`; `epic`, `legendary` and `mythic` avatars are animated (owner decision 2026-11-16).
 - The full table and the play time each price takes are in section 11.
 
 ### 3.2 Pass levels
