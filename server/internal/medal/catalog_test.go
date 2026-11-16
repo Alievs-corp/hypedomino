@@ -75,3 +75,32 @@ func TestNegativeSlotsAreRefused(t *testing.T) {
 		t.Fatalf("Validate() = %v", err)
 	}
 }
+
+func TestAMedalIdNamesItsStaticAddress(t *testing.T) {
+	cases := []struct {
+		id      string
+		valid   bool
+		address string
+	}{
+		{"medal.wins_50", true, "medal/wins_50/static"},
+		{"medal.points_1m", true, "medal/points_1m/static"},
+		{"medal.", false, ""},
+		{"medal.Wins", false, ""},
+		{"medal.wins/static", false, ""},
+		{"medal.wins.x", false, ""},
+		{"medals.wins", false, ""},
+		{"avatar.fox", false, ""},
+		{"../medal.wins", false, ""},
+		{"medal.wins\n", false, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.id, func(t *testing.T) {
+			if ValidID(c.id) != c.valid {
+				t.Fatalf("ValidID(%q) = %v", c.id, !c.valid)
+			}
+			if c.valid && StaticAddress(c.id) != c.address {
+				t.Fatalf("StaticAddress(%q) = %q", c.id, StaticAddress(c.id))
+			}
+		})
+	}
+}

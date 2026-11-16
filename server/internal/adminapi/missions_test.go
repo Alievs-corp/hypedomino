@@ -1,12 +1,16 @@
 package adminapi_test
 
 import (
+	"context"
 	"encoding/json"
+	"image"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
@@ -49,9 +53,23 @@ func without(catalog map[string]any, key, id string) map[string]any {
 	return catalog
 }
 
+func (a *api) passMedalArt(catalog map[string]any) {
+	a.t.Helper()
+	for _, entry := range catalog["medals"].([]any) {
+		id := entry.(map[string]any)["id"].(string)
+		address := "medal/" + strings.TrimPrefix(id, "medal.") + "/static"
+		_, err := a.pool.Exec(context.Background(), `insert into cosmetic_assets (id, item_id, slot, address, object_key, status, uploaded_by, created_at)
+			values ($1, $2, 'static', $3, $4, 'passed', 'art', $5)`, uuid.NewString(), id, address, address+"/"+uuid.NewString()+".png", start)
+		if err != nil {
+			a.t.Fatal(err)
+		}
+	}
+}
+
 func TestMissionsArePublishedWithServerStampsAndNeverDropped(t *testing.T) {
 	a := newAPI(t)
 	a.publishExampleCatalog()
+	a.passMedalArt(exampleCatalog(t, "medals"))
 	a.create("leyla@example.com", rbac.LiveOps)
 	liveOps, content := a.signIn("leyla"), a.signIn("ayla")
 
@@ -146,6 +164,7 @@ func TestMissionsArePublishedWithServerStampsAndNeverDropped(t *testing.T) {
 func TestAMedalKeepsTheSourcesOfPublishedMissionsAndIsNeverDropped(t *testing.T) {
 	a := newAPI(t)
 	a.publishExampleCatalog()
+	a.passMedalArt(exampleCatalog(t, "medals"))
 	a.create("leyla@example.com", rbac.LiveOps)
 	a.create("orxan@example.com", rbac.Support)
 	liveOps, content, support := a.signIn("leyla"), a.signIn("ayla"), a.signIn("orxan")
@@ -182,4 +201,84 @@ func TestAMedalKeepsTheSourcesOfPublishedMissionsAndIsNeverDropped(t *testing.T)
 	if status != http.StatusOK || listed(body["catalog"].(map[string]any), "medals", "medal.chain_100")["revision"] != float64(2) {
 		t.Fatalf("retired %d %v", status, body)
 	}
+}
+
+func TestAMedalIsPublishedOnlyOnceItsStaticPassed(t *testing.T) {
+	cases := []struct {
+		name    string
+		prepare func(t *testing.T, a *api, store *memoryStore, token string)
+		status  int
+		refusal string
+	}{
+		{"no upload", func(*testing.T, *api, *memoryStore, string) {}, http.StatusConflict, "medal_art_missing"},
+		{"awaiting its file", func(t *testing.T, a *api, _ *memoryStore, token string) { uploadMedal(t, a, token) }, http.StatusConflict, "medal_art_missing"},
+		{"rejected", func(t *testing.T, a *api, store *memoryStore, token string) {
+			checkMedal(t, a, store, token, uploadMedal(t, a, token), image.NewGray(image.Rect(0, 0, 256, 256)))
+		}, http.StatusConflict, "medal_art_missing"},
+		{"an upload of another medal", func(t *testing.T, a *api, store *memoryStore, token string) {
+			status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "medal.wins_500", "slot": "static"})
+			expect(t, status, body, http.StatusOK, "")
+			store.upload(body["upload_url"].(string), encodedPNG(t, image.NewNRGBA(image.Rect(0, 0, 256, 256))))
+			status, body = a.call("POST", "/admin/assets/"+body["asset"].(map[string]any)["id"].(string)+"/check", token, nil)
+			expect(t, status, body, http.StatusOK, "")
+		}, http.StatusConflict, "medal_art_missing"},
+		{"passed", func(t *testing.T, a *api, store *memoryStore, token string) {
+			checkMedal(t, a, store, token, uploadMedal(t, a, token), image.NewNRGBA(image.Rect(0, 0, 256, 256)))
+		}, http.StatusOK, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a, store := newAssetAPI(t)
+			a.publishExampleCatalog()
+			a.passMedalArt(without(exampleCatalog(t, "medals"), "medals", "medal.wins_50"))
+			token := a.signIn("ayla")
+			c.prepare(t, a, store, token)
+			status, body := a.call("PUT", "/admin/config/medals", token, map[string]any{"catalog": exampleCatalog(t, "medals"), "reason": "launch medals"})
+			expect(t, status, body, c.status, c.refusal)
+			if detail, _ := body["detail"].(string); c.status != http.StatusOK && !strings.HasSuffix(detail, ": medal.wins_50") {
+				t.Fatalf("detail %v", body)
+			}
+		})
+	}
+}
+
+func TestARollbackNeedsTheArtOfEveryMedalItRestores(t *testing.T) {
+	a := newAPI(t)
+	a.publishExampleCatalog()
+	medals := exampleCatalog(t, "medals")
+	a.passMedalArt(medals)
+	content := a.signIn("ayla")
+	status, body := a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals, "reason": "launch medals"})
+	expect(t, status, body, http.StatusOK, "")
+	first := body["config_version"].(float64)
+	listed(medals, "medals", "medal.wins_50")["rarityId"] = "rare"
+	status, body = a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals, "reason": "rarer"})
+	expect(t, status, body, http.StatusOK, "")
+
+	_, err := a.pool.Exec(context.Background(), `delete from cosmetic_assets where item_id = 'medal.chain_100'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.now = start.Add(11 * time.Minute)
+	a.call("POST", "/admin/session/step-up", content, map[string]string{"id_token": "ayla", "nonce": "nonce"})
+	status, body = a.call("POST", "/admin/config/medals/rollback", content, map[string]any{"version": first, "reason": "restore"})
+	expect(t, status, body, http.StatusConflict, "medal_art_missing")
+	if !strings.HasSuffix(body["detail"].(string), ": medal.chain_100") {
+		t.Fatalf("detail %v", body)
+	}
+}
+
+func uploadMedal(t *testing.T, a *api, token string) string {
+	t.Helper()
+	status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "medal.wins_50", "slot": "static"})
+	expect(t, status, body, http.StatusOK, "")
+	return body["upload_url"].(string)
+}
+
+func checkMedal(t *testing.T, a *api, store *memoryStore, token, uploadURL string, picture image.Image) {
+	t.Helper()
+	store.upload(uploadURL, encodedPNG(t, picture))
+	id := strings.TrimSuffix(uploadURL[strings.LastIndex(uploadURL, "/")+1:], ".png")
+	status, body := a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+	expect(t, status, body, http.StatusOK, "")
 }
