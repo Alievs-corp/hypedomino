@@ -79,6 +79,64 @@ It printed `pearl_comb_loop: blink edit registered (tx, ty, scale, angle) = (0.1
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `pearl_comb: background [200.0, 200.0, 200.0], pockets 7870 px, crop (71, -177, 1192, 944), portrait 768`
+- Crop `(116, 0, 1147, 1031)` to `(71, -177, 1192, 944)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `pearl_comb_loop: blink edit registered (tx, ty, scale, angle) = (0.1516, 0.1818, 1.0002, 0.0001), residual 0.00115 -> 0.00112, eye colour offset [-7.9, -2.6, -0.4], parts 3, filled 17157 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.161 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/pearl_comb/work/pearl_comb_cleanup.py pearl_comb assets-src/cosmetic/avatar/pearl_comb/concept/20261115-01.png assets-src/cosmetic/avatar/pearl_comb/work
+python -I assets-src/cosmetic/avatar/pearl_comb/work/pearl_comb_loop.py assets-src/cosmetic/avatar/pearl_comb/concept assets-src/cosmetic/avatar/pearl_comb/work assets-src/cosmetic/avatar/pearl_comb/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 27 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/pearl_comb` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `f7c9d6a7a84c000ff38d5f73a0446c3bfb830e798a07084bf6dc558b3ccbc9e9` |
+| export/anim/0002.png | `b3a25ed4a27de943393968e3b65a747001130377aaeee6dd6a62b6b097a87f90` |
+| export/anim/0003.png | `a0dcf460eaa6bf602eba4e2c38fe24d7d2e082561e267a83650d2d03d6c4c313` |
+| export/anim/0004.png | `6b3bcc66cf0bcac757c1f617fad452fecfd2079f6bb9f8c44c094be97ae215a6` |
+| export/anim/0005.png | `172b073129b653907169baa27f5551e50e8ef8a83e49d0eb5d44955b1b303777` |
+| export/anim/0006.png | `3aa1d323bf672dd16ece0c5c13818df23a83de4270ccb1fdf54f82ee5eae39ae` |
+| export/anim/0007.png | `11cb3891a2be10feaf8749a27cbee39f8c73eb9a3b9ee50126db36c338332584` |
+| export/anim/0008.png | `a68ed68c329c55c114d6534cd2646e19f9eb1d54838a175dff6d5e323b8a8046` |
+| export/anim/0009.png | `17249ccf2c7903009e01f6a60ce754356f8be358e02d7d35d21ddda9ad4f0233` |
+| export/anim/0010.png | `b851ecede9ed17217a65b457e7f38cb5e7f62fe7664638f43706d132c732075d` |
+| export/anim/0011.png | `ed2eec5a19ea4f591ca0abfe2beb06f9fd0e1b7aace2148b70ec947ef5b60a08` |
+| export/anim/0012.png | `fb4000a8b3728129bed1c831ccdbed82567722923781f07e584a3e53eac4ac04` |
+| export/anim/0013.png | `7be02cfd59d436befbc5f92b928fd17e2bd6a623eb51bdc15a1fa3bfb0519300` |
+| export/anim/0014.png | `b6adfb5025b74b13647157b31acff166126acb419fb918bf92f3130b822f6a45` |
+| export/anim/0015.png | `91d5ba5030c649880c332703a8351f7b75720eee50bfb966e052984715623076` |
+| export/anim/0016.png | `9a6760aa43059e4fc08b2ccb439b20643e4df3c598c429e80cdce48462727ddc` |
+| export/static.png | `17249ccf2c7903009e01f6a60ce754356f8be358e02d7d35d21ddda9ad4f0233` |
+| work/pearl_comb_base.png | `47e3ee10310954c93691ef1b9139471eba0305d14aaea0336e04b6e7c1bb886b` |
+| work/pearl_comb_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/pearl_comb_earring_left.png | `12cc3ed32b74c1f4fbc24e35cc68184a2ef73620cdf570b7fc30484a16384862` |
+| work/pearl_comb_earring_right.png | `16ef58af356b3e4824b87ce864b2d6e9e758beb8dfee4c185d5630884265e6b0` |
+| work/pearl_comb_eyes_closed.png | `5409ee81ebb13809a92dcf43660776d32ccbec1c088c2a0976c81118e8f5bd78` |
+| work/pearl_comb_eyes_open.png | `8f86870e98a807c9fadd86ba2a3e525090a2437ea2750b37a66830e38de62d6a` |
+| work/pearl_comb_head.png | `adc42d434335b5305a444b4a06bc8542ebe27174ca2f04c630d018944588ad84` |
+| work/pearl_comb_loop.py | `7f39c38e588da2371a94ecd9879620bf31665ed3b3de18ff61acd7a68ee340ab` |
+| work/pearl_comb_pearl_strands.png | `fd6e8c0cadf0576962dbe520e5e7f35ed17678efb3fbcef6b57fd098ab4b1cf1` |
+| work/pearl_comb_portrait.png | `ef624204f1f43fe66322df1b327e4ae63ac3934df744fa3308bc19217932bbf6` |
+| work/pearl_comb_torso.png | `0df1b545fe9a74a5710186bb32c8f156229fde14dea6b02c9db90283518bf4ce` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -105,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:44:46 UTC; `c2pa.created` 2026-11-15T16:45:24Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:45:46 UTC; `c2pa.created` 2026-11-15T16:46:41Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/pearl_comb_base.png, work/pearl_comb_cleanup.py, work/pearl_comb_earring_left.png, work/pearl_comb_earring_right.png, work/pearl_comb_eyes_closed.png, work/pearl_comb_eyes_open.png, work/pearl_comb_head.png, work/pearl_comb_loop.py, work/pearl_comb_pearl_strands.png, work/pearl_comb_portrait.png, work/pearl_comb_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(116, 0, 1147, 1031)` to `(71, -177, 1192, 944)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

@@ -84,6 +84,61 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.12, not the 0.17 of the other avatars: at 0.17 the tag layer was 4.4% outside the circle; at 0.12 it is 0.0%
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `lemon_spaniel: background [208.0, 207.0, 207.0], pockets 142 px, crop (30, -107, 1064, 927), portrait 768`
+- Crop `(72, 0, 1023, 951)` to `(30, -107, 1064, 927)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `lemon_spaniel_loop: blink edit registered (tx, ty, scale, angle) = (0.1379, 0.1293, 0.9999, -0.0000), residual 0.00115 -> 0.00113, eye colour offset [-3.7, -0.5, 3.0], parts 1, ripples 3, filled 2756 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.120 after; highest over the 16 loop frames 0.010 before, 0.115 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/lemon_spaniel/work/lemon_spaniel_cleanup.py lemon_spaniel assets-src/cosmetic/avatar/lemon_spaniel/concept/20261116-01.png assets-src/cosmetic/avatar/lemon_spaniel/work
+python -I assets-src/cosmetic/avatar/lemon_spaniel/work/lemon_spaniel_loop.py assets-src/cosmetic/avatar/lemon_spaniel/concept assets-src/cosmetic/avatar/lemon_spaniel/work assets-src/cosmetic/avatar/lemon_spaniel/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/lemon_spaniel` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `f30968ae3d5f43559809f2dfed565ada139d12238cde84e453ef6490a5343044` |
+| export/anim/0002.png | `761d3b6f8695dba04ba8df40a3c5d399ae144fc5b8c5b4db916eae3d1ed49600` |
+| export/anim/0003.png | `0b5912720ba6777c627688fa4f15a054f3256adec459ac9aaa6170891b2f316b` |
+| export/anim/0004.png | `c15bf1707c47684b125ba5f69ac441044d17258edb20bc9711f0e1b48d73a1f9` |
+| export/anim/0005.png | `e344e51621bf82b9d70f6d97b3fad6c847b7487fd729031c89db6ebd440907a0` |
+| export/anim/0006.png | `6719331255cb2972eb99ef52fee4273b255d64890aa57340fc7dcd16a8d494a2` |
+| export/anim/0007.png | `486028e25ae17dc58b00d9b97416386934a8863fd971d19ff01d4b2f3d1b1bab` |
+| export/anim/0008.png | `0ce6d5aa254ae91e3a555be431e691e6b08ece70a90d9a117f747285637505bc` |
+| export/anim/0009.png | `e9678b3aaf557681c585d96f3a6deff10872279df052274f52b659326f6bab70` |
+| export/anim/0010.png | `9fe22c14c4ea9711b4c4c4767633e8e25213131141ce51de2deab52a8bfcb5cb` |
+| export/anim/0011.png | `02b11dbf71cbd0b879328266ec33783b18f483f079deea32cf167d6e1647ab81` |
+| export/anim/0012.png | `4b46296ca138b7f421ad4fda268e04cac82f25814c600cfd3cff0704852f1e29` |
+| export/anim/0013.png | `47001a72fc6f0fdf4f1e6b99e8c39053f66ed1c95a6950aac363b4f687a809ed` |
+| export/anim/0014.png | `22b3cfb412bd50cee43661ea34a6c4d6ac268861d78be06a86e320dbeed6924e` |
+| export/anim/0015.png | `cd09aab4df2ae70c7d6b98d58fc7125980974d4a54b1577231e8207580305a41` |
+| export/anim/0016.png | `d48264bf11f4bc883a8e4c0b7f492d0bbe4fcca878de0e069c19ccf6d9821a06` |
+| export/static.png | `e9678b3aaf557681c585d96f3a6deff10872279df052274f52b659326f6bab70` |
+| work/lemon_spaniel_base.png | `f9f9f3ae19c34297748a4b758ad71511462cb1a4706461ba76a6ca16f778dbfa` |
+| work/lemon_spaniel_cleanup.py | `18a09c5cb88e9deea6bacde53bf5efc038ab7d778bc75123651cf1298b91226b` |
+| work/lemon_spaniel_eyes_closed.png | `2d8c096135524560d6f7bba1b4f17a53943e90924cbbbcd080db462c6b89c9f2` |
+| work/lemon_spaniel_eyes_open.png | `b17bd7d8a60eb3aca6559f6c9d61c70fd8ebea90244ba9019638fa6d73ac03de` |
+| work/lemon_spaniel_head.png | `250f3f72cdf000edf1df0d27e725be40b7fcf10d64d88e2d5efc022bf92d9fc3` |
+| work/lemon_spaniel_loop.py | `1b3d8e5212f12c900904b991c6a6211e64696b40f144277a7ac951da26ef4e8d` |
+| work/lemon_spaniel_portrait.png | `792db1c16da369dba8a6161a6c4c24a3a68440eb0b36a03d7f268b0d9f618b84` |
+| work/lemon_spaniel_tag.png | `1ae7a6887327b5dc3ee7f4b1f8aa073729bbb3cb156172a3832e6b309bc526db` |
+| work/lemon_spaniel_torso.png | `dac5142487cc5b92af1f72a9dcf13604ef0d38731a130e2334adea1b1ec27da9` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -108,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:36:57 UTC; `c2pa.created` 2026-11-16T08:37:42Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:52:19 UTC; `c2pa.created` 2026-11-16T08:53:19Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/lemon_spaniel_base.png, work/lemon_spaniel_cleanup.py, work/lemon_spaniel_eyes_closed.png, work/lemon_spaniel_eyes_open.png, work/lemon_spaniel_head.png, work/lemon_spaniel_loop.py, work/lemon_spaniel_portrait.png, work/lemon_spaniel_tag.png, work/lemon_spaniel_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.12, crop `(72, 0, 1023, 951)` to `(30, -107, 1064, 927)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 

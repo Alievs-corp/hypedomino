@@ -79,6 +79,62 @@ It printed `tassel_cap_loop: blink edit registered (tx, ty, scale, angle) = (0.0
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `tassel_cap: background [199.0, 198.0, 198.0], pockets 2690 px, crop (29, -182, 1201, 990), portrait 768`
+- Crop `(76, 0, 1154, 1078)` to `(29, -182, 1201, 990)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `tassel_cap_loop: blink edit registered (tx, ty, scale, angle) = (0.0877, 0.1104, 0.9998, -0.0000), residual 0.00092 -> 0.00091, eye colour offset [-7.9, -0.4, 3.1], parts 1, filled 11272 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/tassel_cap/work/tassel_cap_cleanup.py tassel_cap assets-src/cosmetic/avatar/tassel_cap/concept/20261115-01.png assets-src/cosmetic/avatar/tassel_cap/work
+python -I assets-src/cosmetic/avatar/tassel_cap/work/tassel_cap_loop.py assets-src/cosmetic/avatar/tassel_cap/concept assets-src/cosmetic/avatar/tassel_cap/work assets-src/cosmetic/avatar/tassel_cap/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/tassel_cap` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `0bf3fba61ccca9a8a0e3bd81a2d71e443fcb775a742751eb77e99ebe7f0faed9` |
+| export/anim/0002.png | `5859adf5fd62b483b7b624297c747adaec6b0d56d47661706777819a6cf84a67` |
+| export/anim/0003.png | `fddc01d7594a345e0d6b6198edb9080d740f92aa87ac448e2cc77f8253aad0bb` |
+| export/anim/0004.png | `9f7d7c2cbe6bfaeb15792455b2ed848bed01c2bc809224452a67e281eb6d1824` |
+| export/anim/0005.png | `c0e9c3ac21f0be00bd3191370c482c0a992535420fc6b11faaccea14efac2652` |
+| export/anim/0006.png | `abeb1ce72f09f7877ff999b32e8d1d3a629bd77f641c5beb72950cf03ea915ca` |
+| export/anim/0007.png | `8b93d2abcb79507515253d61fa2633664faa1accdb3bd897b97bfb7ab10fe0e7` |
+| export/anim/0008.png | `785a92750b791d8dbf9ff40be4c84010d0b27489b7eeca325472c9f72abd8f2e` |
+| export/anim/0009.png | `32c2d8afb002784a725812aa7d0396d88a864e66b731caff8147fdba8ab22b50` |
+| export/anim/0010.png | `e5a20f2558cf6ab6718045538270147ce2836946b496d2d99e09de7892237d51` |
+| export/anim/0011.png | `dc834b670ce3d2202ef5692d695202de8e3c3cdaf0a997a129a6c82027b29543` |
+| export/anim/0012.png | `e658c71bb44a08abad9fc83b868cb865a194002615b5874536e0f5f863a4c9e9` |
+| export/anim/0013.png | `59796528b3a33ce95874512bef38a2c186717a686aeba41fdad74ce3df3cc6fb` |
+| export/anim/0014.png | `da0a3f389a31003731674646e92617a3baf1b5be12f26cfa92afa02eaec2a10e` |
+| export/anim/0015.png | `904646aaef4631dd819d4a8c62b557d879d5c59f9fe55dc6ab5fc488cef0fce9` |
+| export/anim/0016.png | `81b56f47d80c5efe01419797f38e3144aa9ae3ad8c2fdbf1ee7e278115b53b72` |
+| export/static.png | `32c2d8afb002784a725812aa7d0396d88a864e66b731caff8147fdba8ab22b50` |
+| work/tassel_cap_base.png | `f0daf6d609ae99c42d9daeb78f55f6d4c7e661c9a5aabecc7e8188bad08cb277` |
+| work/tassel_cap_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/tassel_cap_eyes_closed.png | `0a59b98239511585856d87cf5088f7626ba5f4555d2ddd75eacddd9fb9217cdd` |
+| work/tassel_cap_eyes_open.png | `fcc7264f8d4258ad194e8bcb921853158513d25914b0645b167bb1b591f206db` |
+| work/tassel_cap_head.png | `24d7495a5c5a8cf53ce965650e99d322b705dfcc272c5b0a68ef6a6e1edd6cef` |
+| work/tassel_cap_loop.py | `59662495ffb041092cef05465c9ab17539bfcde14810ab9e34884db7a84c4b26` |
+| work/tassel_cap_portrait.png | `ec4e9ca1f430965c53b1c60e3d8f035664c7b342ece9f75356761d2aff49cc4e` |
+| work/tassel_cap_tassel.png | `50ef8605cda801eaedc0da2d7df64550a4f117fb38c1c7e4c315337855063a9d` |
+| work/tassel_cap_torso.png | `7ee082b79e12ac1581e1e2a8d9fcd413c5b35527f01559a58c65f30819b82d12` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -103,6 +159,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:42:44 UTC; `c2pa.created` 2026-11-15T16:43:27Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:43:49 UTC; `c2pa.created` 2026-11-15T16:44:25Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/tassel_cap_base.png, work/tassel_cap_cleanup.py, work/tassel_cap_eyes_closed.png, work/tassel_cap_eyes_open.png, work/tassel_cap_head.png, work/tassel_cap_loop.py, work/tassel_cap_portrait.png, work/tassel_cap_tassel.png, work/tassel_cap_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(76, 0, 1154, 1078)` to `(29, -182, 1201, 990)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

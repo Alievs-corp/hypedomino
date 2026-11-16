@@ -81,6 +81,61 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `seafoam_pinwheel: background [202.0, 201.0, 201.0], pockets 3794 px, crop (78, -132, 1199, 989), portrait 768`
+- Crop `(137, 0, 1168, 1031)` to `(78, -132, 1199, 989)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `seafoam_pinwheel_loop: blink edit registered (tx, ty, scale, angle) = (0.2446, -0.0117, 1.0004, -0.0001), residual 0.00130 -> 0.00125, eye colour offset [-3.8, -0.3, 1.1], parts 1, ripples 0, filled 50222 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.062 before, 0.177 after; highest over the 16 loop frames 0.052 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/seafoam_pinwheel/work/seafoam_pinwheel_cleanup.py seafoam_pinwheel assets-src/cosmetic/avatar/seafoam_pinwheel/concept/20261116-01.png assets-src/cosmetic/avatar/seafoam_pinwheel/work
+python -I assets-src/cosmetic/avatar/seafoam_pinwheel/work/seafoam_pinwheel_loop.py assets-src/cosmetic/avatar/seafoam_pinwheel/concept assets-src/cosmetic/avatar/seafoam_pinwheel/work assets-src/cosmetic/avatar/seafoam_pinwheel/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 25 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/seafoam_pinwheel` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `56e1a1e8bb9046746962c9c7e79e39a427b0f999c73c98940e92e15575e33be7` |
+| export/anim/0002.png | `37fc9caa09394b7128650fb33eeea6fd126146e1b742f1076b0fe96600b490fe` |
+| export/anim/0003.png | `9eed484864ed5a322d7ef67268eb0422391cc97b95fc5ef0b55b56ffa41009e5` |
+| export/anim/0004.png | `d93050fdfcc89a6cee0529862c38f450bed40293a78371ce57edf507b2c95710` |
+| export/anim/0005.png | `419f2131cfd70a961f1062576afd6edfb62c189bba90ab8dedbbebfd83000677` |
+| export/anim/0006.png | `9ef5998bdd5a697d17f245b389977e731def4d679c025bd2f4cdeb0639d66566` |
+| export/anim/0007.png | `8a30ad0d8ff0e84d66b7a6843d86282822e96ada7bf8f2c5163e92e1980fa4af` |
+| export/anim/0008.png | `022be8d89eff278c2bbea5eef4a46e7e86137e07ddd963c4e8750aadd714323b` |
+| export/anim/0009.png | `e40bba52a5ed76d15ff288f59f164291e67893e8f1e50b5213e1cd7b09f5f983` |
+| export/anim/0010.png | `5232544cfde0b21e705a1ac70691fff1e3fb6aceb34178f7927cb1f5fa2c2ef6` |
+| export/anim/0011.png | `090c426b5599ae9abba83399a6cfcae4e5500a3c044a3e0ec2e5fbc84f24628a` |
+| export/anim/0012.png | `f9e7c59695e22b0cf8bcb0278b4f0a36e5a350c92ba191b0f503b3e4aac06c3a` |
+| export/anim/0013.png | `518b1b8012826ca4c605cd780720b6b83eea70db9b40a0009300d1253a2e7e97` |
+| export/anim/0014.png | `211165df64c92b87507f4cf2ab08714b6134edd00f5130b3856fc8725c2738d4` |
+| export/anim/0015.png | `dbdb484fd2db5cd22bf80360abb5c866d99c56ce8e398839e61efe9a4caadbc0` |
+| export/anim/0016.png | `69cb9a6c26163bab87175b7cce1f596f04777a546e4e28a84797118c9ee97d8e` |
+| export/static.png | `e40bba52a5ed76d15ff288f59f164291e67893e8f1e50b5213e1cd7b09f5f983` |
+| work/seafoam_pinwheel_base.png | `9b267b28b921db9b3d801171785cd809931515ea8958cd4cddbfad0a6cb64fa1` |
+| work/seafoam_pinwheel_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/seafoam_pinwheel_eyes_closed.png | `5417a3de5652bdaf7ea4e0e666d0d69eb5bb57452c319f8e05a3482dde7c1b60` |
+| work/seafoam_pinwheel_eyes_open.png | `14c3d39536787a70a7ebf12ed4fb2fc288769c9c1135f541a77d18327312642b` |
+| work/seafoam_pinwheel_head.png | `9f3fe0be32393bc335dfea51ac3fa1076be40b2562c82b3f7914eac7f595c950` |
+| work/seafoam_pinwheel_loop.py | `3e31ace07a2a56b0d737e751c602a444ca669320864b9e59b98b06156e06f8aa` |
+| work/seafoam_pinwheel_pinwheel.png | `9110707d133e6e9054dee264cbd51b3f4bb5728efedc01f0772b2a247e5b23ab` |
+| work/seafoam_pinwheel_portrait.png | `b72125d8ab1fd81108be99648c6e0908d1e0be66631e890390da9d20eae43f61` |
+| work/seafoam_pinwheel_torso.png | `787b3790ea10ee3692c6e997ea6516198ef44393965600e9e01fe97128c94fc6` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -105,6 +160,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:32:51 UTC; `c2pa.created` 2026-11-16T08:33:37Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:47:18 UTC; `c2pa.created` 2026-11-16T08:48:24Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/seafoam_pinwheel_base.png, work/seafoam_pinwheel_cleanup.py, work/seafoam_pinwheel_eyes_closed.png, work/seafoam_pinwheel_eyes_open.png, work/seafoam_pinwheel_head.png, work/seafoam_pinwheel_loop.py, work/seafoam_pinwheel_pinwheel.png, work/seafoam_pinwheel_portrait.png, work/seafoam_pinwheel_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(137, 0, 1168, 1031)` to `(78, -132, 1199, 989)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 

@@ -82,6 +82,61 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `watch_chain: background [188.0, 187.0, 187.0], pockets 1274 px, crop (70, -189, 1191, 932), portrait 768`
+- Crop `(115, 0, 1146, 1031)` to `(70, -189, 1191, 932)` on the concept
+- Scale k = 0.9197. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `watch_chain_loop: blink edit registered (tx, ty, scale, angle) = (0.0691, 0.1485, 0.9998, -0.0001), residual 0.00060 -> 0.00059, eye colour offset [-7.1, 0.1, 3.4], parts 0, ripples 1, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.000 before, 0.172 after; highest over the 16 loop frames 0.000 before, 0.167 after
+- The concept cuts the subject at its top edge (42 px wide at the first opaque row of the master). That cut lay outside the circle before; it now shows as a short straight edge at the head top inside the circle, under the frame's top band in the four frames checked. An artist paints it over (RC-5)
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/watch_chain/work/watch_chain_cleanup.py watch_chain assets-src/cosmetic/avatar/watch_chain/concept/20261115-02.png assets-src/cosmetic/avatar/watch_chain/work
+python -I assets-src/cosmetic/avatar/watch_chain/work/watch_chain_loop.py assets-src/cosmetic/avatar/watch_chain/concept assets-src/cosmetic/avatar/watch_chain/work assets-src/cosmetic/avatar/watch_chain/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/watch_chain` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `19a33772d60bb1050142be739d11c36464709a79899b5d1652b63021c54af54b` |
+| export/anim/0002.png | `51d2d4bc04afb27aee56df2fe6ab740d7e00d2e3a8d7276932015cf81b1800d9` |
+| export/anim/0003.png | `a70a69cc301794119067d8e62f5448d77cc24eba11730af8858340a43daaf7ac` |
+| export/anim/0004.png | `3cde7a05be086f3c34ee5a4e217cad5db052da4bc0febb18b117d4c2593966e1` |
+| export/anim/0005.png | `93a56d6145bfdb859d21938d5fa2e797532fbf7d482401e3fe485bd894acded1` |
+| export/anim/0006.png | `f285f1e1b52d1275900c93e3483699ee2ce9a95416318b0a6cec82fd8f56ce35` |
+| export/anim/0007.png | `ae25634d92e5487aa9a0a808fe320c17f2e1f52dfba38371632c738ffba73fae` |
+| export/anim/0008.png | `c11a6c48960c284d1f551438e1d6368e2731f72cc2835eb0b478bf68985c1a60` |
+| export/anim/0009.png | `3164f81bea09ed443ff89f8f8905eb4b9ea1bffead65323d163c11981a4554ce` |
+| export/anim/0010.png | `bf822ae33d420e8eebeef0fcc3f7473d36289f051dc58fba1269bc7f6dfd140b` |
+| export/anim/0011.png | `95d04b9100c3dd9dca85c5b193902f096dd9526546ecdae7c96e74b20991c543` |
+| export/anim/0012.png | `7ae5c81993e0d2e29fa9913d3527d29d4415844e07e099c626904125817319a9` |
+| export/anim/0013.png | `09346d01ebda7580893c0d143874ee359f94d19965f4b7de53f9fbcecdac2781` |
+| export/anim/0014.png | `f363f0b024ded597975cc526244a917682ebb2149a89b454fe5071b52bc291b1` |
+| export/anim/0015.png | `fdb0ef3a0398a4907a416caa0437fab2ccceeb566f224054fe545cfeec903cae` |
+| export/anim/0016.png | `95c7a86d52fb873a986ecfc878bd8dc6773b72607e283368e58305d717ff7592` |
+| export/static.png | `3164f81bea09ed443ff89f8f8905eb4b9ea1bffead65323d163c11981a4554ce` |
+| work/watch_chain_base.png | `e10fe83a61606ee3df7de372b30782b99d532ed3317de6b97702181dc25f8fb9` |
+| work/watch_chain_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/watch_chain_eyes_closed.png | `167495ec2666def4381b13673a52ed4a82315d5c5cc6534cfdf152b1e36796e5` |
+| work/watch_chain_eyes_open.png | `67cb3e8fb5131b9962d7558790e6b9ac2f0b8dcdde927b633ad820b1b5aa50f2` |
+| work/watch_chain_head.png | `57c14c3e612e4b33631a59aff1c8cd73f51dd1fee450eeb65c792eb8995cbece` |
+| work/watch_chain_loop.py | `d894eea4a69870df910955a9fe48370695028001bd933ddbfa9d8dc4b4c729e5` |
+| work/watch_chain_portrait.png | `0c2287c9a850483b7735752f966d77a51caccd39363e4523f1ad93a220661299` |
+| work/watch_chain_torso.png | `d1d8bc71af6afc90481361c28547d8298b10caa265ce126ee79e385415290132` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -106,6 +161,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-02.png | P-3 with the style key, quoted below. Sent 17:35:46 UTC; `c2pa.created` 2026-11-15T17:36:32Z |
 | 2026-11-15 | concept/20261115-03.png | Edit of `concept/20261115-02.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:51:53 UTC; `c2pa.created` 2026-11-15T17:52:53Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/watch_chain_base.png, work/watch_chain_cleanup.py, work/watch_chain_eyes_closed.png, work/watch_chain_eyes_open.png, work/watch_chain_head.png, work/watch_chain_loop.py, work/watch_chain_portrait.png, work/watch_chain_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(115, 0, 1146, 1031)` to `(70, -189, 1191, 932)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-02.png`, verbatim:
 

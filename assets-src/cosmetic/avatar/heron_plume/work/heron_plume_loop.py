@@ -8,27 +8,27 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "heron_plume"
-CROP = (150, 0, 1204, 1054)
+CROP = (80, -170, 1226, 976)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (300, 300, 275, 285)
+HEAD = (323, 390, 253, 262)
 HEAD_FALLOFF = 0.3
-NECK_Y = 545
-NECK_BAND = 40
-SHOULDER_Y = 650
+NECK_Y = 615
+NECK_BAND = 37
+SHOULDER_Y = 712
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.4
-NOD = 2.0
-EYES = [(278, 333, 44, 24), (398, 318, 42, 24)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(303, 420, 40, 22), (413, 406, 39, 22)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "feather", "polygon": [(441, 148), (430, 118), (440, 70), (470, 33), (520, 16), (580, 16), (640, 33), (692, 68), (732, 112), (746, 160), (744, 206), (716, 196), (700, 152), (670, 122), (640, 116), (600, 112), (560, 112), (522, 126), (502, 142), (477, 152), (456, 160)], "pivot": (446, 152), "length": 260, "swing": 2.5, "lag": 0.0, "grow": 8, "behind": "fill"},
+    {"name": "feather", "polygon": [(453, 250), (442, 222), (452, 178), (479, 144), (525, 129), (580, 129), (636, 144), (683, 176), (720, 217), (733, 261), (731, 303), (705, 294), (691, 254), (663, 226), (636, 221), (599, 217), (562, 217), (527, 230), (509, 245), (486, 254), (466, 261)], "pivot": (457, 254), "length": 239, "swing": 2.5, "lag": 0.0, "grow": 7, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_COLOUR = (255, 247, 226)
@@ -89,7 +89,7 @@ def register(canonical, edit):
     small_edit = edit[::REGISTER_SCALE, ::REGISTER_SCALE].mean(axis=2)
     side = (CROP[2] - CROP[0])
     region = np.zeros(canonical.shape[:2], dtype=bool)
-    region[CROP[1]:CROP[1] + side, CROP[0]:CROP[0] + side] = True
+    region[max(CROP[1], 0):CROP[1] + side, max(CROP[0], 0):CROP[0] + side] = True
     region &= ~raw_eye_mask(canonical.shape[:2])
     weight = region[::REGISTER_SCALE, ::REGISTER_SCALE]
     centre = (small_canonical.shape[0] / 2, small_canonical.shape[1] / 2)

@@ -10,35 +10,35 @@ from scipy import ndimage, optimize
 SLUG = "lemon_spaniel"
 CANONICAL = "20261116-01.png"
 BLINK_EDIT = "20261116-02.png"
-CROP = (72, 0, 1023, 951)
+CROP = (30, -107, 1064, 927)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (380, 200, 180, 210)
+HEAD = (381, 263, 166, 193)
 HEAD_FALLOFF = 0.3
-NECK_Y = 390
-NECK_BAND = 35
-SHOULDER_Y = 500
+NECK_Y = 438
+NECK_BAND = 32
+SHOULDER_Y = 539
 HEAD_RIDE = 0.4
-BREATH = 8.0
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 2.0
-EYES = [(336, 215, 36, 18), (430, 194, 36, 18)]
-EYE_FEATHER = 5.0
+NOD = 1.84
+EYES = [(340, 277, 33, 17), (427, 258, 33, 17)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "tag", "polygon": [(334, 664), (358, 664), (364, 690), (362, 716), (346, 724), (330, 716), (328, 690)], "pivot": (346, 666), "length": 30, "swing": 10.0, "lag": 0.6, "grow": 1, "behind": "fill"},
+    {"name": "tag", "polygon": [(338, 690), (360, 690), (366, 714), (364, 738), (349, 745), (335, 738), (333, 714)], "pivot": (349, 692), "length": 28, "swing": 10.0, "lag": 0.6, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55
 GLINT_FLOOR = 0.3
 RIPPLES = [
-    {"polygon": [(190, 470), (300, 450), (440, 470), (480, 540), (490, 660), (500, 780), (150, 780), (150, 640), (160, 540)], "feather": 18, "top": 420, "ramp": 60, "amplitude": 5.0, "wavelength": 1600, "cycles": 1},
-    {"polygon": [(200, 520), (240, 560), (262, 640), (262, 700), (250, 768), (160, 768), (156, 650), (168, 560)], "feather": 10, "top": 560, "ramp": 120, "amplitude": 8.0, "wavelength": 200, "cycles": 1},
-    {"polygon": [(420, 520), (456, 560), (472, 650), (474, 768), (388, 768), (376, 660), (390, 580)], "feather": 10, "top": 560, "ramp": 120, "amplitude": 8.0, "wavelength": 200, "cycles": 1},
+    {"polygon": [(206, 512), (307, 493), (436, 512), (473, 576), (482, 686), (491, 797), (169, 797), (169, 668), (178, 576)], "feather": 17, "top": 466, "ramp": 55, "amplitude": 4.6, "wavelength": 1472, "cycles": 1},
+    {"polygon": [(215, 558), (252, 595), (272, 668), (272, 723), (261, 786), (178, 786), (175, 677), (186, 595)], "feather": 9, "top": 595, "ramp": 110, "amplitude": 7.36, "wavelength": 184, "cycles": 1},
+    {"polygon": [(417, 558), (451, 595), (465, 677), (467, 786), (388, 786), (377, 686), (390, 613)], "feather": 9, "top": 595, "ramp": 110, "amplitude": 7.36, "wavelength": 184, "cycles": 1},
 ]
 GLINT_COLOUR = (255, 247, 226)
 REGISTER_SCALE = 4

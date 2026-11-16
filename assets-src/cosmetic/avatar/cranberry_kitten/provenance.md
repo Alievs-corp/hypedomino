@@ -82,6 +82,62 @@ The script is the batch B loop script (`cornflower_ribbon_loop.py`, which carrie
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.96 to 1.0 (0.96 / 0.92 = 1.043 is wider than the concept, so it is clamped to 1.0, the shorter side of the concept; the subject is 4.0% smaller in the circle instead of 8%)
+- `HEADROOM` 0.07 to 0.12, not the 0.17 of the other avatars: at 0.17 the kitten's tail layer was 46.1% outside the circle (0.1% before); at 0.12 it is 26.2% outside, because the cat sits at the bottom right of a square concept. The tail end is cut by the circle; open for the owner
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `cranberry_kitten: background [184.0, 184.0, 183.0], pockets 2180 px, crop (0, -148, 1254, 1106), portrait 768`
+- Crop `(32, 0, 1235, 1203)` to `(0, -148, 1254, 1106)` on the concept
+- Scale k = 0.9593. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `cranberry_kitten_loop: blink edit registered (tx, ty, scale, angle) = (0.1081, -0.3166, 1.0001, -0.0001), residual 0.00152 -> 0.00144, eye colour offset [-8.3, -2.5, -1.0], parts 2, ripples 0, filled 22175 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.005 before, 0.120 after; highest over the 16 loop frames 0.000 before, 0.115 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/cranberry_kitten/work/cranberry_kitten_cleanup.py cranberry_kitten assets-src/cosmetic/avatar/cranberry_kitten/concept/20261116-01.png assets-src/cosmetic/avatar/cranberry_kitten/work
+python -I assets-src/cosmetic/avatar/cranberry_kitten/work/cranberry_kitten_loop.py assets-src/cosmetic/avatar/cranberry_kitten/concept assets-src/cosmetic/avatar/cranberry_kitten/work assets-src/cosmetic/avatar/cranberry_kitten/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/cranberry_kitten` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `ad3a19a110f826e5a11a96a15f2f1331418569ae7dfd97ef79f1ea91f3ef8960` |
+| export/anim/0002.png | `0bb177292860e18c91312d8424f1411eb6ee6ba2e6ea040941e3284685e55ce8` |
+| export/anim/0003.png | `7eff19d47ce73f6ca09c6da10c94b6d21b66375af5a28d3afe08fb19c12a590d` |
+| export/anim/0004.png | `0a0b64fbde5384e4911a42e911affaf1b0537e983e12e4ad20e66bdb3186b48e` |
+| export/anim/0005.png | `d391506abd9b9d636cc64e85d547dca0bd810599be76200b3f6a1417017a04d0` |
+| export/anim/0006.png | `fbcd078ba6d16cfeba17d97635d8aa4286ae1b62bc5b019a9402b6ec0cae61ed` |
+| export/anim/0007.png | `6aa7415c7aa07bf2ea03626e3fa15c0acb5d2ce8bd6d5d5efa103d6b3288b815` |
+| export/anim/0008.png | `c7f71ffa41b09583c49f66ec23fc7d5e8e9bdbf504ab3b0ddfa6d3ac5850632d` |
+| export/anim/0009.png | `77acad5d3493f804b2a1e8c761b3a423f72362ec7e3107f22b3efa080d9fa6ba` |
+| export/anim/0010.png | `e29fcc6c63dbd96c12abb4c6a66aba4f3b29ba7ca517ee2d9c5530df9b3e90ec` |
+| export/anim/0011.png | `7c8240236e02b824204e910e87d82f90aa5743e51d7c1d2d9b48c3ed6bec0c57` |
+| export/anim/0012.png | `1697236b5a6cf0f56513cebb6010ebac368dcbe9c46805c56c06f98590907427` |
+| export/anim/0013.png | `977dced67cff2c1e01459c9e01ac741f71302e4b947fb3a4d5bef8225d9505ca` |
+| export/anim/0014.png | `f44460578acb2c94a2943b9bb4c6a5c89451da052bba0085ed943bddf696a52d` |
+| export/anim/0015.png | `d8db4a43ad1b962c30744f4201863cb8598af06444eb2974c04b035daa6096c8` |
+| export/anim/0016.png | `d3f07b3d21b96c2deb90823d4e9f3d56f29b85df4e16ce2d46830858003713a0` |
+| export/static.png | `77acad5d3493f804b2a1e8c761b3a423f72362ec7e3107f22b3efa080d9fa6ba` |
+| work/cranberry_kitten_base.png | `ef13f5f6c82ccafa0837e00a503ecbeee2c4240723669fa52b427141b7363085` |
+| work/cranberry_kitten_cleanup.py | `c7158b7b24a7629ccbe1cd3750f6460d24bd57dd4c2802c105e2b978593786f4` |
+| work/cranberry_kitten_eyes_closed.png | `b6ba8442b3283ed92a1a332e8df44323e63bea2e30661928b6bdcb5840cf993a` |
+| work/cranberry_kitten_eyes_open.png | `5b5e4e9be0d106993d56254e5d75ba907e418e8ebfe9ea688ffc1a1ce1cebad6` |
+| work/cranberry_kitten_head.png | `cf105edbc01f3754e2c3fd55fa19723fc9243f67f049c19acd5ac028751fd2cb` |
+| work/cranberry_kitten_kitten_head.png | `108ab8e33a7454028acd1dab545fed5dc5ddd58ffbd619cc736d43f63bd678c4` |
+| work/cranberry_kitten_kitten_tail.png | `3c86d84be76ca3415e8dccc9698c7a520faee82170588f05c3342fefb68dbd21` |
+| work/cranberry_kitten_loop.py | `08aa5d41c50b1985f83c18299f320027b31197462dcfb9bcc797b0e4861c0519` |
+| work/cranberry_kitten_portrait.png | `54b79a0e1aa2f7618bdc05965f415ac3e5d3d6c1048e7d53dbfb498e3b06d4eb` |
+| work/cranberry_kitten_torso.png | `d55f15f1893108ab5edadd5ba7cd250c496208c7797049f3f2bdf13afce2e6cb` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -107,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-16 | concept/20261116-01.png | P-3 with the style key, quoted below. Sent 08:25:38 UTC; `c2pa.created` 2026-11-16T08:26:33Z |
 | 2026-11-16 | concept/20261116-02.png | Edit of `concept/20261116-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 08:42:15 UTC; `c2pa.created` 2026-11-16T08:43:00Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/cranberry_kitten_base.png, work/cranberry_kitten_cleanup.py, work/cranberry_kitten_eyes_closed.png, work/cranberry_kitten_eyes_open.png, work/cranberry_kitten_head.png, work/cranberry_kitten_kitten_head.png, work/cranberry_kitten_kitten_tail.png, work/cranberry_kitten_loop.py, work/cranberry_kitten_portrait.png, work/cranberry_kitten_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.96 to 1.0, `HEADROOM` 0.07 to 0.12, crop `(32, 0, 1235, 1203)` to `(0, -148, 1254, 1106)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261116-01.png`, verbatim:
 

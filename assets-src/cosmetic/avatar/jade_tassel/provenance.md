@@ -79,6 +79,63 @@ It printed `jade_tassel_loop: blink edit registered (tx, ty, scale, angle) = (0.
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.12, not the 0.17 of the other avatars: at 0.17 the right tassel layer was 21.5% outside the circle; at 0.12 it is 0.0%
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `jade_tassel: background [206.0, 206.0, 205.0], pockets 11535 px, crop (21, -134, 1193, 1038), portrait 768`
+- Crop `(68, 0, 1146, 1078)` to `(21, -134, 1193, 1038)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- `register` now clips a crop edge above the concept to 0 when it marks the registration region, as the later loop scripts of this batch do; with the old slice a negative top would have marked the wrong rows
+- Printed by the loop: `jade_tassel_loop: blink edit registered (tx, ty, scale, angle) = (0.1099, -0.3107, 1.0000, 0.0001), residual 0.00149 -> 0.00140, eye colour offset [2.5, 4.7, 4.8], parts 2, filled 19116 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.036 before, 0.120 after; highest over the 16 loop frames 0.031 before, 0.115 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/jade_tassel/work/jade_tassel_cleanup.py jade_tassel assets-src/cosmetic/avatar/jade_tassel/concept/20261115-01.png assets-src/cosmetic/avatar/jade_tassel/work
+python -I assets-src/cosmetic/avatar/jade_tassel/work/jade_tassel_loop.py assets-src/cosmetic/avatar/jade_tassel/concept assets-src/cosmetic/avatar/jade_tassel/work assets-src/cosmetic/avatar/jade_tassel/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 26 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/jade_tassel` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `1f30a655b3211523f24993b710faffd4e76fb3fe772c8ac9eb69b7c4d2cfa0e1` |
+| export/anim/0002.png | `9cef680689fbedf85c9a10f695cfbf70aa6135b0349120f214f481c5c58a0f82` |
+| export/anim/0003.png | `2194a2a92a81c37d782264db23feeacd3fce4e9508db6b39e0932c4bbbb08b05` |
+| export/anim/0004.png | `8759b569e66716ebbab9186cd124b7b55c33c6675cc5553ba9f973e54b62e44d` |
+| export/anim/0005.png | `cc9cf3871912cc813349ee6c01d67037f9d55a4da494444e30107fc033920f54` |
+| export/anim/0006.png | `62d3d12b3296c6734a922fe8a8e174d0f287287c26e9f3d58809d05bb8bff6a3` |
+| export/anim/0007.png | `a8c7867a7480de090934c183191405f1fe3eee23dc143ada92689340c961261e` |
+| export/anim/0008.png | `e13915c0bce481e68c8b839c441c9615794e039e09391b758fe83d681ff6ea3b` |
+| export/anim/0009.png | `e488aa952387aeb62c04dd1a67291a83e829275548039282a3a6998770df5c20` |
+| export/anim/0010.png | `0617ab8880a3322c41b11c0ff633a1fe47a3c151c373f7173aacf1a0bfcd5903` |
+| export/anim/0011.png | `1b07ab8774b80afb712d685ad0ceecb93370faefd2723fe4af62abaa5194bb8d` |
+| export/anim/0012.png | `8d95e6b73a211624f0a221ce2a4dc19e7cebd027fc17d98c6280b2263d509739` |
+| export/anim/0013.png | `fd297a1853d708accba62f0980b6806187888a37c58fb7e036f8cb5629688773` |
+| export/anim/0014.png | `4767fd0e625b10e9ba3499afa463b88fd9c9ba2bd6ddcc45deeefdc3321e96c6` |
+| export/anim/0015.png | `5213c8baba0f5c79ec8ba2ed6929e9f9efb6d67439e8f2b61d77be8d159d4b86` |
+| export/anim/0016.png | `a469d6bb20b9c88193bb8a8273b5225d6ca88e4c645330621a39a13c9080a149` |
+| export/static.png | `e488aa952387aeb62c04dd1a67291a83e829275548039282a3a6998770df5c20` |
+| work/jade_tassel_base.png | `65c88eacd5906706a93df296e076a166b43bec98b060f6a6168f6169d6108570` |
+| work/jade_tassel_cleanup.py | `18a09c5cb88e9deea6bacde53bf5efc038ab7d778bc75123651cf1298b91226b` |
+| work/jade_tassel_eyes_closed.png | `40c828ff261779c6a7906bdb192f5dfb555eceb94eda5c66a76792ec457d87a4` |
+| work/jade_tassel_eyes_open.png | `4384a7521149e7de217694d2b3180506d2f3ee9489c6c7acf1ebccb0f79a602b` |
+| work/jade_tassel_head.png | `6daa149f8e59cfd1a25523d51c765fdec46da70e468d2a0d97a28c37a17e3580` |
+| work/jade_tassel_loop.py | `d907d383fdd8116c1c4b2bc46fb4d6e19ac29d78470b6c022669f7f94228571d` |
+| work/jade_tassel_portrait.png | `76f73fcc96f10c5e12a1353b70872beb25b5c2f2948eea7aac20c3a9ccba0916` |
+| work/jade_tassel_tassel_left.png | `dc9565475c251fd100a154be5219e8a1fce7ca49b5b3c985a2f877a8aef55e81` |
+| work/jade_tassel_tassel_right.png | `e473728a637a15c183a4873d58472af80f5a4e726d618c5fcaee53137149e419` |
+| work/jade_tassel_torso.png | `a07d2b733462ed0386255ce140e8ddd48b84dbc9ff53fff8c05d16ef8a2a44bd` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -106,6 +163,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 16:29:07 UTC; `c2pa.created` 2026-11-15T16:29:52Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 16:31:36 UTC; `c2pa.created` 2026-11-15T16:32:13Z |
 | 2026-11-15 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/jade_tassel_base.png, work/jade_tassel_cleanup.py, work/jade_tassel_eyes_closed.png, work/jade_tassel_eyes_open.png, work/jade_tassel_head.png, work/jade_tassel_loop.py, work/jade_tassel_portrait.png, work/jade_tassel_tassel_left.png, work/jade_tassel_tassel_right.png, work/jade_tassel_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.12, crop `(68, 0, 1146, 1078)` to `(21, -134, 1193, 1038)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

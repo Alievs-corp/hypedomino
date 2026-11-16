@@ -84,6 +84,64 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `lilac_butterfly: background [196.0, 195.0, 195.0], pockets 8390 px, patched 1407 px, crop (75, -182, 1247, 990), portrait 768`
+- Crop `(122, 0, 1200, 1078)` to `(75, -182, 1247, 990)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `lilac_butterfly_loop: blink edit registered (tx, ty, scale, angle) = (0.2699, 0.0895, 0.9998, 0.0001), residual 0.00130 -> 0.00126, eye colour offset [0.4, -1.7, -1.0], parts 4, ripples 0, filled 19414 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.016 before, 0.172 after; highest over the 16 loop frames 0.010 before, 0.161 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/lilac_butterfly/work/lilac_butterfly_cleanup.py lilac_butterfly assets-src/cosmetic/avatar/lilac_butterfly/concept/20261115-01.png assets-src/cosmetic/avatar/lilac_butterfly/work
+python -I assets-src/cosmetic/avatar/lilac_butterfly/work/lilac_butterfly_loop.py assets-src/cosmetic/avatar/lilac_butterfly/concept assets-src/cosmetic/avatar/lilac_butterfly/work assets-src/cosmetic/avatar/lilac_butterfly/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 28 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/lilac_butterfly` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `8492b505764eb77a80e1f2aaaf208fb00a66ab025028d1a6041424012cb7fc82` |
+| export/anim/0002.png | `80030e2560335d9389cbdfa21d1a83bc6d7e8f045c62ff03dbcf81bfc59db99c` |
+| export/anim/0003.png | `d18ebff2b24686da0ca100bc6ad83de51d5e83ffb9d877362fa9430ac2136d1b` |
+| export/anim/0004.png | `c26056a438781ff724a5d025892aa5d2bf84b36a2127741d4a386efbfa6201a5` |
+| export/anim/0005.png | `f928ca1b4b7a12eee6a3b4b41c9b28f8c71ad9e4dd595178d021243424b0548a` |
+| export/anim/0006.png | `cf8734cf6001559c698c3ffef6944537db25a8853efbfe8197534f25bedcfa34` |
+| export/anim/0007.png | `47015302be3492b2d5352278b3403ed339f255821552b04dbf9df18d4f2ae47b` |
+| export/anim/0008.png | `247273fda04be1ad1490e0b56ef384fedec6d8482eb8cacc1ceab814fb7a7a0a` |
+| export/anim/0009.png | `5b359489612d8c34ba9095a90363f6de92ed212730c28c4e4de267768bade79b` |
+| export/anim/0010.png | `7cc6eb52da143b4f776afa67d19afafa1960cbc2bc2ee24d157bafdbfb63d470` |
+| export/anim/0011.png | `a3b66d21c89f6b7c68cd511a28e3241f5bafa7dd2dbf86ea418f7166abddda07` |
+| export/anim/0012.png | `770b00faabe69b803bb19df78a7d2013473146334496a62c9e350ec1fcbcde45` |
+| export/anim/0013.png | `526eb6d37894f18b882f58d84e88bf921916ca9104b39f0d0f92babeeb23ef37` |
+| export/anim/0014.png | `7c518cf6c65d3efb388a1fbbef159272fc91f918757eb425669bd975fd2941f3` |
+| export/anim/0015.png | `14b3d6de65eb625e5879aa71e5dbca5a422fbd4b7536a9849ef2484b75086b84` |
+| export/anim/0016.png | `21878a9fdacc9e113baa582ddcd41eb17ebda57e14081020841e33ad5dcc5ab0` |
+| export/static.png | `5b359489612d8c34ba9095a90363f6de92ed212730c28c4e4de267768bade79b` |
+| work/lilac_butterfly_base.png | `03ee9dc8611631f4b238ae66d4e2ffcb6c1be68e5831d248820ba0573492bcd7` |
+| work/lilac_butterfly_butterfly.png | `0ebcf8403ce4b3858c4ca8dfb860d489ef65c43239b410fd247edb3e5dd35521` |
+| work/lilac_butterfly_cleanup.py | `f2485aa2d74f2b9384702b25fe905eca506e838ff8c6e13f7328dc2097413925` |
+| work/lilac_butterfly_earring_left.png | `a04bbc6e80059ce09bd26953d611007d693209d569f78ba8d635de5116f6e865` |
+| work/lilac_butterfly_earring_right.png | `26dbccbf9fce581fdadc8aa009906f4778785610801b46eebcd3c4ced4d636a4` |
+| work/lilac_butterfly_eyes_closed.png | `e39c8b683f65d3f4e905b44c530114a1b01b2f84b42cbd8af3dbbee9038d12ac` |
+| work/lilac_butterfly_eyes_open.png | `ccbba0211e36f0665c40e34ebfbd618f4564ea5424fdf65c99861ab3a81a551b` |
+| work/lilac_butterfly_head.png | `fe82d945adbdd374f8c51dd4b6516bd3387bda86c320fa99ddfda5323e355421` |
+| work/lilac_butterfly_loop.py | `82d015bad0dcc12fadb4fdee7e5f02aa0464df37e6e80ff795179c1975a93583` |
+| work/lilac_butterfly_pin_pearls.png | `22807b37fe81bd82d82d462cf688e753098848bcab99a5f8c078eba852ac9556` |
+| work/lilac_butterfly_portrait.png | `712232218d6ec2bf6914a94e032be8e45f01a87292b414821de9d4b0202b293b` |
+| work/lilac_butterfly_torso.png | `58d5d9fc527dd18c94835c12d1f2970caad46a8eee5b70281a4cd0a5f92163b6` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -111,6 +169,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:26:57 UTC; `c2pa.created` 2026-11-15T17:27:54Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:43:05 UTC; `c2pa.created` 2026-11-15T17:43:43Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/lilac_butterfly_base.png, work/lilac_butterfly_butterfly.png, work/lilac_butterfly_cleanup.py, work/lilac_butterfly_earring_left.png, work/lilac_butterfly_earring_right.png, work/lilac_butterfly_eyes_closed.png, work/lilac_butterfly_eyes_open.png, work/lilac_butterfly_head.png, work/lilac_butterfly_loop.py, work/lilac_butterfly_pin_pearls.png, work/lilac_butterfly_portrait.png, work/lilac_butterfly_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(122, 0, 1200, 1078)` to `(75, -182, 1247, 990)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 

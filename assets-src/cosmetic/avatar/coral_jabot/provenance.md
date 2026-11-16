@@ -81,6 +81,60 @@ The script is the batch A loop script (`ruby_drop_loop.py`) with this item's geo
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels B-8 and B-9, the bundle measurement of ADR 0012, and W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Re-crop, 2026-11-16
+
+Owner feedback from the phone on 2026-11-16: inside the frames, the frame's top ornament band covered the top of the head and hair. The owner asked for the portrait "very slightly smaller and a bit lower"; `docs/art-direction.md` 5.1 keeps anything essential out of the outer band the frame covers. Only the crop framing changed. The cut-out master was re-made by the same run and is byte-identical; masks, pockets and the edge re-matte are unchanged.
+
+- `CROP_SHARE` 0.86 to 0.935 (0.86 / 0.92: the subject is 8% smaller in the circle)
+- `HEADROOM` 0.07 to 0.17, the same for every avatar except four animated ones whose moving part would leave the circle
+- The crop may now reach above the top of the concept: `upper = min(top - HEADROOM * side, height - side)` instead of clipping it at 0, the rule `avatar.tawny_quill` already used. The subject starts within a few pixels of the concept's top edge, so a lower head needs transparent canvas above it; the bottom and side clamps are as before
+- Printed by the clean-up: `coral_jabot: background [192.0, 191.0, 191.0], pockets 2275 px, crop (23, -175, 1195, 997), portrait 768`
+- Crop `(70, 0, 1148, 1078)` to `(23, -175, 1195, 997)` on the concept
+- Scale k = 0.9198. The rig geometry in portrait pixels (`HEAD`, `NECK_Y`, `NECK_BAND`, `SHOULDER_Y`, `BREATH`, `NOD`, `EYES`, `EYE_FEATHER`, the part polygons, pivots, `length` and `grow`, the glints and the ripples) is mapped through the crop change (x' = k x + offset, sizes and pixel amplitudes times k), so every mask stays on the same anatomy and the motion is the same relative to the subject. Angles, timing, blink frames and `STATIC_FRAME` are unchanged
+- Printed by the loop: `coral_jabot_loop: blink edit registered (tx, ty, scale, angle) = (0.1669, 0.1665, 0.9998, -0.0001), residual 0.00117 -> 0.00114, eye colour offset [-7.3, -1.7, 0.1], parts 0, ripples 1, filled 0 px`
+- Head top (first row of `export/static.png` with alpha above 0.5, as a share of the canvas height): 0.021 before, 0.172 after; highest over the 16 loop frames 0.016 before, 0.167 after
+
+Run on 2026-11-16 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
+
+```bash
+python -I assets-src/cosmetic/avatar/coral_jabot/work/coral_jabot_cleanup.py coral_jabot assets-src/cosmetic/avatar/coral_jabot/concept/20261115-01.png assets-src/cosmetic/avatar/coral_jabot/work
+python -I assets-src/cosmetic/avatar/coral_jabot/work/coral_jabot_loop.py assets-src/cosmetic/avatar/coral_jabot/concept assets-src/cosmetic/avatar/coral_jabot/work assets-src/cosmetic/avatar/coral_jabot/export
+```
+
+Determinism: two more runs of the same commands into two empty folders wrote the same 24 files byte for byte, and both match the files committed here.
+
+`npm run asset:check -- assets-src/cosmetic/avatar/coral_jabot` after the re-crop: 17 sprites, ASTC 6x6 estimate 278,528 bytes, limit under 300,000 (#171, animated avatars under 300 KB each): pass.
+
+The Files table below keeps the hashes of the first export. The files the re-crop changed now hash as follows:
+
+| File | sha256 after the re-crop |
+|---|---|
+| export/anim/0001.png | `90d63796374526768e5ee9621b6bcc2554c2359bc9812ba984e85aa8446664f7` |
+| export/anim/0002.png | `64c1b118c543dacc30f2a2ecb8196d74b48e57e14561471dbb31fc644cfbb3a9` |
+| export/anim/0003.png | `5905eb15f4228b1c31d7bcc40a12235850de8c5387161ac1d7afd0e91d32c0db` |
+| export/anim/0004.png | `7bb3b4ba6a105336d275f08ef0dd504fe4131b5f5c84e54d8627630be2fca17a` |
+| export/anim/0005.png | `90e622404a612037880a35e1686ee441f1cca1d0c256d3a492ff684864a40886` |
+| export/anim/0006.png | `4a8c288ee86b61e1501963dc577a7e0f5368d150622f05f201accdec9eec876e` |
+| export/anim/0007.png | `5d117b7d4225939b32437ae1e038570890dffdd0ebff770deb1e02a59562077c` |
+| export/anim/0008.png | `281b4aa45554aa706137ea24cf6a43e7a481efdedf1b2018b8c6c4ae76edaa90` |
+| export/anim/0009.png | `5f1190cb651960e246118d9d2ca2b2e02a363c250da48e503623dbcfb7d4319a` |
+| export/anim/0010.png | `9c00f797a27250f2133e8518f50285a3440e53f66e71b233add2bbba3bd7096b` |
+| export/anim/0011.png | `84b8eb9fa4573523d5f0a0cc9ad514df5991c0ecb51c3a60c40b15614bd3ded3` |
+| export/anim/0012.png | `0720bfe566bf891ebd1c56f48a2c5eb946c08253e19f9297590a3b52fb878ae8` |
+| export/anim/0013.png | `d71d993a5d69c4d7e8c4b77db4731402e47447fbd54e1edcf1ce7bcb1252e1a1` |
+| export/anim/0014.png | `a67fdc8bacdd43820a02d275bb42f8b8cdaf56a5cf70bc26d155e58f05aab134` |
+| export/anim/0015.png | `a7c7ce37d46cf0c82e38ca62c90a736d38ee2c8a7e50f6c5535c985b5c2a4eac` |
+| export/anim/0016.png | `755b183bc39be1b3a203390e28e14923f7d0ff8316ba42a2ec1e3d88382b8db5` |
+| export/static.png | `5f1190cb651960e246118d9d2ca2b2e02a363c250da48e503623dbcfb7d4319a` |
+| work/coral_jabot_base.png | `9cda40e3f5d920459cc860e5ec0bc1b0afb90cd2dc0f64bdb1d7d81799ffd933` |
+| work/coral_jabot_cleanup.py | `d699aa8b38c6c66da5f607232e08ae8c3bd0032a3517e9a07c89d4ef7d5761ab` |
+| work/coral_jabot_eyes_closed.png | `23b88f462a92e109c1eaf7967558d721ea68d1ebce46164876149876f3a514f5` |
+| work/coral_jabot_eyes_open.png | `24ea620ca2c03b902d89a3d9bd90755684bdbdf77152e89185f6e38f09ca25eb` |
+| work/coral_jabot_head.png | `ee230a336349910368f83c247ce87d61907a4ad6cb961a3b5e80fb9ad5405be4` |
+| work/coral_jabot_loop.py | `485465da61dcfab3b8280ff61a0681551790dd04c2e1c45b03c1df350130889d` |
+| work/coral_jabot_portrait.png | `aca8a4e95614659c2be4329e191fca58a50e7d8cd4c49b69dd9d8cc96ebc05cf` |
+| work/coral_jabot_torso.png | `26640ee0190235363a2b445ce0b4492f1bb36c626db3e9a8d22dbc40675adbb3` |
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
@@ -104,6 +158,7 @@ Not done: the reduce-motion and low-level check of 5.2 (Unity), the board panels
 | 2026-11-15 | concept/20261115-01.png | P-3 with the style key, quoted below. Sent 17:23:41 UTC; `c2pa.created` 2026-11-15T17:24:21Z |
 | 2026-11-15 | concept/20261115-02.png | Edit of `concept/20261115-01.png` (attached): eyes closed, everything else identical, quoted below. Sent 17:41:36 UTC; `c2pa.created` 2026-11-15T17:42:43Z |
 | 2026-11-16 | work/, export/ | The scripts above |
+| 2026-11-16 | export/static.png, work/coral_jabot_base.png, work/coral_jabot_cleanup.py, work/coral_jabot_eyes_closed.png, work/coral_jabot_eyes_open.png, work/coral_jabot_head.png, work/coral_jabot_loop.py, work/coral_jabot_portrait.png, work/coral_jabot_torso.png, export/anim/0001.png to 0016.png | Re-crop: smaller and lower per owner feedback. `CROP_SHARE` 0.86 to 0.935, `HEADROOM` 0.07 to 0.17, crop `(70, 0, 1148, 1078)` to `(23, -175, 1195, 997)`; see "Re-crop, 2026-11-16" |
 
 Prompt of `concept/20261115-01.png`, verbatim:
 
