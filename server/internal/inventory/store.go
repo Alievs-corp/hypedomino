@@ -57,6 +57,10 @@ func (s *Store) Follow(live func() (*cosmetics.Catalog, int64, bool)) {
 	s.live = live
 }
 
+func (s *Store) EmojiSlots() int {
+	return s.config.EmojiSlots
+}
+
 func (s *Store) Catalog() *cosmetics.Catalog {
 	if s.live != nil {
 		if catalog, _, ok := s.live(); ok {

@@ -79,6 +79,10 @@ func (f *fakeInventory) Freeze(_ context.Context, account string) (profile.Loado
 	return l, nil
 }
 
+func (f *fakeInventory) EmojiSlots() int {
+	return 6
+}
+
 type observedAccounts struct {
 	accounts []string
 }
@@ -160,6 +164,9 @@ func TestTheInventoryListsOwnedItemsAndTheEffectiveLoadout(t *testing.T) {
 	}
 	if body["loadout"].(map[string]any)["avatar"] != "avatar.starter" {
 		t.Fatalf("loadout %v", body["loadout"])
+	}
+	if body["emoji_slots"] != float64(6) {
+		t.Fatalf("emoji slots %v", body["emoji_slots"])
 	}
 	if status, body := f.call("GET", "/inventory", "access:broken", ""); status != http.StatusInternalServerError || body["error"] != "internal" {
 		t.Fatalf("failing store answered %d %v", status, body)
