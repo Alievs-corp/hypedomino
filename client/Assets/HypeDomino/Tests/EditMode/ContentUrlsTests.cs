@@ -20,6 +20,12 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ACosmeticsManifestLivesByItsHash()
+        {
+            Assert.AreEqual(Cdn + "/cosmetics/0a1b.json", ContentUrls.Cosmetics(Cdn, "0a1b"));
+        }
+
+        [Test]
         public void ARemoteBundleResolvesUnderTheAnnouncedRoot()
         {
             Assert.AreEqual(Cdn + "/addressables/Android/cosmetic-avatar-comet_fox_static_1a2b.bundle", ContentUrls.Resolve("hd-content:/Android/cosmetic-avatar-comet_fox_static_1a2b.bundle", Cdn));
