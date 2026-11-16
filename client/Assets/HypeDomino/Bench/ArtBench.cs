@@ -189,7 +189,7 @@ namespace HypeDomino.Bench
                         var anchor = new Vector2(0.5f, 1f);
                         var offset = new Vector2(0f, -top - side / 2f);
                         if (avatar != null) NewImage("Avatar", column, avatar.still, side, anchor).rectTransform.anchoredPosition = offset;
-                        AddLoop(sheet, column, chunk[at], side, anchor).rectTransform.anchoredPosition = offset;
+                        AddLoop(sheet, column, chunk[at], side, anchor).anchoredPosition = offset;
                         top += side + Gap;
                     }
                     Label(column, chunk[at].IsAnimated ? $"{chunk[at].name} (anim)" : chunk[at].name);
@@ -235,39 +235,44 @@ namespace HypeDomino.Bench
             var longSide = faces[0].rect.height * scale;
             var width = 0f;
             foreach (var face in faces) width += (IsDouble(face) ? shortSide : longSide) + TileGap;
-            var x = -width / 2f;
-            foreach (var face in faces)
-            {
-                var upright = IsDouble(face);
-                var span = upright ? shortSide : longSide;
-                var centre = new Vector2(x + span / 2f, y);
-                AddTile(parent, face, scale, upright, centre);
-                x += span + TileGap;
-            }
+            var shadowSprite = EffectSprite("tile_shadow");
+            if (shadowSprite != null) PlaceTiles(faces, shortSide, longSide, width, y, (face, upright, centre) => AddShadow(parent, shadowSprite, scale, upright, centre));
+            PlaceTiles(faces, shortSide, longSide, width, y, (face, upright, centre) => AddFace(parent, face, scale, upright, centre));
             var label = NewText(caption, parent, TokenColor.TextPrimary, LabelFontSize);
             label.alignment = TextAnchor.MiddleRight;
             label.rectTransform.sizeDelta = new Vector2(240f, LabelHeight);
             label.rectTransform.anchoredPosition = new Vector2(-width / 2f - 140f, y);
         }
 
-        void AddTile(RectTransform parent, Sprite face, float scale, bool upright, Vector2 centre)
+        static void PlaceTiles(List<Sprite> faces, float shortSide, float longSide, float width, float y, Action<Sprite, bool, Vector2> place)
         {
-            var rotation = Quaternion.Euler(0f, 0f, upright ? 0f : 90f);
-            var shadowSprite = EffectSprite("tile_shadow");
-            if (shadowSprite != null)
+            var x = -width / 2f;
+            foreach (var face in faces)
             {
-                var shadow = NewImage("Shadow", parent, shadowSprite, 0f, CellCentre);
-                shadow.rectTransform.sizeDelta = shadowSprite.rect.size * scale;
-                shadow.rectTransform.localRotation = rotation;
-                shadow.rectTransform.anchoredPosition = centre + new Vector2(0f, -content.shadowOffsetY);
-                Color tint = TokenColor.Shadow;
-                tint.a = content.shadowAlpha;
-                shadow.color = tint;
-                shadow.material = MaterialOf("tile_shadow");
+                var upright = IsDouble(face);
+                var span = upright ? shortSide : longSide;
+                place(face, upright, new Vector2(x + span / 2f, y));
+                x += span + TileGap;
             }
+        }
+
+        void AddShadow(RectTransform parent, Sprite sprite, float scale, bool upright, Vector2 centre)
+        {
+            var shadow = NewImage("Shadow", parent, sprite, 0f, CellCentre);
+            shadow.rectTransform.sizeDelta = sprite.rect.size * scale;
+            shadow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, upright ? 0f : 90f);
+            shadow.rectTransform.anchoredPosition = centre + new Vector2(0f, -content.shadowOffsetY);
+            Color tint = TokenColor.Shadow;
+            tint.a = content.shadowAlpha;
+            shadow.color = tint;
+            shadow.material = MaterialOf(sprite.name);
+        }
+
+        void AddFace(RectTransform parent, Sprite face, float scale, bool upright, Vector2 centre)
+        {
             var tile = NewImage(face.name, parent, face, 0f, CellCentre);
             tile.rectTransform.sizeDelta = face.rect.size * scale;
-            tile.rectTransform.localRotation = rotation;
+            tile.rectTransform.localRotation = Quaternion.Euler(0f, 0f, upright ? 0f : 90f);
             tile.rectTransform.anchoredPosition = centre;
         }
 
@@ -330,7 +335,7 @@ namespace HypeDomino.Bench
                 var back = content.tileBacks[at];
                 var cell = Cell(backArea, at * sides.Length + size, sides.Length, content.tileBacks.Length);
                 var scale = sides[size] / back.still.rect.width;
-                AddLoop(backs, cell, back, 0f).rectTransform.sizeDelta = back.still.rect.size * scale;
+                AddLoop(backs, cell, back, 0f).sizeDelta = back.still.rect.size * scale;
                 Label(cell, back.IsAnimated ? $"{back.name} {sides[size]} (anim)" : $"{back.name} {sides[size]}");
             }
         }
@@ -662,13 +667,13 @@ namespace HypeDomino.Bench
 
         LoopArt ArtOf(ArtBenchLoop item) => new LoopArt(item.still, item.frames, LoopRates[rateIndex]);
 
-        AnimatedImage AddLoop(Sheet sheet, RectTransform parent, ArtBenchLoop item, float side) => AddLoop(sheet, parent, item, side, CellCentre);
+        RectTransform AddLoop(Sheet sheet, RectTransform parent, ArtBenchLoop item, float side) => AddLoop(sheet, parent, item, side, CellCentre);
 
-        AnimatedImage AddLoop(Sheet sheet, RectTransform parent, ArtBenchLoop item, float side, Vector2 anchor)
+        RectTransform AddLoop(Sheet sheet, RectTransform parent, ArtBenchLoop item, float side, Vector2 anchor)
         {
-            var image = NewImage(item.name, parent, item.still, side, anchor).gameObject.AddComponent<AnimatedImage>();
-            sheet.Loops.Add(new LoopSlot { Image = image, Source = item, Art = ArtOf(item) });
-            return image;
+            var image = NewImage(item.name, parent, item.still, side, anchor);
+            sheet.Loops.Add(new LoopSlot { Image = image.gameObject.AddComponent<AnimatedImage>(), Source = item, Art = ArtOf(item) });
+            return image.rectTransform;
         }
 
         Sheet NewSheet(string section, string caption)
