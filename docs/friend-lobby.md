@@ -16,6 +16,8 @@ Owned elsewhere and only referenced: game rules of custom play (`docs/rules.md` 
 
 A member can leave the room in FL-1 and FL-2. Leaving during FL-3 and FL-4 is a leave under R-52 with no penalty (R-55).
 
+FL-5 follows the server: when the custom match ends, the server puts the room back in the lobby phase, and the client of every member still in the room returns to it from the match on that `LobbyState`. A member who left the room during the match returns to the main lobby (`client/README.md`, `AppFlow.Room`).
+
 ## 2. Lobby (FL-1)
 
 - Members: the creator plus invited friends, at most 4, the seat count of the largest mode (R-5). The room has a code for joining without an invite (#268).
