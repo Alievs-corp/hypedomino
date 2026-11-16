@@ -48,6 +48,7 @@ namespace HypeDomino.UI.Cosmetics
         public const string Live = "live";
         public const string Retired = "retired";
         public const string DefaultSource = "default";
+        const string BuiltinResource = "cosmetics-builtin";
 
         static readonly string[] KnownSources = { DefaultSource, "shop", "pass", "mission", "promo", "rank_reward", "first_purchase", "event", "chest" };
 
@@ -118,6 +119,19 @@ namespace HypeDomino.UI.Cosmetics
         {
             if (TryGet(id, out var item) && item.Type == type && item.IsRendered) return item;
             return DefaultOf(type);
+        }
+
+        public static CosmeticManifest LoadBuiltin()
+        {
+            var asset = Resources.Load<TextAsset>(BuiltinResource);
+            if (asset == null)
+            {
+                Debug.LogError($"Cosmetics builtin missing resource={BuiltinResource}");
+                return null;
+            }
+            if (!TryParse(asset.text, out var manifest)) Debug.LogError($"Cosmetics builtin refused resource={BuiltinResource}");
+            Resources.UnloadAsset(asset);
+            return manifest;
         }
 
         public static bool TryParse(string json, out CosmeticManifest manifest)

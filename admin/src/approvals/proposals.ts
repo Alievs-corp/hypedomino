@@ -1,3 +1,4 @@
+import { breakGlassOf } from "../config/liveControls.ts";
 import { grantChangeSummary } from "../players/grant.ts";
 import { promoChangeSummary } from "../promo/codes.ts";
 
@@ -23,11 +24,22 @@ export function objectHref(proposal: Proposal): string | null {
   if (proposal.object_type === "promo_codes") {
     return "/promo";
   }
+  if (proposal.object_type === "admin_accounts") {
+    return "/accounts";
+  }
   return proposal.object_type === "players" ? `/players/${encodeURIComponent(proposal.object_id)}` : null;
 }
 
+function breakGlassSummary(change: unknown): string | null {
+  const glass = breakGlassOf(change);
+  if (glass === null) {
+    return null;
+  }
+  return `${glass.incident.severity} ${glass.incident.id}; config_version: ${glass.config_version}; controls: ${JSON.stringify((change as { controls?: unknown }).controls)}`;
+}
+
 export function changeSummary(change: unknown): string {
-  const special = promoChangeSummary(change) ?? grantChangeSummary(change);
+  const special = promoChangeSummary(change) ?? grantChangeSummary(change) ?? breakGlassSummary(change);
   if (special !== null) {
     return special;
   }

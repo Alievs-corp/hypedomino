@@ -172,6 +172,16 @@ func TestTheShowcaseHoldsOwnedMedalsAndLosesARevokedOne(t *testing.T) {
 	if len(collection.Medals) != 4 {
 		t.Fatalf("collection shows %d medals, want the 4 live ones", len(collection.Medals))
 	}
+	f.store.SetMissionTypes(func(id string) string {
+		if id == "mission.win_50" {
+			return "achievement"
+		}
+		return ""
+	})
+	collection, err = f.store.Collection(context.Background(), account)
+	if err != nil || collection.Medals[0].Group != medal.GroupAchievement || collection.Medals[1].Group != medal.GroupRankReward || collection.Medals[2].Group != "" {
+		t.Fatalf("collection groups %+v %v", collection.Medals, err)
+	}
 	if public, err := f.store.Public(context.Background(), account); err != nil || len(public) != 1 || public[0].ID != "medal.wins_50" || public[0].RarityID == "" {
 		t.Fatalf("public showcase %+v %v", public, err)
 	}

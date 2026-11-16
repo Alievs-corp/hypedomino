@@ -23,13 +23,18 @@ test("a proposal is the admin's own only when they proposed it", () => {
 
 test("player proposals link to the player record and others link nowhere", () => {
   assert.equal(objectHref(grant), "/players/11111111-2222-3333-4444-555555555555");
-  assert.equal(objectHref({ ...grant, object_type: "admin_accounts" }), null);
+  assert.equal(objectHref({ ...grant, object_type: "admin_accounts" }), "/accounts");
+  assert.equal(objectHref({ ...grant, object_type: "live_controls" }), null);
 });
 
 test("the change summary shows what changes and hides bookkeeping ids", () => {
   assert.equal(changeSummary(grant.change), "coins: 5000");
   assert.equal(changeSummary({ roles: ["super_admin", "content"] }), "roles: super_admin, content");
   assert.equal(changeSummary("raw"), '"raw"');
+  assert.equal(
+    changeSummary({ incident: { severity: "SEV1", id: "INC-12" }, config_version: 4, controls: { purchases_disabled: true } }),
+    'SEV1 INC-12; config_version: 4; controls: {"purchases_disabled":true}',
+  );
 });
 
 test("a promo proposal links to the promo screen and reads as its code", () => {

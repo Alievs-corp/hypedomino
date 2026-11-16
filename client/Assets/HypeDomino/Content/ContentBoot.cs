@@ -1,4 +1,5 @@
 using System.IO;
+using HypeDomino.UI.Cosmetics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -15,11 +16,18 @@ namespace HypeDomino.Content
 
         public static ContentCache Cache { get; private set; }
 
+        public static ActiveCosmeticManifest Cosmetics { get; private set; }
+
+        public static CosmeticManifestUpdater CosmeticsUpdater { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
+            Cosmetics = new ActiveCosmeticManifest(CosmeticManifest.LoadBuiltin());
             if (Application.isEditor) return;
             var folder = Folder;
+            CosmeticsUpdater = new CosmeticManifestUpdater(new UnityCosmeticManifestSource(folder), Cosmetics);
+            CosmeticsUpdater.LoadStored();
             Catalog = new CatalogUpdater(new AddressablesCatalogSource(folder), Platform());
             Cache = new ContentCache(new UnityCacheStore(folder), () => Catalog.InMatch);
             Cache.Start();

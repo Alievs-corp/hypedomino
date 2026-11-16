@@ -1,11 +1,15 @@
+using System.IO;
 using HypeDomino.UI.Medals;
 using HypeDomino.UI.Missions;
+using HypeDomino.UI.Rarity;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
 {
     public sealed class MedalCollectionTests
     {
+        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+
         const string CollectionJson = @"{""version"":7,""slots"":3,""medals"":[
 {""id"":""medal.first_win"",""revision"":1,""nameKey"":""medal.first_win.name"",""descriptionKey"":""medal.first_win.description"",""rarityId"":""common"",""staticAddress"":""medal/first_win/static"",""sources"":[{""type"":""mission"",""ref"":""mission.first_win""}],""availability"":""live""},
 {""id"":""medal.hundred_wins"",""revision"":2,""nameKey"":""medal.hundred_wins.name"",""descriptionKey"":""medal.hundred_wins.description"",""rarityId"":""epic"",""staticAddress"":""medal/hundred_wins/static"",""sources"":[{""type"":""mission"",""ref"":""mission.hundred_wins""}],""availability"":""live""},
@@ -182,6 +186,25 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheGridOrdersByGroupThenRarityDescendingThenId()
+        {
+            var collection = new MedalCollection(RarityTable.Parse(File.ReadAllText(RarityDefaultsPath)));
+            collection.Show(MedalCollectionReply.FromJson(@"{""slots"":3,""medals"":[
+{""id"":""medal.top"",""rarityId"":""legendary"",""group"":""rank_reward""},
+{""id"":""medal.moon"",""rarityId"":""rare"",""group"":""event""},
+{""id"":""medal.b_win"",""rarityId"":""common"",""group"":""achievement""},
+{""id"":""medal.lost"",""rarityId"":""mythic""},
+{""id"":""medal.a_win"",""rarityId"":""common"",""group"":""achievement""},
+{""id"":""medal.odd"",""rarityId"":""unknown"",""group"":""achievement""},
+{""id"":""medal.epic_win"",""rarityId"":""epic"",""group"":""achievement""}]}"));
+
+            var ids = new string[collection.ShownCount];
+            for (var at = 0; at < ids.Length; at++) ids[at] = collection.ShownAt(at).id;
+
+            Assert.AreEqual(new[] { "medal.epic_win", "medal.a_win", "medal.b_win", "medal.odd", "medal.moon", "medal.top", "medal.lost" }, ids);
+        }
+
+        [Test]
         public void AnEmptyReplyShowsNothing()
         {
             var collection = new MedalCollection();
@@ -202,6 +225,7 @@ namespace HypeDomino.Tests.EditMode
                 collection.TryGet("medal.first_win", out _);
                 collection.TryGet("medal.hundred_wins", out _);
                 for (var at = 0; at < collection.ShowcaseCount; at++) collection.ShowcaseAt(at);
+                for (var at = 0; at < collection.ShownCount; at++) collection.ShownAt(at);
                 collection.IsShowcased("medal.domino_ten");
             };
             read();

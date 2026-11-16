@@ -8,30 +8,30 @@ from PIL import Image, ImageDraw
 from scipy import ndimage, optimize
 
 SLUG = "cranberry_kitten"
-CANONICAL = "20261116-01.png"
-BLINK_EDIT = "20261116-02.png"
-CROP = (0, -148, 1254, 1106)
+CANONICAL = "20261116-03.png"
+BLINK_EDIT = "20261116-04.png"
+CROP = (54, -161, 1226, 1011)
 SUPER = 768
 CANVAS = 192
 FRAMES = 16
 STATIC_FRAME = 9
 CIRCLE_FEATHER = 2.25
-HEAD = (375, 268, 182, 192)
+HEAD = (350, 330, 210, 215)
 HEAD_FALLOFF = 0.3
-NECK_Y = 426
+NECK_Y = 555
 NECK_BAND = 34
-SHOULDER_Y = 542
+SHOULDER_Y = 660
 HEAD_RIDE = 0.4
-BREATH = 7.67
+BREATH = 7.36
 BREATH_WIDTH = 0.012
 TILT = 1.6
-NOD = 1.92
-EYES = [(351, 275, 35, 17), (440, 259, 35, 17)]
-EYE_FEATHER = 4.8
+NOD = 1.84
+EYES = [(332, 334, 34, 18), (440, 364, 30, 17)]
+EYE_FEATHER = 4.6
 BLINK = {4: 1.0, 5: 1.0}
 PARTS = [
-    {"name": "kitten_head", "polygon": [(497, 252), (515, 233), (532, 250), (549, 267), (572, 277), (593, 279), (609, 279), (603, 309), (589, 334), (570, 353), (543, 363), (515, 357), (497, 336), (492, 296)], "pivot": (553, 365), "length": 48, "swing": 7.0, "lag": 0.0, "flutter": 0.5, "grow": 1, "behind": "fill"},
-    {"name": "kitten_tail", "polygon": [(630, 484), (655, 476), (676, 511), (693, 551), (705, 599), (706, 647), (699, 687), (682, 703), (660, 697), (653, 659), (655, 609), (651, 561), (637, 522)], "pivot": (643, 488), "length": 86, "swing": 7.0, "lag": 1.0, "flutter": 0.4, "grow": 1, "behind": "fill"},
+    {"name": "kitten_head", "polygon": [(478, 400), (500, 360), (515, 336), (532, 365), (560, 385), (590, 395), (620, 390), (610, 425), (600, 455), (585, 480), (560, 495), (530, 500), (500, 492), (480, 470), (476, 440)], "pivot": (545, 500), "length": 48, "swing": 7.0, "lag": 0.0, "flutter": 0.5, "grow": 1, "behind": "fill"},
+    {"name": "kitten_tail", "polygon": [(466, 610), (480, 603), (500, 609), (530, 610), (562, 608), (564, 634), (520, 635), (480, 631), (466, 624)], "pivot": (564, 621), "length": 60, "swing": 6.0, "lag": 1.0, "flutter": 0.4, "grow": 1, "behind": "fill"},
 ]
 GLINTS = []
 GLINT_PEAK = 0.55
@@ -191,7 +191,7 @@ def swayed(layer, part, frame, xs, ys):
     px, py = part["pivot"]
     t = phase(frame)
     lag = part.get("lag", 0.0)
-    angle = math.radians(part["swing"]) * (math.sin(lag) - math.sin(t + lag) + part.get("flutter", 0.0) * math.sin(2 * t)) + part.get("spin", 0) * t
+    angle = math.radians(part["swing"]) * (math.sin(lag) - math.sin(t + lag) + part.get("flutter", 0.0) * math.sin(2 * t))
     shift_x, shift_y = displacement(frame, np.array([px]), np.array([py]))
     dx, dy = xs - px - shift_x[0], ys - py - shift_y[0]
     bend = angle * smoothstep(0, part["length"], np.hypot(dx, dy))

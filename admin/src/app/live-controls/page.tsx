@@ -4,7 +4,9 @@ import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { unpublishedControls, type LiveControlsView } from "@/config/liveControls";
 import { serverTranslator } from "@/i18n/server";
+import type { Proposal } from "@/approvals/proposals";
 import { LiveControlsEditor } from "./LiveControlsEditor";
+import { UnconfirmedBreakGlass } from "./UnconfirmedBreakGlass";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +19,11 @@ export default async function LiveControlsPage() {
   if (!canView(admin.permissions, "live_controls")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const current = await adminApi<LiveControlsView>("GET", "/admin/live-controls");
-  if (current.status !== 200) {
+  const [current, unconfirmed] = await Promise.all([
+    adminApi<LiveControlsView>("GET", "/admin/live-controls"),
+    adminApi<{ proposals: Proposal[] }>("GET", "/admin/live-controls/break-glass"),
+  ]);
+  if (current.status !== 200 || unconfirmed.status !== 200) {
     return <Notice text={t("live.load_failed")} />;
   }
   const canSwitch = can(admin.permissions, "live_controls", "switch_live_control");
@@ -31,6 +36,10 @@ export default async function LiveControlsPage() {
         </p>
         <p className="text-sm text-text-secondary">{t("live.explain")}</p>
       </div>
+      <section className="flex flex-col gap-2">
+        <h2 className="font-semibold">{t("live.break_glass_unconfirmed")}</h2>
+        <UnconfirmedBreakGlass proposals={unconfirmed.body.proposals} t={t} />
+      </section>
       <LiveControlsEditor published={current.body.controls ?? unpublishedControls} clientId={canSwitch ? googleClientId() : null} />
     </main>
   );

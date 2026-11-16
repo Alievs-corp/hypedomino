@@ -126,6 +126,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/me", h.signedIn(h.me))
 	h.mux.HandleFunc("PUT /admin/me/locale", h.signedIn(h.chooseLocale))
 	h.mux.HandleFunc("GET /admin/economy/monitors", h.allowed(rbac.Dashboards, rbac.View, h.economyMonitors))
+	h.mux.HandleFunc("GET /admin/config/version", h.allowed(rbac.Dashboards, rbac.View, h.activeConfigVersion))
 	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
 	h.mux.HandleFunc("POST /admin/audit/export", h.allowed(rbac.AuditLog, rbac.ExportAudit, h.exportAudit))
@@ -194,9 +195,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/config/store-prices/sync/plan", h.allowed(rbac.StoreProducts, rbac.View, h.planStorePush))
 	h.mux.HandleFunc("POST /admin/config/store-prices/sync/apply", h.allowed(rbac.StoreProducts, rbac.PushStorePrices, h.applyStorePush))
 	h.mux.HandleFunc("GET /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticCatalog))
-	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, publisher) })))
+	h.mux.HandleFunc("PUT /admin/config/cosmetics", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.publishDomain, func(publisher string) configDomain { return h.cosmeticsDomain(false, false, publisher) })))
 	h.mux.HandleFunc("GET /admin/config/cosmetics/history", h.allowed(rbac.CosmeticItems, rbac.View, h.domainHistory(cosmetics.Domain)))
-	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.rollbackDomain, func(publisher string) configDomain { return h.cosmeticsDomain(true, publisher) })))
+	h.mux.HandleFunc("POST /admin/config/cosmetics/rollback", h.allowed(rbac.CosmeticItems, rbac.Publish, asPublisher(h.rollbackDomain, func(publisher string) configDomain { return h.cosmeticsDomain(true, false, publisher) })))
 	h.mux.HandleFunc("POST /admin/cosmetics/items/{id}/switch-off", h.allowed(rbac.CosmeticItems, rbac.SwitchOffForIncident, h.switchOffCosmetic))
 	h.mux.HandleFunc("GET /admin/config/missions", h.allowed(rbac.Missions, rbac.View, h.missionCatalog))
 	h.mux.HandleFunc("PUT /admin/config/missions", h.allowed(rbac.Missions, rbac.Publish, h.publishDomain(func() configDomain { return h.missionDomain(false) })))
@@ -224,6 +225,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/config/medals/history", h.allowed(rbac.Medals, rbac.View, h.domainHistory(medal.Domain)))
 	h.mux.HandleFunc("POST /admin/config/medals/rollback", h.allowed(rbac.Medals, rbac.Publish, h.rollbackDomain(func() configDomain { return h.medalDomain(true) })))
 	h.mux.HandleFunc("GET /admin/live-controls", h.allowed(rbac.LiveControls, rbac.View, h.liveControls))
+	h.mux.HandleFunc("GET /admin/live-controls/break-glass", h.allowed(rbac.LiveControls, rbac.View, h.unconfirmedBreakGlass))
 	h.mux.HandleFunc("GET /admin/calendar", h.allowed(rbac.LiveEvents, rbac.View, h.calendar))
 	h.mux.HandleFunc("PUT /admin/live-controls", h.allowed(rbac.LiveControls, rbac.SwitchLiveControl, h.switchLiveControls))
 	h.mux.HandleFunc("GET /admin/reviews", h.allowed(rbac.Queues, rbac.View, h.listReviews))
@@ -574,6 +576,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "frozen"
 	case errors.Is(err, errStaleLiveControls):
 		return http.StatusConflict, "stale_proposal"
+	case errors.Is(err, livecontrol.ErrIncident):
+		return http.StatusBadRequest, "incident_required"
 	case errors.Is(err, errNoSuchVersion):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, gamestrings.ErrUnknownKey), errors.Is(err, gamestrings.ErrNoBundle):
