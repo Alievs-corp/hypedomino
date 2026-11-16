@@ -7,7 +7,7 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class CosmeticManifestTests
     {
-        const string BuiltinPath = "Assets/HypeDomino/UI/Cosmetics/cosmetics-builtin.json";
+        const string BuiltinPath = "Assets/HypeDomino/UI/Cosmetics/Resources/cosmetics-builtin.json";
 
         static string RepoFile(params string[] parts)
         {

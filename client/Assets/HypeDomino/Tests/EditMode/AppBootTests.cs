@@ -8,6 +8,7 @@ using HypeDomino.Game;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Audio;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using Hypedomino.V1;
@@ -30,6 +31,7 @@ namespace HypeDomino.Tests.EditMode
         const string AzContent = @"{""language"":""az"",""strings"":{""k"":""A""}}";
         const string RuContent = @"{""language"":""ru"",""strings"":{""k"":""R""}}";
         const string EnHash = "e0";
+        const string ManifestHash = "c9";
 
         static readonly string[] NoLocales = { };
         static readonly Regex MissingK = new Regex("^Strings missing key=k language=az version=0$");
@@ -72,6 +74,23 @@ namespace HypeDomino.Tests.EditMode
             public void Store(string language, int version, string hash, byte[] content) { }
         }
 
+        sealed class IdleCosmeticSource : ICosmeticManifestSource
+        {
+            public List<string> Downloads { get; } = new();
+
+            public void Download(string url, Action<byte[]> done) => Downloads.Add(url);
+
+            public bool TryLoadStored(out int version, out string hash, out byte[] content)
+            {
+                version = 0;
+                hash = null;
+                content = null;
+                return false;
+            }
+
+            public void Store(int version, string hash, byte[] content) { }
+        }
+
         sealed class ServerFrames : IFrameTransport
         {
             readonly List<byte[]> incoming = new(4);
@@ -104,6 +123,7 @@ namespace HypeDomino.Tests.EditMode
             public readonly FrameRatePolicy FrameRate = AppBootTests.FrameRate();
             public readonly LanguageChoice Choice = LanguageChoice.Load("az", () => NoLocales);
             public readonly IdleStringSource StringSource = new();
+            public readonly IdleCosmeticSource CosmeticSource = new();
             public readonly GameStrings Strings;
             public readonly CatalogUpdater Catalog;
             public HapticCue Felt;
@@ -114,7 +134,7 @@ namespace HypeDomino.Tests.EditMode
                 Strings = new GameStrings(BuiltinStrings.Parse(Builtin), Choice, false);
                 Catalog = new CatalogUpdater(Source, "Android");
                 Flow.Changed += state => AppBoot.FollowMatch(state, FrameRate, Catalog);
-                AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), cue => Felt = cue, sounds => Heard = sounds);
+                AppBoot.Listen(Session, Flow, Catalog, Strings, new StringBundleUpdater(StringSource, Strings), new CosmeticManifestUpdater(CosmeticSource, new ActiveCosmeticManifest(null)), cue => Felt = cue, sounds => Heard = sounds);
                 Session.Hello(Server, new ClientHello());
             }
 
@@ -163,6 +183,7 @@ namespace HypeDomino.Tests.EditMode
             hello.StringBundles.Add(new AnnouncedBundle { Language = "en", Version = 4, Hash = EnHash });
             hello.StringBundles.Add(new AnnouncedBundle { Language = "ru", Version = 2, Hash = RuHash });
             hello.FallbackChains.Add(chains);
+            hello.CosmeticsManifest = new CosmeticsManifest { Version = 9, Hash = ManifestHash };
             return hello;
         }
 
@@ -267,7 +288,7 @@ namespace HypeDomino.Tests.EditMode
             var session = new Session();
             var flow = new AppFlow();
             var server = new ServerFrames();
-            AppBoot.Listen(session, flow, null, Strings("az"), null, _ => { }, _ => { });
+            AppBoot.Listen(session, flow, null, Strings("az"), null, null, _ => { }, _ => { });
             session.Hello(server, new ClientHello());
             server.Deliver(FrameOf(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false)));
             session.Poll();
@@ -331,6 +352,7 @@ namespace HypeDomino.Tests.EditMode
             LogAssert.Expect(LogType.Log, new Regex("^Strings fetch language=en version=4$"));
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Accepted, Chain("az", "az", "en")));
             CollectionAssert.AreEqual(new[] { ContentUrls.Strings(Cdn, "az", AzHash), ContentUrls.Strings(Cdn, "en", EnHash) }, app.StringSource.Downloads);
+            CollectionAssert.AreEqual(new[] { ContentUrls.Cosmetics(Cdn, ManifestHash) }, app.CosmeticSource.Downloads);
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("E", app.Strings.Text("k"));
         }
@@ -403,6 +425,7 @@ namespace HypeDomino.Tests.EditMode
             var app = new Listened();
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Announcing(HelloStatus.Maintenance, Chain("az", "az", "en")));
             CollectionAssert.IsEmpty(app.StringSource.Downloads);
+            CollectionAssert.IsEmpty(app.CosmeticSource.Downloads);
             LogAssert.Expect(LogType.Warning, MissingK);
             Assert.AreEqual("T", app.Strings.Text("k"));
         }
