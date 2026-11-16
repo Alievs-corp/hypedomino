@@ -108,6 +108,7 @@ type Options struct {
 	Clock     Clock
 	Origins   []string
 	Strings   func() Strings
+	Cosmetics func() *pb.CosmeticsManifest
 	Admission func() Admission
 }
 

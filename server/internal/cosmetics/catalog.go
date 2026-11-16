@@ -1,7 +1,9 @@
 package cosmetics
 
 import (
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -77,6 +79,7 @@ func (i Item) Equippable() bool {
 
 type Catalog struct {
 	Version int
+	Hash    string
 	items   map[string]Item
 	order   []string
 }
@@ -105,6 +108,15 @@ func Load(path string) (*Catalog, error) {
 	return Parse(raw)
 }
 
+func Hash(raw []byte) string {
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:])
+}
+
+func File(hash string) string {
+	return "cosmetics/" + hash + ".json"
+}
+
 func Parse(raw []byte) (*Catalog, error) {
 	var m manifest
 	if err := json.Unmarshal(raw, &m); err != nil {
@@ -116,7 +128,7 @@ func Parse(raw []byte) (*Catalog, error) {
 	if m.ManifestVersion < 1 || len(m.Items) == 0 {
 		return nil, fmt.Errorf("%w: manifestVersion and items are required", ErrInvalid)
 	}
-	c := &Catalog{Version: m.ManifestVersion, items: make(map[string]Item, len(m.Items))}
+	c := &Catalog{Version: m.ManifestVersion, Hash: Hash(raw), items: make(map[string]Item, len(m.Items))}
 	for _, item := range m.Items {
 		if err := check(item); err != nil {
 			return nil, err
