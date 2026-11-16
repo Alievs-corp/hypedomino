@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,48 @@ func (a *api) player(subject, email string, nicknames ...string) string {
 		}
 	}
 	return created.ID
+}
+
+func foundPlayers(a *api, token, query string) string {
+	a.t.Helper()
+	status, body := a.call("GET", "/admin/players?"+query, token, nil)
+	if status != http.StatusOK {
+		a.t.Fatalf("search %q: %d %v", query, status, body)
+	}
+	var ids []string
+	for _, player := range body["players"].([]any) {
+		ids = append(ids, player.(map[string]any)["id"].(string))
+	}
+	return strings.Join(ids, ",")
+}
+
+func TestThePlayerSearchPagesAndFiltersByState(t *testing.T) {
+	a := newAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	first := a.player("g-1", "first@mail.example", "Pager_A")
+	second := a.player("g-2", "second@mail.example", "Pager_B")
+	third := a.player("g-3", "third@mail.example", "Pager_C")
+	if _, err := a.pool.Exec(context.Background(), `update accounts set state = 'banned' where id = any($1::uuid[])`, []string{first, third}); err != nil {
+		t.Fatal(err)
+	}
+
+	if page, rest := foundPlayers(a, support, "q=pager&limit=2"), foundPlayers(a, support, "q=pager&limit=2&after="+second); page != first+","+second || rest != third {
+		t.Fatalf("pages %q %q", page, rest)
+	}
+	if banned := foundPlayers(a, support, "q=pager&state=banned"); banned != first+","+third {
+		t.Fatalf("banned %q", banned)
+	}
+	if newest, older := foundPlayers(a, support, "state=banned&limit=1"), foundPlayers(a, support, "state=banned&limit=1&after="+third); newest != third || older != first {
+		t.Fatalf("by state %q %q", newest, older)
+	}
+	if active := foundPlayers(a, support, "q="+url.QueryEscape("second@mail.example")+"&state=banned"); active != "" {
+		t.Fatalf("email with state %q", active)
+	}
+	for _, query := range []string{"state=gone", "q=pager&after=nope", "q=pager&limit=x"} {
+		status, body := a.call("GET", "/admin/players?"+query, support, nil)
+		expect(t, status, body, http.StatusBadRequest, "invalid")
+	}
 }
 
 func TestSupportFindsAPlayerAndEveryRecordViewIsAudited(t *testing.T) {

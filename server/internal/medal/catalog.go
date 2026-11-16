@@ -59,6 +59,14 @@ func Parse(raw []byte) (*Catalog, error) {
 	return catalog, nil
 }
 
+func ValidID(id string) bool {
+	return idPattern.MatchString(id)
+}
+
+func StaticAddress(id string) string {
+	return "medal/" + strings.TrimPrefix(id, "medal.") + "/static"
+}
+
 func (c *Catalog) Medal(id string) (Medal, bool) {
 	for _, medal := range c.Medals {
 		if medal.ID == id {
@@ -102,7 +110,7 @@ func validateMedal(medal Medal, rarities cosmetics.Rarities) error {
 		return errors.New("revision must be at least 1")
 	case medal.NameKey != "medal."+slug+".name" || medal.DescriptionKey != "medal."+slug+".description":
 		return errors.New("nameKey and descriptionKey must be medal.<slug>.name and medal.<slug>.description")
-	case medal.StaticAddress != "medal/"+slug+"/static":
+	case medal.StaticAddress != StaticAddress(medal.ID):
 		return errors.New("staticAddress must be medal/<slug>/static")
 	case rarities[medal.RarityID] == 0:
 		return fmt.Errorf("rarityId %q is not in the rarity table", medal.RarityID)

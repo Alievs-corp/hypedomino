@@ -3,7 +3,7 @@ import { adminApi } from "@/admin/api";
 import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
-import { identityProviders, playerSearch, playersApiPath, type PlayerSummary, type SearchParams } from "@/players/record";
+import { accountStates, identityProviders, nextPlayersHref, playerSearch, playersApiPath, type PlayerSummary, type SearchParams } from "@/players/record";
 import { Notice } from "./Notice";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,7 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
   const mayFindIdentity = admin.account.roles.includes("super_admin");
   const reply = search ? await adminApi<{ players: PlayerSummary[] | null }>("GET", playersApiPath(search)) : null;
   const players = reply?.status === 200 ? (reply.body.players ?? []) : null;
+  const next = search && players ? nextPlayersHref(search, players.map((player) => player.id)) : null;
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
       <h1 className="text-2xl font-semibold">{t("players.title")}</h1>
@@ -28,6 +29,17 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
         <label className="flex min-w-80 flex-col gap-1 text-sm text-text-secondary">
           {t("players.query")}
           <input name="q" defaultValue={search && "q" in search ? search.q : ""} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-text-secondary">
+          {t("players.state")}
+          <select name="state" defaultValue={search && "state" in search ? search.state : ""} className="rounded-md bg-surface px-3 py-1 text-text-primary">
+            <option value="">{t("queues.any")}</option>
+            {accountStates.map((state) => (
+              <option key={state} value={state}>
+                {state}
+              </option>
+            ))}
+          </select>
         </label>
         <button type="submit" className="rounded-md bg-primary px-4 py-2 text-on-primary">
           {t("players.search")}
@@ -86,6 +98,11 @@ export default async function PlayersPage({ searchParams }: { searchParams: Prom
             ))}
           </tbody>
         </table>
+      )}
+      {next && (
+        <Link href={next} prefetch={false} className="self-start rounded-md bg-surface px-4 py-2 text-text-secondary">
+          {t("queues.next")}
+        </Link>
       )}
     </main>
   );

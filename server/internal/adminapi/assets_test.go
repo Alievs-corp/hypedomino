@@ -247,3 +247,62 @@ func TestWithoutAStoreTheListWorksAndUploadsAreRefused(t *testing.T) {
 	status, body = a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "avatar.fox", "slot": "static"})
 	expect(t, status, body, http.StatusServiceUnavailable, "asset_store_off")
 }
+
+func TestAStaticUploadsUnderTheAddressOfACosmeticOrAMedal(t *testing.T) {
+	cases := []struct {
+		item    string
+		status  int
+		refusal string
+		address string
+	}{
+		{"medal.wins_50", http.StatusOK, "", "medal/wins_50/static"},
+		{"medal.points_1m", http.StatusOK, "", "medal/points_1m/static"},
+		{"avatar.fox", http.StatusOK, "", "cosmetic/avatar/fox/static"},
+		{"medal.", http.StatusBadRequest, "invalid", ""},
+		{"medal.Wins_50", http.StatusBadRequest, "invalid", ""},
+		{"medal.wins_50/static", http.StatusBadRequest, "invalid", ""},
+		{"medal.wins.50", http.StatusBadRequest, "invalid", ""},
+		{"medals.wins_50", http.StatusBadRequest, "invalid", ""},
+		{"emblem.global_top10", http.StatusBadRequest, "invalid", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.item, func(t *testing.T) {
+			a, store := newAssetAPI(t)
+			token := a.signIn("ayla")
+			status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": c.item, "slot": "static"})
+			expect(t, status, body, c.status, c.refusal)
+			if c.status != http.StatusOK {
+				return
+			}
+			id, uploadURL := body["asset"].(map[string]any)["id"].(string), body["upload_url"].(string)
+			if !strings.HasPrefix(uploadURL, "https://store.example/put/"+c.address+"/"+id+".png") {
+				t.Fatalf("url %s", uploadURL)
+			}
+			store.upload(uploadURL, encodedPNG(t, image.NewNRGBA(image.Rect(0, 0, 256, 256))))
+			status, body = a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+			expect(t, status, body, http.StatusOK, "")
+			asset := body["asset"].(map[string]any)
+			if asset["status"] != "passed" || asset["address"] != c.address || asset["item_id"] != c.item || asset["width"] != float64(256) {
+				t.Fatalf("asset %v", asset)
+			}
+		})
+	}
+}
+
+func TestAMedalStaticFacesTheSameChecksAndSlots(t *testing.T) {
+	a, store := newAssetAPI(t)
+	token := a.signIn("ayla")
+	for _, slot := range []string{"anim", "clip/idle", ""} {
+		status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "medal.wins_50", "slot": slot})
+		expect(t, status, body, http.StatusBadRequest, "asset_slot_unsupported")
+	}
+	status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "medal.wins_50", "slot": "static"})
+	expect(t, status, body, http.StatusOK, "")
+	id := body["asset"].(map[string]any)["id"].(string)
+	store.upload(body["upload_url"].(string), encodedPNG(t, image.NewGray(image.Rect(0, 0, 256, 256))))
+	status, body = a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+	expect(t, status, body, http.StatusOK, "")
+	if asset := body["asset"].(map[string]any); asset["status"] != "rejected" || asset["checks"].(map[string]any)["alpha"] != false {
+		t.Fatalf("asset %v", asset)
+	}
+}

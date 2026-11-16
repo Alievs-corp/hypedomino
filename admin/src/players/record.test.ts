@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, playerSearch, playersApiPath, searchQuery, validAdjustment, type PlayerAccount } from "./record.ts";
+import { banActive, missionPlace, missionProgress, muteActive, nextPlayersHref, playerApiPath, playerPageSize, playerSearch, playersApiPath, searchQuery, validAdjustment, type PlayerAccount } from "./record.ts";
 
 test("the search query is the first trimmed q value", () => {
   assert.equal(searchQuery({ q: "  ayla " }), "ayla");
@@ -9,8 +9,8 @@ test("the search query is the first trimmed q value", () => {
 });
 
 test("query and id are encoded into the admin API paths", () => {
-  assert.equal(playersApiPath({ q: "ayla@example.com" }), "/admin/players?q=ayla%40example.com");
-  assert.equal(playersApiPath({ q: "a&b=c" }), "/admin/players?q=a%26b%3Dc");
+  assert.equal(playersApiPath({ q: "ayla@example.com", state: "", after: "" }), `/admin/players?q=ayla%40example.com&limit=${playerPageSize}`);
+  assert.equal(playersApiPath({ q: "a&b=c", state: "banned", after: "" }), `/admin/players?q=a%26b%3Dc&state=banned&limit=${playerPageSize}`);
   assert.equal(playersApiPath({ provider: "apple", subject: "001.a&b" }), "/admin/players?provider=apple&subject=001.a%26b");
   assert.equal(playerApiPath("../admin/me"), "/admin/players/..%2Fadmin%2Fme");
 });
@@ -43,8 +43,20 @@ test("a coin adjustment is a whole, non-zero number of coins, credit or debit", 
 test("a subject searches by auth identity, otherwise q searches the text", () => {
   assert.deepEqual(playerSearch({ provider: "apple", subject: " 001.abc ", q: "ayla" }), { provider: "apple", subject: "001.abc" });
   assert.deepEqual(playerSearch({ provider: "other", subject: "1234" }), { provider: "google", subject: "1234" });
-  assert.deepEqual(playerSearch({ q: " ayla ", subject: " " }), { q: "ayla" });
+  assert.deepEqual(playerSearch({ q: " ayla ", subject: " " }), { q: "ayla", state: "", after: "" });
   assert.equal(playerSearch({}), null);
+});
+
+test("the player list keeps a known state and a well-formed cursor, and pages only when full", () => {
+  const id = "5f2c9d3e-6d4a-4f4e-9d11-1a2b3c4d5e6f";
+  assert.deepEqual(playerSearch({ state: "banned", after: id }), { q: "", state: "banned", after: id });
+  assert.equal(playerSearch({ state: "toString", after: id }), null);
+  assert.deepEqual(playerSearch({ q: "ayla", after: "42" }), { q: "ayla", state: "", after: "" });
+  const search = { q: "", state: "banned", after: "" } as const;
+  const ids = Array.from({ length: playerPageSize }, () => id);
+  assert.equal(nextPlayersHref(search, ids), `/players?state=banned&after=${id}`);
+  assert.equal(nextPlayersHref(search, ids.slice(1)), null);
+  assert.equal(nextPlayersHref({ provider: "google", subject: "1" }, ids), null);
 });
 
 test("mission progress shows the published target when the mission is still in the catalog", () => {

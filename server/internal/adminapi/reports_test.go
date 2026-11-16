@@ -3,6 +3,7 @@ package adminapi_test
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +17,51 @@ func (a *api) fileReport(reporter, target, reason string, at time.Time) {
 	if _, err := a.pool.Exec(context.Background(), `insert into player_reports (reporter, target, reason, name_text, created_at, updated_at) values ($1, $2, $3, 'Rude', $4, $4)`, reporter, target, reason, at); err != nil {
 		a.t.Fatal(err)
 	}
+}
+
+func listedTargets(a *api, token, query string) []string {
+	a.t.Helper()
+	status, body := a.call("GET", "/admin/reports"+query, token, nil)
+	if status != http.StatusOK {
+		a.t.Fatalf("reports %d %v", status, body)
+	}
+	var targets []string
+	for _, target := range body["targets"].([]any) {
+		targets = append(targets, target.(map[string]any)["account_id"].(string))
+	}
+	return targets
+}
+
+func TestTheReportQueuePagesFiltersByReasonAndSearchesByAccount(t *testing.T) {
+	a := newAPI(t)
+	a.now = time.Now().UTC()
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	reporter := a.player("g-0", "reporter@mail.example", "Reporter")
+	oldest := a.player("g-1", "oldest@mail.example", "Oldest")
+	middle := a.player("g-2", "middle@mail.example", "Middle")
+	newest := a.player("g-3", "newest@mail.example", "Newest")
+	a.fileReport(reporter, oldest, report.ReasonNickname, a.now.Add(-3*time.Hour))
+	a.fileReport(reporter, middle, report.ReasonImpersonation, a.now.Add(-2*time.Hour))
+	a.fileReport(reporter, newest, report.ReasonNickname, a.now.Add(-time.Hour))
+
+	page := listedTargets(a, support, "?limit=2")
+	if strings.Join(page, ",") != oldest+","+middle {
+		t.Fatalf("page %v", page)
+	}
+	status, body := a.call("POST", "/admin/players/"+middle+"/reports/reject", support, map[string]any{"reason": "name is fine"})
+	expect(t, status, body, http.StatusOK, "")
+	if rest := listedTargets(a, support, "?limit=2&after="+middle); strings.Join(rest, ",") != newest {
+		t.Fatalf("after a decided target %v", rest)
+	}
+	if named := listedTargets(a, support, "?reason="+report.ReasonNickname); strings.Join(named, ",") != oldest+","+newest {
+		t.Fatalf("named %v", named)
+	}
+	if found := listedTargets(a, support, "?account="+newest[:8]); strings.Join(found, ",") != newest {
+		t.Fatalf("found %v", found)
+	}
+	status, body = a.call("GET", "/admin/reports?after=nope", support, nil)
+	expect(t, status, body, http.StatusBadRequest, "invalid")
 }
 
 func TestSupportUpholdsOrRejectsTheOpenReportsOfAPlayer(t *testing.T) {

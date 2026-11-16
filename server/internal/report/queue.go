@@ -35,13 +35,24 @@ type Target struct {
 	Reports        []Entry `json:"reports"`
 }
 
-func Open(ctx context.Context, db Querier, limit int) ([]Target, error) {
+type Query struct {
+	Reason  string
+	Account string
+	After   string
+	Limit   int
+}
+
+func Open(ctx context.Context, db Querier, q Query) ([]Target, error) {
 	rows, err := db.Query(ctx, `select r.target::text, coalesce(p.nickname, ''), coalesce(p.rename_required, false),
 		r.id, r.reporter::text, r.reason, r.name_text, r.match_id::text, r.updated_at
 		from player_reports r left join profiles p on p.account_id = r.target
 		where r.state = 'open' and r.target in (
-			select target from player_reports where state = 'open' group by target order by min(updated_at) limit $1)
-		order by min(r.updated_at) over (partition by r.target), r.target, r.updated_at`, limit)
+			select target from player_reports where state = 'open' and starts_with(target::text, $2) group by target
+			having ($1 = '' or bool_or(reason = $1))
+				and ($3 = '' or (min(updated_at), target) > (select coalesce(min(updated_at) filter (where state = 'open'), min(updated_at)), nullif($3, '')::uuid
+					from player_reports where target = nullif($3, '')::uuid))
+			order by min(updated_at), target limit $4)
+		order by min(r.updated_at) over (partition by r.target), r.target, r.updated_at`, q.Reason, q.Account, q.After, q.Limit)
 	if err != nil {
 		return nil, err
 	}
