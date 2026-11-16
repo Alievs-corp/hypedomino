@@ -271,4 +271,4 @@ B-10 (do and don't) is drawn from this skin and its render.
 | O-5 | ASTC block size, maximum texture and atlas size per asset class | #93, #135, class specs #168 to #175 |
 | O-6 | Canvas size, pivot, outline weight and smallest display size per class | #168 to #175 (`docs/art-direction.md` section 10) |
 | O-7 | Reverse image search tool for RC-3 | Art lead |
-| O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board images B-8 and B-9 (B-1 to B-7 were committed with #166, B-10 with #167) | Art team, #167; the terms of step 2 with the account holder of the 2026-11-12 generation; paint-over and human work of steps 4 and 5 by an artist; cultural review by the owner or a delegate; B-8 #176; B-9 #167 and #168 |
+| O-8 | Steps 2 to 10 of the sample item `tile.sema` (section 6) and the board image B-9 (B-1 to B-7 were committed with #166, B-10 with #167, B-8 with #176) | Art team, #167; the terms of step 2 with the account holder of the 2026-11-12 generation; paint-over and human work of steps 4 and 5 by an artist; cultural review by the owner or a delegate; B-9 #167 and #168 |
