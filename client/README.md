@@ -142,7 +142,7 @@ The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` Edi
 - **`LanguageChoice`:** holds the language in use. `Game/LanguageBoot` loads it before the first scene from the saved `language.choice`. Only when nothing is saved does it read the device locales (Android `LocaleList`, iOS through `Plugins/iOS/HypeDominoLocale.mm`). It saves the first pick and every change.
 - **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match. `Game/LanguageBoot` builds the app's one instance, `LanguageBoot.Strings`, over the built-in bundle and the saved choice.
 - **`StringBundle`:** reads a published bundle after its hash check.
-- **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects.
+- **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects, and format integers, decimals, timestamps and durations in the selected language (`docs/localization.md` 2.4).
 
 The `LocalizationTests` EditMode tests cover them. Format a string when a screen opens or a value changes, never per frame.
 
