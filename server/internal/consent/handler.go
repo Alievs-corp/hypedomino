@@ -38,15 +38,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) save(r *http.Request, account string) (Choices, error) {
-	current, err := h.store.Choices(r.Context(), account)
-	if err != nil {
-		return Choices{}, err
-	}
-	change := Change{Choices: current}
+	var change Change
 	if err := json.NewDecoder(r.Body).Decode(&change); err != nil {
 		return Choices{}, ErrMalformed
 	}
-	return change.Choices, h.store.Save(r.Context(), account, change, h.now())
+	return h.store.Save(r.Context(), account, change, h.now())
 }
 
 func (h *Handler) authed(serve func(r *http.Request, account string) (Choices, error)) http.HandlerFunc {

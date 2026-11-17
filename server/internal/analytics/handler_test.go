@@ -72,8 +72,8 @@ func (w *world) player() string {
 
 func (w *world) chooseAnalytics(account string, granted bool) {
 	w.t.Helper()
-	change := consent.Change{Choices: consent.Choices{Analytics: granted}, PolicyVersion: "2026-11", AppVersion: "1.4.0"}
-	if err := w.consents.Save(context.Background(), account, change, now); err != nil {
+	change := consent.Change{Analytics: &granted, PolicyVersion: "2026-11", AppVersion: "1.4.0"}
+	if _, err := w.consents.Save(context.Background(), account, change, now); err != nil {
 		w.t.Fatal(err)
 	}
 }

@@ -23,6 +23,23 @@ func TestChangedListsOnlyPurposesThatDiffer(t *testing.T) {
 	}
 }
 
+func TestWithChangesOnlyThePurposesGiven(t *testing.T) {
+	on, off := true, false
+	current := consent.Choices{Analytics: true}
+	for _, tc := range []struct {
+		change consent.Change
+		want   consent.Choices
+	}{
+		{consent.Change{}, current},
+		{consent.Change{Diagnostics: &on}, consent.Choices{Analytics: true, Diagnostics: true}},
+		{consent.Change{Analytics: &off}, consent.Choices{}},
+	} {
+		if got := current.With(tc.change); got != tc.want {
+			t.Fatalf("%+v with %+v is %+v, want %+v", current, tc.change, got, tc.want)
+		}
+	}
+}
+
 func TestOfReadsEachPurpose(t *testing.T) {
 	choices := consent.Choices{Diagnostics: true}
 	if choices.Of(consent.Analytics) || !choices.Of(consent.Diagnostics) || choices.Of("promotional_push") {

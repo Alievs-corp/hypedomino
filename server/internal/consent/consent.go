@@ -20,9 +20,20 @@ type Choices struct {
 }
 
 type Change struct {
-	Choices
+	Analytics     *bool  `json:"analytics"`
+	Diagnostics   *bool  `json:"diagnostics"`
 	PolicyVersion string `json:"policyVersion"`
 	AppVersion    string `json:"appVersion"`
+}
+
+func (c Choices) With(change Change) Choices {
+	if change.Analytics != nil {
+		c.Analytics = *change.Analytics
+	}
+	if change.Diagnostics != nil {
+		c.Diagnostics = *change.Diagnostics
+	}
+	return c
 }
 
 func (c Choices) Of(purpose Purpose) bool {

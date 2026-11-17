@@ -29,33 +29,34 @@ func (s *Store) Granted(ctx context.Context, account string, purpose Purpose) (b
 	return choices.Of(purpose), err
 }
 
-func (s *Store) Save(ctx context.Context, account string, change Change, now time.Time) error {
+func (s *Store) Save(ctx context.Context, account string, change Change, now time.Time) (Choices, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return err
+		return Choices{}, err
 	}
 	defer tx.Rollback(ctx)
 	if _, err := tx.Exec(ctx, `select 1 from accounts where id = $1 for no key update`, account); err != nil {
-		return err
+		return Choices{}, err
 	}
 	current, err := latest(ctx, tx, account)
 	if err != nil {
-		return err
+		return Choices{}, err
 	}
-	changed := current.Changed(change.Choices)
+	next := current.With(change)
+	changed := current.Changed(next)
 	if len(changed) == 0 {
-		return nil
+		return current, nil
 	}
 	if change.PolicyVersion == "" || change.AppVersion == "" {
-		return ErrContext
+		return Choices{}, ErrContext
 	}
 	for _, purpose := range changed {
 		if _, err := tx.Exec(ctx, `insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at)
-			values ($1, $2, $3, $4, 'settings', $5, $6)`, account, string(purpose), change.Of(purpose), change.PolicyVersion, change.AppVersion, now); err != nil {
-			return err
+			values ($1, $2, $3, $4, 'settings', $5, $6)`, account, string(purpose), next.Of(purpose), change.PolicyVersion, change.AppVersion, now); err != nil {
+			return Choices{}, err
 		}
 	}
-	return tx.Commit(ctx)
+	return next, tx.Commit(ctx)
 }
 
 func latest(ctx context.Context, q querier, account string) (Choices, error) {
