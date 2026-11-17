@@ -2,13 +2,26 @@ package panics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"runtime/debug"
 	"slices"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+)
+
+const euIngestHostSuffix = ".ingest.de.sentry.io"
+
+const shipFlushTimeout = 2 * time.Second
+
+var (
+	ErrDSNMalformed = errors.New("not a Sentry DSN")
+	ErrDSNOutsideEU = errors.New("not a Sentry EU data region DSN, the host must end in " + euIngestHostSuffix)
 )
 
 var counts = struct {
@@ -24,7 +37,45 @@ func Caught(where string, value any, attrs ...any) bool {
 	counts.by[where]++
 	counts.Unlock()
 	slog.Error("panic recovered", append([]any{"where", where, "panic", fmt.Sprint(value), "stack", string(debug.Stack())}, attrs...)...)
+	ship(where, value)
 	return true
+}
+
+func ship(where string, value any) {
+	hub := sentry.CurrentHub().Clone()
+	hub.Scope().SetTag("where", where)
+	hub.Recover(value)
+}
+
+func CheckDSN(raw string) error {
+	dsn, err := sentry.NewDsn(raw)
+	if err != nil {
+		return ErrDSNMalformed
+	}
+	if !strings.HasSuffix(dsn.GetHost(), euIngestHostSuffix) {
+		return ErrDSNOutsideEU
+	}
+	return nil
+}
+
+func Ship(dsn, environment string, transport sentry.Transport) (func(), error) {
+	if dsn == "" {
+		return func() {}, nil
+	}
+	if err := CheckDSN(dsn); err != nil {
+		return nil, err
+	}
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              dsn,
+		Environment:      environment,
+		Transport:        transport,
+		SendDefaultPII:   false,
+		AttachStacktrace: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return func() { sentry.Flush(shipFlushTimeout) }, nil
 }
 
 func Supervise(ctx context.Context, where string, every time.Duration, run func(context.Context, time.Duration)) {
