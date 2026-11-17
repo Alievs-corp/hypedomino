@@ -197,3 +197,17 @@ func TestStoreCredentialsAreOptionalButCompleteOnceNamed(t *testing.T) {
 		t.Fatalf("with credentials: %+v %v", with.api.Stores, err)
 	}
 }
+
+func TestSentryDSNMustBeAnEURegionDSNAndIsNeverEchoed(t *testing.T) {
+	base := map[string]string{"HD_DATABASE_URL": "postgres://admin", "HD_ADMIN_ENVIRONMENT": "staging", "HD_ADMIN_GOOGLE_DOMAIN": "example.com", "HD_ADMIN_GOOGLE_AUDIENCES": "web"}
+	got, err := configFromEnv(env(merged(base, map[string]string{"HD_SENTRY_DSN": "https://public@o1.ingest.de.sentry.io/1", "HD_SENTRY_ENVIRONMENT": "staging"})))
+	if err != nil || got.sentryDSN != "https://public@o1.ingest.de.sentry.io/1" || got.sentryEnv != "staging" {
+		t.Fatalf("config %q %q err %v", got.sentryDSN, got.sentryEnv, err)
+	}
+	for _, dsn := range []string{"https://hidden-key@o1.ingest.us.sentry.io/1", "hidden-key %zz"} {
+		_, err := configFromEnv(env(merged(base, map[string]string{"HD_SENTRY_DSN": dsn})))
+		if err == nil || !strings.Contains(err.Error(), "HD_SENTRY_DSN") || strings.Contains(err.Error(), "hidden-key") {
+			t.Fatalf("%s: %v", dsn, err)
+		}
+	}
+}
