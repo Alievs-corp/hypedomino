@@ -20,7 +20,7 @@ func TestAMatchThatNeverDealtIsArchivedCancelledWithOneOutcomePerPlayer(t *testi
 		t.Fatalf("started %+v", s)
 	}
 	f := finished(s, replay.Record{}, false, map[rules.Seat]penalties.Kind{rules.SeatNorth: penalties.KindLeave, rules.SeatSouth: penalties.KindAfkReturned}, penalties.Config{OffenseRatingPenalty: 15, PartnerLossReductionPercent: 40}, now)
-	if !f.Cancelled || len(f.Outbox) != 4 || f.Outbox[0].Topic != matchstore.TopicRating || f.Outbox[0].Key != "match:"+s.ID {
+	if !f.Cancelled || len(f.Outbox) != 5 || f.Outbox[0].Topic != matchstore.TopicRating || f.Outbox[0].Key != "match:"+s.ID {
 		t.Fatalf("finished %+v", f)
 	}
 	outcome := f.Outbox[0].Payload.(matchstore.Outcome)
