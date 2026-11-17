@@ -18,10 +18,12 @@ namespace HypeDomino.Tests.PlayMode
     public sealed class LoadingScreenTests
     {
         const string FoxStatic = "cosmetic/avatar/fox/static";
+        const string NeonStatic = "cosmetic/table/neon/static";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
 {""id"":""common"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false}]}";
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
-{""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""}]}";
+{""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
+{""id"":""table.neon"",""type"":""table"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""}]}";
         const string Strings = @"{""entries"":[
 {""key"":""match.loading.ready"",""en"":""Ready""},
 {""key"":""match.loading.bot_playing"",""en"":""Couldn't connect, bot playing""}]}";
@@ -40,6 +42,7 @@ namespace HypeDomino.Tests.PlayMode
         CardParts[] parts;
         LoadingScreenView view;
         Image total;
+        TableView table;
         LoadingScreen screen;
         readonly LoadingCards cards = new();
         readonly MatchSnapshot snapshot = new();
@@ -61,7 +64,8 @@ namespace HypeDomino.Tests.PlayMode
                 views[at] = parts[at].View;
             }
             total = NewImage("Total", view.transform);
-            view.Configure(views, total);
+            table = NewTable(view.transform);
+            view.Configure(views, total, table);
             var strings = new GameStrings(BuiltinStrings.Parse(Strings), LanguageChoice.Load("en", () => new string[0]), false);
             screen = new LoadingScreen(view, stage, new ActiveCosmeticManifest(manifest), strings);
         }
@@ -91,6 +95,22 @@ namespace HypeDomino.Tests.PlayMode
             var image = new GameObject(name, typeof(RectTransform), typeof(Image)).AddComponent<AnimatedImage>().gameObject.AddComponent<CosmeticImage>();
             image.transform.SetParent(parent, false);
             return image;
+        }
+
+        static TableView NewTable(Transform parent)
+        {
+            var built = new GameObject("Table", typeof(RectTransform)).AddComponent<TableView>();
+            built.transform.SetParent(parent, false);
+            var layers = new AnimatedImage[2];
+            for (var at = 0; at < layers.Length; at++)
+            {
+                layers[at] = new GameObject("Layer", typeof(RectTransform), typeof(Image)).AddComponent<AnimatedImage>();
+                layers[at].transform.SetParent(built.transform, false);
+            }
+            var flat = new GameObject("Flat", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            flat.transform.SetParent(built.transform, false);
+            built.Configure(flat, layers, NewSprite());
+            return built;
         }
 
         static CardParts NewCard(string name, Transform parent)
@@ -188,6 +208,30 @@ namespace HypeDomino.Tests.PlayMode
             Show(match);
 
             Assert.AreEqual(loads, stills.Loads.Count);
+        }
+
+        [Test]
+        public void TheTableTheServerChoseLoadsOnceBehindTheCards()
+        {
+            var match = View(MatchState.Loading, Mode._1V1, Seat.X, At(Seat.X, 0), At(Seat.Y, 0));
+            match.Table = "table.neon";
+
+            Show(match);
+            Show(match);
+
+            Assert.AreEqual(1, stills.Loads.FindAll(address => address == NeonStatic).Count);
+        }
+
+        [Test]
+        public void ATableTheManifestDoesNotShowLoadsNothing()
+        {
+            var match = View(MatchState.Loading, Mode._1V1, Seat.X, At(Seat.X, 0), At(Seat.Y, 0));
+            match.Table = "table.gone";
+
+            Show(match);
+
+            CollectionAssert.DoesNotContain(stills.Loads, NeonStatic);
+            Assert.IsTrue(table.Flat != null);
         }
 
         [Test]
