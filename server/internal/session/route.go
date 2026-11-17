@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -43,4 +44,37 @@ func (m *Manager) Place(id, account string, r *room.Room, seat rules.Seat) error
 	m.ensure(id, account)
 	m.mu.Unlock()
 	return m.Seat(id, r, seat)
+}
+
+func (m *Manager) Renew(ctx context.Context) error {
+	if m.router == nil {
+		return nil
+	}
+	var failed error
+	for _, token := range m.routedTokens() {
+		failed = errors.Join(failed, m.router.Claim(ctx, token))
+		if !m.stillRouted(token) {
+			m.release(token)
+		}
+	}
+	return failed
+}
+
+func (m *Manager) routedTokens() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var tokens []string
+	for token, s := range m.sessions {
+		if s.routed {
+			tokens = append(tokens, token)
+		}
+	}
+	return tokens
+}
+
+func (m *Manager) stillRouted(token string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s, ok := m.sessions[token]
+	return ok && s.routed
 }
