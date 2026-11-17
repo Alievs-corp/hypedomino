@@ -83,6 +83,96 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(AppState.Lobby, flow.State);
         }
 
+        static LobbyState InRoom(LobbyPhase phase) => new LobbyState { Code = "K7QM3X", LeaderAccountId = "a", Phase = phase };
+
+        static readonly LobbyState NoRoom = new LobbyState();
+
+        static AppFlow InCustomMatch()
+        {
+            var flow = new AppFlow();
+            flow.Hello(Accepted(false));
+            flow.Room(InRoom(LobbyPhase.Lobby));
+            flow.Room(InRoom(LobbyPhase.Match));
+            flow.View(MatchState.Loading);
+            return flow;
+        }
+
+        [Test]
+        public void EnteringARoomOpensItAndLeavingItReturnsToTheLobby()
+        {
+            var flow = new AppFlow();
+            flow.Hello(Accepted(false));
+            flow.Room(InRoom(LobbyPhase.Lobby));
+            Assert.AreEqual(AppState.Room, flow.State);
+            flow.Room(InRoom(LobbyPhase.Teams));
+            Assert.AreEqual(AppState.Room, flow.State);
+            flow.Room(NoRoom);
+            Assert.AreEqual(AppState.Lobby, flow.State);
+        }
+
+        [Test]
+        public void ACustomMatchStartsFromTheRoom()
+        {
+            var flow = InCustomMatch();
+            Assert.AreEqual(AppState.Match, flow.State);
+            flow.Room(InRoom(LobbyPhase.Match));
+            Assert.AreEqual(AppState.Match, flow.State);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void AMemberStillInTheRoomReturnsToItWhenTheMatchEnds(bool resultFirst)
+        {
+            var flow = InCustomMatch();
+            flow.View(MatchState.Playing);
+            if (resultFirst) flow.View(MatchState.Finished);
+            flow.Room(InRoom(LobbyPhase.Lobby));
+            Assert.AreEqual(AppState.Room, flow.State);
+            Assert.IsFalse(flow.LeaveMatch());
+        }
+
+        [Test]
+        public void AMemberWhoLeftTheRoomDuringTheMatchGoesToTheLobby()
+        {
+            var flow = InCustomMatch();
+            flow.Room(NoRoom);
+            Assert.AreEqual(AppState.Match, flow.State);
+            flow.View(MatchState.Finished);
+            Assert.IsTrue(flow.LeaveMatch());
+            Assert.AreEqual(AppState.Lobby, flow.State);
+        }
+
+        [Test]
+        public void LeavingAFinishedMatchBeforeTheRoomReturnsGoesToTheRoom()
+        {
+            var flow = InCustomMatch();
+            flow.View(MatchState.Finished);
+            Assert.IsTrue(flow.LeaveMatch());
+            Assert.AreEqual(AppState.Room, flow.State);
+        }
+
+        [Test]
+        public void ARoomFromBeforeAReconnectIsForgotten()
+        {
+            var flow = InCustomMatch();
+            flow.Hello(Accepted(true));
+            flow.View(MatchState.Finished);
+            Assert.IsTrue(flow.LeaveMatch());
+            Assert.AreEqual(AppState.Lobby, flow.State);
+        }
+
+        [Test]
+        public void ARoomStateBeforeTheHelloOrOnABlockedScreenChangesNothing()
+        {
+            var boot = new AppFlow();
+            boot.Room(InRoom(LobbyPhase.Lobby));
+            Assert.AreEqual(AppState.Boot, boot.State);
+            var maintenance = new AppFlow();
+            maintenance.Hello(new ServerHello { Status = HelloStatus.Maintenance });
+            maintenance.Room(InRoom(LobbyPhase.Lobby));
+            Assert.AreEqual(AppState.Maintenance, maintenance.State);
+        }
+
         [Test]
         public void ChangedFiresOncePerNewState()
         {

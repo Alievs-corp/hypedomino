@@ -41,6 +41,7 @@ namespace HypeDomino.Game
                 followed = strings.Language;
                 FollowLanguage(announced, strings, bundles);
             };
+            session.LobbyStateReceived += flow.Room;
             session.ViewReceived += view =>
             {
                 flow.View(view.State);

@@ -7,6 +7,7 @@ namespace HypeDomino.Game
         Lobby,
         Match,
         UpdateRequired,
-        Maintenance
+        Maintenance,
+        Room
     }
 }

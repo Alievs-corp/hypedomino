@@ -420,6 +420,20 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ARoomFromTheSessionTakesTheMemberBackToItAfterTheCustomMatch()
+        {
+            var app = new Listened();
+            app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, false));
+            app.Receive(Envelope.PayloadOneofCase.LobbyState, new LobbyState { Code = "K7QM3X", LeaderAccountId = "a", Phase = LobbyPhase.Match });
+            Assert.AreEqual(AppState.Room, app.Flow.State);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, View(MatchState.Loading));
+            Assert.AreEqual(AppState.Match, app.Flow.State);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, View(MatchState.Finished));
+            app.Receive(Envelope.PayloadOneofCase.LobbyState, new LobbyState { Code = "K7QM3X", LeaderAccountId = "a", Phase = LobbyPhase.Lobby });
+            Assert.AreEqual(AppState.Room, app.Flow.State);
+        }
+
+        [Test]
         public void AHelloThatBlocksPlayLeavesTheStringsAlone()
         {
             var app = new Listened();
@@ -457,6 +471,7 @@ namespace HypeDomino.Tests.EditMode
 
         [TestCase(AppState.Match, Music.Match)]
         [TestCase(AppState.Lobby, Music.Lobby)]
+        [TestCase(AppState.Room, Music.Lobby)]
         [TestCase(AppState.Login, Music.Lobby)]
         [TestCase(AppState.Boot, Music.None)]
         [TestCase(AppState.UpdateRequired, Music.None)]
