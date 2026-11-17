@@ -170,6 +170,7 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 - Server-side events (match end, purchase, reward) for a player without `analytics` carry no analytics id and only feed aggregates. Revenue and economy KPIs (#147) are computed from D-16 and D-17, not from analytics.
 - Analytics is first-party: the client sends events only to the game's own server. No third-party analytics SDK ships.
 - Sentry SDK defaults that collect more (IP address, default personal data, automatic session tracking with device ids) are disabled in the client build (#76).
+- Server panic reports (#182, `server/internal/panics`) go to Sentry in the EU data region only when `HD_SENTRY_DSN` is set. They carry the site name (`where`), the panic value, the stack of the server goroutine and the environment name; never an account id, analytics id, nickname, IP or match id, and the SDK's default personal data is off. They describe the server, not a player, so they are not D-25 and need no `diagnostics` consent. They expire by `CrashReportRetentionDays`.
 
 ## 7. Age gate and children
 

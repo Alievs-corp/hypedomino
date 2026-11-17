@@ -310,6 +310,19 @@ func TestADatabaseNeedsASigningKey(t *testing.T) {
 	}
 }
 
+func TestSentryDSNMustBeAnEURegionDSNAndIsNeverEchoed(t *testing.T) {
+	config, err := ConfigFromEnv(lookup(map[string]string{"HD_SENTRY_DSN": "https://public@o1.ingest.de.sentry.io/1", "HD_SENTRY_ENVIRONMENT": "staging"}))
+	if err != nil || config.SentryDSN != "https://public@o1.ingest.de.sentry.io/1" || config.SentryEnv != "staging" {
+		t.Fatalf("config %q %q err %v", config.SentryDSN, config.SentryEnv, err)
+	}
+	for _, dsn := range []string{"https://hidden-key@o1.ingest.us.sentry.io/1", "hidden-key %zz"} {
+		_, err := ConfigFromEnv(lookup(map[string]string{"HD_SENTRY_DSN": dsn}))
+		if err == nil || !strings.Contains(err.Error(), "HD_SENTRY_DSN") || strings.Contains(err.Error(), "hidden-key") {
+			t.Fatalf("%s: %v", dsn, err)
+		}
+	}
+}
+
 func TestIntegrityPolicyStartsAtTheLaunchValuesAndCanBeTightened(t *testing.T) {
 	config, err := ConfigFromEnv(lookup(nil))
 	if err != nil {
