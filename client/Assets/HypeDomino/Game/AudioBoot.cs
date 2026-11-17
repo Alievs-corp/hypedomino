@@ -42,6 +42,7 @@ namespace HypeDomino.Game
         {
             AppState.Match => Music.Match,
             AppState.Lobby => Music.Lobby,
+            AppState.Room => Music.Lobby,
             AppState.Login => Music.Lobby,
             _ => Music.None,
         };

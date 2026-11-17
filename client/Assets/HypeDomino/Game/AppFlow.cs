@@ -6,6 +6,7 @@ namespace HypeDomino.Game
     public sealed class AppFlow
     {
         bool matchFinished;
+        bool inRoom;
 
         public AppState State { get; private set; } = AppState.Boot;
 
@@ -23,6 +24,7 @@ namespace HypeDomino.Game
             {
                 case HelloStatus.Accepted:
                     matchFinished = false;
+                    inRoom = false;
                     Enter(hello.InMatch ? AppState.Match : AppState.Lobby);
                     return;
                 case HelloStatus.UpdateRequired:
@@ -42,15 +44,33 @@ namespace HypeDomino.Game
                 matchFinished = finished;
                 return;
             }
-            if (State != AppState.Lobby || finished) return;
+            if ((State != AppState.Lobby && State != AppState.Room) || finished) return;
             matchFinished = false;
             Enter(AppState.Match);
+        }
+
+        public void Room(LobbyState state)
+        {
+            inRoom = !string.IsNullOrEmpty(state.Code);
+            switch (State)
+            {
+                case AppState.Match when inRoom && state.Phase != LobbyPhase.Match:
+                    matchFinished = false;
+                    Enter(AppState.Room);
+                    return;
+                case AppState.Lobby when inRoom:
+                    Enter(AppState.Room);
+                    return;
+                case AppState.Room when !inRoom:
+                    Enter(AppState.Lobby);
+                    return;
+            }
         }
 
         public bool LeaveMatch()
         {
             if (State != AppState.Match || !matchFinished) return false;
-            Enter(AppState.Lobby);
+            Enter(inRoom ? AppState.Room : AppState.Lobby);
             return true;
         }
 
