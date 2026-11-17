@@ -9,6 +9,7 @@ namespace HypeDomino.Game.Profile
     {
         Loaded,
         SetupRequired,
+        Unknown,
         Offline,
         SignInRequired,
         RateLimited,
@@ -17,6 +18,7 @@ namespace HypeDomino.Game.Profile
 
     public static class ProfileLoadKeys
     {
+        public const string Unknown = "profile.load.unknown";
         public const string Offline = "profile.load.offline";
         public const string RateLimited = "profile.load.rate_limited";
         public const string Failed = "notice.generic";
@@ -25,6 +27,7 @@ namespace HypeDomino.Game.Profile
         {
             ProfileLoadOutcome.Loaded => null,
             ProfileLoadOutcome.SetupRequired => null,
+            ProfileLoadOutcome.Unknown => Unknown,
             ProfileLoadOutcome.Offline => Offline,
             ProfileLoadOutcome.RateLimited => RateLimited,
             ProfileLoadOutcome.SignInRequired => null,
@@ -34,6 +37,8 @@ namespace HypeDomino.Game.Profile
 
     public readonly struct ProfileLoadResult
     {
+        const string UnknownProfileError = "profile.unknown";
+
         ProfileLoadResult(ProfileLoadOutcome outcome, PlayerProfile profile = null)
         {
             Outcome = outcome;
@@ -51,6 +56,7 @@ namespace HypeDomino.Game.Profile
             ApiOutcome.Offline => ProfileLoadOutcome.Offline,
             ApiOutcome.SignInRequired => ProfileLoadOutcome.SignInRequired,
             ApiOutcome.RateLimited => ProfileLoadOutcome.RateLimited,
+            ApiOutcome.Rejected when reply.Error == UnknownProfileError => ProfileLoadOutcome.Unknown,
             _ => ProfileLoadOutcome.Failed,
         });
 
@@ -61,6 +67,8 @@ namespace HypeDomino.Game.Profile
 
     public sealed class ProfileLoader
     {
+        delegate bool ProfileReader(string json, out PlayerProfile profile);
+
         readonly ApiClient api;
 
         public ProfileLoader(ApiClient api)
@@ -70,30 +78,35 @@ namespace HypeDomino.Game.Profile
 
         public bool Busy { get; private set; }
 
-        public bool Load(Action<ProfileLoadResult> done)
+        public bool Load(Action<ProfileLoadResult> done) => Start(PlayerProfile.OwnPath, PlayerProfile.TryFromOwn, done);
+
+        public bool LoadPublic(string accountId, Action<ProfileLoadResult> done) =>
+            !string.IsNullOrEmpty(accountId) && Start(PlayerProfile.PublicPath(accountId), PlayerProfile.TryFromPublic, done);
+
+        bool Start(string path, ProfileReader read, Action<ProfileLoadResult> done)
         {
             if (Busy)
             {
                 return false;
             }
             Busy = true;
-            api.Get(PlayerProfile.OwnPath, reply => Answered(reply, done));
+            api.Get(path, reply => Answered(Read(reply, read), done));
             return true;
         }
 
-        void Answered(ApiReply reply, Action<ProfileLoadResult> done)
+        void Answered(ProfileLoadResult result, Action<ProfileLoadResult> done)
         {
             Busy = false;
-            done(Read(reply));
+            done(result);
         }
 
-        static ProfileLoadResult Read(ApiReply reply)
+        static ProfileLoadResult Read(ApiReply reply, ProfileReader read)
         {
             if (reply.Outcome != ApiOutcome.Ok)
             {
                 return ProfileLoadResult.Refused(reply);
             }
-            return PlayerProfile.TryFromOwn(reply.Body, out var profile) ? ProfileLoadResult.Loaded(profile) : ProfileLoadResult.Unread(reply.Body);
+            return read(reply.Body, out var profile) ? ProfileLoadResult.Loaded(profile) : ProfileLoadResult.Unread(reply.Body);
         }
     }
 }
