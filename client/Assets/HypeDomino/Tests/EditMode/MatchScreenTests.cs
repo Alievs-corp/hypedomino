@@ -18,12 +18,20 @@ namespace HypeDomino.Tests.EditMode
         {
             public Vector2 BoardSize => new(400f, 300f);
             public float BoardMaxScale => 1f;
+            public int BackgroundsShown;
+            public MatchSnapshot Background;
             public int SeatsShown;
             public int ScoresShown;
             public int BoardsShown;
             public MatchSnapshot Seats;
             public ScoreBoard Score;
             public ChainLayout Board;
+
+            public void ShowBackground(MatchSnapshot view)
+            {
+                BackgroundsShown++;
+                Background = view;
+            }
 
             public void ShowSeats(MatchSnapshot view)
             {
@@ -174,10 +182,12 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void AViewReachesTheSeatsTheScoreTheBoardAndTheHand()
+        public void AViewReachesTheBackgroundTheSeatsTheScoreTheBoardAndTheHand()
         {
             Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
 
+            Assert.AreEqual(1, table.BackgroundsShown);
+            Assert.AreSame(snapshot, table.Background);
             Assert.AreEqual(1, table.SeatsShown);
             Assert.AreSame(snapshot, table.Seats);
             Assert.AreEqual(1, table.ScoresShown);
