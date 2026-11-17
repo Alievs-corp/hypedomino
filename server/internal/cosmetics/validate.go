@@ -107,16 +107,14 @@ func (i strictItem) checkShared(rarities Rarities) error {
 
 func (i strictItem) checkTypeFields() error {
 	animated := *i.Animated
-	switch i.Type {
-	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
-		if len(i.Layers) > 0 || animated != (i.AnimationAddress != "") {
-			return fmt.Errorf("V-3 fields do not match a %s with animated %t", i.Type, animated)
-		}
-	case TypeTable:
+	if i.Type == TypeTable {
 		if i.AnimationAddress != "" || animated != (len(i.Layers) > 0) {
 			return fmt.Errorf("V-3 fields do not match a table with animated %t", animated)
 		}
 		return i.checkLayers()
+	}
+	if len(i.Layers) > 0 || animated != (i.AnimationAddress != "") {
+		return fmt.Errorf("V-3 fields do not match a %s with animated %t", i.Type, animated)
 	}
 	return nil
 }
@@ -212,14 +210,12 @@ func stampItem(raw json.RawMessage, before map[string]publishedItem) (json.RawMe
 func deriveFields(fields map[string]any, id string) {
 	fields["nameKey"] = NameKeyOf(id)
 	fields["staticAddress"] = AddressOf(id, "static")
-	animated, _ := fields["animated"].(bool)
-	switch TypeOf(id) {
-	case TypeAvatar, TypeFrame, TypeTile, TypeEmoji:
-		if animated {
-			fields["animationAddress"] = AddressOf(id, "anim")
-		}
-	case TypeTable:
+	if TypeOf(id) == TypeTable {
 		deriveLayers(fields, id)
+		return
+	}
+	if animated, _ := fields["animated"].(bool); animated {
+		fields["animationAddress"] = AddressOf(id, "anim")
 	}
 }
 

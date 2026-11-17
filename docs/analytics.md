@@ -40,7 +40,20 @@ Match end, purchase, reward, mission and pass events are written by the server f
 
 `Core/Analytics/AnalyticsQueue` holds tracked events in memory while the device is offline. `Flush` hands at most `AnalyticsBatchSize` events to an `IAnalyticsSender`; a failed send keeps them for the next flush. When the queue holds `AnalyticsQueueLimit` events, the oldest is dropped. The caller flushes every `AnalyticsFlushSeconds` and when the app pauses.
 
-## 5. Config
+## 5. Server ingest
+
+`POST /analytics/events` (`server/internal/analytics`) takes the access token and `{analyticsId, events: [{name, label, value, clientTimeMs}]}` as JSON.
+
+- `analyticsId` is a random UUID in its 36-character form. The first account that sends it owns it (`analytics_ids`); the same id from another account answers 409 `analytics.id_taken` and stores nothing. This table is the only link from an analytics id to an account (`docs/privacy.md` P-7) and is what deletion and export use.
+- An event is kept only if its name is on the client list in section 2, its value is 0, `clientTimeMs` is positive and its label matches the event: none for `app_open` and `nickname_set`, `google` or `apple` for `sign_in`, and for the others an id of at most 64 letters, digits, `_`, `.` or `-` starting with a letter or digit. Any other event is dropped and the rest of the batch is kept, so a client that knows a newer event does not lose the batch. Server event names are never accepted from the client.
+- The answer is 200 `{accepted}`, the number of events stored. A body that is not valid JSON, is larger than 64 KiB or has no valid analytics id answers 400 `analytics.malformed`; a 400 or 409 batch will never be accepted, so the sender drops it rather than retrying.
+- `analytics_events` stores the analytics id, name, label, value, the device time as sent and the server receive time. The source IP, the account id and the request headers are never stored.
+- Erasure: `analytics_ids` is an erase-rows table in account deletion and its events go with it. Export: the `analytics` section lists the account's events with their analytics id.
+- The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
+
+Not built yet: the server events (section 3), the purge of raw events after `AnalyticsRawRetentionDays`, a server check of the `analytics` consent record (the client gate is the only gate until #157 writes it), and the client sender.
+
+## 6. Config
 
 | Field | Meaning |
 |---|---|
