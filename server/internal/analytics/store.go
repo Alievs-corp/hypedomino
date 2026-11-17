@@ -55,3 +55,8 @@ func columns(events []Event) ([]string, []string, []int64, []int64) {
 	}
 	return names, labels, values, clientTimes
 }
+
+func (s *Store) PurgeRaw(ctx context.Context, receivedBefore time.Time) (int64, error) {
+	tag, err := s.pool.Exec(ctx, `delete from analytics_events where received_at < $1`, receivedBefore)
+	return tag.RowsAffected(), err
+}
