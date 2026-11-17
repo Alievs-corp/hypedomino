@@ -17,8 +17,10 @@ namespace HypeDomino.UI.Board
         const int NoTile = -1;
 
         static readonly Vector2[] Outward = { Vector2.left, Vector2.right, Vector2.up, Vector2.down };
+        static readonly float[] FoldBoxAspectsOfBoard = { 1f, 0.5f, 2f };
 
         readonly int[] endTiles = new int[4];
+        readonly Rect[] areas;
         PlacedDomino[] placed;
         PlacedDomino[] candidate;
         int anchor;
@@ -27,6 +29,7 @@ namespace HypeDomino.UI.Board
         {
             placed = new PlacedDomino[capacity];
             candidate = new PlacedDomino[capacity];
+            areas = new Rect[capacity];
         }
 
         public int Count { get; private set; }
@@ -59,11 +62,21 @@ namespace HypeDomino.UI.Board
             if (line.Count == 0) return;
             MarkEnds(line.Count, anchorIndex, top.Count, bottom.Count);
 
-            var aspect = board.y / board.x;
             var straight = Length(line) + Length(top) + Length(bottom) + 2f;
+            for (var i = 0; i < FoldBoxAspectsOfBoard.Length; i++)
+                TryFoldBoxes(line, anchorIndex, top, bottom, board, maxScale, straight, board.y / board.x * FoldBoxAspectsOfBoard[i]);
+        }
+
+        void TryFoldBoxes(IReadOnlyList<Domino> line, int anchorIndex, IReadOnlyList<Domino> top, IReadOnlyList<Domino> bottom, Vector2 board, float maxScale, float straight, float aspect)
+        {
+            var tried = new Vector2(-1f, -1f);
             for (var halfWidth = straight * Mathf.Max(1f, 1f / aspect); halfWidth >= 1f; halfWidth -= 1f)
             {
-                Lay(line, anchorIndex, top, bottom, new Vector2(halfWidth, halfWidth * aspect));
+                var box = new Vector2(FoldLimit(halfWidth, straight), FoldLimit(halfWidth * aspect, straight));
+                if (box == tried) continue;
+                tried = box;
+                Lay(line, anchorIndex, top, bottom, box);
+                MeasureAreas();
                 if (Overlaps()) continue;
                 var bounds = Enclose();
                 var scale = Mathf.Min(maxScale, Mathf.Min(board.x / bounds.width, board.y / bounds.height));
@@ -73,6 +86,8 @@ namespace HypeDomino.UI.Board
                 (placed, candidate) = (candidate, placed);
             }
         }
+
+        static float FoldLimit(float half, float straight) => Mathf.Floor((Mathf.Min(half, straight) + Tolerance) * 2f) * 0.5f;
 
         void MarkEnds(int lineCount, int anchorIndex, int topCount, int bottomCount)
         {
@@ -121,14 +136,19 @@ namespace HypeDomino.UI.Board
             for (var i = 0; i < tiles.Count; i++) candidate[offset + i] = arm.Place(tiles[i].First, tiles[i].Second, tiles[i].IsDouble);
         }
 
+        void MeasureAreas()
+        {
+            for (var i = 0; i < Count; i++) areas[i] = candidate[i].Area;
+        }
+
         bool Overlaps()
         {
             for (var i = 0; i < Count; i++)
             {
-                var area = candidate[i].Area;
+                var area = areas[i];
                 for (var j = i + 1; j < Count; j++)
                 {
-                    var other = candidate[j].Area;
+                    var other = areas[j];
                     var width = Mathf.Min(area.xMax, other.xMax) - Mathf.Max(area.xMin, other.xMin);
                     var height = Mathf.Min(area.yMax, other.yMax) - Mathf.Max(area.yMin, other.yMin);
                     if (width > Tolerance && height > Tolerance) return true;
@@ -139,12 +159,12 @@ namespace HypeDomino.UI.Board
 
         Rect Enclose()
         {
-            var min = candidate[0].Area.min;
-            var max = candidate[0].Area.max;
+            var min = areas[0].min;
+            var max = areas[0].max;
             for (var i = 1; i < Count; i++)
             {
-                min = Vector2.Min(min, candidate[i].Area.min);
-                max = Vector2.Max(max, candidate[i].Area.max);
+                min = Vector2.Min(min, areas[i].min);
+                max = Vector2.Max(max, areas[i].max);
             }
             return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
         }

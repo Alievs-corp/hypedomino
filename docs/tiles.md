@@ -86,7 +86,16 @@ The match canvas scales its 1080-unit short side to the display (`docs/ui-motion
 | 1v1 landscape | 2076 x 521 |
 | 1v1 portrait | 1048 x 1630 |
 
-The tile is smallest when the board is fullest: at most 25 tiles in 2v2 (all 28 are dealt, R-3, and the hand ends when a player places their last tile, R-32, so the other three still hold at least one each) and 27 in 1v1 (the last boneyard tile is never drawn, R-23). The chain layout of `UI/Board/ChainLayout`, run on 400 random boards per row (seed 169) with every spinner, arm and double mix, gives a smallest tile short side of 41.7 units in 2v2 and in 1v1 landscape, which is 32.0 px on the XR; the median full board gives 65 units (50 px) in 2v2. The largest tile size (the layout's scale cap) is not decided, so the tile never gets smaller than this from the cap.
+The tile is smallest when the board is fullest: at most 25 tiles in 2v2 (all 28 are dealt, R-3, and the hand ends when a player places their last tile, R-32, so the other three still hold at least one each) and 27 in 1v1 (the last boneyard tile is never drawn, R-23). `ChainReadabilityTests` plays 400 full boards per row (seed 169): a random opening, then random legal placements on any open end, with the spinner of R-17 and its arms. The chain layout of `UI/Board/ChainLayout` draws their tiles with these short sides:
+
+| Mode and orientation | Smallest | Median |
+|---|---|---|
+| 2v2 landscape | 52.1 units (40.0 px) | 73.9 units (56.7 px) |
+| 2v2 portrait | 48.8 units (37.4 px) | 61.0 units (46.8 px) |
+| 1v1 landscape | 52.1 units (40.0 px) | 86.9 units (66.6 px) |
+| 1v1 portrait | 63.9 units (49.0 px) | 87.3 units (67.0 px) |
+
+The test fails when any of these boards draws a tile short side under 41.7 units, the 32 px of the check below. The largest tile size (the layout's scale cap) is not decided, so the tile never gets smaller than this from the cap.
 
 The match canvas is a screen space overlay, which renders at the native resolution on every graphics level (`docs/performance.md` 1.1), so 32 px is the size on screen. The check also runs at 28 px, the size if the board were drawn by the camera at the Low level's 720 px cap.
 
@@ -103,7 +112,7 @@ Result for `ivory` on 2026-11-15 (`assets-src/tile/ivory/provenance.md`):
 
 ## 4. Pip readability on screen
 
-At 32 px, a pip is 5.6 px across and two neighbouring pips are 3.0 px apart. On the XR that is 0.44 mm, about 5 minutes of arc at 30 cm, the size of a letter on the 20/20 line of an eye chart: readable for normal vision and at its limit. That is the worst full board on the smallest phone; the median full board shows pips at 8.8 px. A larger floor for the tile is a layout decision (the scale cap and the board region), not an art one. The check on a real XR is part of #191.
+At 32 px, a pip is 5.6 px across and two neighbouring pips are 3.0 px apart. On the XR that is 0.44 mm, about 5 minutes of arc at 30 cm, the size of a letter on the 20/20 line of an eye chart: readable for normal vision and at its limit. 32 px is the floor `ChainReadabilityTests` holds for full boards on the smallest phone; the smallest tile of its boards is 37.4 px, with 6.5 px pips, and the median full board shows pips at 8.2 px or more. A larger floor for the tile is a layout decision (the scale cap and the board region), not an art one. The check on a real XR is part of #191.
 
 ## 5. Runtime layers
 
