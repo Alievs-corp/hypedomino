@@ -171,7 +171,7 @@ One row per change: account id, purpose, state, `PrivacyPolicyVersion`, server t
 - Analytics is first-party: the client sends events only to the game's own server. No third-party analytics SDK ships.
 - Implementation (#181): `POST /analytics/events` stores client events in `analytics_events` keyed by the analytics id only, and the first account that sends an analytics id owns it in `analytics_ids`, the only link from the id to an account. The source IP is not stored. Details in `docs/analytics.md` 5.
 - Sentry SDK defaults that collect more (IP address, default personal data, automatic session tracking with device ids) are disabled in the client build (#76).
-- Server panic reports (#182, `server/internal/panics`) go to Sentry in the EU data region only when `HD_SENTRY_DSN` is set. They carry the site name (`where`), the panic value, the stack of the server goroutine and the environment name; never an account id, analytics id, nickname, IP or match id, and the SDK's default personal data is off. They describe the server, not a player, so they are not D-25 and need no `diagnostics` consent. They expire by `CrashReportRetentionDays`.
+- Server panic reports (#182, `server/internal/panics`, from `cmd/server` and `cmd/admin-api`) go to Sentry in the EU data region only when `HD_SENTRY_DSN` is set. They carry the site name (`where`), the panic value, the stack of the server goroutine and the environment name; never an account id, analytics id, nickname, IP or match id, and the SDK's default personal data is off. They describe the server, not a player, so they are not D-25 and need no `diagnostics` consent. They expire by `CrashReportRetentionDays`.
 
 ## 7. Age gate and children
 
