@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/consent"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
@@ -188,7 +189,9 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
 	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
-	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analytics.NewStore(pool), logger, time.Now))
+	consents := consent.NewStore(pool)
+	a.Handle("/consents", consent.NewHandler(tokens, consents, logger, time.Now))
+	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analytics.NewStore(pool), consents, logger, time.Now))
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
