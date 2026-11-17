@@ -233,10 +233,21 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `CONTENT_ENVIRONMENT` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `staging` | No | Repository variable |
 | `CONTENT_STORE_ACCESS_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-access-key>` | Yes | Repository secret |
 | `CONTENT_STORE_SECRET_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-secret-key>` | Yes | Repository secret |
+| `CLIENT_SERVER_URL` | Yes, for a `client-v*` tag | `Release build` workflow, passed as `-serverUrl` (2.5) | `https://play.example.com` | No | Repository variable |
+| `CLIENT_HTTP_TIMEOUT_SECONDS` | Yes, for a `client-v*` tag | `Release build` workflow, passed as `-httpTimeoutSeconds` (2.5) | not set: an owner decision (section 7) | No | Repository variable |
 
 ### 2.4 Not read yet
 
 The client reads no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+
+### 2.5 Client build inputs
+
+Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes these arguments and writes them to `Resources/ServerEndpoint.json` for that build only; the file is removed after the build and never committed (`client/README.md`, App flow). Neither is a secret.
+
+| Argument | Required | Without it | Example placeholder | Used for |
+|---|---|---|---|---|
+| `-serverUrl` | Together with `-httpTimeoutSeconds`; one without the other fails the build | The player has no server, logs `Net no server endpoint` and stays at boot. In the editor: `http://localhost:8080`, the `server` port of `docker-compose.yml` | `https://play.example.com` | The base of `/auth` and the player API. The WebSocket is `<serverUrl>/ws` (`GET /ws`, `server/internal/app`), `wss` for `https` and `ws` for `http` |
+| `-httpTimeoutSeconds` | Together with `-serverUrl`; a whole number from 1 | In the editor: no timeout (`UnityWebRequest.timeout` 0) | not set: an owner decision (section 7) | The `UnityWebRequest` timeout of every `/auth` and player API request |
 
 ## 3. Where secrets live
 
@@ -322,3 +333,4 @@ Rules:
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
+- Client HTTP timeout: no document or config sets the timeout of the player's `/auth` and API requests, so `-httpTimeoutSeconds` (2.5) and `CLIENT_HTTP_TIMEOUT_SECONDS` (2.3) have no value. A tag release fails before the build until the owner sets it (#66).

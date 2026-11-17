@@ -5,6 +5,7 @@
         "HypeDomino.Bench",
         "HypeDomino.Content",
         "HypeDomino.Core",
+        "HypeDomino.Net",
         "HypeDomino.UI",
         "Unity.Addressables",
         "Unity.Addressables.Editor",

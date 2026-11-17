@@ -18,7 +18,7 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Content` | `HypeDomino.Content` | UI | Addressables |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics, Content | URP |
 | `Assets/HypeDomino/Bench` | `HypeDomino.Bench` | Core, UI | `UnityEngine.UI`; device benches only |
-| `Assets/HypeDomino/Editor` | `HypeDomino.Editor` | Bench, Content, Core, UI | Editor only; Addressables, URP, TextMeshPro |
+| `Assets/HypeDomino/Editor` | `HypeDomino.Editor` | Bench, Content, Core, Net, UI | Editor only; Addressables, URP, TextMeshPro |
 | `Assets/HypeDomino/Tests/Support` | `HypeDomino.Tests.Support` | none | NUnit; `Allocates.Nothing` |
 | `Assets/HypeDomino/Tests/EditMode` | `HypeDomino.Tests.EditMode` | Tests.Support, Core, UI, Game, Net, Proto, Content, Editor | Editor only; NUnit, `Google.Protobuf.dll`, Addressables, URP, TextMeshPro |
 | `Assets/HypeDomino/Tests/PlayMode` | `HypeDomino.Tests.PlayMode` | Tests.Support, Core, UI, Content, Game, Net, Proto | NUnit, `Google.Protobuf.dll`, `UnityEngine.UI`, TextMeshPro |
@@ -75,9 +75,25 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 
 `Game/AppBoot` is the composition root: before the first scene it creates the one `AppFlow` (`AppBoot.Flow`) and follows its changes. Entering `Match` calls `GraphicsBoot.FrameRate.SetInMatch(true)` and `ContentBoot.Catalog.SetInMatch(true)`; any other state calls both with `false`, so the chosen frame rate applies and new catalogs wait from the moment the match is shown until the app leaves it, result screen included. In the editor there is no catalog and only the frame rate follows. Each change logs one `App state=<state>` line.
 
-`AppBoot.Listen(session, flow, catalog, strings, playHaptic)` feeds the flow from a `Session`: every `ServerHello` goes to `Hello`, and the `MatchState` of every `MatchView` goes to `View`. It also keeps one `HapticCues` for the session: every `ServerHello` starts a new connection on it, and every `MatchView` hands its cue to `playHaptic`, so the first view after a reconnect plays nothing. After an accepted hello it calls `Announce(catalog_version, content_base_url)` on the catalog (`docs/content-delivery.md` CD-5); the flow takes the hello first, so a hello into a running match holds the new catalog until the match is left. A null catalog (the editor) is skipped. Passing a `MatchView` on allocates nothing. Whatever builds the `Connection` calls it once with `connection.Session`, `AppBoot.Flow`, `ContentBoot.Catalog`, the app's `GameStrings` and `Haptics.Play`; nothing builds it yet, because the client has no defined server URL and no `ClientHello` provider (session token, app version, build hash, integrity proof).
+`AppBoot.Listen(session, flow, catalog, strings, playHaptic)` feeds the flow from a `Session`: every `ServerHello` goes to `Hello`, and the `MatchState` of every `MatchView` goes to `View`. It also keeps one `HapticCues` for the session: every `ServerHello` starts a new connection on it, and every `MatchView` hands its cue to `playHaptic`, so the first view after a reconnect plays nothing. After an accepted hello it calls `Announce(catalog_version, content_base_url)` on the catalog (`docs/content-delivery.md` CD-5); the flow takes the hello first, so a hello into a running match holds the new catalog until the match is left. A null catalog (the editor) is skipped. Passing a `MatchView` on allocates nothing. `NetBoot` calls it once.
 
-The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` EditMode tests which states count as in a match and that hellos and views read by a `Session` reach the flow and the catalog, and the `AppBootTests` PlayMode test that the running flow moves the frame rate in and out of a match. Scenes, DI beyond this root, building the `Connection` and sending `SignInNeeded` are not built yet.
+`Game/NetBoot` builds the network side after the first scene loads, once the boot classes above exist:
+- `Net/ServerEndpoint.Load` reads `Resources/ServerEndpoint.json`, which `Editor/ReleaseBuild` writes from `-serverUrl` and `-httpTimeoutSeconds` (`docs/environments.md` 2.5). The editor uses `http://localhost:8080` without a timeout. A player built without both logs `Net no server endpoint` and builds nothing.
+- One `UnityHttpTransport(serverUrl, httpTimeoutSeconds)` serves `AuthSession(transport, identity, store)` and `ApiClient(transport, auth)`. `NetBoot.Auth` and `NetBoot.Api` expose them.
+- One `Connection` dials `<serverUrl>/ws` (`wss` for `https`) with a new `WebSocketTransport` per dial and `Time.realtimeSinceStartupAsDouble` as its clock. A hidden driver calls `Tick` every frame.
+- Each dial sends a new `ClientHello`: `Application.version`, the platform, `SystemInfo.operatingSystem` and `deviceModel`, the access token of `AuthSession` and the device time in ms. `build_hash` stays empty: no document defines it, and the build allowlist is off by default (`proto/README.md`, Gateway limits). The integrity proof is empty until a provider exists. `DeviceRiskProbe.Collect` fills `Session.DeviceRiskSignals` once, and every hello carries them.
+- `AppBoot.Listen` gets `connection.Session`, `AppBoot.Flow`, `ContentBoot.Catalog`, `LanguageBoot.Strings`, `LanguageBoot.Bundles`, `ContentBoot.CosmeticsUpdater`, `Haptics.Play` and `AudioBoot.PlayMatch`.
+- `NetBoot.Queue` is a `MatchQueue` following the session and the flow. `NetBoot.Lobby` is the `LobbyCommands`, and `NetBoot.Room` is a `FriendRoom` that reads every `LobbyState` with the signed-in account id.
+- The screens load through `NetBoot.Shop`, `Pass`, `Missions`, `Inventory`, `Medals` and `Profile`, the six loaders built once on `NetBoot.Api`.
+
+`Game/NetStart` is the start order, plain C#:
+- `Begin`: with a stored session, `AuthSession.Resume` and then the dial; without one, `SignInNeeded`.
+- `Unauthenticated`: the `Connection` has stopped. Another `Resume` runs, then the dial again (a redial on the same `Connection`).
+- After a `Resume`, `SignedIn` dials and `SignInRequired` sends the flow to `SignInNeeded`. Any other outcome is logged as `Net resume outcome=<outcome>`, and the app stays where it is; a retry policy for `Offline`, `Unavailable` and `RateLimited` is not decided.
+
+The `NetStartTests` and `ServerEndpointTests` EditMode tests cover the start order, the endpoint rules and the hello fields. A sign-in screen calling `AuthSession.SignIn` is not built; see Sign-in for the identity provider.
+
+The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` EditMode tests which states count as in a match and that hellos and views read by a `Session` reach the flow and the catalog, and the `AppBootTests` PlayMode test that the running flow moves the frame rate in and out of a match. Scenes and DI beyond this root are not built yet.
 
 `Game/StartupMarker` writes the cold start marker of `docs/performance.md` section 3. Built with the `AppFlow`, a clock and a log, it logs one `Startup state=<first state after Boot> ms=<seconds since startup x 1000>` line at the first state change and then stops listening. `AppBoot` creates it with `AppBoot.Flow`, `Time.realtimeSinceStartupAsDouble` and `Debug.Log`. A run that reaches the lobby directly logs `state=Lobby`; a run that shows sign-in, an update, maintenance or a running match first logs that state instead, so it is not counted as a lobby start. The `StartupMarkerTests` EditMode tests cover it.
 
@@ -168,7 +184,11 @@ Outcomes:
 
 `SignOut` forgets the session at once and revokes the refresh token on the server. The `AuthSessionTests` EditMode tests cover these flows.
 
-`Net/Auth/SignInOptions` is the list of sign-in buttons the login screen shows, in order: Google on Android; Google, then Sign in with Apple next to it on iOS (`docs/store-listing.md` DC-5); none on platforms without a native sign-in, such as the editor and desktop. `Current` reads `Application.platform`. The `SignInOptionsTests` EditMode tests cover each platform. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet.
+`Net/Auth/SignInOptions` is the list of sign-in buttons the login screen shows, in order: Google on Android; Google, then Sign in with Apple next to it on iOS (`docs/store-listing.md` DC-5); none on platforms without a native sign-in, such as the editor and desktop. `Current` reads `Application.platform`. The `SignInOptionsTests` EditMode tests cover each platform. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet. Until they are, `NetBoot` uses two stand-ins:
+- `Net/Auth/NoIdentityProvider` supports no provider, so `SignIn` answers `Unsupported` (#56 replaces it).
+- `Net/Auth/MemorySecureStore` keeps the refresh token and device id in memory only and writes nothing to the device. Every start therefore begins without a stored session and shows `Login`.
+
+With no identity provider and no server dev identity path, a build reaches `Login` but cannot sign in or connect end to end yet.
 
 `Net/Api/ApiClient` sends every other player HTTP request (leaderboard, profile, push settings, shop and the rest) with the session of `AuthSession`:
 - Each request carries `Authorization: Bearer <access token>`. Each POST, PUT, PATCH or DELETE also carries `X-HD-Mac`, the request MAC of `docs/anti-cheat.md` V-4 (`Net/Api/RequestMac`), so every write is signed whether or not its route checks it yet.
