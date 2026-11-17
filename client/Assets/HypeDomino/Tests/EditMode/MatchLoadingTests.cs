@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
-using HypeDomino.Tests.Support;
 using HypeDomino.UI.Cosmetics;
 using Hypedomino.V1;
 using NUnit.Framework;
