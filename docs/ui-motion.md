@@ -550,6 +550,17 @@ The results screen opens on the first `MatchView` whose `state` is `MATCH_STATE_
 - **Outcome.** Won when `winner` is the local player's team, lost when it is the other team. A viewer without a seat, or a finished view without a `winner`, gets no outcome and sees only the winning team.
 - **Final scores.** The local team's score first (team A for a viewer without a seat), then the other team's, with `hands_played` and the `mode`.
 - It opens once per match end: later finished views of the same match, a reconnect included, do not open it again, and the next view that is not finished closes it.
+- **Texts.** `Game/Match/MatchResultKeys` names the keys and picks the title from the outcome. The `az` titles and buttons for a win, a loss, play again and back to the lobby are the wording of #86; `az` and `en` ship in the built-in bundle, `tr` and `ru` fall back as for the connection notices.
+
+| Text | When | Key | `az` | `en` |
+|---|---|---|---|---|
+| Title | Outcome won | `match.result.won` | Qələbə | Victory |
+| Title | Outcome lost | `match.result.lost` | Məğlubiyyət | Defeat |
+| Title | No outcome: a viewer without a seat, or no `winner` | `match.result.over` | Matç bitdi | Match over |
+| Button | Play again | `match.result.play_again` | Yenidən oyna | Play again |
+| Button | Back to the lobby | `match.result.back_to_lobby` | Lobbiyə qayıt | Back to lobby |
+
+- What play again does (the same mode and queue, or another choice) and the screen's layout, styles and motion are not decided; they come with the results screen art and the match scene (#78).
 - Coins, pass XP, the rank and LP change and new medals are not shown yet. The server grants them after the match through its outbox consumers (`docs/matchmaking.md` section 4, `docs/pass-missions-medals.md` section 6), and no server-to-client message or player endpoint carries them for a match yet. The screen shows none of them, and never an estimate, until the proto carries them.
 
 ## 9. Open items
