@@ -6,6 +6,8 @@
     { "key": "match.connection.weak", "en": "Weak connection", "az": "Zəif bağlantı" },
     { "key": "match.seat.dropped", "en": "Disconnected", "az": "Bağlantı kəsildi" },
     { "key": "match.seat.bot_playing", "en": "Bot playing", "az": "Bot oynayır" },
+    { "key": "match.loading.ready", "en": "Ready", "az": "Hazır" },
+    { "key": "match.loading.bot_playing", "en": "Couldn't connect, bot playing", "az": "Qoşula bilmədi, bot oynayır" },
     { "key": "match.afk.warning", "en": "If time runs out again, the bot plays for you", "az": "Vaxt yenə bitsə, bot sənin yerinə oynayacaq" },
     { "key": "match.afk.take_back", "en": "The bot is playing for you — come back", "az": "Bot sənin yerinə oynayır — qayıt" },
     { "key": "match.seat.mute", "en": "Mute", "az": "Susdur" },
