@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/integrity"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
+	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
@@ -84,6 +85,8 @@ type Config struct {
 	IntegrityPolicy integrity.Policy
 	PlayIntegrity   integrity.PlayIntegrityConfig
 	RateLimit       ratelimit.Config
+	SentryDSN       string
+	SentryEnv       string
 }
 
 func DefaultConfig() Config {
@@ -308,6 +311,13 @@ func ConfigFromEnv(lookup Lookup) (Config, error) {
 	r.duration("HD_ACCOUNT_DELETION_GRACE", &config.DeletionGrace)
 	r.duration("HD_STALE_MATCH_AFTER", &config.StaleMatchAfter)
 	r.integer("HD_DUPLICATE_COMPENSATION_PERCENT", &config.Reward.DuplicateCompensationPercent)
+	r.text("HD_SENTRY_DSN", &config.SentryDSN)
+	r.text("HD_SENTRY_ENVIRONMENT", &config.SentryEnv)
+	if config.SentryDSN != "" {
+		if err := panics.CheckDSN(config.SentryDSN); err != nil {
+			r.errs = append(r.errs, fmt.Errorf("HD_SENTRY_DSN: %w", err))
+		}
+	}
 	if err := config.Shop.Validate(); err != nil {
 		r.errs = append(r.errs, fmt.Errorf("HD_SHOP_DAILY_SLOTS, HD_SHOP_WEEKLY_SLOTS and HD_SHOP_RESET_HOUR_UTC: %w", err))
 	}

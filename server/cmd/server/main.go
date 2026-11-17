@@ -76,6 +76,12 @@ func main() {
 	}
 	logger := app.NewLogger(os.Stdout, config.LogLevel)
 	slog.SetDefault(logger)
+	flushPanics, err := panics.Ship(config.SentryDSN, config.SentryEnv, nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "HD_SENTRY_DSN:", err)
+		os.Exit(2)
+	}
+	defer flushPanics()
 	sessions := session.New(config.Session, systemClock{}, secrand.Source{})
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
