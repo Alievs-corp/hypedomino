@@ -38,6 +38,7 @@ jobs:
           filters: |
             server:
               - 'server/**'
+              - 'tools/asset-export/budgets.json'
               - '.github/workflows/ci.yml'
             admin:
               - 'admin/**'

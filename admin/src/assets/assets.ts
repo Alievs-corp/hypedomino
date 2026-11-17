@@ -15,6 +15,8 @@ export type Asset = {
   bytes: number | null;
   content_hash: string | null;
   checks: Record<string, boolean> | null;
+  texture_bytes: number | null;
+  texture_limit: number | null;
   created_at: string;
   view_url?: string;
 };
@@ -48,7 +50,11 @@ export function statusLabel(status: AssetStatus, t: Translate): string {
 
 export function failedCheckLabels(asset: Asset, t: Translate): string[] {
   const failed = Object.entries(asset.checks ?? {}).filter(([, passed]) => !passed);
-  return failed.map(([name]) => (name in checkLabels ? t(checkLabels[name]) : name));
+  return failed.map(([name]) => (name === "size" ? sizeRefusal(asset, t) : name in checkLabels ? t(checkLabels[name]) : name));
+}
+
+function sizeRefusal(asset: Asset, t: Translate): string {
+  return `${t("assets.check.size")}: ${t.number(asset.texture_bytes ?? 0)} B, ${t("assets.check.size_limit")} ${t.number(asset.texture_limit ?? 0)} B`;
 }
 
 export function sizeLabel(bytes: number): string {

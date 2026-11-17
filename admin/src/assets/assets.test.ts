@@ -3,7 +3,7 @@ import test from "node:test";
 import type { Translate } from "../i18n/translate.ts";
 import { assetPageSize, assetsApiPath, failedCheckLabels, itemIdValid, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset } from "./assets.ts";
 
-const t = ((key: string) => `<${key}>`) as Translate;
+const t = Object.assign((key: string) => `<${key}>`, { number: (value: number) => value.toLocaleString("en-US") }) as unknown as Translate;
 
 const asset: Asset = {
   id: "a-1",
@@ -17,6 +17,8 @@ const asset: Asset = {
   bytes: 19,
   content_hash: "abc",
   checks: { format: false, alpha: false },
+  texture_bytes: null,
+  texture_limit: null,
   created_at: "2026-11-06T10:00:00Z",
 };
 
@@ -35,6 +37,8 @@ test("only failed checks are named, and an unknown check still shows", () => {
   assert.deepEqual(failedCheckLabels({ ...asset, checks: { atlas: false } }, t), ["atlas"]);
   assert.deepEqual(failedCheckLabels({ ...asset, checks: { format: true, alpha: true } }, t), []);
   assert.deepEqual(failedCheckLabels({ ...asset, checks: null }, t), []);
+  const wide = { ...asset, item_id: "frame.gold", checks: { format: true, alpha: true, size: false }, texture_bytes: 129_600, texture_limit: 125_000 };
+  assert.deepEqual(failedCheckLabels(wide, t), ["<assets.check.size>: 129,600 B, <assets.check.size_limit> 125,000 B"]);
 });
 
 test("every status has its own label", () => {
