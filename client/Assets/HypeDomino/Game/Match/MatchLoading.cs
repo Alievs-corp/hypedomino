@@ -7,7 +7,7 @@ namespace HypeDomino.Game.Match
 {
     public interface ILoadingScreen
     {
-        void ShowCards(LoadingCards cards);
+        void ShowCards(MatchSnapshot view, LoadingCards cards);
         void Close();
     }
 
@@ -51,7 +51,7 @@ namespace HypeDomino.Game.Match
             if (!loading && !Open) return;
             if (loading && !Open) Begin(view);
             cards.Read(view);
-            screen.ShowCards(cards);
+            screen.ShowCards(view, cards);
             if (loading) return;
             Open = false;
             screen.Close();

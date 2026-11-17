@@ -27,7 +27,7 @@ namespace HypeDomino.Tests.EditMode
             public LoadingStatus SecondStatus;
             public float Progress;
 
-            public void ShowCards(LoadingCards cards)
+            public void ShowCards(MatchSnapshot view, LoadingCards cards)
             {
                 CardsShown++;
                 FirstStatus = cards[0].Status;
