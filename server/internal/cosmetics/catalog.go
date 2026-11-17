@@ -90,7 +90,7 @@ type manifest struct {
 	Items           []Item `json:"items"`
 }
 
-var idPattern = regexp.MustCompile(`^(avatar|frame|table|tile|emoji)\.[a-z0-9_]+$`)
+var idPattern = regexp.MustCompile(`^(` + strings.Join(Types, "|") + `)\.[a-z0-9_]+$`)
 
 func Builtin() *Catalog {
 	catalog, err := Parse(builtin)

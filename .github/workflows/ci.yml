@@ -38,6 +38,7 @@ jobs:
           filters: |
             server:
               - 'server/**'
+              - 'docs/cosmetics/schema.json'
               - 'tools/asset-export/budgets.json'
               - '.github/workflows/ci.yml'
             admin:
