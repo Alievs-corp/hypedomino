@@ -12,6 +12,7 @@ namespace HypeDomino.Game.Match
     {
         Vector2 BoardSize { get; }
         float BoardMaxScale { get; }
+        void ShowBackground(MatchSnapshot view);
         void ShowSeats(MatchSnapshot view);
         void ShowScore(ScoreBoard score);
         void ShowBoard(ChainLayout board);
@@ -80,6 +81,7 @@ namespace HypeDomino.Game.Match
             var passed = (cues.Read(view) & MatchSounds.Pass) != 0;
             var passer = lastCurrent;
             lastCurrent = view.Current;
+            table.ShowBackground(view);
             table.ShowSeats(view);
             Score.Read(view);
             table.ShowScore(Score);

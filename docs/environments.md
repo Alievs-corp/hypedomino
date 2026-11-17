@@ -168,14 +168,14 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PROMO_LOCK_SIGNAL_WEIGHT` | No | server | `5` | `5` | No | from #211 |
 | `HD_PROMO_SPIKE_PERCENT` | No | server | `50` | `50` | No | from #211 |
 | `HD_PROMO_SPIKE_WINDOW_MINUTES` | No | server | `60` | `60` | No | from #211 |
-| `HD_SENTRY_DSN` | No | server | empty (panics are logged and counted only, nothing leaves the node) | `https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>` | Yes | #182; only a Sentry EU data region DSN (host ending in `.ingest.de.sentry.io`) is accepted (`docs/privacy.md` section 2), any other value stops the start without echoing it |
-| `HD_SENTRY_ENVIRONMENT` | No | server | empty | `staging` | No | #182; the environment name of section 1 the reports are filed under |
+| `HD_SENTRY_DSN` | No | server, admin-api | empty (panics are logged and counted only, nothing leaves the node) | `https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>` | Yes | #182; only a Sentry EU data region DSN (host ending in `.ingest.de.sentry.io`) is accepted (`docs/privacy.md` section 2), any other value stops the start without echoing it |
+| `HD_SENTRY_ENVIRONMENT` | No | server, admin-api | empty | `staging` | No | #182; the environment name of section 1 the reports are filed under |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
 ### 2.2 Admin API runtime
 
-`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way, and `HD_SHOP_REFERENCE_PRICE_DAYS`, the struck-through price window of `docs/economy.md` 6.3. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. For the store price push (`docs/economy.md` 7.4, #585) it reads `HD_PLAY_PACKAGE` and `HD_PLAY_SERVICE_ACCOUNT` as the server does, and the App Store Connect API key below; a store without its variables is shown as not configured and nothing is pushed to it. The Play service account needs the Play Console permission to manage store presence and pricing of the app; the App Store Connect key needs the App Manager role. Each environment has its own values (E-1).
+`server/cmd/admin-api` (`docs/admin.md` 9.1). It also reads `HD_LOG_LEVEL` and `HD_DATABASE_URL` as above, `HD_REDIS_URL` for its sign-in nonces and rate-limit buckets when more than one instance runs, `HD_READ_TIMEOUT` and `HD_IDLE_TIMEOUT` for its slow client cut-offs, and `HD_SHOP_DAILY_SLOTS`, `HD_SHOP_WEEKLY_SLOTS` and `HD_SHOP_RESET_HOUR_UTC`, which must match the game servers so the shop catalog is checked the same way, and `HD_SHOP_REFERENCE_PRICE_DAYS`, the struck-through price window of `docs/economy.md` 6.3. For the promo routes (#142) it reads `HD_PROMO_KEY`, `HD_PROMO_CODE_LENGTH`, `HD_PROMO_MAX_VALIDITY_DAYS`, `HD_PROMO_COINS_APPROVAL_THRESHOLD` and `HD_COSMETICS_MANIFEST`, which must match the game servers so a code it stores redeems there. For the store price push (`docs/economy.md` 7.4, #585) it reads `HD_PLAY_PACKAGE` and `HD_PLAY_SERVICE_ACCOUNT` as the server does, and the App Store Connect API key below; a store without its variables is shown as not configured and nothing is pushed to it. The Play service account needs the Play Console permission to manage store presence and pricing of the app; the App Store Connect key needs the App Manager role. Its recovered panics go to Sentry with `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` as for the server (2.1), under the same EU data region rule. Each environment has its own values (E-1).
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
@@ -241,7 +241,7 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 
 ### 2.4 Not read yet
 
-The client reads no environment variable. Client crash reporting (#182) adds its build inputs when the code that reads them lands; that PR adds the row here with all columns filled and the secret to section 3 for each environment. The server side reads `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` (2.1).
+The client reads no environment variable. Client crash reporting (#182) adds its build inputs when the code that reads them lands; that PR adds the row here with all columns filled and the secret to section 3 for each environment. The server and the admin API read `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` (2.1, 2.2).
 
 ### 2.5 Client build inputs
 
@@ -265,7 +265,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
-| Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods; unset until the Sentry account exists (section 7) |
+| Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods and of the admin API, which gets the same DSN; unset until the Sentry account exists (section 7) |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.
@@ -337,5 +337,5 @@ Rules:
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
-- Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, server panics are only logged and counted.
+- Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, panics of the server and the admin API are only logged and counted.
 - Client HTTP timeout: no document or config sets the timeout of the player's `/auth` and API requests, so `-httpTimeoutSeconds` (2.5) and `CLIENT_HTTP_TIMEOUT_SECONDS` (2.3) have no value. A tag release fails before the build until the owner sets it (#66).

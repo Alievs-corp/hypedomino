@@ -50,6 +50,8 @@ type config struct {
 	readLimit  time.Duration
 	idleLimit  time.Duration
 	configPoll time.Duration
+	sentryDSN  string
+	sentryEnv  string
 	api        adminapi.Config
 }
 
@@ -103,6 +105,13 @@ func configFromEnv(env lookup) (config, error) {
 	for _, audience := range strings.Split(audiences, ",") {
 		if audience = strings.TrimSpace(audience); audience != "" {
 			c.audiences = append(c.audiences, audience)
+		}
+	}
+	text("HD_SENTRY_DSN", &c.sentryDSN)
+	text("HD_SENTRY_ENVIRONMENT", &c.sentryEnv)
+	if c.sentryDSN != "" {
+		if err := panics.CheckDSN(c.sentryDSN); err != nil {
+			errs = append(errs, fmt.Errorf("HD_SENTRY_DSN: %w", err))
 		}
 	}
 	duration("HD_READ_TIMEOUT", &c.readLimit)
@@ -290,6 +299,12 @@ func main() {
 	}
 	logger := app.NewLogger(os.Stdout, c.logLevel)
 	slog.SetDefault(logger)
+	flushPanics, err := panics.Ship(c.sentryDSN, c.sentryEnv, nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "HD_SENTRY_DSN:", err)
+		os.Exit(2)
+	}
+	defer flushPanics()
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 	if *email != "" {
