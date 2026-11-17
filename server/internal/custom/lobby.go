@@ -132,6 +132,23 @@ func (l *Lobby) Create(creator Member) (*Room, error) {
 	return r, nil
 }
 
+func (l *Lobby) Renew(ctx context.Context) error {
+	if l.directory == nil {
+		return nil
+	}
+	l.mu.Lock()
+	codes := make([]string, 0, len(l.rooms))
+	for code := range l.rooms {
+		codes = append(codes, code)
+	}
+	l.mu.Unlock()
+	var failed error
+	for _, code := range codes {
+		failed = errors.Join(failed, l.directory.Claim(ctx, code))
+	}
+	return failed
+}
+
 func (l *Lobby) code() string {
 	code := make([]byte, CodeLength)
 	value := l.random.Uint64()
