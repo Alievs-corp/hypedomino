@@ -10,14 +10,16 @@ namespace HypeDomino.Game.Match
     public sealed class MatchTable : IMatchTable
     {
         readonly SeatAvatars avatars;
+        readonly TableBackground background;
         readonly CosmeticManifest manifest;
         readonly ScorePanelView score;
         readonly BoardTilesView tiles;
         readonly MatchLayoutView layout;
 
-        public MatchTable(SeatAvatars avatars, CosmeticManifest manifest, ScorePanelView score, BoardTilesView tiles, MatchLayoutView layout, float boardMaxScale)
+        public MatchTable(SeatAvatars avatars, TableBackground background, CosmeticManifest manifest, ScorePanelView score, BoardTilesView tiles, MatchLayoutView layout, float boardMaxScale)
         {
             this.avatars = avatars ?? throw new ArgumentNullException(nameof(avatars));
+            this.background = background ?? throw new ArgumentNullException(nameof(background));
             this.manifest = manifest;
             this.score = score ? score : throw new ArgumentNullException(nameof(score));
             this.tiles = tiles ? tiles : throw new ArgumentNullException(nameof(tiles));
@@ -28,10 +30,18 @@ namespace HypeDomino.Game.Match
         public Vector2 BoardSize => layout.Layout.Board.size;
         public float BoardMaxScale { get; }
 
+        public void ShowBackground(MatchSnapshot view) => background.Show(view, manifest);
+
         public void ShowSeats(MatchSnapshot view) => avatars.Show(view, manifest);
 
         public void ShowScore(ScoreBoard board) => ScorePanel.Show(score, board);
 
         public void ShowBoard(ChainLayout board) => tiles.Show(board);
+
+        public void RefreshEffects()
+        {
+            background.RefreshEffects();
+            avatars.RefreshEffects();
+        }
     }
 }
