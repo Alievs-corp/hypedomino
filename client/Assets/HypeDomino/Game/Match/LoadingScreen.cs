@@ -18,6 +18,7 @@ namespace HypeDomino.Game.Match
         readonly ActiveCosmeticManifest manifest;
         readonly GameStrings strings;
         readonly bool[] shown;
+        readonly TableBackground table;
 
         public LoadingScreen(LoadingScreenView view, CosmeticStage stage, ActiveCosmeticManifest manifest, GameStrings strings)
         {
@@ -26,11 +27,13 @@ namespace HypeDomino.Game.Match
             this.manifest = manifest ?? throw new ArgumentNullException(nameof(manifest));
             this.strings = strings ?? throw new ArgumentNullException(nameof(strings));
             shown = new bool[view.CardCount];
+            table = new TableBackground(stage, view.Table);
         }
 
         public void ShowCards(MatchSnapshot match, LoadingCards cards)
         {
             view.SetOpen(true);
+            table.Show(match, manifest.Current);
             Array.Clear(shown, 0, shown.Length);
             Span<int> placed = stackalloc int[LoadingScreenView.Rows];
             for (var at = 0; at < cards.Count; at++)
@@ -50,6 +53,7 @@ namespace HypeDomino.Game.Match
 
         public void RefreshEffects()
         {
+            table.RefreshEffects();
             for (var index = 0; index < shown.Length; index++)
                 if (shown[index]) view.Card(index).RefreshEffects();
         }
