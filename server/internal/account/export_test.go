@@ -32,7 +32,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		{`insert into risk_actions (account_id, action, score, wave, created_at) values ($1, 'shadowban', 987654321, $2, $2)`, own},
 		{`insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at) values ($1, 'promotional_push', true, 'p-3', 'settings', '1.0.0', $2)`, own},
 		{`insert into analytics_ids (analytics_id, account_id, first_seen_at) values ('6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b', $1, $2)`, own},
-		{`insert into analytics_events (analytics_id, name, label, value, client_time_ms, received_at) values ('6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b', 'screen_view', 'shop', 0, 1762300000000, $2)`, own},
+		{`insert into analytics_events (analytics_id, name, label, value, client_time_ms, received_at) select analytics_id, 'screen_view', 'shop', 0, 1762300000000, $2 from analytics_ids where account_id = $1`, own},
 	} {
 		if _, err := pool.Exec(ctx, seed.statement, seed.args...); err != nil {
 			t.Fatalf("%s: %v", seed.statement, err)
