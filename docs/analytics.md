@@ -50,8 +50,9 @@ Match end, purchase, reward, mission and pass events are written by the server f
 - `analytics_events` stores the analytics id, name, label, value, the device time as sent and the server receive time. The source IP, the account id and the request headers are never stored.
 - Erasure: `analytics_ids` is an erase-rows table in account deletion and its events go with it. Export: the `analytics` section lists the account's events with their analytics id.
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
+- Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job.
 
-Not built yet: the server events (section 3), the purge of raw events after `AnalyticsRawRetentionDays`, a server check of the `analytics` consent record (the client gate is the only gate until #157 writes it), and the client sender.
+Not built yet: the server events (section 3), aggregates without ids (none exist yet, so nothing is kept past the purge), a server check of the `analytics` consent record (the client gate is the only gate until #157 writes it), and the client sender.
 
 ## 6. Config
 

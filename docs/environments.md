@@ -132,6 +132,7 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_DELETION_LOG_ACCESS_KEY` | Yes | account-deletion | none | `<deletion-log-access-key>` | Yes | from #601 |
 | `HD_DELETION_LOG_SECRET_KEY` | Yes | account-deletion | none | `<deletion-log-secret-key>` | Yes | from #601 |
 | `HD_DELETION_LOG_RETENTION` | No | account-deletion | `840h` | `840h` | No | from #601; `BackupRetentionDays` of `docs/privacy.md` section 4 |
+| `HD_ANALYTICS_RAW_RETENTION` | No | account-deletion | `9480h` | `9480h` | No | from #181; `AnalyticsRawRetentionDays` of `docs/privacy.md` section 4 |
 | `HD_EXPORT_STORE_URL` | No | server | none: `POST /account/export` is not served | `https://<object-store-host>/<private-export-bucket>` | No | from #63; a private bucket, never the public asset bucket |
 | `HD_EXPORT_STORE_REGION` | With `HD_EXPORT_STORE_URL` | server | none | `<store-region>` | No | from #63 |
 | `HD_EXPORT_STORE_ACCESS_KEY` | With `HD_EXPORT_STORE_URL` | server | none | `<export-store-access-key>` | Yes | from #63 |
