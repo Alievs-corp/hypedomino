@@ -1,4 +1,5 @@
 using System;
+using Google.Protobuf;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Match;
@@ -32,6 +33,10 @@ namespace HypeDomino.Game.Match
         readonly SoundCues cues = new();
         readonly Action<MatchSnapshot> onView;
         readonly Action<ServerHello> onHello;
+        readonly PlaceTileIntent placeIntent = new() { Tile = new Tile() };
+        readonly PassIntent passIntent = new();
+        readonly DrawIntent drawIntent = new();
+        readonly EndTurnIntent endTurnIntent = new();
         Session session;
         Seat lastCurrent;
         TableSide passSide;
@@ -51,6 +56,7 @@ namespace HypeDomino.Game.Match
         public HandChoice Hand { get; } = new();
         public TurnTimer Timer { get; } = new();
         public ChainLayout Board => board.Layout;
+        bool CanSend => session != null && session.Accepted;
 
         public void Bind(Session source)
         {
@@ -90,6 +96,42 @@ namespace HypeDomino.Game.Match
             Timer.Tick(clock, nowSeconds);
             hud.ShowTurn(Timer);
             TickPass(nowSeconds, reduceMotion);
+        }
+
+        public HandTap TapTile(int index)
+        {
+            if (!CanSend) return HandTap.Ignored;
+            var tap = Hand.Tap(index, out var placement);
+            if (tap == HandTap.Placed) SendPlacement(placement);
+            else if (tap != HandTap.Ignored) hud.ShowHand(Hand);
+            return tap;
+        }
+
+        public bool ChooseEnd(BoardEnd end) =>
+            CanSend && Hand.TryChooseEnd(end, out var placement) && SendPlacement(placement);
+
+        public bool DropTile(int index, ReadOnlySpan<Vector2> endPositions, Vector2 drop) =>
+            CanSend && Hand.TryDrop(index, endPositions, drop, out var placement) && SendPlacement(placement);
+
+        public bool EndTurn() => CanSend && Hand.TryEndTurn() && SendIntent(Envelope.PayloadOneofCase.EndTurnIntent, endTurnIntent);
+
+        public bool Draw() => CanSend && Hand.TryDraw() && SendIntent(Envelope.PayloadOneofCase.DrawIntent, drawIntent);
+
+        public bool Pass() => CanSend && Hand.TryPass() && SendIntent(Envelope.PayloadOneofCase.PassIntent, passIntent);
+
+        bool SendPlacement(TilePlacement placement)
+        {
+            placeIntent.Tile.Low = placement.Tile.Low;
+            placeIntent.Tile.High = placement.Tile.High;
+            placeIntent.End = placement.End;
+            return SendIntent(Envelope.PayloadOneofCase.PlaceTileIntent, placeIntent);
+        }
+
+        bool SendIntent(Envelope.PayloadOneofCase intent, IMessage message)
+        {
+            session.Send(intent, message);
+            hud.ShowHand(Hand);
+            return true;
         }
 
         void StartConnection()
