@@ -30,8 +30,16 @@ const (
 	assetAwaitingFile = "awaiting_file"
 	assetPassed       = "passed"
 	assetRejected     = "rejected"
+	astcBlockSide     = 6
+	astcBlockBytes    = 16
 	assetColumns      = `id::text, item_id, slot, address, status, format, width, height, bytes, frames, content_hash, checks, uploaded_by, created_at, checked_at, object_key`
 )
+
+var staticTextureLimits = map[string]int64{
+	cosmetics.TypeEmoji: 100_000,
+	cosmetics.TypeFrame: 125_000,
+	cosmetics.TypeTable: 1_000_000,
+}
 
 var (
 	errAssetStoreOff = errors.New("adminapi: no asset store is configured")
@@ -64,6 +72,8 @@ type assetView struct {
 	CreatedAt   time.Time       `json:"created_at"`
 	CheckedAt   *time.Time      `json:"checked_at"`
 	ViewURL     string          `json:"view_url,omitempty"`
+	TextureSize *int64          `json:"texture_bytes"`
+	SizeLimit   *int64          `json:"texture_limit"`
 	objectKey   string
 }
 
@@ -107,7 +117,19 @@ func (h *Handler) viewable(asset assetView) assetView {
 	if h.config.Assets != nil && asset.Status == assetPassed {
 		asset.ViewURL = h.config.Assets.SignedGet(asset.objectKey, h.now())
 	}
+	if asset.Width != nil && asset.Height != nil {
+		estimate := astcEstimate(*asset.Width, *asset.Height)
+		asset.TextureSize = &estimate
+	}
+	if limit, ok := staticTextureLimits[cosmetics.TypeOf(asset.ItemID)]; ok {
+		asset.SizeLimit = &limit
+	}
 	return asset
+}
+
+func astcEstimate(width, height int) int64 {
+	blocks := func(side int) int64 { return int64((side + astcBlockSide - 1) / astcBlockSide) }
+	return blocks(width) * blocks(height) * astcBlockBytes
 }
 
 func (h *Handler) startAssetUpload(w http.ResponseWriter, r *http.Request, p principal) {
@@ -171,7 +193,7 @@ func (h *Handler) checkAsset(w http.ResponseWriter, r *http.Request, p principal
 		h.refuse(w, err)
 		return
 	}
-	measured, err := h.measureAsset(r.Context(), asset.objectKey)
+	measured, err := h.measureAsset(r.Context(), asset)
 	if err != nil {
 		h.refuse(w, err)
 		return
@@ -214,13 +236,20 @@ func (h *Handler) awaitingAsset(ctx context.Context, id string) (assetView, erro
 	return asset, nil
 }
 
-func (h *Handler) measureAsset(ctx context.Context, key string) (assetMeasure, error) {
-	body, err := h.config.Assets.Open(ctx, key, h.now())
+func (h *Handler) measureAsset(ctx context.Context, asset assetView) (assetMeasure, error) {
+	body, err := h.config.Assets.Open(ctx, asset.objectKey, h.now())
 	if err != nil {
 		return assetMeasure{}, err
 	}
 	defer body.Close()
-	return measureStatic(body)
+	measured, err := measureStatic(body)
+	if err != nil || measured.Width == nil {
+		return measured, err
+	}
+	if limit, ok := staticTextureLimits[cosmetics.TypeOf(asset.ItemID)]; ok {
+		measured.Checks["size"] = astcEstimate(*measured.Width, *measured.Height) < limit
+	}
+	return measured, nil
 }
 
 func assetEntry(action string, asset assetView) audit.Entry {

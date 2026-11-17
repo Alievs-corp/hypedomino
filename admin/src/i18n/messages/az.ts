@@ -1088,7 +1088,7 @@ export const az: Messages = {
   "store_prices.push.status.failed": "Yazılmadı",
   "nav.assets": "Asset-lər",
   "assets.title": "Asset-lər",
-  "assets.intro": "Hələlik yalnız statik PNG yüklənir. Fayl birbaşa storage-ə gedir, server onu oxuyub ölçür: format, alpha, en, hündürlük, ölçü və hash. Ölçü və atlas limitləri hələ təyin olunmayıb, ona görə də ölçülür, amma rədd edilmir.",
+  "assets.intro": "Hələlik yalnız statik PNG yüklənir. Fayl birbaşa storage-ə gedir, server onu oxuyub ölçür: format, alpha, en, hündürlük, ölçü və hash. Statik emoji, frame və ya table-ın ASTC 6x6 texture təxmini öz tipinin statik limitindən az deyilsə, rədd edilir; atlas və kadr limitləri hələ təyin olunmayıb.",
   "assets.not_delivered": "Yoxlamadan keçən fayl hələ oyunçuya çatmır: Addressables kataloq yığımı və item ilə birlikdə dərc hələ yoxdur.",
   "assets.store_off": "Bu mühitdə asset storage qurulmayıb, ona görə yükləmə bağlıdır.",
   "assets.load_failed": "Asset-ləri yükləmək alınmadı.",
@@ -1117,4 +1117,6 @@ export const az: Messages = {
   "assets.empty_match": "Bu filtrə uyğun asset yoxdur.",
   "assets.check.format": "Fayl PNG deyil",
   "assets.check.alpha": "PNG-də alpha kanalı yoxdur",
+  "assets.check.size": "ASTC 6x6 texture təxmini",
+  "assets.check.size_limit": "bu tipin statik limiti bundan azdır:",
 };

@@ -1093,7 +1093,7 @@ export const en = {
   "store_prices.push.status.failed": "Write failed",
   "nav.assets": "Assets",
   "assets.title": "Assets",
-  "assets.intro": "Only static PNG files upload for now. The file goes straight to storage and the server reads and measures it: format, alpha, width, height, size and hash. Size and atlas limits are not set yet, so these are measured but not refused.",
+  "assets.intro": "Only static PNG files upload for now. The file goes straight to storage and the server reads and measures it: format, alpha, width, height, size and hash. A static emoji, frame or table is refused when its ASTC 6x6 texture estimate is not under the static limit of its type; atlas and frame limits are not set yet.",
   "assets.not_delivered": "A file that passes does not reach players yet: the Addressables catalog build and publishing with the item do not exist yet.",
   "assets.store_off": "This environment has no asset storage configured, so uploads are closed.",
   "assets.load_failed": "Could not load the assets.",
@@ -1122,4 +1122,6 @@ export const en = {
   "assets.empty_match": "No assets match this filter.",
   "assets.check.format": "The file is not a PNG",
   "assets.check.alpha": "The PNG has no alpha channel",
+  "assets.check.size": "ASTC 6x6 texture estimate",
+  "assets.check.size_limit": "the static limit of this type is under",
 };

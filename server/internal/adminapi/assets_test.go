@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -304,5 +305,43 @@ func TestAMedalStaticFacesTheSameChecksAndSlots(t *testing.T) {
 	expect(t, status, body, http.StatusOK, "")
 	if asset := body["asset"].(map[string]any); asset["status"] != "rejected" || asset["checks"].(map[string]any)["alpha"] != false {
 		t.Fatalf("asset %v", asset)
+	}
+}
+
+func TestAStaticIsRefusedOverTheSizeLimitOfItsType(t *testing.T) {
+	cases := []struct {
+		item     string
+		side     int
+		estimate float64
+		limit    any
+		status   string
+	}{
+		{"frame.opal_wings", 512, 118_336, float64(125_000), "passed"},
+		{"frame.opal_wings", 528, 123_904, float64(125_000), "passed"},
+		{"frame.opal_wings", 540, 129_600, float64(125_000), "rejected"},
+		{"emoji.wink", 474, 99_856, float64(100_000), "passed"},
+		{"emoji.wink", 480, 102_400, float64(100_000), "rejected"},
+		{"table.teal_lattice", 1494, 992_016, float64(1_000_000), "passed"},
+		{"table.teal_lattice", 1500, 1_000_000, float64(1_000_000), "rejected"},
+		{"avatar.fox", 1500, 1_000_000, nil, "passed"},
+		{"tile.sema", 1500, 1_000_000, nil, "passed"},
+		{"medal.wins_50", 1500, 1_000_000, nil, "passed"},
+	}
+	for _, c := range cases {
+		t.Run(c.item+"/"+strconv.Itoa(c.side), func(t *testing.T) {
+			a, store := newAssetAPI(t)
+			token := a.signIn("ayla")
+			status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": c.item, "slot": "static"})
+			expect(t, status, body, http.StatusOK, "")
+			id := body["asset"].(map[string]any)["id"].(string)
+			store.upload(body["upload_url"].(string), encodedPNG(t, image.NewNRGBA(image.Rect(0, 0, c.side, c.side))))
+			status, body = a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+			expect(t, status, body, http.StatusOK, "")
+			asset := body["asset"].(map[string]any)
+			sized, measured := asset["checks"].(map[string]any)["size"]
+			if asset["status"] != c.status || asset["texture_bytes"] != c.estimate || asset["texture_limit"] != c.limit || measured != (c.limit != nil) || (measured && sized != (c.status == "passed")) {
+				t.Fatalf("asset %v", asset)
+			}
+		})
 	}
 }
