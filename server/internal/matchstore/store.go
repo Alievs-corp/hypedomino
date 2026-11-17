@@ -34,10 +34,11 @@ const (
 )
 
 const (
-	TopicRating   = "rating"
-	TopicXp       = "xp"
-	TopicMissions = "missions"
-	TopicEconomy  = "economy"
+	TopicRating    = "rating"
+	TopicXp        = "xp"
+	TopicMissions  = "missions"
+	TopicEconomy   = "economy"
+	TopicAnalytics = "analytics"
 )
 
 type Participant struct {
@@ -330,6 +331,7 @@ func MatchMessages(kind string, key string, payload any) []Message {
 	if kind == KindCustom {
 		topics = []string{TopicMissions}
 	}
+	topics = append(topics, TopicAnalytics)
 	out := make([]Message, 0, len(topics))
 	for _, topic := range topics {
 		out = append(out, Message{Topic: topic, Key: key, Payload: payload})
