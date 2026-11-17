@@ -41,14 +41,18 @@ jobs:
           INPUT_CATALOG_VERSION: ${{ inputs.catalog_version || format('pr-{0}', github.event.pull_request.number) }}
           BUILD_NUMBER: ${{ github.run_number }}
           APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
+          SERVER_URL: ${{ vars.CLIENT_SERVER_URL }}
+          HTTP_TIMEOUT_SECONDS: ${{ vars.CLIENT_HTTP_TIMEOUT_SECONDS }}
         run: |
           parameters="-buildNumber $BUILD_NUMBER"
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             version="${GITHUB_REF_NAME#client-v}"
             [[ "$version" =~ ^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$ ]] || { echo "the tag must be client-v<major>.<minor>.<patch>, got $GITHUB_REF_NAME"; exit 1; }
             [[ "$APPLICATION_ID" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || { echo "set the repository variable ANDROID_APPLICATION_ID to the Play package name"; exit 1; }
+            [[ "$SERVER_URL" =~ ^https://[^[:space:]?#]+$ ]] || { echo "set the repository variable CLIENT_SERVER_URL to the https server URL"; exit 1; }
+            [[ "$HTTP_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || { echo "set the repository variable CLIENT_HTTP_TIMEOUT_SECONDS to the HTTP timeout in whole seconds"; exit 1; }
             catalog="$version-$BUILD_NUMBER"
-            parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json"
+            parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json -serverUrl $SERVER_URL -httpTimeoutSeconds $HTTP_TIMEOUT_SECONDS"
           else
             catalog="$INPUT_CATALOG_VERSION"
           fi

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using HypeDomino.Content;
+using HypeDomino.Net;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.Build;
@@ -18,6 +19,9 @@ namespace HypeDomino.Editor
         public const string BuildNumberArgument = "-buildNumber";
         public const string ApplicationIdArgument = "-applicationId";
         public const string SigningArgument = "-androidSigning";
+        public const string ServerUrlArgument = "-serverUrl";
+        public const string HttpTimeoutArgument = "-httpTimeoutSeconds";
+        public const string EndpointFolder = "Assets/HypeDomino/Net/Resources";
         public const string AndroidRemoteFolder = "ServerData/Android";
         public const int MaxAndroidVersionCode = 2100000000;
         const string OutputPathArgument = "-customBuildPath";
@@ -41,6 +45,7 @@ namespace HypeDomino.Editor
             public int BuildNumber;
             public string ApplicationId;
             public AndroidSigning Signing;
+            public ServerEndpoint Endpoint;
         }
 
         public static void BuildAndroid() => EditorMethod.Run(() => BuildAndroid(Argument(CatalogVersionArgument), Argument(OutputPathArgument) ?? DefaultAndroidOutput, ReleaseFromArguments()));
@@ -57,6 +62,7 @@ namespace HypeDomino.Editor
                 settings.OverridePlayerVersion = catalogVersion;
                 EditorUserBuildSettings.buildAppBundle = true;
                 Apply(release);
+                WriteEndpoint(release.Endpoint);
                 if (Directory.Exists(AndroidRemoteFolder)) Directory.Delete(AndroidRemoteFolder, true);
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -69,10 +75,11 @@ namespace HypeDomino.Editor
                 if (report.summary.result != BuildResult.Succeeded) throw new BuildFailedException($"Android release build {report.summary.result}");
                 var catalog = Path.Combine(AndroidRemoteFolder, ContentUrls.CatalogFile(catalogVersion));
                 if (!File.Exists(catalog)) throw new BuildFailedException($"{catalog} was not built");
-                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore}");
+                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore} server={release.Endpoint?.serverUrl ?? "none"}");
             }
             finally
             {
+                AssetDatabase.DeleteAsset(EndpointFolder);
                 settings.OverridePlayerVersion = previousVersion;
                 EditorUserBuildSettings.buildAppBundle = previousAppBundle;
                 restorePlayer();
@@ -109,10 +116,28 @@ namespace HypeDomino.Editor
             return signing;
         }
 
+        public static ServerEndpoint ParseEndpoint(string serverUrl, string httpTimeoutSeconds)
+        {
+            if (serverUrl == null && httpTimeoutSeconds == null) return null;
+            if (serverUrl == null || httpTimeoutSeconds == null) throw new ArgumentException($"{ServerUrlArgument} and {HttpTimeoutArgument} are given together or not at all");
+            return ServerEndpoint.Parse(serverUrl, httpTimeoutSeconds);
+        }
+
         static AndroidRelease ReleaseFromArguments()
         {
             var signingFile = Argument(SigningArgument);
-            return ParseRelease(Argument(AppVersionArgument), Argument(BuildNumberArgument), Argument(ApplicationIdArgument), signingFile == null ? null : File.ReadAllText(signingFile));
+            var release = ParseRelease(Argument(AppVersionArgument), Argument(BuildNumberArgument), Argument(ApplicationIdArgument), signingFile == null ? null : File.ReadAllText(signingFile));
+            release.Endpoint = ParseEndpoint(Argument(ServerUrlArgument), Argument(HttpTimeoutArgument));
+            return release;
+        }
+
+        static void WriteEndpoint(ServerEndpoint endpoint)
+        {
+            if (endpoint == null) return;
+            Directory.CreateDirectory(EndpointFolder);
+            var path = $"{EndpointFolder}/{ServerEndpoint.ResourceName}.json";
+            File.WriteAllText(path, JsonUtility.ToJson(endpoint));
+            AssetDatabase.ImportAsset(path);
         }
 
         static void Apply(AndroidRelease release)
