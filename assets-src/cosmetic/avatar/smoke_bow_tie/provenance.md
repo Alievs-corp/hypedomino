@@ -16,7 +16,9 @@ Static avatar of set 1 (#172), batch D, a painted portrait made with template P-
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 has no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; the expression is friendly; the locs are a hairstyle, painted with the same care as the rest of the portrait; the lapel pin is a plain jewel with no sign in it; the costume cues are evening dress, not a uniform or a symbol
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_smoke_bow_tie`. The offer id is a placeholder until the shop record exists (V-15).
+Proposed for the admin draft, not decided: rarity `rare`, source `shop:offer.avatar_smoke_bow_tie`. The offer id is a placeholder until the shop record exists (V-15).
+
+2026-11-16: owner decision — static avatars are common or rare; higher tiers are for animated avatars.
 
 ## Embedded C2PA manifest
 

@@ -53,6 +53,21 @@ function canvasErrors(still, loops) {
     .map(({ name, png }) => `export/${slot}/${name} is ${png.width}x${png.height}, the static is ${still.width}x${still.height}; frames keep the canvas of the static (docs/art-direction.md section 7)`));
 }
 
+export function sliceErrors(text, still) {
+  let slice;
+  try {
+    slice = JSON.parse(text);
+  } catch {
+    return ["export/slice.json is not JSON"];
+  }
+  const whole = (value) => Number.isInteger(value) && value > 0;
+  if (!whole(slice?.depth) || !whole(slice?.step)) return ["export/slice.json needs a whole positive depth and step in pixels of the static (docs/cosmetics.md 8.4)"];
+  const errors = [];
+  if (slice.depth * 2 >= still.height) errors.push(`export/slice.json depth ${slice.depth} leaves no field in the static height ${still.height}`);
+  if (slice.step >= still.width || (still.width - slice.step) % 2 !== 0) errors.push(`export/slice.json step ${slice.step} must be shorter than the static width ${still.width} and leave an even remainder`);
+  return errors;
+}
+
 function readExportPng(item, path, errors) {
   const png = readPng(readFileSync(join(item.directory, path)));
   if (png.error) errors.push(`${path} ${png.error}`);
@@ -77,22 +92,38 @@ export function inspectItem(directory) {
   const loops = [...loopsBySlot.values()];
   errors.push(...loops.flatMap(({ slot, frames }) => frameNameErrors(slot, frames)));
   if (!still.error) errors.push(...canvasErrors(still, loops.map(({ slot, frames }) => ({ slot, frames: frames.filter(({ png }) => !png.error) }))));
+  if (item.type === "table" && !files.includes("export/slice.json")) errors.push(`${item.root}: missing export/slice.json, the table's ring depth and edge step (docs/cosmetics.md 8.4)`);
+  else if (item.type === "table" && !still.error) errors.push(...sliceErrors(readFileSync(join(item.directory, "export/slice.json"), "utf8"), still));
   return { ...item, errors, still, loops };
 }
 
+function layerCounts(item) {
+  const layers = item.loops.filter(({ slot }) => slot.startsWith("layer/"));
+  return { layers: layers.length, animatedLayers: layers.filter(({ frames }) => frames.length > 1).length };
+}
+
 export function itemBudget(item, budgets) {
-  const rule = budgets.types[item.type];
-  const block = rule?.astcBlock ?? budgets.astcBlock;
+  const typeRule = budgets.types[item.type];
+  const rule = typeRule?.[item.loops.length > 0 ? "animated" : "static"];
+  const block = typeRule?.astcBlock ?? budgets.astcBlock;
   const sprites = [item.still, ...item.loops.flatMap(({ frames }) => frames.map(({ png }) => png))];
   const bytes = sprites.reduce((sum, png) => sum + astcBytes(png.width, png.height, block), 0);
-  const applies = Boolean(rule) && (item.loops.length > 0 || !rule.animatedOnly);
-  return { id: item.id, sprites: sprites.length, block, bytes, maxBytes: applies ? rule.maxBytes : undefined, source: applies ? rule.source : undefined, ok: !applies || bytes < rule.maxBytes };
+  const { layers, animatedLayers } = layerCounts(item);
+  const measured = { id: item.id, sprites: sprites.length, block, bytes, layers, animatedLayers };
+  if (!rule) return { ...measured, ok: true };
+  const layersOk = (rule.maxLayers === undefined || layers <= rule.maxLayers) && (rule.maxAnimatedLayers === undefined || animatedLayers <= rule.maxAnimatedLayers);
+  return { ...measured, maxBytes: rule.maxBytes, maxLayers: rule.maxLayers, maxAnimatedLayers: rule.maxAnimatedLayers, source: rule.source, ok: bytes < rule.maxBytes && layersOk };
+}
+
+function layerText(budget) {
+  if (budget.maxLayers === undefined && budget.maxAnimatedLayers === undefined) return "";
+  return `, ${budget.layers} layers (${budget.animatedLayers} animated), at most ${budget.maxLayers ?? "any"} (${budget.maxAnimatedLayers ?? "any"} animated)`;
 }
 
 export function budgetLine(budget) {
   const measured = `${budget.id}: ${budget.sprites} sprites, ASTC ${budget.block} estimate ${budget.bytes.toLocaleString("en-US")} bytes`;
   if (budget.maxBytes === undefined) return `${measured}, no size limit set for this type and kind (docs/asset-workflow.md O-5)`;
-  return `${measured}, limit under ${budget.maxBytes.toLocaleString("en-US")} (${budget.source}): ${budget.ok ? "pass" : "fail"}`;
+  return `${measured}, limit under ${budget.maxBytes.toLocaleString("en-US")}${layerText(budget)} (${budget.source}): ${budget.ok ? "pass" : "fail"}`;
 }
 
 export function readProvenance(text) {

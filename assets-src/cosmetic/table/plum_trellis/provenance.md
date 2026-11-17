@@ -17,6 +17,8 @@ Animated table of set 1 (#174). The carpet cloth is a concept made with template
 
 Proposed for the admin draft, not decided: rarity `epic` (a painted carpet with one motion; #174 asks for richer art at higher rarity), source `shop:offer.table_plum_trellis`. The offer id is a placeholder until the shop record exists (V-15). `table.starter` stays the `common` default table.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (tassels), so `epic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261115-01.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signature was not validated with a C2PA tool.
@@ -40,7 +42,7 @@ Run on 2026-11-15 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 
 python -I assets-src/cosmetic/table/plum_trellis/work/plum_trellis_table.py assets-src/cosmetic/table/plum_trellis/work/plum_trellis_table.json docs/design-tokens.json assets-src/cosmetic/table/plum_trellis assets-src/cosmetic/table/plum_trellis
 ```
 
-It printed `plum_trellis: trim (0, 0, 1667, 941), stretch 1.004, crop (0.0, 0, 1667.0, 941), canvas 1280x720, seed 17414, tassels 10 frames, key frame 5`. Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
+It printed `plum_trellis: trim (0, 0, 1667, 941), stretch 1.004, crop (0.0, 0, 1667.0, 941), edges depth 234 step 276 start 408 score 1.4312, canvas 1280x720, seed 17414, tassels 10 frames, key frame 5` (run again on 2026-11-16). Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
 
 The script reads its settings from `work/plum_trellis_table.json`; every table of this set uses the same script with its own settings file. Wood and gold come only from `docs/design-tokens.json`, so the rim and the inlay line are those of `table.starter` and the set-1 tables at every canvas size (`docs/art-direction.md` 5.4: the same layout on every table).
 
@@ -79,7 +81,7 @@ python -I assets-src/cosmetic/table/plum_trellis/work/plum_trellis_check.py asse
 
 The check measures the static and every frame of the loop (`base` with each motion frame on top). Centre: the 2v2 landscape board region of `docs/tiles.md` section 3 (1516 x 521 of the 1080-unit canvas), centred on the table. Ivory: the median relative luminance (WCAG) of the opaque pixels of the 28 `tile.ivory` faces, box-filtered to 32 x 64 px, the smallest display size of `docs/tiles.md` section 3; this gives 0.743, lower and so stricter than the 0.765 of the full-size face. Pass rule of this set: ivory against the median of the centre at least 7:1, and against its 90th percentile (the light motifs) at least 4.5:1. The same measure gives `table.starter` 9.2:1 and 8.3:1.
 
-Output on 2026-11-15: `ivory face 0.743; worst scene static: centre median 0.037, 90th percentile 0.077; contrast 9.1:1 against the median (needs 7.0:1), 6.2:1 against the 90th percentile (needs 4.5:1): pass`
+Output on 2026-11-16: `ivory face 0.743; worst scene static: centre median 0.037, 90th percentile 0.077; contrast 9.1:1 against the median (needs 7.0:1), 6.2:1 against the 90th percentile (needs 4.5:1): pass`
 
 The script also writes `check.png`: the static scaled to the 828 px short side of the iPhone XR with a chain of nine `tile.ivory` faces at 32 x 64 px and their runtime shadow (`effect.tile_shadow`, `color.shadow` at `elevation.e1`) in the centre, and `check_x3.png`, its centre enlarged three times. The agent looked at both: pips and faces read on the carpet, and no motif in the centre competes with them.
 
@@ -89,26 +91,38 @@ Team hues (`docs/art-direction.md` section 2): share of static pixels with satur
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), board panel B-8, W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/plum_trellis_table.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 234 px at the 1920 x 1080 scale (156 and 184 px on the 1280 x 720 canvas): the rim, the inlay, the carpet border and its guards, the same on all four sides. The ring takes in the corner tassels of the motion layer, so they stay whole.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 276 px, corner pieces 0 to 408 px and 1512 to 1920 px, score 1.4312. Between the corner pieces both bands are the run from 408 to 684 px repeated 4 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 156, "step": 184}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +2 x0.971; 21:9 steps +2 x1.019; 4:3 steps -2 x1.053 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `c11f93a44e83c80de8d1b0be67a84da0adaa32d7386134d85aa7cb65e287b8eb` | 1672 x 941 RGB, the generator's output, unchanged | Codex CLI `$imagegen`, copied byte for byte by Codex into `concept/` |
-| work/plum_trellis_table.py | `82dda447dd99dcf47e07a049f114a8f169e87e96555766d3eda1d4bf88a4f48a` | W-3, W-4 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set |
-| work/plum_trellis_table.json | `0a013b5d946769e434d58c1ba8486eb7df2556b6c31def8ffb3bc8919686b57d` | The item's settings: canvas, seed, concept and clean-up, motion | Written by Claude Code, 2026-11-15 |
+| work/plum_trellis_table.py | `f194b3c59457057f156fd4c8a77a477594a7c9d29783f205825c38e023cf07ba` | W-3, W-4 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/plum_trellis_table.json | `04e45e98c35f90a2a9edf454e20c6262abc020177709cd4d64687b461d32e2ea` | The item's settings: canvas, seed, concept and clean-up, motion | Written by Claude Code, 2026-11-15 |
 | work/plum_trellis_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | The readability check | Written by Claude Code, 2026-11-15; the same script for every table of this set |
-| work/plum_trellis_back.png | `e26e856feb00210b081eae861ffba18e103604363855230c3f928a35e8eff987` | 1280 x 720 RGBA, back layer | `plum_trellis_table.py` |
+| work/plum_trellis_back.png | `fa9ba1db4e04cc0b1066b09d4fcb1f7413229a518d140a6b674164ef9a618215` | 1280 x 720 RGBA, back layer | `plum_trellis_table.py` |
 | work/plum_trellis_middle.png | `f1ce267d022ab91f5ae083b775b9e997fec40232ea90496aa577c26a0af68586` | 1280 x 720 RGBA, middle layer, gold inlay | `plum_trellis_table.py` |
 | work/plum_trellis_front.png | `db81edc5c67289b8fc6cf6a1c19f63bd80e90d8454ae2877dffaf0bd21faf680` | 1280 x 720 RGBA, front layer, wood rim | `plum_trellis_table.py` |
 | work/plum_trellis_motion_key.png | `fd3688d66ef3b010d089bb5ba3c4e0dfa4c7f70d72a48a1a729f572366950241` | 1280 x 720 RGBA, motion frame 5 | `plum_trellis_table.py` |
-| export/layer/base/0001.png | `19bdb89fe4b2ae1d284dbddc314294a19686382dddbf00dae6aea073aa4e102e` | 1280 x 720 RGBA, the static `base` layer | `plum_trellis_table.py` |
+| export/layer/base/0001.png | `78e33724864ce2ffb5a2a33e6c1120f4d61c5612d76e0ef323d7c0e626c1b479` | 1280 x 720 RGBA, the static `base` layer | `plum_trellis_table.py` |
 | export/layer/motion/0001.png to 0010.png | `bb43c94a01efd4bdd4290ae882db800f8d0630aac47560a69f6c9fc09291f495` (sha256 of the 10 files concatenated in name order) | 1280 x 720 RGBA, the `motion` loop | `plum_trellis_table.py` |
-| export/static.png | `b055ab377771873d26c6c75bf5c85300e1a7795da00d479f34626c721eb0193e` | 1280 x 720 RGBA static, base and motion frame 5 | `plum_trellis_table.py` |
+| export/static.png | `ec49f3ace82769dbbddfa54ddd4c44b179eef7b17c87bd33a3d4a188babc42d1` | 1280 x 720 RGBA static, base and motion frame 5 | `plum_trellis_table.py` |
+| export/slice.json | `650424fc5e46c7a75f5491bd99037172fa11244b4f6e9877d4e3d6b5c007cc69` | `{"depth": 156, "step": 184}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `plum_trellis_table.py`, 2026-11-16 |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-15 | concept/20261115-01.png | P-5 back layer with the style key, quoted below. Sent 16:41:36 UTC by Claude Code, Codex session `01a1e015-f233-71c0-be61-e2409ed82ee0`; `c2pa.created` 2026-11-15T16:42:32Z |
 | 2026-11-15 | work/, export/ | `plum_trellis_table.py` on the concept |
+| 2026-11-16 | work/, export/ | `plum_trellis_table.py` with the repeated top and bottom borders and `export/slice.json` (section Any screen shape) |
 
 Prompt of `concept/20261115-01.png`, verbatim (the Codex call wraps it in `$imagegen <prompt> Generate exactly one image, in a wide landscape format. Save the final PNG in the current working directory as 20261115-01.png. Do not use any API key and do not edit the image.`):
 

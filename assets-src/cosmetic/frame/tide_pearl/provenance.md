@@ -15,7 +15,9 @@ Animated frame of #173 (batch A of the 8 animated frames), an ornamental ring ma
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 and W-4 have no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, weapons, casino cues or team hues seen in the art; no glow or drop shadow painted in; points for the cultural review are named under Concept against the prompt
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.frame_tide_pearl`. The offer id is a placeholder until the shop record exists (V-15). Animated frames are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`.
+Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.frame_tide_pearl`. The offer id is a placeholder until the shop record exists (V-15). Animated frames are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 2 animated details (wave band ripple, rising bubbles), so `legendary`, was `epic`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifest
 

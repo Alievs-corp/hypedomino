@@ -17,7 +17,9 @@ Animated avatar of set 1 (#171), batch A, a painted portrait made with template 
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 and W-4 have no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; no glow or drop shadow painted in; the expression is friendly
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `mythic`, source `shop:offer.avatar_ginkgo_pin`. The offer id is a placeholder until the shop record exists (V-15). Animated avatars are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`; this batch proposes 5 epic, 4 legendary, 1 mythic.
+Proposed for the admin draft, not decided: rarity `epic`, source `shop:offer.avatar_ginkgo_pin`. The offer id is a placeholder until the shop record exists (V-15). Animated avatars are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`; this batch proposes 5 epic, 4 legendary, 1 mythic.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (ginkgo dangles), so `epic`, was `mythic`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifests
 

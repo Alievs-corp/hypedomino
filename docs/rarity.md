@@ -21,6 +21,31 @@ Items refer to a tier by `rarityId` (`docs/cosmetics.md` section 3). Glow levels
 - Name values in other languages are managed in admin (`docs/localization.md` section 2.1).
 - `rare` (hue 230) sits next to `role.teamA` (216), `legendary` (41) next to `role.warning` (39) and `role.score` (43), `mythic` (6) next to `role.danger` (354). Colour is never the only cue: tiers differ by pip pattern, and in a match rarity shows only as a halo behind a seat frame, while team identity comes from seat position and badge, outcomes carry an icon and score gold appears only in score numerals and score effects. `legendary` gold also sits next to the gold ornament of the aristocratic look (`docs/art-direction.md` section 2); a tier still reads by its pip pattern, and the small diamond gems of the score panel carry no pips and show no rarity.
 
+### 1.1 Tier of an item
+
+Owner decisions of 2026-11-16 for the tier an item's admin draft proposes. The admin still sets the tier of each item; these rules say which tier a draft proposes.
+
+- A static avatar is `common` or `rare`. `epic`, `legendary` and `mythic` avatars are animated.
+- An animated item's tier rises with its animated detail: the number of independent moving elements its loop script authors, read from `work/*_loop.py` (or the table script) and the item's `provenance.md`. `tile.sema` keeps its tier and is not counted.
+
+| Class | One animated detail | Not counted |
+|---|---|---|
+| Avatar | Each extra moving part: one part (fan, feather, tassel, single earring, page curl), one matching pair (earrings, hoops, tassels, ribbon ends, a boa on both shoulders), one cloth or chain ripple, one group of stone glints, a full spin. A creature with several moving parts (bird, kitten, puppy, butterfly) counts 2 | The base motion every avatar has: breathing, head tilt, blink |
+| Frame | Each moving ornament group (gear rims, plumes, tassels, scrolls, wings, wave band, billows, orbiting stones) and each ambient type (stone glints, rising sparks, orbiting sparkles, petals, drops, bubbles, bolts) | Runtime sheen and aura |
+| Table | Each moving element type of the motion layer: tassels, fringe, gold-thread light bands, knot twinkle, dust motes | The still back, middle and front layers |
+| Emoji | Each moving part of the loop script's `PARTS` (a heart, a tear, a star, a note, a hat, a flake) | The whole-medallion bounce, sway, tilt or tremble |
+
+| Class | `rare` | `epic` | `legendary` | `mythic` |
+|---|---|---|---|---|
+| Avatar | — | 1 | 2 | 3 or more |
+| Frame | — | 1 | 2 | 3 or more |
+| Table | — | 1 | 2 | 3 or more |
+| Emoji | 0 | 1 or 2 | 3 | 4 or more |
+
+- An emoji is the cheapest class (`GuidePriceTypePercent` 50, `docs/economy.md` 3.1) and three animated emoji move only as a whole medallion, so animated emoji start at `rare`.
+- Set 1 under these thresholds: avatars 21 `epic`, 6 `legendary`, 3 `mythic`; the eight animated shop frames 7 `legendary`, 1 `mythic`; tables 3 `epic`, 1 `legendary`, 2 `mythic`; emoji 3 `rare`, 10 `epic`, 2 `legendary`, 1 `mythic`. Each item's count and tier is in its `provenance.md`.
+- Exception, owner decision of 2026-11-16: the ten season rank frames (`frame.season1_*`, `docs/ranking.md` section 3) keep the tier ladder, so their tier rises with the rank and not with their animated detail: `season1_iron` and `season1_bronze` `common`; `season1_silver`, `season1_gold` and `season1_platinum` `rare`; `season1_emerald` and `season1_diamond` `epic`; `season1_master` and `season1_grandmaster` `legendary`; `season1_challenger` `mythic`.
+
 ## 2. Marks
 
 ### 2.1 Status diamond

@@ -17,7 +17,9 @@ Animated avatar of set 1 (#171), batch B, a painted portrait made with template 
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 and W-4 have no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; no glow or drop shadow painted in; the expression is friendly; the bird is a generic small brown songbird
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `mythic`, source `shop:offer.avatar_wren_perch`. The offer id is a placeholder until the shop record exists (V-15). The only item of the batch with a living companion moving on its own: the bird turns its head and flicks its tail on two layers. Animated avatars stay at `epic` and above as in batch A; batch B proposes 5 epic, 4 legendary, 1 mythic, the same split as batch A.
+Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.avatar_wren_perch`. The offer id is a placeholder until the shop record exists (V-15). The only item of the batch with a living companion moving on its own: the bird turns its head and flicks its tail on two layers. Animated avatars stay at `epic` and above as in batch A; batch B proposes 5 epic, 4 legendary, 1 mythic, the same split as batch A.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 2 animated details (wren head and tail (a creature counts 2)), so `legendary`, was `mythic`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifests
 

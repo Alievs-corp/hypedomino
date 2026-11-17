@@ -16,7 +16,9 @@ Animated emoji of set 1 (#175), one cell of a concept sheet of nine emoji made w
 - Self-check (docs/localization.md 6.1 step 1): not done. The asset author signs it, and W-3 has no human author yet. Notes from the agent for whoever signs: no text, letters, numbers, flags, emblems, religious symbols, weapons, casino cues or team hues seen in the art; no hands or gestures; no glow or drop shadow painted in; the expression is friendly and not taunting
 - Cultural review: not done. W-7 asks for it by another account than the author's (docs/localization.md 6.1)
 
-Proposed for the admin draft, not decided: rarity `rare`, group `love`, source `shop:offer.emoji_smitten`. The offer id is a placeholder until the shop record exists (V-15). The repository names no emoji group yet besides `basic` in the example manifests, so set 1 proposes the groups joy, cheer, love, surprise, think, sorry, greet (`--group` of `npm run asset:add`). Static emoji are proposed at `common` and `rare`, animated ones at `rare` and above.
+Proposed for the admin draft, not decided: rarity `epic`, group `love`, source `shop:offer.emoji_smitten`. The offer id is a placeholder until the shop record exists (V-15). The repository names no emoji group yet besides `basic` in the example manifests, so set 1 proposes the groups joy, cheer, love, surprise, think, sorry, greet (`--group` of `npm run asset:add`). Static emoji are proposed at `common` and `rare`, animated ones at `rare` and above.
+
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (heart), so `epic`, was `rare`. Any tier split stated above is superseded.
 
 ## Embedded C2PA manifest
 

@@ -5,6 +5,7 @@
     1080
   ],
   "seed": 17403,
+  "edges": {"depth": 192},
   "carpet": {
     "palette": {
       "rosewood": [

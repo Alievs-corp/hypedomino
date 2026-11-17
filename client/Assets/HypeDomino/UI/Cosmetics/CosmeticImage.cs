@@ -1,3 +1,4 @@
+using System;
 using HypeDomino.UI.Motion;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +17,8 @@ namespace HypeDomino.UI.Cosmetics
         bool holdsLoop;
         int showTicket;
         int loopTicket;
+
+        public event Action Rested;
 
         public bool IsPlaying => Player.IsPlaying;
 
@@ -112,6 +115,7 @@ namespace HypeDomino.UI.Cosmetics
         {
             Player.ShowStill(sprite);
             GetComponent<Image>().enabled = sprite != null;
+            Rested?.Invoke();
         }
     }
 }

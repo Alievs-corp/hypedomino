@@ -48,10 +48,10 @@ The template starts with "Top-down view of a woven carpet table cloth, {theme}",
 Run on 2026-11-14 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 and Pillow 12.1.1, from the repository root:
 
 ```bash
-python -I assets-src/cosmetic/table/crimson_carpet/work/crimson_carpet_cleanup.py crimson_carpet assets-src/cosmetic/table/crimson_carpet/concept/20261114-01.png assets-src/cosmetic/table/crimson_carpet/work assets-src/cosmetic/table/crimson_carpet/export
+python -I assets-src/cosmetic/table/crimson_carpet/work/crimson_carpet_cleanup.py crimson_carpet 174 assets-src/cosmetic/table/crimson_carpet/concept/20261114-01.png assets-src/cosmetic/table/crimson_carpet/work assets-src/cosmetic/table/crimson_carpet/export
 ```
 
-It printed trim `(11, 10, 1661, 929)`, stretch `0.990`, crop `(0, 0.0, 1650, 919.0)`, canvas 1920x1080. A second run into an empty folder wrote byte-identical files.
+It printed `crimson_carpet: trim (11, 10, 1661, 929), stretch 0.990, crop (0, 0.0, 1650, 919.0), edges depth 174 step 438 start 303 score 2.2542, canvas 1920x1080` (run again on 2026-11-16 with the ring depth `174`). A second run into an empty folder wrote byte-identical files.
 
 Run again on 2026-11-16 with the same command and versions after the centre step was added; it printed the same line, and a second run into an empty folder wrote byte-identical files. The middle and front layers are byte-identical to those of 2026-11-14; only the back layer and the static changed.
 
@@ -91,23 +91,35 @@ Run on 2026-11-16; the script prints one decimal (`7.3:1`, `5.2:1`, `pass`), the
 
 Not done: W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/crimson_carpet_cleanup.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 174 px at the 1920 x 1080 scale: the rim, the inlay, the carpet border and its guards, the same on all four sides.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 438 px, corner pieces 0 to 303 px and 1617 to 1920 px, score 2.2542. Between the corner pieces both bands are the run from 303 to 741 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 174, "step": 438}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.018; 21:9 steps +1 x1.069; 4:3 steps -1 x0.972 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261114-01.png | `693eb2abf4c094e66d203ef4db4474544b849aa655c45549c9459726bfc36b15` | 1672 x 941 RGB, the generator's download, unchanged | ChatGPT image viewer Download button, copied byte for byte |
-| work/crimson_carpet_cleanup.py | `b9b876cd586bd6d705524ccd62e68edc11b6812888cef3ad710e2a9ce46050bf` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of that PR. The centre step (`calm_centre`) added on 2026-11-16 for this table only |
-| work/crimson_carpet_back.png | `0590ba69865cf81d713c142a284658d32e6e3a34cdd74e762f5a1ac12ce7e6e1` | 1920 x 1080 RGBA, back layer | `crimson_carpet_cleanup.py` |
+| work/crimson_carpet_cleanup.py | `ee06acf9a0296d496da2460f506128fad78c5a1a00e6c4322d83afdf4caf3b0d` | W-3 and W-5 script | Written by Claude Code, 2026-11-14; the same script for both tables of that PR. The centre step (`calm_centre`) added on 2026-11-16 for this table only. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/crimson_carpet_back.png | `a0df41ef9dd7e27661ce07978ff5ea295fa97f8da833085d8995c2a4ecb71951` | 1920 x 1080 RGBA, back layer | `crimson_carpet_cleanup.py` |
 | work/crimson_carpet_middle.png | `bf002a633c302a3d7b799119253bb820e9e5220232919a6c245c23d1d319cf1c` | 1920 x 1080 RGBA, middle layer | `crimson_carpet_cleanup.py` |
 | work/crimson_carpet_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | Readability check of #708 | `teal_lattice_check.py`, copied unchanged on 2026-11-16 |
 | work/crimson_carpet_front.png | `7c5379bb0f1fb5766c32a4b9d171e1df2ddb7a3a5c6f3b8296a42fd1c928192d` | 1920 x 1080 RGBA, front layer | `crimson_carpet_cleanup.py` |
-| export/static.png | `291949e75f5119af8c193a407d1a34a4d7c946ba36db20544054296a99bf9f1c` | 1920 x 1080 RGBA static, flattened layers | `crimson_carpet_cleanup.py` |
+| export/static.png | `a978e4c9c858485f28b9374792f0c4351289b2afabbd56a8f65108b455389534` | 1920 x 1080 RGBA static, flattened layers | `crimson_carpet_cleanup.py` |
+| export/slice.json | `520935835d6857efd41ec6a1def6ae2ab630d793b0b50d39c7d2d1b4b91a03a0` | `{"depth": 174, "step": 438}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `crimson_carpet_cleanup.py`, 2026-11-16 |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-14 | concept/20261114-01.png | P-5 back layer with the style key, the first prompt of its conversation, quoted below. Sent 12:26:17 UTC by Claude Code; `c2pa.created` 2026-11-14T12:26:29Z |
 | 2026-11-14 | work/crimson_carpet_back.png, work/crimson_carpet_middle.png, work/crimson_carpet_front.png, export/static.png | `crimson_carpet_cleanup.py` on the concept |
 | 2026-11-16 | work/crimson_carpet_back.png, export/static.png | `crimson_carpet_cleanup.py` with the calmed centre, on the concept (#174, rule of #708) |
+| 2026-11-16 | work/, export/ | `crimson_carpet_cleanup.py` with the repeated top and bottom borders and `export/slice.json` (section Any screen shape) |
 
 Prompt of `concept/20261114-01.png`, verbatim:
 

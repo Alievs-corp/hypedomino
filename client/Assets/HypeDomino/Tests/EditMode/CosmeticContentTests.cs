@@ -153,5 +153,33 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(2, AssetDatabase.LoadAssetAtPath<SpriteLoop>(Table + "/layer/sky.asset").Frames.Length);
             CollectionAssert.AreEquivalent(new[] { "cosmetic", "cosmetic-table" }, Entry(group, tableBase + "/layer/sky").labels.ToArray());
         }
+
+        [Test]
+        public void TheTableSliceBecomesTheBorderOfTheStaticAndOfEveryLayerFrame()
+        {
+            WriteItem(Table, "layer/sky/0001.png", "layer/sky/0002.png", "layer/cloth/0001.png");
+            File.WriteAllText($"{Table}/{CosmeticContent.SliceFile}", "{\"depth\":2,\"step\":4}\n");
+            AssetDatabase.Refresh();
+            CosmeticContent.Import(Table);
+            var expected = new Vector4(2f, 2f, 2f, 2f);
+            Assert.AreEqual(expected, AssetDatabase.LoadAssetAtPath<Sprite>(Table + "/static.png").border);
+            foreach (var frame in AssetDatabase.LoadAssetAtPath<SpriteLoop>(Table + "/layer/sky.asset").Frames) Assert.AreEqual(expected, frame.border);
+            Assert.AreEqual(expected, AssetDatabase.LoadAssetAtPath<SpriteLoop>(Table + "/layer/cloth.asset").Frames[0].border);
+        }
+
+        [Test]
+        public void AnItemWithoutASliceHasNoBorder()
+        {
+            WriteItem(Table, "layer/sky/0001.png");
+            CosmeticContent.Import(Table);
+            Assert.AreEqual(Vector4.zero, AssetDatabase.LoadAssetAtPath<Sprite>(Table + "/static.png").border);
+        }
+
+        [Test]
+        public void TheBorderKeepsTheRingDepthAndCentresOneEdgeStep()
+        {
+            var border = CosmeticContent.Border(new CosmeticContent.TableSlice { depth = 100, step = 132 }, 1280);
+            Assert.AreEqual(new Vector4(574f, 100f, 574f, 100f), border);
+        }
     }
 }

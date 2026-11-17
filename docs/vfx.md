@@ -55,10 +55,10 @@ Made by `assets-src/effect/vfx/work/vfx.py` (provenance, shapes and sizes in `as
 | `rankUp` | Rays behind the badge (`color.gold.default`), stars and sparks | A glow behind the badge (`glow.strong`), more stars and sparks |
 | `emoji` | The emoji art of up to four seats; no particles | A small sparkle of stars and sparks at each pop |
 
-Proposals that need an owner decision (nothing here is in the tokens yet):
-- `block` dim amount: `docs/ui-motion.md` says "the scrim colour at low alpha" without a value. Proposal `opacity.disabled` (0.4); board panel B-8 shows it.
-- Glow levels where the motion spec names none: `domino` `glow.intense`, `matchWin` and `rankUp` `glow.strong`.
-- Stamp tint `color.gold.default`.
+Owner decisions of 2026-11-16 (proposed here first):
+- `block` dim amount: the board's vertex colour moves toward `color.scrim` by `opacity.disabled` (0.4); board panel B-8 shows it. The dim belongs to the board view, which does not exist yet (section 8).
+- Glow levels where the motion spec names none: `domino` `glow.intense`, `matchWin` and `rankUp` `glow.strong`. `effects.json` uses them.
+- Stamp tint `color.gold.default`. `effects.json` uses it.
 
 ## 5. Budget table
 
@@ -137,4 +137,4 @@ Reward reveal and chest open: the reveal of `docs/pass-missions-medals.md` 6.1 a
 
 - Device measurement: CPU and GPU ms, live particles, draw calls and overdraw per effect in its worst concurrency set on the reference devices (`docs/ui-motion.md` section 7, Measurement; `docs/performance.md` section 8). Every number in section 5 is a design estimate until the replay harness (#192) measures it on a device. CI checks 0 B GC per frame and the live particle cap (`EffectPlayerFrameTests`).
 - Banners and the rank badge art, the block board dim (a board view tint) and the hooks listed in section 7.
-- Owner decisions of section 4, the reference board review of B-8 and the cultural review of the sprites.
+- The reference board review of B-8 and the cultural review of the sprites.

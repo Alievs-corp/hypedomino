@@ -17,6 +17,8 @@ Animated frame of #173 (batch A of the 8 animated frames), an ornamental ring ma
 
 Proposed for the admin draft, not decided: rarity `legendary`, source `shop:offer.frame_emerald_plume`. The offer id is a placeholder until the shop record exists (V-15). Animated frames are proposed at `epic` and above, as the batch leans to the higher tiers of `docs/rarity.md`.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 2 animated details (plume sway, emerald glints), so `legendary`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261115-01.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signature was not validated with a C2PA tool.

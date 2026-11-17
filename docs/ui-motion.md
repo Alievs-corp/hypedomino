@@ -226,8 +226,9 @@ The match screen places its regions inside the safe area with the same rules in 
 
 - The local player always sits at the bottom. The other seats follow the turn order of R-7: turns pass clockwise, so in 2v2 the next seat is on the left, the partner (R-6) at the top and the last seat on the right. In 1v1 the opponent sits at the top and the sides stay empty.
 - The seat order is North, East, South, West in 2v2 and X, Y in 1v1 (`docs/rules.md` Examples). A viewer without a seat is placed as South or X.
+- The equipped table fills the whole screen behind the regions, its rim and border whole on every shape above (`docs/cosmetics.md` 8.4); the regions do not move with it.
 - Only the board gives way when room is short; on every shape above the regions stay inside the safe area and never overlap. On a safe area too small for the fixed regions the board shrinks to nothing.
-- A seat box holds the avatar with its animated frame, the name and, on the seat whose turn it is, the turn timer ring. It draws no panel background and no tile count number (`docs/art-direction.md` section 5.5): a seat's hidden tiles show as face-down tiles in its tile skin, so their number reads from the tiles. Places inside the box and of the face-down row come with the seat art (#168, #169).
+- A seat box holds the avatar with its animated frame, the name and, on the seat whose turn it is, the turn timer ring. The frame is never drawn larger than its canvas (`docs/art-direction.md` 5.2), so on a screen whose scale puts more pixels across the box than the frame sprite has (256 for an animated frame), the avatar and frame stay at the frame's pixel size, centred in the box. It draws no panel background and no tile count number (`docs/art-direction.md` section 5.5): a seat's hidden tiles show as face-down tiles in its tile skin, so their number reads from the tiles. Places inside the box and of the face-down row come with the seat art (#168, #169).
 - `Game/Match/SeatAvatars` fills the seat boxes' avatars from the `roster` of each `MatchView`: every entry goes to its table side as above, with `AvatarLook.Of` (`docs/cosmetics.md` 8.3). An entry whose seat is not in the match's mode is skipped. A side whose look did not change is left alone, so a repeated view reloads nothing, restarts no loop and allocates nothing. The views take one more hold on the art the loading screen prefetched, so the prefetch can release it once the seats are shown, without a second download.
 
 ### Turn timer
@@ -398,7 +399,7 @@ Base scene plus effects stays within the p95 work-time gate; the checker enforce
 | `scoreCascade` | Same, scaled by step | Particle burst and glow at the popup; points fly to the team meter |
 | `spinnerFormation` | A double becomes the spinner (R-17, R-18) | Ring pulse on the double, arm markers slide out on the two new ends |
 | `domino` | Hand ends in a domino (R-32) | Localised banner in the winning team colour, burst from the last tile |
-| `block` | Hand ends in a block (R-36) | Lock stamp across the board, board dims with the scrim colour at low alpha |
+| `block` | Hand ends in a block (R-36) | Lock stamp across the board, board dims toward `color.scrim` by `opacity.disabled` (owner decision 2026-11-16, `docs/vfx.md` section 4) |
 | `matchWin` | Match ends (R-46) | Banner, confetti in the winning team colour |
 | `rankUp` | Results screen, rank rises | Rank badge scales in, rays |
 | `emoji` | A player sends an emoji | Emoji pops at the sender's avatar; one live emoji per seat, a new one replaces it |

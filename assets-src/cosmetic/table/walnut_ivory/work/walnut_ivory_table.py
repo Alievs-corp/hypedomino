@@ -22,6 +22,12 @@ KNOT_EDGE = 0.9
 MARGIN_TOLERANCE = 30
 MARGIN_SHARE = 0.98
 STRETCH_LIMIT = 1.1
+EDGE_FADE = 16
+EDGE_LIGHT = 120
+EDGE_STEPS = range(150, 486, 6)
+EDGE_SHORTLIST = 40
+CORNER_MARGIN = 30
+SQUARE_REACH = 520
 
 
 def token(tokens, path):
@@ -199,6 +205,74 @@ def carpet(spec, seed):
     return wool(knots, rows, rng) * lamp(REFERENCE)[..., None]
 
 
+def edge_light(band):
+    low = ndimage.gaussian_filter1d(band, EDGE_LIGHT, axis=1, mode="reflect") + 1
+    return band / low, (low + low[:, ::-1]) / 2
+
+
+def seam_cost(detail, step, start, reach):
+    return np.abs(detail[:, start + step - reach:start + step + reach] - detail[:, start - reach:start + reach]).mean()
+
+
+def mirror_cost(detail, start, reach=24):
+    return np.abs(detail[:, start - reach:start][:, ::-1] - detail[:, start:start + reach]).mean()
+
+
+def repeat_band(detail, step, start):
+    width = detail.shape[1]
+    end = width - start
+    xs = np.arange(width)
+    inside = (xs >= start) & (xs < end)
+    result = detail[:, np.where(inside, start + (xs - start) % step, xs)]
+    offsets = np.arange(-EDGE_FADE, EDGE_FADE)
+    weight = ((offsets + EDGE_FADE + 0.5) / (2 * EDGE_FADE)).reshape((1, -1) + (1,) * (detail.ndim - 2))
+    carried = detail[:, start + step + offsets]
+    for seam in [*range(start + step, end, step), end]:
+        arriving = detail[:, (start if seam < end else end) + offsets]
+        result[:, seam + offsets] = carried * (1 - weight) + arriving * weight
+    return result
+
+
+def best_edges(details, depth, width):
+    candidates = []
+    for step in EDGE_STEPS:
+        for count in range(2, width // step + 1):
+            start, odd = divmod(width - count * step, 2)
+            if odd or start < depth + CORNER_MARGIN or start > SQUARE_REACH - step // 4:
+                continue
+            cost = sum(seam_cost(detail, step, start, 12) + seam_cost(detail, step, start, 48) / 2 + mirror_cost(detail, start) / 2 for detail in details)
+            candidates.append((cost, step, start))
+    scored = []
+    for cost, step, start in sorted(candidates)[:EDGE_SHORTLIST]:
+        drift = sum(np.abs(repeat_band(detail, step, start) - detail)[:, start:width - start].mean() for detail in details)
+        scored.append((cost + drift / 2, step, start))
+    return min(scored)
+
+
+def periodic_edges(pixels, depth):
+    height, width = pixels.shape[:2]
+    bands = (slice(0, depth), slice(height - depth, height))
+    parts = [edge_light(pixels[rows]) for rows in bands]
+    score, step, start = best_edges([detail.mean(axis=2) for detail, _ in parts], depth, width)
+    inward = np.clip((depth - np.arange(depth) - 0.5) / EDGE_FADE, 0, 1)
+    result = pixels.copy()
+    for rows, (detail, light), weight in zip(bands, parts, (inward, inward[::-1])):
+        rebuilt = repeat_band(detail, step, start) * light
+        result[rows] = rebuilt * weight[:, None, None] + pixels[rows] * (1 - weight[:, None, None])
+    return result, step, start, score
+
+
+def write_slice(export, depth, step, size):
+    across, down = size[0] / REFERENCE[0], size[1] / REFERENCE[1]
+    values = {"depth": depth * down, "step": step * across}
+    if any(value != int(value) for value in values.values()):
+        raise ValueError(f"slice {values} is not whole pixels on the {size[0]}x{size[1]} canvas")
+    os.makedirs(export, exist_ok=True)
+    with open(os.path.join(export, "slice.json"), "w", encoding="utf-8", newline="\n") as target:
+        json.dump({key: int(value) for key, value in values.items()}, target)
+        target.write("\n")
+
+
 def margin_trim(pixels):
     ring = np.concatenate([pixels[:2].reshape(-1, 3), pixels[-2:].reshape(-1, 3), pixels[:, :2].reshape(-1, 3), pixels[:, -2:].reshape(-1, 3)])
     near = np.linalg.norm(pixels - np.median(ring, axis=0), axis=2) < MARGIN_TOLERANCE
@@ -371,7 +445,7 @@ def shimmer(spec, size, frame, frames, threads, seed, tokens):
     t = frame / frames
     height, width = threads.shape
     ys, xs = np.mgrid[0:height, 0:width] + 0.5
-    angle = np.arctan2(ys - height / 2, (xs - width / 2) * height / width)
+    angle = np.arctan2(ys - height / 2, np.abs(xs - width / 2) * height / width)
     wave = np.clip(np.cos(spec["bands"] * angle - 2 * np.pi * t), 0, 1) ** spec["sharpness"]
     cell = max(1, int(round(KNOT * height / REFERENCE[1] * spec["cell"])))
     phases = rng.uniform(0, 1, (height // cell + 1, width // cell + 1))
@@ -389,8 +463,8 @@ def anchors(places, inset):
     width, height = REFERENCE
     across, down = inset
     corners = [((across, down), 45), ((width - across, down), 135), ((width - across, height - down), 225), ((across, height - down), 315)]
-    sides = [((width / 2, down), 90), ((width / 2, height - down), 270), ((across, height / 2), 0), ((width - across, height / 2), 180)]
-    return corners + (sides if places == "all" else [])
+    ends = [((across, height / 2), 0), ((width - across, height / 2), 180)]
+    return corners + (ends if places == "ends" else [])
 
 
 def strand_points(origin, direction, across, length, bend, steps=12):
@@ -524,12 +598,16 @@ def main():
         pixels, report = carpet(config["carpet"], seed), f"knot {KNOT} px"
     else:
         pixels, report = concept_back(arguments.item, config["back"])
+    depth = config["edges"]["depth"]
+    pixels, step, start, score = periodic_edges(pixels, depth)
+    report += f", edges depth {depth} step {step} start {start} score {score:.4f}"
     back = resample(to_image(pixels), size)
     middle = inlay_layer(tokens, size)
     front = rim_layer(tokens, size)
     for name, layer in (("back", back), ("middle", middle), ("front", front)):
         save(layer, os.path.join(work, f"{slug}_{name}.png"))
     flattened = Image.alpha_composite(Image.alpha_composite(back, middle), front)
+    write_slice(export, depth, step, size)
     motion = config.get("motion")
     if not motion:
         save(flattened, os.path.join(export, "static.png"))

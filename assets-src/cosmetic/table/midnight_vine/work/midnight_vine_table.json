@@ -5,6 +5,7 @@
     720
   ],
   "seed": 17413,
+  "edges": {"depth": 216},
   "back": {
     "concept": "concept/20261115-01.png",
     "threads": {
@@ -31,7 +32,7 @@
       },
       {
         "kind": "tassels",
-        "places": "all",
+        "places": "ends",
         "inset": [
           136,
           126

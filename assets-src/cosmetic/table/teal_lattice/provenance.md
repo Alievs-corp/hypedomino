@@ -17,6 +17,8 @@ Animated table of set 1 (#174). The carpet cloth is a concept made with template
 
 Proposed for the admin draft, not decided: rarity `epic` (a painted carpet with one motion; #174 asks for richer art at higher rarity), source `shop:offer.table_teal_lattice`. The offer id is a placeholder until the shop record exists (V-15). `table.starter` stays the `common` default table.
 
+2026-11-16: owner decision — an animated item's rarity follows its animated detail (`docs/rarity.md` 1.1): 1 animated detail (silk fringe wave), so `epic`. Any tier split stated above is superseded.
+
 ## Embedded C2PA manifest
 
 `concept/20261115-01.png` carries a C2PA manifest in a `caBX` PNG chunk. Read as text on 2026-11-15; the signature was not validated with a C2PA tool.
@@ -40,7 +42,7 @@ Run on 2026-11-15 by Claude Code with Python 3.12.10, NumPy 2.4.6, SciPy 1.15.3 
 python -I assets-src/cosmetic/table/teal_lattice/work/teal_lattice_table.py assets-src/cosmetic/table/teal_lattice/work/teal_lattice_table.json docs/design-tokens.json assets-src/cosmetic/table/teal_lattice assets-src/cosmetic/table/teal_lattice
 ```
 
-It printed `teal_lattice: trim (0, 0, 1672, 941), stretch 1.001, crop (0, 0.0, 1672, 941.0), canvas 1280x720, seed 17415, fringe 10 frames, key frame 7`. Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
+It printed `teal_lattice: trim (0, 0, 1672, 941), stretch 1.001, crop (0, 0.0, 1672, 941.0), edges depth 222 step 378 start 393 score 1.7566, canvas 1280x720, seed 17415, fringe 10 frames, key frame 7` (run again on 2026-11-16). Two more runs into two empty folders wrote files byte-identical to each other and to the committed ones.
 
 The script reads its settings from `work/teal_lattice_table.json`; every table of this set uses the same script with its own settings file. Wood and gold come only from `docs/design-tokens.json`, so the rim and the inlay line are those of `table.starter` and the set-1 tables at every canvas size (`docs/art-direction.md` 5.4: the same layout on every table).
 
@@ -79,7 +81,7 @@ python -I assets-src/cosmetic/table/teal_lattice/work/teal_lattice_check.py asse
 
 The check measures the static and every frame of the loop (`base` with each motion frame on top). Centre: the 2v2 landscape board region of `docs/tiles.md` section 3 (1516 x 521 of the 1080-unit canvas), centred on the table. Ivory: the median relative luminance (WCAG) of the opaque pixels of the 28 `tile.ivory` faces, box-filtered to 32 x 64 px, the smallest display size of `docs/tiles.md` section 3; this gives 0.743, lower and so stricter than the 0.765 of the full-size face. Pass rule of this set: ivory against the median of the centre at least 7:1, and against its 90th percentile (the light motifs) at least 4.5:1. The same measure gives `table.starter` 9.2:1 and 8.3:1.
 
-Output on 2026-11-15: `ivory face 0.743; worst scene frame 0008: centre median 0.036, 90th percentile 0.067; contrast 9.2:1 against the median (needs 7.0:1), 6.8:1 against the 90th percentile (needs 4.5:1): pass`
+Output on 2026-11-16: `ivory face 0.743; worst scene frame 0008: centre median 0.036, 90th percentile 0.067; contrast 9.2:1 against the median (needs 7.0:1), 6.8:1 against the 90th percentile (needs 4.5:1): pass`
 
 The script also writes `check.png`: the static scaled to the 828 px short side of the iPhone XR with a chain of nine `tile.ivory` faces at 32 x 64 px and their runtime shadow (`effect.tile_shadow`, `color.shadow` at `elevation.e1`) in the centre, and `check_x3.png`, its centre enlarged three times. The agent looked at both: pips and faces read on the carpet, and no motif in the centre competes with them.
 
@@ -89,26 +91,38 @@ Team hues (`docs/art-direction.md` section 2): share of static pixels with satur
 
 Not done: the reduce-motion and low-level check of 5.2 (Unity), board panel B-8, W-6. `npm run asset:add` refuses the item until the Cultural review line above ends in `approved`, so nothing is copied to `client/Assets/Cosmetics/` and no Unity import was run.
 
+## Any screen shape (2026-11-16)
+
+Owner decision of 2026-11-16, after the Art Bench check of #724 on a 20:9 phone: the rim, the inlay and the carpet border must show whole on every screen shape (16:9 to 21:9, 4:3, nearly square). Done on 2026-11-16 by Claude Code in `work/teal_lattice_table.py` (`periodic_edges`, `write_slice`), with no new canvas and no new layer; the rule is `docs/cosmetics.md` 8.4 and `docs/art-direction.md` 5.4.
+
+- Ring depth 222 px at the 1920 x 1080 scale (148 and 252 px on the 1280 x 720 canvas): the rim, the inlay, the carpet border and its guards, the same on all four sides. The ring takes in the fringe of the motion layer on the left and right sides, so it stays whole.
+- The top and bottom borders now repeat. Each band is split into its light (a Gaussian blur of 120 px along the edge, made symmetric left to right) and its detail. The script tries steps of 150 to 480 px in steps of 6 (so a 1280 x 720 canvas keeps whole pixels) and corner pieces of at least the depth plus 30 px and at most 520 px less a quarter step, scores each by how well the art matches at both ends of one step (windows of 12 and 48 px), how mirror-symmetric it is at the start, and how far the repeated band drifts from the art, and keeps the lowest score. Chosen: step 378 px, corner pieces 0 to 393 px and 1527 to 1920 px, score 1.7566. Between the corner pieces both bands are the run from 393 to 771 px repeated 3 times, joined by 32 px cross-fades, and they fade into the untouched field over the 16 px inside the ring. The corner pieces and the side bands keep the art as it was; a motif unique to the middle of the top or bottom edge is replaced by the run.
+- `export/slice.json`, `{"depth": 148, "step": 252}`, records the depth and the step in pixels of the static; `CosmeticContent` sets them as the sprite border of the static and of every layer frame, and `TableImage` draws the table at the screen's shape. Drawn by the same rule as `TableCloth` (scratch render, not committed): 16:9 steps +0 x1.000; 20:9 steps +1 x1.044; 21:9 steps +2 x0.942; 4:3 steps -1 x0.934 (steps gained or lost in the middle of the long edges, then the horizontal scale of the whole table).
+- Readability check of #708 run again on the new static (section above): pass. `npm run asset:check` gives the same sprite count and estimate as before.
+- Not done: the look of the repeated edges is not reviewed by a person; the device check on the Art Bench comes with the bench build of this change.
+
 ## Files
 
 | File | sha256 | What it is | How it was made |
 |---|---|---|---|
 | concept/20261115-01.png | `5f0b5aa9f3fe5b486b0b27af19e1480aa7147f97672820ec48ee94d290ba6983` | 1672 x 941 RGB, the generator's output, unchanged | Codex CLI `$imagegen`, copied byte for byte by Codex into `concept/` |
-| work/teal_lattice_table.py | `82dda447dd99dcf47e07a049f114a8f169e87e96555766d3eda1d4bf88a4f48a` | W-3, W-4 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set |
-| work/teal_lattice_table.json | `15188daf1acdffdd8c23ad067c70571ec04248fab3321fdead2569f7f53fc6ef` | The item's settings: canvas, seed, concept and clean-up, motion | Written by Claude Code, 2026-11-15 |
+| work/teal_lattice_table.py | `f194b3c59457057f156fd4c8a77a477594a7c9d29783f205825c38e023cf07ba` | W-3, W-4 and W-5 script | Written by Claude Code, 2026-11-15, from `starter_carpet.py` and `crimson_carpet_cleanup.py` of set 1; the same script for every table of this set. `periodic_edges` and `write_slice` added on 2026-11-16 (section Any screen shape) |
+| work/teal_lattice_table.json | `92cba62507a9a2ffdd4130f64102e3fdd0379a00af0d2abef423b8d8828e1148` | The item's settings: canvas, seed, concept and clean-up, motion | Written by Claude Code, 2026-11-15 |
 | work/teal_lattice_check.py | `34c3c89c3df7b87a1711fbe2451b7109eb1da623991e79755bfe7953d61b5421` | The readability check | Written by Claude Code, 2026-11-15; the same script for every table of this set |
-| work/teal_lattice_back.png | `09d4f70fcdb43380aa4dca4c36bab7eb39c0b1a6ce4c3b4570894b04e1bcad5a` | 1280 x 720 RGBA, back layer | `teal_lattice_table.py` |
+| work/teal_lattice_back.png | `468f34055e933d14396bccbe8fadbdf2124c865066faa889071aa41f5e87e1bd` | 1280 x 720 RGBA, back layer | `teal_lattice_table.py` |
 | work/teal_lattice_middle.png | `f1ce267d022ab91f5ae083b775b9e997fec40232ea90496aa577c26a0af68586` | 1280 x 720 RGBA, middle layer, gold inlay | `teal_lattice_table.py` |
 | work/teal_lattice_front.png | `db81edc5c67289b8fc6cf6a1c19f63bd80e90d8454ae2877dffaf0bd21faf680` | 1280 x 720 RGBA, front layer, wood rim | `teal_lattice_table.py` |
 | work/teal_lattice_motion_key.png | `0c48c87a72f79e817c08100460d0843688368c5541c6831c97469e3a5306a57c` | 1280 x 720 RGBA, motion frame 7 | `teal_lattice_table.py` |
-| export/layer/base/0001.png | `001ddacfe6248dd5b47fc8068908b0b7fbe9d497c6ba670ac1834feaaf614852` | 1280 x 720 RGBA, the static `base` layer | `teal_lattice_table.py` |
+| export/layer/base/0001.png | `0f4d01913cfe9f6c069fd946cf0ae8e0fbff4c7e7197cab415c346463c63ec9b` | 1280 x 720 RGBA, the static `base` layer | `teal_lattice_table.py` |
 | export/layer/motion/0001.png to 0010.png | `aa7e41e1c79afa6a1b1aff0a52a57fe07b318ecf8761baee19a3eae70f9e45a6` (sha256 of the 10 files concatenated in name order) | 1280 x 720 RGBA, the `motion` loop | `teal_lattice_table.py` |
-| export/static.png | `81df1135ff197b068d9c37d5e37f7b84c921c97f66704814cc2bcb87396368d2` | 1280 x 720 RGBA static, base and motion frame 7 | `teal_lattice_table.py` |
+| export/static.png | `052f7fc0803f60ce17666bec5f069747d38537a177fd2f2c04ec620df901d232` | 1280 x 720 RGBA static, base and motion frame 7 | `teal_lattice_table.py` |
+| export/slice.json | `37ee5f1db4d878d23fa6b092a771ae1da31361c400ccbbab5b4787f4b0278f91` | `{"depth": 148, "step": 252}`: the ring depth and the edge step in pixels of the static (`docs/cosmetics.md` 8.4) | `teal_lattice_table.py`, 2026-11-16 |
 
 | Date | File | Prompt or edit |
 |---|---|---|
 | 2026-11-15 | concept/20261115-01.png | P-5 back layer with the style key, quoted below. Sent 16:42:52 UTC by Claude Code, Codex session `01a1e017-1a7e-7803-a1af-baab6e18da52`; `c2pa.created` 2026-11-15T16:43:41Z |
 | 2026-11-15 | work/, export/ | `teal_lattice_table.py` on the concept |
+| 2026-11-16 | work/, export/ | `teal_lattice_table.py` with the repeated top and bottom borders and `export/slice.json` (section Any screen shape) |
 
 Prompt of `concept/20261115-01.png`, verbatim (the Codex call wraps it in `$imagegen <prompt> Generate exactly one image, in a wide landscape format. Save the final PNG in the current working directory as 20261115-01.png. Do not use any API key and do not edit the image.`):
 

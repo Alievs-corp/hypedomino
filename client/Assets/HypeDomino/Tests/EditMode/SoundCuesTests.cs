@@ -110,11 +110,56 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void OnlyTheLocalTeamsPointsPlayTheScoreSound()
+        public void OnlyTheLocalTeamsPointsPlayAComboSound()
         {
             Read(View(Seat.East, Seat.East, 3, 10, 20));
-            Assert.AreEqual(MatchSounds.TilePlace | MatchSounds.Score, Read(View(Seat.East, Seat.South, 4, 10, 30)));
+            Assert.AreEqual(MatchSounds.TilePlace | MatchSounds.Combo2, Read(View(Seat.East, Seat.South, 4, 10, 30)));
             Assert.AreEqual(MatchSounds.TilePlace, Read(View(Seat.East, Seat.West, 5, 25, 30)), "the other team scored");
+        }
+
+        [TestCase(5u, MatchSounds.Combo1)]
+        [TestCase(10u, MatchSounds.Combo2)]
+        [TestCase(15u, MatchSounds.Combo3)]
+        [TestCase(20u, MatchSounds.Combo4)]
+        [TestCase(25u, MatchSounds.Combo5)]
+        [TestCase(30u, MatchSounds.Combo5)]
+        [TestCase(45u, MatchSounds.Combo5)]
+        public void TheComboSoundFollowsTheScoreCascadeStep(uint points, MatchSounds combo)
+        {
+            Read(View(Seat.South, Seat.South, 3, 100, 0));
+            Assert.AreEqual(MatchSounds.TilePlace | combo, Read(View(Seat.South, Seat.West, 4, 100 + points, 0)));
+        }
+
+        [Test]
+        public void AChainOfPlacementsRaisesTheComboStepAsTheCascadeDoes()
+        {
+            Read(OneOnOne(Seat.X, 6, 5, 1));
+            var view = OneOnOne(Seat.X, 7, 5, 2);
+            view.Scores.TeamA = 10;
+            Assert.AreEqual(MatchSounds.TilePlace | MatchSounds.Combo3, Read(view));
+        }
+
+        [Test]
+        public void ARiseBelowTheFirstStepPlaysTheScoreSound()
+        {
+            Assert.AreEqual(MatchSounds.Score, SoundCues.ScoreSoundOf(0));
+            Assert.AreEqual(MatchSounds.Combo5, SoundCues.ScoreSoundOf(6));
+        }
+
+        [Test]
+        public void OneScoringViewPlaysOneComboAndNoScoreSound()
+        {
+            Read(View(Seat.South, Seat.South, 3, 0, 0));
+            var sounds = Read(View(Seat.South, Seat.West, 4, 20, 0));
+            Assert.AreEqual(MatchSounds.None, sounds & MatchSounds.Score);
+            Assert.AreEqual(MatchSounds.Combo4, sounds & ~MatchSounds.TilePlace);
+        }
+
+        [Test]
+        public void AHandEndCarriesNoComboSound()
+        {
+            Read(View(Seat.South, Seat.South, 9, 0, 0));
+            Assert.AreEqual(MatchSounds.HandEnd, Read(HandEnded(Seat.South, 2, 40)));
         }
 
         [Test]

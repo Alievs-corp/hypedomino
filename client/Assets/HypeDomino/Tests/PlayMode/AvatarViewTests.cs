@@ -13,6 +13,7 @@ namespace HypeDomino.Tests.PlayMode
     {
         const float FramesPerSecond = 10f;
         const float Tolerance = 0.01f;
+        const int FrameCanvasPixels = 64;
         const string AvatarStatic = "cosmetic/avatar/a/static";
         const string AvatarAnim = "cosmetic/avatar/a/anim";
         const string OtherStatic = "cosmetic/avatar/b/static";
@@ -305,6 +306,31 @@ namespace HypeDomino.Tests.PlayMode
                 AssertSquareAtCentre((RectTransform)view.Frame.transform, side, centre);
                 AssertSquareAtCentre((RectTransform)view.Avatar.transform, side, centre);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator TheFrameIsNeverDrawnLargerThanTheScreenPixelsItsSpriteHas()
+        {
+            var texture = new Texture2D(FrameCanvasPixels, FrameCanvasPixels);
+            var frameStill = Sprite.Create(texture, new Rect(0, 0, FrameCanvasPixels, FrameCanvasPixels), Vector2.zero);
+            var view = NewView();
+            var box = (RectTransform)view.transform;
+            box.sizeDelta = new Vector2(300f, 300f);
+            view.Show(NewStage(EffectLevel.Low), Look(default));
+            stills.Finish(FrameStatic, frameStill);
+            yield return null;
+            AssertSquareAtCentre((RectTransform)view.Frame.transform, FrameCanvasPixels, WorldCentreOf(box));
+            AssertSquareAtCentre((RectTransform)view.Avatar.transform, FrameCanvasPixels, WorldCentreOf(box));
+
+            box.sizeDelta = new Vector2(40f, 40f);
+            yield return null;
+            AssertSquareAtCentre((RectTransform)view.Frame.transform, 40f, WorldCentreOf(box));
+
+            root.GetComponent<Canvas>().scaleFactor = 2f;
+            box.sizeDelta = new Vector2(300f, 300f);
+            yield return null;
+            AssertSquareAtCentre((RectTransform)view.Frame.transform, FrameCanvasPixels / 2f, WorldCentreOf(box));
+            Object.Destroy(texture);
         }
 
         [Test]

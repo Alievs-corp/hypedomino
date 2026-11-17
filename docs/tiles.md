@@ -111,13 +111,13 @@ Authored white or greyscale and tinted at runtime (`docs/art-direction.md` secti
 
 | Sprite | Source | Canvas and pivot | Runtime |
 |---|---|---|---|
-| Tile shadow | `assets-src/effect/tile_shadow/`, made from the alpha of a face | 176 x 304, centre; the tile's silhouette padded by 24 px and blurred (sigma 6 px), drawn at the tile's scale under the tile | Tint `color.shadow`; alpha and Y offset from `elevation.e1` at rest, a higher level while a tile is lifted or travels |
+| Tile shadow | `assets-src/effect/tile_shadow/`, made from the alpha of a face | 176 x 304, centre; the tile's silhouette padded by 24 px and blurred (sigma 6 px), drawn at the tile's scale under the tile | Tint `color.shadow`; alpha and Y offset from `elevation.e1` at rest, a higher level while a tile is lifted or travels. `BoardTilesView` gives every tile slot one shadow `Image` from a fixed pool of the same size, with the shadow sprite from the effects atlas, the tile's rotation, and the tile's position moved down by `TokenElevation.E1OffsetY` on the board axis only. The shadow images sit in their own layer below the tile images, so all shadows batch as one draw call from the effects atlas and all faces as one from the face atlas: one overdraw layer for the shadows |
 | Sheen | `assets-src/effect/sheen/` | 64 x 256, centre; a soft white streak with a thin second line, faded at both ends | The one shared streak, masked by the asset it crosses and moved by a transform tween (art-direction section 4). Tile faces do not get the sheen; back skins, frames and gold rims do |
 
 ## 6. Open items
 
 - Wiring `BoardTilesView` into the match screen with the board's `Image` pool and `TilePlaceLayer`; the match screen is not assembled yet.
-- The tile shadow under each laid tile: `elevation` is not in the client tokens yet, so the shadow waits for the effect player (#176) or the tokens.
+- The lifted and travelling shadow levels (`elevation.e2`, `elevation.e3`) during a tile's travel; laid tiles use `e1` (section 5).
 - Size and placement of the face-down rows beside each seat and the hand tile size (`docs/art-direction.md` section 10).
 - The board's scale cap (`docs/ui-motion.md` section 9).
 - The shared effects atlas and the sheen's sweep timing (#176).

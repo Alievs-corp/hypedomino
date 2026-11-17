@@ -14,6 +14,7 @@ const validTree = [
   `${avatar}/export/anim/sheet.png`,
   "cosmetic/table/night_garden/provenance.md",
   "cosmetic/table/night_garden/export/static.png",
+  "cosmetic/table/night_garden/export/slice.json",
   "cosmetic/table/night_garden/export/layer/back/0001.png",
   "medal/first_win/provenance.md",
   "medal/first_win/export/static.png",
@@ -55,6 +56,7 @@ test("export folders must match the cosmetic type and its address slots", () => 
   assertReported([`${avatar}/provenance.md`, `${avatar}/export/static.png`, `${avatar}/export/model/comet_fox.fbx`], "export/model is not allowed for avatar");
   assertReported(["cosmetic/table/t/provenance.md", "cosmetic/table/t/export/static.png", "cosmetic/table/t/export/anim/0001.png"], "export/anim is not allowed for table");
   assertReported(["cosmetic/table/t/provenance.md", "cosmetic/table/t/export/static.png", "cosmetic/table/t/export/layer/0001.png"], "invalid layer name 0001.png");
+  assertReported([`${avatar}/provenance.md`, `${avatar}/export/static.png`, `${avatar}/export/slice.json`], "export/slice.json is not allowed for avatar");
   assertReported(["cosmetic/emoji/e/provenance.md", "cosmetic/emoji/e/export/static.png", "cosmetic/emoji/e/export/anim"], "needs files inside a folder");
 });
 
