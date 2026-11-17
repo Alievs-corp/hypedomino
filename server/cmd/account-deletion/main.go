@@ -12,24 +12,27 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
 	"github.com/Alievs-corp/hypedomino/server/internal/deletionlog"
 	"github.com/Alievs-corp/hypedomino/server/internal/objectstore"
 )
 
 const (
-	urlLifetime      = 15 * time.Minute
-	defaultGrace     = 30 * 24 * time.Hour
-	defaultRetention = 35 * 24 * time.Hour
+	urlLifetime               = 15 * time.Minute
+	defaultGrace              = 30 * 24 * time.Hour
+	defaultRetention          = 35 * 24 * time.Hour
+	defaultAnalyticsRetention = 395 * 24 * time.Hour
 )
 
 var errUsage = errors.New("account-deletion")
 
 type settings struct {
-	databaseURL string
-	grace       time.Duration
-	retention   time.Duration
-	store       objectstore.Config
+	databaseURL        string
+	grace              time.Duration
+	retention          time.Duration
+	analyticsRetention time.Duration
+	store              objectstore.Config
 }
 
 func main() {
@@ -84,7 +87,7 @@ func dispatch(ctx context.Context, args []string, getenv func(string) string, ou
 	if command == "replay" {
 		return replay(ctx, accounts, log, since, out)
 	}
-	return run(ctx, accounts, log, config, now(), out)
+	return run(ctx, accounts, log, analytics.NewStore(pool), config, now(), out)
 }
 
 func parseSince(args []string) (time.Time, error) {
@@ -103,9 +106,10 @@ func parseSince(args []string) (time.Time, error) {
 
 func settingsFrom(getenv func(string) string) (settings, error) {
 	config := settings{
-		databaseURL: getenv("HD_DATABASE_URL"),
-		grace:       defaultGrace,
-		retention:   defaultRetention,
+		databaseURL:        getenv("HD_DATABASE_URL"),
+		grace:              defaultGrace,
+		retention:          defaultRetention,
+		analyticsRetention: defaultAnalyticsRetention,
 		store: objectstore.Config{
 			BaseURL:   getenv("HD_DELETION_LOG_URL"),
 			Region:    getenv("HD_DELETION_LOG_REGION"),
@@ -120,7 +124,7 @@ func settingsFrom(getenv func(string) string) (settings, error) {
 	if config.store.BaseURL == "" {
 		return settings{}, fmt.Errorf("%w: HD_DELETION_LOG_URL is not set; a deletion is complete only once it is logged", errUsage)
 	}
-	for name, target := range map[string]*time.Duration{"HD_ACCOUNT_DELETION_GRACE": &config.grace, "HD_DELETION_LOG_RETENTION": &config.retention} {
+	for name, target := range map[string]*time.Duration{"HD_ACCOUNT_DELETION_GRACE": &config.grace, "HD_DELETION_LOG_RETENTION": &config.retention, "HD_ANALYTICS_RAW_RETENTION": &config.analyticsRetention} {
 		if err := positiveDuration(getenv(name), target); err != nil {
 			return settings{}, fmt.Errorf("%w: %s: %v", errUsage, name, err)
 		}
@@ -143,7 +147,11 @@ func positiveDuration(value string, target *time.Duration) error {
 	return nil
 }
 
-func run(ctx context.Context, accounts *account.Store, log *deletionlog.Log, config settings, now time.Time, out io.Writer) error {
+func run(ctx context.Context, accounts *account.Store, log *deletionlog.Log, events *analytics.Store, config settings, now time.Time, out io.Writer) error {
+	return errors.Join(erase(ctx, accounts, log, config, now, out), purgeAnalytics(ctx, events, config, now, out))
+}
+
+func erase(ctx context.Context, accounts *account.Store, log *deletionlog.Log, config settings, now time.Time, out io.Writer) error {
 	completed, err := accounts.DeleteDue(ctx, log, now.Add(-config.grace), now)
 	fmt.Fprintf(out, "%d deletion(s) erased and logged\n", completed)
 	if err != nil {
@@ -151,6 +159,12 @@ func run(ctx context.Context, accounts *account.Store, log *deletionlog.Log, con
 	}
 	pruned, err := log.Prune(ctx, now.Add(-config.retention))
 	fmt.Fprintf(out, "%d log entries older than %s pruned\n", pruned, config.retention)
+	return err
+}
+
+func purgeAnalytics(ctx context.Context, events *analytics.Store, config settings, now time.Time, out io.Writer) error {
+	deleted, err := events.PurgeRaw(ctx, now.Add(-config.analyticsRetention))
+	fmt.Fprintf(out, "%d raw analytics events older than %s deleted\n", deleted, config.analyticsRetention)
 	return err
 }
 
