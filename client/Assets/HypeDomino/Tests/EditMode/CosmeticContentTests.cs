@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using HypeDomino.Content;
 using HypeDomino.Editor;
 using NUnit.Framework;
@@ -9,6 +10,7 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.U2D;
 using UnityEngine;
+using UnityEngine.U2D;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -21,6 +23,9 @@ namespace HypeDomino.Tests.EditMode
         const string Table = Root + "/remote/table/" + Slug;
         const string AddressBase = "cosmetic/avatar/" + Slug;
         const int Canvas = 8;
+        const int AnimatedFrameCanvas = 256;
+        const int LoopFrames = 16;
+        const int AtlasOfSixteenAnimatedFrames = 1024;
 
         AddressableAssetSettings settings;
 
@@ -44,11 +49,11 @@ namespace HypeDomino.Tests.EditMode
             AssetDatabase.DeleteAsset(Root);
         }
 
-        static void WriteFrame(string path, byte shade)
+        static void WriteFrame(string path, byte shade, int canvas = Canvas)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            var texture = new Texture2D(Canvas, Canvas, TextureFormat.RGBA32, false);
-            texture.SetPixels32(Enumerable.Repeat(new Color32(shade, shade, shade, 255), Canvas * Canvas).ToArray());
+            var texture = new Texture2D(canvas, canvas, TextureFormat.RGBA32, false);
+            texture.SetPixels32(Enumerable.Repeat(new Color32(shade, shade, shade, 255), canvas * canvas).ToArray());
             File.WriteAllBytes(path, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
         }
@@ -58,6 +63,13 @@ namespace HypeDomino.Tests.EditMode
             WriteFrame($"{folder}/static.png", 200);
             for (var at = 0; at < frames.Length; at++) WriteFrame($"{folder}/{frames[at]}", (byte)(at * 40));
             AssetDatabase.Refresh();
+        }
+
+        static Texture2D[] PackedPages(SpriteAtlas atlas)
+        {
+            var preview = typeof(SpriteAtlasExtensions).GetMethod("GetPreviewTextures", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(preview, "SpriteAtlasExtensions.GetPreviewTextures is gone from this Unity version");
+            return (Texture2D[])preview.Invoke(null, new object[] { atlas });
         }
 
         static AddressableAssetEntry Entry(AddressableAssetGroup group, string address) => group.entries.Single(entry => entry.address == address);
@@ -116,6 +128,20 @@ namespace HypeDomino.Tests.EditMode
                 Assert.IsTrue(platformSettings.overridden, platform);
                 Assert.AreEqual(ProjectSetup.SpriteFormat, platformSettings.format, platform);
             }
+        }
+
+        [Test]
+        public void SixteenEdgeToEdgeFramesOfTheAnimatedFrameCanvasFillOneAtlasOfFourByFourFrames()
+        {
+            WriteFrame($"{Remote}/static.png", 200, AnimatedFrameCanvas);
+            for (var at = 1; at <= LoopFrames; at++) WriteFrame($"{Remote}/anim/{at:0000}.png", (byte)(at * 15), AnimatedFrameCanvas);
+            AssetDatabase.Refresh();
+            CosmeticContent.Import(Remote);
+            var path = Remote + "/anim.spriteatlasv2";
+            Assert.AreEqual(CosmeticContent.LoopAtlasPadding, ((SpriteAtlasImporter)AssetImporter.GetAtPath(path)).packingSettings.padding);
+            var pages = PackedPages(AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path));
+            Assert.AreEqual(1, pages.Length, "atlas pages");
+            Assert.AreEqual(new Vector2Int(AtlasOfSixteenAnimatedFrames, AtlasOfSixteenAnimatedFrames), new Vector2Int(pages[0].width, pages[0].height));
         }
 
         [Test]
