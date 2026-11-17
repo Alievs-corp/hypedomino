@@ -82,6 +82,9 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	go panics.Supervise(ctx, "lobby listener", config.MatchmakingTick, func(ctx context.Context, retry time.Duration) {
 		listenLobbies(ctx, lobbies, deps.sessions, retry, logger)
 	})
+	go panics.Supervise(ctx, "lobby code renewal", config.Cluster.RouteTTL/2, func(ctx context.Context, every time.Duration) {
+		renewLobbyCodes(ctx, lobby, every, logger)
+	})
 	go panics.Supervise(ctx, "matchmaking listener", config.MatchmakingTick, func(ctx context.Context, retry time.Duration) {
 		listen(ctx, dispatcher, host, deps.sessions, retry, logger)
 	})
@@ -126,6 +129,19 @@ func listenLobbies(ctx context.Context, lobbies *lobbynet.Net, sessions *session
 		select {
 		case <-time.After(retry):
 		case <-ctx.Done():
+		}
+	}
+}
+
+func renewLobbyCodes(ctx context.Context, lobby *custom.Lobby, every time.Duration, logger *slog.Logger) {
+	for {
+		select {
+		case <-time.After(every):
+		case <-ctx.Done():
+			return
+		}
+		if err := lobby.Renew(ctx); err != nil && ctx.Err() == nil {
+			logger.Error("lobby code renewal failed", "error", err)
 		}
 	}
 }

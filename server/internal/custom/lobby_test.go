@@ -442,3 +442,23 @@ func TestARoomCodeIsClaimedInTheDirectoryUntilTheRoomCloses(t *testing.T) {
 		t.Fatal("a room whose code was not claimed was kept")
 	}
 }
+
+func TestRenewReclaimsTheCodesOfOpenRoomsOnly(t *testing.T) {
+	open, _ := opener(t)
+	lobby := NewLobby(&counter{}, open)
+	must(t, lobby.Renew(context.Background()))
+	codes := &directory{claimed: map[string]bool{}}
+	lobby.Route(codes)
+	kept, err := lobby.Create(player("ana"))
+	must(t, err)
+	closed, err := lobby.Create(player("ben"))
+	must(t, err)
+	must(t, closed.Leave("ben"))
+	clear(codes.claimed)
+	must(t, lobby.Renew(context.Background()))
+	if !codes.claimed[kept.Code()] || len(codes.claimed) != 1 {
+		t.Fatalf("renewed %v, want only %s", codes.claimed, kept.Code())
+	}
+	codes.fail = errors.New("directory down")
+	refused(t, lobby.Renew(context.Background()), codes.fail)
+}
