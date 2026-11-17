@@ -425,7 +425,7 @@ export const az: Messages = {
   "approvals.proposer": "Təklif edən",
   "approvals.expires_at": "Bitir",
   "approvals.own": "Sizin təklifiniz: başqa admin qərar verir",
-  "approvals.note": "Qeyd (istəyə bağlı)",
+  "approvals.note": "Qərarın səbəbi (məcburi)",
   "approvals.approve": "Təsdiqlə",
   "approvals.reject": "Rədd et",
   "approvals.refused": "Rədd edildi",

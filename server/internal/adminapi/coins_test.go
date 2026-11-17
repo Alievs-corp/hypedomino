@@ -116,11 +116,11 @@ func TestALargeAdjustmentWaitsForASecondAdmin(t *testing.T) {
 		t.Fatalf("balance before approval %d", got)
 	}
 
-	status, body = a.call("POST", "/admin/approvals/"+granted+"/approve", proposer, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+granted+"/approve", proposer, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
-	status, body = a.call("POST", "/admin/approvals/"+debit+"/approve", approver, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+debit+"/approve", approver, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "insufficient")
-	status, body = a.call("POST", "/admin/approvals/"+granted+"/approve", approver, map[string]any{"ref": "INC-4"})
+	status, body = a.call("POST", "/admin/approvals/"+granted+"/approve", approver, map[string]any{"reason": "checked", "ref": "INC-4"})
 	if status != http.StatusOK || body["state"] != "approved" {
 		t.Fatalf("approve %d %v", status, body)
 	}

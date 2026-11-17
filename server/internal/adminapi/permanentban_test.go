@@ -49,9 +49,9 @@ func TestAPermanentBanFromTheQueueWaitsForASecondAdmin(t *testing.T) {
 		t.Fatalf("the proposal closed the review: %v", body)
 	}
 
-	status, body = a.call("POST", proposal, support, map[string]any{})
+	status, body = a.call("POST", proposal, support, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
-	status, body = a.call("POST", proposal, root, map[string]any{"ref": "REV-7"})
+	status, body = a.call("POST", proposal, root, map[string]any{"reason": "checked", "ref": "REV-7"})
 	if status != http.StatusOK || body["state"] != "approved" {
 		t.Fatalf("approve %d %v", status, body)
 	}
@@ -98,7 +98,7 @@ func TestAnApprovedBanIsRefusedWhenTheReviewWasClearedMeanwhile(t *testing.T) {
 		t.Fatalf("clear %d %v", status, body)
 	}
 
-	status, body = a.call("POST", proposal+"/approve", root, map[string]any{})
+	status, body = a.call("POST", proposal+"/approve", root, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "decided")
 	if err := a.playerSignIn("g-1"); err != nil {
 		t.Fatalf("a refused approval banned the player: %v", err)

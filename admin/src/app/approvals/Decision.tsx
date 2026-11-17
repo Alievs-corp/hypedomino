@@ -33,10 +33,10 @@ export function Decision({ id, clientId }: { id: number; clientId: string }) {
     <div className="flex flex-col gap-2">
       <input aria-label={t("approvals.note")} placeholder={t("approvals.note")} value={reason} onChange={(event) => setReason(event.target.value)} className="rounded-md bg-surface px-3 py-1 text-text-primary" />
       <div className="flex gap-2">
-        <button type="button" disabled={pending} onClick={() => send("approve")} className="rounded-md bg-primary px-3 py-1 text-on-primary disabled:opacity-40">
+        <button type="button" disabled={pending || reason.trim() === ""} onClick={() => send("approve")} className="rounded-md bg-primary px-3 py-1 text-on-primary disabled:opacity-40">
           {t("approvals.approve")}
         </button>
-        <button type="button" disabled={pending} onClick={() => send("reject")} className="rounded-md bg-surface px-3 py-1 text-text-secondary disabled:opacity-40">
+        <button type="button" disabled={pending || reason.trim() === ""} onClick={() => send("reject")} className="rounded-md bg-surface px-3 py-1 text-text-secondary disabled:opacity-40">
           {t("approvals.reject")}
         </button>
       </div>
