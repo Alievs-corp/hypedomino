@@ -80,8 +80,8 @@ func (h *Handler) approve(w http.ResponseWriter, r *http.Request, p principal) {
 		return
 	}
 	now := h.now()
-	if now.After(p.session.AuthenticatedAt.Add(h.config.Session.StepUp)) {
-		h.refuse(w, errStepUpRequired)
+	if err := h.sensitive(p, note, now); err != nil {
+		h.refuse(w, err)
 		return
 	}
 	var approved approval.Proposal
@@ -151,6 +151,9 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, p principal) {
 	}
 	var rejected approval.Proposal
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
+		if err := h.sensitive(p, note, now); err != nil {
+			return nil, err
+		}
 		var err error
 		rejected, err = h.approvals.In(tx).Reject(r.Context(), id, p.actor(), now)
 		if err != nil {

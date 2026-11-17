@@ -42,6 +42,11 @@ type breakGlassChange struct {
 	Controls      json.RawMessage      `json:"controls"`
 }
 
+type breakGlassRecord struct {
+	breakGlassChange
+	ApprovalID int64 `json:"approval_id"`
+}
+
 type liveControlsView struct {
 	ConfigVersion int64           `json:"config_version"`
 	Controls      json.RawMessage `json:"controls"`
@@ -117,13 +122,14 @@ func (h *Handler) breakGlass(ctx context.Context, tx pgx.Tx, p principal, reques
 	if err != nil {
 		return nil, err
 	}
-	change := marshal(breakGlassChange{Incident: incident, ConfigVersion: version, Controls: request.Controls})
-	proposal, err := h.approvals.In(tx).Propose(ctx, approval.BreakGlass, livecontrol.Domain, change, request.Reason, p.actor(), now)
+	change := breakGlassChange{Incident: incident, ConfigVersion: version, Controls: request.Controls}
+	proposal, err := h.approvals.In(tx).Propose(ctx, approval.BreakGlass, livecontrol.Domain, marshal(change), request.Reason, p.actor(), now)
 	if err != nil {
 		return nil, err
 	}
 	view.ConfigVersion, view.Controls, view.BreakGlassID = version, request.Controls, proposal.ID
-	return []audit.Entry{liveControlsEntry(BreakGlassAction, before, request.Controls, version, changeNote{Reason: request.Reason, Ref: incident.ID})}, nil
+	record := marshal(breakGlassRecord{breakGlassChange: change, ApprovalID: proposal.ID})
+	return []audit.Entry{liveControlsEntry(BreakGlassAction, before, record, version, changeNote{Reason: request.Reason, Ref: incident.ID})}, nil
 }
 
 func (h *Handler) confirmBreakGlass(ctx context.Context, tx pgx.Tx, p principal, proposal approval.Proposal, note changeNote, now time.Time) error {
@@ -131,8 +137,18 @@ func (h *Handler) confirmBreakGlass(ctx context.Context, tx pgx.Tx, p principal,
 	if err := json.Unmarshal(proposal.Change, &change); err != nil {
 		return err
 	}
-	confirmation := audit.Entry{Action: "approve", Object: proposal.Object, After: proposal.Change, ConfigVersion: change.ConfigVersion, Reason: note.Reason, Ref: change.Incident.ID}
-	_, err := h.audit.In(tx).Append(ctx, h.stamp(p, confirmation), now)
+	switched, err := h.audit.In(tx).Search(ctx, p.account.Roles, audit.Filter{Object: proposal.Object, Action: BreakGlassAction, ConfigVersion: change.ConfigVersion, Limit: 1})
+	if err != nil {
+		return err
+	}
+	if len(switched) == 0 {
+		return fmt.Errorf("adminapi: no break-glass entry for config version %d", change.ConfigVersion)
+	}
+	confirmation := audit.Entry{
+		Action: "approve", Object: proposal.Object, After: marshal(breakGlassRecord{breakGlassChange: change, ApprovalID: proposal.ID}),
+		ApprovalID: switched[0].ID, ConfigVersion: change.ConfigVersion, Reason: note.Reason, Ref: change.Incident.ID,
+	}
+	_, err = h.audit.In(tx).Append(ctx, h.stamp(p, confirmation), now)
 	return err
 }
 

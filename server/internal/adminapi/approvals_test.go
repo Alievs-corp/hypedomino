@@ -54,23 +54,36 @@ func TestASuperAdminGrantTakesASecondSuperAdmin(t *testing.T) {
 			t.Fatalf("pending list %d %v, want %d", status, body, want)
 		}
 	}
-	status, body := a.call("POST", "/admin/approvals/"+id+"/approve", root, map[string]any{})
+	status, body := a.call("POST", "/admin/approvals/"+id+"/approve", root, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", content, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", content, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusForbidden, "forbidden")
 
 	a.now = start.Add(11 * time.Minute)
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{})
-	expect(t, status, body, http.StatusForbidden, "step_up_required")
+	refusals := []struct {
+		decision string
+		body     map[string]any
+		want     int
+		code     string
+	}{
+		{"approve", map[string]any{"ref": "OPS-3"}, http.StatusBadRequest, "reason_required"},
+		{"reject", map[string]any{"reason": "  "}, http.StatusBadRequest, "reason_required"},
+		{"approve", map[string]any{"reason": "checked"}, http.StatusForbidden, "step_up_required"},
+		{"reject", map[string]any{"reason": "not needed"}, http.StatusForbidden, "step_up_required"},
+	}
+	for _, refusal := range refusals {
+		status, body = a.call("POST", "/admin/approvals/"+id+"/"+refusal.decision, second, refusal.body)
+		expect(t, status, body, refusal.want, refusal.code)
+	}
 	a.call("POST", "/admin/session/step-up", second, map[string]string{"id_token": "vusal", "nonce": "nonce"})
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"ref": "OPS-3"})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"reason": "checked", "ref": "OPS-3"})
 	if status != http.StatusOK || body["state"] != "approved" || body["decider_id"] == "" {
 		t.Fatalf("approve %d %v", status, body)
 	}
 	if roles := a.rolesOf(second, ayla.ID); !reflect.DeepEqual(roles, []any{"content", "super_admin"}) {
 		t.Fatalf("roles after approval: %v", roles)
 	}
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", second, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "decided")
 
 	entries := a.entries(second, "object_type=admin_accounts&object_id="+ayla.ID)
@@ -104,14 +117,14 @@ func TestAGrantProposalCanBeRejectedOrExpire(t *testing.T) {
 	expired := a.proposeGrant(root, ayla.ID)
 	a.now = start.Add(25 * time.Hour)
 	late := a.signIn("vusal")
-	status, body = a.call("POST", "/admin/approvals/"+expired+"/approve", late, map[string]any{})
+	status, body = a.call("POST", "/admin/approvals/"+expired+"/approve", late, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "expired")
 	status, body = a.call("GET", "/admin/approvals", late, nil)
 	if status != http.StatusOK || len(body["proposals"].([]any)) != 0 {
 		t.Fatalf("pending after expiry %d %v", status, body)
 	}
 	for _, id := range []string{"999", "nope"} {
-		status, body = a.call("POST", "/admin/approvals/"+id+"/approve", late, map[string]any{})
+		status, body = a.call("POST", "/admin/approvals/"+id+"/approve", late, map[string]any{"reason": "checked"})
 		expect(t, status, body, http.StatusNotFound, "not_found")
 	}
 	if roles := a.rolesOf(late, ayla.ID); !reflect.DeepEqual(roles, []any{"content"}) {

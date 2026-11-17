@@ -173,6 +173,7 @@ func TestSearchFiltersNewestFirst(t *testing.T) {
 	store := audit.NewStore(pool)
 	rollback := entry("ben", "rollback", rbac.Snapshots, "shop")
 	rollback.Reason = "Broken PRICE in rotation"
+	rollback.ConfigVersion = 7
 	r := appendAll(t, store,
 		entry("ayla", "edit", rbac.ShopOffers, "o-1"),
 		entry("ben", "edit", rbac.ShopOffers, "o-1"),
@@ -192,6 +193,7 @@ func TestSearchFiltersNewestFirst(t *testing.T) {
 		{"action", audit.Filter{Action: "edit"}, []audit.Recorded{r[4], r[1], r[0]}},
 		{"time range", audit.Filter{From: start.Add(time.Minute), To: start.Add(3 * time.Minute)}, []audit.Recorded{r[2], r[1]}},
 		{"reason text ignores case", audit.Filter{ReasonContains: "price"}, []audit.Recorded{r[3]}},
+		{"config version", audit.Filter{ConfigVersion: 7}, []audit.Recorded{r[3]}},
 		{"combined", audit.Filter{ActorID: "ayla", Action: "edit", Object: audit.Object{ID: "o-1"}}, []audit.Recorded{r[4], r[0]}},
 		{"nothing", audit.Filter{ActorID: "cem"}, []audit.Recorded{}},
 	}
