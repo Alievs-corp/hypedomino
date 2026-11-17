@@ -26,6 +26,8 @@ client/[Ll]ogs/
 client/Signing/
 client/Assets/HypeDomino/Bench/Generated/
 client/Assets/HypeDomino/Bench/Generated.meta
+client/Assets/HypeDomino/Net/Resources/
+client/Assets/HypeDomino/Net/Resources.meta
 client/[Uu]ser[Ss]ettings/
 client/[Mm]emory[Cc]aptures/
 client/[Rr]ecordings/
