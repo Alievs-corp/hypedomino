@@ -84,9 +84,28 @@ namespace HypeDomino.Tests.EditMode
 
         sealed class ServerFrames : IFrameTransport
         {
+            readonly byte[] lastSent = new byte[Session.MaxSentFrameBytes];
+            int lastSentLength;
             byte[] pending;
 
-            public void Send(ReadOnlySpan<byte> frame) { }
+            public int SentCount { get; private set; }
+
+            public void Send(ReadOnlySpan<byte> frame)
+            {
+                SentCount++;
+                frame.CopyTo(lastSent);
+                lastSentLength = frame.Length;
+            }
+
+            public Envelope.PayloadOneofCase LastSentPayload =>
+                FrameReader.TryRead(lastSent.AsSpan(0, lastSentLength), out var frame) ? frame.Payload : Envelope.PayloadOneofCase.None;
+
+            public PlaceTileIntent LastSentPlacement()
+            {
+                Assert.IsTrue(FrameReader.TryRead(lastSent.AsSpan(0, lastSentLength), out var frame));
+                Assert.AreEqual(Envelope.PayloadOneofCase.PlaceTileIntent, frame.Payload);
+                return PlaceTileIntent.Parser.ParseFrom(frame.PayloadBytes);
+            }
 
             public bool TryReceive(out ReadOnlySpan<byte> frame)
             {
@@ -334,6 +353,180 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.That(frame, Allocates.Nothing);
             Assert.Greater(hud.PassesShown, 0);
+        }
+
+        ServerFrames BindAccepted()
+        {
+            var session = new Session();
+            var frames = new ServerFrames();
+            screen.Bind(session);
+            session.Hello(frames, new ClientHello());
+            frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
+            session.Poll();
+            return frames;
+        }
+
+        [Test]
+        public void ATapOnATileWithOneLegalEndSendsItsPlacementOnceUntilTheNextView()
+        {
+            var frames = BindAccepted();
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+            var sentBefore = frames.SentCount;
+            var handsShown = hud.HandsShown;
+
+            Assert.AreEqual(HandTap.Placed, screen.TapTile(0));
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+            var placement = frames.LastSentPlacement();
+            Assert.AreEqual(1u, placement.Tile.Low);
+            Assert.AreEqual(2u, placement.Tile.High);
+            Assert.AreEqual(BoardEnd.Right, placement.End);
+            Assert.AreEqual(handsShown + 1, hud.HandsShown);
+
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(0));
+            Assert.IsFalse(screen.ChooseEnd(BoardEnd.Right));
+            Assert.IsFalse(screen.Pass());
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+            Assert.AreEqual(HandTap.Placed, screen.TapTile(0));
+            Assert.AreEqual(sentBefore + 2, frames.SentCount);
+        }
+
+        [Test]
+        public void ATileWithTwoLegalEndsWaitsForTheChosenEnd()
+        {
+            var frames = BindAccepted();
+            Show(Playing(Seat.South, Move(3, 3, BoardEnd.Left), Move(3, 3, BoardEnd.Right)));
+            var sentBefore = frames.SentCount;
+
+            Assert.AreEqual(HandTap.Selected, screen.TapTile(1));
+            Assert.AreEqual(sentBefore, frames.SentCount);
+            Assert.IsFalse(screen.ChooseEnd(BoardEnd.Top));
+            Assert.AreEqual(sentBefore, frames.SentCount);
+
+            Assert.IsTrue(screen.ChooseEnd(BoardEnd.Left));
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+            var placement = frames.LastSentPlacement();
+            Assert.AreEqual(3u, placement.Tile.Low);
+            Assert.AreEqual(BoardEnd.Left, placement.End);
+            Assert.IsFalse(screen.ChooseEnd(BoardEnd.Right));
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+        }
+
+        [Test]
+        public void ATileTheServerDidNotListSendsNothing()
+        {
+            var frames = BindAccepted();
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+            var sentBefore = frames.SentCount;
+
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(2));
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(5));
+            Assert.AreEqual(sentBefore, frames.SentCount);
+        }
+
+        [Test]
+        public void PassIsSentOnlyWhenTheViewOffersIt()
+        {
+            var frames = BindAccepted();
+            Show(Playing(Seat.West));
+            var sentBefore = frames.SentCount;
+            Assert.IsFalse(screen.Pass());
+            Assert.AreEqual(sentBefore, frames.SentCount);
+
+            Show(Playing(Seat.South));
+            Assert.IsFalse(screen.Draw());
+            Assert.IsFalse(screen.EndTurn());
+            Assert.IsTrue(screen.Pass());
+            Assert.AreEqual(Envelope.PayloadOneofCase.PassIntent, frames.LastSentPayload);
+            Assert.IsFalse(screen.Pass());
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+        }
+
+        [Test]
+        public void DrawIsSentInOneVersusOneWhileTheBoneyardHoldsMoreThanOneTile()
+        {
+            var frames = BindAccepted();
+            var view = Playing(Seat.South);
+            view.Mode = Mode._1V1;
+            view.BoneyardSize = 2;
+            Show(view);
+            var sentBefore = frames.SentCount;
+
+            Assert.IsFalse(screen.Pass());
+            Assert.IsTrue(screen.Draw());
+            Assert.AreEqual(Envelope.PayloadOneofCase.DrawIntent, frames.LastSentPayload);
+            Assert.IsFalse(screen.Draw());
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+
+            view.BoneyardSize = 1;
+            Show(view);
+            Assert.IsFalse(screen.Draw());
+            Assert.IsTrue(screen.Pass());
+            Assert.AreEqual(Envelope.PayloadOneofCase.PassIntent, frames.LastSentPayload);
+        }
+
+        [Test]
+        public void EndTurnIsSentOnlyAfterAPlacementThisTurn()
+        {
+            var frames = BindAccepted();
+            Show(Playing(Seat.South, Move(3, 3, BoardEnd.Left)));
+            Assert.IsFalse(screen.EndTurn());
+
+            var view = Playing(Seat.South, Move(3, 3, BoardEnd.Left));
+            view.TurnPlacements = 1;
+            Show(view);
+            var sentBefore = frames.SentCount;
+            Assert.IsTrue(screen.EndTurn());
+            Assert.AreEqual(Envelope.PayloadOneofCase.EndTurnIntent, frames.LastSentPayload);
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(1));
+            Assert.AreEqual(sentBefore + 1, frames.SentCount);
+        }
+
+        [Test]
+        public void NothingIsSentWithoutAnAcceptedSession()
+        {
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(0));
+            Assert.IsTrue(screen.Hand.IsSelectable(0));
+
+            var session = new Session();
+            var frames = new ServerFrames();
+            screen.Bind(session);
+            session.Hello(frames, new ClientHello());
+            frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Maintenance });
+            session.Poll();
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+
+            Assert.AreEqual(HandTap.Ignored, screen.TapTile(0));
+            Assert.AreEqual(1, frames.SentCount);
+        }
+
+        [Test]
+        public void ATapThatSendsAnIntentAllocatesNothing()
+        {
+            var frames = BindAccepted();
+            var placing = Playing(Seat.South, Move(1, 2, BoardEnd.Right)).ToByteArray();
+            var choosing = Playing(Seat.South, Move(3, 3, BoardEnd.Left), Move(3, 3, BoardEnd.Right)).ToByteArray();
+            var passing = Playing(Seat.South).ToByteArray();
+            TestDelegate input = () =>
+            {
+                snapshot.TryRead(placing);
+                screen.Show(snapshot);
+                screen.TapTile(0);
+                snapshot.TryRead(choosing);
+                screen.Show(snapshot);
+                screen.TapTile(1);
+                screen.ChooseEnd(BoardEnd.Right);
+                snapshot.TryRead(passing);
+                screen.Show(snapshot);
+                screen.Pass();
+            };
+            input();
+            var sentBefore = frames.SentCount;
+
+            Assert.That(input, Allocates.Nothing);
+            Assert.AreEqual(sentBefore + 3, frames.SentCount);
         }
 
         static double Seconds(float ms) => ms / 1000d;
