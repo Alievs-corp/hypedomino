@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/deletionlog"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
@@ -95,20 +96,32 @@ func TestRunErasesDueAccountsLogsThemAndPrunesOldEntries(t *testing.T) {
 	stale := deletionlog.Key(account.Deletion{Account: "11111111-1111-4111-8111-111111111111", At: now.Add(-36 * 24 * time.Hour)})
 	store := &bucket{objects: map[string][]byte{stale: nil}, failPut: errors.New("bucket unreachable")}
 	log := deletionlog.New(store, func() time.Time { return now })
-	config := settings{grace: defaultGrace, retention: defaultRetention}
+	events := analytics.NewStore(pool)
+	ben := signedUp(t, accounts, pool, "g-ben", "Ben")
+	for i, received := range []time.Time{now.Add(-defaultAnalyticsRetention - time.Hour), now.Add(-time.Hour)} {
+		batch := analytics.Batch{AnalyticsID: "6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b", Events: []analytics.Event{{Name: "app_open", ClientTimeMs: int64(i + 1)}}}
+		if err := events.Record(ctx, ben, batch, received); err != nil {
+			t.Fatal(err)
+		}
+	}
+	config := settings{grace: defaultGrace, retention: defaultRetention, analyticsRetention: defaultAnalyticsRetention}
 	var out bytes.Buffer
-	if err := run(ctx, accounts, log, config, now, &out); err == nil || !strings.Contains(out.String(), "0 deletion(s) erased and logged") {
+	if err := run(ctx, accounts, log, events, config, now, &out); err == nil || !strings.Contains(out.String(), "0 deletion(s) erased and logged") || !strings.Contains(out.String(), "1 raw analytics events older than 9480h0m0s deleted") {
 		t.Fatalf("run with an unreachable log: %v %q", err, out.String())
+	}
+	var kept int64
+	if err := pool.QueryRow(ctx, `select coalesce(sum(client_time_ms), 0) from analytics_events`).Scan(&kept); err != nil || kept != 2 {
+		t.Fatalf("analytics events kept after the run: %d %v", kept, err)
 	}
 	if pending, err := accounts.UnloggedDeletions(ctx); err != nil || len(pending) != 1 || pending[0].Account != ayla {
 		t.Fatalf("pending after the failed write: %+v %v", pending, err)
 	}
 	store.failPut = nil
 	out.Reset()
-	if err := run(ctx, accounts, log, config, now, &out); err != nil {
+	if err := run(ctx, accounts, log, events, config, now, &out); err != nil {
 		t.Fatalf("run: %v %q", err, out.String())
 	}
-	if !strings.Contains(out.String(), "1 deletion(s) erased and logged") || !strings.Contains(out.String(), "1 log entries older than 840h0m0s pruned") {
+	if !strings.Contains(out.String(), "1 deletion(s) erased and logged") || !strings.Contains(out.String(), "1 log entries older than 840h0m0s pruned") || !strings.Contains(out.String(), "0 raw analytics events") {
 		t.Fatalf("run output %q", out.String())
 	}
 	logged, err := log.Since(ctx, now.Add(-time.Hour))
@@ -181,16 +194,17 @@ func TestBadInvocationsAreUsageErrors(t *testing.T) {
 		args   []string
 		getenv func(string) string
 	}{
-		"no command":             {nil, with("", "")},
-		"unknown command":        {[]string{"purge"}, with("", "")},
-		"run with arguments":     {[]string{"run", "now"}, with("", "")},
-		"replay without since":   {[]string{"replay"}, with("", "")},
-		"replay with a bad time": {[]string{"replay", "-since", "yesterday"}, with("", "")},
-		"no database":            {[]string{"run"}, with("HD_DATABASE_URL", "")},
-		"no log store":           {[]string{"run"}, with("HD_DELETION_LOG_URL", "")},
-		"no log secret":          {[]string{"replay", "-since", "2026-11-10T12:00:00Z"}, with("HD_DELETION_LOG_SECRET_KEY", "")},
-		"bad grace":              {[]string{"run"}, with("HD_ACCOUNT_DELETION_GRACE", "-1h")},
-		"bad retention":          {[]string{"run"}, with("HD_DELETION_LOG_RETENTION", "35 days")},
+		"no command":              {nil, with("", "")},
+		"unknown command":         {[]string{"purge"}, with("", "")},
+		"run with arguments":      {[]string{"run", "now"}, with("", "")},
+		"replay without since":    {[]string{"replay"}, with("", "")},
+		"replay with a bad time":  {[]string{"replay", "-since", "yesterday"}, with("", "")},
+		"no database":             {[]string{"run"}, with("HD_DATABASE_URL", "")},
+		"no log store":            {[]string{"run"}, with("HD_DELETION_LOG_URL", "")},
+		"no log secret":           {[]string{"replay", "-since", "2026-11-10T12:00:00Z"}, with("HD_DELETION_LOG_SECRET_KEY", "")},
+		"bad grace":               {[]string{"run"}, with("HD_ACCOUNT_DELETION_GRACE", "-1h")},
+		"bad retention":           {[]string{"run"}, with("HD_DELETION_LOG_RETENTION", "35 days")},
+		"bad analytics retention": {[]string{"run"}, with("HD_ANALYTICS_RAW_RETENTION", "0s")},
 	} {
 		if err := dispatch(context.Background(), c.args, c.getenv, io.Discard, time.Now); !errors.Is(err, errUsage) {
 			t.Errorf("%s: %v", name, err)
