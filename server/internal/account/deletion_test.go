@@ -114,6 +114,8 @@ func TestDeletionErasesPersonalDataAndKeepsSharedHistoryUnderATombstone(t *testi
 	for _, statement := range []string{
 		`insert into nickname_history (account_id, nickname, nickname_key) values ($1, 'Old', 'old')`,
 		`insert into purchases (platform, transaction_id, account_id, offer_id, product_id, environment, state, purchased_at) values ('google', 'tx-1', $1, 'offer', 'product', 'production', 'granted', now())`,
+		`insert into analytics_ids (analytics_id, account_id, first_seen_at) values ('6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b', $1, now())`,
+		`insert into analytics_events (analytics_id, name, label, value, client_time_ms, received_at) select analytics_id, 'app_open', '', 0, 1762300000000, now() from analytics_ids where account_id = $1`,
 	} {
 		if _, err := pool.Exec(ctx, statement, ayla.ID); err != nil {
 			t.Fatalf("%s: %v", statement, err)
@@ -143,6 +145,8 @@ func TestDeletionErasesPersonalDataAndKeepsSharedHistoryUnderATombstone(t *testi
 		`select count(*) from profiles where nickname = 'Ayla' or account_id = $1 or $2 = ''`:                                                                       0,
 		`select count(*) from nickname_history where nickname = 'Old' or account_id = $1 or $2 = ''`:                                                                0,
 		`select count(*) from friendships where account_id in ($1, $2)`:                                                                                             0,
+		`select count(*) from analytics_ids where analytics_id = '6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b' or $1 = '' or $2 = ''`:                                      0,
+		`select count(*) from analytics_events where analytics_id = '6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b' or $1 = '' or $2 = ''`:                                   0,
 		`select count(*) from purchases p join accounts a on a.id = p.account_id where a.state = 'deleted' and a.deleted_at is not null and a.id not in ($1, $2)`:   1,
 		`select count(*) from nickname_history h join accounts a on a.id = h.account_id where h.nickname = 'Ayla' and a.state = 'deleted' and a.id not in ($1, $2)`: 1,
 	}

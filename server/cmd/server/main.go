@@ -16,6 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
@@ -76,6 +77,12 @@ func main() {
 	}
 	logger := app.NewLogger(os.Stdout, config.LogLevel)
 	slog.SetDefault(logger)
+	flushPanics, err := panics.Ship(config.SentryDSN, config.SentryEnv, nil)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "HD_SENTRY_DSN:", err)
+		os.Exit(2)
+	}
+	defer flushPanics()
 	sessions := session.New(config.Session, systemClock{}, secrand.Source{})
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
@@ -181,6 +188,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
 	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
+	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analytics.NewStore(pool), logger, time.Now))
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))

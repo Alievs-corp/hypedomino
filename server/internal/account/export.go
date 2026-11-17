@@ -58,6 +58,7 @@ var exportSections = []exportSection{
 	{"blocks", "blocks", `select p.nickname, b.created_at from blocks b left join profiles p on p.account_id = b.blocked_id where b.account_id = $1 order by b.created_at`},
 	{"friend_code", "friend_codes", `select code from friend_codes where account_id = $1`},
 	{"consents", "consent_records", `select purpose, granted, policy_version, source, app_version, recorded_at from consent_records where account_id = $1 order by recorded_at, id`},
+	{"analytics", "analytics_ids", `select i.analytics_id, e.name, e.label, e.value, e.client_time_ms, e.received_at from analytics_ids i join analytics_events e using (analytics_id) where i.account_id = $1 order by e.received_at, e.id`},
 }
 
 var withheldFromExport = map[string]bool{

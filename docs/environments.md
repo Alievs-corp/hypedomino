@@ -167,6 +167,8 @@ Today no code on `main` reads an environment variable. The server variables belo
 | `HD_PROMO_LOCK_SIGNAL_WEIGHT` | No | server | `5` | `5` | No | from #211 |
 | `HD_PROMO_SPIKE_PERCENT` | No | server | `50` | `50` | No | from #211 |
 | `HD_PROMO_SPIKE_WINDOW_MINUTES` | No | server | `60` | `60` | No | from #211 |
+| `HD_SENTRY_DSN` | No | server | empty (panics are logged and counted only, nothing leaves the node) | `https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>` | Yes | #182; only a Sentry EU data region DSN (host ending in `.ingest.de.sentry.io`) is accepted (`docs/privacy.md` section 2), any other value stops the start without echoing it |
+| `HD_SENTRY_ENVIRONMENT` | No | server | empty | `staging` | No | #182; the environment name of section 1 the reports are filed under |
 
 The gateway limits and the reconnect grace are environment variables only until admin config serves them (#210, `docs/penalties.md` section 8); then the admin value wins and the variable is removed in the same PR.
 
@@ -238,7 +240,7 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 
 ### 2.4 Not read yet
 
-The client reads no environment variable. Crash reporting (#182) adds its variables when the code that reads them lands. That PR adds the row here with all columns filled and the secret to section 3 for each environment.
+The client reads no environment variable. Client crash reporting (#182) adds its build inputs when the code that reads them lands; that PR adds the row here with all columns filled and the secret to section 3 for each environment. The server side reads `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` (2.1).
 
 ### 2.5 Client build inputs
 
@@ -262,6 +264,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
+| Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods; unset until the Sentry account exists (section 7) |
 
 Rules:
 - S-1 No secret is committed: not in code, docs, fixtures, images, `.env` files or CI files. `.gitignore` ignores `.env`, `.env.*` (except `.env.example`), keystores, signing certificates, provisioning profiles and `service-account*.json`. Only `.env.example` with placeholders may be committed.
@@ -333,4 +336,5 @@ Rules:
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
+- Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, server panics are only logged and counted.
 - Client HTTP timeout: no document or config sets the timeout of the player's `/auth` and API requests, so `-httpTimeoutSeconds` (2.5) and `CLIENT_HTTP_TIMEOUT_SECONDS` (2.3) have no value. A tag release fails before the build until the owner sets it (#66).

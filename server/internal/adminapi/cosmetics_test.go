@@ -152,6 +152,70 @@ func TestCosmeticsPublishStampsItemsAndKeepsThemForever(t *testing.T) {
 	}
 }
 
+func cosmeticOnSale(id string, fields map[string]any) map[string]any {
+	kind, slug, _ := strings.Cut(id, ".")
+	item := map[string]any{
+		"id": id, "type": kind, "rarityId": "rare", "availability": "live",
+		"sources": []any{map[string]any{"type": "shop", "ref": "offer." + slug}}, "artSource": "handmade", "culturalReview": "approved",
+	}
+	for key, value := range fields {
+		item[key] = value
+	}
+	return item
+}
+
+func TestEveryCosmeticTypeIsCreatedEditedAndPublished(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
+	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)
+	layers := []any{map[string]any{"name": "back", "animated": false}, map[string]any{"name": "waves", "animated": true}}
+	created := []any{
+		cosmeticOnSale("avatar.fox", map[string]any{"animated": true}),
+		cosmeticOnSale("frame.ember", map[string]any{"animated": true}),
+		cosmeticOnSale("table.reef", map[string]any{"animated": true, "layers": layers}),
+		cosmeticOnSale("tile.storm", map[string]any{"animated": true}),
+		cosmeticOnSale("emoji.wave", map[string]any{"animated": false, "group": "basic"}),
+	}
+	catalog := map[string]any{"items": append(append([]any{}, builtin...), created...)}
+	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+
+	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "one item of every type"})
+	expect(t, status, body, http.StatusOK, "")
+	published := body["catalog"].(map[string]any)
+	for _, entry := range created {
+		id := entry.(map[string]any)["id"].(string)
+		item, base := cosmeticItem(published, id), "cosmetic/"+strings.Replace(id, ".", "/", 1)
+		if item["revision"] != 1.0 || item["staticAddress"] != base+"/static" {
+			t.Errorf("created %v", item)
+		}
+	}
+	for _, id := range []string{"avatar.fox", "frame.ember", "tile.storm"} {
+		if item := cosmeticItem(published, id); item["animationAddress"] != "cosmetic/"+strings.Replace(id, ".", "/", 1)+"/anim" {
+			t.Errorf("animated %v", item)
+		}
+	}
+	reef := cosmeticItem(published, "table.reef")["layers"].([]any)
+	if len(reef) != 2 || reef[0].(map[string]any)["address"] != "cosmetic/table/reef/layer/back" || reef[1].(map[string]any)["address"] != "cosmetic/table/reef/layer/waves" {
+		t.Errorf("table layers %v", reef)
+	}
+	if wave := cosmeticItem(published, "emoji.wave"); wave["group"] != "basic" || wave["animationAddress"] != nil {
+		t.Errorf("static emoji %v", wave)
+	}
+
+	for _, entry := range created {
+		cosmeticItem(published, entry.(map[string]any)["id"].(string))["rarityId"] = "epic"
+	}
+	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": published, "reason": "every type rarer"})
+	expect(t, status, body, http.StatusOK, "")
+	edited := body["catalog"].(map[string]any)
+	for _, entry := range created {
+		if item := cosmeticItem(edited, entry.(map[string]any)["id"].(string)); item["revision"] != 2.0 || item["rarityId"] != "epic" {
+			t.Errorf("edited %v", item)
+		}
+	}
+}
+
 func TestCosmeticsPublishKeepsTheSourcesOtherDomainsGrantFrom(t *testing.T) {
 	a := newAPI(t)
 	a.publishExampleCatalog()
