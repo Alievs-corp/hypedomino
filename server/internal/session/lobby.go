@@ -273,19 +273,24 @@ func (c *connection) create(member custom.Member) (*custom.Room, error) {
 	return r, err
 }
 
-func (m *Manager) joinLobby(code string) func(custom.Member) (*custom.Room, error) {
+func (m *Manager) joinLobby(s *Session, code string) func(custom.Member) (*custom.Room, error) {
 	return func(member custom.Member) (*custom.Room, error) {
 		r, err := m.lobby.Find(code)
 		if err != nil {
 			return nil, err
 		}
-		return r, r.Join(member)
+		m.enterLobby(s, r)
+		if err := r.Join(member); err != nil {
+			m.enterLobby(s, nil)
+			return nil, err
+		}
+		return r, nil
 	}
 }
 
 func (c *connection) joinCode(code string) error {
 	if _, err := c.manager.lobby.Find(code); err == nil || c.manager.remote == nil {
-		return c.enter(c.manager.joinLobby(code))
+		return c.enter(c.manager.joinLobby(c.session, code))
 	}
 	switch {
 	case c.manager.lobbyOf(c.session) != nil:
@@ -315,7 +320,7 @@ func (m *Manager) Adopt(ctx context.Context, code, account, token string) pb.Lob
 	s := m.ensure(token, account)
 	s.routed = true
 	m.mu.Unlock()
-	err := m.enter(s, m.joinLobby(code))
+	err := m.enter(s, m.joinLobby(s, code))
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if err != nil {
