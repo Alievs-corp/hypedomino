@@ -155,7 +155,7 @@ func TestFinishIsAtomicAndAppliedOnce(t *testing.T) {
 	if n := count(t, pool, "select count(*) from match_events where match_id = $1 and seq = 2 and at = $2", id, start.Add(9*time.Minute)); n != 1 {
 		t.Fatal("an event without a time does not take the end time")
 	}
-	if n := count(t, pool, "select count(*) from outbox where key = $1", "match:"+id); n != 4 {
+	if n := count(t, pool, "select count(*) from outbox where key = $1", "match:"+id); n != 5 {
 		t.Fatalf("%d outbox rows for a ranked match", n)
 	}
 	if n := count(t, pool, "select count(*) from outbox where key = $1 and topic = 'rating'", "match:"+id); n != 1 {
@@ -172,9 +172,9 @@ func TestMatchMessagesFollowTheKind(t *testing.T) {
 		return out
 	}
 	cases := map[string][]string{
-		matchstore.KindRanked: {"rating", "xp", "missions", "economy"},
-		matchstore.KindCasual: {"xp", "missions", "economy"},
-		matchstore.KindCustom: {"missions"},
+		matchstore.KindRanked: {"rating", "xp", "missions", "economy", "analytics"},
+		matchstore.KindCasual: {"xp", "missions", "economy", "analytics"},
+		matchstore.KindCustom: {"missions", "analytics"},
 	}
 	for kind, want := range cases {
 		got := topics(kind)
@@ -234,11 +234,11 @@ func TestRelayPublishesPendingMessagesAtLeastOnce(t *testing.T) {
 		t.Fatalf("%d xp rows published", n)
 	}
 	pending, err := store.Pending(ctx, "", 100)
-	if err != nil || len(pending) != 4 {
+	if err != nil || len(pending) != 6 {
 		t.Fatalf("other topics pending %d, %v", len(pending), err)
 	}
 	all := matchstore.NewRelay(store, publisher, "", 0, nil)
-	if n, err := all.Once(ctx); err != nil || n != 4 {
+	if n, err := all.Once(ctx); err != nil || n != 6 {
 		t.Fatalf("all topics published %d, %v", n, err)
 	}
 	runCtx, cancel := context.WithCancel(ctx)

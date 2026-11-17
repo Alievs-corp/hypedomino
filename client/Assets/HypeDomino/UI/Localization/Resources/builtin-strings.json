@@ -11,6 +11,11 @@
     { "key": "match.afk.warning", "en": "If time runs out again, the bot plays for you", "az": "Vaxt yenə bitsə, bot sənin yerinə oynayacaq" },
     { "key": "match.afk.take_back", "en": "The bot is playing for you — come back", "az": "Bot sənin yerinə oynayır — qayıt" },
     { "key": "match.seat.mute", "en": "Mute", "az": "Susdur" },
-    { "key": "match.seat.unmute", "en": "Unmute", "az": "Səsini aç" }
+    { "key": "match.seat.unmute", "en": "Unmute", "az": "Səsini aç" },
+    { "key": "match.result.won", "en": "Victory", "az": "Qələbə" },
+    { "key": "match.result.lost", "en": "Defeat", "az": "Məğlubiyyət" },
+    { "key": "match.result.over", "en": "Match over", "az": "Matç bitdi" },
+    { "key": "match.result.play_again", "en": "Play again", "az": "Yenidən oyna" },
+    { "key": "match.result.back_to_lobby", "en": "Back to lobby", "az": "Lobbiyə qayıt" }
   ]
 }

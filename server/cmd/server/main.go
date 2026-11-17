@@ -191,7 +191,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
 	consents := consent.NewStore(pool)
 	a.Handle("/consents", consent.NewHandler(tokens, consents, logger, time.Now))
-	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analytics.NewStore(pool), consents, logger, time.Now))
+	analyticsStore := analytics.NewStore(pool)
+	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analyticsStore, consents, logger, time.Now))
+	matchEnds := matchstore.NewRelay(matchstore.New(pool), analyticsStore, matchstore.TopicAnalytics, 0, time.Now)
+	go panics.Supervise(ctx, "outbox analytics", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
+		matchEnds.Run(ctx, every, func(err error) { logger.Error("analytics relay failed", "error", err) })
+	})
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
 	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))

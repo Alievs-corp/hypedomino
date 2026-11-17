@@ -254,7 +254,7 @@ func assertOutbox(t *testing.T, ctx context.Context, pool *pgxpool.Pool, id stri
 		}
 		assertPlayers(t, topic, outcome.Players, accounts)
 	}
-	want := []string{matchstore.TopicEconomy, matchstore.TopicMissions, matchstore.TopicRating, matchstore.TopicXp}
+	want := []string{matchstore.TopicAnalytics, matchstore.TopicEconomy, matchstore.TopicMissions, matchstore.TopicRating, matchstore.TopicXp}
 	if !slices.Equal(topics, want) {
 		t.Fatalf("outbox topics %v, %v", topics, rows.Err())
 	}
