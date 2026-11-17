@@ -26,6 +26,7 @@ namespace HypeDomino.Editor
         public const string CosmeticLabel = "cosmetic";
         public const string StaticLabel = "cosmetic-static";
         public const string SliceFile = "slice.json";
+        public const int LoopAtlasPadding = 0;
 
         [Serializable]
         public sealed class TableSlice
@@ -221,6 +222,7 @@ namespace HypeDomino.Editor
             var packing = importer.packingSettings;
             packing.enableRotation = false;
             packing.enableTightPacking = false;
+            packing.padding = LoopAtlasPadding;
             importer.packingSettings = packing;
             var texture = importer.textureSettings;
             texture.generateMipMaps = false;
