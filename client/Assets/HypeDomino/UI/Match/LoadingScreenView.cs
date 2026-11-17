@@ -1,3 +1,4 @@
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,13 +12,17 @@ namespace HypeDomino.UI.Match
 
         [SerializeField] LoadingCardView[] cards;
         [SerializeField] Image total;
+        [SerializeField] TableView table;
 
         public int CardCount => cards.Length;
 
-        public void Configure(LoadingCardView[] rowMajorCards, Image totalFill)
+        public TableView Table => table;
+
+        public void Configure(LoadingCardView[] rowMajorCards, Image totalFill, TableView tableView)
         {
             cards = rowMajorCards;
             total = totalFill;
+            table = tableView;
         }
 
         public LoadingCardView Card(int row, int place) => cards[row * CardsPerRow + place];
