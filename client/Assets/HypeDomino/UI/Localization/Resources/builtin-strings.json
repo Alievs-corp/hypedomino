@@ -24,6 +24,13 @@
     { "key": "medal.showcase.not_owned", "en": "That medal is not in your collection", "az": "Bu medal kolleksiyanda yoxdur" },
     { "key": "medal.showcase.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
     { "key": "medal.showcase.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "inventory.load.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "inventory.load.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "inventory.equip.not_owned", "en": "That item is not in your collection", "az": "Bu əşya kolleksiyanda yoxdur" },
+    { "key": "inventory.equip.unavailable", "en": "This item cannot be equipped now", "az": "Bu əşyanı indi taxmaq olmur" },
+    { "key": "inventory.equip.slots_full", "en": "Every emoji slot is taken", "az": "Bütün emoji yerləri doludur" },
+    { "key": "inventory.equip.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "inventory.equip.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
     { "key": "lobby.room.refused.unavailable", "en": "The room is not available right now. Try again later", "az": "Otaq hazırda əlçatan deyil. Sonra yenidən yoxla" },
     { "key": "lobby.room.refused.unknown_code", "en": "There is no room with this code", "az": "Bu kodla otaq yoxdur" },
     { "key": "lobby.room.refused.not_leader", "en": "Only the room leader can do this", "az": "Bunu yalnız otaq lideri edə bilər" },
@@ -77,6 +84,17 @@
     { "key": "shop.buy.unknown", "en": "This offer no longer exists", "az": "Bu təklif artıq yoxdur" },
     { "key": "shop.buy.unsupported", "en": "This offer cannot be bought here yet", "az": "Bu təklifi hələ burada almaq olmur" },
     { "key": "shop.buy.offline", "en": "No connection. Check your internet and try again", "az": "Bağlantı yoxdur. İnterneti yoxla və yenidən cəhd et" },
-    { "key": "shop.buy.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
+    { "key": "shop.buy.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "nickname.rename.invalid_length", "en": "This nickname is too short or too long", "az": "Bu nik çox qısa və ya çox uzundur" },
+    { "key": "nickname.rename.invalid_characters", "en": "This nickname has characters that are not allowed", "az": "Bu nikdə icazə verilməyən simvollar var" },
+    { "key": "nickname.rename.invalid_separators", "en": "A nickname cannot start or end with a symbol or repeat one too often", "az": "Nik simvolla başlaya, bitə və ya simvolu çox təkrarlaya bilməz" },
+    { "key": "nickname.rename.mixed_scripts", "en": "Do not mix Latin and Cyrillic letters in one word", "az": "Bir sözdə latın və kiril hərflərini qarışdırma" },
+    { "key": "nickname.rename.digits_only", "en": "A nickname cannot be only digits", "az": "Nik yalnız rəqəmlərdən ibarət ola bilməz" },
+    { "key": "nickname.rename.taken", "en": "This nickname is already taken", "az": "Bu nik artıq tutulub" },
+    { "key": "nickname.rename.unchanged", "en": "Pick a different nickname", "az": "Başqa nik seç" },
+    { "key": "nickname.rename.not_allowed", "en": "This nickname is not allowed", "az": "Bu nikə icazə verilmir" },
+    { "key": "nickname.rename.cooldown", "en": "You can change your nickname again later", "az": "Niki bir az sonra yenidən dəyişə bilərsən" },
+    { "key": "nickname.rename.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "nickname.rename.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
   ]
 }
