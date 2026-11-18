@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Promo;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
@@ -157,6 +158,41 @@ namespace HypeDomino.Tests.EditMode
                 }
                 StringAssert.IsMatch("^[a-z0-9_]+(\\.[a-z0-9_]+)+$", key, outcome.ToString());
             }
+        }
+
+        [Test]
+        public void EveryOutcomeWithAMessageHasItsOwnKey()
+        {
+            var keys = new HashSet<string>();
+            foreach (PromoRedeemOutcome outcome in Enum.GetValues(typeof(PromoRedeemOutcome)))
+            {
+                var key = PromoRedeemKeys.Of(outcome);
+                if (key == null)
+                {
+                    continue;
+                }
+                Assert.IsTrue(keys.Add(key), outcome.ToString());
+            }
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryMessageInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            foreach (PromoRedeemOutcome outcome in Enum.GetValues(typeof(PromoRedeemOutcome)))
+            {
+                var key = PromoRedeemKeys.Of(outcome);
+                if (key == null)
+                {
+                    continue;
+                }
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
+            Assert.AreEqual("Bu kod etibarsızdır", strings.Value(PromoRedeemKeys.CodeInvalid, "az"));
+            Assert.AreEqual("Bu kodun vaxtı keçib", strings.Value(PromoRedeemKeys.Expired, "az"));
+            Assert.AreEqual("Bu kod artıq istifadə olunub", strings.Value(PromoRedeemKeys.AlreadyRedeemed, "az"));
+            Assert.AreEqual("This code has expired", strings.Value(PromoRedeemKeys.Expired, GameLanguage.English));
         }
 
         sealed class Sent
