@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using HypeDomino.Game.FriendLobby;
 using HypeDomino.Net;
+using HypeDomino.UI.Localization;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace HypeDomino.Tests.EditMode
         const ulong Nonce = 0x5EED_0000_0000_0154;
         const string Leader = "0b7c3f2e-5a41-4d8e-9c1f-2a6b8d4e7f10";
         const string Friend = "5e2d9a14-7c3b-4f60-8a1e-9d4c2b6f3a87";
+        const int DeprecatedUnknownAction = 15;
 
         sealed class FakeTransport : IFrameTransport
         {
@@ -435,6 +437,80 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.AreEqual("K7QM3X", invites.CurrentRoom);
             Assert.IsEmpty(invites.Pending);
+        }
+
+        [Test]
+        public void ARefusedCommandNamesTheTextOfItsReason()
+        {
+            var room = new FriendRoom();
+
+            room.Read(GoldenState(), Leader);
+
+            Assert.AreEqual(LobbyRefusalKeys.SeatsOpen, room.RefusalKey);
+        }
+
+        [Test]
+        public void AStateWithoutARefusalNamesNoText()
+        {
+            var room = new FriendRoom();
+
+            room.Read(FullTwoVersusTwo(), "a");
+
+            Assert.IsNull(room.RefusalKey);
+        }
+
+        [Test]
+        public void EveryReasonTheServerSendsHasItsOwnText()
+        {
+            var keys = new HashSet<string>();
+            foreach (LobbyRefusal refusal in Enum.GetValues(typeof(LobbyRefusal)))
+            {
+                var key = LobbyRefusalKeys.Of(refusal);
+                if (refusal == LobbyRefusal.Unspecified)
+                {
+                    Assert.IsNull(key);
+                    continue;
+                }
+                if ((int)refusal == DeprecatedUnknownAction)
+                {
+                    Assert.AreEqual(LobbyRefusalKeys.Unknown, key);
+                    continue;
+                }
+                Assert.IsTrue(key.StartsWith("lobby.room.refused.", StringComparison.Ordinal), refusal.ToString());
+                Assert.IsTrue(keys.Add(key), refusal.ToString());
+            }
+            Assert.AreEqual(LobbyRefusalKeys.Unknown, LobbyRefusalKeys.Of((LobbyRefusal)999));
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryRefusalInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            foreach (LobbyRefusal refusal in Enum.GetValues(typeof(LobbyRefusal)))
+            {
+                var key = LobbyRefusalKeys.Of(refusal);
+                if (key == null)
+                {
+                    continue;
+                }
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
+            Assert.AreEqual("Bu kodla otaq yoxdur", strings.Value(LobbyRefusalKeys.UnknownCode, "az"));
+            Assert.AreEqual("The room is full", strings.Value(LobbyRefusalKeys.Full, GameLanguage.English));
+        }
+
+        [Test]
+        public void NamingARefusalTextAllocatesNothing()
+        {
+            var room = new FriendRoom();
+            room.Read(GoldenState(), Leader);
+            string key = null;
+            TestDelegate name = () => key = room.RefusalKey;
+            name();
+
+            Assert.That(name, Allocates.Nothing);
+            Assert.AreEqual(LobbyRefusalKeys.SeatsOpen, key);
         }
     }
 }
