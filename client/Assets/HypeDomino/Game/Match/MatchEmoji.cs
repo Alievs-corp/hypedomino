@@ -15,18 +15,60 @@ namespace HypeDomino.Game.Match
         readonly EmojiWheel wheel;
         readonly SeatMessages messages;
         readonly GameStrings strings;
+        readonly EmojiArtShelf shelf;
+        readonly Func<long> clockMs;
+        readonly Action<MatchSnapshot> onView;
+        readonly Action<EmojiShown> onEmoji;
+        readonly Action<QuickMessageShown> onMessage;
         readonly EmojiIntent intent = new();
         readonly QuickMessageIntent messageIntent = new();
         readonly bool[] muted = new bool[(int)Seat.Y + 1];
+        Session session;
         Seat local;
         int viewer;
         int seatCount;
 
-        public MatchEmoji(EmojiWheel wheel, SeatMessages messages, GameStrings strings)
+        public MatchEmoji(EmojiWheel wheel, SeatMessages messages, GameStrings strings, EmojiArtShelf shelf, Func<long> clockMs)
         {
-            this.wheel = wheel;
-            this.messages = messages;
-            this.strings = strings;
+            this.wheel = wheel ?? throw new ArgumentNullException(nameof(wheel));
+            this.messages = messages ?? throw new ArgumentNullException(nameof(messages));
+            this.strings = strings ?? throw new ArgumentNullException(nameof(strings));
+            this.shelf = shelf ?? throw new ArgumentNullException(nameof(shelf));
+            this.clockMs = clockMs ?? throw new ArgumentNullException(nameof(clockMs));
+            onView = Show;
+            onEmoji = shown => Place(shown);
+            onMessage = shown => TryShowMessage(shown, this.clockMs());
+        }
+
+        public bool Begun { get; private set; }
+
+        public void Bind(Session source)
+        {
+            Unbind();
+            session = source ?? throw new ArgumentNullException(nameof(source));
+            session.ViewReceived += onView;
+            session.EmojiReceived += onEmoji;
+            session.QuickMessageReceived += onMessage;
+        }
+
+        public void Unbind()
+        {
+            if (session == null) return;
+            session.ViewReceived -= onView;
+            session.EmojiReceived -= onEmoji;
+            session.QuickMessageReceived -= onMessage;
+            session = null;
+            End();
+        }
+
+        public void Show(MatchSnapshot view)
+        {
+            if (view.State == MatchState.Finished)
+            {
+                if (Begun) End();
+                return;
+            }
+            if (!Begun) Begin(view.Seat, view.Mode);
         }
 
         public void Begin(Seat localSeat, Mode mode)
@@ -36,9 +78,17 @@ namespace HypeDomino.Game.Match
             viewer = seatCount == 0 ? 0 : SeatOrder.Viewer(localSeat, mode);
             Array.Clear(muted, 0, muted.Length);
             messages.Clear();
+            Begun = seatCount != 0;
+            if (!Begun) return;
+            for (var slot = 0; slot < wheel.Count; slot++) shelf.Prefetch(wheel.Slot(slot));
         }
 
-        public void End() => Array.Clear(muted, 0, muted.Length);
+        public void End()
+        {
+            Begun = false;
+            Array.Clear(muted, 0, muted.Length);
+            shelf.Clear();
+        }
 
         public bool TrySend(Session session, int slot, long nowMs)
         {
@@ -56,6 +106,8 @@ namespace HypeDomino.Game.Match
             session.Send(Envelope.PayloadOneofCase.QuickMessageIntent, messageIntent);
             return true;
         }
+
+        public bool Place(EmojiShown shown) => TryPlace(shown.Seat, clockMs(), out var side) && shelf.Show(side, shown.ItemId);
 
         public bool TryPlace(Seat sender, long nowMs, out TableSide side)
         {
