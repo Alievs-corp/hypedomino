@@ -37,8 +37,10 @@ namespace HypeDomino.UI.Emoji
 
         public void Prefetch(IReadOnlyList<string> itemIds)
         {
-            for (var at = 0; at < itemIds.Count; at++) TryShelve(itemIds[at], out _);
+            for (var at = 0; at < itemIds.Count; at++) Prefetch(itemIds[at]);
         }
+
+        public void Prefetch(string itemId) => TryShelve(itemId, out _);
 
         public bool Show(TableSide side, string itemId)
         {

@@ -65,6 +65,17 @@
     { "key": "mission.reroll.not_assigned", "en": "This mission can no longer be changed", "az": "Bu missiyanı artıq dəyişmək olmaz" },
     { "key": "mission.reroll.no_replacement", "en": "No other mission to swap in", "az": "Dəyişmək üçün başqa missiya yoxdur" },
     { "key": "mission.reroll.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
-    { "key": "mission.reroll.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
+    { "key": "mission.reroll.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "nickname.rename.invalid_length", "en": "This nickname is too short or too long", "az": "Bu nik çox qısa və ya çox uzundur" },
+    { "key": "nickname.rename.invalid_characters", "en": "This nickname has characters that are not allowed", "az": "Bu nikdə icazə verilməyən simvollar var" },
+    { "key": "nickname.rename.invalid_separators", "en": "A nickname cannot start or end with a symbol or repeat one too often", "az": "Nik simvolla başlaya, bitə və ya simvolu çox təkrarlaya bilməz" },
+    { "key": "nickname.rename.mixed_scripts", "en": "Do not mix Latin and Cyrillic letters in one word", "az": "Bir sözdə latın və kiril hərflərini qarışdırma" },
+    { "key": "nickname.rename.digits_only", "en": "A nickname cannot be only digits", "az": "Nik yalnız rəqəmlərdən ibarət ola bilməz" },
+    { "key": "nickname.rename.taken", "en": "This nickname is already taken", "az": "Bu nik artıq tutulub" },
+    { "key": "nickname.rename.unchanged", "en": "Pick a different nickname", "az": "Başqa nik seç" },
+    { "key": "nickname.rename.not_allowed", "en": "This nickname is not allowed", "az": "Bu nikə icazə verilmir" },
+    { "key": "nickname.rename.cooldown", "en": "You can change your nickname again later", "az": "Niki bir az sonra yenidən dəyişə bilərsən" },
+    { "key": "nickname.rename.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "nickname.rename.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
   ]
 }
