@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
@@ -100,7 +101,10 @@ func (h *Handler) missionDomain(rollback bool) configDomain {
 			if err != nil {
 				return nil, err
 			}
-			return stamped, missionSourcesListed(ctx, tx, catalog, medals)
+			if err := missionSourcesListed(ctx, tx, catalog, medals); err != nil {
+				return nil, err
+			}
+			return stamped, h.missionsNamedInEnglish(ctx, tx, catalog)
 		},
 		accept: func(_, after []byte) error {
 			_, err := mission.Parse(after)
@@ -132,15 +136,10 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 					return nil, err
 				}
 			}
-			_, raw, err := latestSnapshot(ctx, tx, mission.Domain)
-			if err != nil || raw == nil {
-				return stamped, err
-			}
-			missions, err := mission.Parse(raw)
-			if err != nil {
+			if err := medalSourcesKeptForMissions(ctx, tx, medals); err != nil {
 				return nil, err
 			}
-			return stamped, missionSourcesListed(ctx, tx, missions, medals)
+			return stamped, h.medalsNamedInEnglish(ctx, tx, medals)
 		},
 		accept: func(_, after []byte) error {
 			_, err := medal.Parse(after)
@@ -149,22 +148,62 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 	}
 }
 
+func medalSourcesKeptForMissions(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
+	_, raw, err := latestSnapshot(ctx, tx, mission.Domain)
+	if err != nil || raw == nil {
+		return err
+	}
+	missions, err := mission.Parse(raw)
+	if err != nil {
+		return err
+	}
+	return missionSourcesListed(ctx, tx, missions, medals)
+}
+
+func (h *Handler) missionsNamedInEnglish(ctx context.Context, tx pgx.Tx, missions *mission.Catalog) error {
+	nameKeys := make([]string, 0, len(missions.Missions))
+	for _, m := range missions.Missions {
+		nameKeys = append(nameKeys, m.NameKey)
+	}
+	unnamed, err := h.strings.In(tx).Unapproved(ctx, nameKeys, gamestrings.English)
+	if err != nil || len(unnamed) == 0 {
+		return err
+	}
+	return fmt.Errorf("%w: no approved en name for %s", mission.ErrInvalidCatalog, strings.Join(unnamed, ", "))
+}
+
+func (h *Handler) medalsNamedInEnglish(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
+	nameKeys := make([]string, 0, len(medals.Medals))
+	for _, m := range medals.Medals {
+		nameKeys = append(nameKeys, m.NameKey)
+	}
+	unnamed, err := h.strings.In(tx).Unapproved(ctx, nameKeys, gamestrings.English)
+	if err != nil || len(unnamed) == 0 {
+		return err
+	}
+	return fmt.Errorf("%w: no approved en name for %s", medal.ErrInvalidCatalog, strings.Join(unnamed, ", "))
+}
+
 func medalArtPassed(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
 	ids := make([]string, 0, len(medals.Medals))
 	for _, m := range medals.Medals {
 		ids = append(ids, m.ID)
 	}
-	rows, err := tx.Query(ctx, `select listed.id from unnest($1::text[]) as listed(id)
-		where not exists (select 1 from cosmetic_assets art where art.item_id = listed.id and art.slot = $2 and art.status = $3)
-		order by listed.id`, ids, assetSlotStatic, assetPassed)
-	if err != nil {
-		return err
-	}
-	missing, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	missing, err := withoutPassedStatic(ctx, tx, ids)
 	if err != nil || len(missing) == 0 {
 		return err
 	}
 	return fmt.Errorf("%w: %s", errMedalArtMissing, strings.Join(missing, ", "))
+}
+
+func withoutPassedStatic(ctx context.Context, tx pgx.Tx, ids []string) ([]string, error) {
+	rows, err := tx.Query(ctx, `select listed.id from unnest($1::text[]) as listed(id)
+		where not exists (select 1 from cosmetic_assets art where art.item_id = listed.id and art.slot = $2 and art.status = $3)
+		order by listed.id`, ids, assetSlotStatic, assetPassed)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
 func publishedMedals(ctx context.Context, tx pgx.Tx) (*medal.Catalog, error) {

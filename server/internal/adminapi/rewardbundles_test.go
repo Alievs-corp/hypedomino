@@ -35,6 +35,7 @@ func grantingMission(id string, coins int, cosmetics ...any) map[string]any {
 func publishMissions(t *testing.T, a *api, token string, missions ...any) {
 	t.Helper()
 	catalog := map[string]any{"dailySlots": []any{}, "weeklySlots": []any{}, "missions": missions}
+	a.nameEntries(gamestrings.Approved, catalog, "missions")
 	status, body := a.call("PUT", "/admin/config/missions", token, map[string]any{"catalog": catalog, "reason": "grants"})
 	expect(t, status, body, http.StatusOK, "")
 }
@@ -108,6 +109,7 @@ func TestRewardBundlesTrackUsesValueAndDifferingContent(t *testing.T) {
 	}
 	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), fox)}
 	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+	a.passCosmeticArt(fox)
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox"})
 	expect(t, status, body, http.StatusOK, "")
 
@@ -190,6 +192,7 @@ func publishSharedBundle(t *testing.T, a *api, content, liveOps string) {
 	comet["id"], comet["sources"] = "avatar.comet_fox", []any{map[string]any{"type": "shop", "ref": "offer.avatar_comet_fox"}}
 	items := append(append([]any{}, body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)...), fox, owl, comet)
 	a.nameItems(gamestrings.Approved, items...)
+	a.passCosmeticArt(fox, owl, comet)
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": map[string]any{"items": items}, "reason": "fox"})
 	expect(t, status, body, http.StatusOK, "")
 	publishMissions(t, a, liveOps, grantingMission("mission.first", 0, "avatar.fox"), grantingMission("mission.second", 0, "avatar.fox"))

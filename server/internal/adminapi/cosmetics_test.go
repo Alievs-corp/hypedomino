@@ -3,6 +3,7 @@ package adminapi_test
 import (
 	"context"
 	"encoding/json"
+	"image"
 	"net/http"
 	"strings"
 	"testing"
@@ -41,6 +42,19 @@ func (a *api) nameItems(status gamestrings.Status, items ...any) {
 	}
 }
 
+func (a *api) passCosmeticArt(items ...any) {
+	a.t.Helper()
+	for _, item := range items {
+		id := item.(map[string]any)["id"].(string)
+		address := "cosmetic/" + strings.Replace(id, ".", "/", 1) + "/static"
+		_, err := a.pool.Exec(context.Background(), `insert into cosmetic_assets (id, item_id, slot, address, object_key, status, uploaded_by, created_at)
+			values (gen_random_uuid(), $1, 'static', $2, $2 || '/' || gen_random_uuid() || '.png', 'passed', 'art', $3)`, id, address, start)
+		if err != nil {
+			a.t.Fatal(err)
+		}
+	}
+}
+
 func TestCosmeticsPublishNeedsAnApprovedEnglishName(t *testing.T) {
 	a := newAPI(t)
 	content := a.signIn("ayla")
@@ -48,6 +62,7 @@ func TestCosmeticsPublishNeedsAnApprovedEnglishName(t *testing.T) {
 	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)["items"].([]any)
 	catalog := map[string]any{"items": append(append([]any{}, builtin...), foxAvatar())}
 	a.nameItems(gamestrings.Approved, builtin...)
+	a.passCosmeticArt(foxAvatar())
 
 	steps := []struct {
 		name   string
@@ -89,6 +104,7 @@ func TestCosmeticsPublishStampsItemsAndKeepsThemForever(t *testing.T) {
 
 	first := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
 	a.nameItems(gamestrings.Approved, first["items"].([]any)...)
+	a.passCosmeticArt(foxAvatar())
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": first, "reason": "fox avatar"})
 	expect(t, status, body, http.StatusOK, "")
 	published := body["catalog"].(map[string]any)
@@ -179,6 +195,7 @@ func TestEveryCosmeticTypeIsCreatedEditedAndPublished(t *testing.T) {
 	}
 	catalog := map[string]any{"items": append(append([]any{}, builtin...), created...)}
 	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+	a.passCosmeticArt(created...)
 
 	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "one item of every type"})
 	expect(t, status, body, http.StatusOK, "")
@@ -243,7 +260,7 @@ func (a *api) uploadedBy(email, itemID string) {
 		a.t.Fatal(err)
 	}
 	_, err = a.pool.Exec(context.Background(), `insert into cosmetic_assets (id, item_id, slot, address, object_key, status, uploaded_by, created_at)
-		values (gen_random_uuid(), $1, 'static', $2, $2 || '/x.png', 'awaiting_file', $3, $4)`, itemID, "cosmetic/"+itemID+"/static", account.ID, start)
+		values (gen_random_uuid(), $1, 'static', $2, $2 || '/x.png', 'passed', $3, $4)`, itemID, "cosmetic/"+itemID+"/static", account.ID, start)
 	if err != nil {
 		a.t.Fatal(err)
 	}
@@ -274,6 +291,7 @@ func (a *api) publishFox(token string) (int, map[string]any) {
 	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
 	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
 	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+	a.passCosmeticArt(foxAvatar())
 	return a.call("PUT", "/admin/config/cosmetics", token, map[string]any{"catalog": catalog, "reason": "fox avatar"})
 }
 
@@ -341,6 +359,7 @@ func TestLiveOpsSwitchesOffAnItemForAnIncident(t *testing.T) {
 	builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
 	catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
 	a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+	a.passCosmeticArt(foxAvatar())
 	status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox avatar"})
 	expect(t, status, body, http.StatusOK, "")
 	a.nameItems(gamestrings.Draft, foxAvatar())
@@ -368,4 +387,67 @@ func TestLiveOpsSwitchesOffAnItemForAnIncident(t *testing.T) {
 	a.now = start.Add(15 * time.Minute)
 	status, body = a.call("POST", path, liveOps, incident)
 	expect(t, status, body, http.StatusForbidden, "step_up_required")
+}
+
+func TestANewItemIsPublishedOnlyOnceItsStaticPassed(t *testing.T) {
+	cases := []struct {
+		name    string
+		prepare func(t *testing.T, a *api, store *memoryStore, token string)
+		status  int
+		refusal string
+	}{
+		{"no upload", func(*testing.T, *api, *memoryStore, string) {}, http.StatusConflict, "cosmetic_art_missing"},
+		{"awaiting its file", func(t *testing.T, a *api, _ *memoryStore, token string) { startUpload(t, a, token) }, http.StatusConflict, "cosmetic_art_missing"},
+		{"rejected", func(t *testing.T, a *api, store *memoryStore, token string) {
+			checkFoxStatic(t, a, store, token, image.NewGray(image.Rect(0, 0, 256, 256)))
+		}, http.StatusConflict, "cosmetic_art_missing"},
+		{"an upload of another item", func(t *testing.T, a *api, store *memoryStore, token string) {
+			status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": "avatar.owl", "slot": "static"})
+			expect(t, status, body, http.StatusOK, "")
+			store.upload(body["upload_url"].(string), encodedPNG(t, image.NewNRGBA(image.Rect(0, 0, 256, 256))))
+			status, body = a.call("POST", "/admin/assets/"+body["asset"].(map[string]any)["id"].(string)+"/check", token, nil)
+			expect(t, status, body, http.StatusOK, "")
+		}, http.StatusConflict, "cosmetic_art_missing"},
+		{"passed", func(t *testing.T, a *api, store *memoryStore, token string) {
+			checkFoxStatic(t, a, store, token, image.NewNRGBA(image.Rect(0, 0, 256, 256)))
+		}, http.StatusOK, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a, store := newAssetAPI(t)
+			content, root := a.signIn("ayla"), a.signIn("root")
+			c.prepare(t, a, store, root)
+			_, body := a.call("GET", "/admin/config/cosmetics", content, nil)
+			builtin := body["rules"].(map[string]any)["builtin"].(map[string]any)
+			catalog := map[string]any{"items": append(append([]any{}, builtin["items"].([]any)...), foxAvatar())}
+			a.nameItems(gamestrings.Approved, catalog["items"].([]any)...)
+			status, body := a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": catalog, "reason": "fox avatar"})
+			expect(t, status, body, c.status, c.refusal)
+			if detail, _ := body["detail"].(string); c.status != http.StatusOK && !strings.HasSuffix(detail, ": avatar.fox") {
+				t.Fatalf("detail %v", body)
+			}
+		})
+	}
+}
+
+func TestAPublishedItemIsEditedWithoutANewUpload(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	status, body := a.publishFox(content)
+	expect(t, status, body, http.StatusOK, "")
+	if _, err := a.pool.Exec(context.Background(), `delete from cosmetic_assets where item_id = 'avatar.fox'`); err != nil {
+		t.Fatal(err)
+	}
+	published := body["catalog"].(map[string]any)
+	cosmeticItem(published, "avatar.fox")["rarityId"] = "epic"
+	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": published, "reason": "rarer fox"})
+	expect(t, status, body, http.StatusOK, "")
+}
+
+func checkFoxStatic(t *testing.T, a *api, store *memoryStore, token string, picture image.Image) {
+	t.Helper()
+	id, uploadURL := startUpload(t, a, token)
+	store.upload(uploadURL, encodedPNG(t, picture))
+	status, body := a.call("POST", "/admin/assets/"+id+"/check", token, nil)
+	expect(t, status, body, http.StatusOK, "")
 }
