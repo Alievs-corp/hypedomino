@@ -14,6 +14,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminapi"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -53,6 +54,44 @@ func (a *api) publishShopItems() {
 	a.publishItems(map[string]map[string]any{"avatar.comet_fox": {"sources": sources}})
 }
 
+func (a *api) nameOffers() {
+	a.t.Helper()
+	a.nameKeys(gamestrings.Approved, "shop.offer.avatar_comet_fox", "shop.offer.weekend_pack", "shop.offer.chest_avatar")
+}
+
+func TestAnOfferNeedsAnApprovedEnglishNameToBePublishedOrRestored(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	a.publishShopItems()
+	a.nameKeys(gamestrings.Approved, "shop.offer.weekend_pack")
+	weekend := catalog(cometFox(), weekendPack(start.Add(time.Hour), start.Add(2*time.Hour)))
+
+	for _, step := range []struct {
+		name   string
+		status gamestrings.Status
+	}{{"no value", ""}, {"a draft value", gamestrings.Draft}} {
+		if step.status != "" {
+			a.nameKeys(step.status, "shop.offer.avatar_comet_fox")
+		}
+		status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": weekend, "reason": "weekend"})
+		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.avatar_comet_fox") {
+			t.Fatalf("%s: %d %v", step.name, status, body)
+		}
+	}
+	a.nameKeys(gamestrings.Approved, "shop.offer.avatar_comet_fox")
+	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": weekend, "reason": "weekend"})
+	expect(t, status, body, http.StatusOK, "")
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": weekend, "reason": "again"})
+	expect(t, status, body, http.StatusOK, "")
+
+	a.nameKeys(gamestrings.Draft, "shop.offer.weekend_pack")
+	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "restore"})
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack") {
+		t.Fatalf("rollback %d %v", status, body)
+	}
+}
+
 func (a *api) featuredAt(at time.Time) []string {
 	a.t.Helper()
 	watcher := snapshot.New(a.pool, shop.Domain, shop.Parser(shop.DefaultConfig()), slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -79,6 +118,7 @@ func TestAScheduledOfferOpensAndClosesOnServerTimeAndCanBeRolledBack(t *testing.
 	a.create("leyla@example.com", rbac.LiveOps)
 	liveOps := a.signIn("leyla")
 	opens, closes := start.Add(time.Hour), start.Add(3*time.Hour)
+	a.nameOffers()
 
 	status, body := a.call("GET", "/admin/config/shop", liveOps, nil)
 	if status != http.StatusOK || body["config_version"] != float64(0) || body["catalog"] != nil {
@@ -198,6 +238,7 @@ func TestAChestPoolMustHoldPublishedCommonOrRareItemsOfTheChest(t *testing.T) {
 	liveOps := a.signIn("leyla")
 	withChest := catalog(cometFox(), avatarChest())
 	withChest["chests"] = map[string]any{"rarityPercent": map[string]int{"common": 85, "rare": 15}, "rarePityCount": 10}
+	a.nameOffers()
 
 	status, body := a.call("GET", "/admin/cosmetics/items", liveOps, nil)
 	if status != http.StatusOK || len(body["items"].([]any)) != 5 {
@@ -288,6 +329,7 @@ func TestPublishRefusesAReferencePriceThatIsNotTheLowestEarlierPrice(t *testing.
 	a.create("leyla@example.com", rbac.LiveOps)
 	liveOps := a.signIn("leyla")
 	a.publishShopItems()
+	a.nameOffers()
 	discounted := func(price, reference int) map[string]any {
 		offer := cometFox()
 		offer["priceCoins"], offer["referencePriceCoins"] = price, reference
