@@ -130,6 +130,16 @@ func (s *Store) Value(ctx context.Context, key string, language Language) (Value
 	return value, err
 }
 
+func (s *Store) Unapproved(ctx context.Context, keys []string, language Language) ([]string, error) {
+	rows, err := s.db.Query(ctx, `select listed.key from unnest($1::text[]) with ordinality listed(key, place)
+		where not exists (select 1 from game_string_values v where v.key = listed.key and v.language = $2 and v.status = $3)
+		order by listed.place`, keys, language, Approved)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
+}
+
 func (s *Store) Entry(ctx context.Context, key string) (Entry, error) {
 	rows, err := s.db.Query(ctx, `select `+entryColumns+` from game_strings where key = $1`, key)
 	if err != nil {

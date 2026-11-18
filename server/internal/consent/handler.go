@@ -10,7 +10,10 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
-const MaxBodyBytes = 4 * 1024
+const (
+	MaxBodyBytes    = 4 * 1024
+	FirstLaunchPath = "/consents/first-launch"
+)
 
 type Handler struct {
 	verifier token.Verifier
@@ -30,6 +33,7 @@ func NewHandler(verifier token.Verifier, store *Store, logger *slog.Logger, now 
 		return h.store.Choices(r.Context(), account)
 	}))
 	h.mux.HandleFunc("PUT /consents", h.authed(h.save))
+	h.mux.HandleFunc("POST "+FirstLaunchPath, h.authed(h.saveFirstLaunch))
 	return h
 }
 
@@ -43,6 +47,14 @@ func (h *Handler) save(r *http.Request, account string) (Choices, error) {
 		return Choices{}, ErrMalformed
 	}
 	return h.store.Save(r.Context(), account, change, h.now())
+}
+
+func (h *Handler) saveFirstLaunch(r *http.Request, account string) (Choices, error) {
+	var first FirstLaunch
+	if err := json.NewDecoder(r.Body).Decode(&first); err != nil || !first.Known() {
+		return Choices{}, ErrMalformed
+	}
+	return h.store.SaveFirstLaunch(r.Context(), account, first, h.now())
 }
 
 func (h *Handler) authed(serve func(r *http.Request, account string) (Choices, error)) http.HandlerFunc {

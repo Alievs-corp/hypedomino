@@ -35,6 +35,7 @@ func grantingMission(id string, coins int, cosmetics ...any) map[string]any {
 func publishMissions(t *testing.T, a *api, token string, missions ...any) {
 	t.Helper()
 	catalog := map[string]any{"dailySlots": []any{}, "weeklySlots": []any{}, "missions": missions}
+	a.nameEntries(gamestrings.Approved, catalog, "missions")
 	status, body := a.call("PUT", "/admin/config/missions", token, map[string]any{"catalog": catalog, "reason": "grants"})
 	expect(t, status, body, http.StatusOK, "")
 }
