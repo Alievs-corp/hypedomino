@@ -103,7 +103,7 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 - **Reward:** periodic missions pay their slot's reward from the catalog. An achievement or event bundle grants coins, cosmetic ids and medal ids, and an event bundle also pass XP. Editing a published bundle raises its revision once; restoring the published content restores its revision.
 - **Server fields:** `nameKey` and the mission revision are shown, never typed; the API sets them on publish.
 - **Checks:** a target, slot or weight below 1, a slot outside the type's slots, a bundle granting nothing or a malformed event id marks the mission and blocks the publish. Everything else, such as a granted medal or cosmetic that does not list the mission as a source, is refused by the API with its reason.
-- **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired.
+- **Publish** (`PUT /admin/config/missions`) takes a reason and is shown only to roles with publish on missions. A published mission is never removed; set it to retired. It is refused while any mission name key (`mission.<slug>.name`) has no approved `en` value on `/strings`.
 - **History and rollback:** as for shop offers, on `/admin/config/missions/history` and `/admin/config/missions/rollback`. Each version lists what it changed against the version before: catalog settings such as the slot rewards, and each mission it added or each field of a mission it changed, as `field before → after` (`bundle.coins 0 → 50`). The oldest listed version shows its missions as added.
 
 ## Assets
@@ -124,7 +124,7 @@ The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its orig
 - **Fields:** rarity and availability (live, retired, disabled) come from the server (`rules` in the response). Sources are a list of a type (mission or rank reward) and an id; a medal needs at least one, every source needs an id, and a source listed twice blocks the publish.
 - **Server fields:** `nameKey`, `descriptionKey`, `staticAddress` and the revision are shown, never typed; the API sets them on publish.
 - **Order with missions:** a medal must list every published mission that grants it, and the API refuses a medal publish that drops one. Publish a new medal listing its mission first, then the mission that grants it.
-- **Publish** (`PUT /admin/config/medals`) takes a reason and is shown only to roles with publish on medals. A published medal is never removed; retire or disable it.
+- **Publish** (`PUT /admin/config/medals`) takes a reason and is shown only to roles with publish on medals. A published medal is never removed; retire or disable it. It is refused while any medal name key (`medal.<slug>.name`) has no approved `en` value on `/strings`.
 - **History and rollback:** as for shop offers, on `/admin/config/medals/history` and `/admin/config/medals/rollback`. Each version lists what it changed against the version before, like the missions history: the showcase slots, and each medal it added or each field of a medal it changed.
 
 ## Game strings

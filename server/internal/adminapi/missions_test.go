@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
@@ -66,10 +67,81 @@ func (a *api) passMedalArt(catalog map[string]any) {
 	}
 }
 
+func (a *api) nameEntries(status gamestrings.Status, catalog map[string]any, list string) {
+	a.t.Helper()
+	store := gamestrings.NewStore(a.pool)
+	for _, entry := range catalog[list].([]any) {
+		key := entry.(map[string]any)["id"].(string) + ".name"
+		if err := store.SaveEntry(context.Background(), gamestrings.Entry{Key: key, Note: "Name.", MaxLength: 40}, "content-1", start); err != nil {
+			a.t.Fatal(err)
+		}
+		if err := store.SetValue(context.Background(), key, gamestrings.English, gamestrings.Value{Text: "Name", Status: status}, "content-1", start); err != nil {
+			a.t.Fatal(err)
+		}
+	}
+}
+
+func (a *api) nameExamples() {
+	a.t.Helper()
+	a.nameEntries(gamestrings.Approved, exampleCatalog(a.t, "missions"), "missions")
+	a.nameEntries(gamestrings.Approved, exampleCatalog(a.t, "medals"), "medals")
+}
+
+func TestMissionsAndMedalsNeedAnApprovedEnglishName(t *testing.T) {
+	a := newAPI(t)
+	a.publishExampleCatalog()
+	medals, missions := exampleCatalog(t, "medals"), exampleCatalog(t, "missions")
+	a.passMedalArt(medals)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps, content := a.signIn("leyla"), a.signIn("ayla")
+	a.nameEntries(gamestrings.Approved, without(exampleCatalog(t, "medals"), "medals", "medal.wins_50"), "medals")
+	a.nameEntries(gamestrings.Approved, without(exampleCatalog(t, "missions"), "missions", "mission.win_50"), "missions")
+	wins50 := map[string]any{"medals": []any{listed(medals, "medals", "medal.wins_50")}}
+	win50 := map[string]any{"missions": []any{listed(missions, "missions", "mission.win_50")}}
+
+	steps := []struct {
+		name   string
+		status gamestrings.Status
+		want   int
+	}{
+		{"no value", "", http.StatusBadRequest},
+		{"a draft value", gamestrings.Draft, http.StatusBadRequest},
+		{"an approved value", gamestrings.Approved, http.StatusOK},
+	}
+	for _, step := range steps {
+		if step.status != "" {
+			a.nameEntries(step.status, wins50, "medals")
+		}
+		status, body := a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals, "reason": "launch medals"})
+		if step.want == http.StatusOK {
+			expect(t, status, body, http.StatusOK, "")
+			continue
+		}
+		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for medal.wins_50.name") {
+			t.Errorf("medal %s: %d %v", step.name, status, body)
+		}
+	}
+	for _, step := range steps {
+		if step.status != "" {
+			a.nameEntries(step.status, win50, "missions")
+		}
+		status, body := a.call("PUT", "/admin/config/missions", liveOps, map[string]any{"catalog": missions, "reason": "launch missions"})
+		if step.want == http.StatusOK {
+			expect(t, status, body, http.StatusOK, "")
+			continue
+		}
+		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for mission.win_50.name") {
+			t.Errorf("mission %s: %d %v", step.name, status, body)
+		}
+	}
+}
+
 func TestMissionsArePublishedWithServerStampsAndNeverDropped(t *testing.T) {
 	a := newAPI(t)
 	a.publishExampleCatalog()
 	a.passMedalArt(exampleCatalog(t, "medals"))
+	a.nameExamples()
+	a.nameEntries(gamestrings.Approved, map[string]any{"missions": []any{map[string]any{"id": "mission.hands_3"}}}, "missions")
 	a.create("leyla@example.com", rbac.LiveOps)
 	liveOps, content := a.signIn("leyla"), a.signIn("ayla")
 
@@ -165,6 +237,7 @@ func TestAMedalKeepsTheSourcesOfPublishedMissionsAndIsNeverDropped(t *testing.T)
 	a := newAPI(t)
 	a.publishExampleCatalog()
 	a.passMedalArt(exampleCatalog(t, "medals"))
+	a.nameExamples()
 	a.create("leyla@example.com", rbac.LiveOps)
 	a.create("orxan@example.com", rbac.Support)
 	liveOps, content, support := a.signIn("leyla"), a.signIn("ayla"), a.signIn("orxan")
@@ -231,6 +304,7 @@ func TestAMedalIsPublishedOnlyOnceItsStaticPassed(t *testing.T) {
 			a, store := newAssetAPI(t)
 			a.publishExampleCatalog()
 			a.passMedalArt(without(exampleCatalog(t, "medals"), "medals", "medal.wins_50"))
+			a.nameExamples()
 			token := a.signIn("ayla")
 			c.prepare(t, a, store, token)
 			status, body := a.call("PUT", "/admin/config/medals", token, map[string]any{"catalog": exampleCatalog(t, "medals"), "reason": "launch medals"})
@@ -247,6 +321,7 @@ func TestARollbackNeedsTheArtOfEveryMedalItRestores(t *testing.T) {
 	a.publishExampleCatalog()
 	medals := exampleCatalog(t, "medals")
 	a.passMedalArt(medals)
+	a.nameExamples()
 	content := a.signIn("ayla")
 	status, body := a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals, "reason": "launch medals"})
 	expect(t, status, body, http.StatusOK, "")
