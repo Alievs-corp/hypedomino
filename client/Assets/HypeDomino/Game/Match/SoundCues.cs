@@ -21,6 +21,7 @@ namespace HypeDomino.Game.Match
         Combo3 = 512,
         Combo4 = 1024,
         Combo5 = 2048,
+        TurnWarning = 4096,
     }
 
     public sealed class SoundCues
@@ -74,6 +75,7 @@ namespace HypeDomino.Game.Match
             PlayIf(sounds, MatchSounds.TileDraw, Sound.TileDraw, player);
             PlayIf(sounds, MatchSounds.Pass, Sound.Pass, player);
             PlayIf(sounds, MatchSounds.Score, Sound.Score, player);
+            PlayIf(sounds, MatchSounds.TurnWarning, Sound.TurnWarning, player);
             for (var step = 0; step < ComboSteps; step++)
                 PlayIf(sounds, (MatchSounds)((int)MatchSounds.Combo1 << step), Sound.Combo1 + step, player);
         }

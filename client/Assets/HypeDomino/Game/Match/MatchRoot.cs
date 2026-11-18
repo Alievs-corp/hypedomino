@@ -10,7 +10,7 @@ namespace HypeDomino.Game.Match
 
         public MatchRoot(IMatchTable table, IMatchHud hud, ILoadingScreen loadingScreen, CosmeticArtCache<Sprite> stills, ActiveCosmeticManifest manifest)
         {
-            Screen = new MatchScreen(table, hud);
+            Screen = new MatchScreen(table, hud, AudioBoot.PlayMatch);
             Loading = new MatchLoading(loadingScreen, new MatchPrefetch(stills), manifest);
         }
 
