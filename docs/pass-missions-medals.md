@@ -201,6 +201,7 @@ Each slot has a fixed reward; every mission in the slot's pool pays it, so selec
 - Assignment: at the first moment the server needs the player's missions in a period (session start or match end), it draws one live mission per slot by weight with the server's cryptographically secure random source, avoiding the mission the slot had in the previous period when the pool has another. The draw is stored; it happens once per player and period.
 - Expiry: at the end of the period unfinished missions and their progress end. Completed missions were already granted (PM-3).
 - Reroll: `DailyMissionRerolls` (1) per economy day and `WeeklyMissionRerolls` (1) per week, free, by intent. It replaces one uncompleted mission with another live mission of the same slot that the player has not had in this period; progress on the replaced mission is lost. A reroll is rejected when the slot has no such mission. Rerolls are never sold and do not accumulate.
+- Implemented reroll intent: the server's `POST /missions/reroll` takes `{"mission"}` and answers the new board, or `409` with `mission.reroll_used`, `mission.not_assigned` or `mission.no_replacement`. The client (`Game/Missions/MissionReroller`, #128) sends it only for a card the board offers to reroll and shows the board the server answers with; it never picks the replacement or counts rerolls itself.
 - Grant key: `mission:<missionId>:<period>`, the period being the economy day (`2026-11-03`) or ISO week (`2026-W45`) at 00:00 UTC, the same for every player (`docs/economy.md` 2, #131, #208).
 
 ### 4.5 Achievements
