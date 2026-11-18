@@ -41,6 +41,7 @@ import {
 } from "@/shop/catalog";
 import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult } from "./actions";
 import { OfferTerms } from "./OfferTerms";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
   coins: "currency.coin",
@@ -122,6 +123,7 @@ export function ShopEditor({
             {result.ok ? `${t("shop.published")}: ${result.version}` : `${t("shop.refused")}: ${result.error} ${result.detail}`}
           </p>
         )}
+        {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
       </section>
     </div>
   );

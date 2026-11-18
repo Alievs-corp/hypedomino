@@ -262,6 +262,7 @@ export const en = {
   "strings.saved": "Saved",
   "strings.edit": "Edit",
   "strings.refused": "Refused",
+  "strings.unnamed": "Approve an en value for these name keys on Game strings, then publish again:",
   "strings.status.missing": "Missing",
   "strings.status.draft": "Draft",
   "strings.status.approved": "Approved",
