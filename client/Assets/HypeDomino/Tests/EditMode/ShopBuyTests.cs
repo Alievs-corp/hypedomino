@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Shop;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using HypeDomino.UI.Shop;
 using NUnit.Framework;
 using UnityEngine;
@@ -127,6 +128,36 @@ namespace HypeDomino.Tests.EditMode
                 }
                 StringAssert.IsMatch("^[a-z0-9_]+(\\.[a-z0-9_]+)+$", key, outcome.ToString());
             }
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryShopKeyInAzerbaijaniAndEnglish()
+        {
+            var keys = new HashSet<string>();
+            foreach (ShopBuyOutcome outcome in Enum.GetValues(typeof(ShopBuyOutcome)))
+            {
+                AddShown(keys, ShopBuyKeys.Of(outcome));
+            }
+            foreach (ShopLoadOutcome outcome in Enum.GetValues(typeof(ShopLoadOutcome)))
+            {
+                AddShown(keys, ShopLoadKeys.Of(outcome));
+            }
+            foreach (var section in new[] { "featured", "daily_rotation", "weekly_rotation", "event", "chests", "pass", "crystals" })
+            {
+                AddShown(keys, ShopSectionKeys.Title(section));
+            }
+            Assert.AreEqual(20, keys.Count);
+            var strings = BuiltinStrings.Load();
+            foreach (var key in keys)
+            {
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
+        }
+
+        static void AddShown(HashSet<string> keys, string key)
+        {
+            if (key != null) keys.Add(key);
         }
 
         sealed class Sent

@@ -43,6 +43,25 @@
     { "key": "mission.reroll.not_assigned", "en": "This mission can no longer be changed", "az": "Bu missiyanı artıq dəyişmək olmaz" },
     { "key": "mission.reroll.no_replacement", "en": "No other mission to swap in", "az": "Dəyişmək üçün başqa missiya yoxdur" },
     { "key": "mission.reroll.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
-    { "key": "mission.reroll.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
+    { "key": "mission.reroll.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "shop.load.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "shop.load.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "shop.section.featured.title", "en": "Featured", "az": "Seçilmişlər" },
+    { "key": "shop.section.daily_rotation.title", "en": "Daily offers", "az": "Günün təklifləri" },
+    { "key": "shop.section.weekly_rotation.title", "en": "Weekly offers", "az": "Həftənin təklifləri" },
+    { "key": "shop.section.event.title", "en": "Event", "az": "Tədbir" },
+    { "key": "shop.section.chests.title", "en": "Chests", "az": "Sandıqlar" },
+    { "key": "shop.section.pass.title", "en": "Hype Pass", "az": "Hype Pass" },
+    { "key": "shop.section.crystals.title", "en": "Crystals", "az": "Kristallar" },
+    { "key": "shop.buy.bought", "en": "Purchase complete", "az": "Alış tamamlandı" },
+    { "key": "shop.buy.insufficient", "en": "Not enough balance for this offer", "az": "Bu təklif üçün balansın çatmır" },
+    { "key": "shop.buy.owned", "en": "You already own this", "az": "Bu artıq səndədir" },
+    { "key": "shop.buy.limit_reached", "en": "You have bought this offer as many times as allowed", "az": "Bu təklifi icazə verilən qədər almısan" },
+    { "key": "shop.buy.not_eligible", "en": "This offer is not for your account", "az": "Bu təklif sənin hesabın üçün deyil" },
+    { "key": "shop.buy.unavailable", "en": "This offer is not on sale right now", "az": "Bu təklif hazırda satışda deyil" },
+    { "key": "shop.buy.unknown", "en": "This offer no longer exists", "az": "Bu təklif artıq yoxdur" },
+    { "key": "shop.buy.unsupported", "en": "This offer cannot be bought here yet", "az": "Bu təklifi hələ burada almaq olmur" },
+    { "key": "shop.buy.offline", "en": "No connection. Check your internet and try again", "az": "Bağlantı yoxdur. İnterneti yoxla və yenidən cəhd et" },
+    { "key": "shop.buy.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
   ]
 }
