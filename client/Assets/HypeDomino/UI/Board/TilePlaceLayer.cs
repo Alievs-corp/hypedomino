@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace HypeDomino.UI.Board
 {
-    public sealed class TilePlaceLayer : MonoBehaviour
+    public sealed class TilePlaceLayer : MonoBehaviour, IEffectSettingsTarget
     {
         public const string ProfilerMarkerName = "Effect.tilePlace";
 
