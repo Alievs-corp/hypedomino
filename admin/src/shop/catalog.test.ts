@@ -27,6 +27,22 @@ import {
   withPoolItem,
   withPrice,
   withRegionalNote,
+  termsProblems,
+  withEligibility,
+  withLimitPerAccount,
+  withReferencePrice,
+  draftProblems,
+  englishApproval,
+  exactBundle,
+  lookupProblems,
+  newOffer,
+  offerProblems,
+  searchFrom,
+  sectionsFor,
+  unlistedCosmetics,
+  withOffer,
+  type BundleRow,
+  type NewOfferDraft,
   type CosmeticItem,
   type Offer,
   type PublishedCatalog,
@@ -230,4 +246,142 @@ test("one rotation per period start, kept in date order, and removable", () => {
   const replaced = withRotation(both, { ...earlier, start: "2026-11-04T04:00:00Z", offers: ["offer.c"] });
   assert.equal(replaced.rotations.length, 2);
   assert.deepEqual(withoutRotation(replaced, later).rotations.map((rotation) => rotation.offers), [["offer.c"]]);
+});
+
+test("a struck-through price is set in the currency of the price and cleared when empty", () => {
+  const coins = withReferencePrice(offer({ priceCoins: 400, referencePriceCrystals: 70 }), 500);
+  assert.equal(coins.referencePriceCoins, 500);
+  assert.equal("referencePriceCrystals" in coins, false);
+  assert.equal(withReferencePrice(offer({ priceCrystals: 60 }), 80).referencePriceCrystals, 80);
+  assert.equal("referencePriceCoins" in withReferencePrice(coins, 0), false);
+  assert.equal("referencePriceCoins" in withReferencePrice(coins, Number.NaN), false);
+  const product = withReferencePrice(offer({ productId: "offer_starter" }), 500);
+  assert.equal("referencePriceCoins" in product || "referencePriceCrystals" in product, false);
+});
+
+test("a purchase limit and eligibility keep only positive whole values", () => {
+  assert.equal(withLimitPerAccount(offer({}), 3).limitPerAccount, 3);
+  assert.equal("limitPerAccount" in withLimitPerAccount(offer({ limitPerAccount: 3 }), 0), false);
+  assert.equal("limitPerAccount" in withLimitPerAccount(offer({ limitPerAccount: 3 }), 1.5), false);
+  assert.deepEqual(withEligibility(offer({}), 72, true).eligibility, { maxAccountAgeHours: 72, firstPurchaseOnly: true });
+  assert.deepEqual(withEligibility(offer({}), 0, true).eligibility, { firstPurchaseOnly: true });
+  assert.equal("eligibility" in withEligibility(offer({ eligibility: { maxAccountAgeHours: 72 } }), 0, false), false);
+});
+
+test("purchase terms the server refuses are flagged", () => {
+  const cases: [Partial<Offer>, string[]][] = [
+    [{ kind: "cosmetic", priceCoins: 400, limitPerAccount: 1 }, []],
+    [{ kind: "cosmetic", priceCoins: 400 }, ["cosmetic_limit_one"]],
+    [{ kind: "cosmetic", priceCoins: 400, limitPerAccount: 2 }, ["cosmetic_limit_one"]],
+    [{ kind: "chest", section: "chests", priceCoins: 400 }, []],
+    [{ kind: "chest", section: "chests", priceCoins: 400, limitPerAccount: 1 }, ["chest_without_terms"]],
+    [{ kind: "chest", section: "chests", priceCoins: 400, eligibility: { firstPurchaseOnly: true } }, ["chest_without_terms"]],
+    [{ kind: "bundle", priceCrystals: 60, referencePriceCrystals: 60 }, ["reference_not_above_price"]],
+    [{ kind: "bundle", priceCrystals: 60, referencePriceCrystals: 80 }, []],
+    [{ kind: "bundle", productId: "offer_starter", eligibility: { maxAccountAgeHours: 72, firstPurchaseOnly: true } }, []],
+  ];
+  for (const [fields, want] of cases) {
+    assert.deepEqual(termsProblems(offer(fields)), want, JSON.stringify(fields));
+  }
+});
+
+test("a new offer takes only the sections that hold its kind", () => {
+  assert.deepEqual(sectionsFor("cosmetic"), ["featured", "daily_rotation", "weekly_rotation", "event"]);
+  assert.deepEqual(sectionsFor("chest"), ["chests"]);
+  assert.deepEqual(sectionsFor("crystals"), ["featured", "crystals"]);
+  assert.deepEqual(sectionsFor("pass_levels"), ["featured", "pass"]);
+  assert.deepEqual(sectionsFor(""), []);
+});
+
+test("a new offer draft is refused for its id, kind and section, bundle and name key", () => {
+  const catalog: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.fox" })], rotations: [] };
+  const draft: NewOfferDraft = { id: "offer.wolf_2", kind: "cosmetic", section: "event", bundleId: "bundle.wolf", nameKey: "offer.wolf.name" };
+  const cases: [Partial<NewOfferDraft>, string[]][] = [
+    [{}, []],
+    [{ id: "wolf" }, ["id_format"]],
+    [{ id: "offer.Wolf" }, ["id_format"]],
+    [{ id: "offer." }, ["id_format"]],
+    [{ id: "offer.fox" }, ["id_taken"]],
+    [{ section: "chests" }, ["section_kind"]],
+    [{ kind: "", section: "" }, ["section_kind"]],
+    [{ bundleId: " " }, ["bundle_required"]],
+    [{ kind: "pass", section: "pass", bundleId: "" }, []],
+    [{ nameKey: "" }, ["name_required"]],
+  ];
+  for (const [fields, want] of cases) {
+    assert.deepEqual(draftProblems({ ...draft, ...fields }, catalog), want, JSON.stringify(fields));
+  }
+});
+
+test("a new offer copies an existing reward bundle used the same everywhere", () => {
+  const row = (fields: Partial<BundleRow>): BundleRow => ({ id: "bundle.wolf", revision: 3, coins: 0, cosmetics: ["avatar.wolf"], medals: null, passXp: 0, differs: false, ...fields });
+  assert.deepEqual(exactBundle([row({ id: "bundle.wolf_pack" }), row({})], "bundle.wolf"), { id: "bundle.wolf", revision: 3, coins: 0, cosmetics: ["avatar.wolf"], medals: [], passXp: 0 });
+  assert.equal(exactBundle([row({ id: "bundle.wolf_pack" })], "bundle.wolf"), "unknown");
+  assert.equal(exactBundle([row({ differs: true }), row({ cosmetics: ["frame.wolf"], differs: true })], "bundle.wolf"), "differs");
+  assert.equal(searchFrom("bundle.wolf"), "bundle.wol");
+});
+
+test("a new offer name key needs an approved en value", () => {
+  const rows = [
+    { key: "offer.wolf.name_long", values: { en: { status: "approved" } } },
+    { key: "offer.wolf.name", values: { en: { status: "draft" } } },
+    { key: "offer.fox.name", values: { az: { status: "approved" }, en: { status: "approved" } } },
+  ];
+  assert.equal(englishApproval(rows, "offer.wolf.name"), "not_approved");
+  assert.equal(englishApproval(rows, "offer.fox.name"), "approved");
+  assert.equal(englishApproval(rows, "offer.bear.name"), "not_approved");
+  assert.deepEqual(lookupProblems({ id: "bundle.wolf", revision: 1 }, "approved"), []);
+  assert.deepEqual(lookupProblems(null, "approved"), []);
+  assert.deepEqual(lookupProblems("unknown", "not_approved"), ["bundle_unknown", "name_not_approved"]);
+  assert.deepEqual(lookupProblems("unchecked", "unchecked"), ["bundle_unchecked", "name_unchecked"]);
+  assert.deepEqual(lookupProblems("differs", "approved"), ["bundle_differs"]);
+});
+
+test("an added offer has no price and no window until the admin sets them", () => {
+  const draft: NewOfferDraft = { id: "offer.wolf", kind: "cosmetic", section: "event", bundleId: "bundle.wolf", nameKey: " offer.wolf.name " };
+  const bundle = { id: "bundle.wolf", revision: 3, coins: 0, cosmetics: ["avatar.wolf"], medals: [], passXp: 0 };
+  const added = newOffer(draft, bundle);
+  assert.deepEqual(added, { id: "offer.wolf", kind: "cosmetic", section: "event", bundle, window: { start: "" }, nameKey: "offer.wolf.name" });
+  assert.deepEqual(offerProblems(added), ["price_required", "window_start_required"]);
+  assert.equal("bundle" in newOffer({ ...draft, kind: "pass", section: "pass", bundleId: "" }, null), false);
+  const catalog = withOffer({ schema: 1, offers: [offer({})], rotations: [] }, added);
+  assert.deepEqual(catalog.offers.map((listed) => listed.id), ["offer.x", "offer.wolf"]);
+});
+
+test("offer prices and bundle contents the server refuses are flagged", () => {
+  const bundle = (fields: Partial<NonNullable<Offer["bundle"]>>) => ({ id: "bundle.x", revision: 1, ...fields });
+  const cases: [Partial<Offer>, string[]][] = [
+    [{ priceCoins: 400, bundle: bundle({ cosmetics: ["avatar.fox"] }) }, []],
+    [{ bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["price_required"]],
+    [{ priceCoins: 400, priceCrystals: 60, bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["price_required"]],
+    [{ section: "featured", productId: "Offer-Fox", bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["price_required"]],
+    [{ section: "featured", priceCoins: 400, bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["price_required"]],
+    [{ section: "event", productId: "offer_fox", bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["price_required"]],
+    [{ priceCoins: 400, window: { start: "" }, bundle: bundle({ cosmetics: ["avatar.fox"] }) }, ["window_start_required"]],
+    [{ priceCoins: 400, bundle: bundle({ cosmetics: ["avatar.fox"], medals: ["medal.fox"] }) }, ["bundle_medal"]],
+    [{ priceCoins: 400, bundle: bundle({ cosmetics: ["avatar.fox"], crystals: 10 }) }, ["bundle_currency", "cosmetic_one_item"]],
+    [{ priceCoins: 400, bundle: bundle({ cosmetics: ["avatar.fox", "frame.fox"] }) }, ["cosmetic_one_item"]],
+    [{ kind: "bundle", priceCrystals: 60, bundle: bundle({ cosmetics: ["avatar.fox", "frame.fox"], passXp: 100 }) }, []],
+    [{ kind: "bundle", priceCrystals: 60, bundle: bundle({ passXp: 100 }) }, ["bundle_needs_cosmetic"]],
+    [{ kind: "bundle", section: "featured", productId: "offer_starter", bundle: bundle({ crystals: 300, cosmetics: ["avatar.fox"] }) }, []],
+    [{ kind: "bundle", section: "featured", productId: "offer_starter", bundle: bundle({ coins: 300, cosmetics: ["avatar.fox"] }) }, ["bundle_currency"]],
+    [{ kind: "crystals", section: "crystals", productId: "crystals_tier1", bundle: bundle({ crystals: 100 }) }, []],
+    [{ kind: "crystals", section: "crystals", productId: "crystals_tier1", bundle: bundle({ crystals: 100, cosmetics: ["avatar.fox"] }) }, ["crystal_pack_content"]],
+    [{ kind: "chest", section: "chests", priceCoins: 500, bundle: bundle({ cosmetics: ["avatar.fox"] }) }, []],
+    [{ kind: "chest", section: "chests", priceCoins: 500, bundle: bundle({ cosmetics: [] }) }, ["chest_content"]],
+    [{ kind: "pass", section: "pass", productId: "pass_premium" }, []],
+    [{ kind: "pass_levels", section: "pass", priceCrystals: 60, bundle: bundle({ passXp: 100 }) }, []],
+  ];
+  for (const [fields, want] of cases) {
+    assert.deepEqual(offerProblems(offer(fields)), want, JSON.stringify(fields));
+  }
+});
+
+test("a cosmetic sold by an offer lists that offer as its shop source", () => {
+  const item = (id: string, ref: string): CosmeticItem => ({ id, type: "avatar", rarity: "rare", availability: "live", sources: [{ type: "shop", ref }] });
+  const items = [item("avatar.fox", "offer.x"), item("avatar.wolf", "offer.other")];
+  const selling = (cosmetics: string[]) => offer({ bundle: { id: "bundle.x", revision: 1, cosmetics } });
+  assert.deepEqual(unlistedCosmetics(selling(["avatar.fox"]), items), []);
+  assert.deepEqual(unlistedCosmetics(selling(["avatar.fox", "avatar.wolf", "avatar.bear"]), items), ["avatar.wolf", "avatar.bear"]);
+  assert.deepEqual(unlistedCosmetics({ ...selling(["avatar.wolf"]), kind: "chest" }, items), []);
 });
