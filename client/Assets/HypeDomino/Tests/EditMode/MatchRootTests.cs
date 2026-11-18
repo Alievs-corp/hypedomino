@@ -65,6 +65,10 @@ namespace HypeDomino.Tests.EditMode
             public void HidePass(TableSide side)
             {
             }
+
+            public void ShowNotices(MatchNotices notices)
+            {
+            }
         }
 
         sealed class LoadingCardsScreen : ILoadingScreen
@@ -125,7 +129,7 @@ namespace HypeDomino.Tests.EditMode
         Source source;
         ServerFrames frames;
         Session session;
-        ServerClock clock;
+        Connection connection;
         MatchRoot root;
         Texture2D texture;
         double now;
@@ -140,8 +144,8 @@ namespace HypeDomino.Tests.EditMode
             source = new Source { Art = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.zero) };
             frames = new ServerFrames();
             session = new Session();
-            clock = new ServerClock();
-            clock.Sync(ServerNowMs, 0d, 0d);
+            connection = new Connection(() => throw new InvalidOperationException(), () => new ClientHello(), () => 0d, new System.Random(1));
+            connection.Clock.Sync(ServerNowMs, 0d, 0d);
             now = 0d;
             Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out var manifest));
             root = new MatchRoot(table, hud, loadingScreen, new CosmeticArtCache<Sprite>(source), new ActiveCosmeticManifest(manifest));
@@ -185,7 +189,7 @@ namespace HypeDomino.Tests.EditMode
             session.Poll();
         }
 
-        void Tick(bool sceneReady) => root.Tick(clock, now += 0.1d, false, sceneReady);
+        void Tick(bool sceneReady) => root.Tick(connection, now += 0.1d, false, sceneReady);
 
         void TickReady() => Tick(true);
 
@@ -259,7 +263,7 @@ namespace HypeDomino.Tests.EditMode
         {
             Receive(View(MatchState.Playing));
 
-            root.Tick(clock, 4d, false, true);
+            root.Tick(connection, 4d, false, true);
 
             Assert.AreEqual(6f, hud.TurnRemaining, 1e-3f);
         }
