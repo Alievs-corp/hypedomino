@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
+	"github.com/Alievs-corp/hypedomino/server/internal/consent"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
@@ -39,25 +40,42 @@ func (verifier) Verify(access string) (token.Claims, error) {
 }
 
 type world struct {
-	t       *testing.T
-	pool    *pgxpool.Pool
-	handler http.Handler
+	t        *testing.T
+	pool     *pgxpool.Pool
+	consents *consent.Store
+	handler  http.Handler
 }
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	_, pool := dbtest.Fresh(t)
-	handler := analytics.NewHandler(verifier{}, analytics.NewStore(pool), slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return now })
-	return &world{t: t, pool: pool, handler: handler}
+	consents := consent.NewStore(pool)
+	handler := analytics.NewHandler(verifier{}, analytics.NewStore(pool), consents, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return now })
+	return &world{t: t, pool: pool, consents: consents, handler: handler}
 }
 
-func (w *world) player() string {
+func (w *world) stranger() string {
 	w.t.Helper()
 	var id string
 	if err := w.pool.QueryRow(context.Background(), `insert into accounts default values returning id::text`).Scan(&id); err != nil {
 		w.t.Fatal(err)
 	}
 	return id
+}
+
+func (w *world) player() string {
+	w.t.Helper()
+	account := w.stranger()
+	w.chooseAnalytics(account, true)
+	return account
+}
+
+func (w *world) chooseAnalytics(account string, granted bool) {
+	w.t.Helper()
+	change := consent.Change{Analytics: &granted, PolicyVersion: "2026-11", AppVersion: "1.4.0"}
+	if _, err := w.consents.Save(context.Background(), account, change, now); err != nil {
+		w.t.Fatal(err)
+	}
 }
 
 func (w *world) post(bearer, body string) (int, map[string]any) {
@@ -119,6 +137,22 @@ func TestIngestNeedsAValidAccessToken(t *testing.T) {
 	}
 	if got := w.events(); got != "" {
 		t.Fatalf("stored without a token: %s", got)
+	}
+}
+
+func TestIngestNeedsTheAnalyticsConsent(t *testing.T) {
+	w := newWorld(t)
+	ayla := w.stranger()
+	body := batch(id, `{"name":"app_open","clientTimeMs":1}`)
+
+	w.expect(ayla, body, http.StatusForbidden, "error", "analytics.consent_required")
+	w.chooseAnalytics(ayla, true)
+	w.expect(ayla, body, http.StatusOK, "accepted", float64(1))
+	w.chooseAnalytics(ayla, false)
+	w.expect(ayla, batch(id, `{"name":"nickname_set","clientTimeMs":2}`), http.StatusForbidden, "error", "analytics.consent_required")
+
+	if got := w.events(); got != "6f1c2a7e/app_open//0/1" {
+		t.Fatalf("stored %s", got)
 	}
 }
 
