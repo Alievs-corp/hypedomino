@@ -424,7 +424,7 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 		h.logger.Info("admin request refused", "reason", code)
 	}
 	response := errorResponse{Error: code}
-	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" {
+	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" || code == "cosmetic_art_missing" {
 		response.Detail = err.Error()
 	}
 	reply(w, status, response)
@@ -545,6 +545,8 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errMedalArtMissing):
 		return http.StatusConflict, "medal_art_missing"
+	case errors.Is(err, errCosmeticArtMissing):
+		return http.StatusConflict, "cosmetic_art_missing"
 	case errors.Is(err, errBundleUnknown):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, errBundleDiffers), errors.Is(err, errBundleHeld):
