@@ -93,7 +93,7 @@ Short clips decompressed at load cost no decode time during a match, which matte
 - Match sounds come from `Game/Match/SoundCues`, which reads each server view as the haptics do: the first view of a connection plays nothing. The client sees no pass or draw event, so it reads them from two views of the same hand: a draw is a smaller boneyard; a pass is a turn that moved to another seat with no new tile, no draw and no placement earlier in the turn (so ending a turn of several doubles, R-31, is no pass). The last placement of a hand arrives in the same view as the next deal, so it plays `hand_end`, not `tile_place`. `tile_place` plays when the view arrives; it moves to the settle of the tile (section 1) when the match screen drives `TilePlaceLayer`.
 - A view that ends the match plays only `match_win` or `match_lose`, and a view that ends a hand plays only `hand_end`, so the short sounds of that view do not stack on the longer one ("No sudden loud sounds").
 - A view in which the local team scores plays one scoring sound: `combo_<step>` from `EffectCues.StepOf`, the step the score cascade of `MatchEffects` shows, or `score` when the rise is below the first step. The combo replaces `score`, so the two never stack.
-- `turn_warning` plays once per local turn when `TurnTimer.IsWarning` becomes true (`SoundCues.ReadTurnWarning`), from the match screen's timer tick.
+- `turn_warning` plays once per local turn when `TurnTimer.IsWarning` becomes true (`SoundCues.ReadTurnWarning`), from the timer tick of `Game/Match/MatchScreen`. It plays only while the current seat of the latest view is the viewer's own seat, so another seat's turn and a viewer without a seat hear nothing, and the timer follows server time, so it stays silent until the clock is synced.
 - `ui_click` plays from `UI/Audio/ClickSound`, added to a button; a button that is not interactable is silent.
 
 ## 7. License record
@@ -117,4 +117,4 @@ Short clips decompressed at load cost no decode time during a match, which matte
 | S-2 | Listening check by a person on Mid and High devices, speaker and headphones: levels between groups, "No sudden loud sounds", the loop seams after Unity's encoding, Vorbis quality and build size | Art team, with the wiring issue |
 | S-3 | Listening check that no melody resembles an existing work | Owner or delegate, with the cultural review |
 | S-4 | Self-check and cultural review of the sounds (`docs/localization.md` 6.1 steps 1 and 3) | Asset author, owner or delegate |
-| S-5 | Client wiring: done (section 6.1), except where the match screen calls the cues: the screen is not assembled yet, so `turn_warning` and the placement timing at the settle wait for it | Client, follow-up of #177 |
+| S-5 | Client wiring: done (section 6.1), `turn_warning` included, except the placement timing at the settle: `tile_place` moves to the settle when the match screen drives `TilePlaceLayer` | Client, follow-up of #177 |

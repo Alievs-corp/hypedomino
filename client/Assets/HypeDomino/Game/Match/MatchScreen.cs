@@ -32,6 +32,7 @@ namespace HypeDomino.Game.Match
         readonly IMatchHud hud;
         readonly BoardChain board = new();
         readonly SoundCues cues = new();
+        readonly Action<MatchSounds> playSounds;
         readonly Action<MatchSnapshot> onView;
         readonly Action<ServerHello> onHello;
         readonly PlaceTileIntent placeIntent = new() { Tile = new Tile() };
@@ -40,15 +41,17 @@ namespace HypeDomino.Game.Match
         readonly EndTurnIntent endTurnIntent = new();
         Session session;
         Seat lastCurrent;
+        bool localTurn;
         TableSide passSide;
         bool passPending;
         bool passShowing;
         double passStartedAt;
 
-        public MatchScreen(IMatchTable table, IMatchHud hud)
+        public MatchScreen(IMatchTable table, IMatchHud hud, Action<MatchSounds> playSounds)
         {
             this.table = table ?? throw new ArgumentNullException(nameof(table));
             this.hud = hud ?? throw new ArgumentNullException(nameof(hud));
+            this.playSounds = playSounds ?? throw new ArgumentNullException(nameof(playSounds));
             onView = Show;
             onHello = _ => StartConnection();
         }
@@ -81,6 +84,7 @@ namespace HypeDomino.Game.Match
             var passed = (cues.Read(view) & MatchSounds.Pass) != 0;
             var passer = lastCurrent;
             lastCurrent = view.Current;
+            localTurn = view.Seat != Seat.Unspecified && view.Current == view.Seat;
             table.ShowBackground(view);
             table.ShowSeats(view);
             Score.Read(view);
@@ -97,6 +101,7 @@ namespace HypeDomino.Game.Match
         {
             Timer.Tick(clock, nowSeconds);
             hud.ShowTurn(Timer);
+            if (cues.ReadTurnWarning(localTurn && Timer.IsWarning)) playSounds(MatchSounds.TurnWarning);
             TickPass(nowSeconds, reduceMotion);
         }
 
