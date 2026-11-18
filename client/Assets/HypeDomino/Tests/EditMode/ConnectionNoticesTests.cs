@@ -62,6 +62,17 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(warned, ConnectionNotices.OneTimeoutFromBot(Snapshot(view)));
         }
 
+        [TestCase(MatchState.Opening, true)]
+        [TestCase(MatchState.Playing, true)]
+        [TestCase(MatchState.Finished, false)]
+        public void TheWarningEndsWithTheMatch(MatchState state, bool warned)
+        {
+            var view = TwoSeats(new SeatView { Controller = Controller.Player, ConsecutiveTimeouts = 2 }, new SeatView());
+            view.State = state;
+
+            Assert.AreEqual(warned, ConnectionNotices.OneTimeoutFromBot(Snapshot(view)));
+        }
+
         [Test]
         public void ASeatAlreadyPlayedByTheBotIsNotWarned()
         {
