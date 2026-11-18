@@ -350,6 +350,12 @@ Deal, draw and pass are tweens from the pool (rule 3), with no particles and no 
 | Draw | A tile is drawn in 1v1 (R-22) | The tile travels from the boneyard to the hand in `base` with `enter` | `fast` with `standard` |
 | Pass | A seat passes (R-21, R-23) | A localised "pass" label at the seat panel pops in (`fast`, `overshoot`), holds `slow`, and leaves (`base`, `exit`); 840 ms in total | Opacity fade in `fast` with `standard` instead of the pop; the hold and the exit are unchanged |
 
+`Game/Match/HandArrivals` tells the deal and the draw apart from the views, the same for every seat; `UI/Board/TileTravel.Arrive` moves each tile.
+
+- **Deal.** The first view of a hand (a new `hands_played`, or the first view in the opening or playing state) whose board is still empty is a deal: every tile of the local hand arrives in hand order, and every seat's whole `hand_size` arrives at that seat. A first view whose board already holds tiles (a reconnect or a late join) moves nothing.
+- **Draw.** Within a hand, a tile of the local hand that was not in the previous view arrives, and a seat whose `hand_size` grew gets that many face-down tiles. A placement only shrinks a hand, so it is never read as a draw.
+- Leaving the opening and playing states forgets the hand, so the next hand is dealt again. Reading a view allocates nothing.
+
 ### Tile place
 
 The motion of `tilePlace` (section 7) for every placement, the local player's and the other seats' alike. `UI/Board/TilePlaceLayer` runs it on its own tween pool of `maxTweens` for the effect level (rule 3).
