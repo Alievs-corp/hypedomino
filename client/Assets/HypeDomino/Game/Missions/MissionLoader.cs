@@ -91,7 +91,7 @@ namespace HypeDomino.Game.Missions
             return MissionBoard.TryFrom(ParseReply(reply.Body), out var board) ? MissionLoadResult.Loaded(board) : MissionLoadResult.Unreadable();
         }
 
-        static MissionBoardReply ParseReply(string body)
+        internal static MissionBoardReply ParseReply(string body)
         {
             if (string.IsNullOrEmpty(body))
             {
