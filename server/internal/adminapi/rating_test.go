@@ -50,6 +50,7 @@ func TestRatingConfigFreezesStructuralKeysWhileASeasonIsOpen(t *testing.T) {
 	}
 	medals := exampleCatalog(t, "medals")
 	a.passMedalArt(medals)
+	a.nameExamples()
 	wins250 := listed(medals, "medals", "medal.wins_250")
 	wins250["sources"] = append(wins250["sources"].([]any), map[string]any{"type": "rank_reward", "ref": "bundle.rank_season_1_gold"})
 	status, body = a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals})

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -276,6 +277,23 @@ func TestValueReadsOneLanguageAndReportsMissing(t *testing.T) {
 	value, err = store.Value(ctx, "match.result.win", gamestrings.Russian)
 	if err != nil || value != (gamestrings.Value{Status: gamestrings.Missing}) {
 		t.Fatalf("ru %+v %v", value, err)
+	}
+}
+
+func TestUnapprovedListsTheKeysWithoutAnApprovedValueInTheirOrder(t *testing.T) {
+	store := newStore(t)
+	save(t, store, win(), coins())
+	set(t, store, "match.result.win", gamestrings.English, "Victory", gamestrings.Approved)
+	set(t, store, "match.result.coins", gamestrings.English, "{coins} coins", gamestrings.Draft)
+	set(t, store, "match.result.win", gamestrings.Russian, "Победа", gamestrings.Draft)
+	keys := []string{"match.result.unknown", "match.result.win", "match.result.coins"}
+	unapproved, err := store.Unapproved(context.Background(), keys, gamestrings.English)
+	if err != nil || !slices.Equal(unapproved, []string{"match.result.unknown", "match.result.coins"}) {
+		t.Fatalf("en %v %v", unapproved, err)
+	}
+	unapproved, err = store.Unapproved(context.Background(), keys, gamestrings.Russian)
+	if err != nil || !slices.Equal(unapproved, keys) {
+		t.Fatalf("ru %v %v", unapproved, err)
 	}
 }
 
