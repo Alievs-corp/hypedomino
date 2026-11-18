@@ -43,7 +43,7 @@ namespace HypeDomino.Net
 
         public static bool OneTimeoutFromBot(MatchSnapshot view)
         {
-            if (view.AfkConsecutiveTimeouts == 0) return false;
+            if (view.AfkConsecutiveTimeouts == 0 || view.State == MatchState.Finished) return false;
             foreach (var seat in view.Seats)
             {
                 if (seat.Seat != view.Seat) continue;
