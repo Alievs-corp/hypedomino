@@ -25,6 +25,7 @@ import {
   type MissionType,
 } from "@/missions/catalog";
 import { publishMissions } from "./actions";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -121,6 +122,7 @@ export function MissionEditor({ initialCatalog, published, version, rules, canPu
               {result.ok ? `${t("missions.published")}: ${result.version}` : `${t("missions.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
+          {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
         </section>
       )}
     </div>

@@ -19,6 +19,7 @@ import {
   type MedalRules,
 } from "@/medals/catalog";
 import { publishMedals } from "./actions";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -114,6 +115,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
               {result.ok ? `${t("medals.published")}: ${result.version}` : `${t("medals.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
+          {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
         </section>
       )}
     </div>
