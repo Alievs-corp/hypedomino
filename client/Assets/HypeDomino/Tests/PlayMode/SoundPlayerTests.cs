@@ -223,6 +223,15 @@ namespace HypeDomino.Tests.PlayMode
         }
 
         [Test]
+        public void TheTurnWarningFlagPlaysTheTurnWarningSound()
+        {
+            SoundCues.Play(MatchSounds.TurnWarning, player);
+
+            Assert.AreSame(sounds[(int)Sound.TurnWarning], player.Voice(0).clip);
+            Assert.IsNull(player.Voice(1).clip);
+        }
+
+        [Test]
         public void ClickingAnInteractableButtonPlaysTheClick()
         {
             player.MakeMain();
