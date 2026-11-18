@@ -110,6 +110,9 @@ func (h *Handler) createSeason(w http.ResponseWriter, r *http.Request, p princip
 			return audit.Entry{}, nil, fmt.Errorf("%w: the start must be in the future", rating.ErrSeason)
 		}
 		season := rating.Season{ID: request.ID, NameKey: request.ID + ".name", Start: request.Start, End: request.End, NoRewards: request.NoRewards}
+		if err := h.keysApprovedInEnglish(r.Context(), tx, rating.ErrSeason, []string{season.NameKey}); err != nil {
+			return audit.Entry{}, nil, err
+		}
 		created, err := rating.CreateSeasonIn(r.Context(), tx, season, now)
 		return seasonEntry(CreateSeasonAction, request.changeNote, nil, &created), &created, err
 	})
