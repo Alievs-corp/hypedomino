@@ -2,7 +2,21 @@
 
 import { adminApi } from "@/admin/api";
 import type { ConfigResult } from "@/config/result";
-import type { ShopCatalog } from "@/shop/catalog";
+import { englishApproval, exactBundle, searchFrom, type BundleLookup, type BundleRow, type GameStringRow, type NameApproval, type ShopCatalog } from "@/shop/catalog";
+
+const lookupLimit = "200";
+
+export async function findRewardBundle(id: string): Promise<BundleLookup> {
+  const search = new URLSearchParams({ q: id, after: searchFrom(id), limit: lookupLimit });
+  const reply = await adminApi<{ bundles: BundleRow[] }>("GET", `/admin/reward-bundles?${search}`);
+  return reply.status === 200 ? exactBundle(reply.body.bundles, id) : "unchecked";
+}
+
+export async function nameKeyApproval(key: string): Promise<NameApproval> {
+  const search = new URLSearchParams({ q: key, after: searchFrom(key), limit: lookupLimit });
+  const reply = await adminApi<{ strings: GameStringRow[] }>("GET", `/admin/strings?${search}`);
+  return reply.status === 200 ? englishApproval(reply.body.strings, key) : "unchecked";
+}
 
 export type PublishResult = ConfigResult;
 
