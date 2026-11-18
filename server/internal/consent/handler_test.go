@@ -64,7 +64,12 @@ func (w *world) player() string {
 
 func (w *world) call(method, bearer, body string) (int, map[string]any) {
 	w.t.Helper()
-	request := httptest.NewRequest(method, "/consents", strings.NewReader(body))
+	return w.callAt(method, "/consents", bearer, body)
+}
+
+func (w *world) callAt(method, path, bearer, body string) (int, map[string]any) {
+	w.t.Helper()
+	request := httptest.NewRequest(method, path, strings.NewReader(body))
 	if bearer != "" {
 		request.Header.Set("Authorization", "Bearer "+bearer)
 	}
@@ -77,9 +82,19 @@ func (w *world) call(method, bearer, body string) (int, map[string]any) {
 
 func (w *world) expect(method, account, body string, status int, want string) {
 	w.t.Helper()
-	got, decoded := w.call(method, "access:"+account, body)
+	w.expectAt(method, "/consents", account, body, status, want)
+}
+
+func (w *world) expectFirstLaunch(account, body string, status int, want string) {
+	w.t.Helper()
+	w.expectAt("POST", consent.FirstLaunchPath, account, body, status, want)
+}
+
+func (w *world) expectAt(method, path, account, body string, status int, want string) {
+	w.t.Helper()
+	got, decoded := w.callAt(method, path, "access:"+account, body)
 	if got != status || fmt.Sprint(decoded) != want {
-		w.t.Fatalf("%s %s: %d %v, want %d %s", method, body, got, decoded, status, want)
+		w.t.Fatalf("%s %s %s: %d %v, want %d %s", method, path, body, got, decoded, status, want)
 	}
 }
 
@@ -107,9 +122,10 @@ func (w *world) records(account string) string {
 }
 
 const (
-	neither  = "map[analytics:false diagnostics:false]"
-	analysed = "map[analytics:true diagnostics:false]"
-	both     = "map[analytics:true diagnostics:true]"
+	neither   = "map[analytics:false diagnostics:false]"
+	analysed  = "map[analytics:true diagnostics:false]"
+	diagnosed = "map[analytics:false diagnostics:true]"
+	both      = "map[analytics:true diagnostics:true]"
 )
 
 func TestConsentsNeedAValidAccessToken(t *testing.T) {
@@ -120,6 +136,12 @@ func TestConsentsNeedAValidAccessToken(t *testing.T) {
 		}
 		if status, decoded := w.call(method, "expired", `{"analytics":true}`); status != http.StatusUnauthorized || decoded["error"] != "access_expired" {
 			t.Fatalf("%s expired %d %v", method, status, decoded)
+		}
+	}
+	body := `{"choices":[{"purpose":"analytics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`
+	for _, bearer := range []string{"", "expired"} {
+		if status, _ := w.callAt("POST", consent.FirstLaunchPath, bearer, body); status != http.StatusUnauthorized {
+			t.Fatalf("first launch with %q answered %d", bearer, status)
 		}
 	}
 }
@@ -173,5 +195,50 @@ func TestConsentsBelongToTheirAccountAndIgnoreOtherPurposes(t *testing.T) {
 		if err != nil || granted != check.want {
 			t.Fatalf("%s granted %t %v, want %t", check.purpose, granted, err, check.want)
 		}
+	}
+}
+
+func TestFirstLaunchChoicesAreWrittenInTheOrderTheyWereMade(t *testing.T) {
+	w := newWorld(t)
+	ayla := w.player()
+
+	w.expectFirstLaunch(ayla, `{`, http.StatusBadRequest, "map[error:consent.malformed]")
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"promotional_push","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusBadRequest, "map[error:consent.malformed]")
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}]}`, http.StatusBadRequest, "map[error:consent.context_required]")
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}],"policyVersion":"2026-11"}`, http.StatusBadRequest, "map[error:consent.context_required]")
+	w.expectFirstLaunch(ayla, `{"choices":[]}`, http.StatusOK, neither)
+	if got := w.records(ayla); got != "" {
+		t.Fatalf("recorded a refused or empty first launch: %s", got)
+	}
+
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true},{"purpose":"diagnostics","granted":true},{"purpose":"analytics","granted":false}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusOK, diagnosed)
+	w.expect("GET", ayla, "", http.StatusOK, diagnosed)
+
+	want := "analytics/true/2026-11/first_launch/1.4.0,diagnostics/true/2026-11/first_launch/1.4.0,analytics/false/2026-11/first_launch/1.4.0"
+	if got := w.records(ayla); got != want {
+		t.Fatalf("records %s, want %s", got, want)
+	}
+}
+
+func TestFirstLaunchKeepsTheRecordTheAccountHasForThatPolicy(t *testing.T) {
+	w := newWorld(t)
+	ayla, kamal := w.player(), w.player()
+
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":false}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusOK, neither)
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.1"}`, http.StatusOK, neither)
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}],"policyVersion":"2026-12","appVersion":"1.5.0"}`, http.StatusOK, analysed)
+
+	want := "analytics/false/2026-11/first_launch/1.4.0,analytics/true/2026-12/first_launch/1.5.0"
+	if got := w.records(ayla); got != want {
+		t.Fatalf("records %s, want %s", got, want)
+	}
+
+	if _, err := w.pool.Exec(context.Background(), `insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at)
+		values ($1, 'promotional_push', true, '2026-11', 'settings', '1.4.0', $2)`, kamal, now); err != nil {
+		t.Fatal(err)
+	}
+	w.expectFirstLaunch(kamal, `{"choices":[{"purpose":"diagnostics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusOK, neither)
+	if got := w.records(kamal); got != "promotional_push/true/2026-11/settings/1.4.0" {
+		t.Fatalf("first launch wrote over the account's record: %s", got)
 	}
 }
