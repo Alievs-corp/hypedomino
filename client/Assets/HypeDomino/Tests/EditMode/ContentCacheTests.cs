@@ -79,6 +79,18 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void AClearThatSucceedsLaterCancelsThePendingClear()
+        {
+            store.InUse = true;
+            Assert.AreEqual(CacheClearResult.AtNextStart, cache.Clear());
+            store.InUse = false;
+            Assert.AreEqual(CacheClearResult.Cleared, cache.Clear());
+            Assert.IsFalse(store.ClearAtStart);
+            cache.Start();
+            Assert.AreEqual(2, store.Clears);
+        }
+
+        [Test]
         public void AClearThatFailsAtStartIsTriedAgainNextStart()
         {
             store.ClearAtStart = true;
