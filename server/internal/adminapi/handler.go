@@ -545,6 +545,8 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, errMedalArtMissing):
 		return http.StatusConflict, "medal_art_missing"
+	case errors.Is(err, errCosmeticArtMissing):
+		return http.StatusConflict, "cosmetic_art_missing"
 	case errors.Is(err, errBundleUnknown):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, errBundleDiffers), errors.Is(err, errBundleHeld):

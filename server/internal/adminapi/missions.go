@@ -154,17 +154,21 @@ func medalArtPassed(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error
 	for _, m := range medals.Medals {
 		ids = append(ids, m.ID)
 	}
-	rows, err := tx.Query(ctx, `select listed.id from unnest($1::text[]) as listed(id)
-		where not exists (select 1 from cosmetic_assets art where art.item_id = listed.id and art.slot = $2 and art.status = $3)
-		order by listed.id`, ids, assetSlotStatic, assetPassed)
-	if err != nil {
-		return err
-	}
-	missing, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	missing, err := withoutPassedStatic(ctx, tx, ids)
 	if err != nil || len(missing) == 0 {
 		return err
 	}
 	return fmt.Errorf("%w: %s", errMedalArtMissing, strings.Join(missing, ", "))
+}
+
+func withoutPassedStatic(ctx context.Context, tx pgx.Tx, ids []string) ([]string, error) {
+	rows, err := tx.Query(ctx, `select listed.id from unnest($1::text[]) as listed(id)
+		where not exists (select 1 from cosmetic_assets art where art.item_id = listed.id and art.slot = $2 and art.status = $3)
+		order by listed.id`, ids, assetSlotStatic, assetPassed)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
 func publishedMedals(ctx context.Context, tx pgx.Tx) (*medal.Catalog, error) {
