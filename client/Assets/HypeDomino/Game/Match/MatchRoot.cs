@@ -29,10 +29,10 @@ namespace HypeDomino.Game.Match
             Screen.Unbind();
         }
 
-        public void Tick(ServerClock clock, double nowSeconds, bool reduceMotion, bool sceneReady)
+        public void Tick(Connection connection, double nowSeconds, bool reduceMotion, bool sceneReady)
         {
             Loading.Tick(sceneReady);
-            Screen.Tick(clock, nowSeconds, reduceMotion);
+            Screen.Tick(connection, nowSeconds, reduceMotion);
             var open = Loading.Open;
             if (loadingWasOpen && !open) Loading.ReleaseArt();
             loadingWasOpen = open;
