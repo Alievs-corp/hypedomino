@@ -257,6 +257,7 @@ export const az: Messages = {
   "strings.saved": "Yadda saxlanıldı",
   "strings.edit": "Redaktə et",
   "strings.refused": "Rədd edildi",
+  "strings.unnamed": "Bu ad açarlarının en dəyərini Oyun mətnlərində təsdiqləyin, sonra yenidən dərc edin:",
   "strings.status.missing": "Yoxdur",
   "strings.status.draft": "Qaralama",
   "strings.status.approved": "Təsdiqlənib",
