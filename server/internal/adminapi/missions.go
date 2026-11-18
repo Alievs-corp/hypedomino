@@ -165,11 +165,7 @@ func (h *Handler) missionsNamedInEnglish(ctx context.Context, tx pgx.Tx, mission
 	for _, m := range missions.Missions {
 		nameKeys = append(nameKeys, m.NameKey)
 	}
-	unnamed, err := h.strings.In(tx).Unapproved(ctx, nameKeys, gamestrings.English)
-	if err != nil || len(unnamed) == 0 {
-		return err
-	}
-	return fmt.Errorf("%w: no approved en name for %s", mission.ErrInvalidCatalog, strings.Join(unnamed, ", "))
+	return h.keysApprovedInEnglish(ctx, tx, mission.ErrInvalidCatalog, nameKeys)
 }
 
 func (h *Handler) medalsNamedInEnglish(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
@@ -177,11 +173,15 @@ func (h *Handler) medalsNamedInEnglish(ctx context.Context, tx pgx.Tx, medals *m
 	for _, m := range medals.Medals {
 		nameKeys = append(nameKeys, m.NameKey)
 	}
+	return h.keysApprovedInEnglish(ctx, tx, medal.ErrInvalidCatalog, nameKeys)
+}
+
+func (h *Handler) keysApprovedInEnglish(ctx context.Context, tx pgx.Tx, invalid error, nameKeys []string) error {
 	unnamed, err := h.strings.In(tx).Unapproved(ctx, nameKeys, gamestrings.English)
 	if err != nil || len(unnamed) == 0 {
 		return err
 	}
-	return fmt.Errorf("%w: no approved en name for %s", medal.ErrInvalidCatalog, strings.Join(unnamed, ", "))
+	return fmt.Errorf("%w: no approved en name for %s", invalid, strings.Join(unnamed, ", "))
 }
 
 func medalArtPassed(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
