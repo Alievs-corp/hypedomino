@@ -26,6 +26,26 @@ type Change struct {
 	AppVersion    string `json:"appVersion"`
 }
 
+type Choice struct {
+	Purpose Purpose `json:"purpose"`
+	Granted bool    `json:"granted"`
+}
+
+type FirstLaunch struct {
+	Choices       []Choice `json:"choices"`
+	PolicyVersion string   `json:"policyVersion"`
+	AppVersion    string   `json:"appVersion"`
+}
+
+func (f FirstLaunch) Known() bool {
+	for _, choice := range f.Choices {
+		if choice.Purpose != Analytics && choice.Purpose != Diagnostics {
+			return false
+		}
+	}
+	return true
+}
+
 func (c Choices) With(change Change) Choices {
 	if change.Analytics != nil {
 		c.Analytics = *change.Analytics
