@@ -22,6 +22,8 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 )
 
+var errCosmeticArtMissing = errors.New("adminapi: a cosmetic item is added only after its static upload passed its checks")
+
 type cosmeticRulesView struct {
 	Types        []string        `json:"types"`
 	Rarities     []string        `json:"rarities"`
@@ -77,7 +79,14 @@ func (h *Handler) cosmeticsDomain(rollback, incident bool, publisher string) con
 			if err != nil {
 				return nil, err
 			}
-			if err := reviewedByAnother(ctx, tx, previous, next, publisher); err != nil {
+			added, err := cosmetics.Added(previous, next)
+			if err != nil {
+				return nil, err
+			}
+			if err := reviewedByAnother(ctx, tx, added, publisher); err != nil {
+				return nil, err
+			}
+			if err := staticsPassed(ctx, tx, added); err != nil {
 				return nil, err
 			}
 			raw, err := next.Encode()
@@ -141,13 +150,12 @@ func (h *Handler) namedInEnglish(ctx context.Context, tx pgx.Tx, items *cosmetic
 	return nil
 }
 
-func reviewedByAnother(ctx context.Context, tx pgx.Tx, previous, next cosmetics.Manifest, publisher string) error {
-	added, err := cosmetics.Added(previous, next)
-	if err != nil || len(added) == 0 {
-		return err
+func reviewedByAnother(ctx context.Context, tx pgx.Tx, added []string, publisher string) error {
+	if len(added) == 0 {
+		return nil
 	}
 	var item string
-	err = tx.QueryRow(ctx, `select item_id from cosmetic_assets where item_id = any($1) and uploaded_by = $2 limit 1`, added, publisher).Scan(&item)
+	err := tx.QueryRow(ctx, `select item_id from cosmetic_assets where item_id = any($1) and uploaded_by = $2 limit 1`, added, publisher).Scan(&item)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
@@ -155,6 +163,17 @@ func reviewedByAnother(ctx context.Context, tx pgx.Tx, previous, next cosmetics.
 		return err
 	}
 	return fmt.Errorf("%w: %s", errOwnUpload, item)
+}
+
+func staticsPassed(ctx context.Context, tx pgx.Tx, added []string) error {
+	if len(added) == 0 {
+		return nil
+	}
+	missing, err := withoutPassedStatic(ctx, tx, added)
+	if err != nil || len(missing) == 0 {
+		return err
+	}
+	return fmt.Errorf("%w: %s", errCosmeticArtMissing, strings.Join(missing, ", "))
 }
 
 func (h *Handler) switchOffCosmetic(w http.ResponseWriter, r *http.Request, p principal) {
