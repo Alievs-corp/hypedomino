@@ -9,7 +9,7 @@ namespace HypeDomino.UI.Effects
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class EffectPlayer : MonoBehaviour
+    public sealed class EffectPlayer : MonoBehaviour, IEffectSettingsTarget
     {
         public const string ProfilerMarkerName = "Effect.player";
         public const string TrailSprite = "streak";

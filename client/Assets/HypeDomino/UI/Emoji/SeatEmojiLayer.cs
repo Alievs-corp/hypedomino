@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace HypeDomino.UI.Emoji
 {
-    public sealed class SeatEmojiLayer : MonoBehaviour
+    public sealed class SeatEmojiLayer : MonoBehaviour, IEffectSettingsTarget
     {
         public const string ProfilerMarkerName = "Effect.emoji";
 

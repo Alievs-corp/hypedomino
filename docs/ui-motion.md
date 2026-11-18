@@ -382,6 +382,8 @@ Every sound belongs to one of three groups: music (lobby and match loops), sfx (
 
 The effect level follows the graphics level (`docs/performance.md` 1.1): Low uses low, Medium uses medium, High and Ultra use high. The default level per device tier (`docs/performance.md` section 1) is admin config, with the defaults below. The player may choose a lower level, not a higher one. Reduce motion is independent of the level.
 
+In the client, `UI/Effects/EffectSettingsLink` keeps a screen's effects in step with the settings: given `GraphicsQuality`, `MotionPreference` and the screen's effect targets (`EffectPlayer`, `TilePlaceLayer`, `SeatEmojiLayer`, each built first), it calls each target's `Configure` with `GraphicsQuality.Effects` and `MotionPreference.ReduceMotion` when it is made and on every `Changed` of either, a heat step included. A level change lands every live effect and moving tile first (`EffectPlayer.Configure`, `TilePlaceLayer.Configure`). The screen disposes the link with itself.
+
 | | low | medium | high |
 |---|---|---|---|
 | Default for tier | Low | Mid | High |
