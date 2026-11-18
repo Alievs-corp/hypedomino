@@ -424,7 +424,7 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 		h.logger.Info("admin request refused", "reason", code)
 	}
 	response := errorResponse{Error: code}
-	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" {
+	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" || code == "cosmetic_art_missing" {
 		response.Detail = err.Error()
 	}
 	reply(w, status, response)
