@@ -12,6 +12,7 @@ const MaxBodyBytes = 64 * 1024
 var (
 	ErrMalformed = errors.New("analytics.malformed")
 	ErrIDTaken   = errors.New("analytics.id_taken")
+	ErrNoConsent = errors.New("analytics.consent_required")
 )
 
 type labelRule int

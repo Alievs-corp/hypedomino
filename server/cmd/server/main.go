@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
+	"github.com/Alievs-corp/hypedomino/server/internal/consent"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
@@ -188,8 +189,10 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	a.Handle("/friends", friendsHandler)
 	a.Handle("/friends/", friendsHandler)
 	a.Handle("/push/", push.NewHandler(tokens, push.NewStore(pool), logger, time.Now))
+	consents := consent.NewStore(pool)
+	a.Handle("/consents", consent.NewHandler(tokens, consents, logger, time.Now))
 	analyticsStore := analytics.NewStore(pool)
-	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analyticsStore, logger, time.Now))
+	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analyticsStore, consents, logger, time.Now))
 	matchEnds := matchstore.NewRelay(matchstore.New(pool), analyticsStore, matchstore.TopicAnalytics, 0, time.Now)
 	go panics.Supervise(ctx, "outbox analytics", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
 		matchEnds.Run(ctx, every, func(err error) { logger.Error("analytics relay failed", "error", err) })
