@@ -69,9 +69,15 @@ func (a *api) passMedalArt(catalog map[string]any) {
 
 func (a *api) nameEntries(status gamestrings.Status, catalog map[string]any, list string) {
 	a.t.Helper()
-	store := gamestrings.NewStore(a.pool)
 	for _, entry := range catalog[list].([]any) {
-		key := entry.(map[string]any)["id"].(string) + ".name"
+		a.nameKeys(status, entry.(map[string]any)["id"].(string)+".name")
+	}
+}
+
+func (a *api) nameKeys(status gamestrings.Status, keys ...string) {
+	a.t.Helper()
+	store := gamestrings.NewStore(a.pool)
+	for _, key := range keys {
 		if err := store.SaveEntry(context.Background(), gamestrings.Entry{Key: key, Note: "Name.", MaxLength: 40}, "content-1", start); err != nil {
 			a.t.Fatal(err)
 		}

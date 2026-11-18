@@ -2,9 +2,11 @@ package adminapi_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
@@ -60,6 +62,19 @@ func TestRankedSeasonsAreScheduledEditedExtendedAndRemovedWithAudit(t *testing.T
 	expect(t, status, body, http.StatusBadRequest, "reason_required")
 	status, body = a.call("POST", "/admin/ranked/seasons", liveOps, map[string]any{"id": "season.one", "start": start.Add(-time.Hour), "end": oneEnd, "reason": "launch"})
 	expect(t, status, body, http.StatusBadRequest, "invalid")
+	for _, step := range []struct {
+		name   string
+		status gamestrings.Status
+	}{{"no name", ""}, {"a draft name", gamestrings.Draft}} {
+		if step.status != "" {
+			a.nameKeys(step.status, "season.one.name")
+		}
+		status, body = a.call("POST", "/admin/ranked/seasons", liveOps, one)
+		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for season.one.name") {
+			t.Fatalf("%s: %d %v", step.name, status, body)
+		}
+	}
+	a.nameKeys(gamestrings.Approved, "season.one.name", "season.two.name")
 
 	status, body = a.call("POST", "/admin/ranked/seasons", liveOps, one)
 	if status != http.StatusCreated || body["state"] != "scheduled" || body["name_key"] != "season.one.name" {

@@ -139,6 +139,7 @@ func TestRewardBundlesTrackUsesValueAndDifferingContent(t *testing.T) {
 func TestRewardBundlesCoverTheShopThePassAndPromoCampaigns(t *testing.T) {
 	a := newPromoAPI(t)
 	a.publishShopItems()
+	a.nameOffers()
 	liveOps := a.signIn("leyla")
 
 	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(weekendPack(start, start.Add(time.Hour)), cometFox()), "reason": "weekend"})
@@ -196,6 +197,7 @@ func publishSharedBundle(t *testing.T, a *api, content, liveOps string) {
 	status, body = a.call("PUT", "/admin/config/cosmetics", content, map[string]any{"catalog": map[string]any{"items": items}, "reason": "fox"})
 	expect(t, status, body, http.StatusOK, "")
 	publishMissions(t, a, liveOps, grantingMission("mission.first", 0, "avatar.fox"), grantingMission("mission.second", 0, "avatar.fox"))
+	a.nameOffers()
 	pack := weekendPack(start, start.Add(time.Hour))
 	pack["bundle"] = map[string]any{"id": "bundle.wins", "revision": 1, "cosmetics": []string{"avatar.fox"}, "medals": []string{}}
 	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(pack, cometFox()), "reason": "pack"})
