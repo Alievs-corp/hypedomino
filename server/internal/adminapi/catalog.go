@@ -41,7 +41,7 @@ type publishCatalogRequest struct {
 }
 
 func (h *Handler) catalogDomain(publish bool) configDomain {
-	prepare := h.offerSourcesListed
+	prepare := h.restorableCatalog
 	if publish {
 		prepare = h.publishableCatalog
 	}
@@ -127,13 +127,13 @@ func (h *Handler) rollbackShop(w http.ResponseWriter, r *http.Request, p princip
 	reply(w, http.StatusOK, viewCatalog(version, raw))
 }
 
-func (h *Handler) offerSourcesListed(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
-	_, err := h.sourcesListedCatalog(ctx, tx, after)
+func (h *Handler) restorableCatalog(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
+	_, err := h.listedAndNamedCatalog(ctx, tx, after)
 	return after, err
 }
 
 func (h *Handler) publishableCatalog(ctx context.Context, tx pgx.Tx, _, after []byte) ([]byte, error) {
-	catalog, err := h.sourcesListedCatalog(ctx, tx, after)
+	catalog, err := h.listedAndNamedCatalog(ctx, tx, after)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (h *Handler) publishableCatalog(ctx context.Context, tx pgx.Tx, _, after []
 	return after, catalog.CheckReferencePrices(inEffect)
 }
 
-func (h *Handler) sourcesListedCatalog(ctx context.Context, tx pgx.Tx, raw []byte) (*shop.Catalog, error) {
+func (h *Handler) listedAndNamedCatalog(ctx context.Context, tx pgx.Tx, raw []byte) (*shop.Catalog, error) {
 	catalog, err := shop.Parse(raw, h.config.Shop)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,14 @@ func (h *Handler) sourcesListedCatalog(ctx context.Context, tx pgx.Tx, raw []byt
 	if err != nil {
 		return nil, err
 	}
-	return catalog, catalog.CheckSources(items)
+	if err := catalog.CheckSources(items); err != nil {
+		return nil, err
+	}
+	nameKeys := make([]string, 0, len(catalog.Offers))
+	for _, offer := range catalog.Offers {
+		nameKeys = append(nameKeys, offer.NameKey)
+	}
+	return catalog, h.keysApprovedInEnglish(ctx, tx, shop.ErrInvalid, nameKeys)
 }
 
 type cosmeticItemView struct {
