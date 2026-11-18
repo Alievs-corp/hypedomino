@@ -43,6 +43,29 @@ FL-5 follows the server: when the custom match ends, the server puts the room ba
 - Rooms live on the node that created them, and the room code is unique across nodes. A player connected to another node who joins by code is moved to the room's node: the server closes the connection, the client reconnects as after any drop and arrives in the room with its `LobbyState`. In-game invites reach the friend on whichever node they are connected to (`server/README.md`, Cluster).
 - The leader adds a member who has no seat to a free seat in team setup or during the match (`ADD`, R-55); during the match the member takes the seat back from the bot. A player outside the room joins it first; a removed player can join again only in the lobby or team setup, because a running match accepts no joins.
 
+### Refusal texts
+
+A refused command comes back as the `LobbyRefusal` of the `LobbyState`, and the screen shows its text. The built-in bundle (`docs/localization.md` 2.4) ships these `az` and `en` texts; a published bundle replaces them from admin, and `tr` and `ru` fall back along `docs/localization.md` 1.2 until translated. A typed code the client refuses before sending (`client/README.md`, `RoomCode`) shows the `UNKNOWN_CODE` text, since no room can have it.
+
+| Refusal | Key | `az` | `en` |
+|---|---|---|---|
+| `UNAVAILABLE` | `lobby.room.refused.unavailable` | Otaq hazırda əlçatan deyil. Sonra yenidən yoxla | The room is not available right now. Try again later |
+| `UNKNOWN_CODE` | `lobby.room.refused.unknown_code` | Bu kodla otaq yoxdur | There is no room with this code |
+| `NOT_LEADER` | `lobby.room.refused.not_leader` | Bunu yalnız otaq lideri edə bilər | Only the room leader can do this |
+| `SEAT_TAKEN` | `lobby.room.refused.seat_taken` | Bu oturacaq artıq tutulub | This seat is already taken |
+| `NOT_IN_LOBBY` | `lobby.room.refused.not_in_lobby` | Bu oyunçu otaqda deyil | This player is not in the room |
+| `ALREADY_IN_LOBBY` | `lobby.room.refused.already_in_lobby` | Oyunçu artıq otaqdadır | The player is already in a room |
+| `FULL` | `lobby.room.refused.full` | Otaq doludur | The room is full |
+| `SEATS_OPEN` | `lobby.room.refused.seats_open` | Matçı başlatmaq üçün bütün oturacaqları doldur | Fill every seat to start the match |
+| `STARTED` | `lobby.room.refused.started` | Matç artıq başlayıb | The match has already started |
+| `INVALID_SEAT` | `lobby.room.refused.invalid_seat` | Bu oturacaq seçilmiş rejimdə yoxdur | This seat is not in the chosen mode |
+| `INVALID_MODE` | `lobby.room.refused.invalid_mode` | Bu rejimi seçmək olmur | This mode cannot be chosen |
+| `IN_MATCH` | `lobby.room.refused.in_match` | Oyunçunun bitməmiş matçı var | The player has a match that has not ended |
+| `WRONG_PHASE` | `lobby.room.refused.wrong_phase` | Bu, hazırda mümkün deyil | This is not possible right now |
+| `BLOCKED` | `lobby.room.refused.blocked` | Bu oyunçunu dəvət etmək olmur | This player cannot be invited |
+| `NOT_FRIEND` | `lobby.room.refused.not_friend` | Yalnız dostları dəvət etmək olar | Only friends can be invited |
+| Any other refusal, including the deprecated `UNKNOWN_ACTION` | `notice.generic` | Nəsə alınmadı. Yenidən cəhd et | Something went wrong. Try again |
+
 ## 5. Decisions and open items
 
 - Decided 2026-11-12, replacing the 2026-10-28 decision on lobby actions: the lobby has no 3D characters and no actions, and the `action` cosmetic type is removed (`docs/cosmetics.md`). Members show as avatars with frames.

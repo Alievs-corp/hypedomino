@@ -35,6 +35,7 @@ namespace HypeDomino.Game.FriendLobby
         public LobbyPhase Phase { get; private set; }
         public Mode Mode { get; private set; }
         public LobbyRefusal Refusal { get; private set; }
+        public string RefusalKey => LobbyRefusalKeys.Of(Refusal);
         public Seat LocalSeat { get; private set; }
         public IReadOnlyList<string> Members => members;
         public IReadOnlyList<string> Waiting => waiting;
