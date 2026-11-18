@@ -22,6 +22,11 @@
     { "key": "match.result.lost", "en": "Defeat", "az": "Məğlubiyyət" },
     { "key": "match.result.over", "en": "Match over", "az": "Matç bitdi" },
     { "key": "match.result.play_again", "en": "Play again", "az": "Yenidən oyna" },
-    { "key": "match.result.back_to_lobby", "en": "Back to lobby", "az": "Lobbiyə qayıt" }
+    { "key": "match.result.back_to_lobby", "en": "Back to lobby", "az": "Lobbiyə qayıt" },
+    { "key": "mission.reroll.used", "en": "No mission changes left for this period", "az": "Bu dövr üçün missiya dəyişmə haqqın qalmayıb" },
+    { "key": "mission.reroll.not_assigned", "en": "This mission can no longer be changed", "az": "Bu missiyanı artıq dəyişmək olmaz" },
+    { "key": "mission.reroll.no_replacement", "en": "No other mission to swap in", "az": "Dəyişmək üçün başqa missiya yoxdur" },
+    { "key": "mission.reroll.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "mission.reroll.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
   ]
 }
