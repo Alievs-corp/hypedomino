@@ -1,18 +1,25 @@
 package analytics
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/consent"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
+
+type Consents interface {
+	Granted(ctx context.Context, account string, purpose consent.Purpose) (bool, error)
+}
 
 type Handler struct {
 	verifier token.Verifier
 	store    *Store
+	consents Consents
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
@@ -26,8 +33,8 @@ type acceptedResponse struct {
 	Accepted int `json:"accepted"`
 }
 
-func NewHandler(verifier token.Verifier, store *Store, logger *slog.Logger, now func() time.Time) *Handler {
-	h := &Handler{verifier: verifier, store: store, logger: logger, now: now, mux: http.NewServeMux()}
+func NewHandler(verifier token.Verifier, store *Store, consents Consents, logger *slog.Logger, now func() time.Time) *Handler {
+	h := &Handler{verifier: verifier, store: store, consents: consents, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("POST /analytics/events", h.ingest)
 	return h
 }
@@ -54,6 +61,16 @@ func (h *Handler) ingest(w http.ResponseWriter, r *http.Request) {
 	accepted, err := batch.Accepted()
 	if err != nil {
 		reply(w, http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+	granted, err := h.consents.Granted(r.Context(), claims.Account, consent.Analytics)
+	switch {
+	case err != nil:
+		h.logger.Error("analytics consent check failed", "error", err)
+		reply(w, http.StatusInternalServerError, errorResponse{Error: "internal"})
+		return
+	case !granted:
+		reply(w, http.StatusForbidden, errorResponse{Error: ErrNoConsent.Error()})
 		return
 	}
 	err = h.store.Record(r.Context(), claims.Account, accepted, h.now())
