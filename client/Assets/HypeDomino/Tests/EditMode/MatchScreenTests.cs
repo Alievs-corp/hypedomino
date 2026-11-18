@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Google.Protobuf;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
@@ -13,6 +14,7 @@ namespace HypeDomino.Tests.EditMode
     public sealed class MatchScreenTests
     {
         const ulong ServerNowMs = 1_000_000;
+        static readonly Uri ServerUri = new("wss://play.test/ws");
 
         sealed class Table : IMatchTable
         {
@@ -63,6 +65,8 @@ namespace HypeDomino.Tests.EditMode
             public float PassAlpha;
             public int PassesHidden;
             public TableSide HiddenSide;
+            public int NoticesShown;
+            public MatchNotices Notices;
 
             public void ShowHand(HandChoice hand)
             {
@@ -88,6 +92,37 @@ namespace HypeDomino.Tests.EditMode
                 PassesHidden++;
                 HiddenSide = side;
             }
+
+            public void ShowNotices(MatchNotices notices)
+            {
+                NoticesShown++;
+                Notices = notices;
+            }
+        }
+
+        sealed class FakeSocket : ISocketTransport
+        {
+            readonly Queue<byte[]> incoming = new();
+
+            public TransportState State { get; set; } = TransportState.Idle;
+
+            public void Connect(Uri uri) => State = TransportState.Connecting;
+
+            public void Send(ReadOnlySpan<byte> frame)
+            {
+            }
+
+            public bool TryReceive(out ReadOnlySpan<byte> frame)
+            {
+                frame = default;
+                if (incoming.Count == 0) return false;
+                frame = incoming.Dequeue();
+                return true;
+            }
+
+            public void Deliver(byte[] frame) => incoming.Enqueue(frame);
+
+            public void Dispose() => State = TransportState.Closed;
         }
 
         sealed class ServerFrames : IFrameTransport
@@ -131,6 +166,7 @@ namespace HypeDomino.Tests.EditMode
         Table table;
         Hud hud;
         MatchScreen screen;
+        readonly List<FakeSocket> sockets = new();
         int warningsPlayed;
         MatchSounds soundsPlayed;
 
@@ -141,6 +177,7 @@ namespace HypeDomino.Tests.EditMode
             hud = new Hud();
             warningsPlayed = 0;
             soundsPlayed = MatchSounds.None;
+            sockets.Clear();
             screen = new MatchScreen(table, hud, PlaySounds);
         }
 
@@ -184,11 +221,40 @@ namespace HypeDomino.Tests.EditMode
 
         void Show(MatchView view) => screen.Show(Read(view));
 
-        static ServerClock SyncedClock()
+        Connection OfflineConnection() =>
+            new(OpenSocket, () => new ClientHello { SessionToken = "sess_01HZX" }, () => 0d, new System.Random(1));
+
+        Connection SyncedConnection()
         {
-            var clock = new ServerClock();
-            clock.Sync(ServerNowMs, 0d, 0d);
-            return clock;
+            var connection = OfflineConnection();
+            connection.Clock.Sync(ServerNowMs, 0d, 0d);
+            return connection;
+        }
+
+        Connection OnlineConnection()
+        {
+            var connection = OfflineConnection();
+            connection.Start(ServerUri);
+            var socket = sockets[sockets.Count - 1];
+            socket.State = TransportState.Open;
+            var hello = new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 77 };
+            socket.Deliver(new FrameWriter(Session.MaxSentFrameBytes).Write(new FrameHeader(Session.ProtocolVersion, 0, 0, 0), Envelope.PayloadOneofCase.ServerHello, hello).ToArray());
+            connection.Tick();
+            Assert.AreEqual(ConnectionState.Online, connection.State);
+            return connection;
+        }
+
+        ISocketTransport OpenSocket()
+        {
+            var socket = new FakeSocket();
+            sockets.Add(socket);
+            return socket;
+        }
+
+        static MatchView WithSeat(MatchView view, Seat seat, Controller controller, bool disconnected)
+        {
+            view.Seats.Add(new SeatView { Seat = seat, Controller = controller, Disconnected = disconnected });
+            return view;
         }
 
         [Test]
@@ -238,14 +304,14 @@ namespace HypeDomino.Tests.EditMode
         public void TheTimerTicksFromTheServerDeadline()
         {
             Show(Playing(Seat.South));
-            screen.Tick(SyncedClock(), 4d, false);
+            screen.Tick(SyncedConnection(), 4d, false);
 
             Assert.AreEqual(1, hud.TurnsShown);
             Assert.IsTrue(screen.Timer.Running);
             Assert.AreEqual(6f, hud.TurnRemaining, 0.001f);
             Assert.IsFalse(screen.Timer.IsWarning);
 
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
             Assert.IsTrue(screen.Timer.IsWarning);
         }
 
@@ -253,15 +319,15 @@ namespace HypeDomino.Tests.EditMode
         public void TheTurnWarningPlaysOnceWhenTheLocalTurnReachesTheWarning()
         {
             Show(Playing(Seat.South));
-            screen.Tick(SyncedClock(), 4d, false);
+            screen.Tick(SyncedConnection(), 4d, false);
             Assert.AreEqual(0, warningsPlayed);
 
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
             Assert.AreEqual(1, warningsPlayed);
             Assert.AreEqual(MatchSounds.TurnWarning, soundsPlayed);
 
-            screen.Tick(SyncedClock(), 7d, false);
-            screen.Tick(SyncedClock(), 11d, false);
+            screen.Tick(SyncedConnection(), 7d, false);
+            screen.Tick(SyncedConnection(), 11d, false);
             Assert.AreEqual(1, warningsPlayed);
         }
 
@@ -269,13 +335,13 @@ namespace HypeDomino.Tests.EditMode
         public void TheTurnWarningPlaysAgainOnTheNextLocalTurn()
         {
             Show(Playing(Seat.South));
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
             Show(Playing(Seat.West));
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
             Assert.AreEqual(1, warningsPlayed);
 
             Show(Playing(Seat.South));
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
             Assert.AreEqual(2, warningsPlayed);
         }
 
@@ -283,7 +349,7 @@ namespace HypeDomino.Tests.EditMode
         public void AnotherSeatsTurnPlaysNoTurnWarning()
         {
             Show(Playing(Seat.West));
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
 
             Assert.IsTrue(screen.Timer.IsWarning);
             Assert.AreEqual(0, warningsPlayed);
@@ -295,26 +361,26 @@ namespace HypeDomino.Tests.EditMode
             var view = Playing(Seat.Unspecified);
             view.Seat = Seat.Unspecified;
             Show(view);
-            screen.Tick(SyncedClock(), 6d, false);
+            screen.Tick(SyncedConnection(), 6d, false);
 
             Assert.IsTrue(screen.Timer.IsWarning);
             Assert.AreEqual(0, warningsPlayed);
         }
 
         [Test]
-        public void TheTurnWarningStaysSilentWithoutASyncedClock()
+        public void TheTurnWarningStaysSilentWithoutASyncedConnection()
         {
             Show(Playing(Seat.South));
-            screen.Tick(new ServerClock(), 6d, false);
+            screen.Tick(OfflineConnection(), 6d, false);
 
             Assert.AreEqual(0, warningsPlayed);
         }
 
         [Test]
-        public void TheTimerStaysStillWithoutASyncedClock()
+        public void TheTimerStaysStillWithoutASyncedConnection()
         {
             Show(Playing(Seat.South));
-            screen.Tick(new ServerClock(), 4d, false);
+            screen.Tick(OfflineConnection(), 4d, false);
 
             Assert.AreEqual(1, hud.TurnsShown);
             Assert.IsFalse(screen.Timer.Running);
@@ -325,23 +391,23 @@ namespace HypeDomino.Tests.EditMode
         public void APassShowsAtThePassingSeatAndLeavesAfterItsLifetime()
         {
             Show(Playing(Seat.West));
-            screen.Tick(SyncedClock(), 0d, false);
+            screen.Tick(SyncedConnection(), 0d, false);
             Assert.AreEqual(0, hud.PassesShown);
 
             Show(Playing(Seat.North));
-            screen.Tick(SyncedClock(), 10d, false);
+            screen.Tick(SyncedConnection(), 10d, false);
             Assert.AreEqual(1, hud.PassesShown);
             Assert.AreEqual(TableSide.Left, hud.PassSide);
 
-            screen.Tick(SyncedClock(), 10d + Seconds(PassNotice.LifetimeMs) - 0.05d, false);
+            screen.Tick(SyncedConnection(), 10d + Seconds(PassNotice.LifetimeMs) - 0.05d, false);
             Assert.AreEqual(2, hud.PassesShown);
             Assert.AreEqual(0, hud.PassesHidden);
 
-            screen.Tick(SyncedClock(), 10d + Seconds(PassNotice.LifetimeMs) + 0.01d, false);
+            screen.Tick(SyncedConnection(), 10d + Seconds(PassNotice.LifetimeMs) + 0.01d, false);
             Assert.AreEqual(1, hud.PassesHidden);
             Assert.AreEqual(TableSide.Left, hud.HiddenSide);
 
-            screen.Tick(SyncedClock(), 20d, false);
+            screen.Tick(SyncedConnection(), 20d, false);
             Assert.AreEqual(2, hud.PassesShown);
             Assert.AreEqual(1, hud.PassesHidden);
         }
@@ -353,7 +419,7 @@ namespace HypeDomino.Tests.EditMode
             var placed = Playing(Seat.North);
             placed.Board.Line.Add(O(1, 4));
             Show(placed);
-            screen.Tick(SyncedClock(), 0d, false);
+            screen.Tick(SyncedConnection(), 0d, false);
 
             Assert.AreEqual(0, hud.PassesShown);
         }
@@ -373,7 +439,7 @@ namespace HypeDomino.Tests.EditMode
             session.Poll();
             frames.Deliver(Envelope.PayloadOneofCase.MatchView, Playing(Seat.North));
             session.Poll();
-            screen.Tick(SyncedClock(), 0d, false);
+            screen.Tick(SyncedConnection(), 0d, false);
 
             Assert.AreEqual(2, table.SeatsShown);
             Assert.AreEqual(0, hud.PassesShown);
@@ -409,7 +475,7 @@ namespace HypeDomino.Tests.EditMode
             var second = Playing(Seat.North);
             second.Mode = Mode.Unspecified;
             Show(second);
-            screen.Tick(SyncedClock(), 0d, false);
+            screen.Tick(SyncedConnection(), 0d, false);
 
             Assert.AreEqual(0, hud.PassesShown);
         }
@@ -417,7 +483,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ShowingAViewAndTickingAllocateNothing()
         {
-            var clock = SyncedClock();
+            var connection = SyncedConnection();
             var west = Playing(Seat.West, Move(1, 2, BoardEnd.Right)).ToByteArray();
             var north = Playing(Seat.North).ToByteArray();
             var now = 0d;
@@ -425,10 +491,10 @@ namespace HypeDomino.Tests.EditMode
             {
                 snapshot.TryRead(west);
                 screen.Show(snapshot);
-                screen.Tick(clock, now += 0.1d, false);
+                screen.Tick(connection, now += 0.1d, false);
                 snapshot.TryRead(north);
                 screen.Show(snapshot);
-                screen.Tick(clock, now += 0.1d, true);
+                screen.Tick(connection, now += 0.1d, true);
             };
             frame();
 
@@ -439,22 +505,98 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void TickingIntoTheTurnWarningAllocatesNothing()
         {
-            var clock = SyncedClock();
+            var connection = SyncedConnection();
             var south = Playing(Seat.South).ToByteArray();
             var west = Playing(Seat.West).ToByteArray();
             TestDelegate frame = () =>
             {
                 snapshot.TryRead(south);
                 screen.Show(snapshot);
-                screen.Tick(clock, 6d, false);
+                screen.Tick(connection, 6d, false);
                 snapshot.TryRead(west);
                 screen.Show(snapshot);
-                screen.Tick(clock, 6d, false);
+                screen.Tick(connection, 6d, false);
             };
             frame();
 
             Assert.That(frame, Allocates.Nothing);
             Assert.Greater(warningsPlayed, 1);
+        }
+
+        [Test]
+        public void AViewReachesTheHudNoticesOnlyWhenWhatShowsChanges()
+        {
+            Show(Playing(Seat.South));
+            Assert.AreEqual(0, hud.NoticesShown);
+
+            Show(WithSeat(Playing(Seat.South), Seat.North, Controller.Player, true));
+            Assert.AreEqual(1, hud.NoticesShown);
+            Assert.AreSame(screen.Notices, hud.Notices);
+            Assert.AreEqual(SeatNotice.Dropped, screen.Notices.Seats.At(TableSide.Top));
+
+            Show(WithSeat(Playing(Seat.West), Seat.North, Controller.Player, true));
+            Assert.AreEqual(1, hud.NoticesShown);
+
+            Show(Playing(Seat.South));
+            Assert.AreEqual(2, hud.NoticesShown);
+            Assert.AreEqual(SeatNotice.None, screen.Notices.Seats.At(TableSide.Top));
+        }
+
+        [Test]
+        public void ATickReachesTheHudNoticesOnlyWhenTheNetworkNoticeChanges()
+        {
+            var connection = OnlineConnection();
+            screen.Tick(connection, 1d, false);
+            Assert.AreEqual(0, hud.NoticesShown);
+
+            sockets[sockets.Count - 1].State = TransportState.Closed;
+            connection.Tick();
+            screen.Tick(connection, 2d, false);
+            Assert.AreEqual(1, hud.NoticesShown);
+            Assert.AreSame(screen.Notices, hud.Notices);
+            Assert.AreEqual(NetworkNotice.Reconnecting, screen.Notices.Network);
+
+            screen.Tick(connection, 3d, false);
+            Assert.AreEqual(1, hud.NoticesShown);
+        }
+
+        [Test]
+        public void ATapOnTheTakeBackBannerRejoinsOnceUntilTheNextView()
+        {
+            var connection = OnlineConnection();
+            Assert.IsFalse(screen.TapTakeBack(connection));
+
+            Show(WithSeat(Playing(Seat.West), Seat.South, Controller.Bot, true));
+            Assert.IsTrue(screen.Notices.TakeBack.Shown);
+            Assert.AreEqual(1, hud.NoticesShown);
+
+            Assert.IsTrue(screen.TapTakeBack(connection));
+            Assert.AreEqual(2, sockets.Count);
+            Assert.IsFalse(screen.TapTakeBack(connection));
+            Assert.AreEqual(2, sockets.Count);
+        }
+
+        [Test]
+        public void TickingTheConnectionNoticesAllocatesNothing()
+        {
+            var connection = OnlineConnection();
+            connection.Send(Envelope.PayloadOneofCase.PassIntent, new PassIntent());
+            var dropped = WithSeat(Playing(Seat.West), Seat.North, Controller.Player, true).ToByteArray();
+            var settled = Playing(Seat.West).ToByteArray();
+            TestDelegate frame = () =>
+            {
+                snapshot.TryRead(dropped);
+                screen.Show(snapshot);
+                screen.Tick(connection, 1d, false);
+                snapshot.TryRead(settled);
+                screen.Show(snapshot);
+                screen.Tick(connection, 5d, false);
+            };
+            frame();
+            var noticesShown = hud.NoticesShown;
+
+            Assert.That(frame, Allocates.Nothing);
+            Assert.Greater(hud.NoticesShown, noticesShown);
         }
 
         ServerFrames BindAccepted()
