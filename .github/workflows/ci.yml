@@ -194,6 +194,8 @@ jobs:
           percent=$(go test -cover ./internal/rules/ | grep -o 'coverage: [0-9.]*' | grep -o '[0-9.]*')
           echo "server/internal/rules coverage: ${percent}% (${rules} functions)" | tee -a "$GITHUB_STEP_SUMMARY"
           awk -v p="$percent" 'BEGIN { exit (p + 0 >= 95) ? 0 : 1 }' || { echo "rules coverage ${percent}% is below the 95% floor of docs/test-strategy.md section 11"; exit 1; }
+      - name: Admin API has no known reachable vulnerability
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./cmd/admin-api/...
 
   bench:
     needs: changes
@@ -330,6 +332,8 @@ jobs:
       - run: pnpm run --if-present typecheck
       - run: pnpm run --if-present test
       - run: pnpm run build
+      - name: No critical vulnerability in admin dependencies
+        run: pnpm audit --audit-level=critical
 
   client:
     needs: changes
