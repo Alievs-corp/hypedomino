@@ -21,10 +21,12 @@ import {
   rotationCandidates,
   rotationFits,
   slotsOf,
+  termsProblems,
   toggledOffer,
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
+  withReferencePrice,
   withRegionalNote,
   withRotation,
   withWindow,
@@ -38,6 +40,7 @@ import {
   type ShopCatalog,
 } from "@/shop/catalog";
 import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult } from "./actions";
+import { OfferTerms } from "./OfferTerms";
 import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
@@ -85,6 +88,7 @@ export function ShopEditor({
           ))}
         </select>
         {offer && <OfferPrice offer={offer} referencePrices={referencePrices} onChange={update} />}
+        {offer && <OfferTerms offer={offer} onChange={update} />}
         {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
@@ -104,6 +108,7 @@ export function ShopEditor({
               (candidate) =>
                 windowEndsBeforeStart(candidate) ||
                 permanentMythics(candidate, items).length > 0 ||
+                termsProblems(candidate).length > 0 ||
                 referencePriceProblem(candidate, referencePrices.inEffect) !== null,
             ) ||
             catalog.rotations.some((rotation) => !rotationFits(rotation, rules))
@@ -328,14 +333,27 @@ function OfferPrice({ offer, referencePrices, onChange }: { offer: Offer; refere
           </label>
         </>
       ) : (
-        <input
-          type="number"
-          min={1}
-          aria-label={t(currencyLabel[price.currency])}
-          value={price.amount}
-          onChange={(event) => onChange(withPrice(offer, { ...price, amount: Number(event.target.value) }))}
-          className={fieldClass}
-        />
+        <div className="flex flex-wrap items-end gap-3">
+          <input
+            type="number"
+            min={1}
+            aria-label={t(currencyLabel[price.currency])}
+            value={price.amount}
+            onChange={(event) => onChange(withPrice(offer, { ...price, amount: Number(event.target.value) }))}
+            className={fieldClass}
+          />
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            {t("shop.reference_price_input")}
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={(offer.referencePriceCoins ?? 0) + (offer.referencePriceCrystals ?? 0) || ""}
+              onChange={(event) => onChange(withReferencePrice(offer, Number(event.target.value)))}
+              className={fieldClass}
+            />
+          </label>
+        </div>
       )}
       {problem && (
         <p role="alert" className="text-sm text-danger-text">

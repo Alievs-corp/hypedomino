@@ -21,9 +21,12 @@ export type Offer = {
   bundle?: Bundle;
   window: { start: string; end?: string };
   limitPerAccount?: number;
+  eligibility?: Eligibility;
   nameKey: string;
   [field: string]: unknown;
 };
+
+export type Eligibility = { maxAccountAgeHours?: number; firstPurchaseOnly?: boolean };
 
 export type ChestRules = {
   rarityPercent: Record<string, number>;
@@ -102,6 +105,52 @@ export function withPrice(offer: Offer, price: Price): Offer {
 export function withRegionalNote(offer: Offer, note: string): Offer {
   const { regionalOverrideNote, ...rest } = offer;
   return note.trim() ? { ...rest, regionalOverrideNote: note } : rest;
+}
+
+function positiveWhole(value: number): number | undefined {
+  return Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+export function withReferencePrice(offer: Offer, amount: number): Offer {
+  const { referencePriceCoins, referencePriceCrystals, ...rest } = offer;
+  const reference = positiveWhole(amount);
+  const price = priceOf(offer);
+  if (reference === undefined || price.currency === "product") {
+    return rest;
+  }
+  return price.currency === "coins" ? { ...rest, referencePriceCoins: reference } : { ...rest, referencePriceCrystals: reference };
+}
+
+export function withLimitPerAccount(offer: Offer, limit: number): Offer {
+  const { limitPerAccount, ...rest } = offer;
+  const kept = positiveWhole(limit);
+  return kept === undefined ? rest : { ...rest, limitPerAccount: kept };
+}
+
+export function withEligibility(offer: Offer, maxAccountAgeHours: number, firstPurchaseOnly: boolean): Offer {
+  const { eligibility, ...rest } = offer;
+  const hours = positiveWhole(maxAccountAgeHours);
+  const next: Eligibility = { ...(hours === undefined ? {} : { maxAccountAgeHours: hours }), ...(firstPurchaseOnly ? { firstPurchaseOnly } : {}) };
+  return Object.keys(next).length === 0 ? rest : { ...rest, eligibility: next };
+}
+
+export type TermsProblem = "cosmetic_limit_one" | "chest_without_terms" | "reference_not_above_price";
+
+export function termsProblems(offer: Offer): TermsProblem[] {
+  const problems: TermsProblem[] = [];
+  if (offer.kind === "cosmetic" && offer.limitPerAccount !== 1) {
+    problems.push("cosmetic_limit_one");
+  }
+  const eligibility = offer.eligibility ?? {};
+  if (offer.kind === "chest" && (offer.limitPerAccount !== undefined || eligibility.maxAccountAgeHours !== undefined || eligibility.firstPurchaseOnly)) {
+    problems.push("chest_without_terms");
+  }
+  const price = priceOf(offer);
+  const reference = (offer.referencePriceCoins ?? 0) + (offer.referencePriceCrystals ?? 0);
+  if (reference > 0 && price.currency !== "product" && reference <= price.amount) {
+    problems.push("reference_not_above_price");
+  }
+  return problems;
 }
 
 export function replaceOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
