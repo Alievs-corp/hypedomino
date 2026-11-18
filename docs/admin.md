@@ -733,6 +733,8 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
   A publish keeps every published id (ids are never reused): a mission is retired and a medal retired or disabled instead, and one left out gets 400 `invalid`. A rollback restores the earlier content; an entry added since stays in the catalog, retired.
 
+  A publish or rollback where any mission, or any medal, has no `approved` `en` value for its `nameKey` in the game strings (#214, section 3.3) gets 400 `invalid` with those name keys in `detail`. A reward bundle edit republishes the missions under the same check.
+
   Every mission bundle's medals and cosmetics must list that mission as a source (`docs/economy.md` section 4). A mission publish checks this against the published medals and cosmetics. A medal publish checks it against the published missions, so a medal cannot lose a source a live mission grants it through. The order for a new medal is therefore: publish the medal listing the mission, then the mission.
 
   The panel edits missions on `/missions` and medals on `/medals` (`admin/README.md`). Their history shows, for each version, the catalog settings and the fields of each mission or medal it changed against the version before, and the ones it added.
