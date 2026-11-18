@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.Game.Match;
+using Google.Protobuf;
 using HypeDomino.Net;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Emoji;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using NUnit.Framework;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HypeDomino.Tests.EditMode
 {
@@ -17,6 +22,37 @@ namespace HypeDomino.Tests.EditMode
         static readonly string[] Equipped = { "emoji.laugh", "emoji.cry" };
         static readonly string[] NoLocales = Array.Empty<string>();
         const string Builtin = @"{""entries"":[{""key"":""quick.well_played"",""en"":""Well played"",""az"":""Əla oyun""}]}";
+        const string LaughStill = "cosmetic/emoji/laugh/static";
+        const string CryStill = "cosmetic/emoji/cry/static";
+        const string PartyStill = "cosmetic/emoji/party/static";
+        const string Manifest = "{\"schemaVersion\":1,\"manifestVersion\":1,\"items\":["
+            + "{\"id\":\"emoji.laugh\",\"type\":\"emoji\",\"availability\":\"live\",\"staticAddress\":\"cosmetic/emoji/laugh/static\"},"
+            + "{\"id\":\"emoji.cry\",\"type\":\"emoji\",\"availability\":\"live\",\"staticAddress\":\"cosmetic/emoji/cry/static\"},"
+            + "{\"id\":\"emoji.party\",\"type\":\"emoji\",\"availability\":\"live\",\"staticAddress\":\"cosmetic/emoji/party/static\"}"
+            + "]}";
+
+        sealed class Source<T> : ICosmeticArtSource<T> where T : class
+        {
+            readonly Dictionary<string, Action<T>> pending = new();
+
+            public readonly List<string> Loads = new();
+            public readonly List<string> Releases = new();
+
+            public void Load(string address, Action<T> done)
+            {
+                Loads.Add(address);
+                pending[address] = done;
+            }
+
+            public void Release(string address) => Releases.Add(address);
+
+            public void Finish(string address, T art)
+            {
+                var done = pending[address];
+                pending.Remove(address);
+                done(art);
+            }
+        }
 
         sealed class FakeTransport : IFrameTransport
         {
@@ -35,12 +71,21 @@ namespace HypeDomino.Tests.EditMode
             }
 
             public void Deliver(byte[] frame) => incoming.Enqueue(frame);
+
+            public void Deliver(Envelope.PayloadOneofCase payload, IMessage message) =>
+                Deliver(new FrameWriter(Session.MaxSentFrameBytes).Write(new FrameHeader(Session.ProtocolVersion, 0, 0, Nonce), payload, message).ToArray());
         }
 
         EmojiWheel wheel;
         SeatMessages messages;
         LanguageChoice language;
         MatchEmoji emoji;
+        Source<Sprite> stills;
+        Texture2D texture;
+        Sprite sprite;
+        long now;
+        int shownCount;
+        TableSide shownSide;
 
         [SetUp]
         public void CreateWheel()
@@ -49,7 +94,29 @@ namespace HypeDomino.Tests.EditMode
             wheel.Equip(Equipped);
             messages = new SeatMessages();
             language = LanguageChoice.Load("az", () => NoLocales);
-            emoji = new MatchEmoji(wheel, messages, new GameStrings(BuiltinStrings.Parse(Builtin), language, false));
+            stills = new Source<Sprite>();
+            texture = new Texture2D(4, 4);
+            sprite = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.zero);
+            now = 0;
+            shownCount = 0;
+            Assert.IsTrue(CosmeticManifest.TryParse(Manifest, out var manifest));
+            var stage = new CosmeticStage(stills, new Source<LoopArt>(), null, null, null, EffectLevel.Medium, false);
+            var shelf = new EmojiArtShelf(manifest, stage, Record);
+            emoji = new MatchEmoji(wheel, messages, new GameStrings(BuiltinStrings.Parse(Builtin), language, false), shelf, () => now);
+        }
+
+        [TearDown]
+        public void DestroyArt()
+        {
+            emoji.Unbind();
+            Object.DestroyImmediate(sprite);
+            Object.DestroyImmediate(texture);
+        }
+
+        void Record(TableSide side, LoopArt art)
+        {
+            shownCount++;
+            shownSide = side;
         }
 
         static Session AcceptedSession(FakeTransport transport)
@@ -298,6 +365,184 @@ namespace HypeDomino.Tests.EditMode
                 }
             }, Allocates.Nothing);
         }
+
+        [Test]
+        public void TheFirstViewOfAMatchBeginsItAndPrefetchesTheOwnEmoji()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+
+            Receive(transport, session, View(MatchState.Loading, Seat.South, Mode._2V2));
+
+            Assert.IsTrue(emoji.Begun);
+            CollectionAssert.AreEqual(new[] { LaughStill, CryStill }, stills.Loads);
+            Assert.IsTrue(emoji.CanMute(Seat.North));
+            Assert.IsFalse(emoji.CanMute(Seat.South));
+
+            emoji.ToggleMute(Seat.North);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            Assert.AreEqual(2, stills.Loads.Count, "later views of the match prefetch nothing");
+            Assert.IsTrue(emoji.IsMuted(Seat.North), "later views of the match keep the mutes");
+        }
+
+        [Test]
+        public void AViewOutsideATwoOrFourSeatMatchBeginsNothing()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+
+            Receive(transport, session, View(MatchState.Waiting, Seat.Unspecified, Mode.Unspecified));
+
+            Assert.IsFalse(emoji.Begun);
+            Assert.AreEqual(0, stills.Loads.Count);
+        }
+
+        [Test]
+        public void ARelayedEmojiPopsItsArtAtTheSendersSide()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            stills.Finish(LaughStill, sprite);
+
+            now = 700;
+            transport.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = Seat.West, ItemId = "emoji.laugh" });
+            session.Poll();
+
+            Assert.AreEqual(1, shownCount);
+            Assert.AreEqual(TableSide.Left, shownSide);
+            Assert.IsFalse(wheel.Calm(700), "another seat's emoji leaves the wheel free");
+
+            transport.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = Seat.South, ItemId = "emoji.party" });
+            session.Poll();
+            Assert.AreEqual(1, shownCount, "art still loading pops when it arrives");
+            Assert.IsTrue(wheel.Calm(700 + TokenEffect.EmojiDurationMs - 1), "the own emoji restarts the calm at the clock's time");
+            Assert.IsFalse(wheel.Calm(700 + TokenEffect.EmojiDurationMs));
+
+            stills.Finish(PartyStill, sprite);
+            Assert.AreEqual(2, shownCount);
+            Assert.AreEqual(TableSide.Bottom, shownSide);
+        }
+
+        [Test]
+        public void ARelayedQuickMessageShowsAtTheSendersSideAtTheClocksTime()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.X, Mode._1V1));
+
+            now = 1000;
+            transport.Deliver(Envelope.PayloadOneofCase.QuickMessageShown, Message(Seat.Y));
+            session.Poll();
+
+            Assert.IsTrue(messages.TryGet(TableSide.Top, 1000 + TokenEffect.EmojiDurationMs - 1, out var text));
+            Assert.AreEqual("Əla oyun", text);
+            Assert.IsFalse(messages.TryGet(TableSide.Top, 1000 + TokenEffect.EmojiDurationMs, out _));
+        }
+
+        [Test]
+        public void AMutedSeatsRelayedEmojiAndMessagesAreDropped()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            stills.Finish(LaughStill, sprite);
+            emoji.ToggleMute(Seat.East);
+
+            transport.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = Seat.East, ItemId = "emoji.laugh" });
+            transport.Deliver(Envelope.PayloadOneofCase.QuickMessageShown, Message(Seat.East));
+            session.Poll();
+
+            Assert.AreEqual(0, shownCount);
+            Assert.IsFalse(messages.TryGet(TableSide.Right, 0, out _));
+        }
+
+        [Test]
+        public void AFinishedViewEndsTheMatchAndTheNextMatchBeginsAfresh()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            stills.Finish(LaughStill, sprite);
+            stills.Finish(CryStill, sprite);
+            emoji.ToggleMute(Seat.East);
+
+            Receive(transport, session, View(MatchState.Finished, Seat.South, Mode._2V2));
+
+            Assert.IsFalse(emoji.Begun);
+            Assert.IsFalse(emoji.IsMuted(Seat.East));
+            CollectionAssert.AreEquivalent(new[] { LaughStill, CryStill }, stills.Releases);
+
+            Receive(transport, session, View(MatchState.Finished, Seat.South, Mode._2V2));
+            Assert.AreEqual(2, stills.Releases.Count, "a repeated finished view releases nothing twice");
+
+            Receive(transport, session, View(MatchState.Loading, Seat.X, Mode._1V1));
+            Assert.IsTrue(emoji.Begun);
+            Assert.IsTrue(emoji.CanMute(Seat.Y));
+            Assert.IsFalse(emoji.CanMute(Seat.East));
+            Assert.AreEqual(4, stills.Loads.Count);
+        }
+
+        [Test]
+        public void UnbindEndsTheMatchAndStopsTheRelays()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            stills.Finish(LaughStill, sprite);
+            stills.Finish(CryStill, sprite);
+            emoji.ToggleMute(Seat.East);
+
+            emoji.Unbind();
+
+            Assert.IsFalse(emoji.Begun);
+            Assert.IsFalse(emoji.IsMuted(Seat.East));
+            Assert.AreEqual(2, stills.Releases.Count);
+            transport.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = Seat.West, ItemId = "emoji.laugh" });
+            transport.Deliver(Envelope.PayloadOneofCase.QuickMessageShown, Message(Seat.West));
+            session.Poll();
+            Assert.AreEqual(0, shownCount);
+            Assert.IsFalse(messages.TryGet(TableSide.Left, 0, out _));
+        }
+
+        [Test]
+        public void ViewsOfARunningMatchAndALoadedEmojiDoNotAllocate()
+        {
+            var transport = new FakeTransport();
+            var session = BoundSession(transport);
+            Receive(transport, session, View(MatchState.Playing, Seat.South, Mode._2V2));
+            stills.Finish(LaughStill, sprite);
+            var view = session.View;
+            var shown = new EmojiShown { Seat = Seat.West, ItemId = "emoji.laugh" };
+            emoji.Show(view);
+            emoji.Place(shown);
+            Assert.That(() =>
+            {
+                for (var at = 0; at < 100; at++)
+                {
+                    now = at;
+                    emoji.Show(view);
+                    emoji.Place(shown);
+                }
+            }, Allocates.Nothing);
+            Assert.AreEqual(101, shownCount);
+        }
+
+        Session BoundSession(FakeTransport transport)
+        {
+            var session = AcceptedSession(transport);
+            emoji.Bind(session);
+            return session;
+        }
+
+        static void Receive(FakeTransport transport, Session session, MatchView view)
+        {
+            transport.Deliver(Envelope.PayloadOneofCase.MatchView, view);
+            session.Poll();
+            Assert.IsFalse(session.Broken);
+        }
+
+        static MatchView View(MatchState state, Seat seat, Mode mode) => new() { State = state, Seat = seat, Mode = mode };
 
         static QuickMessageShown Message(Seat sender) => new() { Seat = sender, Key = "quick.well_played" };
     }

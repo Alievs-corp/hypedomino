@@ -505,6 +505,7 @@ Muting another player's emoji and quick messages on this device (#155, carried b
 - **Menu (owner decision 2026-11-14).** A long press on another player's seat avatar opens a menu with the mute toggle, labelled `match.seat.mute` or, while the seat is muted, `match.seat.unmute`. The own seat has no such menu; a viewer without a seat may mute any seat. The long-press hold time and the menu's look come with the match HUD and are not decided here.
 - **Effect.** A muted seat's incoming `EmojiShown` and `QuickMessageShown` are dropped on this device only; the server and the other players are not involved. An emoji or message already on screen finishes as usual. Unmuting shows the seat's next ones again.
 - **Lifetime (owner decision 2026-11-14).** A mute lasts for the current match only. It is cleared when the match ends or a new match starts, and it is never stored on the device (no PlayerPrefs key, `docs/anti-cheat.md` Device storage).
+- **Match bounds.** For emoji, quick messages and mutes a match begins with the first `MatchView` of a 1v1 or 2v2 match that is not `MATCH_STATE_FINISHED`; the viewer's seat and the mode come from that view, and the own equipped emoji start loading then (Emoji wheel, Art). It ends with the first finished view or when the match screen lets go of the session, which also releases the held emoji art. A reconnect within the match keeps its mutes.
 
 ## 8. Score cascade
 
