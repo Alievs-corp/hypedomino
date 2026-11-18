@@ -21,6 +21,7 @@ import {
 } from "@/ranked/seasons";
 import { windowMinute } from "@/shop/catalog";
 import { createSeason, deleteSeason, extendSeason, rescheduleSeason } from "./actions";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary disabled:opacity-50";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -300,8 +301,11 @@ function Outcome({ result }: { result: SeasonResult | null }) {
     return null;
   }
   return (
-    <p role="status" className="text-sm text-text-secondary">
-      {t("ranked.refused")}: {result.error} {result.detail}
-    </p>
+    <>
+      <p role="status" className="text-sm text-text-secondary">
+        {t("ranked.refused")}: {result.error} {result.detail}
+      </p>
+      <UnnamedKeys error={result.error} detail={result.detail} />
+    </>
   );
 }
