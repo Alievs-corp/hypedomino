@@ -27,6 +27,10 @@ import {
   withPoolItem,
   withPrice,
   withRegionalNote,
+  termsProblems,
+  withEligibility,
+  withLimitPerAccount,
+  withReferencePrice,
   type CosmeticItem,
   type Offer,
   type PublishedCatalog,
@@ -230,4 +234,41 @@ test("one rotation per period start, kept in date order, and removable", () => {
   const replaced = withRotation(both, { ...earlier, start: "2026-11-04T04:00:00Z", offers: ["offer.c"] });
   assert.equal(replaced.rotations.length, 2);
   assert.deepEqual(withoutRotation(replaced, later).rotations.map((rotation) => rotation.offers), [["offer.c"]]);
+});
+
+test("a struck-through price is set in the currency of the price and cleared when empty", () => {
+  const coins = withReferencePrice(offer({ priceCoins: 400, referencePriceCrystals: 70 }), 500);
+  assert.equal(coins.referencePriceCoins, 500);
+  assert.equal("referencePriceCrystals" in coins, false);
+  assert.equal(withReferencePrice(offer({ priceCrystals: 60 }), 80).referencePriceCrystals, 80);
+  assert.equal("referencePriceCoins" in withReferencePrice(coins, 0), false);
+  assert.equal("referencePriceCoins" in withReferencePrice(coins, Number.NaN), false);
+  const product = withReferencePrice(offer({ productId: "offer_starter" }), 500);
+  assert.equal("referencePriceCoins" in product || "referencePriceCrystals" in product, false);
+});
+
+test("a purchase limit and eligibility keep only positive whole values", () => {
+  assert.equal(withLimitPerAccount(offer({}), 3).limitPerAccount, 3);
+  assert.equal("limitPerAccount" in withLimitPerAccount(offer({ limitPerAccount: 3 }), 0), false);
+  assert.equal("limitPerAccount" in withLimitPerAccount(offer({ limitPerAccount: 3 }), 1.5), false);
+  assert.deepEqual(withEligibility(offer({}), 72, true).eligibility, { maxAccountAgeHours: 72, firstPurchaseOnly: true });
+  assert.deepEqual(withEligibility(offer({}), 0, true).eligibility, { firstPurchaseOnly: true });
+  assert.equal("eligibility" in withEligibility(offer({ eligibility: { maxAccountAgeHours: 72 } }), 0, false), false);
+});
+
+test("purchase terms the server refuses are flagged", () => {
+  const cases: [Partial<Offer>, string[]][] = [
+    [{ kind: "cosmetic", priceCoins: 400, limitPerAccount: 1 }, []],
+    [{ kind: "cosmetic", priceCoins: 400 }, ["cosmetic_limit_one"]],
+    [{ kind: "cosmetic", priceCoins: 400, limitPerAccount: 2 }, ["cosmetic_limit_one"]],
+    [{ kind: "chest", section: "chests", priceCoins: 400 }, []],
+    [{ kind: "chest", section: "chests", priceCoins: 400, limitPerAccount: 1 }, ["chest_without_terms"]],
+    [{ kind: "chest", section: "chests", priceCoins: 400, eligibility: { firstPurchaseOnly: true } }, ["chest_without_terms"]],
+    [{ kind: "bundle", priceCrystals: 60, referencePriceCrystals: 60 }, ["reference_not_above_price"]],
+    [{ kind: "bundle", priceCrystals: 60, referencePriceCrystals: 80 }, []],
+    [{ kind: "bundle", productId: "offer_starter", eligibility: { maxAccountAgeHours: 72, firstPurchaseOnly: true } }, []],
+  ];
+  for (const [fields, want] of cases) {
+    assert.deepEqual(termsProblems(offer(fields)), want, JSON.stringify(fields));
+  }
 });

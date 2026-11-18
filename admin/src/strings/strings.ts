@@ -64,6 +64,24 @@ export function stringsHref(query: StringsQuery, change: Partial<StringsQuery>):
   return `/strings?${searchOf({ ...query, ...change })}`;
 }
 
+const unnamedMarker = "no approved en name for ";
+
+export function unnamedKeys(error: string, detail: string): string[] {
+  const at = detail.lastIndexOf(unnamedMarker);
+  if (error !== "invalid" || at < 0) {
+    return [];
+  }
+  return detail
+    .slice(at + unnamedMarker.length)
+    .split(",")
+    .map((key) => key.trim())
+    .filter((key) => key !== "");
+}
+
+export function keyHref(key: string): string {
+  return `/strings?${searchOf({ q: key })}`;
+}
+
 export function nextStringsHref(query: StringsQuery, keys: readonly string[]): string | null {
   return keys.length < stringsPageSize ? null : stringsHref(query, { after: keys[keys.length - 1] });
 }

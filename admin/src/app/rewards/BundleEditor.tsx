@@ -6,6 +6,7 @@ import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
 import { bundleEditChanged, bundleEditIssues, editOf, parsedIds, useLabel, type RewardBundle } from "@/rewards/bundles";
 import { editRewardBundle } from "./actions";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -97,6 +98,7 @@ export function BundleEditor({ bundle, domainLabel }: Props) {
           {t("rewards.refused")}: {result.error} {result.detail}
         </p>
       )}
+      {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { needsStepUp } from "@/admin/refusals";
 import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
 import { useTranslator } from "@/i18n/client";
 import type { ConfigResult } from "@/config/result";
+import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
 export function Rollback({ version, clientId, action }: { version: number; clientId: string; action: (version: number, reason: string) => Promise<ConfigResult> }) {
   const t = useTranslator();
@@ -53,6 +54,7 @@ export function Rollback({ version, clientId, action }: { version: number; clien
           {result.ok ? `${t("rollback.done")}: ${result.version}` : `${t("rollback.refused")}: ${result.error} ${result.detail}`}
         </p>
       )}
+      {result && !result.ok && !stepUp && <UnnamedKeys error={result.error} detail={result.detail} />}
     </div>
   );
 }
