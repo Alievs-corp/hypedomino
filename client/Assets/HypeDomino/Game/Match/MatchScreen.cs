@@ -24,6 +24,7 @@ namespace HypeDomino.Game.Match
         void ShowTurn(TurnTimer timer);
         void ShowPass(TableSide side, PassNotice notice);
         void HidePass(TableSide side);
+        void ShowNotices(MatchNotices notices);
     }
 
     public sealed class MatchScreen
@@ -59,6 +60,7 @@ namespace HypeDomino.Game.Match
         public ScoreBoard Score { get; } = new();
         public HandChoice Hand { get; } = new();
         public TurnTimer Timer { get; } = new();
+        public MatchNotices Notices { get; } = new();
         public ChainLayout Board => board.Layout;
         bool CanSend => session != null && session.Accepted;
 
@@ -94,16 +96,20 @@ namespace HypeDomino.Game.Match
             Timer.Read(view);
             Hand.Read(view);
             hud.ShowHand(Hand);
+            if (Notices.Read(view)) hud.ShowNotices(Notices);
             if (passed && TrySideOf(view, passer, out var side)) StartPass(side);
         }
 
-        public void Tick(ServerClock clock, double nowSeconds, bool reduceMotion)
+        public void Tick(Connection connection, double nowSeconds, bool reduceMotion)
         {
-            Timer.Tick(clock, nowSeconds);
+            Timer.Tick(connection.Clock, nowSeconds);
             hud.ShowTurn(Timer);
             if (cues.ReadTurnWarning(localTurn && Timer.IsWarning)) playSounds(MatchSounds.TurnWarning);
             TickPass(nowSeconds, reduceMotion);
+            if (Notices.Tick(connection, nowSeconds)) hud.ShowNotices(Notices);
         }
+
+        public bool TapTakeBack(Connection connection) => Notices.TakeBack.Tap(connection);
 
         public HandTap TapTile(int index)
         {
