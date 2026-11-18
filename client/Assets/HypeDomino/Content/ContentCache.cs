@@ -27,7 +27,11 @@ namespace HypeDomino.Content
         public CacheClearResult Clear()
         {
             if (inMatch()) return CacheClearResult.NotInMatch;
-            if (store.TryClear()) return CacheClearResult.Cleared;
+            if (store.TryClear())
+            {
+                if (store.ClearAtStart) store.ClearAtStart = false;
+                return CacheClearResult.Cleared;
+            }
             store.ClearAtStart = true;
             return CacheClearResult.AtNextStart;
         }
