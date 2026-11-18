@@ -21,9 +21,12 @@ export type Offer = {
   bundle?: Bundle;
   window: { start: string; end?: string };
   limitPerAccount?: number;
+  eligibility?: Eligibility;
   nameKey: string;
   [field: string]: unknown;
 };
+
+export type Eligibility = { maxAccountAgeHours?: number; firstPurchaseOnly?: boolean };
 
 export type ChestRules = {
   rarityPercent: Record<string, number>;
@@ -102,6 +105,52 @@ export function withPrice(offer: Offer, price: Price): Offer {
 export function withRegionalNote(offer: Offer, note: string): Offer {
   const { regionalOverrideNote, ...rest } = offer;
   return note.trim() ? { ...rest, regionalOverrideNote: note } : rest;
+}
+
+function positiveWhole(value: number): number | undefined {
+  return Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+export function withReferencePrice(offer: Offer, amount: number): Offer {
+  const { referencePriceCoins, referencePriceCrystals, ...rest } = offer;
+  const reference = positiveWhole(amount);
+  const price = priceOf(offer);
+  if (reference === undefined || price.currency === "product") {
+    return rest;
+  }
+  return price.currency === "coins" ? { ...rest, referencePriceCoins: reference } : { ...rest, referencePriceCrystals: reference };
+}
+
+export function withLimitPerAccount(offer: Offer, limit: number): Offer {
+  const { limitPerAccount, ...rest } = offer;
+  const kept = positiveWhole(limit);
+  return kept === undefined ? rest : { ...rest, limitPerAccount: kept };
+}
+
+export function withEligibility(offer: Offer, maxAccountAgeHours: number, firstPurchaseOnly: boolean): Offer {
+  const { eligibility, ...rest } = offer;
+  const hours = positiveWhole(maxAccountAgeHours);
+  const next: Eligibility = { ...(hours === undefined ? {} : { maxAccountAgeHours: hours }), ...(firstPurchaseOnly ? { firstPurchaseOnly } : {}) };
+  return Object.keys(next).length === 0 ? rest : { ...rest, eligibility: next };
+}
+
+export type TermsProblem = "cosmetic_limit_one" | "chest_without_terms" | "reference_not_above_price";
+
+export function termsProblems(offer: Offer): TermsProblem[] {
+  const problems: TermsProblem[] = [];
+  if (offer.kind === "cosmetic" && offer.limitPerAccount !== 1) {
+    problems.push("cosmetic_limit_one");
+  }
+  const eligibility = offer.eligibility ?? {};
+  if (offer.kind === "chest" && (offer.limitPerAccount !== undefined || eligibility.maxAccountAgeHours !== undefined || eligibility.firstPurchaseOnly)) {
+    problems.push("chest_without_terms");
+  }
+  const price = priceOf(offer);
+  const reference = (offer.referencePriceCoins ?? 0) + (offer.referencePriceCrystals ?? 0);
+  if (reference > 0 && price.currency !== "product" && reference <= price.amount) {
+    problems.push("reference_not_above_price");
+  }
+  return problems;
 }
 
 export function replaceOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
@@ -242,4 +291,144 @@ export function toggledOffer(rotation: Rotation, offerId: string): Rotation {
 
 export function rotationFits(rotation: Rotation, rules: RotationRules): boolean {
   return rotation.offers.length >= 1 && rotation.offers.length <= slotsOf(rules, rotation.period);
+}
+
+export const offerKinds = ["cosmetic", "bundle", "crystals", "pass", "pass_levels", "chest"];
+
+const cosmeticKinds = ["cosmetic", "bundle"];
+
+const passKinds = ["pass", "pass_levels"];
+
+const sectionKinds: Record<string, string[]> = {
+  featured: [...cosmeticKinds, "crystals", ...passKinds],
+  daily_rotation: cosmeticKinds,
+  weekly_rotation: cosmeticKinds,
+  event: cosmeticKinds,
+  chests: ["chest"],
+  pass: passKinds,
+  crystals: ["crystals"],
+};
+
+export function sectionsFor(kind: string): string[] {
+  return Object.keys(sectionKinds).filter((section) => sectionKinds[section].includes(kind));
+}
+
+export type NewOfferDraft = { id: string; kind: string; section: string; bundleId: string; nameKey: string };
+
+export type DraftProblem = "id_format" | "id_taken" | "section_kind" | "bundle_required" | "name_required";
+
+const offerIdPattern = /^offer\.[a-z0-9_]+$/;
+
+export function draftProblems(draft: NewOfferDraft, catalog: ShopCatalog): DraftProblem[] {
+  const checks: [boolean, DraftProblem][] = [
+    [!offerIdPattern.test(draft.id), "id_format"],
+    [catalog.offers.some((offer) => offer.id === draft.id), "id_taken"],
+    [!sectionsFor(draft.kind).includes(draft.section), "section_kind"],
+    [draft.bundleId.trim() === "" && !passKinds.includes(draft.kind), "bundle_required"],
+    [draft.nameKey.trim() === "", "name_required"],
+  ];
+  return checks.filter(([failed]) => failed).map(([, problem]) => problem);
+}
+
+export type BundleRow = { id: string; revision: number; coins: number; crystals?: number; cosmetics: string[] | null; medals: string[] | null; passXp: number; differs: boolean };
+
+export type BundleLookup = Bundle | "unknown" | "differs" | "unchecked";
+
+export function exactBundle(rows: BundleRow[], id: string): BundleLookup {
+  const matches = rows.filter((row) => row.id === id);
+  if (matches.length === 0) {
+    return "unknown";
+  }
+  if (matches.length > 1 || matches[0].differs) {
+    return "differs";
+  }
+  const { revision, coins, crystals, cosmetics, medals, passXp } = matches[0];
+  return { id, revision, coins, ...(crystals ? { crystals } : {}), cosmetics: cosmetics ?? [], medals: medals ?? [], passXp };
+}
+
+export type NameApproval = "approved" | "not_approved" | "unchecked";
+
+export type GameStringRow = { key: string; values: Partial<Record<string, { status: string }>> };
+
+export function englishApproval(rows: GameStringRow[], key: string): NameApproval {
+  return rows.some((row) => row.key === key && row.values.en?.status === "approved") ? "approved" : "not_approved";
+}
+
+export function searchFrom(id: string): string {
+  return id.slice(0, -1);
+}
+
+export type LookupProblem = "bundle_unknown" | "bundle_differs" | "bundle_unchecked" | "name_not_approved" | "name_unchecked";
+
+const bundleProblem: Record<Exclude<BundleLookup, Bundle>, LookupProblem> = { unknown: "bundle_unknown", differs: "bundle_differs", unchecked: "bundle_unchecked" };
+
+const nameProblem: Record<Exclude<NameApproval, "approved">, LookupProblem> = { not_approved: "name_not_approved", unchecked: "name_unchecked" };
+
+export function lookupProblems(bundle: BundleLookup | null, name: NameApproval): LookupProblem[] {
+  const problems: LookupProblem[] = typeof bundle === "string" ? [bundleProblem[bundle]] : [];
+  return name === "approved" ? problems : [...problems, nameProblem[name]];
+}
+
+export function newOffer(draft: NewOfferDraft, bundle: Bundle | null): Offer {
+  return { id: draft.id, kind: draft.kind, section: draft.section, ...(bundle ? { bundle } : {}), window: { start: "" }, nameKey: draft.nameKey.trim() };
+}
+
+export function withOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
+  return { ...catalog, offers: [...catalog.offers, offer] };
+}
+
+export type OfferProblem =
+  | "price_required"
+  | "window_start_required"
+  | "bundle_medal"
+  | "bundle_currency"
+  | "cosmetic_one_item"
+  | "bundle_needs_cosmetic"
+  | "crystal_pack_content"
+  | "chest_content";
+
+const productIdPattern = /^[a-z0-9_]+$/;
+
+function priced(offer: Offer): boolean {
+  const prices = [(offer.priceCoins ?? 0) > 0, (offer.priceCrystals ?? 0) > 0, Boolean(offer.productId)].filter(Boolean).length;
+  return prices === 1 && (!offer.productId || productIdPattern.test(offer.productId)) && allowedCurrencies(offer).includes(priceOf(offer).currency);
+}
+
+function bundleProblems(offer: Offer): OfferProblem[] {
+  if (passKinds.includes(offer.kind) && !offer.bundle?.id) {
+    return [];
+  }
+  const cosmetics = offer.bundle?.cosmetics ?? [];
+  const coins = offer.bundle?.coins ?? 0;
+  const crystals = offer.bundle?.crystals ?? 0;
+  const passXp = offer.bundle?.passXp ?? 0;
+  const product = Boolean(offer.productId);
+  const checks: [boolean, OfferProblem][] = [
+    [(offer.bundle?.medals ?? []).length > 0, "bundle_medal"],
+    [product ? coins > 0 : coins > 0 || crystals > 0, "bundle_currency"],
+    [offer.kind === "cosmetic" && (cosmetics.length !== 1 || coins > 0 || crystals > 0 || passXp > 0), "cosmetic_one_item"],
+    [offer.kind === "bundle" && cosmetics.length === 0, "bundle_needs_cosmetic"],
+    [offer.kind === "crystals" && (crystals === 0 || !product || cosmetics.length > 0 || passXp > 0), "crystal_pack_content"],
+    [offer.kind === "chest" && (passXp > 0 || cosmetics.length === 0), "chest_content"],
+  ];
+  return checks.filter(([failed]) => failed).map(([, problem]) => problem);
+}
+
+export function offerProblems(offer: Offer): OfferProblem[] {
+  const own: OfferProblem[] = [];
+  if (!priced(offer)) {
+    own.push("price_required");
+  }
+  if (windowMinute(offer.window.start) === "") {
+    own.push("window_start_required");
+  }
+  return [...own, ...bundleProblems(offer)];
+}
+
+export function unlistedCosmetics(offer: Offer, items: CosmeticItem[]): string[] {
+  if (offer.kind === "chest") {
+    return [];
+  }
+  const listed = (id: string) => items.some((item) => item.id === id && item.sources.some((source) => source.type === "shop" && source.ref === offer.id));
+  return (offer.bundle?.cosmetics ?? []).filter((id) => !listed(id));
 }
