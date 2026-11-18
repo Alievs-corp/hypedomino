@@ -10,6 +10,7 @@ import {
   chestRulesOf,
   crystalPacks,
   listsChest,
+  offerProblems,
   oddsTotal,
   permanentMythics,
   priceOf,
@@ -23,6 +24,7 @@ import {
   slotsOf,
   termsProblems,
   toggledOffer,
+  unlistedCosmetics,
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
@@ -30,6 +32,7 @@ import {
   withRegionalNote,
   withRotation,
   withWindow,
+  withOffer,
   withoutRotation,
   type CosmeticItem,
   type Offer,
@@ -40,6 +43,8 @@ import {
   type ShopCatalog,
 } from "@/shop/catalog";
 import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult } from "./actions";
+import { NewOffer } from "./NewOffer";
+import { OfferChecks } from "./OfferChecks";
 import { OfferTerms } from "./OfferTerms";
 import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
@@ -90,6 +95,14 @@ export function ShopEditor({
         {offer && <OfferPrice offer={offer} referencePrices={referencePrices} onChange={update} />}
         {offer && <OfferTerms offer={offer} onChange={update} />}
         {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
+        {offer && <OfferChecks offer={offer} items={items} />}
+        <NewOffer
+          catalog={catalog}
+          onAdd={(added) => {
+            setCatalog((current) => withOffer(current, added));
+            setSelected(added.id);
+          }}
+        />
       </section>
       <CrystalPacks catalog={catalog} onChange={update} />
       <Chests catalog={catalog} items={items} onChange={update} onRules={(chests) => setCatalog((current) => ({ ...current, chests }))} />
@@ -109,6 +122,8 @@ export function ShopEditor({
                 windowEndsBeforeStart(candidate) ||
                 permanentMythics(candidate, items).length > 0 ||
                 termsProblems(candidate).length > 0 ||
+                offerProblems(candidate).length > 0 ||
+                unlistedCosmetics(candidate, items).length > 0 ||
                 referencePriceProblem(candidate, referencePrices.inEffect) !== null,
             ) ||
             catalog.rotations.some((rotation) => !rotationFits(rotation, rules))
