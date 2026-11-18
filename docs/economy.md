@@ -364,6 +364,26 @@ A code has an id, a campaign id (what cosmetic `promo` sources reference), a bun
 - A code grants coins, cosmetics and pass XP, never crystals directly, a medal or a chest; a `passPremium` code unlocks the premium track, whose levels pay crystals (OQ-18). It never grants a store product or an item whose `sources` lack its campaign. Codes are never sold.
 - Implemented in `server/internal/promo` (#108): `cmd/promo` and the admin API (`docs/admin.md` 9.1, #142) create, batch, approve and disable codes (`passPremium` through the `-pass-premium` flag and the `passPremium` field); `POST /promo/redeem` redeems them. The per-account attempt limits and lock are enforced; the per-device and per-IP limits are #184.
 - Client model in `client/Assets/HypeDomino/Game/Promo` (#109, `client/README.md` Promo codes): the typed or pasted code passes the server's format check before submit is offered and before it is sent, one request is in flight at a time, and each refusal reason maps to a game string key `promo.redeem.<reason>`. The client grants nothing; it shows what the reply reports.
+- Reply texts: the built-in bundle (`docs/localization.md` 2.4) ships these `az` and `en` texts; a published bundle replaces them from admin, and `tr` and `ru` fall back along `docs/localization.md` 1.2 until translated. The `az` texts for an invalid, expired and already used code follow the wording of #109. No text names a limit or a lock time, since those are admin config. A lost session has no text and returns to sign-in.
+
+| Reply | Key | `az` | `en` |
+|---|---|---|---|
+| Granted | `promo.redeem.granted` | Kod qəbul olundu | Code redeemed |
+| `promo.code_invalid`, or refused before sending | `promo.redeem.code_invalid` | Bu kod etibarsızdır | This code is invalid |
+| `promo.unknown` | `promo.redeem.unknown` | Belə kod yoxdur | This code does not exist |
+| `promo.not_active` | `promo.redeem.not_active` | Bu kod aktiv deyil | This code is not active |
+| `promo.disabled` | `promo.redeem.disabled` | Bu kod söndürülüb | This code has been turned off |
+| `promo.not_started` | `promo.redeem.not_started` | Bu kod hələ aktiv deyil | This code is not active yet |
+| `promo.expired` | `promo.redeem.expired` | Bu kodun vaxtı keçib | This code has expired |
+| `promo.exhausted` | `promo.redeem.exhausted` | Bu kodun limiti bitib | This code has run out |
+| `promo.already_redeemed` | `promo.redeem.already_redeemed` | Bu kod artıq istifadə olunub | You have already used this code |
+| `promo.not_eligible` | `promo.redeem.not_eligible` | Bu kod sənin hesabın üçün deyil | This code is not for your account |
+| `promo.no_pass_season` | `promo.redeem.no_pass_season` | Hazırda Hype Pass mövsümü yoxdur. Sonra yenidən yoxla | No Hype Pass season is running. Try again later |
+| `promo.pass_premium_owned` | `promo.redeem.pass_premium_owned` | Bu mövsüm premium Hype Pass artıq səndədir | You already have the premium Hype Pass this season |
+| `promo.rate_limited`, `rate_limited` | `promo.redeem.rate_limited` | Çox cəhd etdin. Sonra yenidən yoxla | Too many attempts. Try again later |
+| `promo.locked` | `promo.redeem.locked` | Çox səhv kod yazıldı. Kod daxil etmə bir müddət dayandırılıb | Too many wrong codes. Code entry is paused for a while |
+| No response | `promo.redeem.offline` | Bağlantı yoxdur. İnterneti yoxla və yenidən cəhd et | No connection. Check your internet and try again |
+| Any other reply | `notice.generic` | Nəsə alınmadı. Yenidən cəhd et | Something went wrong. Try again |
 
 ## 9. Refunds and chargebacks
 
