@@ -208,6 +208,8 @@ The #148 acceptance is Lighthouse above 90 and no critical vulnerability (`docs/
 4. Run `lighthouse <url> --preset=desktop` and the default mobile run on `/` signed out, and on `/`, `/audit` and `/shop` with `--extra-headers '{"Cookie":"hd_admin_session=<local token>"}'`.
 5. Run `pnpm audit` here and `govulncheck ./cmd/admin-api/...` in `server/`.
 
+CI repeats step 5 on every change to its area: the `admin` job fails on a critical advisory (`pnpm audit --audit-level=critical`) and the `server` job on any vulnerability `govulncheck` finds reachable from the admin API, which has no severity levels (`docs/test-strategy.md` 10.1). Lighthouse needs a running panel and API, so it stays a manual run.
+
 Last result: 2026-11-03, Lighthouse 13.6.0, headless Chrome on Windows, empty catalog and one audit entry. The scores are performance / accessibility / best practices.
 
 | Page | Desktop | Mobile |

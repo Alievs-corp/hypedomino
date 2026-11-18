@@ -110,7 +110,7 @@ Unit and component tests run with `pnpm test`, browser e2e as a separate suite. 
 | Audit | Every write produces an audit entry with who, what, before, after and reason | #134 |
 | Config publish e2e | Create a value, publish, see a new version id; publish an earlier version; the game server loads it (section 2.3) | #145 |
 | Catalog e2e | Cosmetic CRUD produces a manifest that passes the cosmetics schema (`tools/cosmetics-schema`) | #136 |
-| Hardening | Lighthouse above 90, no critical vulnerability (#148 acceptance); procedure and last result in `admin/README.md` | #148 |
+| Hardening | Lighthouse above 90, no critical vulnerability (#148 acceptance); procedure and last result in `admin/README.md`; the vulnerability half runs in CI (section 10.1) | #148 |
 
 ### 2.7 Spec tooling (exists)
 
@@ -282,9 +282,9 @@ A test that fails and then passes on the same commit is flaky. A flaky test is a
 | `lint` | `npm run lint` (comment lint), `npm run test:tools` (spec validators) | Always |
 | `secret-scan` | Pinned gitleaks over the PR's commits, or the full history on `main` (`docs/environments.md` section 4) | Always |
 | `pr-meta` | One `type:`, `area:` and `priority:` label; `Closes #N` or `Part of #N` in the body | PRs |
-| `server` | `gofmt`, `go vet`, `go build`, `go test -race ./...` | Server changed |
+| `server` | `gofmt`, `go vet`, `go build`, `go test -race ./...`, `govulncheck` (pinned) over `./cmd/admin-api/...` (#148) | Server changed |
 | `image` | Builds `server/Dockerfile`; `tools/deploy/container-smoke.sh` (non-root user, bad config exits 2, health, drain on `SIGTERM`); `deploy/k8s/base`, `deploy/k8s/overlays/ci` and `deploy/k8s/monitoring` render and pass kubeconform; `promtool check rules` and `promtool test rules` on the alert rules of `deploy/k8s/monitoring` (the latency alert of ADR 0014 fires after 15 minutes over budget and stays quiet within budget or at low traffic); `tools/deploy/kind-rollout.sh` on a kind cluster (the release through `tools/deploy/apply-release.sh`: the `migrate` Job migrates a throwaway PostgreSQL to the newest migration before the rollout, a second release applies nothing, a failed job leaves the server untouched; rolling deploy keeps every replica available, old pods drain and stop, rollback under 5 minutes, ADR 0010); `tools/deploy/kind-metrics.sh` (the debug port `6060` answers the `monitoring` namespace, is refused from another namespace, is not in the `server` Service and answers pprof with 404; the loopback pprof listener `6061` is refused from the pod network and reached through `kubectl port-forward`) | Server, `deploy/` or `tools/deploy/` changed |
-| `admin` | `pnpm install --frozen-lockfile`, `typecheck`, `test`, `build` (scripts if present) | Admin changed |
+| `admin` | `pnpm install --frozen-lockfile`, `typecheck`, `test`, `build` (scripts if present), `pnpm audit --audit-level=critical` (#148) | Admin changed |
 | `client` | Unity test runner, `testMode: all` (edit-mode and play-mode) | Client changed |
 | `proto` | `buf lint`, `buf format --diff --exit-code`, `buf breaking` against the PR base | Proto changed |
 | `CI complete` | Fails if any needed job is neither `success` nor `skipped`, or if `changes`, `lint` or `secret-scan` did not succeed | Always |
