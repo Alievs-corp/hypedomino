@@ -131,13 +131,23 @@ namespace HypeDomino.Tests.EditMode
         Table table;
         Hud hud;
         MatchScreen screen;
+        int warningsPlayed;
+        MatchSounds soundsPlayed;
 
         [SetUp]
         public void CreateScreen()
         {
             table = new Table();
             hud = new Hud();
-            screen = new MatchScreen(table, hud);
+            warningsPlayed = 0;
+            soundsPlayed = MatchSounds.None;
+            screen = new MatchScreen(table, hud, PlaySounds);
+        }
+
+        void PlaySounds(MatchSounds sounds)
+        {
+            soundsPlayed |= sounds;
+            if ((sounds & MatchSounds.TurnWarning) != 0) warningsPlayed++;
         }
 
         static Tile T(uint low, uint high) => new() { Low = low, High = high };
@@ -237,6 +247,67 @@ namespace HypeDomino.Tests.EditMode
 
             screen.Tick(SyncedClock(), 6d, false);
             Assert.IsTrue(screen.Timer.IsWarning);
+        }
+
+        [Test]
+        public void TheTurnWarningPlaysOnceWhenTheLocalTurnReachesTheWarning()
+        {
+            Show(Playing(Seat.South));
+            screen.Tick(SyncedClock(), 4d, false);
+            Assert.AreEqual(0, warningsPlayed);
+
+            screen.Tick(SyncedClock(), 6d, false);
+            Assert.AreEqual(1, warningsPlayed);
+            Assert.AreEqual(MatchSounds.TurnWarning, soundsPlayed);
+
+            screen.Tick(SyncedClock(), 7d, false);
+            screen.Tick(SyncedClock(), 11d, false);
+            Assert.AreEqual(1, warningsPlayed);
+        }
+
+        [Test]
+        public void TheTurnWarningPlaysAgainOnTheNextLocalTurn()
+        {
+            Show(Playing(Seat.South));
+            screen.Tick(SyncedClock(), 6d, false);
+            Show(Playing(Seat.West));
+            screen.Tick(SyncedClock(), 6d, false);
+            Assert.AreEqual(1, warningsPlayed);
+
+            Show(Playing(Seat.South));
+            screen.Tick(SyncedClock(), 6d, false);
+            Assert.AreEqual(2, warningsPlayed);
+        }
+
+        [Test]
+        public void AnotherSeatsTurnPlaysNoTurnWarning()
+        {
+            Show(Playing(Seat.West));
+            screen.Tick(SyncedClock(), 6d, false);
+
+            Assert.IsTrue(screen.Timer.IsWarning);
+            Assert.AreEqual(0, warningsPlayed);
+        }
+
+        [Test]
+        public void AViewerWithoutASeatHearsNoTurnWarning()
+        {
+            var view = Playing(Seat.Unspecified);
+            view.Seat = Seat.Unspecified;
+            Show(view);
+            screen.Tick(SyncedClock(), 6d, false);
+
+            Assert.IsTrue(screen.Timer.IsWarning);
+            Assert.AreEqual(0, warningsPlayed);
+        }
+
+        [Test]
+        public void TheTurnWarningStaysSilentWithoutASyncedClock()
+        {
+            Show(Playing(Seat.South));
+            screen.Tick(new ServerClock(), 6d, false);
+
+            Assert.AreEqual(0, warningsPlayed);
         }
 
         [Test]
@@ -363,6 +434,27 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.That(frame, Allocates.Nothing);
             Assert.Greater(hud.PassesShown, 0);
+        }
+
+        [Test]
+        public void TickingIntoTheTurnWarningAllocatesNothing()
+        {
+            var clock = SyncedClock();
+            var south = Playing(Seat.South).ToByteArray();
+            var west = Playing(Seat.West).ToByteArray();
+            TestDelegate frame = () =>
+            {
+                snapshot.TryRead(south);
+                screen.Show(snapshot);
+                screen.Tick(clock, 6d, false);
+                snapshot.TryRead(west);
+                screen.Show(snapshot);
+                screen.Tick(clock, 6d, false);
+            };
+            frame();
+
+            Assert.That(frame, Allocates.Nothing);
+            Assert.Greater(warningsPlayed, 1);
         }
 
         ServerFrames BindAccepted()
