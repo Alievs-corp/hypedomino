@@ -809,6 +809,8 @@ export const az: Messages = {
   "ranked.new_season": "Yeni mövsüm",
   "ranked.slug": "season. sonrası id",
   "ranked.new_id": "Mövsüm id-si",
+  "ranked.name_key": "Ad açarı",
+  "ranked.name_key_hint": "Mövsüm yalnız bu açarın Oyun mətnlərində təsdiqlənmiş en dəyəri olduqda yaradılır.",
   "ranked.no_rewards": "Mükafatsız (beta, soft launch)",
   "ranked.new_hint_next": "Yeni mövsüm sonuncu mövsümün bitdiyi anda başlayır. Bitmə tarixi standart olaraq konfiqdəki mövsüm uzunluğundan hesablanır.",
   "ranked.new_hint_first": "Birinci mövsüm gələcəkdə istənilən vaxt başlaya bilər. Bitmə tarixi standart olaraq konfiqdəki mövsüm uzunluğundan hesablanır.",

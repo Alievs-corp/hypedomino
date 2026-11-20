@@ -7,6 +7,7 @@ import {
   extendIssues,
   rescheduleIssues,
   seasonIdFromSlug,
+  seasonNameKey,
   seasonProgress,
   shiftedBy,
   startLocked,
@@ -21,6 +22,11 @@ const now = "2026-11-06T12:00:00Z";
 
 test("a season id is built from its slug", () => {
   assert.equal(seasonIdFromSlug("winter_2027"), "season.winter_2027");
+});
+
+test("a season name key is the one the server gives the new season", () => {
+  assert.equal(seasonNameKey(seasonIdFromSlug("winter_2027")), "season.winter_2027.name");
+  assert.equal(seasonNameKey(live.id), live.name_key);
 });
 
 test("the default end adds calendar months the way the server does", () => {
