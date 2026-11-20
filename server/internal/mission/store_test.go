@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -137,6 +138,11 @@ func TestAMatchCompletesMissionsAndGrantsThemOnce(t *testing.T) {
 	var keys int
 	if err := f.pool.QueryRow(context.Background(), `select count(*) from reward_grants where account_id = $1 and idempotency_key in ('mission:mission.daily_play_1:2026-11-03', 'mission:mission.weekly_win_2:2026-W45', 'mission:mission.win_1:once')`, account).Scan(&keys); err != nil || keys != 3 {
 		t.Fatalf("grant keys %d, %v", keys, err)
+	}
+	var events, identified int
+	if err := f.pool.QueryRow(context.Background(), `select count(*), count(*) filter (where analytics_id is not null or client_time_ms is not null or label <> '' or value <> 0 or received_at <> $2)
+		from analytics_events where name = $1`, analytics.MissionComplete, now).Scan(&events, &identified); err != nil || events != 3 || identified != 0 {
+		t.Fatalf("%d mission_complete events, %d with an id, a device time, a label, a value or another time, %v", events, identified, err)
 	}
 }
 
