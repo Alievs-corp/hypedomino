@@ -7,6 +7,7 @@ import type { MessageKey } from "@/i18n/translate";
 import {
   addMedal,
   medalIssues,
+  medalTextKeys,
   newMedal,
   replaceMedal,
   validMedalSlug,
@@ -102,7 +103,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
             {t("medals.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
-          <UnnamedKeysAhead keys={catalog.medals.map((item) => item.nameKey)} />
+          <UnnamedKeysAhead keys={medalTextKeys(catalog)} />
           <button
             type="button"
             disabled={pending || blocked || catalog.medals.length === 0}
