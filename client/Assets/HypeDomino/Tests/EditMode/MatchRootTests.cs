@@ -5,7 +5,10 @@ using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Cosmetics;
+using HypeDomino.UI.Emoji;
+using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
+using HypeDomino.UI.Motion;
 using Hypedomino.V1;
 using NUnit.Framework;
 using UnityEngine;
@@ -17,10 +20,15 @@ namespace HypeDomino.Tests.EditMode
     {
         const string NeonTable = "cosmetic/table/neon/static";
         const string FoxAvatar = "cosmetic/avatar/fox/static";
+        const string LaughStill = "cosmetic/emoji/laugh/static";
         const ulong ServerNowMs = 1_000_000;
+        const string Builtin = @"{""entries"":[{""key"":""quick.well_played"",""en"":""Well played"",""az"":""Əla oyun""}]}";
+        static readonly string[] Equipped = { "emoji.laugh" };
+        static readonly string[] NoLocales = Array.Empty<string>();
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
 {""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
-{""id"":""table.neon"",""type"":""table"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""}]}";
+{""id"":""table.neon"",""type"":""table"",""rarityId"":""epic"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""},
+{""id"":""emoji.laugh"",""type"":""emoji"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/laugh/static""}]}";
 
         sealed class Table : IMatchTable
         {
@@ -85,10 +93,15 @@ namespace HypeDomino.Tests.EditMode
         {
             readonly Dictionary<string, Action<Sprite>> pending = new();
 
+            public readonly List<string> Loads = new();
             public readonly List<string> Releases = new();
             public Sprite Art;
 
-            public void Load(string address, Action<Sprite> done) => pending[address] = done;
+            public void Load(string address, Action<Sprite> done)
+            {
+                Loads.Add(address);
+                pending[address] = done;
+            }
 
             public void Release(string address) => Releases.Add(address);
 
@@ -97,6 +110,17 @@ namespace HypeDomino.Tests.EditMode
                 var done = new List<Action<Sprite>>(pending.Values);
                 pending.Clear();
                 foreach (var finish in done) finish(Art);
+            }
+        }
+
+        sealed class NoLoops : ICosmeticArtSource<LoopArt>
+        {
+            public void Load(string address, Action<LoopArt> done)
+            {
+            }
+
+            public void Release(string address)
+            {
             }
         }
 
@@ -127,12 +151,15 @@ namespace HypeDomino.Tests.EditMode
         Hud hud;
         LoadingCardsScreen loadingScreen;
         Source source;
+        Source emojiStills;
         ServerFrames frames;
         Session session;
         Connection connection;
         MatchRoot root;
         Texture2D texture;
         double now;
+        int emojiShown;
+        TableSide emojiSide;
 
         [SetUp]
         public void CreateRoot()
@@ -142,13 +169,15 @@ namespace HypeDomino.Tests.EditMode
             loadingScreen = new LoadingCardsScreen();
             texture = new Texture2D(4, 4);
             source = new Source { Art = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.zero) };
+            emojiStills = new Source { Art = source.Art };
+            emojiShown = 0;
             frames = new ServerFrames();
             session = new Session();
             connection = new Connection(() => throw new InvalidOperationException(), () => new ClientHello(), () => 0d, new System.Random(1));
             connection.Clock.Sync(ServerNowMs, 0d, 0d);
             now = 0d;
             Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out var manifest));
-            root = new MatchRoot(table, hud, loadingScreen, new CosmeticArtCache<Sprite>(source), new ActiveCosmeticManifest(manifest));
+            root = new MatchRoot(table, hud, loadingScreen, new CosmeticArtCache<Sprite>(source), new ActiveCosmeticManifest(manifest), CreateEmoji(manifest));
             root.Bind(session);
             session.Hello(frames, new ClientHello());
             frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
@@ -161,6 +190,27 @@ namespace HypeDomino.Tests.EditMode
             root.Unbind();
             Object.DestroyImmediate(source.Art);
             Object.DestroyImmediate(texture);
+        }
+
+        MatchEmoji CreateEmoji(CosmeticManifest manifest)
+        {
+            var wheel = new EmojiWheel(Equipped.Length);
+            wheel.Equip(Equipped);
+            var strings = new GameStrings(BuiltinStrings.Parse(Builtin), LanguageChoice.Load("az", () => NoLocales), false);
+            var stage = new CosmeticStage(emojiStills, new NoLoops(), null, null, null, EffectLevel.Medium, false);
+            return new MatchEmoji(wheel, new SeatMessages(), strings, new EmojiArtShelf(manifest, stage, RecordEmoji), () => 0);
+        }
+
+        void RecordEmoji(TableSide side, LoopArt art)
+        {
+            emojiShown++;
+            emojiSide = side;
+        }
+
+        void ReceiveEmoji(Seat seat)
+        {
+            frames.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = seat, ItemId = "emoji.laugh" });
+            session.Poll();
         }
 
         static MatchView View(MatchState state)
@@ -277,6 +327,58 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.AreEqual(0, loadingScreen.CardsShown);
             Assert.AreEqual(0, table.BackgroundsShown);
+        }
+
+        [Test]
+        public void OneBindBeginsTheMatchEmojiAndRoutesARelayedEmojiToItsSide()
+        {
+            Receive(View(MatchState.Loading));
+
+            Assert.IsTrue(root.Emoji.Begun);
+            CollectionAssert.AreEqual(new[] { LaughStill }, emojiStills.Loads);
+
+            emojiStills.FinishAll();
+            ReceiveEmoji(Seat.Y);
+
+            Assert.AreEqual(1, emojiShown);
+            Assert.AreEqual(TableSide.Top, emojiSide);
+        }
+
+        [Test]
+        public void UnbindEndsTheMatchEmojiAndReleasesItsArt()
+        {
+            Receive(View(MatchState.Playing));
+            emojiStills.FinishAll();
+
+            root.Unbind();
+            ReceiveEmoji(Seat.Y);
+
+            Assert.IsFalse(root.Emoji.Begun);
+            CollectionAssert.AreEqual(new[] { LaughStill }, emojiStills.Releases);
+            Assert.AreEqual(0, emojiShown);
+        }
+
+        [Test]
+        public void TheMatchEmojiArtIsNotReleasedWithTheLoadingArt()
+        {
+            Receive(View(MatchState.Loading));
+            source.FinishAll();
+            emojiStills.FinishAll();
+            Tick(true);
+
+            Receive(View(MatchState.Opening));
+            Tick(true);
+
+            Assert.IsTrue(root.Emoji.Begun);
+            Assert.IsEmpty(emojiStills.Releases);
+        }
+
+        [Test]
+        public void AMatchRootNeedsAMatchEmoji()
+        {
+            Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out var manifest));
+
+            Assert.Throws<ArgumentNullException>(() => new MatchRoot(table, hud, loadingScreen, new CosmeticArtCache<Sprite>(source), new ActiveCosmeticManifest(manifest), null));
         }
 
         [Test]
