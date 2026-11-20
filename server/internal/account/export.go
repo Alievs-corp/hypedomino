@@ -29,6 +29,7 @@ var exportSections = []exportSection{
 	{"season_results", "season_results", `select season_id, mode, position, rank_index, apex_tier, lp, wins, mmr, reset_index, country from season_results where account_id = $1 order by season_id, mode`},
 	{"season_rewards", "season_rewards", `select season_id, mode, tier, rank_index, coins, bundle_id, emblems, created_at, seen_at from season_rewards where account_id = $1 order by created_at`},
 	{"leaderboard_emblems", "leaderboard_emblems", `select mode, season_id, board, bracket, position, awarded_at, revoked_at, revoke_reason from leaderboard_emblems where account_id = $1 order by awarded_at`},
+	{"leaderboard_removals", "leaderboard_removals", `select season_id, mode, removed_at from leaderboard_removals where account_id = $1 order by removed_at`},
 	{"emblem_showcase", "emblem_showcases", `select emblems, updated_at from emblem_showcases where account_id = $1`},
 	{"wallets", "wallets", `select currency, balance, updated_at from wallets where account_id = $1 order by currency`},
 	{"ledger", "ledger_entries", `select currency, amount, reason, source_type, source_ref, balance_after, created_at from ledger_entries where account_id = $1 order by id`},

@@ -8,8 +8,10 @@ import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { emptyGrant, grantReady, grantRequest, grantSourceTypes, type GrantDraft } from "@/players/grant";
 import { validAdjustment } from "@/players/record";
+import { boardModes } from "@/players/leaderboard";
 import { ladders, penaltyRunning, type PenaltyView } from "@/players/penalties";
-import { adjustCoins, banTemporarily, forceRename, grantReward, liftPenalty, liftShadowban, liftTemporaryBan, mute, removeOffense, shadowban, unmute, type PlayerActionResult } from "./actions";
+import type { SeasonMode } from "@/ranked/seasons";
+import { adjustCoins, banTemporarily, forceRename, grantReward, liftPenalty, liftShadowban, liftTemporaryBan, mute, removeFromLeaderboard, removeOffense, shadowban, unmute, type PlayerActionResult } from "./actions";
 
 type Pending = { action: () => Promise<PlayerActionResult>; onApplied?: () => void };
 
@@ -27,7 +29,7 @@ function outcomeKey(result: PlayerActionResult): MessageKey {
   return result.repeated ? "actions.repeated" : "actions.done";
 }
 
-export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renameRequired, penalties }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; muted: boolean; renameRequired: boolean; penalties: PenaltyView | null }) {
+export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renameRequired, penalties, boardSeasons }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; muted: boolean; renameRequired: boolean; penalties: PenaltyView | null; boardSeasons: string[] }) {
   const t = useTranslator();
   const router = useRouter();
   const [reason, setReason] = useState("");
@@ -35,6 +37,8 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renam
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [grant, setGrant] = useState<GrantDraft>(emptyGrant);
   const [grantId, setGrantId] = useState(() => crypto.randomUUID());
+  const [boardSeason, setBoardSeason] = useState(boardSeasons[0] ?? "");
+  const [boardMode, setBoardMode] = useState<SeasonMode>("1v1");
   const [last, setLast] = useState<Pending | null>(null);
   const [result, setResult] = useState<PlayerActionResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -141,6 +145,37 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renam
           {t("actions.grant_apply")}
         </button>
       </fieldset>
+      {boardSeasons.length > 0 && (
+        <fieldset className="flex flex-col gap-3 rounded-md border border-surface p-3">
+          <legend className="px-1 text-sm font-semibold">{t("actions.board_removal")}</legend>
+          <p className="text-sm text-text-muted">{t("actions.board_removal_hint")}</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className={labelClass}>
+              {t("actions.board_season")}
+              <select value={boardSeason} onChange={(event) => setBoardSeason(event.target.value)} className={fieldClass}>
+                {boardSeasons.map((season) => (
+                  <option key={season} value={season}>
+                    {season}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              {t("actions.board_mode")}
+              <select value={boardMode} onChange={(event) => setBoardMode(event.target.value as SeasonMode)} className={fieldClass}>
+                {boardModes.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="button" disabled={pending || noReason || boardSeason === ""} onClick={() => run({ action: () => removeFromLeaderboard(id, boardSeason, boardMode, reason) })} className={buttonClass}>
+              {t("actions.board_remove")}
+            </button>
+          </div>
+        </fieldset>
+      )}
       <div className="flex flex-wrap gap-3">
         {banned ? (
           <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => liftTemporaryBan(id, reason) })} className={buttonClass}>

@@ -50,6 +50,10 @@ export async function unmute(id: string, reason: string): Promise<PlayerActionRe
   return act("DELETE", `${playerApiPath(id)}/mute`, { reason });
 }
 
+export async function removeFromLeaderboard(id: string, season: string, mode: string, reason: string): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/leaderboard-removal`, { season, mode, reason });
+}
+
 export async function liftPenalty(id: string, reason: string): Promise<PlayerActionResult> {
   return act("POST", `${playerApiPath(id)}/penalties/lift`, { reason });
 }
