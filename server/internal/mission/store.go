@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -292,6 +293,11 @@ func (s *Store) ApplyMatch(ctx context.Context, account, matchID string, match M
 			return nil, err
 		}
 		completed = append(completed, mission.ID)
+	}
+	if len(completed) > 0 {
+		if err := analytics.RecordServerIn(ctx, tx, analytics.MissionComplete, len(completed), endedAt); err != nil {
+			return nil, err
+		}
 	}
 	return completed, tx.Commit(ctx)
 }
