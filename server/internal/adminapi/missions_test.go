@@ -70,7 +70,11 @@ func (a *api) passMedalArt(catalog map[string]any) {
 func (a *api) nameEntries(status gamestrings.Status, catalog map[string]any, list string) {
 	a.t.Helper()
 	for _, entry := range catalog[list].([]any) {
-		a.nameKeys(status, entry.(map[string]any)["id"].(string)+".name")
+		id := entry.(map[string]any)["id"].(string)
+		a.nameKeys(status, id+".name")
+		if list == "medals" {
+			a.nameKeys(status, id+".description")
+		}
 	}
 }
 
@@ -114,16 +118,29 @@ func TestMissionsAndMedalsNeedAnApprovedEnglishName(t *testing.T) {
 		{"a draft value", gamestrings.Draft, http.StatusBadRequest},
 		{"an approved value", gamestrings.Approved, http.StatusOK},
 	}
-	for _, step := range steps {
-		if step.status != "" {
+	for _, step := range []struct {
+		name       string
+		status     gamestrings.Status
+		nameOnly   bool
+		unapproved []string
+	}{
+		{"no value", "", false, []string{"medal.wins_50.name", "medal.wins_50.description"}},
+		{"draft values", gamestrings.Draft, false, []string{"medal.wins_50.name", "medal.wins_50.description"}},
+		{"an approved name and a draft description", gamestrings.Approved, true, []string{"medal.wins_50.description"}},
+		{"approved values", gamestrings.Approved, false, nil},
+	} {
+		switch {
+		case step.nameOnly:
+			a.nameKeys(step.status, "medal.wins_50.name")
+		case step.status != "":
 			a.nameEntries(step.status, wins50, "medals")
 		}
 		status, body := a.call("PUT", "/admin/config/medals", content, map[string]any{"catalog": medals, "reason": "launch medals"})
-		if step.want == http.StatusOK {
+		if step.unapproved == nil {
 			expect(t, status, body, http.StatusOK, "")
 			continue
 		}
-		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for medal.wins_50.name") || !refusedKeys(body, "medal.wins_50.name") {
+		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for "+strings.Join(step.unapproved, ", ")) || !refusedKeys(body, step.unapproved...) {
 			t.Errorf("medal %s: %d %v", step.name, status, body)
 		}
 	}
