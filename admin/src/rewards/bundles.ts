@@ -21,7 +21,7 @@ export type BundleEdit = { coins: number; crystals: number; cosmetics: string[];
 
 export const bundlePageSize = 50;
 
-export const bundleDomains = ["shop", "pass", "missions", "rating", "daily_login", "promo", "promo_template"] as const;
+export const bundleDomains = ["shop", "pass", "missions", "rating", "daily_login", "promo", "promo_template", "reward_bundles"] as const;
 
 export type BundleQuery = { q: string; domain: (typeof bundleDomains)[number] | ""; differing: "true" | ""; after: string };
 
@@ -87,4 +87,23 @@ export function bundleEditIssues(edit: BundleEdit): MessageKey[] {
   if (![edit.coins, edit.crystals, edit.passXp].every((value) => Number.isInteger(value) && value >= 0)) found.push("rewards.issue.number");
   if (edit.coins === 0 && edit.crystals === 0 && edit.passXp === 0 && edit.cosmetics.length === 0 && edit.medals.length === 0) found.push("rewards.issue.empty");
   return found;
+}
+
+const bundleIdPattern = /^bundle\.[a-z0-9_]+$/;
+
+export const emptyBundleEdit: BundleEdit = { coins: 0, crystals: 0, cosmetics: [], medals: [], passXp: 0 };
+
+export function newBundleIssues(id: string, edit: BundleEdit): MessageKey[] {
+  const idIssues: MessageKey[] = bundleIdPattern.test(id) ? [] : ["rewards.issue.id"];
+  return [...idIssues, ...bundleEditIssues(edit)];
+}
+
+export type BundleForm = { coins: number; crystals: number; passXp: number; cosmetics: string; medals: string };
+
+export function formOf(edit: BundleEdit): BundleForm {
+  return { coins: edit.coins, crystals: edit.crystals, passXp: edit.passXp, cosmetics: edit.cosmetics.join(", "), medals: edit.medals.join(", ") };
+}
+
+export function editFrom(form: BundleForm): BundleEdit {
+  return { coins: form.coins, crystals: form.crystals, passXp: form.passXp, cosmetics: parsedIds(form.cosmetics), medals: parsedIds(form.medals) };
 }

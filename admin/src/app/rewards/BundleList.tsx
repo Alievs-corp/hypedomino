@@ -17,6 +17,7 @@ const domainLabel: Record<string, MessageKey> = {
   daily_login: "rewards.domain.daily_login",
   promo: "rewards.domain.promo",
   promo_template: "rewards.domain.promo_template",
+  reward_bundles: "rewards.domain.reward_bundles",
 };
 
 export function BundleList({ bundles, query, canEdit, nameKeys }: { bundles: RewardBundle[]; query: BundleQuery; canEdit: boolean; nameKeys: NameKeysByDomain }) {
