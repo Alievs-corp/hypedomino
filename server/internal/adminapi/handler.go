@@ -257,7 +257,31 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if _, pattern := h.mux.Handler(r); pattern == "" {
+		refuseUnmatched(w, r, h.mux)
+		return
+	}
 	h.mux.ServeHTTP(w, r)
+}
+
+type unmatchedProbe struct {
+	header http.Header
+	status int
+}
+
+func (p *unmatchedProbe) Header() http.Header         { return p.header }
+func (p *unmatchedProbe) Write(b []byte) (int, error) { return len(b), nil }
+func (p *unmatchedProbe) WriteHeader(status int)      { p.status = status }
+
+func refuseUnmatched(w http.ResponseWriter, r *http.Request, mux http.Handler) {
+	probe := &unmatchedProbe{header: http.Header{}, status: http.StatusNotFound}
+	mux.ServeHTTP(probe, r)
+	if probe.status == http.StatusMethodNotAllowed {
+		w.Header().Set("Allow", probe.header.Get("Allow"))
+		reply(w, http.StatusMethodNotAllowed, errorResponse{Error: "method_not_allowed"})
+		return
+	}
+	reply(w, http.StatusNotFound, errorResponse{Error: "not_found"})
 }
 
 type principal struct {
@@ -594,6 +618,7 @@ func classify(err error) (int, string) {
 func reply(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(body)
 }
