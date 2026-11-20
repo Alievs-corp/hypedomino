@@ -27,6 +27,10 @@ export function seasonIdFromSlug(slug: string): string {
   return `season.${slug}`;
 }
 
+export function seasonNameKey(id: string): string {
+  return `${id}.name`;
+}
+
 export function endAfterMonths(start: string, months: number): string {
   const end = new Date(start);
   end.setUTCMonth(end.getUTCMonth() + months);
