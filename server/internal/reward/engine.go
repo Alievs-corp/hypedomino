@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -274,6 +275,9 @@ func (e *Engine) record(ctx context.Context, tx pgx.Tx, report *Report) error {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `update reward_grants set report = $2 where id = $1`, report.ID, encoded); err != nil {
+		return err
+	}
+	if err := analytics.RecordServerIn(ctx, tx, analytics.RewardGrant, 1, report.At); err != nil {
 		return err
 	}
 	_, err = tx.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3) on conflict (topic, key) do nothing`, Topic, report.Account+":"+report.Key, encoded)

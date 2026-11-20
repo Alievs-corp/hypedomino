@@ -10,6 +10,7 @@ import (
 const (
 	MissionComplete = "mission_complete"
 	PassLevel       = "pass_level"
+	RewardGrant     = "reward_grant"
 )
 
 func RecordServerIn(ctx context.Context, tx pgx.Tx, name string, count int, at time.Time) error {

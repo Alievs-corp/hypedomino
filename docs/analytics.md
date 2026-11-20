@@ -26,7 +26,7 @@ The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any 
 
 ## 3. Server events
 
-Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. `match_end`, `mission_complete` and `pass_level` are built.
+Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. `match_end`, `mission_complete`, `pass_level` and `reward_grant` are built.
 
 | Event | Source |
 |---|---|
@@ -41,6 +41,8 @@ Match end, purchase, reward, mission and pass events are written by the server f
 `mission_complete`: `mission.Store.ApplyMatch` writes one row per mission the match completes, in the same transaction as the mission's `completed_at` and its reward grant (`docs/pass-missions-medals.md` section 10). The match is applied once per player (`mission_matches`) and a completed mission is never completed again, so the row needs no `analytics_sources` entry. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the match end. The label and value of `mission_complete` are not decided.
 
 `pass_level`: every pass XP gain (match XP, bundle XP, level purchase, Premium+) goes through `pass.Store.addXpIn`, which writes one row per level the new XP total crosses, in the same transaction as `pass_progress` and the level grants (`docs/pass-missions-medals.md` section 10). An XP key is applied once (`pass_xp_events`), so a repeated gain writes nothing twice; after a Premium revoke (`RevokePremiumIn`) lowers the XP, levels reached again write new rows. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the server time of the XP gain (the match end for match XP). The label and value of `pass_level` are not decided.
+
+`reward_grant`: every reward bundle (missions, pass levels, daily login, promo codes, rank rewards, shop and chest offers, store purchases, admin grants) goes through `reward.Engine.ApplyIn`, which writes one row when it records a new grant in `reward_grants`, in the same transaction as the grant's ledger entries (`docs/economy.md` sections 4 and 5). A store purchase therefore also writes a `reward_grant` row; `purchase_complete` stays its own event. A repeated idempotency key writes nothing, and a revoke or a reinstatement is not a grant. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the server time of the grant. The label and value of `reward_grant` are not decided.
 
 ## 4. Sending
 
@@ -59,7 +61,7 @@ Match end, purchase, reward, mission and pass events are written by the server f
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
 - Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job. The same run deletes the server events of section 3 by their time and the `analytics_sources` rows older than the cutoff.
 
-Not built yet: the server events of section 3 other than `match_end`, `mission_complete` and `pass_level`, aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
+Not built yet: the server events of section 3 other than `match_end`, `mission_complete`, `pass_level` and `reward_grant`, aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
 
 ## 6. Config
 
