@@ -277,7 +277,7 @@ func (e *Engine) record(ctx context.Context, tx pgx.Tx, report *Report) error {
 	if _, err := tx.Exec(ctx, `update reward_grants set report = $2 where id = $1`, report.ID, encoded); err != nil {
 		return err
 	}
-	if err := analytics.RecordServerIn(ctx, tx, analytics.RewardGrant, 1, report.At); err != nil {
+	if err := analytics.RecordServerIn(ctx, tx, analytics.RewardGrant, report.Account, 1, report.At); err != nil {
 		return err
 	}
 	_, err = tx.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, $2, $3) on conflict (topic, key) do nothing`, Topic, report.Account+":"+report.Key, encoded)
