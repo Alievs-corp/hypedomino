@@ -59,6 +59,12 @@ export function useLabel(use: BundleUse): string {
   return use.detail ? `${use.object} ${use.detail}` : use.object;
 }
 
+export type NameKeysByDomain = Readonly<Record<string, readonly string[]>>;
+
+export function republishedNameKeys(bundle: RewardBundle, nameKeys: NameKeysByDomain): string[] {
+  return [...new Set(bundle.usedBy.map((use) => use.domain))].flatMap((domain) => nameKeys[domain] ?? []);
+}
+
 export function editOf(bundle: RewardBundle): BundleEdit {
   return { coins: bundle.coins, crystals: bundle.crystals ?? 0, cosmetics: bundle.cosmetics ?? [], medals: bundle.medals ?? [], passXp: bundle.passXp };
 }

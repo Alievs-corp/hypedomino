@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BundleEditor } from "./BundleEditor";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { bundleDomains, useLabel, type BundleQuery, type RewardBundle } from "@/rewards/bundles";
+import { bundleDomains, useLabel, type BundleQuery, type NameKeysByDomain, type RewardBundle } from "@/rewards/bundles";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -19,7 +19,7 @@ const domainLabel: Record<string, MessageKey> = {
   promo_template: "rewards.domain.promo_template",
 };
 
-export function BundleList({ bundles, query, canEdit }: { bundles: RewardBundle[]; query: BundleQuery; canEdit: boolean }) {
+export function BundleList({ bundles, query, canEdit, nameKeys }: { bundles: RewardBundle[]; query: BundleQuery; canEdit: boolean; nameKeys: NameKeysByDomain }) {
   const t = useTranslator();
   const [selected, setSelected] = useState("");
   const label = (domain: string) => (domainLabel[domain] ? t(domainLabel[domain]) : domain);
@@ -97,7 +97,7 @@ export function BundleList({ bundles, query, canEdit }: { bundles: RewardBundle[
         </tbody>
       </table>
       {bundles.length === 0 && <p className="text-sm text-text-secondary">{t("rewards.no_match")}</p>}
-      {canEdit && editing && <BundleEditor key={`${editing.id}:${editing.revision}`} bundle={editing} domainLabel={label} />}
+      {canEdit && editing && <BundleEditor key={`${editing.id}:${editing.revision}`} bundle={editing} domainLabel={label} nameKeys={nameKeys} />}
     </section>
   );
 }
