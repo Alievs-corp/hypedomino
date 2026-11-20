@@ -11,6 +11,7 @@ import {
   cloneSeason,
   droppedSeasons,
   newSeason,
+  rankedWindow,
   removeSeason,
   replaceSeason,
   seasonIssues,
@@ -28,6 +29,7 @@ import {
   type SeasonState,
   type SettingKey,
   type Track,
+  type Window,
 } from "@/pass/config";
 import { idList } from "@/missions/catalog";
 import { windowMinute } from "@/shop/catalog";
@@ -54,9 +56,9 @@ const curveKeys: readonly (keyof Curve)[] = ["levels", "xpBase", "xpStep", "xpMa
 
 const instant = (minute: string) => (minute ? `${minute}:00Z` : "");
 
-type Props = { initialConfig: PassConfig; published: PassConfig | null; version: number; serverTime: string; canPublish: boolean };
+type Props = { initialConfig: PassConfig; published: PassConfig | null; version: number; serverTime: string; rankedSeasons: Window[] | null; canPublish: boolean };
 
-export function PassEditor({ initialConfig, published, version, serverTime, canPublish }: Props) {
+export function PassEditor({ initialConfig, published, version, serverTime, rankedSeasons, canPublish }: Props) {
   const t = useTranslator();
   const [config, setConfig] = useState(initialConfig);
   const [selected, setSelected] = useState(initialConfig.seasons.at(-1)?.id ?? "");
@@ -92,6 +94,8 @@ export function PassEditor({ initialConfig, published, version, serverTime, canP
         )}
         <NewSeason
           config={config}
+          rankedSeasons={rankedSeasons}
+          serverTime={serverTime}
           onAdd={(created) => {
             change(addSeason(config, created));
             setSelected(created.id);
@@ -242,11 +246,14 @@ function Settings({ config, onChange }: { config: PassConfig; onChange: (config:
   );
 }
 
-function NewSeason({ config, onAdd }: { config: PassConfig; onAdd: (season: Season) => void }) {
+type NewSeasonProps = { config: PassConfig; rankedSeasons: Window[] | null; serverTime: string; onAdd: (season: Season) => void };
+
+function NewSeason({ config, rankedSeasons, serverTime, onAdd }: NewSeasonProps) {
   const t = useTranslator();
+  const suggested = (from: PassConfig) => (rankedSeasons ? rankedWindow(from, rankedSeasons, serverTime) : null);
   const [source, setSource] = useState(config.seasons.at(-1)?.id ?? "");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const [start, setStart] = useState(() => windowMinute(suggested(config)?.start));
+  const [end, setEnd] = useState(() => windowMinute(suggested(config)?.end));
   const [curve, setCurve] = useState<Partial<Curve>>({});
   const from = config.seasons.find((candidate) => candidate.id === source);
   const curveReady = curveKeys.every((key) => (curve[key] ?? 0) >= 1);
@@ -282,8 +289,9 @@ function NewSeason({ config, onAdd }: { config: PassConfig; onAdd: (season: Seas
           onClick={() => {
             const created = from ? cloneSeason(config, from, instant(start), instant(end)) : newSeason(config, instant(start), instant(end), curve as Curve);
             onAdd(created);
-            setStart("");
-            setEnd("");
+            const next = suggested(addSeason(config, created));
+            setStart(windowMinute(next?.start));
+            setEnd(windowMinute(next?.end));
           }}
           className="rounded-md bg-surface px-4 py-2 text-text-secondary disabled:opacity-40"
         >
@@ -291,6 +299,7 @@ function NewSeason({ config, onAdd }: { config: PassConfig; onAdd: (season: Seas
         </button>
       </div>
       <p className="text-sm text-text-muted">{t(from ? "pass.clone_hint" : "pass.empty_hint")}</p>
+      {suggested(config) && <p className="text-sm text-text-muted">{t("pass.ranked_window_hint")}</p>}
     </fieldset>
   );
 }

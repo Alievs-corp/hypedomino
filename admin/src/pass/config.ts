@@ -34,6 +34,8 @@ export type PassConfig = {
 
 export type SeasonState = "planned" | "running" | "ended";
 
+export type Window = { start: string; end: string };
+
 export type XpRow = { level: number; toNext: number; total: number };
 
 export const tracks: readonly Track[] = ["free", "premium"];
@@ -178,8 +180,13 @@ export function removeSeason(config: PassConfig, id: string): PassConfig {
   return { ...config, seasons: config.seasons.filter((season) => season.id !== id) };
 }
 
-function overlaps(a: Season, b: Season): boolean {
+function overlaps(a: Window, b: Window): boolean {
   return Date.parse(a.start) < Date.parse(b.end) && Date.parse(b.start) < Date.parse(a.end);
+}
+
+export function rankedWindow(config: PassConfig, ranked: readonly Window[], now: string): Window | null {
+  const free = ranked.find((candidate) => Date.parse(candidate.end) > Date.parse(now) && !config.seasons.some((season) => overlaps(season, candidate)));
+  return free ? { start: free.start, end: free.end } : null;
 }
 
 export function seasonIssues(config: PassConfig, season: Season): MessageKey[] {
