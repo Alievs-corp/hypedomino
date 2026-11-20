@@ -610,7 +610,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
 ### 9.1 Admin API
 
-`server/cmd/admin-api` is the admin API (`server/internal/adminapi`), a separate binary on its own host. It reads the environment of `docs/environments.md` 2.2. Every route answers JSON with `Cache-Control: no-store`, and every route except `/admin/nonce` and `/admin/session` takes the session token as `Authorization: Bearer`.
+`server/cmd/admin-api` is the admin API (`server/internal/adminapi`), a separate binary on its own host. It reads the environment of `docs/environments.md` 2.2. Every route answers JSON with `Cache-Control: no-store` and `X-Content-Type-Options: nosniff` (the CSV and JSON attachments carry both too). A path no route matches answers 404 `not_found` and a known path with another method answers 405 `method_not_allowed` with `Allow`, both as the same JSON, never a plain-text page. Every route except `/admin/nonce` and `/admin/session` takes the session token as `Authorization: Bearer`.
 
 | Route | Who | Does |
 |---|---|---|
