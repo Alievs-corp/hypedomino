@@ -101,6 +101,8 @@ Implemented in `client/Assets/HypeDomino/UI/Localization` (#70) as plain C#, cov
 - **Nickname keys:** the built-in bundle also holds the nickname rename reply keys (`nickname.rename.*`, one per reason code of 5.5 plus `cooldown`, `offline` and `rate_limited`, `client/README.md` Profile, #75) with `en` and `az` texts; their `tr` and `ru` values fall back along 1.2 to `en` until translated. The texts name no length or other admin-tuned value.
 - **Friend room keys:** the built-in bundle also holds the friend room refusal keys (`lobby.room.refused.*`, `docs/friend-lobby.md` 4, Refusal texts, #154) with `en` and `az` texts; their `tr` and `ru` values fall back along 1.2 to `en` until translated.
 
+- **Cache keys:** the built-in bundle also holds the cache clear outcome keys (`settings.cache.*`, `docs/content-delivery.md` 7, #160) with `en` and `az` texts; their `tr` and `ru` values fall back along 1.2 to `en` until translated. The texts name no size or limit.
+
 Not built yet:
 - **Account sync:** syncing the choice with the account (`docs/privacy.md` D-11) needs a server endpoint that does not exist yet.
 - **Wiring:** no screen calls `ApplyStaged` on load or listens to `Changed`, so a bundle downloaded after start is applied only at the next start; nothing passes `LanguageBoot.Bundles` to `AppBoot.Listen` yet, because no runtime code opens the session; Settings has no screen yet; `GameLanguage.LaunchCount`, `LaunchAt` and `OwnName` give its list of the four languages by their own name, and `Game/SettingsModel` holds the choice for it.
