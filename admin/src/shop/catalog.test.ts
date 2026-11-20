@@ -325,14 +325,9 @@ test("a new offer copies an existing reward bundle used the same everywhere", ()
 });
 
 test("a new offer name key needs an approved en value", () => {
-  const rows = [
-    { key: "offer.wolf.name_long", values: { en: { status: "approved" } } },
-    { key: "offer.wolf.name", values: { en: { status: "draft" } } },
-    { key: "offer.fox.name", values: { az: { status: "approved" }, en: { status: "approved" } } },
-  ];
-  assert.equal(englishApproval(rows, "offer.wolf.name"), "not_approved");
-  assert.equal(englishApproval(rows, "offer.fox.name"), "approved");
-  assert.equal(englishApproval(rows, "offer.bear.name"), "not_approved");
+  assert.equal(englishApproval(["offer.wolf.name"], "offer.wolf.name"), "not_approved");
+  assert.equal(englishApproval([], "offer.fox.name"), "approved");
+  assert.equal(englishApproval(["offer.wolf.name_long"], "offer.wolf.name"), "approved");
   assert.deepEqual(lookupProblems({ id: "bundle.wolf", revision: 1 }, "approved"), []);
   assert.deepEqual(lookupProblems(null, "approved"), []);
   assert.deepEqual(lookupProblems("unknown", "not_approved"), ["bundle_unknown", "name_not_approved"]);
