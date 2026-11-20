@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
@@ -51,6 +52,12 @@ func TestMatchXpCountsOnceAndStopsAtTheDailyCap(t *testing.T) {
 	}
 	if got := f.count(t, `select count(*) from outbox where topic = $1 and key = $2`, pass.XpTopic, account+":match:match-1"); got != 1 {
 		t.Fatalf("outbox events for match-1 = %d", got)
+	}
+	if got := f.count(t, `select count(*) from analytics_events where name = $1 and received_at = $2 and analytics_id is null and client_time_ms is null and label = '' and value = 0`, analytics.PassLevel, now); got != 20 {
+		t.Fatalf("anonymous pass_level events on the first day = %d, want 20", got)
+	}
+	if got := f.count(t, `select count(*) from analytics_events where name = $1`, analytics.PassLevel); got != 21 {
+		t.Fatalf("pass_level events = %d, want one per level from 1 to 22", got)
 	}
 }
 
