@@ -25,7 +25,7 @@ import {
   type MissionType,
 } from "@/missions/catalog";
 import { publishMissions } from "./actions";
-import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -108,6 +108,7 @@ export function MissionEditor({ initialCatalog, published, version, rules, canPu
             {t("missions.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
+          <UnnamedKeysAhead keys={catalog.missions.map((item) => item.nameKey)} />
           <button
             type="button"
             disabled={pending || blocked || catalog.missions.length === 0}

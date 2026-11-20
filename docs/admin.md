@@ -84,6 +84,7 @@ An empty cell means no access: the screen is not in the navigation and the admin
 - A change set is published only by an account that holds P on every object in it.
 - The matrix is enforced by the admin API per request. #134's acceptance test checks that an account without the role can neither see nor perform each action.
 - That test (`server/internal/adminapi/routes_test.go`) reads every route registered in the admin API's source. Only `/admin/nonce` and `/admin/session` answer without a session; every other route refuses a call without one, and every role the matrix does not grant a route's action gets `forbidden` with no audit entry. A new route is covered without editing the test.
+- The panel side of the same test (`admin/src/admin/pages.test.ts`) reads every page of `admin/src/app`: each one refuses a visitor without a session, and a role without view on the page's object, before it calls the admin API.
 - The matrix lives in `server/internal/rbac`. Its test reads this table, so a change to a cell fails CI until the code matches. A new qualifier or `S` phrase needs a named action there.
 
 ## 3. Workflow
@@ -710,6 +711,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/approvals/{id}/reject` | an approver role of section 8 | Rejects it |
 | `GET /admin/strings` | V on game strings | Keys with their values per language, by key, 50 a page (at most 200 through `limit`), `after=<key>` asks for the next page (#148). `q` searches keys, notes and value texts (any case), `missing=<language>` keeps the keys the missing-value report counts for that language: not deprecated and without an approved value |
 | `GET /admin/strings/coverage` | V on game strings | The missing-value report per language (`coverage`: keys, approved, percent), counted over keys that are not deprecated |
+| `POST /admin/strings/unapproved` `{"keys"}` | V on game strings | The given keys that have no `approved` `en` value, unknown keys included, in the order sent (`keys`). It answers the name check of section 3.3 before a mission, medal or shop offer publish, so the panel can name those keys ahead of the refusal |
 | `PUT /admin/strings/{key}` `{"note","max_length","placeholders","deprecated"}` | C for a new key, E for an existing one, R to deprecate it | Saves the key |
 | `PUT /admin/strings/{key}/values/{language}` `{"text","status"}` | E for `draft`, E and P for `approved` | Saves one value |
 | `GET /admin/strings/export?language=&format=` | V on game strings | The translator file of `docs/localization.md` 2.1, `csv` or `json` |
@@ -733,7 +735,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
   A publish keeps every published id (ids are never reused): a mission is retired and a medal retired or disabled instead, and one left out gets 400 `invalid`. A rollback restores the earlier content; an entry added since stays in the catalog, retired.
 
-  A publish or rollback where any mission, or any medal, has no `approved` `en` value for its `nameKey` in the game strings (#214, section 3.3) gets 400 `invalid` with those name keys in `detail`. A reward bundle edit republishes the missions under the same check. The `detail` of this refusal, here and for shop offers and seasons, ends with `no approved en name for ` and the keys separated by commas; the panel lists those keys under the refusal, each linking to its search on `/strings`.
+  A publish or rollback where any mission, or any medal, has no `approved` `en` value for its `nameKey` in the game strings (#214, section 3.3) gets 400 `invalid` with those name keys in `detail`. A reward bundle edit republishes the missions under the same check. The `detail` of this refusal, here and for shop offers and seasons, ends with `no approved en name for ` and the keys separated by commas; the panel lists those keys under the refusal, each linking to its search on `/strings`, and lists them above the publish button of `/missions`, `/medals` and `/shop` through `POST /admin/strings/unapproved` before the publish is sent.
 
   Every mission bundle's medals and cosmetics must list that mission as a source (`docs/economy.md` section 4). A mission publish checks this against the published medals and cosmetics. A medal publish checks it against the published missions, so a medal cannot lose a source a live mission grants it through. The order for a new medal is therefore: publish the medal listing the mission, then the mission.
 
