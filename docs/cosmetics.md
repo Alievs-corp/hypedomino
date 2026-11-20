@@ -17,7 +17,7 @@ This document stores references to these decisions and never their values.
 | Pass, mission and medal rewards | `docs/pass-missions-medals.md` (#9) | A `pass` or `mission` source holds a reward or mission id |
 | Ranked season rewards | #8 | A `rank_reward` source holds a season reward id |
 | Animated asset format and player, active animation budget per screen | #93, ADR 0012 | An address; the asset behind it is a sprite sheet loop |
-| Emoji groups and equipped emoji slot count | #150 | `group` id; slot count is admin config there |
+| Emoji groups and equipped emoji slot count | #150 | `group` id, free text with no fixed list (`docs/admin.md` O-12); slot count is admin config there |
 | Download and prefetch policy | #68 | Addresses and labels in section 8 |
 | Grant engine and duplicate grants | #102 | Every grant goes through the reward bundle engine |
 
