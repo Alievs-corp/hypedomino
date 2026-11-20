@@ -18,10 +18,10 @@ async function sent(uploadUrl: string, file: File): Promise<boolean> {
   }
 }
 
-export function AssetUpload() {
+export function AssetUpload({ initialItem }: { initialItem: string }) {
   const t = useTranslator();
   const router = useRouter();
-  const [itemId, setItemId] = useState("");
+  const [itemId, setItemId] = useState(initialItem);
   const [file, setFile] = useState<File | null>(null);
   const [refusal, setRefusal] = useState("");
   const [pending, startTransition] = useTransition();

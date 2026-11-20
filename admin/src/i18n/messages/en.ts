@@ -1142,6 +1142,7 @@ export const en = {
   "assets.recheck": "Check",
   "assets.upload_failed": "The file did not reach storage. The row stays waiting: check the connection and the storage CORS setting, then upload again.",
   "assets.refused": "Refused",
+  "assets.missing_art": "Upload a static PNG that passes its checks for these items on Assets, then publish again:",
   "assets.issue.item": "An item id is a type and a slug, such as avatar.fox or medal.wins_50: lowercase letters, digits and underscores.",
   "assets.empty": "No assets uploaded yet.",
   "assets.preview": "Preview",
