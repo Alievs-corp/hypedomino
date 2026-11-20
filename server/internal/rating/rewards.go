@@ -111,7 +111,7 @@ func RankBundle(config Config, snapshot *Snapshot, tier string, version int64) (
 }
 
 func (s *Store) finals(ctx context.Context, season string, mode rules.Mode) ([]finalRow, error) {
-	rows, err := s.pool.Query(ctx, `select account_id, rank_index, lp, apex_tier, position, coalesce(country, ''), not (`+notShadowbanned+`) from season_results where season_id = $1 and mode = $2 order by position`, season, mode.String())
+	rows, err := s.pool.Query(ctx, `select account_id, rank_index, lp, apex_tier, position, coalesce(country, ''), not (`+notShadowbanned+` and `+notRemoved("season_results.season_id", "season_results.mode", "season_results.account_id")+`) from season_results where season_id = $1 and mode = $2 order by position`, season, mode.String())
 	if err != nil {
 		return nil, err
 	}
