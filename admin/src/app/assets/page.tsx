@@ -2,7 +2,7 @@ import Link from "next/link";
 import { adminApi } from "@/admin/api";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { assetStatuses, assetsApiPath, failedCheckLabels, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset, type AssetQuery } from "@/assets/assets";
+import { assetStatuses, assetsApiPath, failedCheckLabels, itemIdValid, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset, type AssetQuery } from "@/assets/assets";
 import type { SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
@@ -40,7 +40,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
           {t("assets.store_off")}
         </p>
       )}
-      {canUpload && <AssetUpload />}
+      {canUpload && <AssetUpload initialItem={itemIdValid(query.item) ? query.item : ""} />}
       <FilterForm query={query} t={t} />
       <AssetTable assets={assets} canCheck={canUpload} empty={t(filtered ? "assets.empty_match" : "assets.empty")} t={t} />
       {older && (

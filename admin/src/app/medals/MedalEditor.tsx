@@ -20,6 +20,7 @@ import {
 } from "@/medals/catalog";
 import { publishMedals } from "./actions";
 import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
+import { ItemsWithoutArt } from "@/app/assets/ItemsWithoutArt";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -117,6 +118,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
             </p>
           )}
           {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
+          {result && !result.ok && <ItemsWithoutArt error={result.error} detail={result.detail} />}
         </section>
       )}
     </div>
