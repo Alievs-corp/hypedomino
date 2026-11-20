@@ -182,6 +182,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/promo-templates/{id}", h.allowed(rbac.PromoCodes, rbac.Edit, h.editPromoTemplate))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
 	h.mux.HandleFunc("GET /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.View, h.listRewardBundles))
+	h.mux.HandleFunc("POST /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.Create, h.createRewardBundle))
 	h.mux.HandleFunc("PUT /admin/reward-bundles/{id}", h.allowed(rbac.RewardBundles, rbac.Publish, h.editRewardBundle))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
@@ -580,6 +581,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "stale_bundle"
 	case errors.Is(err, errBundleSame):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errBundleExists):
+		return http.StatusConflict, "bundle_exists"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):

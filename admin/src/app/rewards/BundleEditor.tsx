@@ -4,61 +4,28 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
-import { bundleEditChanged, bundleEditIssues, editOf, parsedIds, republishedNameKeys, useLabel, type NameKeysByDomain, type RewardBundle } from "@/rewards/bundles";
+import { bundleEditChanged, bundleEditIssues, editFrom, editOf, formOf, republishedNameKeys, useLabel, type NameKeysByDomain, type RewardBundle } from "@/rewards/bundles";
 import { editRewardBundle } from "./actions";
+import { BundleFields, fieldClass, labelClass } from "./BundleFields";
 import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
-
-const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
-const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
 
 type Props = { bundle: RewardBundle; domainLabel: (domain: string) => string; nameKeys: NameKeysByDomain };
 
 export function BundleEditor({ bundle, domainLabel, nameKeys }: Props) {
   const t = useTranslator();
   const router = useRouter();
-  const [edit, setEdit] = useState(editOf(bundle));
-  const [cosmetics, setCosmetics] = useState((bundle.cosmetics ?? []).join(", "));
-  const [medals, setMedals] = useState((bundle.medals ?? []).join(", "));
+  const [form, setForm] = useState(formOf(editOf(bundle)));
   const [reason, setReason] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [result, setResult] = useState<ConfigResult | null>(null);
   const [pending, startTransition] = useTransition();
-  const next = { ...edit, cosmetics: parsedIds(cosmetics), medals: parsedIds(medals) };
+  const next = editFrom(form);
   const issues = bundleEditIssues(next);
-  const number = (value: string) => (value === "" ? Number.NaN : Number(value));
   const ready = bundleEditChanged(bundle, next) && issues.length === 0 && reason.trim() !== "" && confirmed && !pending;
   return (
     <section className="flex flex-col gap-3 rounded-md border border-surface p-3">
       <h2 className="font-mono text-lg font-semibold break-all">{bundle.id}</h2>
-      <div className="flex flex-wrap gap-3">
-        <label className={labelClass}>
-          {t("rewards.coins")}
-          <input type="number" min={0} value={Number.isNaN(edit.coins) ? "" : edit.coins} onChange={(event) => setEdit({ ...edit, coins: number(event.target.value) })} className={fieldClass} />
-        </label>
-        <label className={labelClass}>
-          {t("rewards.crystals")}
-          <input type="number" min={0} value={Number.isNaN(edit.crystals) ? "" : edit.crystals} onChange={(event) => setEdit({ ...edit, crystals: number(event.target.value) })} className={fieldClass} />
-        </label>
-        <label className={labelClass}>
-          {t("rewards.pass_xp")}
-          <input type="number" min={0} value={Number.isNaN(edit.passXp) ? "" : edit.passXp} onChange={(event) => setEdit({ ...edit, passXp: number(event.target.value) })} className={fieldClass} />
-        </label>
-      </div>
-      <label className={labelClass}>
-        {t("rewards.cosmetics")}
-        <input value={cosmetics} onChange={(event) => setCosmetics(event.target.value)} className={`${fieldClass} font-mono`} />
-      </label>
-      <label className={labelClass}>
-        {t("rewards.medals")}
-        <input value={medals} onChange={(event) => setMedals(event.target.value)} className={`${fieldClass} font-mono`} />
-      </label>
-      {issues.length > 0 && (
-        <ul role="alert" className="flex flex-col gap-1 text-sm text-danger-text">
-          {issues.map((issue) => (
-            <li key={issue}>{t(issue)}</li>
-          ))}
-        </ul>
-      )}
+      <BundleFields form={form} onChange={setForm} issues={issues} />
       <div role="alert" className="flex flex-col gap-1 text-sm text-danger-text">
         <p>{t("rewards.edit_warning")}</p>
         <ul className="flex flex-col gap-1">

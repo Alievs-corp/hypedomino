@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bundleEditChanged, bundleEditIssues, bundlePageSize, editOf, nextRewardsHref, parsedIds, readBundleQuery, republishedNameKeys, rewardBundlesApiPath, useLabel, type RewardBundle } from "./bundles.ts";
+import { bundleEditChanged, bundleEditIssues, bundlePageSize, editFrom, editOf, emptyBundleEdit, formOf, newBundleIssues, nextRewardsHref, parsedIds, readBundleQuery, republishedNameKeys, rewardBundlesApiPath, useLabel, type RewardBundle } from "./bundles.ts";
 
 const daily: RewardBundle = {
   id: "bundle.daily_login_day_1",
@@ -76,4 +76,23 @@ test("an edit needs whole numbers and something to grant", () => {
   assert.deepEqual(bundleEditIssues({ ...editOf(wins), coins: Number.NaN }), ["rewards.issue.number"]);
   assert.deepEqual(bundleEditIssues({ ...editOf(wins), passXp: 1.5 }), ["rewards.issue.number"]);
   assert.deepEqual(bundleEditIssues({ coins: 0, crystals: 0, cosmetics: [], medals: [], passXp: 0 }), ["rewards.issue.empty"]);
+});
+
+test("a new bundle needs a bundle id and the checks of an edit", () => {
+  const granting = { ...emptyBundleEdit, coins: 50 };
+  assert.deepEqual(newBundleIssues("bundle.weekend_pack", granting), []);
+  assert.deepEqual(newBundleIssues("weekend_pack", granting), ["rewards.issue.id"]);
+  assert.deepEqual(newBundleIssues("bundle.Weekend", granting), ["rewards.issue.id"]);
+  assert.deepEqual(newBundleIssues("bundle.", emptyBundleEdit), ["rewards.issue.id", "rewards.issue.empty"]);
+});
+
+test("a created bundle can be filtered as its own domain", () => {
+  assert.equal(readBundleQuery({ domain: "reward_bundles" }).domain, "reward_bundles");
+});
+
+test("a bundle form lists ids as text and reads them back once each", () => {
+  const form = formOf(editOf(wins));
+  assert.equal(form.cosmetics, "avatar.fox");
+  assert.deepEqual(editFrom({ ...form, cosmetics: "avatar.fox, frame.gold, avatar.fox" }).cosmetics, ["avatar.fox", "frame.gold"]);
+  assert.deepEqual(editFrom(form), editOf(wins));
 });
