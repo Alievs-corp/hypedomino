@@ -103,6 +103,24 @@ export function assetsApiPath(query: AssetQuery): string {
   return `/admin/assets?${search}`;
 }
 
+const artMissingCodes = new Set(["cosmetic_art_missing", "medal_art_missing"]);
+
+export function itemsWithoutArt(error: string, detail: string): string[] {
+  const at = detail.lastIndexOf(": ");
+  if (!artMissingCodes.has(error) || at < 0) {
+    return [];
+  }
+  return detail
+    .slice(at + 2)
+    .split(",")
+    .map((id) => id.trim())
+    .filter(itemIdValid);
+}
+
+export function itemAssetsHref(id: string): string {
+  return `/assets?${searchOf({ status: "", item: id, before: "" })}`;
+}
+
 export function olderAssetsHref(query: AssetQuery, assets: readonly Asset[]): string | null {
   if (assets.length < assetPageSize) {
     return null;

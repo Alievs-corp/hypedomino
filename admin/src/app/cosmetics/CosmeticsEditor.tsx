@@ -32,6 +32,7 @@ import {
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { publishCosmetics } from "./actions";
+import { ItemsWithoutArt } from "@/app/assets/ItemsWithoutArt";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary disabled:opacity-50";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -188,6 +189,7 @@ export function CosmeticsEditor({ published, manifestVersion, version, rules, ca
               {t("cosmetics.refused")}: {result.error} {result.detail}
             </p>
           )}
+          {result && !result.ok && <ItemsWithoutArt error={result.error} detail={result.detail} />}
         </section>
       )}
     </div>
