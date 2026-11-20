@@ -201,6 +201,22 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(MessageFormat.TryFormat("{left}", "en", "en", seconds, _ => "{seconds, plural, one {#}", out _));
         }
 
+        [TestCase("en", 2, 3, 4, 5, "2 days 3 hours")]
+        [TestCase("en", 0, 1, 1, 0, "1 hour 1 minute")]
+        [TestCase("en", 0, 0, 5, 1, "5 minutes 1 second")]
+        [TestCase("en", 0, 0, 0, 9, "9 seconds")]
+        [TestCase("az", 1, 2, 0, 0, "1 gün 2 saat")]
+        [TestCase("az", 0, 3, 15, 0, "3 saat 15 dəqiqə")]
+        [TestCase("az", 0, 0, 5, 9, "5 dəqiqə 9 saniyə")]
+        [TestCase("az", 0, 0, 0, 1, "1 saniyə")]
+        public void TheShippedBundleWritesADurationInEnglishAndAzerbaijani(string language, int days, int hours, int minutes, int seconds, string expected)
+        {
+            var strings = BuiltinStrings.Load();
+            var args = new Dictionary<string, object> { ["left"] = new TimeSpan(days, hours, minutes, seconds) };
+            Assert.IsTrue(MessageFormat.TryFormat("{left}", language, language, args, unitKey => strings.Value(unitKey, language), out var text));
+            Assert.AreEqual(expected, text);
+        }
+
         [Test]
         public void PlaceholdersPluralsAndSelectsFormat()
         {
