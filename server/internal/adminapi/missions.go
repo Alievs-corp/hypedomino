@@ -181,8 +181,17 @@ func (h *Handler) keysApprovedInEnglish(ctx context.Context, tx pgx.Tx, invalid 
 	if err != nil || len(unnamed) == 0 {
 		return err
 	}
-	return fmt.Errorf("%w: no approved en name for %s", invalid, strings.Join(unnamed, ", "))
+	return unapprovedKeysError{refusal: fmt.Errorf("%w: no approved en name for %s", invalid, strings.Join(unnamed, ", ")), keys: unnamed}
 }
+
+type unapprovedKeysError struct {
+	refusal error
+	keys    []string
+}
+
+func (e unapprovedKeysError) Error() string { return e.refusal.Error() }
+
+func (e unapprovedKeysError) Unwrap() error { return e.refusal }
 
 func medalArtPassed(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
 	ids := make([]string, 0, len(medals.Medals))

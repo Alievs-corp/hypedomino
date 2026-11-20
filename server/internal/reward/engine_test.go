@@ -139,19 +139,53 @@ func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
 	if _, err := engine.Get(ctx, ayla, "nope"); !errors.Is(err, reward.ErrUnknownGrant) {
 		t.Fatalf("unknown grant: %v", err)
 	}
-	if events, anonymous := rewardGrantEvents(t, f.pool, start); events != 1 || anonymous != 1 {
-		t.Fatalf("%d reward_grant events, %d anonymous at the grant time, want one for a repeated grant", events, anonymous)
+	if events, anonymous := rewardGrantEvents(t, f.pool, start, spring.Type); events != 1 || anonymous != 1 {
+		t.Fatalf("%d reward_grant events, %d anonymous at the grant time labeled %q, want one for a repeated grant", events, anonymous, spring.Type)
 	}
 }
 
-func rewardGrantEvents(t *testing.T, pool *pgxpool.Pool, at time.Time) (int, int) {
+func rewardGrantEvents(t *testing.T, pool *pgxpool.Pool, at time.Time, label string) (int, int) {
 	t.Helper()
 	var events, anonymous int
-	if err := pool.QueryRow(context.Background(), `select count(*), count(*) filter (where analytics_id is null and client_time_ms is null and label = '' and value = 0 and received_at = $2)
-		from analytics_events where name = $1`, analytics.RewardGrant, at).Scan(&events, &anonymous); err != nil {
+	if err := pool.QueryRow(context.Background(), `select count(*), count(*) filter (where analytics_id is null and client_time_ms is null and label = $3 and value = 0 and received_at = $2)
+		from analytics_events where name = $1`, analytics.RewardGrant, at, label).Scan(&events, &anonymous); err != nil {
 		t.Fatal(err)
 	}
 	return events, anonymous
+}
+
+func TestARewardGrantEventIsLabeledWithTheGrantSourceTypeOnly(t *testing.T) {
+	f := newFixture(t)
+	engine := f.engine(f.medals, f.pass)
+	ctx := context.Background()
+	ayla := f.account(t)
+	coins := reward.Bundle{ID: "bundle.coins_100", Revision: 1, Coins: 100}
+	grants := map[string]reward.Grant{
+		"promo": {Account: ayla, Bundle: coins, Source: cosmetics.Source{Type: "promo", Ref: "campaign.winter"}, Reason: wallet.Promo, Key: "promo:winter"},
+		"event": {Account: ayla, Bundle: coins, Source: spring, LedgerSource: wallet.Source{Type: "admin", Ref: "admin.ayla"}, Reason: wallet.AdminAdjust, Key: "admin-grant:admin.ayla:r1"},
+	}
+	for label, grant := range grants {
+		if _, err := engine.Apply(ctx, grant, start); err != nil {
+			t.Fatalf("%s: %v", label, err)
+		}
+	}
+	rows, err := f.pool.Query(ctx, `select label, count(*) from analytics_events where name = $1 group by label`, analytics.RewardGrant)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	labels := map[string]int{}
+	for rows.Next() {
+		var label string
+		var count int
+		if err := rows.Scan(&label, &count); err != nil {
+			t.Fatal(err)
+		}
+		labels[label] = count
+	}
+	if err := rows.Err(); err != nil || len(labels) != 2 || labels["promo"] != 1 || labels["event"] != 1 {
+		t.Fatalf("reward_grant labels %v %v, want one promo and one event", labels, err)
+	}
 }
 
 func TestDuplicatesPayCompensationAndMissingServicesDropTheirParts(t *testing.T) {
@@ -198,7 +232,7 @@ func TestARefusedGrantWritesNothing(t *testing.T) {
 	if _, err := engine.Get(ctx, ayla, "mission:x:1"); !errors.Is(err, reward.ErrUnknownGrant) {
 		t.Fatalf("refused grant recorded: %v", err)
 	}
-	if events, _ := rewardGrantEvents(t, f.pool, start); events != 0 {
+	if events, _ := rewardGrantEvents(t, f.pool, start, "mission"); events != 0 {
 		t.Fatalf("%d reward_grant events from a refused grant", events)
 	}
 	for name, grant := range map[string]reward.Grant{

@@ -75,7 +75,7 @@ func TestAnOfferNeedsAnApprovedEnglishNameToBePublishedOrRestored(t *testing.T) 
 			a.nameKeys(step.status, "shop.offer.avatar_comet_fox")
 		}
 		status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": weekend, "reason": "weekend"})
-		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.avatar_comet_fox") {
+		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.avatar_comet_fox") || !refusedKeys(body, "shop.offer.avatar_comet_fox") {
 			t.Fatalf("%s: %d %v", step.name, status, body)
 		}
 	}
@@ -87,7 +87,7 @@ func TestAnOfferNeedsAnApprovedEnglishNameToBePublishedOrRestored(t *testing.T) 
 
 	a.nameKeys(gamestrings.Draft, "shop.offer.weekend_pack")
 	status, body = a.call("POST", "/admin/config/shop/rollback", liveOps, map[string]any{"version": 2, "reason": "restore"})
-	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack") {
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack") || !refusedKeys(body, "shop.offer.weekend_pack") {
 		t.Fatalf("rollback %d %v", status, body)
 	}
 }
