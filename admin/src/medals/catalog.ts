@@ -46,6 +46,10 @@ export function newMedal(slug: string, rules: MedalRules): Medal {
   };
 }
 
+export function medalTextKeys(catalog: MedalCatalog): string[] {
+  return catalog.medals.flatMap((medal) => [medal.nameKey, medal.descriptionKey]);
+}
+
 export function addMedal(catalog: MedalCatalog, medal: Medal): MedalCatalog | null {
   if (catalog.medals.some((candidate) => candidate.id === medal.id)) {
     return null;
