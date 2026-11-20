@@ -61,7 +61,7 @@ func (s *Store) addXpIn(ctx context.Context, tx pgx.Tx, account string, season S
 		return false, err
 	}
 	if after > before {
-		if err := analytics.RecordServerIn(ctx, tx, analytics.PassLevel, after-before, now); err != nil {
+		if err := analytics.RecordServerIn(ctx, tx, analytics.PassLevel, account, after-before, now); err != nil {
 			return false, err
 		}
 	}

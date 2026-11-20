@@ -240,7 +240,7 @@ func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Ca
 	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, bonusKey, now); err != nil {
 		return Result{}, err
 	}
-	if err := analytics.RecordServerIn(ctx, tx, analytics.PurchaseComplete, 1, now); err != nil {
+	if err := analytics.RecordServerIn(ctx, tx, analytics.PurchaseComplete, r.Account, 1, now); err != nil {
 		return Result{}, err
 	}
 	crystals, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Crystal)

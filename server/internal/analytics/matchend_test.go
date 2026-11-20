@@ -14,6 +14,13 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
+const (
+	playerA = "0b6f3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e01"
+	playerB = "0b6f3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e02"
+	playerC = "0b6f3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e03"
+	playerD = "0b6f3c1e-1a2b-4c3d-8e4f-5a6b7c8d9e04"
+)
+
 func queueOutcome(t *testing.T, pool *pgxpool.Pool, outcome matchstore.Outcome) {
 	t.Helper()
 	payload, err := json.Marshal(outcome)
@@ -39,8 +46,8 @@ func matchEnds(t *testing.T, pool *pgxpool.Pool) int {
 func TestTheAnalyticsRelayWritesOneAnonymousMatchEndPerPlayerOnce(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	ctx := context.Background()
-	queueOutcome(t, pool, matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: "a", Won: true}, {Account: "b"}}})
-	queueOutcome(t, pool, matchstore.Outcome{Match: "m2", Mode: rules.Mode2v2, Kind: matchstore.KindCasual, BotSeat: true, Cancelled: true, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: "a"}, {Account: "c"}, {Account: "d"}}})
+	queueOutcome(t, pool, matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: playerA, Won: true}, {Account: playerB}}})
+	queueOutcome(t, pool, matchstore.Outcome{Match: "m2", Mode: rules.Mode2v2, Kind: matchstore.KindCasual, BotSeat: true, Cancelled: true, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: playerA}, {Account: playerC}, {Account: playerD}}})
 	relay := matchstore.NewRelay(matchstore.New(pool), analytics.NewStore(pool), matchstore.TopicAnalytics, 0, nil)
 	for range 2 {
 		if published, err := relay.Once(ctx); err != nil || published != 2 {
@@ -74,7 +81,7 @@ func TestPurgeRawDropsServerEventsAndTheirSourcesBeforeTheCutoff(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	ctx := context.Background()
 	store := analytics.NewStore(pool)
-	queueOutcome(t, pool, matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: "a"}, {Account: "b"}}})
+	queueOutcome(t, pool, matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: playerA}, {Account: playerB}}})
 	if _, err := matchstore.NewRelay(matchstore.New(pool), store, matchstore.TopicAnalytics, 0, nil).Once(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -87,5 +94,23 @@ func TestPurgeRawDropsServerEventsAndTheirSourcesBeforeTheCutoff(t *testing.T) {
 	var sources int
 	if err := pool.QueryRow(ctx, `select count(*) from analytics_sources`).Scan(&sources); err != nil || sources != 0 {
 		t.Fatalf("%d analytics sources kept, %v", sources, err)
+	}
+}
+
+func TestTheAnalyticsRelayBindsMatchEndOnlyForAPlayerWithAnalyticsOn(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	ayla, bob := w.player(), w.stranger()
+	w.sendWith(ayla, id, now)
+	w.sendWith(bob, othersID, now)
+	queueOutcome(t, w.pool, matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindRanked, EndedAt: now, Players: []matchstore.PlayerOutcome{{Account: ayla, Won: true}, {Account: bob}}})
+	if _, err := matchstore.NewRelay(matchstore.New(w.pool), analytics.NewStore(w.pool), matchstore.TopicAnalytics, 0, nil).Once(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var events, bound int
+	var analyticsID string
+	err := w.pool.QueryRow(ctx, `select count(*), count(analytics_id), coalesce(max(analytics_id::text), '') from analytics_events where name = $1`, analytics.MatchEnd).Scan(&events, &bound, &analyticsID)
+	if err != nil || events != 2 || bound != 1 || analyticsID != id {
+		t.Fatalf("%d match_end events, %d bound to %q, %v", events, bound, analyticsID, err)
 	}
 }
