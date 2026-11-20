@@ -977,6 +977,8 @@ export const en = {
   "cosmetics.art_source": "Art source",
   "cosmetics.review_approved": "Cultural review approved",
   "cosmetics.group": "Emoji group",
+  "cosmetics.group_known": "Groups of the other emoji",
+  "cosmetics.group_new": "No other emoji uses this group. Check the spelling before you start a new group.",
   "cosmetics.layers": "Table layers, back to front",
   "cosmetics.layers_hint": "At least one layer is animated. The server sets the addresses from the names.",
   "cosmetics.layer_name": "Layer name",

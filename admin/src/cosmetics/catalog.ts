@@ -125,6 +125,11 @@ function layerIssues(layers: ItemLayer[]): MessageKey[] {
   return found;
 }
 
+export function emojiGroups(items: CosmeticItem[], exceptId: string): string[] {
+  const groups = items.filter((item) => item.type === "emoji" && item.id !== exceptId && item.group).map((item) => item.group as string);
+  return [...new Set(groups)].sort();
+}
+
 export function missingDefaults(items: CosmeticItem[], types: readonly string[]): string[] {
   const covered = new Set(items.filter((item) => item.availability === "live" && item.sources.some((source) => source.type === defaultSource)).map((item) => item.type));
   return types.filter((type) => !covered.has(type));

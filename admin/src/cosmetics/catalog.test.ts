@@ -4,6 +4,7 @@ import {
   addedItems,
   addItem,
   changedItems,
+  emojiGroups,
   emptyFilter,
   filteredItems,
   itemIssues,
@@ -141,4 +142,12 @@ test("the review sees added, changed and newly disabled items whatever the key o
   assert.deepEqual(changedItems([published], [{ ...published, rarityId: "rare" }]), ["avatar.fox"]);
   assert.deepEqual(newlyDisabled([published], [{ ...published, availability: "disabled" }]), ["avatar.fox"]);
   assert.deepEqual(newlyDisabled([{ ...published, availability: "disabled" }], [{ ...published, availability: "disabled" }]), []);
+});
+
+test("an emoji is offered the groups the other emoji use, once each and sorted", () => {
+  const emoji = (slug: string, group: string) => ({ ...ready(newItem("emoji", slug, rules)), group });
+  const items = [fox, emoji("wave", "hands"), emoji("smile", "faces"), emoji("clap", "hands"), emoji("draft", "")];
+  assert.deepEqual(emojiGroups(items, "emoji.draft"), ["faces", "hands"]);
+  assert.deepEqual(emojiGroups(items, "emoji.smile"), ["hands"]);
+  assert.deepEqual(emojiGroups([fox], "emoji.wave"), []);
 });
