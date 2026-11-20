@@ -153,6 +153,10 @@ export function termsProblems(offer: Offer): TermsProblem[] {
   return problems;
 }
 
+export function emptyShopCatalog(): ShopCatalog {
+  return { schema: 1, offers: [], rotations: [] };
+}
+
 export function replaceOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
   return { ...catalog, offers: catalog.offers.map((current) => (current.id === offer.id ? offer : current)) };
 }

@@ -4,7 +4,7 @@ import { canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { changedOffers, inEffectWithinDays, type CosmeticItem, type PublishedCatalog, type RotationRules, type ShopCatalog } from "@/shop/catalog";
+import { changedOffers, emptyShopCatalog, inEffectWithinDays, type CosmeticItem, type PublishedCatalog, type RotationRules, type ShopCatalog } from "@/shop/catalog";
 import { Rollback } from "../config/Rollback";
 import { rollbackCatalog } from "./actions";
 import { ShopEditor } from "./ShopEditor";
@@ -31,17 +31,14 @@ export default async function ShopPage() {
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10">
       <h1 className="text-2xl font-semibold">{t("shop.title")}</h1>
-      {shop.body.catalog === null ? (
-        <p className="text-text-secondary">{t("shop.empty")}</p>
-      ) : (
-        <ShopEditor
-          initialCatalog={shop.body.catalog}
-          version={shop.body.config_version}
-          items={items.body.items}
-          rules={shop.body.rotation}
-          referencePrices={{ days: shop.body.reference_price_days, inEffect: inEffectWithinDays(history.body.versions, shop.body.reference_price_days, new Date()) }}
-        />
-      )}
+      {shop.body.catalog === null && <p className="text-text-secondary">{t("shop.empty")}</p>}
+      <ShopEditor
+        initialCatalog={shop.body.catalog ?? emptyShopCatalog()}
+        version={shop.body.config_version}
+        items={items.body.items}
+        rules={shop.body.rotation}
+        referencePrices={{ days: shop.body.reference_price_days, inEffect: inEffectWithinDays(history.body.versions, shop.body.reference_price_days, new Date()) }}
+      />
       <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "shop_offers") ? googleClientId() : null} t={t} />
     </main>
   );

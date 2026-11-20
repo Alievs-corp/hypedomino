@@ -51,7 +51,7 @@ export const en = {
   "rarity.rare": "Rare",
   "shop.title": "Shop offers",
   "shop.load_failed": "The shop catalog could not be loaded.",
-  "shop.empty": "No shop catalog has been published yet.",
+  "shop.empty": "No shop catalog has been published yet. Add its offers below; the first publish creates it.",
   "shop.version": "Published version",
   "shop.offers": "Offers",
   "shop.price": "Price",
