@@ -28,8 +28,10 @@ func (s *Store) Publish(ctx context.Context, message matchstore.Pending) error {
 	if tag.RowsAffected() == 0 {
 		return nil
 	}
-	if err := RecordServerIn(ctx, tx, MatchEnd, len(outcome.Players), outcome.EndedAt); err != nil {
-		return err
+	for _, player := range outcome.Players {
+		if err := RecordServerIn(ctx, tx, MatchEnd, player.Account, 1, outcome.EndedAt); err != nil {
+			return err
+		}
 	}
 	return tx.Commit(ctx)
 }
