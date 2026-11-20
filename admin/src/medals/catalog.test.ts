@@ -5,6 +5,7 @@ import {
   emptyMedalCatalog,
   medalChanges,
   medalIssues,
+  medalTextKeys,
   newMedal,
   replaceMedal,
   validMedalSlug,
@@ -83,4 +84,15 @@ test("history lists each field a version changed, per medal and in the showcase 
     ],
   });
   assert.deepEqual(medalChanges(null, catalog), { settings: [], entries: [{ id: "medal.wins_50", change: "added", fields: [] }] });
+});
+
+test("the keys checked before a medal publish are each medal's name and description", () => {
+  const second = { ...newMedal("first_cup", rules), revision: 1 };
+  assert.deepEqual(medalTextKeys({ ...catalog, medals: [...catalog.medals, second] }), [
+    "medal.wins_50.name",
+    "medal.wins_50.description",
+    "medal.first_cup.name",
+    "medal.first_cup.description",
+  ]);
+  assert.deepEqual(medalTextKeys(emptyMedalCatalog()), []);
 });
