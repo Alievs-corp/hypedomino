@@ -47,7 +47,7 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 - **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
 - **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.
 - **Publish** (`PUT /admin/config/cosmetics`) takes a reason and a confirmation step that lists added, changed and newly disabled items. It is shown only to roles with publish on cosmetic items.
-- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions.
+- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions. Each version lists what it changed against the version before, like the missions history: a schema version change, and each item it added or each field of an item it changed by path, as `rarityId common → rare`. The `revision` the API bumps is left out; the oldest listed version is compared with the built-in manifest.
 
 ## Reward bundles
 

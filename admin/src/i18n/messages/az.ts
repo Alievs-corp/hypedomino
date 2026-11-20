@@ -998,7 +998,6 @@ export const az: Messages = {
   "cosmetics.history": "Dərc olunmuş versiyalar",
   "cosmetics.history_empty": "Hələ manifest dərc olunmayıb.",
   "cosmetics.published_at": "Dərc olunub",
-  "cosmetics.changed": "Əlavə olunan və ya dəyişən",
   "cosmetics.issue.slug": "Id kiçik hərf, rəqəm və alt xətt ilə yazılır.",
   "cosmetics.issue.id_taken": "Bu id artıq var.",
   "cosmetics.issue.no_source": "Item-in ən azı bir mənbəyi olmalıdır.",
