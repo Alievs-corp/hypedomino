@@ -19,7 +19,7 @@ import {
   type MedalRules,
 } from "@/medals/catalog";
 import { publishMedals } from "./actions";
-import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -101,6 +101,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
             {t("medals.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
+          <UnnamedKeysAhead keys={catalog.medals.map((item) => item.nameKey)} />
           <button
             type="button"
             disabled={pending || blocked || catalog.medals.length === 0}
