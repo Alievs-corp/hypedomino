@@ -133,7 +133,7 @@ func (s *Store) publish(ctx context.Context, season string, mode rules.Mode, ent
 	if s.boards == nil || len(entries) == 0 {
 		return
 	}
-	listed, err := s.listable(ctx, entries)
+	listed, err := s.listable(ctx, season, mode, entries)
 	if err != nil {
 		if s.logger != nil {
 			s.logger.Error("leaderboard update skipped", "season", season, "mode", mode.String(), "error", err)

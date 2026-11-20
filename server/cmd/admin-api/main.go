@@ -341,6 +341,7 @@ func run(ctx context.Context, c config, logger *slog.Logger) error {
 		ratings := rating.NewStore(pool, ratingConfigs)
 		ratings.SetBoards(leaderboard.New(client, ratings, ratings, leaderboard.DefaultConfig()), logger)
 		handler.OnShadowban(ratings.HideFromBoards)
+		handler.OnLeaderboardRemoval(ratings.DropFromBoards)
 	}
 	server := &http.Server{Addr: c.listenAddr, Handler: handler, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: c.readLimit, IdleTimeout: c.idleLimit}
 	serveErr := make(chan error, 1)
