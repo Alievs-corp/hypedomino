@@ -81,3 +81,30 @@ func TestServerEventsCarryTheNewestAnalyticsIDSeenSinceTheLastWithdrawal(t *test
 	w.sendWith(ayla, newestID, start.Add(5*time.Minute))
 	w.expectServerEvents("granted_again_with_a_new_id", ayla, newestID)
 }
+
+func TestALabeledServerEventKeepsItsLabelAndTheConsentedAnalyticsID(t *testing.T) {
+	w := newWorld(t)
+	ayla := w.stranger()
+	w.chooseAnalyticsAt(ayla, true, now.Add(-time.Hour))
+	w.sendWith(ayla, id, now.Add(-time.Minute))
+	ctx := context.Background()
+	tx, err := w.pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx)
+	if err := analytics.RecordServerLabeledIn(ctx, tx, analytics.RewardGrant, ayla, "shop", 1, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var label, analyticsID string
+	var value int64
+	if err := w.pool.QueryRow(ctx, `select label, value, analytics_id::text from analytics_events where name = $1`, analytics.RewardGrant).Scan(&label, &value, &analyticsID); err != nil {
+		t.Fatal(err)
+	}
+	if label != "shop" || value != 0 || analyticsID != id {
+		t.Fatalf("labeled event %q %d %q, want shop 0 %q", label, value, analyticsID, id)
+	}
+}
