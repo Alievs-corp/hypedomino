@@ -24,7 +24,7 @@ import {
 import { windowMinute } from "@/shop/catalog";
 import { keyHref } from "@/strings/strings";
 import { createSeason, deleteSeason, extendSeason, rescheduleSeason } from "./actions";
-import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary disabled:opacity-50";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -164,6 +164,7 @@ function NewSeason({ nextStart, serverTime, lengthMonths }: { nextStart: string 
       {slug && <p className="text-sm text-text-muted">{t("ranked.new_id")}: <span className="font-mono">{seasonIdFromSlug(slug)}</span></p>}
       {slug && <NameKey nameKey={seasonNameKey(seasonIdFromSlug(slug))} />}
       <Reason value={reason} onChange={setReason} />
+      <UnnamedKeysAhead keys={slug ? [seasonNameKey(seasonIdFromSlug(slug))] : []} />
       <button
         type="button"
         disabled={pending || !slug || found.length > 0 || reason.trim() === ""}
