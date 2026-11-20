@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 )
@@ -58,6 +59,11 @@ func (s *Store) addXpIn(ctx context.Context, tx pgx.Tx, account string, season S
 	before, after := season.Curve.LevelFor(progress.XP), season.Curve.LevelFor(total)
 	if _, err := s.grantLevels(ctx, tx, account, season, version, unlocked(progress), before+1, after, now); err != nil {
 		return false, err
+	}
+	if after > before {
+		if err := analytics.RecordServerIn(ctx, tx, analytics.PassLevel, after-before, now); err != nil {
+			return false, err
+		}
 	}
 	payload, err := json.Marshal(XpAdded{Account: account, Season: season.ID, Amount: event.Amount, Source: event.Source, Key: event.Key, XpTotal: total, Level: after, At: now})
 	if err != nil {

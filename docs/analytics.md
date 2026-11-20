@@ -26,7 +26,7 @@ The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any 
 
 ## 3. Server events
 
-Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. `match_end` and `mission_complete` are built.
+Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. All five are built.
 
 | Event | Source |
 |---|---|
@@ -39,6 +39,12 @@ Match end, purchase, reward, mission and pass events are written by the server f
 `match_end`: `matchstore.Finish` writes the match outcome to the `analytics` outbox topic in the same transaction as the result, for every match kind (`docs/matchmaking.md` section 4). The game server's relay on that topic (`HD_OUTBOX_POLL`) writes one `match_end` row per human player of the outcome, cancelled matches included, to `analytics_events`. The relay does not read the `analytics` consent (`docs/privacy.md` 6.3) yet (#181), so every row has no analytics id, no device time, no label and value 0; its time is the match end. `analytics_sources` keeps the topic and key of every applied outbox row, so a redelivered match writes nothing twice; it holds no account and no link to the events. The label and value of `match_end` are not decided.
 
 `mission_complete`: `mission.Store.ApplyMatch` writes one row per mission the match completes, in the same transaction as the mission's `completed_at` and its reward grant (`docs/pass-missions-medals.md` section 10). The match is applied once per player (`mission_matches`) and a completed mission is never completed again, so the row needs no `analytics_sources` entry. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the match end. The label and value of `mission_complete` are not decided.
+
+`pass_level`: every pass XP gain (match XP, bundle XP, level purchase, Premium+) goes through `pass.Store.addXpIn`, which writes one row per level the new XP total crosses, in the same transaction as `pass_progress` and the level grants (`docs/pass-missions-medals.md` section 10). An XP key is applied once (`pass_xp_events`), so a repeated gain writes nothing twice; after a Premium revoke (`RevokePremiumIn`) lowers the XP, levels reached again write new rows. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the server time of the XP gain (the match end for match XP). The label and value of `pass_level` are not decided.
+
+`reward_grant`: every reward bundle (missions, pass levels, daily login, promo codes, rank rewards, shop and chest offers, store purchases, admin grants) goes through `reward.Engine.ApplyIn`, which writes one row when it records a new grant in `reward_grants`, in the same transaction as the grant's ledger entries (`docs/economy.md` sections 4 and 5). A store purchase therefore also writes a `reward_grant` row; `purchase_complete` stays its own event. A repeated idempotency key writes nothing, and a revoke or a reinstatement is not a grant. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the server time of the grant. The label and value of `reward_grant` are not decided.
+
+`purchase_complete`: `purchase.Store` writes one row when a receipt-validated purchase moves to `granted` (`docs/economy.md` section 7), from `POST /shop/complete` or from the store notification that settles a pending purchase, in the same transaction as the purchase state and its grants. A repeated completion of a granted purchase, a refund and a reversal write nothing. Like `match_end` the row has no analytics id, no device time, no label and value 0, and its time is the server time of the grant. The price, currency and product of the purchase are not recorded: the label and value of `purchase_complete` are not decided, and revenue comes from the purchase records (section 1).
 
 ## 4. Sending
 
@@ -57,7 +63,7 @@ Match end, purchase, reward, mission and pass events are written by the server f
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
 - Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job. The same run deletes the server events of section 3 by their time and the `analytics_sources` rows older than the cutoff.
 
-Not built yet: the server events of section 3 other than `match_end` and `mission_complete`, aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
+Not built yet: the `analytics` consent check and analytics id for the server events of section 3, aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
 
 ## 6. Config
 
