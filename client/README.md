@@ -160,7 +160,7 @@ The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` Edi
 `UI/Localization` is the client side of `docs/localization.md` (section 2.4).
 - **`GameLanguage`:** picks the language. `LaunchCount`, `LaunchAt` and `OwnName` give the settings list: the four launch languages in order, each by its own name (`docs/localization.md` 1.1).
 - **`LanguageChoice`:** holds the language in use. `Game/LanguageBoot` loads it before the first scene from the saved `language.choice`. Only when nothing is saved does it read the device locales (Android `LocaleList`, iOS through `Plugins/iOS/HypeDominoLocale.mm`). It saves the first pick and every change.
-- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match. `Game/LanguageBoot` builds the app's one instance, `LanguageBoot.Strings`, over the built-in bundle and the saved choice.
+- **`GameStrings`:** looks a key up along the fallback chain over downloaded and built-in bundles, and swaps a staged bundle in outside a match. `AppBoot.ApplyStagedStrings` does that at every app state change, so a bundle downloaded after start is applied at the next screen outside the match. `Game/LanguageBoot` builds the app's one instance, `LanguageBoot.Strings`, over the built-in bundle and the saved choice.
 - **`StringBundle`:** reads a published bundle after its hash check.
 - **`MessageFormat` and `PluralRules`:** render placeholders, plurals and selects, and format integers, decimals, timestamps and durations in the selected language (`docs/localization.md` 2.4).
 
