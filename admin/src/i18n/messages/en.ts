@@ -506,6 +506,7 @@ export const en = {
   "shop.terms_cosmetic_limit_one": "A cosmetic offer is limited to one purchase per account.",
   "shop.terms_chest_without_terms": "A chest has no purchase limit or eligibility.",
   "shop.terms_reference_not_above_price": "The struck-through price must be above the price.",
+  "shop.remove_offer": "Remove this unpublished offer from the draft",
   "shop.new_offer": "New offer",
   "shop.new_offer_hint": "Adds the offer to this draft. Then set its price, terms and window above and publish. A published offer stays in the catalog; its window ends it.",
   "shop.new_offer_id": "Offer id",

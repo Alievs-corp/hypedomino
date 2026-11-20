@@ -41,6 +41,8 @@ import {
   sectionsFor,
   unlistedCosmetics,
   withOffer,
+  withoutOffer,
+  isUnpublishedOffer,
   type BundleRow,
   type NewOfferDraft,
   type CosmeticItem,
@@ -346,6 +348,18 @@ test("an added offer has no price and no window until the admin sets them", () =
   assert.equal("bundle" in newOffer({ ...draft, kind: "pass", section: "pass", bundleId: "" }, null), false);
   const catalog = withOffer({ schema: 1, offers: [offer({})], rotations: [] }, added);
   assert.deepEqual(catalog.offers.map((listed) => listed.id), ["offer.x", "offer.wolf"]);
+});
+
+test("only an offer missing from the published catalog is removed, from its offers and rotations", () => {
+  const published: ShopCatalog = { schema: 1, offers: [offer({ id: "offer.daily_a", section: "daily" })], rotations: [] };
+  const added = offer({ id: "offer.daily_b", section: "daily" });
+  const rotation: Rotation = { period: "daily", start: "2026-02-02T00:00:00Z", offers: ["offer.daily_a", "offer.daily_b"] };
+  const draft = { ...withOffer(published, added), rotations: [rotation] };
+  assert.equal(isUnpublishedOffer(published, "offer.daily_b"), true);
+  assert.equal(isUnpublishedOffer(published, "offer.daily_a"), false);
+  const removed = withoutOffer(draft, "offer.daily_b");
+  assert.deepEqual(removed.offers.map((listed) => listed.id), ["offer.daily_a"]);
+  assert.deepEqual(removed.rotations, [{ ...rotation, offers: ["offer.daily_a"] }]);
 });
 
 test("offer prices and bundle contents the server refuses are flagged", () => {

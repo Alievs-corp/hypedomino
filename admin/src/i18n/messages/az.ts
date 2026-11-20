@@ -501,6 +501,7 @@ export const az: Messages = {
   "shop.terms_cosmetic_limit_one": "Kosmetik təklif hesab başına bir alışla məhdudlaşır.",
   "shop.terms_chest_without_terms": "Sandığın alış limiti və uyğunluq şərti olmur.",
   "shop.terms_reference_not_above_price": "Üstündən xətt çəkilmiş qiymət əsas qiymətdən yuxarı olmalıdır.",
+  "shop.remove_offer": "Dərc olunmamış bu təklifi qaralamadan sil",
   "shop.new_offer": "Yeni təklif",
   "shop.new_offer_hint": "Təklifi bu qaralamaya əlavə edir. Sonra yuxarıda qiymətini, şərtlərini və pəncərəsini qoyub dərc edin. Dərc olunmuş təklif kataloqda qalır; onu pəncərəsi bitirir.",
   "shop.new_offer_id": "Təklif id-si",
