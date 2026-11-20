@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bundlesApiPath, chainError, chainFromText, keyHref, nextStringsHref, olderBundlesHref, placeholdersFromText, placeholdersText, problemsText, readStringsQuery, stringsApiPath, stringsPageSize, unnamedKeys, valueOf, type GameString } from "./strings.ts";
+import { bundlesApiPath, chainError, chainFromText, distinctNames, keyHref, nextStringsHref, olderBundlesHref, placeholdersFromText, placeholdersText, problemsText, readStringsQuery, stringsApiPath, stringsPageSize, unnamedKeys, valueOf, type GameString } from "./strings.ts";
 
 function entry(key: string, fields: Partial<GameString> = {}): GameString {
   return { key, note: "", max_length: 40, placeholders: [], deprecated: false, values: {}, ...fields };
@@ -70,4 +70,9 @@ test("an invalid refusal names the keys without an approved en name, each linkin
   assert.deepEqual(unnamedKeys("conflict", detail), []);
   assert.equal(keyHref("season.one.name"), "/strings?q=season.one.name");
   assert.equal(keyHref("a&b"), "/strings?q=a%26b");
+});
+
+test("the names checked before a publish are trimmed, non-empty and listed once in their order", () => {
+  assert.deepEqual(distinctNames([" mission.b.name", "mission.a.name", "", "mission.b.name ", "  "]), ["mission.b.name", "mission.a.name"]);
+  assert.deepEqual(distinctNames([]), []);
 });
