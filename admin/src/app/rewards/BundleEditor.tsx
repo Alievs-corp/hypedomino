@@ -4,16 +4,16 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
-import { bundleEditChanged, bundleEditIssues, editOf, parsedIds, useLabel, type RewardBundle } from "@/rewards/bundles";
+import { bundleEditChanged, bundleEditIssues, editOf, parsedIds, republishedNameKeys, useLabel, type NameKeysByDomain, type RewardBundle } from "@/rewards/bundles";
 import { editRewardBundle } from "./actions";
-import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
 
-type Props = { bundle: RewardBundle; domainLabel: (domain: string) => string };
+type Props = { bundle: RewardBundle; domainLabel: (domain: string) => string; nameKeys: NameKeysByDomain };
 
-export function BundleEditor({ bundle, domainLabel }: Props) {
+export function BundleEditor({ bundle, domainLabel, nameKeys }: Props) {
   const t = useTranslator();
   const router = useRouter();
   const [edit, setEdit] = useState(editOf(bundle));
@@ -77,6 +77,7 @@ export function BundleEditor({ bundle, domainLabel }: Props) {
         <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
         {t("rewards.edit_confirm")}
       </label>
+      <UnnamedKeysAhead keys={republishedNameKeys(bundle, nameKeys)} />
       <button
         type="button"
         disabled={!ready}
