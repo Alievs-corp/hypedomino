@@ -271,8 +271,11 @@ Today a bundle is stored inside each object that grants it, not in a catalog of 
 | `regionalOverrideNote` | Optional text about the offer. It records no country price: those live only in `store_prices` (5.6, `docs/economy.md` 7.4) |
 | `pool` | Chests only: the `common` and `rare` items of the chest, stored as its bundle cosmetics; the editor offers only published `common` and `rare` items (`docs/economy.md` 3.4) |
 | `chests` | Catalog-wide: `rarityPercent` (`ChestRarityPercent`) and `rarePityCount` (`ChestRarePityCount`) |
+| `variants` | Optional A/B variants: each an `id` (`[a-z0-9_]+`, unique in the offer) with a `nameKey` (a game string with an approved `en` value) and/or a `position` (integer >= 1, the place of the offer in its section). A variant that changes neither is refused (owner decision O-14) |
 
 A rotation is a schedule entry: period (`daily` or `weekly`), period start in UTC, and an ordered list of offer ids, `ShopDailyRotationSlots` or `ShopWeeklyRotationSlots` long. Rotations are planned ahead in the calendar; an unscheduled period repeats the previous one (`docs/economy.md` 6.1). Offers and rotations are the same for every player (EP-8): a variant test may change presentation only, never price, content, window or eligibility (owner decision O-3).
+
+A/B variants (owner decision O-14): a variant may change only the offer's `nameKey` and its display order, so it has no other field. Players are split by a stable hash of the account id: FNV-1a (32 bit) of the offer id, a zero byte and the account id, modulo the number of variants plus one; group 0 sees the offer as written and group `n` sees variant `n` in list order, so each group gets an even share and a player stays in the same group while the variant list is unchanged. Hashing the offer id with the account id keeps the tests of two offers independent. `GET /shop` answers the variant's `nameKey` in place of the offer's and moves the offer to `position` in its section, counted from 1: a position past the end puts it last, and several moved offers are placed in order of position, then of catalog order. Purchases, limits and the config version are those of the offer, whatever the variant. The shop preview of the panel shows the offer as written. The editor on `/shop` adds, edits and removes the variants of the selected offer, and a publish needs an approved `en` value for each variant `nameKey`, like the offer's.
 
 ### 5.6 Store products and crystal packs
 
@@ -849,13 +852,13 @@ The content gate report (A-41) has no sub-issue yet (`docs/launch-content-gate.m
 
 ## 13. Decisions
 
-Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead. O-8 to O-12 are owner decisions of 2026-11-20.
+Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead. O-8 to O-12 and O-14 are owner decisions of 2026-11-20.
 
 | Id | Question | Decision |
 |---|---|---|
 | O-1 | Two-person rule scope (section 8) | High-risk actions only; ordinary production publishes need one author. Break-glass for incidents |
 | O-2 | Network restriction for the panel | Identity-aware access proxy in front of SSO with 2FA; no public endpoint |
-| O-3 | Variant tests in the shop (#139) | Presentation only; price, content, window and eligibility are the same for everyone (`docs/economy.md` EP-8) |
+| O-3 | Variant tests in the shop (#139) | Presentation only; price, content, window and eligibility are the same for everyone (`docs/economy.md` EP-8). Detailed by O-14 |
 | O-4 | Meaning of "mute" in #144 | Blocks in-match emoji and quick messages for `ModerationMuteHours`; play is unaffected |
 | O-5 | Second factor for `super_admin` | Phishing-resistant keys only |
 | O-6 | Section 11 defaults | As listed |
@@ -865,3 +868,4 @@ Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the
 | O-10 | `govulncheck` in CI (#148) | Blocks a PR on every vulnerability reachable from the admin API, as it does today |
 | O-11 | Component library for the panel (#134) | None; the panel uses Tailwind only |
 | O-12 | Emoji groups (5.1, #137) | Free text with the spelling hint of the form; no fixed managed list |
+| O-14 | What an A/B variant of a shop offer may change, and how players are split (#139) | Only `nameKey` and display order; players are split between variants by a stable hash of the account id (5.5) |

@@ -134,6 +134,7 @@ type Offer struct {
 	ReferencePriceCoins    int64         `json:"referencePriceCoins,omitempty"`
 	ReferencePriceCrystals int64         `json:"referencePriceCrystals,omitempty"`
 	RegionalOverrideNote   string        `json:"regionalOverrideNote,omitempty"`
+	Variants               []Variant     `json:"variants,omitempty"`
 }
 
 func (o Offer) Validate() error {
@@ -167,6 +168,9 @@ func (o Offer) Validate() error {
 		return fail("reference price is in the currency of the price")
 	}
 	if err := o.validateBundle(); err != nil {
+		return fail("%v", err)
+	}
+	if err := o.validateVariants(); err != nil {
 		return fail("%v", err)
 	}
 	return o.validateSection()

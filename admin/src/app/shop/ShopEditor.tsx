@@ -5,6 +5,7 @@ import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import {
   allowedCurrencies,
+  catalogNameKeys,
   chestCandidates,
   chestRarities,
   chestRulesOf,
@@ -26,6 +27,7 @@ import {
   termsProblems,
   toggledOffer,
   unlistedCosmetics,
+  variantProblems,
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
@@ -48,6 +50,7 @@ import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult 
 import { NewOffer } from "./NewOffer";
 import { OfferChecks } from "./OfferChecks";
 import { OfferTerms } from "./OfferTerms";
+import { OfferVariants } from "./OfferVariants";
 import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
@@ -97,6 +100,7 @@ export function ShopEditor({
         {offer && <OfferPrice offer={offer} referencePrices={referencePrices} onChange={update} />}
         {offer && <OfferTerms offer={offer} onChange={update} />}
         {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
+        {offer && <OfferVariants offer={offer} onChange={update} />}
         {offer && <OfferChecks offer={offer} items={items} />}
         {offer && isUnpublishedOffer(initialCatalog, offer.id) && (
           <button
@@ -127,7 +131,7 @@ export function ShopEditor({
           {t("shop.reason")}
           <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
         </label>
-        <UnnamedKeysAhead keys={catalog.offers.map((offer) => offer.nameKey)} />
+        <UnnamedKeysAhead keys={catalogNameKeys(catalog)} />
         <button
           type="button"
           disabled={
@@ -137,6 +141,7 @@ export function ShopEditor({
                 windowEndsBeforeStart(candidate) ||
                 permanentMythics(candidate, items).length > 0 ||
                 termsProblems(candidate).length > 0 ||
+                variantProblems(candidate).length > 0 ||
                 offerProblems(candidate).length > 0 ||
                 unlistedCosmetics(candidate, items).length > 0 ||
                 referencePriceProblem(candidate, referencePrices.inEffect) !== null,
