@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -138,6 +139,19 @@ func TestAGrantWritesCoinsItemsMedalsAndXpOnceAndReportsIt(t *testing.T) {
 	if _, err := engine.Get(ctx, ayla, "nope"); !errors.Is(err, reward.ErrUnknownGrant) {
 		t.Fatalf("unknown grant: %v", err)
 	}
+	if events, anonymous := rewardGrantEvents(t, f.pool, start); events != 1 || anonymous != 1 {
+		t.Fatalf("%d reward_grant events, %d anonymous at the grant time, want one for a repeated grant", events, anonymous)
+	}
+}
+
+func rewardGrantEvents(t *testing.T, pool *pgxpool.Pool, at time.Time) (int, int) {
+	t.Helper()
+	var events, anonymous int
+	if err := pool.QueryRow(context.Background(), `select count(*), count(*) filter (where analytics_id is null and client_time_ms is null and label = '' and value = 0 and received_at = $2)
+		from analytics_events where name = $1`, analytics.RewardGrant, at).Scan(&events, &anonymous); err != nil {
+		t.Fatal(err)
+	}
+	return events, anonymous
 }
 
 func TestDuplicatesPayCompensationAndMissingServicesDropTheirParts(t *testing.T) {
@@ -183,6 +197,9 @@ func TestARefusedGrantWritesNothing(t *testing.T) {
 	}
 	if _, err := engine.Get(ctx, ayla, "mission:x:1"); !errors.Is(err, reward.ErrUnknownGrant) {
 		t.Fatalf("refused grant recorded: %v", err)
+	}
+	if events, _ := rewardGrantEvents(t, f.pool, start); events != 0 {
+		t.Fatalf("%d reward_grant events from a refused grant", events)
 	}
 	for name, grant := range map[string]reward.Grant{
 		"bad bundle":     {Account: ayla, Bundle: reward.Bundle{ID: "x"}, Source: spring, Reason: wallet.EventReward, Key: "k"},

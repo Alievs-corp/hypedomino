@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
@@ -237,6 +238,9 @@ func (s *Store) grant(ctx context.Context, tx pgx.Tx, r record, catalog *shop.Ca
 		result.Bonus = &bonus
 	}
 	if _, err := tx.Exec(ctx, `update purchases set state = $2, grant_key = $3, bonus_key = $4, granted_at = $5, refunded_at = null where id = $1`, r.ID, RecordGranted, grantKey, bonusKey, now); err != nil {
+		return Result{}, err
+	}
+	if err := analytics.RecordServerIn(ctx, tx, analytics.PurchaseComplete, 1, now); err != nil {
 		return Result{}, err
 	}
 	crystals, err := s.wallet.BalanceIn(ctx, tx, r.Account, wallet.Crystal)
