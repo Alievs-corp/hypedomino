@@ -2,6 +2,10 @@
   "entries": [
     { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
     { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" },
+    { "key": "duration.days", "en": "{days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}", "az": "{days, plural, one {# gün} other {# gün}} {hours, plural, one {# saat} other {# saat}}" },
+    { "key": "duration.hours", "en": "{hours, plural, one {# hour} other {# hours}} {minutes, plural, one {# minute} other {# minutes}}", "az": "{hours, plural, one {# saat} other {# saat}} {minutes, plural, one {# dəqiqə} other {# dəqiqə}}" },
+    { "key": "duration.minutes", "en": "{minutes, plural, one {# minute} other {# minutes}} {seconds, plural, one {# second} other {# seconds}}", "az": "{minutes, plural, one {# dəqiqə} other {# dəqiqə}} {seconds, plural, one {# saniyə} other {# saniyə}}" },
+    { "key": "duration.seconds", "en": "{seconds, plural, one {# second} other {# seconds}}", "az": "{seconds, plural, one {# saniyə} other {# saniyə}}" },
     { "key": "notice.generic", "en": "Something went wrong. Try again", "az": "Nəsə alınmadı. Yenidən cəhd et" },
     { "key": "promo.redeem.granted", "en": "Code redeemed", "az": "Kod qəbul olundu" },
     { "key": "promo.redeem.code_invalid", "en": "This code is invalid", "az": "Bu kod etibarsızdır" },
