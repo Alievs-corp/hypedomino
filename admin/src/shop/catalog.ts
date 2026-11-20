@@ -377,6 +377,18 @@ export function withOffer(catalog: ShopCatalog, offer: Offer): ShopCatalog {
   return { ...catalog, offers: [...catalog.offers, offer] };
 }
 
+export function isUnpublishedOffer(published: ShopCatalog, offerId: string): boolean {
+  return !published.offers.some((offer) => offer.id === offerId);
+}
+
+export function withoutOffer(catalog: ShopCatalog, offerId: string): ShopCatalog {
+  return {
+    ...catalog,
+    offers: catalog.offers.filter((offer) => offer.id !== offerId),
+    rotations: catalog.rotations.map((rotation) => ({ ...rotation, offers: rotation.offers.filter((id) => id !== offerId) })),
+  };
+}
+
 export type OfferProblem =
   | "price_required"
   | "window_start_required"
