@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Translate } from "../i18n/translate.ts";
-import { assetPageSize, assetsApiPath, failedCheckLabels, itemIdValid, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset } from "./assets.ts";
+import { assetPageSize, assetsApiPath, failedCheckLabels, itemAssetsHref, itemIdValid, itemsWithoutArt, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset } from "./assets.ts";
 
 const t = Object.assign((key: string) => `<${key}>`, { number: (value: number) => value.toLocaleString("en-US") }) as unknown as Translate;
 
@@ -66,4 +66,14 @@ test("sizes read in the nearest unit", () => {
   assert.equal(sizeLabel(1023), "1023 B");
   assert.equal(sizeLabel(1536), "1.5 KB");
   assert.equal(sizeLabel(1572864), "1.5 MB");
+});
+
+test("an art refusal names the items without a passed static, each linking to its uploads", () => {
+  const cosmetic = "adminapi: a cosmetic item is added only after its static upload passed its checks: avatar.fox, emoji.s1_wave";
+  assert.deepEqual(itemsWithoutArt("cosmetic_art_missing", cosmetic), ["avatar.fox", "emoji.s1_wave"]);
+  const medal = "adminapi: a medal is published only after its static upload passed its checks: medal.wins_50";
+  assert.deepEqual(itemsWithoutArt("medal_art_missing", medal), ["medal.wins_50"]);
+  assert.deepEqual(itemsWithoutArt("invalid", cosmetic), []);
+  assert.deepEqual(itemsWithoutArt("cosmetic_art_missing", "avatar.fox"), []);
+  assert.equal(itemAssetsHref("medal.wins_50"), "/assets?item=medal.wins_50");
 });

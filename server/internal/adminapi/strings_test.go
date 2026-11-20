@@ -70,6 +70,7 @@ func TestStringRoutesFollowTheRoleMatrix(t *testing.T) {
 	}{
 		{"list", "GET", "/admin/strings", nil, 200, 200, 200},
 		{"coverage", "GET", "/admin/strings/coverage", nil, 200, 200, 200},
+		{"unapproved", "POST", "/admin/strings/unapproved", map[string]any{"keys": []string{"match.result.win"}}, 200, 200, 200},
 		{"create a key", "PUT", "/admin/strings/match.result.win", winKey, 200, 200, 403},
 		{"edit a key", "PUT", "/admin/strings/match.result.win", map[string]any{"note": "Title.", "max_length": 12}, 200, 200, 403},
 		{"save a draft", "PUT", "/admin/strings/match.result.win/values/en", map[string]any{"text": "Victory!", "status": "draft"}, 200, 200, 403},
@@ -131,6 +132,42 @@ func TestStringsPageAndCoverageIsItsOwnReport(t *testing.T) {
 		status, body := a.call("GET", path, content, nil)
 		expect(t, status, body, http.StatusBadRequest, "invalid")
 	}
+}
+
+func unapprovedKeys(a *api, token string, body any) string {
+	a.t.Helper()
+	status, reply := a.call("POST", "/admin/strings/unapproved", token, body)
+	if status != http.StatusOK {
+		a.t.Fatalf("unapproved %v: %d %v", body, status, reply)
+	}
+	var keys []string
+	for _, key := range reply["keys"].([]any) {
+		keys = append(keys, key.(string))
+	}
+	return strings.Join(keys, ",")
+}
+
+func TestUnapprovedListsTheKeysWithoutAnApprovedEnglishValueInTheirOrder(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	a.approveEnglishWin(content)
+	a.call("PUT", "/admin/strings/match.result.lose", content, winKey)
+	a.call("PUT", "/admin/strings/match.result.lose/values/en", content, map[string]any{"text": "Defeat", "status": "draft"})
+	a.call("PUT", "/admin/strings/match.result.draw", content, winKey)
+	a.call("PUT", "/admin/strings/match.result.draw/values/az", content, map[string]any{"text": "Heç-heçə", "status": "approved"})
+
+	keys := []string{"mission.unknown.name", "match.result.win", "match.result.lose", "match.result.draw"}
+	if got := unapprovedKeys(a, content, map[string]any{"keys": keys}); got != "mission.unknown.name,match.result.lose,match.result.draw" {
+		t.Fatalf("unapproved %q", got)
+	}
+	if got := unapprovedKeys(a, content, map[string]any{"keys": []string{"match.result.win"}}); got != "" {
+		t.Fatalf("approved key listed %q", got)
+	}
+	if got := unapprovedKeys(a, content, map[string]any{}); got != "" {
+		t.Fatalf("no keys %q", got)
+	}
+	status, body := a.call("POST", "/admin/strings/unapproved", content, []string{"match.result.win"})
+	expect(t, status, body, http.StatusBadRequest, "malformed")
 }
 
 func TestKeyAndValueChangesAreAudited(t *testing.T) {

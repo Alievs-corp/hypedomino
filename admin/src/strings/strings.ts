@@ -78,6 +78,10 @@ export function unnamedKeys(error: string, detail: string): string[] {
     .filter((key) => key !== "");
 }
 
+export function distinctNames(keys: readonly string[]): string[] {
+  return [...new Set(keys.map((key) => key.trim()).filter((key) => key !== ""))];
+}
+
 export function keyHref(key: string): string {
   return `/strings?${searchOf({ q: key })}`;
 }

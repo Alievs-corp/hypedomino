@@ -55,6 +55,11 @@ export async function importStrings(language: string, format: string, text: stri
   return reply.status === 200 ? { ok: true, changed: reply.body.changed } : refused(reply.status, reply.body as Blocked);
 }
 
+export async function unapprovedNames(keys: string[]): Promise<string[]> {
+  const reply = await adminApi<{ keys: string[] }>("POST", "/admin/strings/unapproved", { keys });
+  return reply.status === 200 ? reply.body.keys : [];
+}
+
 export async function publishBundle(language: string, reason: string): Promise<ConfigResult> {
   const reply = await adminApi<{ version: number }>("POST", `/admin/strings/bundles/${encodeURIComponent(language)}`, { reason });
   return reply.status === 200 ? { ok: true, version: reply.body.version } : refused(reply.status, reply.body as Blocked);
