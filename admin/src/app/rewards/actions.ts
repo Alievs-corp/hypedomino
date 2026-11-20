@@ -15,7 +15,7 @@ export async function editRewardBundle(id: string, revision: number, edit: Bundl
 export async function createRewardBundle(id: string, bundle: BundleEdit, reason: string): Promise<ConfigResult> {
   const reply = await adminApi<{ config_version: number }>("POST", "/admin/reward-bundles", { id, ...bundle, reason });
   if (reply.status !== 201) {
-    return { ok: false, error: reply.body.error ?? String(reply.status), detail: reply.body.detail ?? "" };
+    return refusalOf(reply);
   }
   return { ok: true, version: reply.body.config_version };
 }
