@@ -7,6 +7,7 @@ import {
   addedItems,
   addItem,
   changedItems,
+  emojiGroups,
   emptyFilter,
   filteredItems,
   isPublished,
@@ -132,6 +133,7 @@ export function CosmeticsEditor({ published, manifestVersion, version, rules, ca
         <ItemForm
           key={item.id}
           item={item}
+          groups={emojiGroups(items, item.id)}
           rules={rules}
           canReview={canReview}
           removable={!isPublished(published, item.id)}
@@ -337,9 +339,9 @@ function ItemTable({ items, checked, selected, onCheck, onSelect }: TableProps) 
   );
 }
 
-type FormProps = { item: CosmeticItem; rules: CosmeticRules; canReview: boolean; removable: boolean; onChange: (item: CosmeticItem) => void; onRemove: () => void };
+type FormProps = { item: CosmeticItem; groups: string[]; rules: CosmeticRules; canReview: boolean; removable: boolean; onChange: (item: CosmeticItem) => void; onRemove: () => void };
 
-function ItemForm({ item, rules, canReview, removable, onChange, onRemove }: FormProps) {
+function ItemForm({ item, groups, rules, canReview, removable, onChange, onRemove }: FormProps) {
   const t = useTranslator();
   const label = useLabel();
   return (
@@ -355,7 +357,7 @@ function ItemForm({ item, rules, canReview, removable, onChange, onRemove }: For
         <Toggle label={t("cosmetics.animated")} checked={item.animated} onChange={(animated) => onChange(withAnimated(item, animated))} />
         <Toggle label={t("cosmetics.review_approved")} checked={item.culturalReview === "approved"} disabled={!canReview} onChange={(on) => onChange({ ...item, culturalReview: on ? "approved" : "" })} />
       </div>
-      <TypeFields item={item} onChange={onChange} />
+      <TypeFields item={item} groups={groups} onChange={onChange} />
       <Sources item={item} rules={rules} onChange={onChange} />
       <Issues keys={itemIssues(item)} />
       {removable && (
@@ -368,20 +370,38 @@ function ItemForm({ item, rules, canReview, removable, onChange, onRemove }: For
   );
 }
 
-function TypeFields({ item, onChange }: { item: CosmeticItem; onChange: (item: CosmeticItem) => void }) {
-  const t = useTranslator();
+function TypeFields({ item, groups, onChange }: { item: CosmeticItem; groups: string[]; onChange: (item: CosmeticItem) => void }) {
   if (item.type === "emoji") {
-    return (
-      <label className={labelClass}>
-        {t("cosmetics.group")}
-        <input value={item.group ?? ""} onChange={(event) => onChange({ ...item, group: event.target.value })} className={`${fieldClass} self-start font-mono`} />
-      </label>
-    );
+    return <EmojiGroup item={item} groups={groups} onChange={onChange} />;
   }
   if (item.type === "table" && item.animated) {
     return <Layers item={item} onChange={onChange} />;
   }
   return null;
+}
+
+function EmojiGroup({ item, groups, onChange }: { item: CosmeticItem; groups: string[]; onChange: (item: CosmeticItem) => void }) {
+  const t = useTranslator();
+  const group = item.group ?? "";
+  return (
+    <div className="flex flex-col gap-1">
+      <label className={labelClass}>
+        {t("cosmetics.group")}
+        <input list="emoji-groups" value={group} onChange={(event) => onChange({ ...item, group: event.target.value })} className={`${fieldClass} self-start font-mono`} />
+      </label>
+      <datalist id="emoji-groups">
+        {groups.map((known) => (
+          <option key={known} value={known} />
+        ))}
+      </datalist>
+      {groups.length > 0 && (
+        <p className="text-sm text-text-muted">
+          {t("cosmetics.group_known")}: <span className="font-mono">{groups.join(", ")}</span>
+        </p>
+      )}
+      {group !== "" && !groups.includes(group) && <p className="text-sm text-text-muted">{t("cosmetics.group_new")}</p>}
+    </div>
+  );
 }
 
 function Layers({ item, onChange }: { item: CosmeticItem; onChange: (item: CosmeticItem) => void }) {

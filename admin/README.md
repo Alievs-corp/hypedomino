@@ -42,12 +42,12 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 - **Catalog:** every item with its rarity, availability, animation, sources and revision. It can be searched by id or source record and filtered by type, rarity, availability and source type.
 - **Bulk edit:** rarity and availability over the checked items. The header box checks every listed item.
 - **New item:** a type and a slug become `<type>.<slug>`; a taken id is refused. The id and the type never change, and a published item cannot be removed: retire or disable it.
-- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a table's ordered layers. Turning animation off drops the fields a static item must not have.
+- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a table's ordered layers. The emoji group field suggests the groups the other emoji already use and notes when a typed group is used by no other emoji, so a misspelled group is seen before it becomes a new one. Turning animation off drops the fields a static item must not have.
 - **Server fields:** `revision`, `nameKey` and every address are set by the API on publish, so they are shown and never typed.
 - **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
 - **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.
 - **Publish** (`PUT /admin/config/cosmetics`) takes a reason and a confirmation step that lists added, changed and newly disabled items. It is shown only to roles with publish on cosmetic items.
-- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions.
+- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions. Each version lists what it changed against the version before, like the missions history: a schema version change, and each item it added or each field of an item it changed by path, as `rarityId common → rare`. The `revision` the API bumps is left out; the oldest listed version is compared with the built-in manifest.
 
 ## Reward bundles
 

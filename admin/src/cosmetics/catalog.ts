@@ -1,3 +1,4 @@
+import { entryChanges, fieldChanges, type CatalogChanges } from "../config/changes.ts";
 import { sameContent } from "../config/sameContent.ts";
 import type { MessageKey } from "../i18n/translate.ts";
 
@@ -125,6 +126,11 @@ function layerIssues(layers: ItemLayer[]): MessageKey[] {
   return found;
 }
 
+export function emojiGroups(items: CosmeticItem[], exceptId: string): string[] {
+  const groups = items.filter((item) => item.type === "emoji" && item.id !== exceptId && item.group).map((item) => item.group as string);
+  return [...new Set(groups)].sort();
+}
+
 export function missingDefaults(items: CosmeticItem[], types: readonly string[]): string[] {
   const covered = new Set(items.filter((item) => item.availability === "live" && item.sources.some((source) => source.type === defaultSource)).map((item) => item.type));
   return types.filter((type) => !covered.has(type));
@@ -159,6 +165,17 @@ export function changedItems(before: CosmeticItem[], after: CosmeticItem[]): str
       return old !== undefined && !sameContent({ ...old, revision: 0 }, { ...item, revision: 0 });
     })
     .map((item) => item.id);
+}
+
+function unrevised(items: CosmeticItem[]): CosmeticItem[] {
+  return items.map((item) => ({ ...item, revision: 0 }));
+}
+
+export function manifestChanges(before: CosmeticManifest, after: CosmeticManifest): CatalogChanges {
+  return {
+    settings: fieldChanges({ schemaVersion: before.schemaVersion }, { schemaVersion: after.schemaVersion }),
+    entries: entryChanges(unrevised(before.items), unrevised(after.items)),
+  };
 }
 
 export function newlyDisabled(before: CosmeticItem[], after: CosmeticItem[]): string[] {
