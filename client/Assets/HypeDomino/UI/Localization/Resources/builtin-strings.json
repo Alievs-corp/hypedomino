@@ -117,6 +117,9 @@
     { "key": "nickname.rename.not_allowed", "en": "This nickname is not allowed", "az": "Bu nikə icazə verilmir" },
     { "key": "nickname.rename.cooldown", "en": "You can change your nickname again later", "az": "Niki bir az sonra yenidən dəyişə bilərsən" },
     { "key": "nickname.rename.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
-    { "key": "nickname.rename.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" }
+    { "key": "nickname.rename.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "settings.cache.cleared", "en": "Cache cleared. Art downloads again when it is needed", "az": "Keş təmizləndi. Lazım olan şəkillər yenidən yüklənəcək" },
+    { "key": "settings.cache.cleared_at_next_start", "en": "The cache will be cleared the next time the game starts", "az": "Keş oyun növbəti dəfə açılanda təmizlənəcək" },
+    { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" }
   ]
 }
