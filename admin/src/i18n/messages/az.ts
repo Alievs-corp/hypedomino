@@ -972,6 +972,8 @@ export const az: Messages = {
   "cosmetics.art_source": "Art mənbəyi",
   "cosmetics.review_approved": "Mədəni yoxlama təsdiqlənib",
   "cosmetics.group": "Emoji qrupu",
+  "cosmetics.group_known": "Digər emojilərin qrupları",
+  "cosmetics.group_new": "Bu qrupu heç bir başqa emoji istifadə etmir. Yeni qrup başlamazdan əvvəl yazılışı yoxlayın.",
   "cosmetics.layers": "Masa qatları, arxadan önə",
   "cosmetics.layers_hint": "Ən azı bir qat animasiyalı olmalıdır. Ünvanları server adlardan təyin edir.",
   "cosmetics.layer_name": "Qatın adı",
