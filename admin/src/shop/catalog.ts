@@ -352,10 +352,8 @@ export function exactBundle(rows: BundleRow[], id: string): BundleLookup {
 
 export type NameApproval = "approved" | "not_approved" | "unchecked";
 
-export type GameStringRow = { key: string; values: Partial<Record<string, { status: string }>> };
-
-export function englishApproval(rows: GameStringRow[], key: string): NameApproval {
-  return rows.some((row) => row.key === key && row.values.en?.status === "approved") ? "approved" : "not_approved";
+export function englishApproval(unapproved: readonly string[], key: string): NameApproval {
+  return unapproved.includes(key) ? "not_approved" : "approved";
 }
 
 export function searchFrom(id: string): string {

@@ -48,7 +48,7 @@ import { previewCatalog, publishCatalog, type PreviewResult, type PublishResult 
 import { NewOffer } from "./NewOffer";
 import { OfferChecks } from "./OfferChecks";
 import { OfferTerms } from "./OfferTerms";
-import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const currencyLabel: Record<PriceCurrency, MessageKey> = {
   coins: "currency.coin",
@@ -127,6 +127,7 @@ export function ShopEditor({
           {t("shop.reason")}
           <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
         </label>
+        <UnnamedKeysAhead keys={catalog.offers.map((offer) => offer.nameKey)} />
         <button
           type="button"
           disabled={

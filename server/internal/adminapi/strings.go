@@ -96,6 +96,14 @@ type blockedResponse struct {
 	Problems []problemView `json:"problems"`
 }
 
+type keysRequest struct {
+	Keys []string `json:"keys"`
+}
+
+type keysResponse struct {
+	Keys []string `json:"keys"`
+}
+
 type importResponse struct {
 	Changed int `json:"changed"`
 }
@@ -211,6 +219,22 @@ func (h *Handler) stringsCoverage(w http.ResponseWriter, r *http.Request, p prin
 		coverage = append(coverage, coverageView{Language: c.Language, Keys: c.Keys, Approved: c.Approved, Percent: c.Percent})
 	}
 	reply(w, http.StatusOK, coverageResponse{Coverage: coverage})
+}
+
+func (h *Handler) unapprovedInEnglish(w http.ResponseWriter, r *http.Request, p principal) {
+	var request keysRequest
+	if !decode(w, r, &request) {
+		return
+	}
+	unapproved, err := h.strings.Unapproved(r.Context(), request.Keys, gamestrings.English)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	if unapproved == nil {
+		unapproved = []string{}
+	}
+	reply(w, http.StatusOK, keysResponse{Keys: unapproved})
 }
 
 func (h *Handler) saveString(w http.ResponseWriter, r *http.Request, p principal) {
