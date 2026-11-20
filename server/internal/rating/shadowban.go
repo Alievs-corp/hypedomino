@@ -10,12 +10,13 @@ import (
 
 const notShadowbanned = `not exists (select 1 from accounts a where a.id = account_id and a.shadowbanned_at is not null)`
 
-func (s *Store) listable(ctx context.Context, entries []Entry) ([]Entry, error) {
+func (s *Store) listable(ctx context.Context, season string, mode rules.Mode, entries []Entry) ([]Entry, error) {
 	accounts := make([]string, 0, len(entries))
 	for _, e := range entries {
 		accounts = append(accounts, e.Account)
 	}
-	rows, err := s.pool.Query(ctx, `select id::text from accounts where id = any($1::uuid[]) and shadowbanned_at is not null`, accounts)
+	rows, err := s.pool.Query(ctx, `select id::text from accounts where id = any($1::uuid[]) and shadowbanned_at is not null
+		union select account_id::text from leaderboard_removals where account_id = any($1::uuid[]) and season_id = $2 and mode = $3`, accounts, season, mode.String())
 	if err != nil {
 		return nil, err
 	}

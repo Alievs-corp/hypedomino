@@ -151,6 +151,7 @@ Roles with `act_on_player` (support and `super_admin`) get the support actions o
 - **Temporary ban:** ban or lift, whichever applies now. The ban is refused with `not_configured` while `HD_TEMP_BAN_HOURS` is unset.
 - **Grant:** a reward bundle (bundle id, coins, pass XP, cosmetic and medal ids) under a source picked by type and id, such as the event or campaign whose reward the player missed. Every cosmetic and medal must list that source, or the API refuses the grant and says which one. Like coins, the form keeps one `request_id` until the grant is applied. Above `AdminGrantApprovalCoins` coins or with a `mythic` item it becomes a proposal, which `/approvals` shows as bundle, grants and source.
 - **Force rename:** offered while the player is not already flagged.
+- **Remove from a leaderboard:** a started season (newest first, from `GET /admin/ranked/seasons`) and a mode, sent to `POST /admin/players/{id}/leaderboard-removal`. The player leaves every board of that season and mode for good (owner decision 2026-11-20); `not_on_board` means the player has no placed rating or result there and `already_removed` that it was done before. There is no whole-board reset.
 
 **Replay `/matches/{id}`** (D-13, for support and `super_admin`) opens from the Replay link in a player's matches. It shows:
 - the match and its seats, with links to the players;

@@ -8,7 +8,9 @@ import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
 import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, type PlayerRecord } from "@/players/record";
+import { boardSeasons } from "@/players/leaderboard";
 import { ladders, type PenaltyView } from "@/players/penalties";
+import type { Season } from "@/ranked/seasons";
 import { Notice } from "../Notice";
 import { PlayerActions } from "./PlayerActions";
 
@@ -34,8 +36,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     return <Notice text={t("player.load_failed")} />;
   }
   const record = reply.body;
-  const penaltyReply = await adminApi<PenaltyView>("GET", `${playerApiPath(record.account.id)}/penalties`);
+  const [penaltyReply, seasonsReply] = await Promise.all([
+    adminApi<PenaltyView>("GET", `${playerApiPath(record.account.id)}/penalties`),
+    canView(admin.permissions, "ranked_seasons") ? adminApi<{ seasons: Season[] }>("GET", "/admin/ranked/seasons") : null,
+  ]);
   const penalties = penaltyReply.status === 200 ? penaltyReply.body : null;
+  const seasons = seasonsReply?.status === 200 ? boardSeasons(seasonsReply.body.seasons) : [];
   const { account, profile } = record;
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
@@ -61,7 +67,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
       {can(admin.permissions, "players", "act_on_player") && account.state !== "deleted" && (
-        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} penalties={penalties} />
+        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} penalties={penalties} boardSeasons={seasons} />
       )}
       {penalties && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
