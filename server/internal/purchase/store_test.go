@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
@@ -123,6 +124,16 @@ func (f *fixture) events(t *testing.T, name string) int {
 	return count
 }
 
+func (f *fixture) purchaseCompletes(t *testing.T) (int, int) {
+	t.Helper()
+	var events, anonymous int
+	if err := f.pool.QueryRow(context.Background(), `select count(*), count(*) filter (where analytics_id is null and client_time_ms is null and label = '' and value = 0)
+		from analytics_events where name = $1`, analytics.PurchaseComplete).Scan(&events, &anonymous); err != nil {
+		t.Fatal(err)
+	}
+	return events, anonymous
+}
+
 func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) {
 	f := newFixture(t, purchase.DefaultConfig())
 	ctx := context.Background()
@@ -177,6 +188,9 @@ func TestAValidatedPurchaseIsGrantedOnceWithTheFirstPurchaseBonus(t *testing.T) 
 	if third, err := f.store.Complete(ctx, ayla, "offer.crystals_tier2", purchase.PlatformGoogle, "tok-3", now); err != nil || third.Finished || third.State != purchase.RecordGranted {
 		t.Fatalf("purchase with a stuck consume %+v %v", third, err)
 	}
+	if events, anonymous := f.purchaseCompletes(t); events != 3 || anonymous != 3 {
+		t.Fatalf("%d purchase_complete events, %d anonymous, want one per granted purchase", events, anonymous)
+	}
 }
 
 func TestARefusedPurchaseGrantsNothing(t *testing.T) {
@@ -226,6 +240,9 @@ func TestARefusedPurchaseGrantsNothing(t *testing.T) {
 	if f.events(t, purchase.EventReuse) != 1 || f.events(t, purchase.EventAccountMatch) != 1 {
 		t.Fatal("hard evidence was not published")
 	}
+	if events, _ := f.purchaseCompletes(t); events != 1 {
+		t.Fatalf("%d purchase_complete events, want only the granted one", events)
+	}
 }
 
 func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
@@ -274,6 +291,9 @@ func TestAPendingPurchaseIsGrantedByTheStoreNotification(t *testing.T) {
 	}
 	if completed, err := f.store.Complete(ctx, ayla, "offer.crystals_tier1", purchase.PlatformGoogle, "tok-p", now); err != nil || !completed.Repeated || completed.Crystals != 200 || completed.Bonus == nil {
 		t.Fatalf("complete after the notice granted %+v %v", completed, err)
+	}
+	if events, _ := f.purchaseCompletes(t); events != 1 {
+		t.Fatalf("%d purchase_complete events, want one for the pending purchase granted by the notice", events)
 	}
 }
 
@@ -330,6 +350,9 @@ func TestARefundRevokesTheGoodsAndAReversalRestoresThem(t *testing.T) {
 	}
 	if completed, err := f.store.Complete(ctx, ayla, "offer.starter", purchase.PlatformGoogle, "tok-1", now); err != nil || !completed.Repeated || completed.Grant.Key != "purchase:google:tok-1:reversal:v-1" {
 		t.Fatalf("complete after the reversal %+v %v", completed, err)
+	}
+	if events, _ := f.purchaseCompletes(t); events != 1 {
+		t.Fatalf("%d purchase_complete events after a refund and a reversal, want 1", events)
 	}
 	f.receipt("tok-2", "crystals_tier1", ayla, purchase.StatePurchased)
 	f.receipt("tok-3", "crystals_tier1", ayla, purchase.StatePurchased)
