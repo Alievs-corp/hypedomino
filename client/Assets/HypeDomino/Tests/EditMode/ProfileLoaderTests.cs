@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Profile;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using HypeDomino.UI.Profile;
 using NUnit.Framework;
 
@@ -201,6 +202,24 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(outcome, results[0].Outcome);
             Assert.AreEqual(key, results[0].MessageKey);
             Assert.IsNull(results[0].Profile);
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryProfileLoadKeyInAzerbaijaniAndEnglish()
+        {
+            var keys = new HashSet<string>();
+            foreach (ProfileLoadOutcome outcome in Enum.GetValues(typeof(ProfileLoadOutcome)))
+            {
+                var key = ProfileLoadKeys.Of(outcome);
+                if (key != null) keys.Add(key);
+            }
+            Assert.AreEqual(4, keys.Count);
+            var strings = BuiltinStrings.Load();
+            foreach (var key in keys)
+            {
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
         }
     }
 }
