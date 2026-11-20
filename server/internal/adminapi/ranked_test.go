@@ -70,7 +70,7 @@ func TestRankedSeasonsAreScheduledEditedExtendedAndRemovedWithAudit(t *testing.T
 			a.nameKeys(step.status, "season.one.name")
 		}
 		status, body = a.call("POST", "/admin/ranked/seasons", liveOps, one)
-		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for season.one.name") {
+		if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for season.one.name") || !refusedKeys(body, "season.one.name") {
 			t.Fatalf("%s: %d %v", step.name, status, body)
 		}
 	}

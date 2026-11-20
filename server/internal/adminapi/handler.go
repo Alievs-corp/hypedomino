@@ -408,8 +408,9 @@ func bearer(r *http.Request) string {
 }
 
 type errorResponse struct {
-	Error  string `json:"error"`
-	Detail string `json:"detail,omitempty"`
+	Error  string   `json:"error"`
+	Detail string   `json:"detail,omitempty"`
+	Keys   []string `json:"keys,omitempty"`
 }
 
 var (
@@ -453,6 +454,10 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 	response := errorResponse{Error: code}
 	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" || code == "cosmetic_art_missing" {
 		response.Detail = err.Error()
+	}
+	var unapproved unapprovedKeysError
+	if errors.As(err, &unapproved) {
+		response.Keys = unapproved.keys
 	}
 	reply(w, status, response)
 }

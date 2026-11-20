@@ -1,4 +1,5 @@
 import type { MessageKey } from "@/i18n/translate";
+import type { Refusal } from "@/config/result";
 
 export type SeasonState = "scheduled" | "live" | "ending" | "closed";
 
@@ -19,7 +20,7 @@ export type SeasonMode = "1v1" | "2v2";
 
 export type SeasonProgress = "open" | "closed" | "rewarded";
 
-export type SeasonResult = { ok: true } | { ok: false; error: string; detail: string };
+export type SeasonResult = { ok: true } | Refusal;
 
 const instant = (value: string) => Date.parse(value);
 

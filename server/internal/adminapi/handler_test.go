@@ -137,6 +137,19 @@ func expect(t *testing.T, status int, body map[string]any, wantStatus int, wantE
 	}
 }
 
+func refusedKeys(body map[string]any, want ...string) bool {
+	keys, _ := body["keys"].([]any)
+	if len(keys) != len(want) {
+		return false
+	}
+	for i, key := range keys {
+		if key != want[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestOnlyActiveCompanyAccountsSignIn(t *testing.T) {
 	a := newAPI(t)
 	disabled := a.create("vusal@example.com", rbac.Support)
