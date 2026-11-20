@@ -237,6 +237,7 @@ func (s *Store) View(ctx context.Context, account string, now time.Time) (View, 
 	}
 	view := View{Version: version, Sections: make([]SectionView, 0, len(Sections))}
 	for _, section := range catalog.Sections(s.config, now) {
+		section = section.For(account)
 		sv := SectionView{Section: section.Name, EndsAt: stamp(section.EndsAt), Offers: make([]OfferView, 0, len(section.Offers))}
 		for _, offer := range section.Offers {
 			ov, err := s.offerView(offer, catalog.Chests, st, now)

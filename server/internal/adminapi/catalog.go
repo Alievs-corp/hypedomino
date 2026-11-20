@@ -159,6 +159,11 @@ func (h *Handler) listedAndNamedCatalog(ctx context.Context, tx pgx.Tx, raw []by
 	nameKeys := make([]string, 0, len(catalog.Offers))
 	for _, offer := range catalog.Offers {
 		nameKeys = append(nameKeys, offer.NameKey)
+		for _, variant := range offer.Variants {
+			if variant.NameKey != "" {
+				nameKeys = append(nameKeys, variant.NameKey)
+			}
+		}
 	}
 	return catalog, h.keysApprovedInEnglish(ctx, tx, shop.ErrInvalid, nameKeys)
 }

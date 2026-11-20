@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HypeDomino.Content;
 using HypeDomino.Game;
+using HypeDomino.UI.Localization;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
@@ -40,6 +41,18 @@ namespace HypeDomino.Tests.EditMode
                 var key = CacheClearKeys.Of(result);
                 StringAssert.IsMatch(GameStringKeyFormat, key, result.ToString());
                 Assert.IsTrue(keys.Add(key), result.ToString());
+            }
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryCacheClearKeyInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            foreach (CacheClearResult result in Enum.GetValues(typeof(CacheClearResult)))
+            {
+                var key = CacheClearKeys.Of(result);
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
             }
         }
 

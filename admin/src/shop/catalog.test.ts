@@ -44,6 +44,10 @@ import {
   emptyShopCatalog,
   withoutOffer,
   isUnpublishedOffer,
+  variantProblems,
+  withVariants,
+  editedVariant,
+  catalogNameKeys,
   type BundleRow,
   type NewOfferDraft,
   type CosmeticItem,
@@ -404,4 +408,26 @@ test("a cosmetic sold by an offer lists that offer as its shop source", () => {
   assert.deepEqual(unlistedCosmetics(selling(["avatar.fox"]), items), []);
   assert.deepEqual(unlistedCosmetics(selling(["avatar.fox", "avatar.wolf", "avatar.bear"]), items), ["avatar.wolf", "avatar.bear"]);
   assert.deepEqual(unlistedCosmetics({ ...selling(["avatar.wolf"]), kind: "chest" }, items), []);
+});
+
+test("a variant changes its name key or its position and nothing else", () => {
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "bold", nameKey: "k2" }, { id: "first", position: 1 }] })), []);
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "Bold", nameKey: "k2" }] })), ["variant_id"]);
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "bold", nameKey: "k2" }, { id: "bold", position: 2 }] })), ["variant_twice"]);
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "bold", position: 1.5 }] })), ["variant_position"]);
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "bold" }] })), ["variant_no_change"]);
+  assert.deepEqual(variantProblems(offer({ variants: [{ id: "bold", nameKey: "k" }] })), ["variant_no_change"]);
+});
+
+test("a variant edit keeps only what it changes and an offer without variants drops the field", () => {
+  assert.deepEqual(editedVariant({ id: "bold" }, " k2 ", 0), { id: "bold", nameKey: "k2" });
+  assert.deepEqual(editedVariant({ id: "bold", nameKey: "k2" }, "", 3), { id: "bold", position: 3 });
+  assert.deepEqual(editedVariant({ id: "bold", position: 3 }, "", Number.NaN), { id: "bold" });
+  assert.equal("variants" in withVariants(offer({ variants: [{ id: "bold", nameKey: "k2" }] }), []), false);
+  assert.deepEqual(withVariants(offer({}), [{ id: "bold", nameKey: "k2" }]).variants, [{ id: "bold", nameKey: "k2" }]);
+});
+
+test("the name keys of a catalog include those of its variants", () => {
+  const catalog: ShopCatalog = { ...emptyShopCatalog(), offers: [offer({ variants: [{ id: "bold", nameKey: "k2" }, { id: "first", position: 1 }] }), offer({ id: "offer.y", nameKey: "y" })] };
+  assert.deepEqual(catalogNameKeys(catalog), ["k", "k2", "y"]);
 });

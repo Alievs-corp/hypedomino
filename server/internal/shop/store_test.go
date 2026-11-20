@@ -307,6 +307,43 @@ func TestAPublishedCatalogIsVisibleWithoutARestart(t *testing.T) {
 	}
 }
 
+func TestTheViewShowsEachAccountItsVariantOfAnOffer(t *testing.T) {
+	f := newFixture(t, false)
+	raw, err := os.ReadFile("../../../docs/economy/examples/shop.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	named := `"nameKey": "shop.offer.crystals_tier5"`
+	catalog, err := shop.Parse([]byte(strings.Replace(string(raw), named, named+`, "variants": [{"id": "top", "nameKey": "shop.offer.crystals_tier5_top", "position": 1}]`, 1)), shop.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.watcher.Seed(catalog, 0)
+	offer, _ := catalog.Offer("offer.crystals_tier5")
+	seen := map[bool]bool{}
+	for attempt := 0; len(seen) < 2; attempt++ {
+		if attempt == 64 {
+			t.Fatalf("64 accounts saw only %v", seen)
+		}
+		account := f.account(t, 0)
+		_, inVariant := offer.VariantFor(account)
+		view, err := f.store.View(context.Background(), account, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		packs := section(t, view, shop.SectionCrystals).Offers
+		want := shop.OfferView{ID: "offer.crystals_tier5", NameKey: "shop.offer.crystals_tier5"}
+		at := 4
+		if inVariant {
+			want.NameKey, at = "shop.offer.crystals_tier5_top", 0
+		}
+		if len(packs) != 5 || packs[at].ID != want.ID || packs[at].NameKey != want.NameKey || packs[at].Crystals != 7000 || packs[at].ProductID != "crystals_tier5" {
+			t.Fatalf("variant %v packs %+v", inVariant, packs)
+		}
+		seen[inVariant] = true
+	}
+}
+
 func TestACrystalPricedOfferSpendsCrystalsOnly(t *testing.T) {
 	f := newFixture(t, false)
 	ctx := context.Background()
