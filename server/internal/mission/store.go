@@ -295,7 +295,7 @@ func (s *Store) ApplyMatch(ctx context.Context, account, matchID string, match M
 		completed = append(completed, mission.ID)
 	}
 	if len(completed) > 0 {
-		if err := analytics.RecordServerIn(ctx, tx, analytics.MissionComplete, len(completed), endedAt); err != nil {
+		if err := analytics.RecordServerIn(ctx, tx, analytics.MissionComplete, account, len(completed), endedAt); err != nil {
 			return nil, err
 		}
 	}
