@@ -213,7 +213,7 @@ One form engine driven by `docs/cosmetics/schema.json` (#136) with type fields p
 | `culturalReview` | All | Set to `approved` only by the cultural review action of an account other than the asset's uploader (`docs/localization.md` 6.1 step 3). The publish that adds an item is the review: it is refused (`own_upload`) when the publishing account uploaded one of the item's assets |
 | `animationAddress` | `avatar`, `frame`, `tile`, `emoji` | Server: derived; upload required when animated |
 | `layers` | `table` | Ordered list of name and upload with an animated flag, at most `TableMaxLayers` |
-| `group` | `emoji` | Emoji group id (#150) |
+| `group` | `emoji` | Emoji group id (#150), free text: there is no fixed list of groups, and the form notes a group no other emoji uses so a misspelling is seen (O-12) |
 
 Lifecycle: create and edit as drafts; publish adds the item to the next manifest; retire or disable instead of delete. Bulk edit of availability and rarity over a filtered list (#136). Disabling an item for a content violation may be done by `live_ops` during an incident: the switch-off publishes the next manifest with only that item set to `disabled`, needs a reason, the incident id as `ref` and a recent sign-in, and is audited as `retire`.
 
@@ -602,7 +602,7 @@ Break-glass: during a declared SEV1 or SEV2 incident (`docs/launch-runbook.md` 6
 | Step-up | Every `S` action and every approval needs a sign-in no older than `AdminStepUpMinutes` |
 | Admin API | Separate host and credentials, never player tokens (ADR 0006). The browser talks only to the admin web server; the admin API authorises every request from the admin's identity and roles |
 | Data access | The admin API's database role writes config, audit and admin tables and calls the ledger and sanction services; it has no direct write on ledger, inventory or rank tables |
-| Web hardening | Cross-site request protection (`SameSite=Strict` session cookie, every change through a server action that checks `Origin`, no change on `GET`), strict CSP with a per-request nonce, rate limits per account, server-side pagination (#148, `admin/README.md`) |
+| Web hardening | Cross-site request protection by the `SameSite=Strict` session cookie and the `Origin` check of the server action every change goes through, with no change on `GET`; there are no CSRF tokens (O-8). Strict CSP with a per-request nonce, rate limits per account, server-side pagination (#148, `admin/README.md`) |
 | Secrets | From the environment only (ADR 0006). Promo plaintext is shown once and never logged |
 | Compromise | Disable affected admin accounts, rotate secrets, review the audit log since the first suspect entry (`docs/launch-runbook.md` 6.5) |
 
@@ -803,7 +803,7 @@ Every list screen paginates on the server, filters by state and searches by id a
 
 ## 11. Config
 
-Deployment config of the admin API (section 9), changed by pull request. Values are launch defaults (O-6).
+Deployment config of the admin API (section 9), changed by pull request. Values are launch defaults (O-6), except the four `AdminRate*` keys: their defaults are proposed and still await an owner decision (#148).
 
 | Key | Proposed default | Section |
 |---|---|---|
@@ -849,7 +849,7 @@ The content gate report (A-41) has no sub-issue yet (`docs/launch-content-gate.m
 
 ## 13. Decisions
 
-Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead.
+Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead. O-8 to O-12 are owner decisions of 2026-11-20.
 
 | Id | Question | Decision |
 |---|---|---|
@@ -860,3 +860,8 @@ Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the
 | O-5 | Second factor for `super_admin` | Phishing-resistant keys only |
 | O-6 | Section 11 defaults | As listed |
 | O-7 | Bounds of the `rules` domain keys (5.14, #145) | `docs/rules.md` section 13; set by the lead with the owner's permission on 2026-10-31 |
+| O-8 | CSRF protection of the panel (section 9, #148) | `SameSite=Strict` session cookie plus the `Origin` check of server actions; no CSRF tokens |
+| O-9 | Lighthouse target of #148 | Above 90 in performance, accessibility and best practices. SEO is not part of it: every page is `noindex` on purpose |
+| O-10 | `govulncheck` in CI (#148) | Blocks a PR on every vulnerability reachable from the admin API, as it does today |
+| O-11 | Component library for the panel (#134) | None; the panel uses Tailwind only |
+| O-12 | Emoji groups (5.1, #137) | Free text with the spelling hint of the form; no fixed managed list |

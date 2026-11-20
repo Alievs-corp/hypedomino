@@ -1,6 +1,6 @@
 # admin
 
-Next.js admin panel (TypeScript, Tailwind) for content, economy, live-ops and player support. Every designer-tunable value is managed here.
+Next.js admin panel (TypeScript, Tailwind only, no component library: `docs/admin.md` O-11) for content, economy, live-ops and player support. Every designer-tunable value is managed here.
 
 The panel holds no permission logic of its own: the admin API decides every permission (`docs/admin.md` AP-2, matrix in `server/internal/rbac`).
 
@@ -42,7 +42,7 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 - **Catalog:** every item with its rarity, availability, animation, sources and revision. It can be searched by id or source record and filtered by type, rarity, availability and source type.
 - **Bulk edit:** rarity and availability over the checked items. The header box checks every listed item.
 - **New item:** a type and a slug become `<type>.<slug>`; a taken id is refused. The id and the type never change, and a published item cannot be removed: retire or disable it.
-- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a table's ordered layers. The emoji group field suggests the groups the other emoji already use and notes when a typed group is used by no other emoji, so a misspelled group is seen before it becomes a new one. Turning animation off drops the fields a static item must not have.
+- **Item form:** rarity, availability, art source, animation, the cultural review and the sources. Type fields follow the type and the animation flag: an emoji group, a table's ordered layers. The emoji group field suggests the groups the other emoji already use and notes when a typed group is used by no other emoji, so a misspelled group is seen before it becomes a new one. Groups stay free text; there is no fixed list (`docs/admin.md` O-12). Turning animation off drops the fields a static item must not have.
 - **Server fields:** `revision`, `nameKey` and every address are set by the API on publish, so they are shown and never typed.
 - **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
 - **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.
@@ -199,13 +199,13 @@ A `promo_code` proposal reads as its code count, campaign, bundle and window, an
 
 `src/proxy.ts` makes a fresh 128-bit nonce for every page request and sends a Content Security Policy (`src/security/headers.ts`): scripts only with that nonce and `'strict-dynamic'`, no `'unsafe-inline'`, `'unsafe-eval'` only under `next dev`; no framing (`frame-ancestors 'none'`), forms only to the panel, no `<base>`, no plugins. Google sign-in may load its button frame, its stylesheet and its calls under `https://accounts.google.com/gsi/` and nothing wider. Next.js puts the nonce on its own scripts; the sign-in button adds the Google script with the nonce of the loaded document, so it keeps working after a client-side navigation, when the page's nonce no longer matches the document's policy. `next.config.ts` adds `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin-allow-popups` (the sign-in popup) and a `Permissions-Policy` to every response, and HSTS in production.
 
-Cross-site requests: the session cookie is `SameSite=Strict`, every change goes through a server action, which Next.js accepts only when the `Origin` header matches the host, and no `GET` changes anything. If the access proxy in front of the panel rewrites the host, its public host goes into `serverActions.allowedOrigins`.
+Cross-site requests: the session cookie is `SameSite=Strict`, every change goes through a server action, which Next.js accepts only when the `Origin` header matches the host, and no `GET` changes anything. These two are the whole protection; the panel uses no CSRF tokens (`docs/admin.md` O-8). If the access proxy in front of the panel rewrites the host, its public host goes into `serverActions.allowedOrigins`.
 
 The admin API limits sign-in per address and requests per account (`docs/admin.md` 9.1); a sign-in refused with `rate_limited` shows `signin.rate_limited`.
 
 ## Hardening check
 
-The #148 acceptance is Lighthouse above 90 and no critical vulnerability (`docs/test-strategy.md` 2.6). To repeat it locally:
+The #148 acceptance is Lighthouse above 90 in performance, accessibility and best practices, and no critical vulnerability (`docs/test-strategy.md` 2.6). SEO is not part of the target, because every page is `noindex` on purpose (`docs/admin.md` O-9). To repeat it locally:
 
 1. Start PostgreSQL. In `server/`, run `go run ./cmd/migrate up`, then `go run ./cmd/admin-api -bootstrap-email root@example.com -bootstrap-name Root`, then run the admin API.
 2. Google sign-in needs a real client, so a local-only session stands in for it: insert an `admin_sessions` row for that account with `token_hash = sha256('<local token>')`, and send `Cookie: hd_admin_session=<local token>`. Never do this outside a throwaway database.
@@ -213,7 +213,7 @@ The #148 acceptance is Lighthouse above 90 and no critical vulnerability (`docs/
 4. Run `lighthouse <url> --preset=desktop` and the default mobile run on `/` signed out, and on `/`, `/audit` and `/shop` with `--extra-headers '{"Cookie":"hd_admin_session=<local token>"}'`.
 5. Run `pnpm audit` here and `govulncheck ./cmd/admin-api/...` in `server/`.
 
-CI repeats step 5 on every change to its area: the `admin` job fails on a critical advisory (`pnpm audit --audit-level=critical`) and the `server` job on any vulnerability `govulncheck` finds reachable from the admin API, which has no severity levels (`docs/test-strategy.md` 10.1). Lighthouse needs a running panel and API, so it stays a manual run.
+CI repeats step 5 on every change to its area: the `admin` job fails on a critical advisory (`pnpm audit --audit-level=critical`) and the `server` job on any vulnerability `govulncheck` finds reachable from the admin API, which has no severity levels, so every reachable finding blocks the PR (`docs/test-strategy.md` 10.1, `docs/admin.md` O-10). Lighthouse needs a running panel and API, so it stays a manual run.
 
 Last result: 2026-11-03, Lighthouse 13.6.0, headless Chrome on Windows, empty catalog and one audit entry. The scores are performance / accessibility / best practices.
 
@@ -224,7 +224,7 @@ Last result: 2026-11-03, Lighthouse 13.6.0, headless Chrome on Windows, empty ca
 | `/audit` | 100 / 100 / 100 | 97 / 100 / 100 |
 | `/shop` | 100 / 100 / 100 | 98 / 100 / 100 |
 
-Mobile LCP is 0.7 to 0.8 s and CLS is 0. SEO scores 50 by design: every page is `noindex`, which is the failing audit. `pnpm audit` and `govulncheck` found no known vulnerabilities.
+Mobile LCP is 0.7 to 0.8 s and CLS is 0. SEO scores 50 by design and is outside the target: every page is `noindex`, which is the failing audit. `pnpm audit` and `govulncheck` found no known vulnerabilities.
 
 The same run probed the panel and the API:
 - Every response carried the headers above.
