@@ -2,9 +2,10 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { addedItems, changedItems, type CosmeticManifest, type CosmeticRules } from "@/cosmetics/catalog";
+import { manifestChanges, type CosmeticManifest, type CosmeticRules } from "@/cosmetics/catalog";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
+import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackCosmetics } from "./actions";
 import { CosmeticsEditor } from "./CosmeticsEditor";
@@ -66,25 +67,23 @@ function History({ versions, builtin, rollback, t }: { versions: ConfigVersion[]
               <th className="py-2 pr-4">{t("cosmetics.manifest_version")}</th>
               <th className="py-2 pr-4">{t("cosmetics.published_at")}</th>
               <th className="py-2 pr-4">{t("cosmetics.item_count")}</th>
-              <th className="py-2 pr-4">{t("cosmetics.changed")}</th>
+              <th className="py-2 pr-4">{t("config.changes")}</th>
               {rollback && <th className="py-2 pr-4" />}
             </tr>
           </thead>
           <tbody>
-            {versions.map((version, index) => {
-              const previous = (versions[index + 1]?.catalog ?? builtin).items;
-              const items = version.catalog.items;
-              return (
-                <tr key={version.config_version} className="border-t border-surface align-top">
-                  <td className="py-2 pr-4">{version.config_version}</td>
-                  <td className="py-2 pr-4">{version.catalog.manifestVersion}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
-                  <td className="py-2 pr-4">{items.length}</td>
-                  <td className="py-2 pr-4 font-mono break-all">{[...addedItems(previous, items), ...changedItems(previous, items)].join(", ")}</td>
-                  {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackCosmetics} />}</td>}
-                </tr>
-              );
-            })}
+            {versions.map((version, index) => (
+              <tr key={version.config_version} className="border-t border-surface align-top">
+                <td className="py-2 pr-4">{version.config_version}</td>
+                <td className="py-2 pr-4">{version.catalog.manifestVersion}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{t.when(version.published_at)}</td>
+                <td className="py-2 pr-4">{version.catalog.items.length}</td>
+                <td className="py-2 pr-4 font-mono break-all">
+                  <CatalogChangeList changes={manifestChanges(versions[index + 1]?.catalog ?? builtin, version.catalog)} t={t} />
+                </td>
+                {rollback && <td className="py-2 pr-4">{index > 0 && <Rollback version={version.config_version} clientId={rollback} action={rollbackCosmetics} />}</td>}
+              </tr>
+            ))}
           </tbody>
         </table>
       )}

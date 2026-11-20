@@ -4,9 +4,11 @@ import {
   addedItems,
   addItem,
   changedItems,
+  emojiGroups,
   emptyFilter,
   filteredItems,
   itemIssues,
+  manifestChanges,
   missingDefaults,
   moveLayer,
   newItem,
@@ -141,4 +143,27 @@ test("the review sees added, changed and newly disabled items whatever the key o
   assert.deepEqual(changedItems([published], [{ ...published, rarityId: "rare" }]), ["avatar.fox"]);
   assert.deepEqual(newlyDisabled([published], [{ ...published, availability: "disabled" }]), ["avatar.fox"]);
   assert.deepEqual(newlyDisabled([{ ...published, availability: "disabled" }], [{ ...published, availability: "disabled" }]), []);
+});
+
+test("an emoji is offered the groups the other emoji use, once each and sorted", () => {
+  const emoji = (slug: string, group: string) => ({ ...ready(newItem("emoji", slug, rules)), group });
+  const items = [fox, emoji("wave", "hands"), emoji("smile", "faces"), emoji("clap", "hands"), emoji("draft", "")];
+  assert.deepEqual(emojiGroups(items, "emoji.draft"), ["faces", "hands"]);
+  assert.deepEqual(emojiGroups(items, "emoji.smile"), ["hands"]);
+  assert.deepEqual(emojiGroups([fox], "emoji.wave"), []);
+});
+
+test("a version lists each added item and each changed field against the version before, revisions aside", () => {
+  const published: CosmeticItem = { ...fox, revision: 3 };
+  const frame = ready(newItem("frame", "gold", rules));
+  const before = { schemaVersion: 1, manifestVersion: 4, items: [published] };
+  const after = { schemaVersion: 1, manifestVersion: 5, items: [{ ...published, revision: 4, rarityId: "rare" }, frame] };
+  assert.deepEqual(manifestChanges(before, after), {
+    settings: [],
+    entries: [
+      { id: "avatar.fox", change: "changed", fields: [{ field: "rarityId", before: fox.rarityId, after: "rare" }] },
+      { id: "frame.gold", change: "added", fields: [] },
+    ],
+  });
+  assert.deepEqual(manifestChanges(before, { ...before, manifestVersion: 5, items: [{ ...published, revision: 4 }] }), { settings: [], entries: [] });
 });
