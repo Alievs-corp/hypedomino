@@ -6,9 +6,7 @@ namespace HypeDomino.Game
 {
     public static class AudioBoot
     {
-        const string MusicKey = "audio.musicVolume";
-        const string SfxKey = "audio.sfxVolume";
-        const string UiKey = "audio.uiVolume";
+        static AudioLevelStore store;
 
         public static AudioVolumes Volumes { get; private set; }
 
@@ -17,10 +15,8 @@ namespace HypeDomino.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
-            Volumes = new AudioVolumes(
-                PlayerPrefs.GetFloat(MusicKey, AudioVolumes.Full),
-                PlayerPrefs.GetFloat(SfxKey, AudioVolumes.Full),
-                PlayerPrefs.GetFloat(UiKey, AudioVolumes.Full));
+            Volumes = AudioLevelStore.Load();
+            store = new AudioLevelStore(Volumes);
             Volumes.Changed += OnChanged;
             Log();
             var driver = new GameObject(nameof(AudioBoot)) { hideFlags = HideFlags.HideInHierarchy };
@@ -28,9 +24,8 @@ namespace HypeDomino.Game
             Player = driver.AddComponent<SoundPlayer>();
             Player.Configure(SoundBank.Load(), Volumes, SoundPlayer.Voices, () => Time.unscaledTime * 1000f);
             Player.MakeMain();
-            if (Application.isEditor) return;
-            ApplyOutput();
             driver.AddComponent<Driver>();
+            if (!Application.isEditor) ApplyOutput();
         }
 
         public static void FollowState(AppState state)
@@ -51,12 +46,12 @@ namespace HypeDomino.Game
 
         static void OnChanged()
         {
-            PlayerPrefs.SetFloat(MusicKey, Volumes.Level(AudioGroup.Music));
-            PlayerPrefs.SetFloat(SfxKey, Volumes.Level(AudioGroup.Sfx));
-            PlayerPrefs.SetFloat(UiKey, Volumes.Level(AudioGroup.Ui));
-            PlayerPrefs.Save();
-            Log();
             if (!Application.isEditor) ApplyOutput();
+        }
+
+        static void SaveLevels()
+        {
+            if (store.Save()) Log();
         }
 
         static void ApplyOutput()
@@ -72,8 +67,15 @@ namespace HypeDomino.Game
         {
             void OnApplicationFocus(bool hasFocus)
             {
-                if (hasFocus) ApplyOutput();
+                if (hasFocus && !Application.isEditor) ApplyOutput();
             }
+
+            void OnApplicationPause(bool pause)
+            {
+                if (pause) SaveLevels();
+            }
+
+            void OnApplicationQuit() => SaveLevels();
         }
     }
 }
