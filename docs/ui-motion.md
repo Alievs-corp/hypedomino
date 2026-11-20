@@ -381,7 +381,7 @@ Haptics use the platform's own feedback patterns, so the game sets no duration o
 
 ### Sound
 
-Every sound belongs to one of three groups: music (lobby and match loops), sfx (match events) and ui (interface clicks). Each group has its own volume level from off (0) to full (1), so settings can lower a group or turn it off completely (#157); full is the default. The levels are device settings (`docs/anti-cheat.md`, Device storage) and a change applies immediately, without restart.
+Every sound belongs to one of three groups: music (lobby and match loops), sfx (match events) and ui (interface clicks). Each group has its own volume level from off (0) to full (1), so settings can lower a group or turn it off completely (#157); full is the default. The levels are device settings (`docs/anti-cheat.md`, Device storage) and a change applies immediately, without restart. A change is written to the device when the app pauses or quits, not on every change, so dragging a level writes nothing to storage per frame.
 
 - A group at 0 plays nothing; a sound of that group is not started at all.
 - While every group is at 0 the audio output is stopped (`AudioSettings.Mobile.StopAudioOutput`), so muted sound costs no mixing CPU; it starts again as soon as any group is above 0. The state is applied again whenever the app regains focus.
