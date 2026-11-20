@@ -23,8 +23,11 @@ export type Offer = {
   limitPerAccount?: number;
   eligibility?: Eligibility;
   nameKey: string;
+  variants?: Variant[];
   [field: string]: unknown;
 };
+
+export type Variant = { id: string; nameKey?: string; position?: number };
 
 export type Eligibility = { maxAccountAgeHours?: number; firstPurchaseOnly?: boolean };
 
@@ -445,4 +448,35 @@ export function unlistedCosmetics(offer: Offer, items: CosmeticItem[]): string[]
   }
   const listed = (id: string) => items.some((item) => item.id === id && item.sources.some((source) => source.type === "shop" && source.ref === offer.id));
   return (offer.bundle?.cosmetics ?? []).filter((id) => !listed(id));
+}
+
+const variantIdPattern = /^[a-z0-9_]+$/;
+
+export type VariantProblem = "variant_id" | "variant_twice" | "variant_position" | "variant_no_change";
+
+export function variantProblems(offer: Offer): VariantProblem[] {
+  const found = new Set<VariantProblem>();
+  const variants = offer.variants ?? [];
+  variants.forEach((variant, at) => {
+    if (!variantIdPattern.test(variant.id)) found.add("variant_id");
+    if (variants.findIndex((other) => other.id === variant.id) !== at) found.add("variant_twice");
+    if (variant.position !== undefined && !(Number.isInteger(variant.position) && variant.position > 0)) found.add("variant_position");
+    const keepsName = (variant.nameKey ?? "") === "" || variant.nameKey === offer.nameKey;
+    if (keepsName && variant.position === undefined) found.add("variant_no_change");
+  });
+  return [...found];
+}
+
+export function withVariants(offer: Offer, next: Variant[]): Offer {
+  const { variants, ...rest } = offer;
+  return next.length === 0 ? rest : { ...rest, variants: next };
+}
+
+export function editedVariant(variant: Variant, nameKey: string, position: number): Variant {
+  const key = nameKey.trim();
+  return { id: variant.id, ...(key === "" ? {} : { nameKey: key }), ...(position === 0 || Number.isNaN(position) ? {} : { position }) };
+}
+
+export function catalogNameKeys(catalog: ShopCatalog): string[] {
+  return catalog.offers.flatMap((offer) => [offer.nameKey, ...(offer.variants ?? []).flatMap((variant) => (variant.nameKey ? [variant.nameKey] : []))]);
 }

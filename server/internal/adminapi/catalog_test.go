@@ -92,6 +92,31 @@ func TestAnOfferNeedsAnApprovedEnglishNameToBePublishedOrRestored(t *testing.T) 
 	}
 }
 
+func TestAVariantNameKeyNeedsAnApprovedEnglishName(t *testing.T) {
+	a := newAPI(t)
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps := a.signIn("leyla")
+	a.publishShopItems()
+	a.nameOffers()
+	pack := weekendPack(start.Add(time.Hour), start.Add(2*time.Hour))
+	pack["variants"] = []any{map[string]any{"id": "bold", "nameKey": "shop.offer.weekend_pack_bold", "position": 1}}
+
+	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), pack), "reason": "variant"})
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack_bold") || !refusedKeys(body, "shop.offer.weekend_pack_bold") {
+		t.Fatalf("unnamed variant %d %v", status, body)
+	}
+	a.nameKeys(gamestrings.Approved, "shop.offer.weekend_pack_bold")
+	status, body = a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), pack), "reason": "variant"})
+	expect(t, status, body, http.StatusOK, "")
+	status, body = a.call("GET", "/admin/config/shop", liveOps, nil)
+	expect(t, status, body, http.StatusOK, "")
+	for _, offer := range body["catalog"].(map[string]any)["offers"].([]any) {
+		if entry := offer.(map[string]any); entry["id"] == "offer.weekend_pack" && len(entry["variants"].([]any)) != 1 {
+			t.Fatalf("variants %v", entry)
+		}
+	}
+}
+
 func (a *api) featuredAt(at time.Time) []string {
 	a.t.Helper()
 	watcher := snapshot.New(a.pool, shop.Domain, shop.Parser(shop.DefaultConfig()), slog.New(slog.NewTextHandler(io.Discard, nil)))
