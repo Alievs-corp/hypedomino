@@ -102,7 +102,7 @@ func TestAVariantNameKeyNeedsAnApprovedEnglishName(t *testing.T) {
 	pack["variants"] = []any{map[string]any{"id": "bold", "nameKey": "shop.offer.weekend_pack_bold", "position": 1}}
 
 	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(cometFox(), pack), "reason": "variant"})
-	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack_bold") {
+	if status != http.StatusBadRequest || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for shop.offer.weekend_pack_bold") || !refusedKeys(body, "shop.offer.weekend_pack_bold") {
 		t.Fatalf("unnamed variant %d %v", status, body)
 	}
 	a.nameKeys(gamestrings.Approved, "shop.offer.weekend_pack_bold")
