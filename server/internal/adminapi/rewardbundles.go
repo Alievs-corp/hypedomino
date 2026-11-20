@@ -165,7 +165,7 @@ func (r bundleRow) searchable() []string {
 
 func (h *Handler) rewardBundles(ctx context.Context) (rewardBundlesView, error) {
 	index := bundleIndex{}
-	collectors := []func(context.Context, bundleIndex) error{h.shopBundles, h.passBundles, h.missionBundles, h.ratingBundles, h.dailyLoginBundles}
+	collectors := []func(context.Context, bundleIndex) error{h.shopBundles, h.passBundles, h.missionBundles, h.ratingBundles, h.dailyLoginBundles, h.libraryBundles}
 	for _, collect := range collectors {
 		if err := collect(ctx, index); err != nil {
 			return rewardBundlesView{}, err
