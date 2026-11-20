@@ -1005,7 +1005,6 @@ export const en = {
   "cosmetics.history": "Published versions",
   "cosmetics.history_empty": "No manifest has been published yet.",
   "cosmetics.published_at": "Published",
-  "cosmetics.changed": "Added or changed",
   "cosmetics.issue.slug": "An id takes lowercase letters, digits and underscores.",
   "cosmetics.issue.id_taken": "This id is taken.",
   "cosmetics.issue.no_source": "An item needs at least one source.",
