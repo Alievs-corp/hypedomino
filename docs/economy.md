@@ -231,6 +231,7 @@ At least one field among `coins`, `crystals`, `cosmetics`, `medals` and `passXp`
 | `window` | Start and optional end, server UTC |
 | `limitPerAccount` | Purchases per account; 1 for cosmetics and one-time offers, none for crystal packs and chests |
 | `eligibility` | Optional: hours since account creation, first purchase only |
+| `variants` | Optional A/B variants that change only the offer's name key and its position in its section; players are split by a stable hash of the account id (`docs/admin.md` 5.5, O-14). Price, contents, window and eligibility are the same in every variant (EP-8) |
 
 - A cosmetic offer is not sold to an account that owns the item; the intent is rejected.
 - A bundle offer is sold while at least one of its cosmetics is not owned, or while it grants a currency or pass XP besides them. Owned items get duplicate compensation (2.7), and the shop shows that before purchase.
