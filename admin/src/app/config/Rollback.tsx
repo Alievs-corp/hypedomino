@@ -7,6 +7,7 @@ import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
 import { useTranslator } from "@/i18n/client";
 import type { ConfigResult } from "@/config/result";
 import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
+import { ItemsWithoutArt } from "@/app/assets/ItemsWithoutArt";
 
 export function Rollback({ version, clientId, action }: { version: number; clientId: string; action: (version: number, reason: string) => Promise<ConfigResult> }) {
   const t = useTranslator();
@@ -55,6 +56,7 @@ export function Rollback({ version, clientId, action }: { version: number; clien
         </p>
       )}
       {result && !result.ok && !stepUp && <UnnamedKeys error={result.error} detail={result.detail} />}
+      {result && !result.ok && !stepUp && <ItemsWithoutArt error={result.error} detail={result.detail} />}
     </div>
   );
 }
