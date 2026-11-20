@@ -10,6 +10,7 @@ import {
   newSeason,
   nextSeasonId,
   passChanges,
+  rankedWindow,
   removeSeason,
   replaceSeason,
   seasonIssues,
@@ -138,4 +139,19 @@ test("the history names each changed setting and season field, and the seasons a
 
 test("the oldest listed version shows its seasons as added", () => {
   assert.deepEqual(passChanges(null, config), { settings: [], entries: [{ id: "season_1", change: "added", fields: [] }] });
+});
+
+test("a new season defaults to the first ranked season not ended and free of pass seasons", () => {
+  const ranked = [
+    { start: "2026-09-01T00:00:00Z", end: "2026-12-01T00:00:00Z" },
+    { start: "2026-12-01T00:00:00Z", end: "2027-03-01T00:00:00Z" },
+    { start: "2027-03-01T00:00:00Z", end: "2027-06-01T00:00:00Z" },
+  ];
+  assert.deepEqual(rankedWindow(emptyPassConfig(), ranked, "2026-11-20T00:00:00Z"), ranked[0]);
+  assert.deepEqual(rankedWindow(config, ranked, "2026-11-20T00:00:00Z"), ranked[0]);
+  assert.deepEqual(rankedWindow(emptyPassConfig(), ranked, "2026-12-01T00:00:00Z"), ranked[1]);
+  assert.deepEqual(rankedWindow(config, ranked, "2026-12-01T00:00:00Z"), ranked[2]);
+  const next = addSeason(config, newSeason(config, ranked[2].start, ranked[2].end, curve));
+  assert.equal(rankedWindow(next, ranked, "2026-12-01T00:00:00Z"), null);
+  assert.equal(rankedWindow(emptyPassConfig(), [], "2026-11-20T00:00:00Z"), null);
 });

@@ -8,6 +8,7 @@ import {
   chestCandidates,
   chestRarities,
   chestRulesOf,
+  isUnpublishedOffer,
   crystalPacks,
   listsChest,
   offerProblems,
@@ -34,6 +35,7 @@ import {
   withWindow,
   withOffer,
   withoutRotation,
+  withoutOffer,
   type CosmeticItem,
   type Offer,
   type PriceCurrency,
@@ -96,6 +98,18 @@ export function ShopEditor({
         {offer && <OfferTerms offer={offer} onChange={update} />}
         {offer && <OfferWindow offer={offer} mythics={permanentMythics(offer, items)} onChange={update} />}
         {offer && <OfferChecks offer={offer} items={items} />}
+        {offer && isUnpublishedOffer(initialCatalog, offer.id) && (
+          <button
+            type="button"
+            onClick={() => {
+              setCatalog((current) => withoutOffer(current, offer.id));
+              setSelected(catalog.offers.find((candidate) => candidate.id !== offer.id)?.id ?? "");
+            }}
+            className="self-start rounded-md bg-surface px-3 py-1 text-sm text-text-secondary"
+          >
+            {t("shop.remove_offer")}
+          </button>
+        )}
         <NewOffer
           catalog={catalog}
           onAdd={(added) => {
