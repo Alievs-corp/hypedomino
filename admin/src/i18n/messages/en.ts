@@ -816,6 +816,8 @@ export const en = {
   "ranked.new_season": "New season",
   "ranked.slug": "Id after season.",
   "ranked.new_id": "Season id",
+  "ranked.name_key": "Name key",
+  "ranked.name_key_hint": "The season is created only once this key has an approved en value on Game strings.",
   "ranked.no_rewards": "No rewards (beta, soft launch)",
   "ranked.new_hint_next": "A new season starts at the end of the last one. The end defaults to the season length of the ranking config.",
   "ranked.new_hint_first": "The first season may start at any future time. The end defaults to the season length of the ranking config.",

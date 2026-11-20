@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTranslator } from "@/i18n/client";
@@ -11,6 +12,7 @@ import {
   extendIssues,
   rescheduleIssues,
   seasonIdFromSlug,
+  seasonNameKey,
   seasonProgress,
   shiftedBy,
   startLocked,
@@ -20,6 +22,7 @@ import {
   type SeasonState,
 } from "@/ranked/seasons";
 import { windowMinute } from "@/shop/catalog";
+import { keyHref } from "@/strings/strings";
 import { createSeason, deleteSeason, extendSeason, rescheduleSeason } from "./actions";
 import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
@@ -159,6 +162,7 @@ function NewSeason({ nextStart, serverTime, lengthMonths }: { nextStart: string 
       </div>
       <p className="text-sm text-text-muted">{t(nextStart ? "ranked.new_hint_next" : "ranked.new_hint_first")}</p>
       {slug && <p className="text-sm text-text-muted">{t("ranked.new_id")}: <span className="font-mono">{seasonIdFromSlug(slug)}</span></p>}
+      {slug && <NameKey nameKey={seasonNameKey(seasonIdFromSlug(slug))} />}
       <Reason value={reason} onChange={setReason} />
       <button
         type="button"
@@ -256,6 +260,19 @@ function LiveSeason({ seasons, season, onDone }: { seasons: Season[]; season: Se
       <Issues keys={found} />
       <Outcome result={result} />
     </fieldset>
+  );
+}
+
+function NameKey({ nameKey }: { nameKey: string }) {
+  const t = useTranslator();
+  return (
+    <p className="text-sm text-text-muted">
+      {t("ranked.name_key")}:{" "}
+      <Link href={keyHref(nameKey)} prefetch={false} className="font-mono text-primary underline">
+        {nameKey}
+      </Link>
+      . {t("ranked.name_key_hint")}
+    </p>
   );
 }
 
