@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
@@ -133,6 +134,48 @@ func TestSeasonEndSnapshotsResetsAndRunsOnce(t *testing.T) {
 	seasons, err := f.store.Seasons(context.Background())
 	if err != nil || len(seasons) != 2 || seasons[0].State(end) != rating.StateClosed || !seasons[1].End.Equal(end.AddDate(0, 3, 0)) {
 		t.Fatalf("seasons %+v %v", seasons, err)
+	}
+}
+
+func TestTheServerCreatedSeasonGetsANameKeyWithAnApprovedPlaceholder(t *testing.T) {
+	f := newFixture(t)
+	end := now.Add(60 * 24 * time.Hour)
+	closed, err := f.store.CloseSeason(context.Background(), "season.test", rules.Mode1v1, end)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seasons, err := f.store.Seasons(context.Background())
+	if err != nil || len(seasons) != 2 || seasons[1].ID != closed.Next || seasons[1].NameKey != closed.Next+".name" {
+		t.Fatalf("seasons %+v %v", seasons, err)
+	}
+	strings := gamestrings.NewStore(f.pool)
+	value, err := strings.Value(context.Background(), seasons[1].NameKey, gamestrings.English)
+	if err != nil || value.Status != gamestrings.Approved || value.Text != rating.PlaceholderName(seasons[1]) || value.Text != "Season 2026-12" {
+		t.Fatalf("placeholder %+v %v", value, err)
+	}
+	entry, err := strings.Entry(context.Background(), seasons[1].NameKey)
+	if err != nil || entry.Validate() != nil {
+		t.Fatalf("entry %+v %v", entry, err)
+	}
+}
+
+func TestTheServerCreatedSeasonKeepsANameAlreadyWritten(t *testing.T) {
+	f := newFixture(t)
+	end := now.Add(60 * 24 * time.Hour)
+	strings := gamestrings.NewStore(f.pool)
+	key := end.Format("season.2006_01") + ".name"
+	if err := strings.SaveEntry(context.Background(), gamestrings.Entry{Key: key, Note: "Winter season name.", MaxLength: 30}, "content-1", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := strings.SetValue(context.Background(), key, gamestrings.English, gamestrings.Value{Text: "Winter Cup", Status: gamestrings.Draft}, "content-1", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.store.CloseSeason(context.Background(), "season.test", rules.Mode1v1, end); err != nil {
+		t.Fatal(err)
+	}
+	value, err := strings.Value(context.Background(), key, gamestrings.English)
+	if err != nil || value != (gamestrings.Value{Text: "Winter Cup", Status: gamestrings.Draft}) {
+		t.Fatalf("value %+v %v", value, err)
 	}
 }
 
