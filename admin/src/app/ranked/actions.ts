@@ -1,7 +1,7 @@
 "use server";
 
 import { adminApi } from "@/admin/api";
-import type { ConfigResult } from "@/config/result";
+import { refusalOf, type ConfigResult } from "@/config/result";
 import type { RatingConfig } from "@/ranked/config";
 import type { SeasonResult } from "@/ranked/seasons";
 
@@ -24,7 +24,7 @@ export async function rollbackRating(version: number, reason: string): Promise<C
 async function seasonChange(method: string, path: string, body: unknown, success: number): Promise<SeasonResult> {
   const reply = await adminApi<object>(method, path, body);
   if (reply.status !== success) {
-    return { ok: false, error: reply.body.error ?? String(reply.status), detail: reply.body.detail ?? "" };
+    return refusalOf(reply);
   }
   return { ok: true };
 }
