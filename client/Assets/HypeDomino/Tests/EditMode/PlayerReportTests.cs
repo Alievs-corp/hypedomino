@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Profile;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
@@ -132,6 +133,24 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(1, results.Count);
             Assert.AreEqual(outcome, results[0].Outcome);
             Assert.AreEqual(key, results[0].MessageKey);
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryReportKeyInAzerbaijaniAndEnglish()
+        {
+            var keys = new HashSet<string>();
+            foreach (PlayerReportOutcome outcome in Enum.GetValues(typeof(PlayerReportOutcome)))
+            {
+                var key = PlayerReportKeys.Of(outcome);
+                if (key != null) keys.Add(key);
+            }
+            Assert.AreEqual(6, keys.Count);
+            var strings = BuiltinStrings.Load();
+            foreach (var key in keys)
+            {
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
         }
     }
 }

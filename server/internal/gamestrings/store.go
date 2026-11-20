@@ -67,6 +67,26 @@ func (s *Store) SaveEntry(ctx context.Context, entry Entry, by string, now time.
 	return err
 }
 
+func (s *Store) AddApprovedIfMissing(ctx context.Context, entry Entry, english string, by string, now time.Time) error {
+	if err := entry.Validate(); err != nil {
+		return err
+	}
+	if err := entry.CheckValue(English, english); err != nil {
+		return err
+	}
+	placeholders, err := json.Marshal(entry.placeholders())
+	if err != nil {
+		return err
+	}
+	tag, err := s.db.Exec(ctx, `insert into game_strings (key, note, max_length, placeholders, deprecated, updated_by, updated_at)
+		values ($1, $2, $3, $4, false, $5, $6) on conflict (key) do nothing`,
+		entry.Key, entry.Note, entry.MaxLength, placeholders, by, now.UTC())
+	if err != nil || tag.RowsAffected() == 0 {
+		return err
+	}
+	return upsertValue(ctx, s.db, entry.Key, English, Value{Text: english, Status: Approved}, by, now)
+}
+
 func (e Entry) placeholders() []Placeholder {
 	if e.Placeholders == nil {
 		return []Placeholder{}
