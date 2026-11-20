@@ -82,7 +82,7 @@ func TestCosmeticsPublishNeedsAnApprovedEnglishName(t *testing.T) {
 			expect(t, status, body, http.StatusOK, "")
 			continue
 		}
-		if status != step.want || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "V-16 no approved en name for avatar.fox") {
+		if status != step.want || body["error"] != "invalid" || !strings.Contains(body["detail"].(string), "V-16 no approved en name for avatar.fox") || !refusedKeys(body, cosmetics.NameKeyOf("avatar.fox")) {
 			t.Errorf("%s: %d %v", step.name, status, body)
 		}
 	}
