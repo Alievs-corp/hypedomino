@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
@@ -374,11 +375,34 @@ func (s *Store) nextSeason(ctx context.Context, tx pgx.Tx, season Season, config
 		if err := tx.QueryRow(ctx, `select exists (select 1 from ranked_seasons where id = $1)`, id).Scan(&exists); err != nil {
 			return Season{}, err
 		}
-		if !exists {
-			return insertSeason(ctx, tx, Season{ID: id, Start: season.End, End: end}, now)
+		if exists {
+			continue
 		}
+		created, err := insertSeason(ctx, tx, Season{ID: id, NameKey: id + ".name", Start: season.End, End: end}, now)
+		if err != nil {
+			return Season{}, err
+		}
+		return created, addPlaceholderName(ctx, tx, created, now)
 	}
 	return Season{}, fmt.Errorf("%w: no free id for the season after %s", ErrSeason, season.ID)
+}
+
+const (
+	placeholderNameAuthor    = "season_end"
+	placeholderNameMaxLength = 40
+)
+
+func PlaceholderName(season Season) string {
+	return "Season " + season.Start.Format("2006-01")
+}
+
+func addPlaceholderName(ctx context.Context, tx pgx.Tx, season Season, now time.Time) error {
+	entry := gamestrings.Entry{
+		Key:       season.NameKey,
+		Note:      "Name of the ranked season " + season.ID + " on the ranked screens. Placeholder set by the server when it created the season at the end of the previous one; replace it.",
+		MaxLength: placeholderNameMaxLength,
+	}
+	return new(gamestrings.Store).In(tx).AddApprovedIfMissing(ctx, entry, PlaceholderName(season), placeholderNameAuthor, now)
 }
 
 func (s *Store) snapshotSeason(ctx context.Context, tx pgx.Tx, season Season, mode rules.Mode, config Config) (int, error) {
