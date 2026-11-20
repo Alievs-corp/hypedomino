@@ -145,7 +145,7 @@ draft -> submitted -> approved -> [scheduled] -> active -> superseded
 | `progression` | PV-1 to PV-10: free track coins within `PassFreeTrackCoins`, premium track crystals within `PassPremiumTrackCrystals`; every premium level has a bundle; no `medals`, `passXp` or `mythic` item on a track; no overlapping pass seasons and no change to a frozen field of a running one; mission slots within their coin and XP budgets; event mission XP within `EventMissionXpBudget`; medal sources only `mission` or `rank_reward` | `docs/pass-missions-medals.md` 9.1, `docs/economy.md` 2.5; `tools/pass-season` checks the sample season against the curve and the track budgets |
 | `ranking` | `LpChangeMax` + the `penalties` domain's `OffenseRatingPenalty` below `DivisionLp` (checked when either domain is published); reset table monotone and never above the old rank; structural keys unchanged while a season runs; seasons contiguous | `docs/ranking.md` 3.1, 7.1, 7.2 |
 | `localization` | Only approved values in a bundle; placeholders match the key's declaration; plural categories complete per language; value within the key's max length; `en` complete; `en` last in every fallback chain | `docs/localization.md` 1.2, 2.1, 4.1 to 4.3 |
-| All | Every reference resolves (bundle, offer, item, medal, mission, product); every record that grants an item is listed in the item's `sources`; every value within its schema type and bounds; every `nameKey` has an approved `en` value | `docs/cosmetics.md` V-15, V-16, AP-3 |
+| All | Every reference resolves (bundle, offer, item, medal, mission, product); every record that grants an item is listed in the item's `sources`; every value within its schema type and bounds; every `nameKey`, and every medal `descriptionKey`, has an approved `en` value | `docs/cosmetics.md` V-15, V-16, AP-3 |
 
 The admin API implements these rules in Go. The tools in `tools/` check the repo defaults with the same rules; both run the same test vectors so they do not drift.
 
@@ -247,12 +247,14 @@ Fields and rules are `docs/rarity.md` section 7: tier id, `ordinal`, `nameKey`, 
 | `cosmetics` | Unique item ids; each item lists the granting source (V-15) |
 | `medals` | Unique medal ids |
 | `passXp` | Integer >= 0 |
-| `usedBy` | Server: every offer, mission, pass level, daily login day, season reward, event and promo campaign that grants it |
+| `usedBy` | Server: every offer, mission, pass level, daily login day, season reward, event and promo campaign that grants it, and `reward_bundles` for a bundle created on `/rewards` |
 | `guideValue` | Server: coins plus guide prices of the cosmetics (`docs/economy.md` 3.1) |
 
 Shape and grant rules: `docs/economy.md` section 4. Editing a bundle in use shows `usedBy` and needs confirmation (#138 acceptance). A bundle in use cannot be retired.
 
 Today a bundle is stored inside each object that grants it, not in a catalog of its own. `GET /admin/reward-bundles` derives the list from the published shop, pass, missions, rating and daily login config and from promo codes and templates. The same id holding different content is shown as two rows marked `differs`. Events are not listed because they have no published config yet. `PUT /admin/reward-bundles/{id}` writes the new content to every holder and publishes each affected domain in one transaction, so all of them change or none do. Only bundles held entirely by `shop`, `pass` and `missions` can be edited this way. Rank rewards are excluded because their coins come from `RankRewardCoins`, daily login days because they are coins in a calendar, and promo codes because a code keeps the bundle it was created with. An id with `differs` is refused until its holders agree. Each edit raises the bundle's `revision` above its current one, and the domains keep their own history and rollback.
+
+A bundle with new content is created on `/rewards` through `POST /admin/reward-bundles` (owner decision O-13). Before any object grants it, it needs a home, so the server keeps created bundles in a `reward_bundles` config domain of their own (`{"bundles":[...]}`, a versioned snapshot no game server reads). The id is `bundle.<slug>` and must not be held anywhere yet (409 `bundle_exists`); the content follows `docs/economy.md` section 4 at revision 1, and every cosmetic and medal must be published (400 `invalid`). Source checks (V-15) wait for the object that grants it. The bundle is listed with the use `reward_bundles` and edited like any other; a shop offer then takes it by id (**New offer** on `/shop`), which copies the content into the catalog, and a later edit changes the copy in `reward_bundles` with the others. A created bundle is not deleted.
 
 ### 5.5 Shop offers and rotations
 
@@ -346,7 +348,7 @@ Rules: `docs/pass-missions-medals.md` section 5.
 |---|---|
 | `id` | `medal.<slug>`, never reused |
 | `revision` | Server: +1 on every published change |
-| `nameKey`, `descriptionKey` | Server: `medal.<slug>.name`, `medal.<slug>.description`; the values are edited as game strings (5.15); the description says how the medal is earned |
+| `nameKey`, `descriptionKey` | Server: `medal.<slug>.name`, `medal.<slug>.description`; the values are edited as game strings (5.15); the description says how the medal is earned; both need an approved `en` value before a publish (3.3) |
 | `rarityId` | Picked from the published rarity table, guided by the expected earn share (`docs/pass-missions-medals.md` 5.3); the list shows the measured share from #147 |
 | `staticAddress` | Server: `medal/<slug>/static`; the upload must exist (5.2): a publish or rollback is refused (`medal_art_missing`, naming the medals) while a listed medal has no `static` upload that passed its checks |
 | `sources` | At least one: `mission` (achievement or event mission id) or `rank_reward` (#120 reward id) |
@@ -523,6 +525,7 @@ Every action goes through the same server path a game event would use, so it obe
 | Remove offense, lift penalty | `docs/penalties.md` section 7 | No |
 | Revert rating changes | Reverses MMR and LP of named matches after confirmed collusion (`docs/anti-cheat.md` V-9) | No |
 | Revoke emblem | `docs/ranking.md` 8.3; leaves the showcase at once | No |
+| Remove from leaderboard | Takes the player off every board (global, country, region, friends) of one season and mode, live or frozen, for good (owner decision 2026-11-20, `docs/ranking.md` 8.2); rank, LP, MMR and rank rewards stay, an emblem not yet awarded is not earned. There is no whole-board reset | No |
 | Force rename | `docs/localization.md` 5.6 | No |
 | Edit targeted promo list | 5.11 | No |
 | Mute | For `ModerationMuteHours`, the player cannot send in-match emoji or quick messages (#151, #152); play is unaffected (owner decision O-4) | - |
@@ -694,7 +697,9 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `POST /admin/players/{id}/penalties/lift` `{"reason","ref"}` | S on players | Lifts the running matchmaking ban, review flag and queue delays of the penalty record; offenses stay (`docs/penalties.md` section 7). 409 `nothing_to_lift` when none runs |
 | `POST /admin/players/{id}/penalties/remove` `{"queue","match_id","reason","ref"}` | S on players | Removes one offense of the `ranked` or `casual` ladder; 404 `unknown_offense` when the record has no such offense |
 | `POST /admin/players/{id}/force-rename` | S on players: force rename | Requires the player to pick a new nickname (`docs/localization.md` 5.6) |
+| `POST /admin/players/{id}/leaderboard-removal` `{"season","mode","reason","ref"}` | S on players: remove from leaderboard | Takes the player off the boards of that season and mode (6.2) and answers with the removal (`season`, `mode`, `account_id`, `country`, `removed_at`); a `remove_from_leaderboard` entry on `players` holds it as `after`. 400 `invalid` for a mode other than `1v1` or `2v2`, 404 `not_on_board` when the player has no placed rating or season result there, 409 `already_removed` the second time. The player page sends it from Actions with a season id and a mode |
 | `GET /admin/reward-bundles` | V on reward bundles | The bundles in published config, promo codes (one use per campaign and content) and promo templates with `guideValue`, `usedBy`, `differs` and `editable`, by id, 50 a page (at most 200 through `limit`; a page never splits the rows of one id). `q` searches ids, items, medals and objects (any case), `domain` keeps bundles used in that domain, `differing=true` only ids holding differing content, `after=<bundle id>` asks for the next page (#148) (5.4) |
+| `POST /admin/reward-bundles` `{"id","coins","crystals","cosmetics","medals","passXp","reason"}` | C on reward bundles | Creates a bundle with new content at revision 1 in the `reward_bundles` domain and answers 201 with `bundle` and `config_version`. `bundle_exists` when the id is already held, `invalid` for an id or content the bundle rules refuse or an unpublished item or medal (5.4) |
 | `PUT /admin/reward-bundles/{id}` `{"revision","coins","crystals","cosmetics","medals","passXp","reason"}` | P on reward bundles and on each domain holding it | Publishes the new content to every holder in one transaction; `editable` on the list says which bundles allow it. `stale_bundle` when `revision` is not the current one, `bundle_not_editable` for a differing id or another holder (5.4) |
 | `POST /admin/players/{id}/grant` `{"bundle","source","request_id"}` | S on players: grant | Applies the bundle through the reward engine (6.2); above `AdminGrantApprovalCoins` coins or with a `mythic` item it answers 202 with a `player_grant` proposal instead (section 8) |
 | `GET /admin/matches/{id}/replay` | V on players | The match (mode, kind, window, scores, winner, config version), its seats with account, nickname, bot and result, and the replay record (D-13) played back hand by hand: the tiles dealt to each seat, every intent with its tile, end, points or drawn tile, and each hand's outcome; `timeline` is null when no record was stored |
@@ -738,7 +743,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 
   A publish keeps every published id (ids are never reused): a mission is retired and a medal retired or disabled instead, and one left out gets 400 `invalid`. A rollback restores the earlier content; an entry added since stays in the catalog, retired.
 
-  A publish or rollback where any mission, or any medal, has no `approved` `en` value for its `nameKey` in the game strings (#214, section 3.3) gets 400 `invalid` with those name keys in `keys`. A reward bundle edit republishes the missions under the same check. This refusal, here and for cosmetics, shop offers and seasons, carries the unapproved name keys as a JSON array `keys` beside the human `detail` text (owner decision 2026-11-20, #214); the panel reads `keys`, never parses `detail`, and lists those keys under the refusal, each linking to its search on `/strings`, and lists them above the publish button of `/missions`, `/medals` and `/shop`, of a reward bundle edit (the name keys of the published missions and shop catalogs it republishes) and of a new season (its `<id>.name`) through `POST /admin/strings/unapproved` before the publish is sent.
+  A publish or rollback where any mission has no `approved` `en` value for its `nameKey`, or any medal for its `nameKey` or its `descriptionKey` (owner decision 2026-11-20), in the game strings (#214, section 3.3) gets 400 `invalid` with those keys in `keys`. A reward bundle edit republishes the missions under the same check. This refusal, here and for cosmetics, shop offers and seasons, carries the unapproved name keys as a JSON array `keys` beside the human `detail` text (owner decision 2026-11-20, #214); the panel reads `keys`, never parses `detail`, and lists those keys under the refusal, each linking to its search on `/strings`, and lists them above the publish button of `/missions`, `/medals` (name and description keys) and `/shop`, of a reward bundle edit (the name keys of the published missions and shop catalogs it republishes) and of a new season (its `<id>.name`) through `POST /admin/strings/unapproved` before the publish is sent.
 
   Every mission bundle's medals and cosmetics must list that mission as a source (`docs/economy.md` section 4). A mission publish checks this against the published medals and cosmetics. A medal publish checks it against the published missions, so a medal cannot lose a source a live mission grants it through. The order for a new medal is therefore: publish the medal listing the mission, then the mission.
 
@@ -852,7 +857,7 @@ The content gate report (A-41) has no sub-issue yet (`docs/launch-content-gate.m
 
 ## 13. Decisions
 
-Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead. O-8 to O-12 and O-14 are owner decisions of 2026-11-20.
+Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the lead. O-8 to O-14 are owner decisions of 2026-11-20.
 
 | Id | Question | Decision |
 |---|---|---|
@@ -868,4 +873,5 @@ Owner decisions of 2026-10-26 (O-1 to O-4); O-5 and O-6 taken as proposed by the
 | O-10 | `govulncheck` in CI (#148) | Blocks a PR on every vulnerability reachable from the admin API, as it does today |
 | O-11 | Component library for the panel (#134) | None; the panel uses Tailwind only |
 | O-12 | Emoji groups (5.1, #137) | Free text with the spelling hint of the form; no fixed managed list |
+| O-13 | Where a reward bundle with new content is created (#139) | On the `/rewards` page, through a new admin API endpoint (`POST /admin/reward-bundles`, 5.4) |
 | O-14 | What an A/B variant of a shop offer may change, and how players are split (#139) | Only `nameKey` and display order; players are split between variants by a stable hash of the account id (5.5) |

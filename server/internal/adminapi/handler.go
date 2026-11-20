@@ -81,22 +81,23 @@ type Verifier interface {
 }
 
 type Handler struct {
-	config    Config
-	verifier  Verifier
-	buckets   ratelimit.Buckets
-	pool      *pgxpool.Pool
-	accounts  *adminaccount.Store
-	sessions  *adminsession.Store
-	audit     *audit.Store
-	strings   *gamestrings.Store
-	approvals *approval.Store
-	wallet    *wallet.Store
-	promos    *promo.Store
-	economy   *economy.Monitor
-	now       func() time.Time
-	logger    *slog.Logger
-	mux       *http.ServeMux
-	hide      func(ctx context.Context, account string) error
+	config         Config
+	verifier       Verifier
+	buckets        ratelimit.Buckets
+	pool           *pgxpool.Pool
+	accounts       *adminaccount.Store
+	sessions       *adminsession.Store
+	audit          *audit.Store
+	strings        *gamestrings.Store
+	approvals      *approval.Store
+	wallet         *wallet.Store
+	promos         *promo.Store
+	economy        *economy.Monitor
+	now            func() time.Time
+	logger         *slog.Logger
+	mux            *http.ServeMux
+	hide           func(ctx context.Context, account string) error
+	dropFromBoards func(ctx context.Context, removal rating.BoardRemoval) error
 }
 
 func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxpool.Pool, now func() time.Time, logger *slog.Logger) *Handler {
@@ -168,6 +169,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/penalties/remove", h.allowed(rbac.Players, rbac.ActOnPlayer, h.removeOffense))
 	h.mux.HandleFunc("POST /admin/players/{id}/force-rename", h.allowed(rbac.Players, rbac.ActOnPlayer, h.forceRename))
 	h.mux.HandleFunc("POST /admin/players/{id}/grant", h.allowed(rbac.Players, rbac.ActOnPlayer, h.grantReward))
+	h.mux.HandleFunc("POST /admin/players/{id}/leaderboard-removal", h.allowed(rbac.Players, rbac.ActOnPlayer, h.removeFromLeaderboard))
 	h.mux.HandleFunc("GET /admin/matches/suspicious", h.allowed(rbac.Players, rbac.View, h.suspiciousMatches))
 	h.mux.HandleFunc("GET /admin/matches/{id}/replay", h.allowed(rbac.Players, rbac.View, h.matchReplay))
 	h.mux.HandleFunc("GET /admin/promo-codes", h.allowed(rbac.PromoCodes, rbac.View, h.listPromos))
@@ -182,6 +184,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("PUT /admin/promo-templates/{id}", h.allowed(rbac.PromoCodes, rbac.Edit, h.editPromoTemplate))
 	h.mux.HandleFunc("GET /admin/cosmetics/items", h.allowed(rbac.CosmeticItems, rbac.View, h.cosmeticItems))
 	h.mux.HandleFunc("GET /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.View, h.listRewardBundles))
+	h.mux.HandleFunc("POST /admin/reward-bundles", h.allowed(rbac.RewardBundles, rbac.Create, h.createRewardBundle))
 	h.mux.HandleFunc("PUT /admin/reward-bundles/{id}", h.allowed(rbac.RewardBundles, rbac.Publish, h.editRewardBundle))
 	h.mux.HandleFunc("GET /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.View, h.shopCatalog))
 	h.mux.HandleFunc("PUT /admin/config/shop", h.allowed(rbac.ShopOffers, rbac.Publish, h.publishShop))
@@ -551,6 +554,10 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, rating.ErrSeasonUnknown):
 		return http.StatusNotFound, "not_found"
+	case errors.Is(err, rating.ErrNotOnBoard):
+		return http.StatusNotFound, "not_on_board"
+	case errors.Is(err, rating.ErrRemovedFromBoard):
+		return http.StatusConflict, "already_removed"
 	case errors.Is(err, rating.ErrSeasonStarted):
 		return http.StatusConflict, "season_started"
 	case errors.Is(err, errSeasonNotLive):
@@ -585,6 +592,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "stale_bundle"
 	case errors.Is(err, errBundleSame):
 		return http.StatusBadRequest, "invalid"
+	case errors.Is(err, errBundleExists):
+		return http.StatusConflict, "bundle_exists"
 	case errors.Is(err, errReasonRequired):
 		return http.StatusBadRequest, "reason_required"
 	case errors.Is(err, errStepUpRequired):

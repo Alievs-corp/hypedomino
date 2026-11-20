@@ -169,11 +169,11 @@ func (h *Handler) missionsNamedInEnglish(ctx context.Context, tx pgx.Tx, mission
 }
 
 func (h *Handler) medalsNamedInEnglish(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {
-	nameKeys := make([]string, 0, len(medals.Medals))
+	keys := make([]string, 0, 2*len(medals.Medals))
 	for _, m := range medals.Medals {
-		nameKeys = append(nameKeys, m.NameKey)
+		keys = append(keys, m.NameKey, m.DescriptionKey)
 	}
-	return h.keysApprovedInEnglish(ctx, tx, medal.ErrInvalidCatalog, nameKeys)
+	return h.keysApprovedInEnglish(ctx, tx, medal.ErrInvalidCatalog, keys)
 }
 
 func (h *Handler) keysApprovedInEnglish(ctx context.Context, tx pgx.Tx, invalid error, nameKeys []string) error {

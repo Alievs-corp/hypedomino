@@ -53,11 +53,12 @@ func (h *Handler) bundleHolders() []bundleHolder {
 		{domain: func() configDomain { return h.missionDomain(false) }, replace: bundleInMissions},
 		{domain: func() configDomain { return h.passDomain(false, true) }, replace: bundleInPass},
 		{domain: func() configDomain { return h.catalogDomain(true) }, replace: h.bundleInShop},
+		{domain: bundleLibraryDomainConfig, replace: bundleInLibrary},
 	}
 }
 
 func bundleEditableIn(domain string) bool {
-	return domain == mission.Domain || domain == pass.Domain || domain == shop.Domain
+	return domain == mission.Domain || domain == pass.Domain || domain == shop.Domain || domain == bundleLibraryDomain
 }
 
 func bundleInMissions(raw []byte, next reward.Bundle) ([]byte, error) {
