@@ -53,7 +53,7 @@ export const az: Messages = {
   "rarity.rare": "Nadir",
   "shop.title": "Mağaza təklifləri",
   "shop.load_failed": "Mağaza kataloqu yüklənmədi.",
-  "shop.empty": "Hələ mağaza kataloqu dərc olunmayıb.",
+  "shop.empty": "Hələ mağaza kataloqu dərc olunmayıb. Təkliflərini aşağıda əlavə edin; ilk dərc onu yaradır.",
   "shop.version": "Dərc olunmuş versiya",
   "shop.offers": "Təkliflər",
   "shop.price": "Qiymət",

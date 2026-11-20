@@ -41,6 +41,7 @@ import {
   sectionsFor,
   unlistedCosmetics,
   withOffer,
+  emptyShopCatalog,
   withoutOffer,
   isUnpublishedOffer,
   type BundleRow,
@@ -348,6 +349,16 @@ test("an added offer has no price and no window until the admin sets them", () =
   assert.equal("bundle" in newOffer({ ...draft, kind: "pass", section: "pass", bundleId: "" }, null), false);
   const catalog = withOffer({ schema: 1, offers: [offer({})], rotations: [] }, added);
   assert.deepEqual(catalog.offers.map((listed) => listed.id), ["offer.x", "offer.wolf"]);
+});
+
+test("the first catalog starts with no offers and takes a new offer that is removable until published", () => {
+  const first = emptyShopCatalog();
+  assert.deepEqual(first, { schema: 1, offers: [], rotations: [] });
+  const draft: NewOfferDraft = { id: "offer.wolf", kind: "cosmetic", section: "event", bundleId: "bundle.wolf", nameKey: "offer.wolf.name" };
+  assert.deepEqual(draftProblems(draft, first), []);
+  const added = withOffer(first, newOffer(draft, { id: "bundle.wolf", revision: 1, cosmetics: ["avatar.wolf"] }));
+  assert.equal(isUnpublishedOffer(first, "offer.wolf"), true);
+  assert.deepEqual(withoutOffer(added, "offer.wolf"), first);
 });
 
 test("only an offer missing from the published catalog is removed, from its offers and rotations", () => {
