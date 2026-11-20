@@ -85,7 +85,7 @@ What the player is told after a clear (CD-26) is one game string per outcome (`d
 | A bundle is in use, so the clear runs at the next start | `settings.cache.cleared_at_next_start` |
 | Refused in a match | `settings.cache.not_in_match` |
 
-Their texts are not in the built-in bundle; they come from admin like any other key, and until one is published the lookup falls back as `docs/localization.md` 2.3 says.
+Their `en` and `az` texts ship in the built-in bundle (`docs/localization.md`, Cache keys), so a fresh install or an offline start can tell the player. Admin may publish other texts like for any other key; until `tr` and `ru` are translated, those languages fall back to `en` (`docs/localization.md` 1.2).
 
 ## 8. Bucket, upload and CDN
 
