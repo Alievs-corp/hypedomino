@@ -57,6 +57,8 @@ namespace HypeDomino.Game
             catalog?.SetInMatch(inMatch);
         }
 
+        public static void ApplyStagedStrings(AppState state, GameStrings strings) => strings?.ApplyStaged(state == AppState.Match);
+
         public static List<AnnouncedBundle> FollowStrings(ServerHello hello, GameStrings strings)
         {
             var chains = hello.FallbackChains;
@@ -106,6 +108,7 @@ namespace HypeDomino.Game
         {
             FollowMatch(state, GraphicsBoot.FrameRate, ContentBoot.Catalog);
             ContentBoot.Cosmetics?.ApplyStaged(state == AppState.Match);
+            ApplyStagedStrings(state, LanguageBoot.Strings);
             AudioBoot.FollowState(state);
             Debug.Log($"App state={state}");
         }
