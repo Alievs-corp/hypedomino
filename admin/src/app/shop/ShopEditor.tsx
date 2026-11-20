@@ -153,7 +153,7 @@ export function ShopEditor({
             {result.ok ? `${t("shop.published")}: ${result.version}` : `${t("shop.refused")}: ${result.error} ${result.detail}`}
           </p>
         )}
-        {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
+        {result && !result.ok && <UnnamedKeys keys={result.keys} />}
       </section>
     </div>
   );

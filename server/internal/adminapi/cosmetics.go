@@ -134,18 +134,20 @@ func (h *Handler) uploadManifest(ctx context.Context, raw []byte) error {
 
 func (h *Handler) namedInEnglish(ctx context.Context, tx pgx.Tx, items *cosmetics.Catalog) error {
 	store := h.strings.In(tx)
-	var unnamed []string
+	var unnamed, keys []string
 	for _, item := range items.Items() {
-		value, err := store.Value(ctx, cosmetics.NameKeyOf(item.ID), gamestrings.English)
+		key := cosmetics.NameKeyOf(item.ID)
+		value, err := store.Value(ctx, key, gamestrings.English)
 		if err != nil {
 			return err
 		}
 		if value.Status != gamestrings.Approved {
 			unnamed = append(unnamed, item.ID)
+			keys = append(keys, key)
 		}
 	}
 	if len(unnamed) > 0 {
-		return fmt.Errorf("%w: V-16 no approved en name for %s", cosmetics.ErrInvalid, strings.Join(unnamed, ", "))
+		return unapprovedKeysError{refusal: fmt.Errorf("%w: V-16 no approved en name for %s", cosmetics.ErrInvalid, strings.Join(unnamed, ", ")), keys: keys}
 	}
 	return nil
 }
