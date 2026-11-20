@@ -236,6 +236,62 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsTrue(frameRate.InMatch);
         }
 
+        static GameStrings StagedAz()
+        {
+            var strings = Strings("az");
+            Assert.IsTrue(strings.Stage("az", 3, AzHash, Encoding.UTF8.GetBytes(AzContent)));
+            return strings;
+        }
+
+        [TestCase(AppState.Login)]
+        [TestCase(AppState.Lobby)]
+        [TestCase(AppState.Room)]
+        [TestCase(AppState.UpdateRequired)]
+        [TestCase(AppState.Maintenance)]
+        public void ABundleDownloadedAfterStartIsAppliedAtTheNextStateOutsideTheMatch(AppState state)
+        {
+            var strings = StagedAz();
+            var changes = 0;
+            strings.Changed += () => changes++;
+            AppBoot.ApplyStagedStrings(state, strings);
+            Assert.AreEqual("A", strings.Text("k"));
+            Assert.AreEqual(1, changes);
+            Assert.IsFalse(strings.ApplyStaged(false));
+        }
+
+        [Test]
+        public void ABundleDownloadedBeforeTheMatchWaitsUntilTheMatchIsLeft()
+        {
+            var strings = StagedAz();
+            var changes = 0;
+            strings.Changed += () => changes++;
+            AppBoot.ApplyStagedStrings(AppState.Match, strings);
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("T", strings.Text("k"));
+            Assert.AreEqual(0, changes);
+            Assert.IsTrue(strings.Holds("az", AzHash));
+
+            AppBoot.ApplyStagedStrings(AppState.Lobby, strings);
+            Assert.AreEqual("A", strings.Text("k"));
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void AStateChangeWithNothingStagedLeavesTheStringsUnchanged()
+        {
+            var strings = Strings("az");
+            var changes = 0;
+            strings.Changed += () => changes++;
+            AppBoot.ApplyStagedStrings(AppState.Lobby, strings);
+            LogAssert.Expect(LogType.Warning, MissingK);
+            Assert.AreEqual("T", strings.Text("k"));
+            Assert.AreEqual(0, changes);
+        }
+
+        [Test]
+        public void AStateChangeBeforeTheStringsExistAppliesNothing() =>
+            Assert.DoesNotThrow(() => AppBoot.ApplyStagedStrings(AppState.Lobby, null));
+
         [Test]
         public void AnAcceptedHelloFromTheSessionOpensTheLobbyAndFetchesTheAnnouncedCatalog()
         {
