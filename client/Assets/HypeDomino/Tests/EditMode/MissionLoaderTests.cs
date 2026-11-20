@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Missions;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using HypeDomino.UI.Missions;
 using NUnit.Framework;
 
@@ -126,6 +127,22 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(outcome, results[0].Outcome);
             Assert.AreEqual(key, results[0].MessageKey);
             Assert.IsNull(results[0].Board);
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryLoadKeyInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            foreach (MissionLoadOutcome outcome in Enum.GetValues(typeof(MissionLoadOutcome)))
+            {
+                var key = MissionLoadKeys.Of(outcome);
+                if (key == null)
+                {
+                    continue;
+                }
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
         }
     }
 }
