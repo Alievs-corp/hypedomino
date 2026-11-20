@@ -333,6 +333,7 @@ func (h *Handler) exportStrings(w http.ResponseWriter, r *http.Request, p princi
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Disposition", `attachment; filename="strings-`+string(language)+"."+string(format)+`"`)
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
