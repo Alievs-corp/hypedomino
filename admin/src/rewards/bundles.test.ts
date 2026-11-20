@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bundleEditChanged, bundleEditIssues, bundlePageSize, editOf, nextRewardsHref, parsedIds, readBundleQuery, rewardBundlesApiPath, useLabel, type RewardBundle } from "./bundles.ts";
+import { bundleEditChanged, bundleEditIssues, bundlePageSize, editOf, nextRewardsHref, parsedIds, readBundleQuery, republishedNameKeys, rewardBundlesApiPath, useLabel, type RewardBundle } from "./bundles.ts";
 
 const daily: RewardBundle = {
   id: "bundle.daily_login_day_1",
@@ -43,6 +43,14 @@ test("the list pages on the server and offers a next page only when full", () =>
 test("a use shows its object and its place inside it", () => {
   assert.equal(useLabel(wins.usedBy[0]), "mission.first");
   assert.equal(useLabel(wins.usedBy[1]), "season_1 free.3");
+});
+
+test("an edit warns about the name keys of every catalog it republishes, once per catalog", () => {
+  const nameKeys = { missions: ["mission.first.name", "mission.second.name"], shop: ["offer.gold.name"], pass: [] };
+  const held: RewardBundle = { ...wins, usedBy: [{ domain: "missions", object: "mission.first" }, { domain: "missions", object: "mission.second" }, { domain: "pass", object: "season_1", detail: "free.3" }] };
+  assert.deepEqual(republishedNameKeys(held, nameKeys), ["mission.first.name", "mission.second.name"]);
+  assert.deepEqual(republishedNameKeys({ ...wins, usedBy: [{ domain: "shop", object: "offer.gold" }] }, nameKeys), ["offer.gold.name"]);
+  assert.deepEqual(republishedNameKeys(daily, nameKeys), []);
 });
 
 test("an edit starts from the bundle and fills what the API left out", () => {

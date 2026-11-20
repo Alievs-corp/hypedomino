@@ -228,6 +228,7 @@ func writeCodes(w http.ResponseWriter, batch string, created []promo.Created, ap
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", batch+".csv"))
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Hd-Promo-State", created[0].Code.State)
 	if approvalID != 0 {
 		w.Header().Set("Hd-Approval-Id", strconv.FormatInt(approvalID, 10))
