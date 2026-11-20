@@ -28,8 +28,7 @@ func (s *Store) Publish(ctx context.Context, message matchstore.Pending) error {
 	if tag.RowsAffected() == 0 {
 		return nil
 	}
-	if _, err := tx.Exec(ctx, `insert into analytics_events (name, label, value, received_at) select $1, '', 0, $2 from generate_series(1, $3)`,
-		MatchEnd, outcome.EndedAt, len(outcome.Players)); err != nil {
+	if err := RecordServerIn(ctx, tx, MatchEnd, len(outcome.Players), outcome.EndedAt); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
