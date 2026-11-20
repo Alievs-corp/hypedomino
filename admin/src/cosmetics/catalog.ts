@@ -1,3 +1,4 @@
+import { entryChanges, fieldChanges, type CatalogChanges } from "../config/changes.ts";
 import { sameContent } from "../config/sameContent.ts";
 import type { MessageKey } from "../i18n/translate.ts";
 
@@ -164,6 +165,17 @@ export function changedItems(before: CosmeticItem[], after: CosmeticItem[]): str
       return old !== undefined && !sameContent({ ...old, revision: 0 }, { ...item, revision: 0 });
     })
     .map((item) => item.id);
+}
+
+function unrevised(items: CosmeticItem[]): CosmeticItem[] {
+  return items.map((item) => ({ ...item, revision: 0 }));
+}
+
+export function manifestChanges(before: CosmeticManifest, after: CosmeticManifest): CatalogChanges {
+  return {
+    settings: fieldChanges({ schemaVersion: before.schemaVersion }, { schemaVersion: after.schemaVersion }),
+    entries: entryChanges(unrevised(before.items), unrevised(after.items)),
+  };
 }
 
 export function newlyDisabled(before: CosmeticItem[], after: CosmeticItem[]): string[] {

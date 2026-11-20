@@ -47,7 +47,7 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 - **Cultural review:** only roles with the review action can set it (`cultural_review`). An item without it blocks the publish.
 - **Checks:** a missing source, a malformed record id, a repeated source, a default item that is not live and static, a default action, a missing emoji group, bad table layers, or a type without a live default item marks the item and blocks the publish. Everything else, such as dropping a source another domain grants from, is refused by the API with its reason.
 - **Publish** (`PUT /admin/config/cosmetics`) takes a reason and a confirmation step that lists added, changed and newly disabled items. It is shown only to roles with publish on cosmetic items.
-- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions.
+- **History and rollback:** on `/admin/config/cosmetics/history` and `/admin/config/cosmetics/rollback`. A rollback brings content back under new revisions. Each version lists what it changed against the version before, like the missions history: a schema version change, and each item it added or each field of an item it changed by path, as `rarityId common → rare`. The `revision` the API bumps is left out; the oldest listed version is compared with the built-in manifest.
 
 ## Reward bundles
 
@@ -111,6 +111,8 @@ Signed in, `/` is the A-1 dashboard (`docs/admin.md` section 10). It shows the a
 ## Assets
 
 `/assets` (#135, `docs/admin.md` 5.2) uploads the static PNG of a cosmetic item or a medal (`medal.<slug>`, stored at `medal/<slug>/static`; a medal publish, and a cosmetics publish that adds the item, are refused until its static has passed). The panel asks `POST /admin/assets/uploads` for a signed URL, the browser sends the file straight to the object store, and `POST /admin/assets/{id}/check` makes the server read it back and record format, alpha, width, height, bytes and SHA-256. A file that fails stays listed as rejected and is never shown; a new upload makes a new row. The list pages on the server, 50 rows at a time, and filters by status and item id prefix. The file does not reach players yet.
+
+When a cosmetics publish is refused with `cosmetic_art_missing`, or a medal publish or rollback with `medal_art_missing`, the refusal lists the items the API named, each linking to `/assets?item=<id>`. That link filters the list to the item and fills the upload form with its id. The panel does not check this before the publish; the API decides.
 
 The browser needs the store in two places: `HD_ADMIN_ASSET_ORIGIN` adds its origin to `img-src` and `connect-src` of the Content Security Policy, and the bucket's CORS rules must allow `PUT` from the panel's origin. Without `HD_ASSET_STORE_URL` on the admin API, the page lists rows and closes uploads.
 

@@ -8,6 +8,7 @@ import {
   emptyFilter,
   filteredItems,
   itemIssues,
+  manifestChanges,
   missingDefaults,
   moveLayer,
   newItem,
@@ -150,4 +151,19 @@ test("an emoji is offered the groups the other emoji use, once each and sorted",
   assert.deepEqual(emojiGroups(items, "emoji.draft"), ["faces", "hands"]);
   assert.deepEqual(emojiGroups(items, "emoji.smile"), ["hands"]);
   assert.deepEqual(emojiGroups([fox], "emoji.wave"), []);
+});
+
+test("a version lists each added item and each changed field against the version before, revisions aside", () => {
+  const published: CosmeticItem = { ...fox, revision: 3 };
+  const frame = ready(newItem("frame", "gold", rules));
+  const before = { schemaVersion: 1, manifestVersion: 4, items: [published] };
+  const after = { schemaVersion: 1, manifestVersion: 5, items: [{ ...published, revision: 4, rarityId: "rare" }, frame] };
+  assert.deepEqual(manifestChanges(before, after), {
+    settings: [],
+    entries: [
+      { id: "avatar.fox", change: "changed", fields: [{ field: "rarityId", before: fox.rarityId, after: "rare" }] },
+      { id: "frame.gold", change: "added", fields: [] },
+    ],
+  });
+  assert.deepEqual(manifestChanges(before, { ...before, manifestVersion: 5, items: [{ ...published, revision: 4 }] }), { settings: [], entries: [] });
 });
