@@ -123,7 +123,7 @@ func TestMissionsAndMedalsNeedAnApprovedEnglishName(t *testing.T) {
 			expect(t, status, body, http.StatusOK, "")
 			continue
 		}
-		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for medal.wins_50.name") {
+		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for medal.wins_50.name") || !refusedKeys(body, "medal.wins_50.name") {
 			t.Errorf("medal %s: %d %v", step.name, status, body)
 		}
 	}
@@ -136,7 +136,7 @@ func TestMissionsAndMedalsNeedAnApprovedEnglishName(t *testing.T) {
 			expect(t, status, body, http.StatusOK, "")
 			continue
 		}
-		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for mission.win_50.name") {
+		if status != step.want || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), "no approved en name for mission.win_50.name") || !refusedKeys(body, "mission.win_50.name") {
 			t.Errorf("mission %s: %d %v", step.name, status, body)
 		}
 	}

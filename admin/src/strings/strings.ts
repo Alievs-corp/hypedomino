@@ -64,20 +64,6 @@ export function stringsHref(query: StringsQuery, change: Partial<StringsQuery>):
   return `/strings?${searchOf({ ...query, ...change })}`;
 }
 
-const unnamedMarker = "no approved en name for ";
-
-export function unnamedKeys(error: string, detail: string): string[] {
-  const at = detail.lastIndexOf(unnamedMarker);
-  if (error !== "invalid" || at < 0) {
-    return [];
-  }
-  return detail
-    .slice(at + unnamedMarker.length)
-    .split(",")
-    .map((key) => key.trim())
-    .filter((key) => key !== "");
-}
-
 export function distinctNames(keys: readonly string[]): string[] {
   return [...new Set(keys.map((key) => key.trim()).filter((key) => key !== ""))];
 }

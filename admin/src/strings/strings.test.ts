@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bundlesApiPath, chainError, chainFromText, distinctNames, keyHref, nextStringsHref, olderBundlesHref, placeholdersFromText, placeholdersText, problemsText, readStringsQuery, stringsApiPath, stringsPageSize, unnamedKeys, valueOf, type GameString } from "./strings.ts";
+import { bundlesApiPath, chainError, chainFromText, distinctNames, keyHref, nextStringsHref, olderBundlesHref, placeholdersFromText, placeholdersText, problemsText, readStringsQuery, stringsApiPath, stringsPageSize, valueOf, type GameString } from "./strings.ts";
 
 function entry(key: string, fields: Partial<GameString> = {}): GameString {
   return { key, note: "", max_length: 40, placeholders: [], deprecated: false, values: {}, ...fields };
@@ -62,12 +62,7 @@ test("a chain starts with its language, ends with en and repeats no known langua
   assert.equal(chainError("az", ["az", "tr", "tr", "en"], languages), "repeat");
 });
 
-test("an invalid refusal names the keys without an approved en name, each linking to its search", () => {
-  const detail = "invalid mission catalog: no approved en name for mission.win_50.name, mission.hands_3.name";
-  assert.deepEqual(unnamedKeys("invalid", detail), ["mission.win_50.name", "mission.hands_3.name"]);
-  assert.deepEqual(unnamedKeys("invalid", "invalid shop catalog: no approved en name for shop.offer.weekend_pack"), ["shop.offer.weekend_pack"]);
-  assert.deepEqual(unnamedKeys("invalid", "invalid season: start must be next_start"), []);
-  assert.deepEqual(unnamedKeys("conflict", detail), []);
+test("an unnamed key links to its search", () => {
   assert.equal(keyHref("season.one.name"), "/strings?q=season.one.name");
   assert.equal(keyHref("a&b"), "/strings?q=a%26b");
 });
