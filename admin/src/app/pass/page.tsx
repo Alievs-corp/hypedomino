@@ -4,7 +4,7 @@ import { can, canRollBack, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { emptyPassConfig, passChanges, type PassConfig } from "@/pass/config";
+import { emptyPassConfig, passChanges, type PassConfig, type Window } from "@/pass/config";
 import { CatalogChangeList } from "../config/CatalogChangeList";
 import { Rollback } from "../config/Rollback";
 import { rollbackPass } from "./actions";
@@ -21,9 +21,10 @@ export default async function PassPage() {
   if (!canView(admin.permissions, "pass_seasons")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const [config, history] = await Promise.all([
+  const [config, history, ranked] = await Promise.all([
     adminApi<{ config_version: number; catalog: PassConfig | null; rules: { server_time: string } }>("GET", "/admin/config/pass"),
     adminApi<{ versions: ConfigVersion[] }>("GET", "/admin/config/pass/history"),
+    canView(admin.permissions, "ranked_seasons") ? adminApi<{ seasons: Window[] }>("GET", "/admin/ranked/seasons") : null,
   ]);
   if (config.status !== 200 || history.status !== 200) {
     return <Notice text={t("pass.load_failed")} />;
@@ -37,6 +38,7 @@ export default async function PassPage() {
         published={config.body.catalog}
         version={config.body.config_version}
         serverTime={config.body.rules.server_time}
+        rankedSeasons={ranked?.status === 200 ? ranked.body.seasons : null}
         canPublish={can(admin.permissions, "pass_seasons", "publish")}
       />
       <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "pass_seasons") ? googleClientId() : null} t={t} />
