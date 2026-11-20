@@ -5,7 +5,7 @@ export const sessionCookie = "hd_admin_session";
 
 export type ApiReply<T> = { status: number; body: T };
 
-export type ApiRefusal = { error?: string; detail?: string };
+export type ApiRefusal = { error?: string; detail?: string; keys?: string[] };
 
 export async function sessionToken(): Promise<string | undefined> {
   return (await cookies()).get(sessionCookie)?.value || undefined;

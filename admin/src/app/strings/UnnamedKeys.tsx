@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslator } from "@/i18n/client";
-import { distinctNames, keyHref, unnamedKeys } from "@/strings/strings";
+import { distinctNames, keyHref } from "@/strings/strings";
 import { unapprovedNames } from "./actions";
 
-export function UnnamedKeys({ error, detail }: { error: string; detail: string }) {
+export function UnnamedKeys({ keys = [] }: { keys?: readonly string[] }) {
   const t = useTranslator();
-  return <KeyLinks message={t("strings.unnamed")} keys={unnamedKeys(error, detail)} />;
+  return <KeyLinks message={t("strings.unnamed")} keys={keys} />;
 }
 
 const separator = "\n";

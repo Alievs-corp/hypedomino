@@ -66,7 +66,7 @@ export function BundleEditor({ bundle, domainLabel, nameKeys }: Props) {
           {t("rewards.refused")}: {result.error} {result.detail}
         </p>
       )}
-      {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
+      {result && !result.ok && <UnnamedKeys keys={result.keys} />}
     </section>
   );
 }

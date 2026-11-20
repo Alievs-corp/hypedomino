@@ -323,7 +323,7 @@ function Outcome({ result }: { result: SeasonResult | null }) {
       <p role="status" className="text-sm text-text-secondary">
         {t("ranked.refused")}: {result.error} {result.detail}
       </p>
-      <UnnamedKeys error={result.error} detail={result.detail} />
+      <UnnamedKeys keys={result.keys} />
     </>
   );
 }
