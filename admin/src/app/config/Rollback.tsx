@@ -55,7 +55,7 @@ export function Rollback({ version, clientId, action }: { version: number; clien
           {result.ok ? `${t("rollback.done")}: ${result.version}` : `${t("rollback.refused")}: ${result.error} ${result.detail}`}
         </p>
       )}
-      {result && !result.ok && !stepUp && <UnnamedKeys error={result.error} detail={result.detail} />}
+      {result && !result.ok && !stepUp && <UnnamedKeys keys={result.keys} />}
       {result && !result.ok && !stepUp && <ItemsWithoutArt error={result.error} detail={result.detail} />}
     </div>
   );

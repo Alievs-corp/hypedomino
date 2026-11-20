@@ -123,7 +123,7 @@ export function MissionEditor({ initialCatalog, published, version, rules, canPu
               {result.ok ? `${t("missions.published")}: ${result.version}` : `${t("missions.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
-          {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
+          {result && !result.ok && <UnnamedKeys keys={result.keys} />}
         </section>
       )}
     </div>

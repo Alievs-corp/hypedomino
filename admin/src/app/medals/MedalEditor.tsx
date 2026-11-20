@@ -117,7 +117,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
               {result.ok ? `${t("medals.published")}: ${result.version}` : `${t("medals.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
-          {result && !result.ok && <UnnamedKeys error={result.error} detail={result.detail} />}
+          {result && !result.ok && <UnnamedKeys keys={result.keys} />}
           {result && !result.ok && <ItemsWithoutArt error={result.error} detail={result.detail} />}
         </section>
       )}
