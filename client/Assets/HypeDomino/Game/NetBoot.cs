@@ -75,6 +75,7 @@ namespace HypeDomino.Game
             Lobby = new LobbyCommands();
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
+            FriendLobbyBoot.Start(session, Room, Api);
             BuildLoaders(Api);
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
