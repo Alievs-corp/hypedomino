@@ -14,6 +14,12 @@ namespace HypeDomino.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
+            Build();
+            StartupPhases.App.Mark(nameof(CrashReportingBoot));
+        }
+
+        static void Build()
+        {
             var settings = CrashReportSettings.Load();
             if (settings == null) return;
             var envelope = new SentryEnvelope(Application.version, settings.environment, SystemInfo.operatingSystem, SystemInfo.deviceModel);
