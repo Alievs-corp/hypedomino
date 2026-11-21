@@ -58,6 +58,7 @@ namespace HypeDomino.Game
             var session = Connection.Session;
             session.HelloReceived += startProof.Read;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
+            DeviceRiskProbe.CollectHooks(session.HookSignals);
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);
             Queue = new MatchQueue();
             Queue.Follow(session, AppBoot.Flow);
