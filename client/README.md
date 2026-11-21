@@ -365,12 +365,14 @@ Optional arguments stamp the release, and the build restores the project setting
 - `-buildNumber <n>` sets the Android version code, 1 to 2,100,000,000.
 - `-applicationId <package>` sets the Android package name.
 - `-androidSigning <file>` signs with the upload key: a JSON file with `keystore`, `keystorePass`, `keyAlias` and `keyAliasPass`.
+- `-crashReporting <file>` turns crash reports on: a JSON file with `dsn` and optional `environment` (Error reports above). Leaving it out builds without crash reports; a file without a `dsn` fails the build.
 
 Every run passes the workflow run number as the build number, so build numbers only grow. Pushing a tag `client-v<major>.<minor>.<patch>` runs the same workflow as a release:
 - The version comes from the tag, and the catalog version is `<version>-<build number>`.
 - The package name is the repository variable `ANDROID_APPLICATION_ID`.
 - The upload key comes from the `ANDROID_KEYSTORE_*` and `ANDROID_KEYALIAS_*` secrets (`docs/environments.md` 2.3). It is written to `client/Signing` for the build only and removed afterwards.
 - The signed AAB goes to the Play internal testing track with `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+- When the secret `CLIENT_SENTRY_DSN` is set, its DSN and the variable `CLIENT_SENTRY_ENVIRONMENT` are written to `client/Signing/crash-reporting.json` and passed as `-crashReporting`; without it the run warns and the build sends no crash reports.
 
 A tag run fails before the build when a variable or secret is missing. The iOS build and the TestFlight upload are not built yet.
 
@@ -461,7 +463,13 @@ A tag run fails before the build when a variable or secret is missing. The iOS b
 
 ## Error reports
 
-`Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The crash SDK behind `IErrorSender`, its DSN and its symbol upload are owner setup: the DSN comes from build config, never from code. The `ErrorReportsTests` EditMode tests cover the gate.
+`Core/Diagnostics/ErrorReports` is the consent gate of #182 (`docs/privacy.md` 6.2, OQ-5). Its `OnLog` matches `Application.LogCallback`: while the `diagnostics` purpose is off nothing is sent, and after `Consent()` every exception, error and assert goes to an `IErrorSender` as an `ErrorReport` (type, message, stack trace), without account or analytics id. `Withdraw()` stops it at once. The `ErrorReportsTests` EditMode tests cover the gate.
+
+`Core/Diagnostics/SentryErrorSender` is the `IErrorSender` behind it, without a vendor SDK: it posts each report as a Sentry envelope over HTTPS with `UnityWebRequest` (`UnityEnvelopeTransport`) to the project of the DSN. The DSN is a build input, never code (`docs/environments.md` 2.5): `Editor/ReleaseBuild` writes `-crashReporting <file>` to `Resources/CrashReporting.json` for that build only, and `CrashReportSettings` accepts only a Sentry EU data region DSN (host ending in `.ingest.de.sentry.io`, `docs/privacy.md` section 2) without echoing a refused one. Without the file, or with an empty `dsn`, `Game/CrashReportingBoot` hooks nothing and `CrashReportingBoot.Reports` sends nowhere. With it, the boot subscribes `ErrorReports.OnLog` to `Application.logMessageReceivedThreaded` and pumps the sender once a frame; nothing is sent until the `diagnostics` purpose calls `Consent()`.
+
+Each event carries the release (`Application.version`), the environment, the log type, the OS and the device model (D-25) and the exception with its frames, oldest first, our `HypeDomino.` frames marked in app. It carries no user, no device id, no server name and no session, and tells Sentry not to infer the IP (`infer_ip: never`, `docs/privacy.md` 6.4). `ErrorScrub` removes UUIDs (account and analytics ids), email addresses, bearer tokens, JWTs and URL query strings from the message and the stack trace. One envelope is in flight at a time; at most 30 reports wait (the Sentry SDK default queue size) and more are dropped; a failed post drops its report. A 429 or an `X-Sentry-Rate-Limits` header for errors pauses sending for its `Retry-After` (60 s when absent, the Sentry SDK default) and drops what arrives meanwhile. Nothing is written to the device. The `SentryDsnTests`, `SentryEnvelopeTests`, `ErrorScrubTests` and `SentryErrorSenderTests` EditMode tests cover the DSN rule, the event, the scrubbing, the queue and the rate limits.
+
+Not built yet: release health (sessions) and native crashes, which need the Sentry Unity SDK (crash-free sessions count native crashes, `docs/closed-beta.md` BS-1), and the IL2CPP symbol and mapping upload, which needs the CI token (`docs/launch-runbook.md` OI-6).
 
 ## Analytics
 
