@@ -339,6 +339,7 @@ func TestIntegrityPolicyStartsAtTheLaunchValuesAndCanBeTightened(t *testing.T) {
 		"HD_INTEGRITY_REQUIRE_LICENSED": "true",
 		"HD_INTEGRITY_FAILURE_WEIGHT":   "30",
 		"HD_DEVICE_RISK_WEIGHT":         "7",
+		"HD_HOOK_SIGNAL_WEIGHT":         "3",
 		"HD_PLAY_PACKAGE":               "com.example.hypedomino",
 		"HD_PLAY_SERVICE_ACCOUNT":       "/run/secrets/play.json",
 		"HD_PLAY_NOTIFICATION_TOKEN":    "push-secret",
@@ -348,7 +349,7 @@ func TestIntegrityPolicyStartsAtTheLaunchValuesAndCanBeTightened(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	strict := integrity.Policy{IntegrityFailureAction: integrity.ActionBlock, IntegrityFailureWeight: 30, DeviceRiskAction: integrity.DeviceRiskBlockRanked, DeviceRiskWeight: 7, MinDeviceLevel: integrity.DeviceLevelStrong, RequireLicensed: true}
+	strict := integrity.Policy{IntegrityFailureAction: integrity.ActionBlock, IntegrityFailureWeight: 30, DeviceRiskAction: integrity.DeviceRiskBlockRanked, DeviceRiskWeight: 7, HookSignalWeight: 3, MinDeviceLevel: integrity.DeviceLevelStrong, RequireLicensed: true}
 	if config.IntegrityPolicy != strict || config.PlayIntegrity.PackageName != "com.example.hypedomino" || !slices.Equal(config.PlayIntegrity.CertificateDigests, []string{"abc", "def"}) || config.PlayIntegrity.TokenMaxAge != 90*time.Second {
 		t.Fatalf("tightened %+v %+v", config.IntegrityPolicy, config.PlayIntegrity)
 	}
@@ -363,5 +364,9 @@ func TestIntegrityPolicyStartsAtTheLaunchValuesAndCanBeTightened(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), name) {
 			t.Errorf("error does not name %s: %v", name, err)
 		}
+	}
+	_, err = ConfigFromEnv(lookup(map[string]string{"HD_HOOK_SIGNAL_WEIGHT": "-1"}))
+	if err == nil || !strings.Contains(err.Error(), "HD_HOOK_SIGNAL_WEIGHT") {
+		t.Errorf("a negative hook signal weight is accepted: %v", err)
 	}
 }

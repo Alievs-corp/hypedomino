@@ -508,8 +508,9 @@ func (r *envReader) integrity(config *Config) {
 	r.flag("HD_INTEGRITY_REQUIRE_LICENSED", &policy.RequireLicensed)
 	r.integer("HD_INTEGRITY_FAILURE_WEIGHT", &policy.IntegrityFailureWeight)
 	r.integer("HD_DEVICE_RISK_WEIGHT", &policy.DeviceRiskWeight)
-	if policy.IntegrityFailureWeight < 0 || policy.DeviceRiskWeight < 0 {
-		r.errs = append(r.errs, errors.New("HD_INTEGRITY_FAILURE_WEIGHT and HD_DEVICE_RISK_WEIGHT: must not be negative"))
+	r.integer("HD_HOOK_SIGNAL_WEIGHT", &policy.HookSignalWeight)
+	if policy.IntegrityFailureWeight < 0 || policy.DeviceRiskWeight < 0 || policy.HookSignalWeight < 0 {
+		r.errs = append(r.errs, errors.New("HD_INTEGRITY_FAILURE_WEIGHT, HD_DEVICE_RISK_WEIGHT and HD_HOOK_SIGNAL_WEIGHT: must not be negative"))
 	}
 	config.PlayIntegrity.PackageName = config.Play.PackageName
 	r.list("HD_PLAY_CERT_DIGESTS", &config.PlayIntegrity.CertificateDigests)
