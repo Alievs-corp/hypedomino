@@ -45,6 +45,7 @@ import {
   withoutOffer,
   isUnpublishedOffer,
   variantProblems,
+  previewVariants,
   withVariants,
   editedVariant,
   catalogNameKeys,
@@ -430,4 +431,11 @@ test("a variant edit keeps only what it changes and an offer without variants dr
 test("the name keys of a catalog include those of its variants", () => {
   const catalog: ShopCatalog = { ...emptyShopCatalog(), offers: [offer({ variants: [{ id: "bold", nameKey: "k2" }, { id: "first", position: 1 }] }), offer({ id: "offer.y", nameKey: "y" })] };
   assert.deepEqual(catalogNameKeys(catalog), ["k", "k2", "y"]);
+});
+
+test("a preview asks only for variants the draft still has", () => {
+  const catalog: ShopCatalog = { ...emptyShopCatalog(), offers: [offer({ variants: [{ id: "bold", nameKey: "k2" }] }), offer({ id: "offer.y", nameKey: "y" })] };
+  assert.deepEqual(previewVariants(catalog, { "offer.x": "bold" }), { "offer.x": "bold" });
+  assert.deepEqual(previewVariants(catalog, { "offer.x": "gone", "offer.y": "bold", "offer.removed": "bold" }), {});
+  assert.deepEqual(previewVariants(catalog, {}), {});
 });

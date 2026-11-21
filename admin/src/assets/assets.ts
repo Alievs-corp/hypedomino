@@ -121,6 +121,23 @@ export function itemAssetsHref(id: string): string {
   return `/assets?${searchOf({ status: "", item: id, before: "" })}`;
 }
 
+export type StaticArt = { state: "passed"; url: string; width: number | null; height: number | null; uploadedAt: string } | { state: "missing" } | { state: "unavailable" };
+
+export function staticArtApiPath(itemId: string): string {
+  return `/admin/assets?${new URLSearchParams({ item: itemId, exact: "true", slot: "static", status: "passed", limit: "1" })}`;
+}
+
+export function staticArtOf(status: number, body: { store_configured?: boolean; assets?: Asset[] }): StaticArt {
+  if (status !== 200 || !body.store_configured) {
+    return { state: "unavailable" };
+  }
+  const asset = body.assets?.[0];
+  if (!asset?.view_url) {
+    return { state: "missing" };
+  }
+  return { state: "passed", url: asset.view_url, width: asset.width, height: asset.height, uploadedAt: asset.created_at };
+}
+
 export function olderAssetsHref(query: AssetQuery, assets: readonly Asset[]): string | null {
   if (assets.length < assetPageSize) {
     return null;

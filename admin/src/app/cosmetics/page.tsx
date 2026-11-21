@@ -42,6 +42,7 @@ export default async function CosmeticsPage() {
         rules={rules}
         canPublish={can(admin.permissions, "cosmetic_items", "publish")}
         canReview={can(admin.permissions, "cosmetic_items", "cultural_review")}
+        canSeeArt={canView(admin.permissions, "assets")}
       />
       {catalog !== null && can(admin.permissions, "cosmetic_items", "switch_off_for_incident") && (
         <SwitchOff itemIds={catalog.items.filter((item) => item.availability !== "disabled").map((item) => item.id)} clientId={googleClientId()} />

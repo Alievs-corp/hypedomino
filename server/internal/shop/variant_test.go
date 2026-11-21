@@ -104,3 +104,22 @@ func TestAVariantMovesTheOfferToItsPositionInTheSection(t *testing.T) {
 		t.Fatalf("the published section changed: %v", ids(section.Offers))
 	}
 }
+
+func TestAChosenVariantIsShownWhateverTheAccount(t *testing.T) {
+	moved := Offer{ID: "offer.c", NameKey: "c", Variants: []Variant{{ID: "first", NameKey: "c2", Position: 1}}}
+	section := Section{Name: SectionEvent, Offers: []Offer{{ID: "offer.a", NameKey: "a"}, {ID: "offer.b", NameKey: "b"}, moved}}
+
+	chosen := section.WithVariants(map[string]string{"offer.c": "first"})
+	if !same(ids(chosen.Offers), []string{"offer.c", "offer.a", "offer.b"}) || chosen.Offers[0].NameKey != "c2" {
+		t.Fatalf("chosen %+v", chosen.Offers)
+	}
+	for name, variants := range map[string]map[string]string{"none": nil, "unknown": {"offer.c": "last"}, "other offer": {"offer.a": "first"}} {
+		written := section.WithVariants(variants)
+		if !same(ids(written.Offers), []string{"offer.a", "offer.b", "offer.c"}) || written.Offers[2].NameKey != "c" {
+			t.Fatalf("%s %+v", name, written.Offers)
+		}
+	}
+	if _, ok := moved.Variant(""); ok {
+		t.Fatal("an empty variant id names a variant")
+	}
+}
