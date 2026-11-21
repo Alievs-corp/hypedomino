@@ -61,6 +61,7 @@ namespace HypeDomino.Game
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
+            AnalyticsBoot.Start(Api);
             Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
             startProof = new SessionStartProof(Integrity.Request, StartConnection);
             Connection = new Connection(OpenSocket, NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
@@ -88,6 +89,7 @@ namespace HypeDomino.Game
             driver.AddComponent<Driver>();
             Debug.Log($"Net server={endpoint.serverUrl} socket={socket}");
             StartupPhases.App.Mark(nameof(NetBoot));
+            AnalyticsBoot.Follow(Auth, Queue);
             start.Begin();
         }
 

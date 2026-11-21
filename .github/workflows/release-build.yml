@@ -43,6 +43,7 @@ jobs:
           APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
           SERVER_URL: ${{ vars.CLIENT_SERVER_URL }}
           HTTP_TIMEOUT_SECONDS: ${{ vars.CLIENT_HTTP_TIMEOUT_SECONDS }}
+          CRASH_REPORTING: ${{ secrets.CLIENT_SENTRY_DSN != '' }}
         run: |
           parameters="-buildNumber $BUILD_NUMBER"
           if [ "$GITHUB_REF_TYPE" = tag ]; then
@@ -53,6 +54,12 @@ jobs:
             [[ "$HTTP_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || { echo "set the repository variable CLIENT_HTTP_TIMEOUT_SECONDS to the HTTP timeout in whole seconds"; exit 1; }
             catalog="$version-$BUILD_NUMBER"
             parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json -serverUrl $SERVER_URL -httpTimeoutSeconds $HTTP_TIMEOUT_SECONDS"
+            if [ "$CRASH_REPORTING" = true ]; then
+              parameters="$parameters -crashReporting Signing/crash-reporting.json"
+              echo "crash_reporting=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::CLIENT_SENTRY_DSN is not set, so this build sends no crash reports (docs/environments.md 2.5)"
+            fi
           else
             catalog="$INPUT_CATALOG_VERSION"
           fi
@@ -86,6 +93,14 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > client/Signing/release.keystore
           jq -n --arg keystore Signing/release.keystore --arg keystorePass "$ANDROID_KEYSTORE_PASS" --arg keyAlias "$ANDROID_KEYALIAS_NAME" --arg keyAliasPass "$ANDROID_KEYALIAS_PASS" \
             '{keystore: $keystore, keystorePass: $keystorePass, keyAlias: $keyAlias, keyAliasPass: $keyAliasPass}' > client/Signing/signing.json
+      - name: Write the crash reporting file
+        if: steps.release.outputs.crash_reporting == 'true'
+        env:
+          CLIENT_SENTRY_DSN: ${{ secrets.CLIENT_SENTRY_DSN }}
+          CLIENT_SENTRY_ENVIRONMENT: ${{ vars.CLIENT_SENTRY_ENVIRONMENT }}
+        run: |
+          mkdir -p client/Signing
+          jq -n --arg dsn "$CLIENT_SENTRY_DSN" --arg environment "$CLIENT_SENTRY_ENVIRONMENT" '{dsn: $dsn, environment: $environment}' > client/Signing/crash-reporting.json
       - uses: game-ci/unity-builder@v6
         continue-on-error: true
         env:

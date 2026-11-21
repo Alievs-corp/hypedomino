@@ -15,7 +15,7 @@ import (
 )
 
 type Passes interface {
-	Enter(ctx context.Context, account string, now time.Time) (Season, Progress, int64, error)
+	View(ctx context.Context, account string, now time.Time) (View, error)
 	BuyLevels(ctx context.Context, account string, count int, currency wallet.Currency, requestID string, now time.Time) (LevelPurchase, error)
 }
 
@@ -43,32 +43,36 @@ type errorResponse struct {
 }
 
 type View struct {
-	Season        string                           `json:"season"`
-	StartsAt      time.Time                        `json:"starts_at"`
-	EndsAt        time.Time                        `json:"ends_at"`
-	ConfigVersion int64                            `json:"config_version"`
-	Levels        int                              `json:"levels"`
-	XP            int64                            `json:"xp"`
-	Level         int                              `json:"level"`
-	LevelXP       int64                            `json:"level_xp"`
-	NextLevelXP   *int64                           `json:"next_level_xp"`
-	Premium       bool                             `json:"premium"`
-	Tracks        map[string]map[int]reward.Bundle `json:"tracks"`
+	Season            string                           `json:"season"`
+	StartsAt          time.Time                        `json:"starts_at"`
+	EndsAt            time.Time                        `json:"ends_at"`
+	ConfigVersion     int64                            `json:"config_version"`
+	Levels            int                              `json:"levels"`
+	XP                int64                            `json:"xp"`
+	Level             int                              `json:"level"`
+	LevelXP           int64                            `json:"level_xp"`
+	NextLevelXP       *int64                           `json:"next_level_xp"`
+	Premium           bool                             `json:"premium"`
+	LevelCoinPrice    int64                            `json:"level_coin_price"`
+	LevelCrystalPrice int64                            `json:"level_crystal_price"`
+	Tracks            map[string]map[int]reward.Bundle `json:"tracks"`
 }
 
-func NewView(season Season, progress Progress, version int64) View {
+func NewView(config *Snapshot, season Season, progress Progress, version int64) View {
 	level := season.Curve.LevelFor(progress.XP)
 	view := View{
-		Season:        season.ID,
-		StartsAt:      season.Start,
-		EndsAt:        season.End,
-		ConfigVersion: version,
-		Levels:        season.Curve.Levels,
-		XP:            progress.XP,
-		Level:         level,
-		LevelXP:       season.Curve.XpToReach(level),
-		Premium:       progress.Premium,
-		Tracks:        map[string]map[int]reward.Bundle{Free: season.Free, Premium: season.Premium},
+		Season:            season.ID,
+		StartsAt:          season.Start,
+		EndsAt:            season.End,
+		ConfigVersion:     version,
+		Levels:            season.Curve.Levels,
+		XP:                progress.XP,
+		Level:             level,
+		LevelXP:           season.Curve.XpToReach(level),
+		Premium:           progress.Premium,
+		LevelCoinPrice:    config.LevelPrice(wallet.Coin),
+		LevelCrystalPrice: config.LevelPrice(wallet.Crystal),
+		Tracks:            map[string]map[int]reward.Bundle{Free: season.Free, Premium: season.Premium},
 	}
 	if level < season.Curve.Levels {
 		next := season.Curve.XpToReach(level + 1)
@@ -95,7 +99,7 @@ func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	season, progress, version, err := h.store.Enter(r.Context(), claims.Account, h.now())
+	view, err := h.store.View(r.Context(), claims.Account, h.now())
 	switch {
 	case errors.Is(err, ErrNoSeason):
 		reply(w, http.StatusNotFound, errorResponse{Error: "pass.no_season"})
@@ -103,7 +107,7 @@ func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("pass view failed", "error", err)
 		reply(w, http.StatusInternalServerError, errorResponse{Error: "internal"})
 	default:
-		reply(w, http.StatusOK, NewView(season, progress, version))
+		reply(w, http.StatusOK, view)
 	}
 }
 
