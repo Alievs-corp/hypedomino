@@ -15,7 +15,7 @@ Unity `6000.3.27f1` (Unity 6.3 LTS), pinned in `ProjectSettings/ProjectVersion.t
 | `Assets/HypeDomino/Net` | `HypeDomino.Net` | Core, Proto | |
 | `Assets/HypeDomino/UI` | `HypeDomino.UI` | Core, Net | `UnityEngine.UI`, TextMeshPro |
 | `Assets/HypeDomino/Cosmetics` | `HypeDomino.Cosmetics` | Core | |
-| `Assets/HypeDomino/Content` | `HypeDomino.Content` | UI | Addressables |
+| `Assets/HypeDomino/Content` | `HypeDomino.Content` | Core, UI | Addressables |
 | `Assets/HypeDomino/Game` | `HypeDomino.Game` | Core, Net, Proto, UI, Cosmetics, Content | URP |
 | `Assets/HypeDomino/Bench` | `HypeDomino.Bench` | Core, UI | `UnityEngine.UI`; device benches only |
 | `Assets/HypeDomino/Editor` | `HypeDomino.Editor` | Bench, Content, Core, Net, UI | Editor only; Addressables, URP, TextMeshPro |
