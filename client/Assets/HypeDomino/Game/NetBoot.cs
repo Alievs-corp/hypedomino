@@ -26,6 +26,7 @@ namespace HypeDomino.Game
         public static IntegrityProofs Integrity { get; private set; }
         public static Connection Connection { get; private set; }
         public static MatchQueue Queue { get; private set; }
+        public static MaintenanceScreen Maintenance { get; private set; }
         public static LobbyCommands Lobby { get; private set; }
         public static FriendRoom Room { get; private set; }
         public static ShopLoader Shop { get; private set; }
@@ -67,6 +68,8 @@ namespace HypeDomino.Game
             BuildLoaders(Api);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
+            Maintenance = new MaintenanceScreen(Dial, () => Time.realtimeSinceStartupAsDouble);
+            session.HelloReceived += Maintenance.Read;
             var driver = new GameObject(nameof(NetBoot)) { hideFlags = HideFlags.HideInHierarchy };
             Object.DontDestroyOnLoad(driver);
             driver.AddComponent<Driver>();
@@ -123,7 +126,11 @@ namespace HypeDomino.Game
 
         sealed class Driver : MonoBehaviour
         {
-            void Update() => Connection.Tick();
+            void Update()
+            {
+                Connection.Tick();
+                Maintenance.Tick();
+            }
         }
     }
 }
