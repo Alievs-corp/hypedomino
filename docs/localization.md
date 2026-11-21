@@ -23,6 +23,8 @@ Adding a language is an admin and bundle change plus a glyph check (4.5); it nee
 | Change | Settings lists the four languages by their own name (Azərbaycanca, English, Türkçe, Русский). It applies immediately, without restart. |
 | Later launches | The device locale is no longer consulted. |
 
+Account sync (D-11 in `docs/privacy.md`): the account language is `accounts.language` (migration `00058_account_language`), empty until first set. `GET /profile/language` answers `{"language"}`; `PUT /profile/language` `{"language"}` stores one of the four launch codes (400 `language.invalid`, 404 `not_found` for an unknown account). It appears in the data export and is erased with the account. On the client, `Game/Profile/LanguageSync` reads it after every accepted hello for an account it has not read yet. An account without a language gets the device choice; after that, every change made in Settings while signed in is sent, one request at a time, with the latest choice. A failed read or save is retried at the next accepted hello. When the account holds a language that differs from the device choice, both are left as they are: which one wins on sign-in is an open owner decision.
+
 ### 1.2 Fallback order
 
 A key is looked up in the selected language, then along its chain, ending in `en`.

@@ -32,6 +32,7 @@ namespace HypeDomino.Game
         public static InventoryLoader Inventory { get; private set; }
         public static MedalLoader Medals { get; private set; }
         public static ProfileLoader Profile { get; private set; }
+        public static LanguageSync Language { get; private set; }
 
         static NetStart start;
         static Uri socket;
@@ -59,6 +60,8 @@ namespace HypeDomino.Game
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
+            Language = new LanguageSync(Api, LanguageBoot.Choice);
+            session.HelloReceived += SyncLanguage;
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
             var driver = new GameObject(nameof(NetBoot)) { hideFlags = HideFlags.HideInHierarchy };
@@ -95,6 +98,11 @@ namespace HypeDomino.Game
             Inventory = new InventoryLoader(api);
             Medals = new MedalLoader(api);
             Profile = new ProfileLoader(api);
+        }
+
+        static void SyncLanguage(ServerHello hello)
+        {
+            if (hello.Status == HelloStatus.Accepted) Language.SignedIn(Auth.AccountId);
         }
 
         static void Dial()
