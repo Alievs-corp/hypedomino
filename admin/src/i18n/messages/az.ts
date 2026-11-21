@@ -485,6 +485,7 @@ export const az: Messages = {
   "shop.preview_hint": "Bu qaralama ilə mağazanın UTC üzrə verilmiş anda nə göstərdiyi, server tərəfindən hesablanır; heç nə dərc olunmur",
   "shop.preview_at": "An (UTC, boş qalsa indi)",
   "shop.preview_show": "Göstər",
+  "shop.preview_as_written": "Yazıldığı kimi",
   "shop.rotation_rules": "Slotlar və sıfırlanma serverdən",
   "shop.rotation_daily": "gündəlik",
   "shop.rotation_weekly": "həftəlik",

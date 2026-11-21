@@ -1,3 +1,5 @@
+using System;
+
 namespace HypeDomino.UI.Shop
 {
     public enum Currency
@@ -43,6 +45,29 @@ namespace HypeDomino.UI.Shop
 
         public Balance Coins { get; }
         public Balance Crystals { get; }
+
+        public static bool TryRead(string walletBody, out Balances balances)
+        {
+            balances = default;
+            if (string.IsNullOrEmpty(walletBody))
+            {
+                return false;
+            }
+            try
+            {
+                var reply = WalletReply.FromJson(walletBody);
+                if (reply == null)
+                {
+                    return false;
+                }
+                balances = new Balances(reply);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
 
         public Balances After(PurchaseReply purchase)
         {

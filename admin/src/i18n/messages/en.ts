@@ -490,6 +490,7 @@ export const en = {
   "shop.preview_hint": "What the shop shows at a moment in UTC with this draft, computed by the server; nothing is published",
   "shop.preview_at": "Moment (UTC, empty for now)",
   "shop.preview_show": "Show",
+  "shop.preview_as_written": "As written",
   "shop.rotation_rules": "Slots and reset from the server",
   "shop.rotation_daily": "daily",
   "shop.rotation_weekly": "weekly",
