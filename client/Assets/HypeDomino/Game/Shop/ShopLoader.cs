@@ -102,30 +102,13 @@ namespace HypeDomino.Game.Shop
                 Finish(ShopLoadResult.Refused(reply), done);
                 return;
             }
-            var wallet = ParseWallet(reply.Body);
-            Finish(wallet == null ? ShopLoadResult.Unreadable() : ShopLoadResult.Loaded(showcase, new Balances(wallet)), done);
+            Finish(Balances.TryRead(reply.Body, out var balances) ? ShopLoadResult.Loaded(showcase, balances) : ShopLoadResult.Unreadable(), done);
         }
 
         void Finish(ShopLoadResult result, Action<ShopLoadResult> done)
         {
             Busy = false;
             done(result);
-        }
-
-        static WalletReply ParseWallet(string body)
-        {
-            if (string.IsNullOrEmpty(body))
-            {
-                return null;
-            }
-            try
-            {
-                return WalletReply.FromJson(body);
-            }
-            catch (ArgumentException)
-            {
-                return null;
-            }
         }
     }
 }
