@@ -8,6 +8,7 @@ Owner scope: #48 (queue), #52 (leaver rules), #118 (quality tuning). Rules refer
 - An entry is one account with its mode, queue, region, MMR of that mode (`InitialMmr` until #112 writes real values) and the server time it joined. One account holds at most one entry at a time, and none while a match it plays in has not ended (R-58).
 - A penalty queue delay (`docs/penalties.md` steps 2) sets the time the search starts; the entry keeps its join time for ordering and window growth.
 - There are no parties. An entry names one account and nothing else; a client cannot name a partner, and in 2v2 the four players are split into teams at random (R-54). Playing with a friend is what custom rooms are for (R-55, #49).
+- Training is not a queue. The lobby's training card opens the bot game of #89 and sends no queue intent; it stays in M2 (owner decision 2026-11-21, #852). The lobby offers it only while the player has no entry and no queue intent waits for its answer (`client/README.md`, Lobby screen).
 
 ## 2. Forming a match
 
