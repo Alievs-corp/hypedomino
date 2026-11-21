@@ -335,10 +335,17 @@ func TestTheViewShowsEachAccountItsVariantOfAnOffer(t *testing.T) {
 		want := shop.OfferView{ID: "offer.crystals_tier5", NameKey: "shop.offer.crystals_tier5"}
 		at := 4
 		if inVariant {
-			want.NameKey, at = "shop.offer.crystals_tier5_top", 0
+			want.NameKey, want.Variant, at = "shop.offer.crystals_tier5_top", "top", 0
 		}
-		if len(packs) != 5 || packs[at].ID != want.ID || packs[at].NameKey != want.NameKey || packs[at].Crystals != 7000 || packs[at].ProductID != "crystals_tier5" {
+		if len(packs) != 5 || packs[at].ID != want.ID || packs[at].NameKey != want.NameKey || packs[at].Variant != want.Variant || packs[at].Crystals != 7000 || packs[at].ProductID != "crystals_tier5" {
 			t.Fatalf("variant %v packs %+v", inVariant, packs)
+		}
+		for _, other := range view.Sections {
+			for _, shown := range other.Offers {
+				if shown.ID != want.ID && shown.Variant != "" {
+					t.Fatalf("offer %s without variants shows variant %q", shown.ID, shown.Variant)
+				}
+			}
 		}
 		seen[inVariant] = true
 	}
