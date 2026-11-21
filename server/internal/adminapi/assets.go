@@ -85,9 +85,9 @@ func scanAsset(row pgx.Row) (assetView, error) {
 
 func (h *Handler) listAssets(w http.ResponseWriter, r *http.Request, _ principal) {
 	query := r.URL.Query()
-	before := query.Get("before")
+	before, exact := query.Get("before"), query.Get("exact")
 	limit, err := optionalNumber(query.Get("limit"))
-	if err != nil || (before != "" && uuid.Validate(before) != nil) {
+	if err != nil || (before != "" && uuid.Validate(before) != nil) || (exact != "" && exact != "true") {
 		h.refuse(w, errMalformed)
 		return
 	}
@@ -95,9 +95,9 @@ func (h *Handler) listAssets(w http.ResponseWriter, r *http.Request, _ principal
 		limit = AssetPageSize
 	}
 	rows, err := h.pool.Query(r.Context(), `select `+assetColumns+` from cosmetic_assets
-		where ($1 = '' or status = $1) and starts_with(item_id, $2)
+		where ($1 = '' or status = $1) and (item_id = $2 or (not $5 and starts_with(item_id, $2))) and ($6 = '' or slot = $6)
 			and ($3 = '' or (created_at, id) < (select created_at, id from cosmetic_assets where id = nullif($3, '')::uuid))
-		order by created_at desc, id desc limit $4`, query.Get("status"), query.Get("item"), before, min(limit, AssetPageMax))
+		order by created_at desc, id desc limit $4`, query.Get("status"), query.Get("item"), before, min(limit, AssetPageMax), exact == "true", query.Get("slot"))
 	if err != nil {
 		h.refuse(w, err)
 		return
