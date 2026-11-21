@@ -20,11 +20,12 @@ namespace HypeDomino.Game.Match
         public MatchLoading Loading { get; }
         public MatchEmoji Emoji { get; }
 
-        public void Bind(Session session)
+        public void Bind(Connection connection)
         {
-            Loading.Bind(session);
-            Screen.Bind(session);
-            Emoji.Bind(session);
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
+            Loading.Bind(connection.Session);
+            Screen.Bind(connection);
+            Emoji.Bind(connection.Session);
         }
 
         public void Unbind()
