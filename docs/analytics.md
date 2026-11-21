@@ -65,7 +65,9 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
 - Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job. The same run deletes the server events of section 3 by their time and the `analytics_sources` rows older than the cutoff.
 
-Not built yet: aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
+Retention cohorts (#147, `GET /admin/analytics/kpis`, `docs/admin.md` 9.1) are computed from these rows when asked and never stored: an analytics id joins the cohort of the economy day of its first `app_open` by receive time, and counts as retained on D1 or D7 with an `app_open` received on the day after or seven days after. A cohort older than the raw retention only shows the rows still kept.
+
+Not built yet: stored aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
 
 ## 6. Config
 
