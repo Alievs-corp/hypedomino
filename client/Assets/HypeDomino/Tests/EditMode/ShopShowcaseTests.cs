@@ -107,7 +107,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(new[] { "avatar.comet_fox" }, starter.Cosmetics);
             Assert.IsFalse(starter.IsOwned("avatar.comet_fox"));
             Assert.AreEqual(ShopBuyKeys.Unsupported, showcase.Sections[4].Offers[0].RefusalKey);
-            Assert.AreEqual(ShopBuyKeys.Failed, showcase.Sections[5].Offers[1].RefusalKey);
+            Assert.AreEqual(ShopBuyKeys.PurchaseBlocked, showcase.Sections[5].Offers[1].RefusalKey);
             Assert.AreEqual(0, showcase.Sections[5].Offers[0].Limit);
         }
 
