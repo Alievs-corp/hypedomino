@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace HypeDomino.UI.Rarity
@@ -35,6 +36,9 @@ namespace HypeDomino.UI.Rarity
     public sealed class RarityTable
     {
         const float MillisecondsPerSecond = 1000f;
+        const int MaxPips = 6;
+        static readonly Regex TierId = new(@"^[a-z][a-z0-9_]*z", RegexOptions.CultureInvariant);
+        static readonly Regex Hex = new(@"^#[0-9A-Fa-f]{6}z", RegexOptions.CultureInvariant);
 
         [Serializable]
         sealed class TierEntry
@@ -65,7 +69,15 @@ namespace HypeDomino.UI.Rarity
         {
             DiamondMinSize = file.diamondMinSize;
             FlowPeriodSeconds = file.flowPeriodMs / MillisecondsPerSecond;
-            foreach (var entry in file.tiers ?? Array.Empty<TierEntry>()) Add(entry);
+            var valid = new List<TierEntry>();
+            foreach (var entry in file.tiers ?? Array.Empty<TierEntry>())
+            {
+                if (IsValid(entry)) valid.Add(entry);
+            }
+            foreach (var entry in valid)
+            {
+                if (IsUnique(valid, entry)) Add(entry);
+            }
         }
 
         public int DiamondMinSize { get; }
@@ -82,12 +94,31 @@ namespace HypeDomino.UI.Rarity
             return !string.IsNullOrEmpty(id) && tiers.TryGetValue(id, out tier);
         }
 
+        static bool IsValid(TierEntry entry) =>
+            entry != null
+            && entry.id != null && TierId.IsMatch(entry.id)
+            && entry.ordinal >= 1
+            && entry.nameKey == $"rarity.{entry.id}.name"
+            && entry.pips >= 1 && entry.pips <= MaxPips
+            && IsHex(entry.fill) && IsHex(entry.on) && IsHex(entry.text);
+
+        static bool IsHex(string value) => value != null && Hex.IsMatch(value);
+
+        static bool IsUnique(List<TierEntry> entries, TierEntry entry)
+        {
+            foreach (var other in entries)
+            {
+                if (other == entry) continue;
+                if (other.id == entry.id || other.ordinal == entry.ordinal || other.pips == entry.pips) return false;
+            }
+            return true;
+        }
+
         void Add(TierEntry entry)
         {
-            if (string.IsNullOrEmpty(entry.id) || entry.pips < 1) return;
-            if (!ColorUtility.TryParseHtmlString(entry.fill, out var fill)) return;
-            if (!ColorUtility.TryParseHtmlString(entry.on, out var on)) return;
-            if (!ColorUtility.TryParseHtmlString(entry.text, out var text)) return;
+            ColorUtility.TryParseHtmlString(entry.fill, out var fill);
+            ColorUtility.TryParseHtmlString(entry.on, out var on);
+            ColorUtility.TryParseHtmlString(entry.text, out var text);
             tiers[entry.id] = new RarityTier(entry.id, entry.ordinal, entry.nameKey, fill, on, text, entry.pips, entry.glowAlpha, entry.glowScale, entry.flow);
         }
     }
