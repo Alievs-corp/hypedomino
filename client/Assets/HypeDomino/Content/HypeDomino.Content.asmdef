@@ -2,6 +2,7 @@
     "name": "HypeDomino.Content",
     "rootNamespace": "HypeDomino.Content",
     "references": [
+        "HypeDomino.Core",
         "HypeDomino.UI",
         "Unity.Addressables",
         "Unity.ResourceManager"
