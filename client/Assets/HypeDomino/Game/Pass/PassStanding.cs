@@ -15,6 +15,8 @@ namespace HypeDomino.Game.Pass
         public long level_xp;
         public long next_level_xp;
         public bool premium;
+        public long level_coin_price;
+        public long level_crystal_price;
 
         public static PassReply FromJson(string json) => JsonUtility.FromJson<PassReply>(json);
     }
@@ -47,6 +49,8 @@ namespace HypeDomino.Game.Pass
             Level = reply.level;
             Xp = reply.xp;
             Premium = reply.premium;
+            LevelCoinPrice = reply.level_coin_price;
+            LevelCrystalPrice = reply.level_crystal_price;
             EndsUnixMs = endsUnixMs;
             levelXp = reply.level_xp;
             nextLevelXp = reply.next_level_xp;
@@ -61,6 +65,10 @@ namespace HypeDomino.Game.Pass
         public long Xp { get; }
 
         public bool Premium { get; }
+
+        public long LevelCoinPrice { get; }
+
+        public long LevelCrystalPrice { get; }
 
         public ulong EndsUnixMs { get; }
 
@@ -78,6 +86,7 @@ namespace HypeDomino.Game.Pass
             if (reply == null || string.IsNullOrEmpty(reply.season) || reply.levels < 1) return false;
             if (reply.level < 1 || reply.level > reply.levels || reply.xp < reply.level_xp) return false;
             if (reply.level < reply.levels && reply.next_level_xp <= reply.xp) return false;
+            if (reply.level_coin_price < 0 || reply.level_crystal_price < 0) return false;
             if (!ServerClock.TryReadUnixMs(reply.ends_at, out var endsUnixMs)) return false;
             standing = new PassStanding(reply, endsUnixMs);
             return true;
