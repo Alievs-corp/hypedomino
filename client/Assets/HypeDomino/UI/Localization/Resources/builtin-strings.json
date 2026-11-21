@@ -124,6 +124,12 @@
     { "key": "nickname.rename.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
     { "key": "privacy.settings.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
     { "key": "privacy.settings.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "push.settings.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "push.settings.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "account.export.cooldown", "en": "You can request a new copy of your data later", "az": "Məlumatlarının yeni nüsxəsini bir az sonra istəyə bilərsən" },
+    { "key": "account.export.unavailable", "en": "Your data copy is not available right now. Try again later", "az": "Məlumat nüsxəsi hazırda alınmır. Sonra yenidən cəhd et" },
+    { "key": "account.export.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "account.export.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
     { "key": "settings.cache.cleared", "en": "Cache cleared. Art downloads again when it is needed", "az": "Keş təmizləndi. Lazım olan şəkillər yenidən yüklənəcək" },
     { "key": "settings.cache.cleared_at_next_start", "en": "The cache will be cleared the next time the game starts", "az": "Keş oyun növbəti dəfə açılanda təmizlənəcək" },
     { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" }

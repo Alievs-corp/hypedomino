@@ -51,11 +51,28 @@ type placedOffer struct {
 	position int
 }
 
+func (o Offer) Variant(id string) (Variant, bool) {
+	for _, variant := range o.Variants {
+		if variant.ID == id {
+			return variant, true
+		}
+	}
+	return Variant{}, false
+}
+
 func (s Section) For(account string) Section {
+	return s.shown(func(offer Offer) (Variant, bool) { return offer.VariantFor(account) })
+}
+
+func (s Section) WithVariants(chosen map[string]string) Section {
+	return s.shown(func(offer Offer) (Variant, bool) { return offer.Variant(chosen[offer.ID]) })
+}
+
+func (s Section) shown(variantOf func(Offer) (Variant, bool)) Section {
 	offers := make([]Offer, 0, len(s.Offers))
 	var placed []placedOffer
 	for _, offer := range s.Offers {
-		variant, ok := offer.VariantFor(account)
+		variant, ok := variantOf(offer)
 		if ok && variant.NameKey != "" {
 			offer.NameKey = variant.NameKey
 		}
