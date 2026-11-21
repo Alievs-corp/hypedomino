@@ -211,3 +211,22 @@ func TestSuggestionsAreFreeAndMatchesUpdateTheStatistics(t *testing.T) {
 		t.Fatalf("unknown account exists %v %v", exists, err)
 	}
 }
+
+func TestNicknamesNameTheAccountsThatHaveAProfile(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := profile.NewStore(pool, profile.DefaultConfig())
+	ctx := context.Background()
+	ayla, kamran, unnamed := newAccount(t, pool), newAccount(t, pool), newAccount(t, pool)
+	for account, name := range map[string]string{ayla: "Ayla", kamran: "Kamran"} {
+		if _, err := store.SetNickname(ctx, account, name, start); err != nil {
+			t.Fatal(err)
+		}
+	}
+	names, err := store.Nicknames(ctx, []string{kamran, ayla, unnamed, ayla})
+	if err != nil || len(names) != 2 || names[ayla] != "Ayla" || names[kamran] != "Kamran" {
+		t.Fatalf("nicknames %v %v", names, err)
+	}
+	if _, named := names[unnamed]; named {
+		t.Fatalf("an account without a profile was named: %v", names)
+	}
+}
