@@ -34,6 +34,7 @@ namespace HypeDomino.Game
         public static InventoryLoader Inventory { get; private set; }
         public static MedalLoader Medals { get; private set; }
         public static ProfileLoader Profile { get; private set; }
+        public static LanguageSync Language { get; private set; }
         public static LobbyScreen LobbyScreen { get; private set; }
         public static LobbyHeaderLoader LobbyHeaderLoader { get; private set; }
 
@@ -70,6 +71,8 @@ namespace HypeDomino.Game
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
+            Language = new LanguageSync(Api, LanguageBoot.Choice);
+            session.HelloReceived += SyncLanguage;
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
@@ -112,6 +115,11 @@ namespace HypeDomino.Game
             Inventory = new InventoryLoader(api);
             Medals = new MedalLoader(api);
             Profile = new ProfileLoader(api);
+        }
+
+        static void SyncLanguage(ServerHello hello)
+        {
+            if (hello.Status == HelloStatus.Accepted) Language.SignedIn(Auth.AccountId);
         }
 
         public static LobbyScreen NewLobbyScreen(MatchQueue queue, IntegrityProofs integrity, LobbyHeader header) => new(header, new LobbyPlay(queue, integrity.Request), queue);
