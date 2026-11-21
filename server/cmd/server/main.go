@@ -154,6 +154,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
+	profiles.SetLanguages(accounts)
 	a.Handle("/profile/", profiles)
 	catalog, err := loadCatalog(config.Cosmetics)
 	if err != nil {
