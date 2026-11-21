@@ -168,3 +168,37 @@ func TestCountryIsAdoptedOnceAndChangedWithinTheCooldown(t *testing.T) {
 		t.Fatalf("unknown account country: %v", err)
 	}
 }
+
+func TestTheLanguageIsEmptyUntilSetAndOnlyALaunchLanguageIsStored(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := account.New(pool)
+	ctx := context.Background()
+	a, _, err := store.SignIn(ctx, idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-l", Email: "l@example.com", EmailVerified: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if language, err := store.Language(ctx, a.ID); err != nil || language != "" {
+		t.Fatalf("fresh %q %v", language, err)
+	}
+	for _, code := range []string{"", "de", "AZ", "az-Latn"} {
+		if _, err := store.SetLanguage(ctx, a.ID, code); !errors.Is(err, account.ErrLanguageInvalid) {
+			t.Fatalf("%q: %v", code, err)
+		}
+	}
+	if language, err := store.SetLanguage(ctx, a.ID, "ru"); err != nil || language != "ru" {
+		t.Fatalf("set %q %v", language, err)
+	}
+	if language, err := store.SetLanguage(ctx, a.ID, "az"); err != nil || language != "az" {
+		t.Fatalf("change %q %v", language, err)
+	}
+	if language, err := store.Language(ctx, a.ID); err != nil || language != "az" {
+		t.Fatalf("stored %q %v", language, err)
+	}
+	unknown := "00000000-0000-0000-0000-000000000000"
+	if _, err := store.SetLanguage(ctx, unknown, "az"); !errors.Is(err, account.ErrUnknown) {
+		t.Fatalf("unknown account: %v", err)
+	}
+	if _, err := store.Language(ctx, unknown); !errors.Is(err, account.ErrUnknown) {
+		t.Fatalf("unknown account language: %v", err)
+	}
+}

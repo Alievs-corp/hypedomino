@@ -8,7 +8,9 @@ namespace HypeDomino.Game.Ranking
     {
         public int position;
         public string account_id;
+        public string nickname;
         public string rank;
+        public int lp;
         public string tier;
         public int wins;
     }
@@ -28,11 +30,13 @@ namespace HypeDomino.Game.Ranking
 
     public readonly struct LeaderboardRow
     {
-        public LeaderboardRow(int position, string accountId, RankBadge badge, int wins)
+        public LeaderboardRow(int position, string accountId, string nickname, RankBadge badge, int lp, int wins)
         {
             Position = position;
             AccountId = accountId;
+            Nickname = nickname;
             Badge = badge;
+            LP = lp;
             Wins = wins;
         }
 
@@ -40,7 +44,11 @@ namespace HypeDomino.Game.Ranking
 
         public string AccountId { get; }
 
+        public string Nickname { get; }
+
         public RankBadge Badge { get; }
+
+        public int LP { get; }
 
         public int Wins { get; }
     }
@@ -149,11 +157,11 @@ namespace HypeDomino.Game.Ranking
         static bool TryRow(LeaderboardRowReply reply, out LeaderboardRow row)
         {
             row = default;
-            if (reply == null || string.IsNullOrEmpty(reply.account_id) || reply.position < 1 || reply.wins < 0 || !TryBadge(reply.rank, reply.tier, out var badge))
+            if (reply == null || string.IsNullOrEmpty(reply.account_id) || reply.position < 1 || reply.lp < 0 || reply.wins < 0 || !TryBadge(reply.rank, reply.tier, out var badge))
             {
                 return false;
             }
-            row = new LeaderboardRow(reply.position, reply.account_id, badge, reply.wins);
+            row = new LeaderboardRow(reply.position, reply.account_id, reply.nickname ?? string.Empty, badge, reply.lp, reply.wins);
             return true;
         }
 

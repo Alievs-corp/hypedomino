@@ -100,6 +100,23 @@ func (s *Store) Get(ctx context.Context, account string) (Profile, bool, error) 
 	return p, err == nil, err
 }
 
+func (s *Store) Nicknames(ctx context.Context, accounts []string) (map[string]string, error) {
+	rows, err := s.pool.Query(ctx, `select account_id::text, nickname from profiles where account_id = any($1::uuid[])`, accounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	names := make(map[string]string, len(accounts))
+	for rows.Next() {
+		var account, nickname string
+		if err := rows.Scan(&account, &nickname); err != nil {
+			return nil, err
+		}
+		names[account] = nickname
+	}
+	return names, rows.Err()
+}
+
 func (s *Store) Exists(ctx context.Context, account string) (bool, error) {
 	var state string
 	err := s.pool.QueryRow(ctx, `select state from accounts where id = $1`, account).Scan(&state)
