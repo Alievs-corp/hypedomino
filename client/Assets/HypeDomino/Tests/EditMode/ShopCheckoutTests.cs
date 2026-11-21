@@ -195,6 +195,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(HttpReply.NoResponse, null, ShopBuyOutcome.Offline)]
         [TestCase(429, "{\"error\":\"rate_limited\"}", ShopBuyOutcome.RateLimited)]
         [TestCase(503, "{\"error\":\"shop.unavailable\"}", ShopBuyOutcome.Failed)]
+        [TestCase(503, "{\"error\":\"purchases.disabled\"}", ShopBuyOutcome.PurchasesDisabled)]
         [TestCase(200, "not json", ShopBuyOutcome.Failed)]
         public void AnUnsettledFailureRetriesTheSameIntent(int status, string body, ShopBuyOutcome outcome)
         {
