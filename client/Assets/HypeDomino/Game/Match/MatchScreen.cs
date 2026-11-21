@@ -40,7 +40,7 @@ namespace HypeDomino.Game.Match
         readonly PassIntent passIntent = new();
         readonly DrawIntent drawIntent = new();
         readonly EndTurnIntent endTurnIntent = new();
-        Session session;
+        Connection connection;
         Seat lastCurrent;
         bool localTurn;
         TableSide passSide;
@@ -62,23 +62,23 @@ namespace HypeDomino.Game.Match
         public TurnTimer Timer { get; } = new();
         public MatchNotices Notices { get; } = new();
         public ChainLayout Board => board.Layout;
-        bool CanSend => session != null && session.Accepted;
+        bool CanSend => connection != null && connection.Session.Accepted;
 
-        public void Bind(Session source)
+        public void Bind(Connection source)
         {
             Unbind();
-            session = source ?? throw new ArgumentNullException(nameof(source));
-            session.HelloReceived += onHello;
-            session.ViewReceived += onView;
+            connection = source ?? throw new ArgumentNullException(nameof(source));
+            connection.Session.HelloReceived += onHello;
+            connection.Session.ViewReceived += onView;
             StartConnection();
         }
 
         public void Unbind()
         {
-            if (session == null) return;
-            session.HelloReceived -= onHello;
-            session.ViewReceived -= onView;
-            session = null;
+            if (connection == null) return;
+            connection.Session.HelloReceived -= onHello;
+            connection.Session.ViewReceived -= onView;
+            connection = null;
         }
 
         public void Show(MatchSnapshot view)
@@ -142,7 +142,7 @@ namespace HypeDomino.Game.Match
 
         bool SendIntent(Envelope.PayloadOneofCase intent, IMessage message)
         {
-            session.Send(intent, message);
+            connection.Send(intent, message);
             hud.ShowHand(Hand);
             return true;
         }
