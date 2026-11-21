@@ -147,6 +147,16 @@ namespace HypeDomino.Game.Pass
 
         public static int MostLevelsFor(PassStanding standing) => standing == null ? 0 : standing.Levels - standing.Level;
 
+        public static bool TryPriceOf(PassStanding standing, int count, Currency currency, out long price)
+        {
+            price = 0;
+            if (count < 1 || count > MostLevelsFor(standing)) return false;
+            var levelPrice = currency == Currency.Crystal ? standing.LevelCrystalPrice : standing.LevelCoinPrice;
+            if (levelPrice < 1) return false;
+            price = count * levelPrice;
+            return true;
+        }
+
         public bool IsUnsettled(int count, Currency currency) => pendingRequestId != null && count == pendingCount && currency == pendingCurrency;
 
         public bool Buy(PassStanding standing, int count, Currency currency, Action<PassLevelBuyResult> done)
