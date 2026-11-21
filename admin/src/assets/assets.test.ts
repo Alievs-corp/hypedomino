@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Translate } from "../i18n/translate.ts";
-import { assetPageSize, assetsApiPath, failedCheckLabels, itemAssetsHref, itemIdValid, itemsWithoutArt, olderAssetsHref, readAssetQuery, sizeLabel, statusLabel, type Asset } from "./assets.ts";
+import { assetPageSize, assetsApiPath, failedCheckLabels, itemAssetsHref, itemIdValid, itemsWithoutArt, olderAssetsHref, readAssetQuery, sizeLabel, staticArtApiPath, staticArtOf, statusLabel, type Asset } from "./assets.ts";
 
 const t = Object.assign((key: string) => `<${key}>`, { number: (value: number) => value.toLocaleString("en-US") }) as unknown as Translate;
 
@@ -76,4 +76,22 @@ test("an art refusal names the items without a passed static, each linking to it
   assert.deepEqual(itemsWithoutArt("invalid", cosmetic), []);
   assert.deepEqual(itemsWithoutArt("cosmetic_art_missing", "avatar.fox"), []);
   assert.equal(itemAssetsHref("medal.wins_50"), "/assets?item=medal.wins_50");
+});
+
+test("the static art of an item asks for its newest passed static only", () => {
+  assert.equal(staticArtApiPath("avatar.fox"), "/admin/assets?item=avatar.fox&exact=true&slot=static&status=passed&limit=1");
+});
+
+test("the static art shows the passed upload, says when there is none and hides without storage or access", () => {
+  const passed = { ...asset, status: "passed" as const, width: 512, height: 512, view_url: "https://store.example/get/cosmetic/avatar/fox/static/a-1" };
+  assert.deepEqual(staticArtOf(200, { store_configured: true, assets: [passed] }), {
+    state: "passed",
+    url: passed.view_url,
+    width: 512,
+    height: 512,
+    uploadedAt: passed.created_at,
+  });
+  assert.deepEqual(staticArtOf(200, { store_configured: true, assets: [] }), { state: "missing" });
+  assert.deepEqual(staticArtOf(200, { store_configured: false, assets: [passed] }), { state: "unavailable" });
+  assert.deepEqual(staticArtOf(403, {}), { state: "unavailable" });
 });

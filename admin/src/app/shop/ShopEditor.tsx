@@ -28,6 +28,7 @@ import {
   toggledOffer,
   unlistedCosmetics,
   variantProblems,
+  previewVariants,
   windowEndsBeforeStart,
   windowMinute,
   withPrice,
@@ -167,7 +168,9 @@ export function ShopEditor({
 function Preview({ catalog }: { catalog: ShopCatalog }) {
   const t = useTranslator();
   const [minute, setMinute] = useState("");
+  const [chosen, setChosen] = useState<Record<string, string>>({});
   const [result, setResult] = useState<PreviewResult | null>(null);
+  const tested = catalog.offers.filter((offer) => (offer.variants ?? []).length > 0);
   const [pending, startTransition] = useTransition();
   return (
     <section className="flex flex-col gap-3">
@@ -178,10 +181,23 @@ function Preview({ catalog }: { catalog: ShopCatalog }) {
           {t("shop.preview_at")}
           <input type="datetime-local" value={minute} onChange={(event) => setMinute(event.target.value)} className={fieldClass} />
         </label>
+        {tested.map((offer) => (
+          <label key={offer.id} className="flex flex-col gap-1 text-sm text-text-secondary">
+            <span className="font-mono">{offer.id}</span>
+            <select value={chosen[offer.id] ?? ""} onChange={(event) => setChosen({ ...chosen, [offer.id]: event.target.value })} className={fieldClass}>
+              <option value="">{t("shop.preview_as_written")}</option>
+              {(offer.variants ?? []).map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.id}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
         <button
           type="button"
           disabled={pending}
-          onClick={() => startTransition(async () => setResult(await previewCatalog(catalog, minute ? `${minute}:00Z` : undefined)))}
+          onClick={() => startTransition(async () => setResult(await previewCatalog(catalog, minute ? `${minute}:00Z` : undefined, previewVariants(catalog, chosen))))}
           className="rounded-md bg-surface px-4 py-2 text-text-secondary disabled:opacity-40"
         >
           {t("shop.preview_show")}
@@ -199,7 +215,7 @@ function Preview({ catalog }: { catalog: ShopCatalog }) {
             {result.sections.map((section) => (
               <tr key={section.section} className="border-t border-surface">
                 <td className="py-1 pr-4 font-mono">{section.section}</td>
-                <td className="py-1 pr-4 font-mono">{section.offers.join(", ") || "—"}</td>
+                <td className="py-1 pr-4 font-mono">{section.offers.map((offer) => (offer.variant ? `${offer.id} [${offer.variant}: ${offer.name_key}]` : offer.id)).join(", ") || "—"}</td>
                 <td className="py-1 pr-4 text-text-muted">{section.ends_at ? t.when(section.ends_at) : ""}</td>
               </tr>
             ))}

@@ -40,6 +40,7 @@ namespace HypeDomino.Game
         static readonly Action<LobbyHeaderLoadOutcome> headerLoaded = HeaderLoaded;
 
         static NetStart start;
+        static SessionStartProof startProof;
         static Uri socket;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -56,9 +57,12 @@ namespace HypeDomino.Game
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
             Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
+            startProof = new SessionStartProof(Integrity.Request, StartConnection);
             Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
+            session.HelloReceived += startProof.Read;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
+            DeviceRiskProbe.CollectHooks(session.HookSignals);
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);
             Queue = new MatchQueue();
             Queue.Follow(session, AppBoot.Flow);
@@ -93,7 +97,12 @@ namespace HypeDomino.Game
             _ => Platform.Unspecified,
         };
 
-        static ClientHello NextHello() => Hello(Auth.AccessToken, Application.platform, (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        static ClientHello NextHello()
+        {
+            var hello = Hello(Auth.AccessToken, Application.platform, (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            startProof.Attach(hello);
+            return hello;
+        }
 
         static void BuildLoaders(ApiClient api)
         {
@@ -126,12 +135,15 @@ namespace HypeDomino.Game
 
         static void Dial()
         {
-            if (!Connection.Rejoin()) Connection.Start(socket);
+            if (!Connection.Rejoin()) startProof.Start();
         }
+
+        static void StartConnection() => Connection.Start(socket);
 
         static void OnError(Error error)
         {
             if (error.Code == ErrorCode.Unauthenticated) start.Unauthenticated();
+            else startProof.Read(error);
         }
 
         sealed class Driver : MonoBehaviour

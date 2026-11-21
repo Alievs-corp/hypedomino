@@ -1,5 +1,6 @@
 using System;
 using HypeDomino.Net;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Emoji;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
@@ -11,6 +12,8 @@ namespace HypeDomino.Game.Match
     {
         public const string MuteKey = "match.seat.mute";
         public const string UnmuteKey = "match.seat.unmute";
+
+        static readonly string[] NothingWorn = Array.Empty<string>();
 
         readonly EmojiWheel wheel;
         readonly SeatMessages messages;
@@ -24,6 +27,8 @@ namespace HypeDomino.Game.Match
         readonly QuickMessageIntent messageIntent = new();
         readonly bool[] muted = new bool[(int)Seat.Y + 1];
         Session session;
+        string[] worn = NothingWorn;
+        int emojiSlots;
         Seat local;
         int viewer;
         int seatCount;
@@ -41,6 +46,19 @@ namespace HypeDomino.Game.Match
         }
 
         public bool Begun { get; private set; }
+
+        public void Wear(InventoryReply inventory)
+        {
+            if (inventory == null) return;
+            worn = inventory.loadout?.emojis ?? NothingWorn;
+            emojiSlots = inventory.emoji_slots;
+        }
+
+        public void Wear(EquipReply equipped)
+        {
+            if (equipped?.loadout == null) return;
+            worn = equipped.loadout.emojis ?? NothingWorn;
+        }
 
         public void Bind(Session source)
         {
@@ -80,6 +98,7 @@ namespace HypeDomino.Game.Match
             messages.Clear();
             Begun = seatCount != 0;
             if (!Begun) return;
+            wheel.Equip(worn, emojiSlots);
             for (var slot = 0; slot < wheel.Count; slot++) shelf.Prefetch(wheel.Slot(slot));
         }
 
