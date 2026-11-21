@@ -148,6 +148,19 @@ type MissionAssignment struct {
 	ReplacedAt  *time.Time `json:"replaced_at"`
 }
 
+type Report struct {
+	ID        int64      `json:"id"`
+	Reporter  string     `json:"reporter"`
+	Target    string     `json:"target"`
+	Reason    string     `json:"reason"`
+	NameText  string     `json:"name_text"`
+	MatchID   *string    `json:"match_id"`
+	State     string     `json:"state"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DecidedAt *time.Time `json:"decided_at"`
+}
+
 type Record struct {
 	Account         Account             `json:"account"`
 	Profile         *Profile            `json:"profile"`
@@ -161,6 +174,7 @@ type Record struct {
 	Matches         []Match             `json:"matches"`
 	PairSignals     []PairSignal        `json:"pair_signals"`
 	Missions        []MissionAssignment `json:"missions"`
+	Reports         []Report            `json:"reports"`
 }
 
 const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
@@ -265,7 +279,7 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	if err := loadIdentities(ctx, db, &r, withIdentities); err != nil {
 		return Record{}, err
 	}
-	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals, loadMissions} {
+	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals, loadMissions, loadReports} {
 		if err := load(ctx, db, &r); err != nil {
 			return Record{}, err
 		}
@@ -386,5 +400,13 @@ func loadMissions(ctx context.Context, db Querier, r *Record) error {
 		from mission_assignments where account_id = $1::uuid order by assigned_at desc, mission_type, slot, mission_id limit $2`,
 		func(row pgx.CollectableRow, m *MissionAssignment) error {
 			return row.Scan(&m.MissionID, &m.Type, &m.Slot, &m.Period, &m.Progress, &m.AssignedAt, &m.CompletedAt, &m.ReplacedAt)
+		}, r.Account.ID, ListLimit)
+}
+
+func loadReports(ctx context.Context, db Querier, r *Record) error {
+	return collect(ctx, db, &r.Reports, `select id, reporter::text, target::text, reason, name_text, match_id::text, state, created_at, updated_at, decided_at
+		from player_reports where target = $1::uuid or reporter = $1::uuid order by updated_at desc, id desc limit $2`,
+		func(row pgx.CollectableRow, p *Report) error {
+			return row.Scan(&p.ID, &p.Reporter, &p.Target, &p.Reason, &p.NameText, &p.MatchID, &p.State, &p.CreatedAt, &p.UpdatedAt, &p.DecidedAt)
 		}, r.Account.ID, ListLimit)
 }
