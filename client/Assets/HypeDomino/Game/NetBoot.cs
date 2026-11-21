@@ -11,6 +11,7 @@ using HypeDomino.Game.Shop;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.Net.Integrity;
 using Hypedomino.V1;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -22,6 +23,7 @@ namespace HypeDomino.Game
     {
         public static AuthSession Auth { get; private set; }
         public static ApiClient Api { get; private set; }
+        public static IntegrityProofs Integrity { get; private set; }
         public static Connection Connection { get; private set; }
         public static MatchQueue Queue { get; private set; }
         public static LobbyCommands Lobby { get; private set; }
@@ -32,6 +34,10 @@ namespace HypeDomino.Game
         public static InventoryLoader Inventory { get; private set; }
         public static MedalLoader Medals { get; private set; }
         public static ProfileLoader Profile { get; private set; }
+        public static LobbyScreen LobbyScreen { get; private set; }
+        public static LobbyHeaderLoader LobbyHeaderLoader { get; private set; }
+
+        static readonly Action<LobbyHeaderLoadOutcome> headerLoaded = HeaderLoaded;
 
         static NetStart start;
         static Uri socket;
@@ -49,6 +55,7 @@ namespace HypeDomino.Game
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
+            Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
             Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
@@ -59,6 +66,7 @@ namespace HypeDomino.Game
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
+            BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
             var driver = new GameObject(nameof(NetBoot)) { hideFlags = HideFlags.HideInHierarchy };
@@ -95,6 +103,25 @@ namespace HypeDomino.Game
             Inventory = new InventoryLoader(api);
             Medals = new MedalLoader(api);
             Profile = new ProfileLoader(api);
+        }
+
+        public static LobbyScreen NewLobbyScreen(MatchQueue queue, IntegrityProofs integrity, LobbyHeader header) => new(header, new LobbyPlay(queue, integrity.Request), queue);
+
+        public static bool ReloadHeader(AppState state, LobbyHeaderLoader loader, Action<LobbyHeaderLoadOutcome> loaded) => state == AppState.Lobby && loader.Load(loaded);
+
+        static void BuildLobby(ApiClient api, IntegrityProofs integrity, MatchQueue queue, AppFlow flow)
+        {
+            var header = new LobbyHeader();
+            LobbyHeaderLoader = new LobbyHeaderLoader(api, header);
+            LobbyScreen = NewLobbyScreen(queue, integrity, header);
+            flow.Changed += OnFlowChanged;
+        }
+
+        static void OnFlowChanged(AppState state) => ReloadHeader(state, LobbyHeaderLoader, headerLoaded);
+
+        static void HeaderLoaded(LobbyHeaderLoadOutcome outcome)
+        {
+            if (outcome != LobbyHeaderLoadOutcome.Loaded) Debug.LogWarning($"Lobby header outcome={outcome}");
         }
 
         static void Dial()

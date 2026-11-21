@@ -85,6 +85,7 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 - `AppBoot.Listen` gets `connection.Session`, `AppBoot.Flow`, `ContentBoot.Catalog`, `LanguageBoot.Strings`, `LanguageBoot.Bundles`, `ContentBoot.CosmeticsUpdater`, `Haptics.Play` and `AudioBoot.PlayMatch`.
 - `NetBoot.Queue` is a `MatchQueue` following the session and the flow. `NetBoot.Lobby` is the `LobbyCommands`, and `NetBoot.Room` is a `FriendRoom` that reads every `LobbyState` with the signed-in account id.
 - The screens load through `NetBoot.Shop`, `Pass`, `Missions`, `Inventory`, `Medals` and `Profile`, the six loaders built once on `NetBoot.Api`.
+- `NetBoot.LobbyScreen` is the lobby model (#74): a `LobbyHeader` and a `LobbyPlay` that asks `NetBoot.Integrity` (an `IntegrityProofs` on `NetBoot.Api` with `NoDeviceAttestor`) for the card's proof and joins through `NetBoot.Queue`. `NetBoot.LobbyHeaderLoader` fills that header each time `AppBoot.Flow` enters `Lobby`: after an accepted hello, a finished match or leaving a friend room, through `NetBoot.ReloadHeader`. A hello that keeps the lobby loads nothing, nor does a load already in flight. An outcome other than `Loaded` is logged as `Lobby header outcome=<outcome>`; what the header shows then and a retry policy are not decided. The `LobbyWiringTests` EditMode tests cover it.
 
 `Game/NetStart` is the start order, plain C#:
 - `Begin`: with a stored session, `AuthSession.Resume` and then the dial; without one, `SignInNeeded`.
