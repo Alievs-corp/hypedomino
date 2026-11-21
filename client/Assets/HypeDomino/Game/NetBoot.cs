@@ -58,6 +58,7 @@ namespace HypeDomino.Game
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
+            AnalyticsBoot.Start(Api);
             Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
             startProof = new SessionStartProof(Integrity.Request, StartConnection);
             Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
