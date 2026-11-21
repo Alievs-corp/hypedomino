@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { banActive, missionPlace, missionProgress, muteActive, nextPlayersHref, playerApiPath, playerPageSize, playerSearch, playersApiPath, searchQuery, validAdjustment, type PlayerAccount } from "./record.ts";
+import { banActive, missionPlace, missionProgress, muteActive, nextPlayersHref, playerApiPath, playerPageSize, playerSearch, playersApiPath, reportSide, searchQuery, validAdjustment, type PlayerAccount } from "./record.ts";
 
 test("the search query is the first trimmed q value", () => {
   assert.equal(searchQuery({ q: "  ayla " }), "ayla");
@@ -69,4 +69,9 @@ test("an achievement has no slot, a daily or weekly mission shows its slot", () 
   assert.equal(missionPlace({ type: "daily", slot: 2 }), "daily 2");
   assert.equal(missionPlace({ type: "weekly", slot: 1 }), "weekly 1");
   assert.equal(missionPlace({ type: "achievement", slot: 0 }), "achievement");
+});
+
+test("a report names the other account and whether it is about the player", () => {
+  assert.deepEqual(reportSide("p", { reporter: "q", target: "p" }), { about: true, counterpart: "q" });
+  assert.deepEqual(reportSide("p", { reporter: "p", target: "q" }), { about: false, counterpart: "q" });
 });
