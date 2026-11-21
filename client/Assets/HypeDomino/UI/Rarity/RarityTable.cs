@@ -37,8 +37,8 @@ namespace HypeDomino.UI.Rarity
     {
         const float MillisecondsPerSecond = 1000f;
         const int MaxPips = 6;
-        static readonly Regex TierId = new(@"^[a-z][a-z0-9_]*z", RegexOptions.CultureInvariant);
-        static readonly Regex Hex = new(@"^#[0-9A-Fa-f]{6}z", RegexOptions.CultureInvariant);
+        static readonly Regex TierId = new(@"^[a-z][a-z0-9_]*\z", RegexOptions.CultureInvariant);
+        static readonly Regex Hex = new(@"^#[0-9A-Fa-f]{6}\z", RegexOptions.CultureInvariant);
 
         [Serializable]
         sealed class TierEntry
