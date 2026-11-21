@@ -34,6 +34,10 @@ namespace HypeDomino.Game
         public static InventoryLoader Inventory { get; private set; }
         public static MedalLoader Medals { get; private set; }
         public static ProfileLoader Profile { get; private set; }
+        public static LobbyScreen LobbyScreen { get; private set; }
+        public static LobbyHeaderLoader LobbyHeaderLoader { get; private set; }
+
+        static readonly Action<LobbyHeaderLoadOutcome> headerLoaded = HeaderLoaded;
 
         static NetStart start;
         static SessionStartProof startProof;
@@ -66,6 +70,7 @@ namespace HypeDomino.Game
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
+            BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
             var driver = new GameObject(nameof(NetBoot)) { hideFlags = HideFlags.HideInHierarchy };
@@ -107,6 +112,25 @@ namespace HypeDomino.Game
             Inventory = new InventoryLoader(api);
             Medals = new MedalLoader(api);
             Profile = new ProfileLoader(api);
+        }
+
+        public static LobbyScreen NewLobbyScreen(MatchQueue queue, IntegrityProofs integrity, LobbyHeader header) => new(header, new LobbyPlay(queue, integrity.Request), queue);
+
+        public static bool ReloadHeader(AppState state, LobbyHeaderLoader loader, Action<LobbyHeaderLoadOutcome> loaded) => state == AppState.Lobby && loader.Load(loaded);
+
+        static void BuildLobby(ApiClient api, IntegrityProofs integrity, MatchQueue queue, AppFlow flow)
+        {
+            var header = new LobbyHeader();
+            LobbyHeaderLoader = new LobbyHeaderLoader(api, header);
+            LobbyScreen = NewLobbyScreen(queue, integrity, header);
+            flow.Changed += OnFlowChanged;
+        }
+
+        static void OnFlowChanged(AppState state) => ReloadHeader(state, LobbyHeaderLoader, headerLoaded);
+
+        static void HeaderLoaded(LobbyHeaderLoadOutcome outcome)
+        {
+            if (outcome != LobbyHeaderLoadOutcome.Loaded) Debug.LogWarning($"Lobby header outcome={outcome}");
         }
 
         static void Dial()
