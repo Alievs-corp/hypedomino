@@ -19,9 +19,11 @@ namespace HypeDomino.UI.Emoji
 
         public bool Calm(long nowMs) => nowMs < calmUntilMs;
 
-        public void Equip(IReadOnlyList<string> equipped)
+        public void Equip(IReadOnlyList<string> equipped) => Equip(equipped, slots.Length);
+
+        public void Equip(IReadOnlyList<string> equipped, int slotCount)
         {
-            Count = Math.Min(equipped.Count, slots.Length);
+            Count = Math.Max(0, Math.Min(Math.Min(equipped.Count, slotCount), slots.Length));
             for (var i = 0; i < slots.Length; i++) slots[i] = i < Count ? equipped[i] : null;
             if (Count == 0) IsOpen = false;
         }

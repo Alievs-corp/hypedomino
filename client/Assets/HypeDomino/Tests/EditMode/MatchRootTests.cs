@@ -197,7 +197,9 @@ namespace HypeDomino.Tests.EditMode
             wheel.Equip(Equipped);
             var strings = new GameStrings(BuiltinStrings.Parse(Builtin), LanguageChoice.Load("az", () => NoLocales), false);
             var stage = new CosmeticStage(emojiStills, new NoLoops(), null, null, null, EffectLevel.Medium, false);
-            return new MatchEmoji(wheel, new SeatMessages(), strings, new EmojiArtShelf(manifest, stage, RecordEmoji), () => 0);
+            var emoji = new MatchEmoji(wheel, new SeatMessages(), strings, new EmojiArtShelf(manifest, stage, RecordEmoji), () => 0);
+            emoji.Wear(new InventoryReply { loadout = new LoadoutReply { emojis = Equipped }, emoji_slots = Equipped.Length });
+            return emoji;
         }
 
         void RecordEmoji(TableSide side, LoopArt art)
