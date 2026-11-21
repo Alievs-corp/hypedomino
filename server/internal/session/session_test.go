@@ -577,25 +577,30 @@ func TestAMovedDeviceClockIsObservedButTheServerKeepsItsOwnTime(t *testing.T) {
 }
 
 type deviceLog struct {
-	mu   sync.Mutex
-	seen map[string][]string
+	mu    sync.Mutex
+	seen  map[string][]string
+	hooks map[string][]string
 }
 
-func (l *deviceLog) Observe(_ context.Context, account string, signals []string) {
+func (l *deviceLog) Observe(_ context.Context, account string, deviceSignals, hookSignals []string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.seen[account] = signals
+	l.seen[account] = deviceSignals
+	l.hooks[account] = hookSignals
 }
 
 func TestTheHelloDeviceSignalsAreObservedForTheAccount(t *testing.T) {
 	tab := newTable(t, rules.Mode1v1)
-	devices := &deviceLog{seen: map[string][]string{}}
+	devices := &deviceLog{seen: map[string][]string{}, hooks: map[string][]string{}}
 	tab.manager.ObserveDevices(devices)
-	tab.connectWith(&pb.ClientHello{AppVersion: "1.0.0", SessionToken: tab.tokens[rules.SeatX], DeviceRiskSignals: []string{"root", "emulator"}}, true)
+	tab.connectWith(&pb.ClientHello{AppVersion: "1.0.0", SessionToken: tab.tokens[rules.SeatX], DeviceRiskSignals: []string{"root", "emulator"}, HookSignals: []string{"debugger"}}, true)
 	devices.mu.Lock()
 	defer devices.mu.Unlock()
 	if got := devices.seen["account-X"]; !slices.Equal(got, []string{"root", "emulator"}) {
 		t.Fatalf("observed device signals %v", devices.seen)
+	}
+	if got := devices.hooks["account-X"]; !slices.Equal(got, []string{"debugger"}) {
+		t.Fatalf("observed hook signals %v", devices.hooks)
 	}
 }
 

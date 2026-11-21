@@ -237,6 +237,28 @@ func TestTheAssetListPagesFiltersByStatusAndSearchesByItem(t *testing.T) {
 	expect(t, status, body, http.StatusBadRequest, "invalid")
 }
 
+func TestTheAssetListMatchesOneItemExactlyAndFiltersBySlot(t *testing.T) {
+	a, _ := newAssetAPI(t)
+	token := a.signIn("ayla")
+	uploaded := map[string]string{}
+	for _, item := range []string{"avatar.fox", "avatar.fox_red"} {
+		status, body := a.call("POST", "/admin/assets/uploads", token, map[string]any{"item_id": item, "slot": "static"})
+		expect(t, status, body, http.StatusOK, "")
+		uploaded[item] = item + "#" + body["asset"].(map[string]any)["id"].(string)
+	}
+	if prefix := listedAssetIDs(t, a, token, "?item=avatar.fox"); len(prefix) != 2 {
+		t.Fatalf("prefix %v", prefix)
+	}
+	if exact := listedAssetIDs(t, a, token, "?item=avatar.fox&exact=true&slot=static"); len(exact) != 1 || exact[0] != uploaded["avatar.fox"] {
+		t.Fatalf("exact %v", exact)
+	}
+	if other := listedAssetIDs(t, a, token, "?item=avatar.fox&exact=true&slot=anim"); len(other) != 0 {
+		t.Fatalf("anim %v", other)
+	}
+	status, body := a.call("GET", "/admin/assets?item=avatar.fox&exact=yes", token, nil)
+	expect(t, status, body, http.StatusBadRequest, "invalid")
+}
+
 func TestWithoutAStoreTheListWorksAndUploadsAreRefused(t *testing.T) {
 	a := newAPI(t)
 	token := a.signIn("ayla")

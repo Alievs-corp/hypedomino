@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Push;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.UI.Localization;
 using NUnit.Framework;
 
 namespace HypeDomino.Tests.EditMode
@@ -229,8 +230,9 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void EveryOutcomeButDoneAndSignInHasAMessageKey()
+        public void EveryOutcomeButDoneAndSignInHasAMessageKeyWithBuiltInTexts()
         {
+            var strings = BuiltinStrings.Load();
             foreach (PushSettingsOutcome outcome in Enum.GetValues(typeof(PushSettingsOutcome)))
             {
                 var key = PushSettingsKeys.Of(outcome);
@@ -240,6 +242,8 @@ namespace HypeDomino.Tests.EditMode
                     continue;
                 }
                 StringAssert.IsMatch("^[a-z0-9_]+(\\.[a-z0-9_]+)+$", key, outcome.ToString());
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
             }
         }
     }
