@@ -50,7 +50,11 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 
 ## 4. Sending
 
-`Core/Analytics/AnalyticsQueue` holds tracked events in memory while the device is offline. `Flush` hands at most `AnalyticsBatchSize` events to an `IAnalyticsSender`; a failed send keeps them for the next flush. When the queue holds `AnalyticsQueueLimit` events, the oldest is dropped. The caller flushes every `AnalyticsFlushSeconds` and when the app pauses.
+`Core/Analytics/AnalyticsQueue` holds tracked events in memory while the device is offline; they are never written to disk. `Flush` hands at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time. When the queue holds `AnalyticsQueueLimit` events, the oldest is dropped.
+
+`Game/Analytics/ApiAnalyticsSender` posts the batch to `POST /analytics/events` (section 5) through the signed API client, with the access token. It reports the batch as settled, so it leaves the queue, when the server answers 200, and when it refuses the batch for good: 400 (`analytics.malformed`), 403 `analytics.consent_required` and 409 `analytics.id_taken` (section 5). Every other answer keeps the batch for the next flush: no response (offline), a lost session, 429, 5xx and any other refusal. An expired access token is refreshed once by the API client before the answer counts.
+
+`Core/Analytics/AnalyticsFlushTimer` flushes every `AnalyticsFlushSeconds` of real time and at once when the app pauses. `Game/AnalyticsBoot` builds the queue, the sender and the timer when the network layer starts and drives the timer from a hidden object (`Update` and `OnApplicationPause`). The device time of an event is the UTC Unix time in milliseconds. A full batch does not trigger a send of its own: the docs define only the timer and the pause, and a size trigger would repeat a failing send while offline.
 
 ## 5. Server ingest
 
@@ -65,7 +69,7 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
 - Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job. The same run deletes the server events of section 3 by their time and the `analytics_sources` rows older than the cutoff.
 
-Not built yet: aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
+Not built yet: aggregates without ids (none exist yet, so nothing is kept past the purge).
 
 ## 6. Config
 
@@ -75,4 +79,12 @@ Not built yet: aggregates without ids (none exist yet, so nothing is kept past t
 | `AnalyticsQueueLimit` | Most events held while offline |
 | `AnalyticsFlushSeconds` | Time between flushes |
 
-The values are owner decisions not yet made; they come from admin config.
+The values are owner decisions not yet made; they are meant to come from admin config. Until then the client uses `AnalyticsSettings.Draft`, a draft that the owner replaces:
+
+| Field | Draft |
+|---|---|
+| `AnalyticsBatchSize` | 50 |
+| `AnalyticsQueueLimit` | 500 |
+| `AnalyticsFlushSeconds` | 60 |
+
+`AnalyticsBatchSize` is at most `AnalyticsSettings.MaxBatchSize` (400): 400 of the longest event the server accepts (a 64-character label) fit the 64 KiB body limit of section 5, so no batch is refused as too large. `AnalyticsQueueLimit` is at least `AnalyticsBatchSize` and `AnalyticsFlushSeconds` is positive.

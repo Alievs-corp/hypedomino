@@ -97,6 +97,7 @@ The premium track is unlocked by `pass_premium`, by `pass_premium_plus`, or by a
 ### 2.6 Level purchase
 
 - Intent with a count `k`, a currency (`coin`, the default, or `crystal`) and a client request id. Price `k` x `PassLevelCoinPrice` (200, *economy*) coins or `k` x `PassLevelCrystalPrice` (40, *economy*) crystals, ledger reason `pass_level_purchase`, key `spend:<requestId>` (`docs/economy.md` 3.2, section 5).
+- `GET /pass` sends the current per-level prices as `level_coin_price` and `level_crystal_price` (the config's `levelCoinPrice` and `levelCrystalPrice`), so the screen shows `k` x price before the intent. The shown price is display only: the intent carries no price, and the server charges the configured price at purchase time.
 - The server rejects `k` < 1, a count that would pass `PassLevels`, a balance below the price, and any purchase outside the season window.
 - A bought level adds the XP from the current total to the total of level `L + k`, keeping progress inside the current level. Levels crossed grant the free track, and the premium track if unlocked.
 - Coins and crystals are not refunded for levels, and a later premium unlock grants the premium rewards of bought levels as in 2.5.

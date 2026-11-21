@@ -13,6 +13,7 @@ namespace HypeDomino.Tests.EditMode
     public sealed class PassLevelBuyerTests
     {
         const string StandingJson = @"{""season"":""season_1"",""ends_at"":""2027-02-01T00:00:00Z"",""levels"":100,""xp"":1700,""level"":97,""level_xp"":1500,""next_level_xp"":2000,""premium"":false}";
+        const string PricedJson = @"{""season"":""season_1"",""ends_at"":""2027-02-01T00:00:00Z"",""levels"":100,""xp"":1700,""level"":97,""level_xp"":1500,""next_level_xp"":2000,""premium"":false,""level_coin_price"":200,""level_crystal_price"":40}";
         const string LastLevelJson = @"{""season"":""season_1"",""ends_at"":""2027-02-01T00:00:00Z"",""levels"":100,""xp"":2000,""level"":100,""level_xp"":2000,""next_level_xp"":0,""premium"":false}";
         const string BoughtJson = @"{""season"":""season_1"",""count"":2,""currency"":""crystal"",""price"":80,""level"":99,""xp"":1900,""balance"":20,""repeated"":false}";
         const string RepeatedJson = @"{""season"":""season_1"",""count"":2,""currency"":""coin"",""price"":400,""level"":99,""xp"":1900,""balance"":1100,""repeated"":true}";
@@ -97,6 +98,33 @@ namespace HypeDomino.Tests.EditMode
         }
 
         PassLevelsRequest Body(int index) => JsonUtility.FromJson<PassLevelsRequest>(api.Requests[index].Body);
+
+        [TestCase(1, Currency.Coin, 200L)]
+        [TestCase(3, Currency.Coin, 600L)]
+        [TestCase(2, Currency.Crystal, 80L)]
+        public void TheShownPriceIsTheServerLevelPriceTimesTheCount(int count, Currency currency, long expected)
+        {
+            Assert.IsTrue(PassLevelBuyer.TryPriceOf(Standing(PricedJson), count, currency, out var price));
+            Assert.AreEqual(expected, price);
+        }
+
+        [TestCase(0)]
+        [TestCase(4)]
+        public void ACountTheSeasonCannotHoldHasNoPrice(int count)
+        {
+            Assert.IsFalse(PassLevelBuyer.TryPriceOf(Standing(PricedJson), count, Currency.Coin, out var price));
+            Assert.AreEqual(0, price);
+            Assert.IsFalse(PassLevelBuyer.TryPriceOf(null, 1, Currency.Coin, out _));
+            Assert.IsFalse(PassLevelBuyer.TryPriceOf(Standing(LastLevelJson), 1, Currency.Crystal, out _));
+        }
+
+        [Test]
+        public void WithoutAServerPriceNoPriceIsShown()
+        {
+            Assert.IsFalse(PassLevelBuyer.TryPriceOf(standing, 1, Currency.Coin, out var price));
+            Assert.AreEqual(0, price);
+            Assert.IsFalse(PassLevelBuyer.TryPriceOf(standing, 1, Currency.Crystal, out _));
+        }
 
         [Test]
         public void TheIntentCarriesOnlyTheCountTheCurrencyAndARequestId()
