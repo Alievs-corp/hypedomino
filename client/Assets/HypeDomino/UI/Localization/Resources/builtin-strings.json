@@ -149,6 +149,10 @@
     { "key": "tutorial.replay", "en": "Play again", "az": "Yenidən oyna" },
     { "key": "tutorial.continue", "en": "Continue", "az": "Davam et" },
     { "key": "tutorial.wrong_tile", "en": "Use the highlighted tile", "az": "İşıqlanan daşı seç" },
-    { "key": "tutorial.wrong_end", "en": "Place it on the highlighted end", "az": "Onu işıqlanan uca qoy" }
+    { "key": "tutorial.wrong_end", "en": "Place it on the highlighted end", "az": "Onu işıqlanan uca qoy" },
+    { "key": "tutorial.offer.title", "en": "New here?", "az": "Yenisən?" },
+    { "key": "tutorial.offer.body", "en": "Learn the rules in one short hand against a bot", "az": "Bot ilə qısa bir əldə qaydaları öyrən" },
+    { "key": "tutorial.offer.play", "en": "Play", "az": "Oyna" },
+    { "key": "tutorial.offer.skip", "en": "Skip", "az": "Keç" }
   ]
 }

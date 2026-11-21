@@ -21,8 +21,8 @@ namespace HypeDomino.Tests.PlayMode
         const string GoldStatic = "cosmetic/frame/gold/static";
         const string StarterFrame = "cosmetic/frame/starter/static";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""common"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false},
-{""id"":""epic"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":3,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":false}]}";
+{""id"":""common"",""ordinal"":1,""nameKey"":""rarity.common.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false},
+{""id"":""epic"",""ordinal"":3,""nameKey"":""rarity.epic.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":3,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":false}]}";
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
 {""id"":""avatar.starter"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/starter/static"",""sources"":[{""type"":""default""}]},
 {""id"":""frame.starter"",""type"":""frame"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/frame/starter/static"",""sources"":[{""type"":""default""}]},
