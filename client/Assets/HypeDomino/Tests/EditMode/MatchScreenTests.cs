@@ -244,6 +244,13 @@ namespace HypeDomino.Tests.EditMode
             return connection;
         }
 
+        Session BoundSession()
+        {
+            var connection = OfflineConnection();
+            screen.Bind(connection);
+            return connection.Session;
+        }
+
         ISocketTransport OpenSocket()
         {
             var socket = new FakeSocket();
@@ -427,9 +434,8 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void TheFirstViewAfterAHelloShowsNoPass()
         {
-            var session = new Session();
+            var session = BoundSession();
             var frames = new ServerFrames();
-            screen.Bind(session);
             session.Hello(frames, new ClientHello());
             frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
             session.Poll();
@@ -448,9 +454,8 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ViewsFromTheSessionStopAfterUnbind()
         {
-            var session = new Session();
+            var session = BoundSession();
             var frames = new ServerFrames();
-            screen.Bind(session);
             session.Hello(frames, new ClientHello());
             frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
             session.Poll();
@@ -599,11 +604,37 @@ namespace HypeDomino.Tests.EditMode
             Assert.Greater(hud.NoticesShown, noticesShown);
         }
 
+        [Test]
+        public void AMoveWaitingForItsAckShowsTheWeakNoticeUntilTheAckArrives()
+        {
+            var connection = OnlineConnection();
+            screen.Bind(connection);
+            Show(Playing(Seat.South, Move(1, 2, BoardEnd.Right)));
+
+            Assert.AreEqual(HandTap.Placed, screen.TapTile(0));
+            Assert.IsTrue(connection.RoundTrip.HasPending);
+            screen.Tick(connection, ConnectionNotices.WeakUnackedSeconds - 0.5d, false);
+            Assert.AreEqual(NetworkNotice.None, screen.Notices.Network);
+
+            screen.Tick(connection, ConnectionNotices.WeakUnackedSeconds + 0.5d, false);
+            Assert.AreEqual(NetworkNotice.Weak, screen.Notices.Network);
+            Assert.AreEqual(1, hud.NoticesShown);
+
+            var view = Playing(Seat.West);
+            sockets[sockets.Count - 1].Deliver(new FrameWriter(Session.MaxSentFrameBytes).Write(new FrameHeader(Session.ProtocolVersion, 0, 1, 77), Envelope.PayloadOneofCase.MatchView, view).ToArray());
+            connection.Tick();
+            screen.Tick(connection, ConnectionNotices.WeakUnackedSeconds + 1d, false);
+
+            Assert.IsFalse(connection.RoundTrip.HasPending);
+            Assert.AreEqual(NetworkNotice.None, screen.Notices.Network);
+            Assert.AreEqual(2, hud.NoticesShown);
+            Assert.AreEqual(Seat.West, table.Seats.Current);
+        }
+
         ServerFrames BindAccepted()
         {
-            var session = new Session();
+            var session = BoundSession();
             var frames = new ServerFrames();
-            screen.Bind(session);
             session.Hello(frames, new ClientHello());
             frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
             session.Poll();
@@ -734,9 +765,8 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(HandTap.Ignored, screen.TapTile(0));
             Assert.IsTrue(screen.Hand.IsSelectable(0));
 
-            var session = new Session();
+            var session = BoundSession();
             var frames = new ServerFrames();
-            screen.Bind(session);
             session.Hello(frames, new ClientHello());
             frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Maintenance });
             session.Poll();
