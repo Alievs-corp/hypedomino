@@ -112,10 +112,10 @@ namespace HypeDomino.Net.Auth
                 return;
             }
             var request = JsonUtility.ToJson(new SignInRequest { provider = ProviderName(provider), id_token = token.Token, nonce = nonce, device_id = DeviceId() });
-            transport.Post(SignInPath, request, reply => SignedIn(provider, reply, done));
+            transport.Post(SignInPath, request, reply => ProviderAnswered(provider, reply, done));
         }
 
-        void SignedIn(AuthProvider provider, HttpReply reply, Action<AuthResult> done)
+        void ProviderAnswered(AuthProvider provider, HttpReply reply, Action<AuthResult> done)
         {
             var result = Tokens(reply, false);
             if (result.Outcome == AuthOutcome.SignedIn) ProviderSignedIn?.Invoke(provider);
