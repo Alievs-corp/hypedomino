@@ -2,6 +2,7 @@ package leaderboard
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -55,9 +56,18 @@ func DefaultConfig() Config {
 type Row struct {
 	Position int         `json:"position"`
 	Account  string      `json:"account_id"`
+	Nickname string      `json:"nickname"`
 	Rank     rating.Rank `json:"rank"`
 	Tier     string      `json:"tier"`
 	Wins     int         `json:"wins"`
+}
+
+func (r Row) MarshalJSON() ([]byte, error) {
+	type fields Row
+	return json.Marshal(struct {
+		fields
+		LP int `json:"lp"`
+	}{fields(r), r.Rank.LP})
 }
 
 type Boards struct {

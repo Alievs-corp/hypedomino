@@ -68,6 +68,7 @@ namespace HypeDomino.Tests.EditMode
         {
             sockets.Clear();
             now = 10;
+            debuggerAttached = false;
             connection = new Connection(OpenSocket, () => new ClientHello { SessionToken = "sess_01HZX" }, () => now, new FixedRandom(0.5));
         }
 
@@ -114,6 +115,29 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(ConnectionState.Connecting, connection.State);
             Assert.AreEqual(ServerUri, Socket.Uri);
             Assert.AreEqual("sess_01HZX", Envelope.Parser.ParseFrom(Socket.Sent[0]).ClientHello.SessionToken);
+        }
+
+        bool debuggerAttached;
+
+        void CollectHooks(List<string> signals)
+        {
+            if (debuggerAttached) signals.Add(HypeDomino.Core.DeviceRisk.HookSignals.Debugger);
+        }
+
+        [Test]
+        public void ARedialSendsTheHookSignalsCollectedForIt()
+        {
+            connection.Session.CollectHookSignals = CollectHooks;
+            GoOnline();
+            debuggerAttached = true;
+
+            DropAndTick();
+            now = connection.RetryAtSeconds;
+            connection.Tick();
+
+            Assert.AreEqual(2, sockets.Count);
+            CollectionAssert.IsEmpty(Envelope.Parser.ParseFrom(sockets[0].Sent[0]).ClientHello.HookSignals);
+            CollectionAssert.AreEqual(new[] { "debugger" }, Envelope.Parser.ParseFrom(Socket.Sent[0]).ClientHello.HookSignals);
         }
 
         [Test]

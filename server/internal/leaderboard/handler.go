@@ -25,6 +25,10 @@ type Friends interface {
 	FriendIDs(ctx context.Context, account string) ([]string, error)
 }
 
+type Nicknames interface {
+	Nicknames(ctx context.Context, accounts []string) (map[string]string, error)
+}
+
 type Seasons interface {
 	SeasonAt(ctx context.Context, at time.Time) (rating.Season, error)
 	TopSize() int
@@ -35,13 +39,14 @@ type Handler struct {
 	boards   Reader
 	seasons  Seasons
 	friends  Friends
+	names    Nicknames
 	logger   *slog.Logger
 	now      func() time.Time
 	mux      *http.ServeMux
 }
 
-func NewHandler(verifier token.Verifier, boards Reader, seasons Seasons, friends Friends, logger *slog.Logger, now func() time.Time) *Handler {
-	h := &Handler{verifier: verifier, boards: boards, seasons: seasons, friends: friends, logger: logger, now: now, mux: http.NewServeMux()}
+func NewHandler(verifier token.Verifier, boards Reader, seasons Seasons, friends Friends, names Nicknames, logger *slog.Logger, now func() time.Time) *Handler {
+	h := &Handler{verifier: verifier, boards: boards, seasons: seasons, friends: friends, names: names, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("GET /leaderboard/{mode}", h.view)
 	return h
 }
@@ -109,6 +114,10 @@ func (h *Handler) view(w http.ResponseWriter, r *http.Request) {
 		h.refuse(w, err)
 		return
 	}
+	if err := h.name(r.Context(), top, around); err != nil {
+		h.refuse(w, err)
+		return
+	}
 	view := View{Season: season, Mode: mode.String(), Board: board, Top: top, Around: []Row{}}
 	if listed {
 		view.Around = around
@@ -132,6 +141,10 @@ func (h *Handler) friendsView(w http.ResponseWriter, r *http.Request, season str
 		h.refuse(w, err)
 		return
 	}
+	if err := h.name(r.Context(), rows); err != nil {
+		h.refuse(w, err)
+		return
+	}
 	view := View{Season: season, Mode: mode.String(), Board: BoardFriends, Top: rows[:min(len(rows), h.seasons.TopSize())], Around: []Row{}}
 	for i := range rows {
 		if rows[i].Account == viewer {
@@ -140,6 +153,28 @@ func (h *Handler) friendsView(w http.ResponseWriter, r *http.Request, season str
 		}
 	}
 	reply(w, http.StatusOK, view)
+}
+
+func (h *Handler) name(ctx context.Context, lists ...[]Row) error {
+	accounts := []string{}
+	for _, rows := range lists {
+		for i := range rows {
+			accounts = append(accounts, rows[i].Account)
+		}
+	}
+	if len(accounts) == 0 {
+		return nil
+	}
+	names, err := h.names.Nicknames(ctx, accounts)
+	if err != nil {
+		return err
+	}
+	for _, rows := range lists {
+		for i := range rows {
+			rows[i].Nickname = names[rows[i].Account]
+		}
+	}
+	return nil
 }
 
 func (h *Handler) refuse(w http.ResponseWriter, err error) {
