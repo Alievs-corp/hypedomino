@@ -152,6 +152,7 @@ type Policy struct {
 	IntegrityFailureWeight int
 	DeviceRiskAction       DeviceRiskAction
 	DeviceRiskWeight       int
+	HookSignalWeight       int
 	MinDeviceLevel         DeviceLevel
 	RequireLicensed        bool
 }
@@ -161,6 +162,7 @@ type SignalKind uint8
 const (
 	SignalIntegrityFailure SignalKind = iota + 1
 	SignalDeviceRisk
+	SignalHook
 )
 
 func (k SignalKind) String() string {
@@ -169,6 +171,8 @@ func (k SignalKind) String() string {
 		return "integrity_failure"
 	case SignalDeviceRisk:
 		return "device_risk"
+	case SignalHook:
+		return "hook_signal"
 	}
 	return "invalid"
 }
