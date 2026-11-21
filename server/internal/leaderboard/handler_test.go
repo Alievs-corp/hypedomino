@@ -79,6 +79,19 @@ func (fakeFriends) FriendIDs(_ context.Context, account string) ([]string, error
 	return []string{}, nil
 }
 
+type fakeNames struct {
+	err   error
+	calls [][]string
+}
+
+func (f *fakeNames) Nicknames(_ context.Context, accounts []string) (map[string]string, error) {
+	f.calls = append(f.calls, accounts)
+	if f.err != nil {
+		return nil, f.err
+	}
+	return map[string]string{"top": "Ayla", "second": "Kamran", "pal1": "Nigar"}, nil
+}
+
 type fakeSeasons struct{}
 
 func (fakeSeasons) SeasonAt(_ context.Context, at time.Time) (rating.Season, error) {
@@ -91,9 +104,9 @@ func (fakeSeasons) SeasonAt(_ context.Context, at time.Time) (rating.Season, err
 func (fakeSeasons) TopSize() int { return 1 }
 
 func TestTheFriendsBoardRanksTheViewerAmongTheirFriends(t *testing.T) {
-	boards := &fakeBoards{}
+	boards, names := &fakeBoards{}, &fakeNames{}
 	clock := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
-	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, names, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
 	call := func(access string) (int, map[string]any) {
 		t.Helper()
 		request := httptest.NewRequest(http.MethodGet, "/leaderboard/1v1?board=friends", nil)
@@ -111,19 +124,31 @@ func TestTheFriendsBoardRanksTheViewerAmongTheirFriends(t *testing.T) {
 	if boards.calls[0] != "among pal1,pal2,pal3,pal4,unplaced,second" {
 		t.Fatalf("calls %v", boards.calls)
 	}
+	if pal := body["top"].([]any)[0].(map[string]any); pal["nickname"] != "Nigar" || body["me"].(map[string]any)["nickname"] != "Kamran" {
+		t.Fatalf("friend names: %v", body)
+	}
+	lookups := len(names.calls)
 	status, body = call("access:loner")
 	if status != http.StatusOK || body["me"] != nil || len(body["top"].([]any)) != 0 || len(body["around"].([]any)) != 0 {
 		t.Fatalf("unplaced viewer without friends: %d %v", status, body)
 	}
+	if len(names.calls) != lookups {
+		t.Fatalf("an empty board looked up nicknames: %v", names.calls)
+	}
+	names.err = errors.New("database down")
+	if status, body := call("access:second"); status != http.StatusInternalServerError || body["error"] != "internal" {
+		t.Fatalf("nickname store down on friends board: %d %v", status, body)
+	}
+	names.err = nil
 	if status, body := call("access:broken"); status != http.StatusInternalServerError || body["error"] != "internal" {
 		t.Fatalf("friends store down: %d %v", status, body)
 	}
 }
 
 func TestTheHandlerServesTopAndTheViewersPlace(t *testing.T) {
-	boards := &fakeBoards{}
+	boards, names := &fakeBoards{}, &fakeNames{}
 	clock := time.Date(2026, 10, 30, 12, 0, 0, 0, time.UTC)
-	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	handler := leaderboard.NewHandler(fakeVerifier{}, boards, fakeSeasons{}, fakeFriends{}, names, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
 	call := func(access, path string) (int, map[string]any) {
 		t.Helper()
 		request := httptest.NewRequest(http.MethodGet, path, nil)
@@ -142,6 +167,13 @@ func TestTheHandlerServesTopAndTheViewersPlace(t *testing.T) {
 	}
 	if boards.calls[0] != "top season.s1 1v1 global" || boards.calls[1] != "around second" {
 		t.Fatalf("calls %v", boards.calls)
+	}
+	first, me, third := body["top"].([]any)[0].(map[string]any), body["me"].(map[string]any), body["around"].([]any)[2].(map[string]any)
+	if first["nickname"] != "Ayla" || first["lp"] != float64(700) || first["rank"] != "Master" || me["nickname"] != "Kamran" || me["lp"] != float64(50) || me["rank"] != "Gold II" || third["nickname"] != "" {
+		t.Fatalf("rows: %v %v %v", first, me, third)
+	}
+	if len(names.calls) != 1 || strings.Join(names.calls[0], ",") != "top,top,second,third" {
+		t.Fatalf("nickname lookups %v", names.calls)
 	}
 	status, body = call("access:nobody", "/leaderboard/2v2?season=season.s2")
 	if status != http.StatusOK || body["season"] != "season.s2" || body["me"] != nil || len(body["around"].([]any)) != 0 {
@@ -163,11 +195,16 @@ func TestTheHandlerServesTopAndTheViewersPlace(t *testing.T) {
 			t.Errorf("%s %s: %d %v, want %d %s", c.access, c.path, status, body, c.status, c.err)
 		}
 	}
+	names.err = errors.New("database down")
+	if status, body := call("access:second", "/leaderboard/1v1"); status != http.StatusInternalServerError || body["error"] != "internal" {
+		t.Errorf("nickname store down: %d %v", status, body)
+	}
+	names.err = nil
 	clock = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	if status, body := call("access:second", "/leaderboard/1v1"); status != http.StatusNotFound || body["error"] != "rating.season_unknown" {
 		t.Errorf("no season: %d %v", status, body)
 	}
-	disabled := leaderboard.NewHandler(fakeVerifier{}, nil, fakeSeasons{}, fakeFriends{}, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
+	disabled := leaderboard.NewHandler(fakeVerifier{}, nil, fakeSeasons{}, fakeFriends{}, names, slog.New(slog.NewTextHandler(io.Discard, nil)), func() time.Time { return clock })
 	request := httptest.NewRequest(http.MethodGet, "/leaderboard/1v1", nil)
 	request.Header.Set("Authorization", "Bearer access:second")
 	recorder := httptest.NewRecorder()
