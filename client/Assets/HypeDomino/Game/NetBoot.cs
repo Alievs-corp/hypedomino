@@ -78,6 +78,7 @@ namespace HypeDomino.Game
             BuildLoaders(Api);
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
+            PrivacyBoot.Start(Api, Auth, session);
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             session.ErrorReceived += OnError;
