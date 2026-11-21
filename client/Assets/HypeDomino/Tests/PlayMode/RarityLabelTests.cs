@@ -9,8 +9,8 @@ namespace HypeDomino.Tests.PlayMode
     public sealed class RarityLabelTests
     {
         const string Table = @"{""tiers"":[
-{""id"":""plain"",""nameKey"":""rarity.plain.name"",""fill"":""#808080"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1},
-{""id"":""bright"",""nameKey"":""rarity.bright.name"",""fill"":""#FF0000"",""on"":""#000000"",""text"":""#00FF00"",""pips"":2}]}";
+{""id"":""plain"",""ordinal"":1,""nameKey"":""rarity.plain.name"",""fill"":""#808080"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1},
+{""id"":""bright"",""ordinal"":2,""nameKey"":""rarity.bright.name"",""fill"":""#FF0000"",""on"":""#000000"",""text"":""#00FF00"",""pips"":2}]}";
         const string Names = @"{""entries"":[
 {""key"":""rarity.plain.name"",""en"":""Plain"",""az"":""Sadə""},
 {""key"":""rarity.bright.name"",""en"":""Bright"",""az"":""Parlaq""}]}";

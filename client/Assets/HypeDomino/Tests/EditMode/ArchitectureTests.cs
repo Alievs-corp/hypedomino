@@ -22,6 +22,7 @@ namespace HypeDomino.Tests.EditMode
         static readonly Regex Coroutine = new Regex(@"\bStartCoroutine\s*\(|\bIEnumerator\s+\w+\s*\(|\bnew\s+WaitFor\w*\s*\(");
         static readonly Regex FrameRead = new Regex(@"\.TryReceive\s*\(|\bParser\.ParseFrom\s*\(|\bFrameReader\.TryRead\s*\(");
         static readonly Regex StartupHook = new Regex(@"\[\s*RuntimeInitializeOnLoadMethod\b");
+        static readonly Regex BeforeSceneHook = new Regex(@"\[\s*RuntimeInitializeOnLoadMethod\s*\(\s*RuntimeInitializeLoadType\.BeforeSceneLoad\s*\)\s*\]");
 
         [Test]
         public void MatchCodeNamesNothingFromTheLobby()
@@ -119,6 +120,29 @@ namespace HypeDomino.Tests.EditMode
         [TestCase("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]")]
         [TestCase("[ RuntimeInitializeOnLoadMethod]")]
         public void StartupHooksAreRecognised(string line) => Assert.IsTrue(StartupHook.IsMatch(line));
+
+        [Test]
+        public void EveryBootBeforeTheFirstSceneMarksItsStartupPhase()
+        {
+            var boots = new List<string>();
+            var unmarked = new List<string>();
+            foreach (var file in RuntimeCodeRulesTests.RuntimeSources())
+            {
+                var source = File.ReadAllText(file);
+                if (!BeforeSceneHook.IsMatch(source)) continue;
+                var boot = Path.GetFileNameWithoutExtension(file);
+                boots.Add(boot);
+                if (!source.Contains($"StartupPhases.App.Mark(nameof({boot}))")) unmarked.Add(boot);
+            }
+            CollectionAssert.Contains(boots, nameof(AppBoot));
+            Assert.IsEmpty(unmarked);
+        }
+
+        [TestCase("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]", true)]
+        [TestCase("[ RuntimeInitializeOnLoadMethod( RuntimeInitializeLoadType.BeforeSceneLoad ) ]", true)]
+        [TestCase("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]", false)]
+        [TestCase("[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]", false)]
+        public void BeforeSceneHooksAreRecognised(string line, bool beforeScene) => Assert.AreEqual(beforeScene, BeforeSceneHook.IsMatch(line));
 
         static bool Names(string source, string word) => Regex.IsMatch(source, $@"(?<!\w){Regex.Escape(word)}(?!\w)");
 

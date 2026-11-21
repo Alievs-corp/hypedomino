@@ -131,6 +131,18 @@
     { "key": "account.export.unavailable", "en": "Your data copy is not available right now. Try again later", "az": "Məlumat nüsxəsi hazırda alınmır. Sonra yenidən cəhd et" },
     { "key": "account.export.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
     { "key": "account.export.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "account.deletion.pending", "en": "Your account will be deleted on {deleteAt}. You can cancel until then", "az": "Hesabın {deleteAt} tarixində silinəcək. O vaxta qədər ləğv edə bilərsən" },
+    { "key": "account.deletion.pending_undated", "en": "Your account is waiting to be deleted. You can still cancel", "az": "Hesabın silinməni gözləyir. Hələ ləğv edə bilərsən" },
+    { "key": "account.deletion.restored", "en": "Deletion cancelled. Your account stays as it was", "az": "Silinmə ləğv olundu. Hesabın olduğu kimi qalır" },
+    { "key": "account.deletion.sign_in_failed", "en": "Sign-in did not work. Try again", "az": "Giriş alınmadı. Yenidən cəhd et" },
+    { "key": "account.deletion.in_match", "en": "Finish the match first, then try again", "az": "Əvvəlcə matçı bitir, sonra yenidən cəhd et" },
+    { "key": "account.deletion.not_pending", "en": "This account is not waiting to be deleted", "az": "Bu hesab silinməni gözləmir" },
+    { "key": "account.deletion.unknown_account", "en": "No game account uses this sign-in. Choose the account you play with", "az": "Bu girişlə oyun hesabı yoxdur. Oynadığın hesabı seç" },
+    { "key": "account.deletion.banned", "en": "This account is blocked, so it cannot be deleted right now", "az": "Bu hesab bloklanıb, ona görə indi silinə bilməz" },
+    { "key": "account.deletion.deleted", "en": "This account has already been deleted", "az": "Bu hesab artıq silinib" },
+    { "key": "account.deletion.offline", "en": "No connection. Try again", "az": "Bağlantı yoxdur. Yenidən cəhd et" },
+    { "key": "account.deletion.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
+    { "key": "account.deletion.unavailable", "en": "Account deletion is not available right now. Try again later", "az": "Hesab silinməsi hazırda alınmır. Sonra yenidən cəhd et" },
     { "key": "settings.cache.cleared", "en": "Cache cleared. Art downloads again when it is needed", "az": "Keş təmizləndi. Lazım olan şəkillər yenidən yüklənəcək" },
     { "key": "settings.cache.cleared_at_next_start", "en": "The cache will be cleared the next time the game starts", "az": "Keş oyun növbəti dəfə açılanda təmizlənəcək" },
     { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" },
@@ -149,6 +161,10 @@
     { "key": "tutorial.replay", "en": "Play again", "az": "Yenidən oyna" },
     { "key": "tutorial.continue", "en": "Continue", "az": "Davam et" },
     { "key": "tutorial.wrong_tile", "en": "Use the highlighted tile", "az": "İşıqlanan daşı seç" },
-    { "key": "tutorial.wrong_end", "en": "Place it on the highlighted end", "az": "Onu işıqlanan uca qoy" }
+    { "key": "tutorial.wrong_end", "en": "Place it on the highlighted end", "az": "Onu işıqlanan uca qoy" },
+    { "key": "tutorial.offer.title", "en": "New here?", "az": "Yenisən?" },
+    { "key": "tutorial.offer.body", "en": "Learn the rules in one short hand against a bot", "az": "Bot ilə qısa bir əldə qaydaları öyrən" },
+    { "key": "tutorial.offer.play", "en": "Play", "az": "Oyna" },
+    { "key": "tutorial.offer.skip", "en": "Skip", "az": "Keç" }
   ]
 }

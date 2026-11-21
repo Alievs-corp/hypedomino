@@ -24,16 +24,19 @@ The interactive tutorial teaches a new player the rules of `docs/rules.md` in on
 - **TU-3** A player move with another tile is refused with `tutorial.wrong_tile`, and one on another end with `tutorial.wrong_end`. Nothing is placed and the step stays.
 - **TU-4** The script is display data. The tutorial sends no intent, starts no match and changes no score, rating, mission, pass or statistic. The points it shows exist only on that screen. `TutorialScriptTests` replay the script through the rules of R-15 to R-29, so a script that breaks a rule or shows points the rules would not give fails the build.
 
-## 2. Skip and replay
+## 2. First offer, skip and replay
 
 - **TU-5** The player can skip the tutorial before it starts and at any step. A skipped run shows nothing further.
 - **TU-6** A finished run, skipped or completed, can be played again from the first step with no points.
 - **TU-7** A device that has finished a run, skipped or completed, keeps `tutorial.finished` (`docs/anti-cheat.md`, Device storage) and is no longer offered the tutorial on its own; the player can still open it again.
+- **TU-9** The tutorial is offered on its own only in the Lobby: the first time in an app session that the app enters the Lobby and the device has no `tutorial.finished`, a prompt asks Play or Skip (`tutorial.offer.*`). A resumed match is not interrupted; the prompt waits for the Lobby after it. Play starts the run of TU-2 from the first step. Skip counts as a skipped run: the device keeps `tutorial.finished` (TU-7) and is never offered the tutorial on its own again.
+- **TU-10** The prompt is shown at most once per app session. Leaving the Lobby before answering withdraws it without keeping `tutorial.finished`, so the next app session asks again. Replay (TU-6) is opened from a menu, never by this prompt.
 
 ## 3. Completion reward
 
-- **TU-8** The completion reward is open: an owner decision on the amount, the currency, whether it is granted once per account, and the ledger reason and source (`docs/economy.md` section 2 has no tutorial source). Until it is decided, completing the tutorial grants nothing. Once decided, the server grants it through the reward engine once per account; the client only sends the completion intent and never decides the reward.
+- **TU-8** The tutorial grants no reward: completing, skipping or replaying it gives no currency, item, XP or progress, on any account or device. There is no tutorial ledger source in `docs/economy.md` and no server change for it (owner decision, #852).
 
 ## 4. Implementation
 
-- Client: `Game/Tutorial` (`client/README.md`, Tutorial). The tutorial screen, its art and where the first offer appears in the app flow are not built yet.
+- Client: `Game/Tutorial` (`client/README.md`, Tutorial). `TutorialOffer` follows the app flow and answers TU-9 and TU-10; `TutorialBoot` builds it on the app flow.
+- Not built yet: the tutorial screen and the prompt view with their art (#848), and the menu entry for replay (TU-6).

@@ -20,7 +20,7 @@ namespace HypeDomino.Tests.PlayMode
         const string FoxStatic = "cosmetic/avatar/fox/static";
         const string NeonStatic = "cosmetic/table/neon/static";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""common"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false}]}";
+{""id"":""common"",""ordinal"":1,""nameKey"":""rarity.common.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false}]}";
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
 {""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
 {""id"":""table.neon"",""type"":""table"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""}]}";
