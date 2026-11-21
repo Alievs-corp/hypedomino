@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Graphics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -51,6 +52,7 @@ namespace HypeDomino.Game
             Debug.Log($"Graphics tier={Quality.Tier} level={Quality.Level} effects={Quality.Effects} renderScale={renderScale:F2} probeDrops={Quality.ProbeDrops} " +
                       $"targetFps={FrameRate.Target} highestFps={FrameRate.Highest} memoryMb={device.MemoryMb} gpu=\"{device.GpuName}\" " +
                       $"refreshHz={string.Join("/", refreshRatesHz)} shortSide={NativeShortSide()}");
+            StartupPhases.App.Mark(nameof(GraphicsBoot));
         }
 
         public static void SettleProbe(double workTimeP95Ms)
