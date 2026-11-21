@@ -3,6 +3,7 @@ package adminapi_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -318,7 +319,7 @@ func TestAShopPreviewShowsTheSectionsOfADraftAtAGivenTime(t *testing.T) {
 	}
 	status, body := a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": opens})
 	expect(t, status, body, http.StatusOK, "")
-	if featured, daily := shown(body, "featured"), shown(body, "daily_rotation"); len(featured) != 1 || featured[0] != "offer.weekend_pack" || len(daily) != 1 || daily[0] != "offer.avatar_comet_fox" {
+	if featured, daily := shown(body, "featured"), shown(body, "daily_rotation"); len(featured) != 1 || featured[0].(map[string]any)["id"] != "offer.weekend_pack" || featured[0].(map[string]any)["name_key"] != "shop.offer.weekend_pack" || len(daily) != 1 || daily[0].(map[string]any)["id"] != "offer.avatar_comet_fox" {
 		t.Fatalf("at opening %v", body)
 	}
 	status, body = a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": closes})
@@ -334,6 +335,52 @@ func TestAShopPreviewShowsTheSectionsOfADraftAtAGivenTime(t *testing.T) {
 	expect(t, status, body, http.StatusBadRequest, "invalid")
 	if entries := a.entries(a.signIn("root"), "object_type=shop_offers"); len(entries) != 0 {
 		t.Fatalf("a preview left entries: %v", entries)
+	}
+}
+
+func TestAShopPreviewShowsTheChosenVariantOfAnOffer(t *testing.T) {
+	a := newAPI(t)
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	opens := start.Add(time.Hour)
+	second := weekendPack(opens, opens.Add(time.Hour))
+	second["id"], second["nameKey"] = "offer.weekend_pack_two", "shop.offer.weekend_pack_two"
+	second["bundle"] = map[string]any{"id": "bundle.weekend_pack_two", "revision": 1, "cosmetics": []string{"avatar.comet_fox"}}
+	second["variants"] = []any{map[string]any{"id": "top", "nameKey": "shop.offer.weekend_pack_top", "position": 1}}
+	draft := catalog(cometFox(), weekendPack(opens, opens.Add(time.Hour)), second)
+	featured := func(variants map[string]string) string {
+		status, body := a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": opens, "variants": variants})
+		expect(t, status, body, http.StatusOK, "")
+		for _, entry := range body["sections"].([]any) {
+			if entry.(map[string]any)["section"] != "featured" {
+				continue
+			}
+			var shown []string
+			for _, offer := range entry.(map[string]any)["offers"].([]any) {
+				offer := offer.(map[string]any)
+				shown = append(shown, fmt.Sprint(offer["id"], " ", offer["name_key"], " ", offer["variant"]))
+			}
+			return strings.Join(shown, ", ")
+		}
+		t.Fatalf("no featured in %v", body)
+		return ""
+	}
+
+	if got := featured(nil); got != "offer.weekend_pack shop.offer.weekend_pack <nil>, offer.weekend_pack_two shop.offer.weekend_pack_two <nil>" {
+		t.Fatalf("as written: %s", got)
+	}
+	if got := featured(map[string]string{"offer.weekend_pack_two": "top"}); got != "offer.weekend_pack_two shop.offer.weekend_pack_top top, offer.weekend_pack shop.offer.weekend_pack <nil>" {
+		t.Fatalf("variant top: %s", got)
+	}
+	for name, variants := range map[string]map[string]string{
+		"unknown variant": {"offer.weekend_pack_two": "bold"},
+		"unknown offer":   {"offer.missing": "top"},
+		"no variants":     {"offer.weekend_pack": "top"},
+	} {
+		status, body := a.call("POST", "/admin/config/shop/preview", support, map[string]any{"catalog": draft, "at": opens, "variants": variants})
+		if status != http.StatusBadRequest || body["error"] != "invalid" {
+			t.Fatalf("%s: %d %v", name, status, body)
+		}
 	}
 }
 
