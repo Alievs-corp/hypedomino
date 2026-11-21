@@ -110,6 +110,7 @@ Implemented in `client/Assets/HypeDomino/UI/Localization` (#70) as plain C#, cov
 
 - **Tutorial keys:** the built-in bundle also holds the tutorial step and control keys (`tutorial.*`, `docs/tutorial.md`, `client/README.md` Tutorial, #88) with `en` and `az` texts; their `tr` and `ru` values fall back along 1.2 to `en` until translated. The step texts name the scripted tiles and points of TU-2 and the target score of R-43.
 - **Cache keys:** the built-in bundle also holds the cache clear outcome keys (`settings.cache.*`, `docs/content-delivery.md` 7, #160) with `en` and `az` texts; their `tr` and `ru` values fall back along 1.2 to `en` until translated. The texts name no size or limit.
+- **Unavailable text:** the built-in bundle holds `common.text.unavailable`, the text of 2.3 step 3, with `en` and `az` texts. Step 3 reads only the `en` value, so every player sees `Text unavailable` for a key missing in the whole chain; the `az` text is a draft for review like the duration texts and is not shown until step 3 reads the selected language. The `LocalizationTests` EditMode tests cover it in all four languages, and the duration clock fallback of `tr` and `ru` over the shipped bundle.
 
 Not built yet:
 - **Account sync:** syncing the choice with the account (`docs/privacy.md` D-11) needs a server endpoint that does not exist yet.

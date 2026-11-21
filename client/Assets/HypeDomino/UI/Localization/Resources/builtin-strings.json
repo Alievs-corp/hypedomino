@@ -1,5 +1,6 @@
 {
   "entries": [
+    { "key": "common.text.unavailable", "en": "Text unavailable", "az": "Mətn əlçatan deyil" },
     { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
     { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" },
     { "key": "duration.days", "en": "{days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}", "az": "{days, plural, one {# gün} other {# gün}} {hours, plural, one {# saat} other {# saat}}" },
