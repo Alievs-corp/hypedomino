@@ -11,6 +11,7 @@ using HypeDomino.Game.Shop;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
+using HypeDomino.Net.Integrity;
 using Hypedomino.V1;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -22,6 +23,7 @@ namespace HypeDomino.Game
     {
         public static AuthSession Auth { get; private set; }
         public static ApiClient Api { get; private set; }
+        public static IntegrityProofs Integrity { get; private set; }
         public static Connection Connection { get; private set; }
         public static MatchQueue Queue { get; private set; }
         public static LobbyCommands Lobby { get; private set; }
@@ -34,6 +36,7 @@ namespace HypeDomino.Game
         public static ProfileLoader Profile { get; private set; }
 
         static NetStart start;
+        static SessionStartProof startProof;
         static Uri socket;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -49,8 +52,11 @@ namespace HypeDomino.Game
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
+            Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
+            startProof = new SessionStartProof(Integrity.Request, StartConnection);
             Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
+            session.HelloReceived += startProof.Read;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
             DeviceRiskProbe.CollectHooks(session.HookSignals);
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);
@@ -86,7 +92,12 @@ namespace HypeDomino.Game
             _ => Platform.Unspecified,
         };
 
-        static ClientHello NextHello() => Hello(Auth.AccessToken, Application.platform, (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        static ClientHello NextHello()
+        {
+            var hello = Hello(Auth.AccessToken, Application.platform, (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            startProof.Attach(hello);
+            return hello;
+        }
 
         static void BuildLoaders(ApiClient api)
         {
@@ -100,12 +111,15 @@ namespace HypeDomino.Game
 
         static void Dial()
         {
-            if (!Connection.Rejoin()) Connection.Start(socket);
+            if (!Connection.Rejoin()) startProof.Start();
         }
+
+        static void StartConnection() => Connection.Start(socket);
 
         static void OnError(Error error)
         {
             if (error.Code == ErrorCode.Unauthenticated) start.Unauthenticated();
+            else startProof.Read(error);
         }
 
         sealed class Driver : MonoBehaviour
