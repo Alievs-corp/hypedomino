@@ -279,7 +279,7 @@ namespace HypeDomino.Tests.EditMode
             AnswerInventory(TwoWorn);
             Enter();
 
-            link.Wear(new EquipReply { loadout = new LoadoutReply { emojis = new[] { "emoji.party" } } });
+            link.Wear(new EquipReply { loadout = new HypeDomino.UI.Cosmetics.LoadoutReply { emojis = new[] { "emoji.party" } } });
             Assert.AreEqual("emoji.laugh", link.Wheel.Slot(0), "the server keeps the emoji the member joined with");
 
             Leave();
