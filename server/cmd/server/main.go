@@ -154,6 +154,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
+	profiles.SetLanguages(accounts)
 	a.Handle("/profile/", profiles)
 	catalog, err := loadCatalog(config.Cosmetics)
 	if err != nil {
@@ -341,7 +342,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.SetBoards(boards, logger)
 		reader = boards
 	}
-	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, logger, time.Now))
+	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, profileStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
 	go panics.Supervise(ctx, "pass season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		passes.RunSeasonEnd(ctx, logger, every, time.Now)

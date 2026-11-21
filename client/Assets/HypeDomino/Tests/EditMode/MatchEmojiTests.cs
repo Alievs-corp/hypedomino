@@ -103,6 +103,7 @@ namespace HypeDomino.Tests.EditMode
             var stage = new CosmeticStage(stills, new Source<LoopArt>(), null, null, null, EffectLevel.Medium, false);
             var shelf = new EmojiArtShelf(manifest, stage, Record);
             emoji = new MatchEmoji(wheel, messages, new GameStrings(BuiltinStrings.Parse(Builtin), language, false), shelf, () => now);
+            emoji.Wear(Inventory(Equipped, Equipped.Length));
         }
 
         [TearDown]
@@ -506,6 +507,71 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheMatchBeginsWithTheWornEmojiUpToTheEmojiSlots()
+        {
+            emoji.Wear(Inventory(new[] { "emoji.party", "emoji.laugh", "emoji.cry" }, 1));
+
+            emoji.Begin(Seat.South, Mode._2V2);
+
+            Assert.AreEqual(1, wheel.Count);
+            Assert.AreEqual("emoji.party", wheel.Slot(0));
+            Assert.IsNull(wheel.Slot(1));
+            CollectionAssert.AreEqual(new[] { PartyStill }, stills.Loads);
+        }
+
+        [Test]
+        public void TheWheelHoldsNoMoreThanItsCapacity()
+        {
+            emoji.Wear(Inventory(new[] { "emoji.party", "emoji.laugh", "emoji.cry" }, 6));
+
+            emoji.Begin(Seat.South, Mode._2V2);
+
+            Assert.AreEqual(Equipped.Length, wheel.Count);
+            CollectionAssert.AreEqual(new[] { PartyStill, LaughStill }, stills.Loads);
+        }
+
+        [Test]
+        public void AnEquipDuringAMatchReachesTheWheelAtTheNextMatch()
+        {
+            emoji.Begin(Seat.South, Mode._2V2);
+
+            emoji.Wear(new EquipReply { loadout = new LoadoutReply { emojis = new[] { "emoji.party", "emoji.laugh", "emoji.cry" } } });
+            Assert.AreEqual("emoji.laugh", wheel.Slot(0), "the wheel keeps the loadout the match began with");
+
+            emoji.End();
+            emoji.Begin(Seat.X, Mode._1V1);
+            Assert.AreEqual(Equipped.Length, wheel.Count);
+            Assert.AreEqual("emoji.party", wheel.Slot(0));
+            Assert.AreEqual("emoji.laugh", wheel.Slot(1));
+        }
+
+        [Test]
+        public void NoWornEmojiHidesTheWheelWhenTheMatchBegins()
+        {
+            wheel.Toggle();
+            emoji.Wear(new InventoryReply { loadout = new LoadoutReply(), emoji_slots = 6 });
+
+            emoji.Begin(Seat.South, Mode._2V2);
+
+            Assert.IsFalse(wheel.Visible);
+            Assert.IsFalse(wheel.IsOpen);
+            Assert.IsEmpty(stills.Loads);
+        }
+
+        [Test]
+        public void AReplyWithoutALoadoutKeepsTheWornEmoji()
+        {
+            emoji.Wear((InventoryReply)null);
+            emoji.Wear((EquipReply)null);
+            emoji.Wear(new EquipReply());
+
+            emoji.Begin(Seat.South, Mode._2V2);
+
+            Assert.AreEqual(Equipped.Length, wheel.Count);
+            Assert.AreEqual("emoji.laugh", wheel.Slot(0));
+        }
+
+        [Test]
         public void ViewsOfARunningMatchAndALoadedEmojiDoNotAllocate()
         {
             var transport = new FakeTransport();
@@ -541,6 +607,9 @@ namespace HypeDomino.Tests.EditMode
             session.Poll();
             Assert.IsFalse(session.Broken);
         }
+
+        static InventoryReply Inventory(string[] emojis, int emojiSlots) =>
+            new() { loadout = new LoadoutReply { emojis = emojis }, emoji_slots = emojiSlots };
 
         static MatchView View(MatchState state, Seat seat, Mode mode) => new() { State = state, Seat = seat, Mode = mode };
 

@@ -16,6 +16,8 @@ namespace HypeDomino.Net
 
         public MatchSnapshot View { get; } = new();
         public List<string> DeviceRiskSignals { get; } = new(4);
+        public List<string> HookSignals { get; } = new(3);
+        public Action<List<string>> CollectHookSignals { get; set; }
         public bool Accepted { get; private set; }
         public bool Broken { get; private set; }
         public ulong SessionNonce { get; private set; }
@@ -40,7 +42,17 @@ namespace HypeDomino.Net
             hello.LastAckedSequence = AckedSequence;
             hello.DeviceRiskSignals.Clear();
             hello.DeviceRiskSignals.Add(DeviceRiskSignals);
+            RefreshHookSignals();
+            hello.HookSignals.Clear();
+            hello.HookSignals.Add(HookSignals);
             transport.Send(writer.Write(new FrameHeader(ProtocolVersion, AckedSequence + 1, 0, 0), Envelope.PayloadOneofCase.ClientHello, hello));
+        }
+
+        void RefreshHookSignals()
+        {
+            if (CollectHookSignals == null) return;
+            HookSignals.Clear();
+            CollectHookSignals(HookSignals);
         }
 
         public ulong Send(Envelope.PayloadOneofCase intent, IMessage message)

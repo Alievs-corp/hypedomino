@@ -18,7 +18,7 @@ type exportSection struct {
 }
 
 var exportSections = []exportSection{
-	{"account", "accounts", `select id, state, country, created_at, country_changed_at, deletion_requested_at, banned_until, shadowbanned_at, muted_until from accounts where id = $1`},
+	{"account", "accounts", `select id, state, country, language, created_at, country_changed_at, deletion_requested_at, banned_until, shadowbanned_at, muted_until from accounts where id = $1`},
 	{"email", "auth_identities", `select email, created_at from auth_identities where account_id = $1 and email is not null order by created_at`},
 	{"profile", "profiles", `select nickname, nickname_changed_at, rename_required, loadout, stats, updated_at from profiles where account_id = $1`},
 	{"nickname_history", "nickname_history", `select nickname, replaced_at from nickname_history where account_id = $1 order by replaced_at`},

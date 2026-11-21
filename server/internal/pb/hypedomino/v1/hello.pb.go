@@ -134,6 +134,7 @@ type ClientHello struct {
 	ClientTimeUnixMs  uint64                 `protobuf:"varint,8,opt,name=client_time_unix_ms,json=clientTimeUnixMs,proto3" json:"client_time_unix_ms,omitempty"`
 	Integrity         *IntegrityProof        `protobuf:"bytes,9,opt,name=integrity,proto3" json:"integrity,omitempty"`
 	DeviceRiskSignals []string               `protobuf:"bytes,10,rep,name=device_risk_signals,json=deviceRiskSignals,proto3" json:"device_risk_signals,omitempty"`
+	HookSignals       []string               `protobuf:"bytes,11,rep,name=hook_signals,json=hookSignals,proto3" json:"hook_signals,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -234,6 +235,13 @@ func (x *ClientHello) GetIntegrity() *IntegrityProof {
 func (x *ClientHello) GetDeviceRiskSignals() []string {
 	if x != nil {
 		return x.DeviceRiskSignals
+	}
+	return nil
+}
+
+func (x *ClientHello) GetHookSignals() []string {
+	if x != nil {
+		return x.HookSignals
 	}
 	return nil
 }
@@ -672,7 +680,7 @@ var File_hypedomino_v1_hello_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/hello.proto\x12\rhypedomino.v1\"\xb5\x03\n" +
+	"\x19hypedomino/v1/hello.proto\x12\rhypedomino.v1\"\xd8\x03\n" +
 	"\vClientHello\x12\x1f\n" +
 	"\vapp_version\x18\x01 \x01(\tR\n" +
 	"appVersion\x12\x1d\n" +
@@ -687,7 +695,8 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x13client_time_unix_ms\x18\b \x01(\x04R\x10clientTimeUnixMs\x12;\n" +
 	"\tintegrity\x18\t \x01(\v2\x1d.hypedomino.v1.IntegrityProofR\tintegrity\x12.\n" +
 	"\x13device_risk_signals\x18\n" +
-	" \x03(\tR\x11deviceRiskSignals\"\x91\x01\n" +
+	" \x03(\tR\x11deviceRiskSignals\x12!\n" +
+	"\fhook_signals\x18\v \x03(\tR\vhookSignals\"\x91\x01\n" +
 	"\x0eIntegrityProof\x122\n" +
 	"\x14play_integrity_token\x18\x01 \x01(\tH\x00R\x12playIntegrityToken\x12B\n" +
 	"\n" +
