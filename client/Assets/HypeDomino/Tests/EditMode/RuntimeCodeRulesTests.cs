@@ -15,6 +15,7 @@ namespace HypeDomino.Tests.EditMode
         static readonly Regex HandWrittenColour = new Regex(@"\bnew\s+Color(32)?\s*\(|\bColor\.(black|blue|cyan|gray|green|grey|magenta|red|white|yellow)\b");
         static readonly Regex PlayerPrefsKey = new Regex(@"\bPlayerPrefs\.(?:Get|Set|Has|Delete)\w*\(\s*(?:""(?<literal>[^""]*)""|(?<name>[A-Za-z_]\w*))");
         static readonly Regex FileWrite = new Regex(@"\bFile\.(?:Write|Append|Create|Copy|Move|Replace)\w*\s*\(|\bnew\s+(?:FileStream|StreamWriter|BinaryWriter)\s*\(");
+        static readonly Regex CultureBlindCasing = new Regex(@"\.To(?:Upper|Lower)\(\s*\)|\b[Cc]har\.To(?:Upper|Lower)\(\s*[^,()]+\)|\bFontStyles\.(?:UpperCase|LowerCase|SmallCaps)\b");
         static readonly Regex DocumentedKey = new Regex(@"`([a-z]+(?:\.[A-Za-z]+)+)`");
         static readonly Regex KeyWord = new Regex(@"[A-Z]?[a-z]+|[A-Z]+(?![a-z])");
         static readonly HashSet<string> ServerValueWords = new HashSet<string>
@@ -51,6 +52,31 @@ namespace HypeDomino.Tests.EditMode
         [TestCase("camera.backgroundColor = Color.clear;")]
         [TestCase("var colourCount = palette.Length;")]
         public void TokenColoursAreNotFlagged(string line) => Assert.IsFalse(HandWrittenColour.IsMatch(line));
+
+        [Test]
+        public void RuntimeCodeDoesNotChangeCaseWithoutACulture()
+        {
+            var offenders = new List<string>();
+            foreach (var file in RuntimeSources())
+                if (CultureBlindCasing.IsMatch(File.ReadAllText(file))) offenders.Add(file);
+            Assert.IsEmpty(offenders, "docs/localization.md 4.6: display text is cased with the selected language's culture, identifiers with the invariant one");
+        }
+
+        [TestCase("var title = text.ToUpper();")]
+        [TestCase("label.text = name.ToLower( );")]
+        [TestCase("var first = char.ToUpper(name[0]);")]
+        [TestCase("var first = Char.ToLower(letter);")]
+        [TestCase("label.fontStyle = FontStyles.UpperCase;")]
+        [TestCase("label.fontStyle |= FontStyles.SmallCaps;")]
+        public void CultureBlindCasingIsRecognised(string line) => Assert.IsTrue(CultureBlindCasing.IsMatch(line));
+
+        [TestCase("var code = text.ToUpperInvariant();")]
+        [TestCase("var tag = locale.ToLowerInvariant();")]
+        [TestCase("var title = text.ToUpper(culture);")]
+        [TestCase("var upper = char.ToUpperInvariant(character);")]
+        [TestCase("var first = char.ToUpper(name[0], culture);")]
+        [TestCase("label.fontStyle = FontStyles.Bold;")]
+        public void CulturedOrInvariantCasingIsNotFlagged(string line) => Assert.IsFalse(CultureBlindCasing.IsMatch(line));
 
         [Test]
         public void EveryPlayerPrefsKeyIsListedUnderDeviceStorage()

@@ -195,6 +195,8 @@ ICU MessageFormat subset: `{name}`, `{count, plural, one {...} few {...} many {.
 - Headlines that must be uppercase are stored as their own approved value rather than uppercased at runtime.
 - Case-insensitive comparison of player text uses the normalisation in 5.2, not display casing.
 
+In the client the lint is `RuntimeCodeRulesTests` (EditMode, #70): runtime code that calls `ToUpper()` or `ToLower()` without a culture, `char.ToUpper` or `char.ToLower` without a culture, or sets the TextMeshPro `FontStyles.UpperCase`, `LowerCase` or `SmallCaps` style fails the test. `ToUpperInvariant` and `ToLowerInvariant` stay allowed for identifiers and codes (room codes, promo codes, locale tags). No display text is case-changed at runtime today (`docs/ui-motion.md` section 3).
+
 ### 4.7 No sentence concatenation
 
 A sentence is one key with placeholders. Code never joins fragments (`name + " " + verb + count`): word order, case endings and plurals differ per language. Lists use a localized list-pattern key. `az`, `tr` and `ru` inflect nouns and names, so keys that insert a player name are phrased without inflecting it (a label followed by the name).
