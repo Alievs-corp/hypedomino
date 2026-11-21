@@ -28,6 +28,7 @@ namespace HypeDomino.Game.Promo
         public string promo;
         public string campaign;
         public PromoGrantReply grant;
+        public bool pass_premium;
 
         public static PromoRedemptionReply FromJson(string json) => JsonUtility.FromJson<PromoRedemptionReply>(json);
     }
@@ -96,7 +97,7 @@ namespace HypeDomino.Game.Promo
 
     public readonly struct PromoRedeemResult
     {
-        PromoRedeemResult(PromoRedeemOutcome outcome, PromoGrantReply grant = null, IReadOnlyDictionary<string, long> duplicates = null)
+        PromoRedeemResult(PromoRedeemOutcome outcome, PromoGrantReply grant = null, IReadOnlyDictionary<string, long> duplicates = null, bool passPremium = false)
         {
             Outcome = outcome;
             Coins = grant?.coins ?? 0;
@@ -104,6 +105,7 @@ namespace HypeDomino.Game.Promo
             Duplicates = duplicates ?? GrantDuplicates.None;
             PassXp = grant?.pass_xp ?? 0;
             PassXpDropped = grant?.pass_xp_dropped ?? 0;
+            PassPremium = passPremium;
         }
 
         public PromoRedeemOutcome Outcome { get; }
@@ -112,6 +114,7 @@ namespace HypeDomino.Game.Promo
         public IReadOnlyDictionary<string, long> Duplicates { get; }
         public int PassXp { get; }
         public int PassXpDropped { get; }
+        public bool PassPremium { get; }
         public string MessageKey => PromoRedeemKeys.Of(Outcome);
 
         public static PromoRedeemResult Of(PromoRedeemOutcome outcome) => new(outcome);
@@ -129,7 +132,7 @@ namespace HypeDomino.Game.Promo
         {
             var redemption = Parse(body);
             if (redemption == null || !GrantDuplicates.TryRead(body, out var duplicates)) return new(PromoRedeemOutcome.Failed);
-            return new(PromoRedeemOutcome.Granted, redemption.grant, duplicates);
+            return new(PromoRedeemOutcome.Granted, redemption.grant, duplicates, redemption.pass_premium);
         }
 
         static PromoRedemptionReply Parse(string body)

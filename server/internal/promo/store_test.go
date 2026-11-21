@@ -141,7 +141,7 @@ func TestAMultiUseCodeGrantsOncePerAccountUpToItsCap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if redemption.Promo != "promo.welcome" || redemption.Campaign != "campaign.launch_week" || redemption.Grant.Coins != 300 || redemption.Grant.Key != "promo:promo.welcome:"+a {
+	if redemption.Promo != "promo.welcome" || redemption.Campaign != "campaign.launch_week" || redemption.Grant.Coins != 300 || redemption.Grant.Key != "promo:promo.welcome:"+a || redemption.PassPremium {
 		t.Fatalf("redemption %+v", redemption)
 	}
 	if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != 300 {

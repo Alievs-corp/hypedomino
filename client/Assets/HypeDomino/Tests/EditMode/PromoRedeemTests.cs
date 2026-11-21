@@ -72,6 +72,26 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0, result.PassXpDropped);
             Assert.AreEqual(1, result.Duplicates.Count);
             Assert.AreEqual(40, result.Duplicates["tile.moon_owl"]);
+            Assert.IsFalse(result.PassPremium);
+        }
+
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":true}", true)]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":false}", false)]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500}}", false)]
+        public void AGrantSaysWhetherThePremiumPassWasUnlocked(string body, bool premium)
+        {
+            var result = PromoRedeemResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
+            Assert.AreEqual(PromoRedeemOutcome.Granted, result.Outcome);
+            Assert.AreEqual(500, result.Coins);
+            Assert.AreEqual(premium, result.PassPremium);
+        }
+
+        [Test]
+        public void ARefusalNeverUnlocksThePremiumPass()
+        {
+            var result = PromoRedeemResult.From(new ApiReply(ApiOutcome.Rejected, 409, "{\"error\":\"promo.pass_premium_owned\",\"pass_premium\":true}", "promo.pass_premium_owned"));
+            Assert.AreEqual(PromoRedeemOutcome.PassPremiumOwned, result.Outcome);
+            Assert.IsFalse(result.PassPremium);
         }
 
         [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500,\"cosmetics\":[]}}")]
