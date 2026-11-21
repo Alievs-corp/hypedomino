@@ -1,5 +1,6 @@
 using System;
 using HypeDomino.Content;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.Game.FriendLobby;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
@@ -44,6 +45,7 @@ namespace HypeDomino.Game
         static NetStart start;
         static SessionStartProof startProof;
         static Uri socket;
+        static NetStartPhases phases;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Start()
@@ -55,13 +57,14 @@ namespace HypeDomino.Game
                 return;
             }
             socket = endpoint.SocketUri;
+            phases = new NetStartPhases(StartupPhases.App);
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
             Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
             Api = new ApiClient(http, Auth);
             AnalyticsBoot.Start(Api);
             Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
             startProof = new SessionStartProof(Integrity.Request, StartConnection);
-            Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
+            Connection = new Connection(OpenSocket, NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
             session.HelloReceived += startProof.Read;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
@@ -84,6 +87,7 @@ namespace HypeDomino.Game
             Object.DontDestroyOnLoad(driver);
             driver.AddComponent<Driver>();
             Debug.Log($"Net server={endpoint.serverUrl} socket={socket}");
+            StartupPhases.App.Mark(nameof(NetBoot));
             start.Begin();
         }
 
@@ -147,10 +151,17 @@ namespace HypeDomino.Game
 
         static void Dial()
         {
+            phases.Resumed();
             if (!Connection.Rejoin()) startProof.Start();
         }
 
-        static void StartConnection() => Connection.Start(socket);
+        static void StartConnection()
+        {
+            phases.Proved();
+            Connection.Start(socket);
+        }
+
+        static ISocketTransport OpenSocket() => phases.Dialing(new WebSocketTransport());
 
         static void OnError(Error error)
         {
@@ -162,6 +173,7 @@ namespace HypeDomino.Game
         {
             void Update()
             {
+                phases.Tick();
                 Connection.Tick();
                 Maintenance.Tick();
             }

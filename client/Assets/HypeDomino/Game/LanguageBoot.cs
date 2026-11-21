@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using HypeDomino.Content;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Localization;
 using UnityEngine;
 
@@ -19,6 +20,12 @@ namespace HypeDomino.Game
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
+        {
+            Build();
+            StartupPhases.App.Mark(nameof(LanguageBoot));
+        }
+
+        static void Build()
         {
             var saved = PlayerPrefs.GetString(ChoiceKey, string.Empty);
             Choice = LanguageChoice.Load(saved, DeviceLocales);

@@ -1,3 +1,4 @@
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.Game.Match;
 using HypeDomino.UI.Audio;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace HypeDomino.Game
             Player.MakeMain();
             driver.AddComponent<Driver>();
             if (!Application.isEditor) ApplyOutput();
+            StartupPhases.App.Mark(nameof(AudioBoot));
         }
 
         public static void FollowState(AppState state)

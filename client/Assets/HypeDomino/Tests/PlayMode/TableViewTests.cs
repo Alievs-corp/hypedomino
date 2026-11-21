@@ -15,7 +15,7 @@ namespace HypeDomino.Tests.PlayMode
         const string NeonCloth = "cosmetic/table/neon/layer/cloth";
         const string PlainStatic = "cosmetic/table/plain/static";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""top"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
+{""id"":""top"",""ordinal"":1,""nameKey"":""rarity.top.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
 
         static readonly TableLook Neon = new(NeonStatic, new[] { new TableLayer("sky", NeonSky, true), new TableLayer("cloth", NeonCloth, false) });
         static readonly TableLook Plain = new(PlainStatic, null);
