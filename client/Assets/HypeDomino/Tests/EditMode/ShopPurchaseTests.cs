@@ -13,7 +13,7 @@ namespace HypeDomino.Tests.EditMode
     public sealed class ShopPurchaseTests
     {
         const string Offer = "offer.crystals_tier2";
-        const string CheckoutJson = "{\"offer\":\"offer.crystals_tier2\",\"product_id\":\"crystals_tier2\",\"account_token\":\"5f0c7a3e-1111-5222-8333-444455556666\"}";
+        const string CheckoutJson = "{\"offer\":\"offer.crystals_tier2\",\"product_id\":\"crystals_tier2\",\"account_token\":\"account-token-test\"}";
         const string GrantedJson = "{\"platform\":\"google\",\"transaction_id\":\"GPA.1234\",\"offer\":\"offer.crystals_tier2\",\"state\":\"granted\",\"repeated\":false,\"crystals\":650,\"finished\":true}";
         const string PendingJson = "{\"platform\":\"google\",\"transaction_id\":\"GPA.1234\",\"offer\":\"offer.crystals_tier2\",\"state\":\"pending\",\"repeated\":false,\"crystals\":0,\"finished\":false}";
 
@@ -142,7 +142,7 @@ namespace HypeDomino.Tests.EditMode
 
             api.Requests[0].Done(new HttpReply(200, CheckoutJson));
             CollectionAssert.AreEqual(new[] { "crystals_tier2" }, billing.Products);
-            CollectionAssert.AreEqual(new[] { "5f0c7a3e-1111-5222-8333-444455556666" }, billing.AccountTokens);
+            CollectionAssert.AreEqual(new[] { "account-token-test" }, billing.AccountTokens);
             Assert.IsEmpty(proofs.Purposes);
 
             billing.Answer(new StoreBillingResult(StoreBillingOutcome.Purchased, new StoreReceipt(StorePlatform.Google, "purchase-token")));
@@ -257,7 +257,7 @@ namespace HypeDomino.Tests.EditMode
 
         [TestCase("{}")]
         [TestCase("{\"offer\":\"offer.crystals_tier2\",\"product_id\":\"crystals_tier2\"}")]
-        [TestCase("{\"offer\":\"offer.crystals_tier2\",\"account_token\":\"5f0c7a3e\"}")]
+        [TestCase("{\"offer\":\"offer.crystals_tier2\",\"account_token\":\"account-token-test\"}")]
         [TestCase("not json")]
         public void AnUnreadableCheckoutIsAFailure(string body)
         {
