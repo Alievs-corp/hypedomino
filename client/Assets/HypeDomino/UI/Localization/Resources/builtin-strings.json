@@ -1,5 +1,6 @@
 {
   "entries": [
+    { "key": "common.text.unavailable", "en": "Text unavailable", "az": "Mətn əlçatan deyil" },
     { "key": "currency.coin.name", "en": "Coin", "az": "Sikkə", "tr": "Coin", "ru": "Монета" },
     { "key": "currency.crystal.name", "en": "Crystal", "az": "Kristal", "tr": "Kristal", "ru": "Кристалл" },
     { "key": "duration.days", "en": "{days, plural, one {# day} other {# days}} {hours, plural, one {# hour} other {# hours}}", "az": "{days, plural, one {# gün} other {# gün}} {hours, plural, one {# saat} other {# saat}}" },
@@ -132,6 +133,22 @@
     { "key": "account.export.rate_limited", "en": "Too many tries. Wait a moment", "az": "Çox cəhd oldu. Bir az gözlə" },
     { "key": "settings.cache.cleared", "en": "Cache cleared. Art downloads again when it is needed", "az": "Keş təmizləndi. Lazım olan şəkillər yenidən yüklənəcək" },
     { "key": "settings.cache.cleared_at_next_start", "en": "The cache will be cleared the next time the game starts", "az": "Keş oyun növbəti dəfə açılanda təmizlənəcək" },
-    { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" }
+    { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" },
+    { "key": "tutorial.welcome", "en": "Welcome! Learn the rules in one short hand against a bot", "az": "Xoş gəldin! Bot ilə qısa bir əldə qaydaları öyrən" },
+    { "key": "tutorial.open", "en": "You hold 2-3, so you open the first hand. Place 2-3", "az": "2-3 səndədir, ona görə ilk əli sən açırsan. 2-3-ü qoy" },
+    { "key": "tutorial.ends", "en": "The chain has two open ends: 2 and 3. A tile goes on an end that shows the same number as one of its halves. In the first hand the opening tile never scores", "az": "Zəncirin iki açıq ucu var: 2 və 3. Daş yarılarından birindəki rəqəmlə eyni rəqəmi göstərən uca qoyulur. İlk əldə açılış daşı xal vermir" },
+    { "key": "tutorial.bot_double", "en": "The bot puts 3-3 on the 3. A double on an end counts both halves, so the ends are now 2 and 6", "az": "Bot 3-3-ü 3-ün yanına qoydu. Ucdakı cüt daş hər iki yarısı ilə sayılır, ona görə uclar indi 2 və 6-dır" },
+    { "key": "tutorial.score_ten", "en": "Place 2-4 on the 2. The open ends will add up to 4 + 6 = 10", "az": "2-4-ü 2-nin yanına qoy. Açıq uclar 4 + 6 = 10 edəcək" },
+    { "key": "tutorial.multiples", "en": "When the open ends add up to a multiple of 5, you score that total. You scored 10", "az": "Açıq ucların cəmi 5-in qatı olanda bu cəmi xal kimi qazanırsan. Sən 10 xal qazandın" },
+    { "key": "tutorial.bot_spinner", "en": "The bot puts 3-1 on the other side of 3-3. The ends add up to 4 + 1 = 5, so the bot scores 5", "az": "Bot 3-1-i 3-3-ün o biri tərəfinə qoydu. Uclar 4 + 1 = 5 edir, ona görə bot 5 xal qazandı" },
+    { "key": "tutorial.spinner", "en": "3-3 now has tiles on both sides, so it is the spinner. Tiles can also go on its top and bottom, and those ends count once a tile is there", "az": "3-3-ün indi hər iki tərəfində daş var, ona görə o spinnerdir. Onun üstünə və altına da daş qoymaq olar, bu uclar orada daş olandan sonra sayılır" },
+    { "key": "tutorial.spinner_play", "en": "Place 3-5 on top of the spinner. The ends will add up to 4 + 1 + 5 = 10", "az": "3-5-i spinnerin üstünə qoy. Uclar 4 + 1 + 5 = 10 edəcək" },
+    { "key": "tutorial.target", "en": "A hand ends when a player places their last tile. Points add up from hand to hand, and reaching 365 wins the match", "az": "Oyunçu son daşını qoyanda əl bitir. Xallar əldən-ələ toplanır, 365-ə çatan matçı qazanır" },
+    { "key": "tutorial.done", "en": "You know the basics. Good luck in your first match!", "az": "Əsasları öyrəndin. İlk matçında uğurlar!" },
+    { "key": "tutorial.skip", "en": "Skip", "az": "Keç" },
+    { "key": "tutorial.replay", "en": "Play again", "az": "Yenidən oyna" },
+    { "key": "tutorial.continue", "en": "Continue", "az": "Davam et" },
+    { "key": "tutorial.wrong_tile", "en": "Use the highlighted tile", "az": "İşıqlanan daşı seç" },
+    { "key": "tutorial.wrong_end", "en": "Place it on the highlighted end", "az": "Onu işıqlanan uca qoy" }
   ]
 }
