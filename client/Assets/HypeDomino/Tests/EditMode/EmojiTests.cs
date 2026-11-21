@@ -30,6 +30,18 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsNull(wheel.Slot(0));
         }
 
+        [TestCase(6, 3)]
+        [TestCase(2, 2)]
+        [TestCase(0, 0)]
+        [TestCase(-1, 0)]
+        public void TheWheelHoldsNoMoreThanTheSlotCount(int slotCount, int expected)
+        {
+            var wheel = new EmojiWheel(4);
+            wheel.Equip(Equipped, slotCount);
+            Assert.AreEqual(expected, wheel.Count);
+            for (var slot = expected; slot < 4; slot++) Assert.IsNull(wheel.Slot(slot));
+        }
+
         [Test]
         public void ASendClosesTheWheelAndCalmsItForTheEmojiDuration()
         {
