@@ -8,6 +8,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
+	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 )
 
 func TestARecordCarriesInventoryGrantsPurchasesAndMatches(t *testing.T) {
@@ -54,5 +55,56 @@ func TestARecordCarriesInventoryGrantsPurchasesAndMatches(t *testing.T) {
 	}
 	if _, err := playerrecord.Load(ctx, pool, "11111111-1111-1111-1111-111111111111", false); !errors.Is(err, playerrecord.ErrNotFound) {
 		t.Fatalf("unknown account: %v", err)
+	}
+}
+
+func TestARecordCarriesTheReportsAboutAndByThePlayerWithTheirDecision(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	at := time.Date(2026, 11, 2, 9, 0, 0, 0, time.UTC)
+	ids := make([]string, 3)
+	for i := range ids {
+		if err := pool.QueryRow(ctx, `insert into accounts (country) values ('AZ') returning id::text`).Scan(&ids[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	player, other, stranger := ids[0], ids[1], ids[2]
+	for _, report := range []struct {
+		reporter, target, state string
+		updated                 time.Time
+	}{
+		{other, player, "upheld", at.Add(2 * time.Hour)},
+		{player, other, "open", at.Add(time.Hour)},
+		{other, stranger, "open", at.Add(3 * time.Hour)},
+	} {
+		if _, err := pool.Exec(ctx, `insert into player_reports (reporter, target, reason, name_text, state, created_at, updated_at, decided_at)
+			values ($1, $2, 'offensive_nickname', 'Rude', $3::text, $4, $5::timestamptz, case when $3::text = 'open' then null else $5::timestamptz end)`,
+			report.reporter, report.target, report.state, at, report.updated); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	record, err := playerrecord.Load(ctx, pool, player, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(record.Reports) != 2 {
+		t.Fatalf("reports %+v", record.Reports)
+	}
+	about, by := record.Reports[0], record.Reports[1]
+	if about.Target != player || about.Reporter != other || about.State != "upheld" || about.DecidedAt == nil || !about.DecidedAt.Equal(at.Add(2*time.Hour)) {
+		t.Fatalf("report about the player %+v", about)
+	}
+	if by.Reporter != player || by.Target != other || by.State != "open" || by.DecidedAt != nil || by.Reason != "offensive_nickname" || by.NameText != "Rude" {
+		t.Fatalf("report by the player %+v", by)
+	}
+}
+
+func TestEveryRoleThatOpensARecordMaySeeTheReportsInIt(t *testing.T) {
+	for _, role := range []rbac.Role{rbac.SuperAdmin, rbac.Content, rbac.LiveOps, rbac.Support, rbac.Analyst} {
+		roles := []rbac.Role{role}
+		if rbac.Allows(roles, rbac.Players, rbac.View) && !rbac.Allows(roles, rbac.Queues, rbac.View) {
+			t.Fatalf("%s opens player records but may not view report queues", role)
+		}
 	}
 }

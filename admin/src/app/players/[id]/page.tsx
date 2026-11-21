@@ -7,7 +7,7 @@ import { currentAdmin } from "@/admin/session";
 import { serverTranslator } from "@/i18n/server";
 import { matchHref } from "@/matches/replay";
 import type { MessageKey, Translate } from "@/i18n/translate";
-import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, type PlayerRecord } from "@/players/record";
+import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, reportSide, type PlayerRecord } from "@/players/record";
 import { boardSeasons } from "@/players/leaderboard";
 import { ladders, type PenaltyView } from "@/players/penalties";
 import type { Season } from "@/ranked/seasons";
@@ -83,6 +83,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         { label: "player.penalty_weight", cell: (row) => row.weight },
         { label: "player.at", cell: (row) => when(row.at) },
         { label: "player.penalty_expires", cell: (row) => when(row.expires_at) },
+      ]} />
+      <Rows title="player.reports" t={t} rows={record.reports.map((report) => ({ ...report, ...reportSide(account.id, report) }))} columns={[
+        { label: "player.at", cell: (row) => when(row.updated_at) },
+        { label: "player.report_side", cell: (row) => t(row.about ? "player.report_about" : "player.report_by") },
+        { label: "player.counterpart", cell: (row) => <Link href={`/players/${encodeURIComponent(row.counterpart)}`} prefetch={false} className="text-primary underline">{row.counterpart}</Link> },
+        { label: "reports.reason_code", cell: (row) => <span className="font-mono">{row.reason}</span> },
+        { label: "reports.name_text", cell: (row) => row.name_text },
+        { label: "reports.match", cell: (row) => (row.match_id ? <Link href={matchHref(row.match_id)} prefetch={false} className="text-primary underline">{row.match_id}</Link> : "") },
+        { label: "players.state", cell: (row) => row.state },
+        { label: "player.decided_at", cell: (row) => when(row.decided_at) },
       ]} />
       <Rows title="player.missions" t={t} rows={record.missions} columns={[
         { label: "player.assigned_at", cell: (row) => when(row.assigned_at) },
