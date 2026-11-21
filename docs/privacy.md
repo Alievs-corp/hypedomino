@@ -274,6 +274,7 @@ Decision: **A**, accounts 13 and older only (owner, #187, 2026-10-26). `MinAccou
 - D-23: the `consents` section lists every `consent_records` row (purpose, choice, policy and app version, source, time). The age gate result is not stored yet, so it is not in the document.
 - D-24: the `analytics` section lists every stored event of the account's analytics ids (analytics id, name, label, value, device time, receive time).
 - Not yet in the document, because the data is not stored yet: the history of past admin bans and mutes, which today lives only in the admin audit log (D-27).
+- Client: `Game/Privacy/DataExport` sends the request from Settings, Account and hands the signed URL and its expiry to the screen, which opens the link in the browser; the link is held in memory only, never stored on the device (`client/README.md` Settings screen, #157). The Settings, Account screen itself is not built yet.
 - A support answer to an access request (8.1) gives the same anti-cheat content and states, with the reason, what was withheld and that the player may complain to a supervisory authority (GDPR Art. 12(4)).
 
 ## 9. Regulation mapping
