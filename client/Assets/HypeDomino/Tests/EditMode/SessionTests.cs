@@ -50,6 +50,7 @@ namespace HypeDomino.Tests.EditMode
         {
             transport = new FakeTransport();
             session = new Session();
+            hookCollections = 0;
         }
 
         static byte[] Golden(string name) =>
@@ -111,6 +112,39 @@ namespace HypeDomino.Tests.EditMode
             CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[0]).ClientHello.HookSignals);
             CollectionAssert.AreEqual(expected, SentEnvelope(transport.Sent[1]).ClientHello.HookSignals);
             CollectionAssert.IsEmpty(SentEnvelope(transport.Sent[0]).ClientHello.DeviceRiskSignals);
+        }
+
+        int hookCollections;
+
+        void CollectDebuggerAfterFirstHello(List<string> signals)
+        {
+            if (hookCollections++ > 0) signals.Add(HypeDomino.Core.DeviceRisk.HookSignals.Debugger);
+        }
+
+        [Test]
+        public void EveryHelloCollectsTheHookSignalsAgain()
+        {
+            session.CollectHookSignals = CollectDebuggerAfterFirstHello;
+            var hello = new ClientHello();
+
+            session.Hello(transport, hello);
+            session.Hello(transport, hello);
+
+            Assert.AreEqual(2, hookCollections);
+            CollectionAssert.IsEmpty(SentEnvelope(transport.Sent[0]).ClientHello.HookSignals);
+            CollectionAssert.AreEqual(new[] { "debugger" }, SentEnvelope(transport.Sent[1]).ClientHello.HookSignals);
+        }
+
+        [Test]
+        public void ACollectedHelloDropsHookSignalsThatAreGone()
+        {
+            session.HookSignals.Add(HypeDomino.Core.DeviceRisk.HookSignals.Instrumentation);
+            session.CollectHookSignals = CollectDebuggerAfterFirstHello;
+
+            session.Hello(transport, new ClientHello());
+
+            CollectionAssert.IsEmpty(session.HookSignals);
+            CollectionAssert.IsEmpty(SentEnvelope(transport.Sent[0]).ClientHello.HookSignals);
         }
 
         [Test]
