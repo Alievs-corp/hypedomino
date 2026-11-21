@@ -25,6 +25,10 @@ namespace HypeDomino.Game.Shop
         Unavailable,
         Unknown,
         Unsupported,
+        StoreOnly,
+        InGameOnly,
+        PurchaseBlocked,
+        PurchasesDisabled,
         RateLimited,
         Offline,
         SignInRequired,
@@ -41,6 +45,10 @@ namespace HypeDomino.Game.Shop
         public const string Unavailable = "shop.buy.unavailable";
         public const string Unknown = "shop.buy.unknown";
         public const string Unsupported = "shop.buy.unsupported";
+        public const string StoreOnly = "shop.buy.store_only";
+        public const string InGameOnly = "shop.buy.in_game_only";
+        public const string PurchaseBlocked = "shop.buy.purchase_blocked";
+        public const string PurchasesDisabled = "shop.buy.purchases_disabled";
         public const string RateLimited = "shop.buy.rate_limited";
         public const string Offline = "shop.buy.offline";
         public const string Failed = "notice.generic";
@@ -55,6 +63,10 @@ namespace HypeDomino.Game.Shop
             ShopBuyOutcome.Unavailable => Unavailable,
             ShopBuyOutcome.Unknown => Unknown,
             ShopBuyOutcome.Unsupported => Unsupported,
+            ShopBuyOutcome.StoreOnly => StoreOnly,
+            ShopBuyOutcome.InGameOnly => InGameOnly,
+            ShopBuyOutcome.PurchaseBlocked => PurchaseBlocked,
+            ShopBuyOutcome.PurchasesDisabled => PurchasesDisabled,
             ShopBuyOutcome.RateLimited => RateLimited,
             ShopBuyOutcome.Offline => Offline,
             ShopBuyOutcome.SignInRequired => null,
@@ -82,7 +94,7 @@ namespace HypeDomino.Game.Shop
             ApiOutcome.Offline => new(ShopBuyOutcome.Offline),
             ApiOutcome.SignInRequired => new(ShopBuyOutcome.SignInRequired),
             ApiOutcome.RateLimited => new(ShopBuyOutcome.RateLimited),
-            ApiOutcome.Rejected => new(Refusal(reply.Error)),
+            ApiOutcome.Rejected or ApiOutcome.Unavailable => new(Refusal(reply.Error)),
             _ => new(ShopBuyOutcome.Failed),
         };
 
@@ -118,6 +130,10 @@ namespace HypeDomino.Game.Shop
             "offer.unavailable" => ShopBuyOutcome.Unavailable,
             "offer.unknown" => ShopBuyOutcome.Unknown,
             "offer.unsupported" => ShopBuyOutcome.Unsupported,
+            "offer.store_only" => ShopBuyOutcome.StoreOnly,
+            "offer.in_game_only" => ShopBuyOutcome.InGameOnly,
+            "purchase.blocked" => ShopBuyOutcome.PurchaseBlocked,
+            "purchases.disabled" => ShopBuyOutcome.PurchasesDisabled,
             _ => ShopBuyOutcome.Failed,
         };
     }

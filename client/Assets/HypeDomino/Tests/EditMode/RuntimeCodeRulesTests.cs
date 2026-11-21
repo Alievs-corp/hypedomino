@@ -156,7 +156,7 @@ namespace HypeDomino.Tests.EditMode
             return constant.Groups[1].Value;
         }
 
-        static IEnumerable<string> RuntimeSources()
+        internal static IEnumerable<string> RuntimeSources()
         {
             var root = Path.Combine(Application.dataPath, "HypeDomino");
             foreach (var folder in Directory.GetDirectories(root))
