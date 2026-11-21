@@ -24,6 +24,15 @@ First-party product analytics (#181). Privacy rules are `docs/privacy.md` sectio
 
 The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any other name is ignored.
 
+Where the client tracks them (`Game/Analytics/AppAnalytics`, `Game/Profile/NicknameSaver`). An event tracked while `analytics` is off is dropped (section 1), so every call site runs only through `AnalyticsQueue.Track`:
+
+- `app_open`: once per app run, on the first frame the queue holds the `analytics` consent. Consent is known only after the account's choices are read, so the event cannot fire at the first frame of the run. A withdrawal and a new grant in the same run do not track it again; the new analytics id gets its first `app_open` on the next run.
+- `sign_in`: when a provider sign-in (`AuthSession.SignIn`) ends signed in, labeled `google` or `apple` (`AuthSession.ProviderName`). Resuming a stored session is not a sign-in. A sign-in on a fresh install happens before the account's consent is read, so it is dropped unless the queue already holds consent from earlier in the run.
+- `nickname_set`: when the server accepts a nickname save (`NicknameSaver`, `PUT /profile/nickname`). The nickname itself is never tracked.
+- `queue_join`: when a join intent is sent (`MatchQueue.TryJoin` returns true). The label is the queue and the mode as `docs/matchmaking.md` names them: `ranked_1v1`, `ranked_2v2`, `casual_1v1` or `casual_2v2` (draft form, owner to confirm). A join that is not sent is not tracked.
+
+Not tracked yet: `screen_view` (no list of screen ids is decided) and `purchase_start` and `purchase_cancel` (the client purchase flow is not built yet; their label is the store product id).
+
 ## 3. Server events
 
 Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. All five are built.
