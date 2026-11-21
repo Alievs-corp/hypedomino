@@ -1,7 +1,9 @@
 using System;
 using HypeDomino.Core.Analytics;
 using HypeDomino.Game.Analytics;
+using HypeDomino.Game.Lobby;
 using HypeDomino.Net.Api;
+using HypeDomino.Net.Auth;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -10,6 +12,7 @@ namespace HypeDomino.Game
     public static class AnalyticsBoot
     {
         static AnalyticsFlushTimer timer;
+        static AppAnalytics app;
 
         public static AnalyticsQueue Queue { get; private set; }
 
@@ -18,16 +21,23 @@ namespace HypeDomino.Game
             var settings = AnalyticsSettings.Draft;
             Queue = new AnalyticsQueue(new ApiAnalyticsSender(api), DeviceTimeMs, settings.BatchSize, settings.QueueLimit);
             timer = new AnalyticsFlushTimer(Queue, settings.FlushSeconds);
+            app = new AppAnalytics(Queue);
             var driver = new GameObject(nameof(AnalyticsBoot)) { hideFlags = HideFlags.HideInHierarchy };
             Object.DontDestroyOnLoad(driver);
             driver.AddComponent<Driver>();
         }
 
+        public static void Follow(AuthSession auth, MatchQueue matches) => app.Follow(auth, matches);
+
         static long DeviceTimeMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         sealed class Driver : MonoBehaviour
         {
-            void Update() => timer.Tick(Time.realtimeSinceStartupAsDouble);
+            void Update()
+            {
+                app.Tick();
+                timer.Tick(Time.realtimeSinceStartupAsDouble);
+            }
 
             void OnApplicationPause(bool pause)
             {

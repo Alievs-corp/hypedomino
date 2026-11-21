@@ -24,6 +24,15 @@ First-party product analytics (#181). Privacy rules are `docs/privacy.md` sectio
 
 The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any other name is ignored.
 
+Where the client tracks them (`Game/Analytics/AppAnalytics`, `Game/Profile/NicknameSaver`). An event tracked while `analytics` is off is dropped (section 1), so every call site runs only through `AnalyticsQueue.Track`:
+
+- `app_open`: once per app run, on the first frame the queue holds the `analytics` consent. Consent is known only after the account's choices are read, so the event cannot fire at the first frame of the run. A withdrawal and a new grant in the same run do not track it again; the new analytics id gets its first `app_open` on the next run.
+- `sign_in`: when a provider sign-in (`AuthSession.SignIn`) ends signed in, labeled `google` or `apple` (`AuthSession.ProviderName`). Resuming a stored session is not a sign-in. A sign-in on a fresh install happens before the account's consent is read, so it is dropped unless the queue already holds consent from earlier in the run.
+- `nickname_set`: when the server accepts a nickname save (`NicknameSaver`, `PUT /profile/nickname`). The nickname itself is never tracked.
+- `queue_join`: when a join intent is sent (`MatchQueue.TryJoin` returns true). The label is the queue and the mode as `docs/matchmaking.md` names them: `ranked_1v1`, `ranked_2v2`, `casual_1v1` or `casual_2v2` (draft form, owner to confirm). A join that is not sent is not tracked.
+
+Not tracked yet: `screen_view` (no list of screen ids is decided) and `purchase_start` and `purchase_cancel` (the client purchase flow is not built yet; their label is the store product id).
+
 ## 3. Server events
 
 Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. All five are built.
@@ -68,6 +77,8 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 - Erasure: `analytics_ids` is an erase-rows table in account deletion and its events go with it. Export: the `analytics` section lists the account's events with their analytics id.
 - The global per-IP and per-account rate limits (`HD_RATE_*`) cover the route.
 - Retention: every run of the hourly deletion job (`server/cmd/account-deletion run`, `docs/backup-restore.md` 3.7) deletes the `analytics_events` rows whose server receive time is older than `HD_ANALYTICS_RAW_RETENTION`, default 9480 h, which is `AnalyticsRawRetentionDays` (395) of `docs/privacy.md` section 4. The device time is never used for it. `analytics_ids` rows stay: they are the account's link for deletion and export and go with the account. The purge runs even when the deletion log is unreachable, and a failure of either fails the job. The same run deletes the server events of section 3 by their time and the `analytics_sources` rows older than the cutoff.
+
+Retention cohorts (#147, `GET /admin/analytics/kpis`, `docs/admin.md` 9.1) are computed from these rows when asked and never stored: an analytics id joins the cohort of the economy day of its first `app_open` by receive time, and counts as retained on D1 or D7 with an `app_open` received on the day after or seven days after. A cohort older than the raw retention only shows the rows still kept.
 
 Not built yet: aggregates without ids (none exist yet, so nothing is kept past the purge).
 

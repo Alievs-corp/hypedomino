@@ -32,6 +32,8 @@ namespace HypeDomino.Game.Lobby
 
         public event Action Changed;
 
+        public event Action<Mode, QueueKind> JoinSent;
+
         public void Follow(Session session, AppFlow flow)
         {
             session.HelloReceived += OnHello;
@@ -48,6 +50,7 @@ namespace HypeDomino.Game.Lobby
             join.Integrity = integrity;
             session.Send(Envelope.PayloadOneofCase.JoinQueueIntent, join);
             repliesDue++;
+            JoinSent?.Invoke(mode, kind);
             return true;
         }
 
