@@ -89,7 +89,9 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(409, "offer.unavailable", ShopBuyOutcome.Unavailable, "shop.buy.unavailable")]
         [TestCase(404, "offer.unknown", ShopBuyOutcome.Unknown, "shop.buy.unknown")]
         [TestCase(409, "offer.unsupported", ShopBuyOutcome.Unsupported, "shop.buy.unsupported")]
-        [TestCase(409, "offer.store_only", ShopBuyOutcome.Failed, "notice.generic")]
+        [TestCase(409, "offer.store_only", ShopBuyOutcome.StoreOnly, "shop.buy.store_only")]
+        [TestCase(409, "offer.in_game_only", ShopBuyOutcome.InGameOnly, "shop.buy.in_game_only")]
+        [TestCase(403, "purchase.blocked", ShopBuyOutcome.PurchaseBlocked, "shop.buy.purchase_blocked")]
         [TestCase(409, "item.source_not_listed", ShopBuyOutcome.Failed, "notice.generic")]
         [TestCase(400, "request.invalid", ShopBuyOutcome.Failed, "notice.generic")]
         [TestCase(400, "malformed", ShopBuyOutcome.Failed, "notice.generic")]
@@ -104,6 +106,7 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [TestCase(ApiOutcome.RateLimited, 429, "rate_limited", ShopBuyOutcome.RateLimited, "shop.buy.rate_limited")]
+        [TestCase(ApiOutcome.Unavailable, 503, "purchases.disabled", ShopBuyOutcome.PurchasesDisabled, "shop.buy.purchases_disabled")]
         [TestCase(ApiOutcome.Unavailable, 503, "shop.unavailable", ShopBuyOutcome.Failed, "notice.generic")]
         [TestCase(ApiOutcome.Unavailable, 500, "internal", ShopBuyOutcome.Failed, "notice.generic")]
         [TestCase(ApiOutcome.Offline, HttpReply.NoResponse, null, ShopBuyOutcome.Offline, "shop.buy.offline")]
@@ -146,7 +149,7 @@ namespace HypeDomino.Tests.EditMode
             {
                 AddShown(keys, ShopSectionKeys.Title(section));
             }
-            Assert.AreEqual(20, keys.Count);
+            Assert.AreEqual(24, keys.Count);
             var strings = BuiltinStrings.Load();
             foreach (var key in keys)
             {
