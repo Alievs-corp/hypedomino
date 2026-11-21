@@ -24,6 +24,15 @@ First-party product analytics (#181). Privacy rules are `docs/privacy.md` sectio
 
 The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any other name is ignored.
 
+Where the client tracks them (`Game/Analytics/AppAnalytics`, `Game/Profile/NicknameSaver`). An event tracked while `analytics` is off is dropped (section 1), so every call site runs only through `AnalyticsQueue.Track`:
+
+- `app_open`: once per app run, on the first frame the queue holds the `analytics` consent. Consent is known only after the account's choices are read, so the event cannot fire at the first frame of the run. A withdrawal and a new grant in the same run do not track it again; the new analytics id gets its first `app_open` on the next run.
+- `sign_in`: when a provider sign-in (`AuthSession.SignIn`) ends signed in, labeled `google` or `apple` (`AuthSession.ProviderName`). Resuming a stored session is not a sign-in. A sign-in on a fresh install happens before the account's consent is read, so it is dropped unless the queue already holds consent from earlier in the run.
+- `nickname_set`: when the server accepts a nickname save (`NicknameSaver`, `PUT /profile/nickname`). The nickname itself is never tracked.
+- `queue_join`: when a join intent is sent (`MatchQueue.TryJoin` returns true). The label is the queue and the mode as `docs/matchmaking.md` names them: `ranked_1v1`, `ranked_2v2`, `casual_1v1` or `casual_2v2` (draft form, owner to confirm). A join that is not sent is not tracked.
+
+Not tracked yet: `screen_view` (no list of screen ids is decided) and `purchase_start` and `purchase_cancel` (the client purchase flow is not built yet; their label is the store product id).
+
 ## 3. Server events
 
 Match end, purchase, reward, mission and pass events are written by the server from its own records (`docs/privacy.md` 6.4). For a player without `analytics` they carry no analytics id and only feed aggregates. All five are built.
@@ -50,7 +59,11 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 
 ## 4. Sending
 
-`Core/Analytics/AnalyticsQueue` holds tracked events in memory while the device is offline. `Flush` hands at most `AnalyticsBatchSize` events to an `IAnalyticsSender`; a failed send keeps them for the next flush. When the queue holds `AnalyticsQueueLimit` events, the oldest is dropped. The caller flushes every `AnalyticsFlushSeconds` and when the app pauses.
+`Core/Analytics/AnalyticsQueue` holds tracked events in memory while the device is offline; they are never written to disk. `Flush` hands at most `AnalyticsBatchSize` events to an `IAnalyticsSender`, one send at a time. When the queue holds `AnalyticsQueueLimit` events, the oldest is dropped.
+
+`Game/Analytics/ApiAnalyticsSender` posts the batch to `POST /analytics/events` (section 5) through the signed API client, with the access token. It reports the batch as settled, so it leaves the queue, when the server answers 200, and when it refuses the batch for good: 400 (`analytics.malformed`), 403 `analytics.consent_required` and 409 `analytics.id_taken` (section 5). Every other answer keeps the batch for the next flush: no response (offline), a lost session, 429, 5xx and any other refusal. An expired access token is refreshed once by the API client before the answer counts.
+
+`Core/Analytics/AnalyticsFlushTimer` flushes every `AnalyticsFlushSeconds` of real time and at once when the app pauses. `Game/AnalyticsBoot` builds the queue, the sender and the timer when the network layer starts and drives the timer from a hidden object (`Update` and `OnApplicationPause`). The device time of an event is the UTC Unix time in milliseconds. A full batch does not trigger a send of its own: the docs define only the timer and the pause, and a size trigger would repeat a failing send while offline.
 
 ## 5. Server ingest
 
@@ -67,7 +80,7 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 
 Retention cohorts (#147, `GET /admin/analytics/kpis`, `docs/admin.md` 9.1) are computed from these rows when asked and never stored: an analytics id joins the cohort of the economy day of its first `app_open` by receive time, and counts as retained on D1 or D7 with an `app_open` received on the day after or seven days after. A cohort older than the raw retention only shows the rows still kept.
 
-Not built yet: stored aggregates without ids (none exist yet, so nothing is kept past the purge), and the client sender.
+Not built yet: aggregates without ids (none exist yet, so nothing is kept past the purge).
 
 ## 6. Config
 
@@ -77,4 +90,12 @@ Not built yet: stored aggregates without ids (none exist yet, so nothing is kept
 | `AnalyticsQueueLimit` | Most events held while offline |
 | `AnalyticsFlushSeconds` | Time between flushes |
 
-The values are owner decisions not yet made; they come from admin config.
+The values are owner decisions not yet made; they are meant to come from admin config. Until then the client uses `AnalyticsSettings.Draft`, a draft that the owner replaces:
+
+| Field | Draft |
+|---|---|
+| `AnalyticsBatchSize` | 50 |
+| `AnalyticsQueueLimit` | 500 |
+| `AnalyticsFlushSeconds` | 60 |
+
+`AnalyticsBatchSize` is at most `AnalyticsSettings.MaxBatchSize` (400): 400 of the longest event the server accepts (a 64-character label) fit the 64 KiB body limit of section 5, so no batch is refused as too large. `AnalyticsQueueLimit` is at least `AnalyticsBatchSize` and `AnalyticsFlushSeconds` is positive.

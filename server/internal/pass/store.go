@@ -74,6 +74,22 @@ func (s *Store) Enter(ctx context.Context, account string, now time.Time) (Seaso
 	if err != nil {
 		return Season{}, Progress{}, 0, err
 	}
+	return s.enter(ctx, current, version, account, now)
+}
+
+func (s *Store) View(ctx context.Context, account string, now time.Time) (View, error) {
+	current, version, err := s.current()
+	if err != nil {
+		return View{}, err
+	}
+	season, progress, _, err := s.enter(ctx, current, version, account, now)
+	if err != nil {
+		return View{}, err
+	}
+	return NewView(current, season, progress, version), nil
+}
+
+func (s *Store) enter(ctx context.Context, current *Snapshot, version int64, account string, now time.Time) (Season, Progress, int64, error) {
 	season, ok := current.Active(now)
 	if !ok {
 		return Season{}, Progress{}, version, ErrNoSeason
