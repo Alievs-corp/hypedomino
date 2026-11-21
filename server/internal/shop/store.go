@@ -76,6 +76,7 @@ type OfferView struct {
 	ID                     string           `json:"id"`
 	Kind                   string           `json:"kind"`
 	NameKey                string           `json:"name_key"`
+	Variant                string           `json:"variant,omitempty"`
 	PriceCoins             int64            `json:"price_coins,omitempty"`
 	PriceCrystals          int64            `json:"price_crystals,omitempty"`
 	ProductID              string           `json:"product_id,omitempty"`
@@ -243,6 +244,9 @@ func (s *Store) View(ctx context.Context, account string, now time.Time) (View, 
 			ov, err := s.offerView(offer, catalog.Chests, st, now)
 			if err != nil {
 				return View{}, err
+			}
+			if variant, ok := offer.VariantFor(account); ok {
+				ov.Variant = variant.ID
 			}
 			sv.Offers = append(sv.Offers, ov)
 		}
