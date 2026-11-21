@@ -52,7 +52,7 @@ namespace HypeDomino.Game
             Connection = new Connection(() => new WebSocketTransport(), NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
-            DeviceRiskProbe.CollectHooks(session.HookSignals);
+            session.CollectHookSignals = DeviceRiskProbe.CollectHooks;
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);
             Queue = new MatchQueue();
             Queue.Follow(session, AppBoot.Flow);
