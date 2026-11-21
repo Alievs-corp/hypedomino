@@ -74,7 +74,7 @@ A square standing on one corner. Its pips use the layout of a domino half (`docs
 
 ### 2.2.1 Client
 
-- `RarityTable` holds the tiers by id. Ids are data, not an enum, because the table is admin config and may grow to a sixth tier. An invalid tier is left out, so it draws no mark.
+- `RarityTable` holds the tiers by id. Ids are data, not an enum, because the table is admin config and may grow to a sixth tier. An invalid tier is left out, so it draws no mark. A tier is invalid when it breaks a per-tier rule of section 7: the id pattern, an `ordinal` of at least 1, `nameKey` `rarity.<id>.name`, 1 to 6 `pips`, and `fill`, `on` and `text` as `#RRGGBB`. Tiers that share an id, an `ordinal` or a pip count are all left out, whatever their order, so no two drawn tiers compare equal or show the same pip pattern. The client does not check the table-wide rules (ordinals without gaps, glow order, contrast); admin rejects such a publish.
 - `UI/Rarity/rarity-defaults.json` is the built-in table. `npm run tokens:gen` generates it from `docs/design-tokens.json`, and a test fails if it is stale. The active table from config (section 7) has the same shape; delivery waits for the client config (#145).
 - `RarityDiamond` draws the diamond and picks the pip overlay by tier, and hides itself when its box is under `diamondMinSize`, also after a resize.
 - `RarityLabel` draws the tier label: the tier's `nameKey` through `GameStrings` in the tier's `text` shade, on a `TMP_Text` that the screen's prefab gives the `caption` style with `TokenText`. It formats the name again on `GameStrings.Changed`, so a language change or an applied bundle reaches an open screen, and draws nothing for a tier missing from the table.

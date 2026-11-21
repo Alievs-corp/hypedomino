@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Motion;
 using UnityEngine;
 using UnityEngine.Android;
@@ -18,6 +19,12 @@ namespace HypeDomino.Game
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
+        {
+            Build();
+            StartupPhases.App.Mark(nameof(MotionBoot));
+        }
+
+        static void Build()
         {
             savedChoice = LoadChoice();
             Motion = new MotionPreference(savedChoice, SystemReduce());
