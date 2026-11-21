@@ -52,7 +52,7 @@ Access roles are the admin roles of `docs/admin.md` section 2 (super admin, cont
 
 | ID | Data item | Source | Purpose | Basis | Storage | Retention | Access | Processor |
 |---|---|---|---|---|---|---|---|---|
-| D-1 | Account id (random, internal) | Server | Key for every other row | CON | PostgreSQL | Account lifetime; becomes a tombstone id at deletion | support, super admin | Hosting |
+| D-1 | Account id (random, internal) | Server | Key for every other row | CON | PostgreSQL | Account lifetime; becomes a tombstone id at deletion | support, super admin; public as the key of leaderboard rows and profiles (section 5) | Hosting |
 | D-2 | Auth identity: provider and subject id | Google or Apple ID token (#57) | Sign-in, account lookup | CON | PostgreSQL | Account lifetime | super admin | Hosting; Google, Apple |
 | D-3 | Email address (Apple may give a relay address) | ID token (#57) | Support lookup (#144), account notices | CON | PostgreSQL | Account lifetime | support, super admin | Hosting |
 | D-4 | Session data: refresh token hash, device binding, resume token | Server (#58, #45) | Keep the player signed in, reconnect | CON | PostgreSQL, Redis | Access token `HD_ACCESS_TTL` (15 min), refresh token `HD_REFRESH_TTL` (30 days from last use); revoked and expired `auth_sessions` rows go with the account (#63); Redis keys carry TTLs | none | Hosting |
@@ -66,7 +66,7 @@ Access roles are the admin roles of `docs/admin.md` section 2 (super admin, cont
 | D-12 | Match records: participants, seats, results, scores, events, config version | Server (#50) | Play, results, ranking, rewards | CON | PostgreSQL | Account lifetime; anonymized at deletion | support | Hosting |
 | D-13 | Replay records: seed, table draw and moves (#41, #98) | Server | Disputes, collusion review (V-9) | LI | PostgreSQL or object storage | `ReplayRetentionDays`; longer while linked to an open case | support | Hosting |
 | D-14 | In-match emoji and quick messages (catalog ids only) | Player (#151, #152) | Relay to the room | CON | Memory only | Not stored | none | Hosting |
-| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots, leaderboard emblems and profile showcase | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank and position public, MMR never shown | Hosting |
+| D-15 | Rank state: MMR, rank, LP, season results, leaderboard snapshots, leaderboard emblems and profile showcase | Server (`docs/ranking.md`) | Ranked play, leaderboards | CON | PostgreSQL, Redis read models | Season snapshots kept; anonymized at deletion | support; rank, LP, ranked wins and position public, MMR never shown | Hosting |
 | D-16 | Economy: ledger, inventory, pass progress, missions, medals, daily rewards, promo redemptions | Server (#101, #61, #123, #127, #129, #131, #108) | Grant and keep what the player earned or bought | CON | PostgreSQL | Account lifetime | support | Hosting |
 | D-17 | Purchases: store, product id, transaction id, purchase token or receipt, purchase time, bound account token, refund and chargeback notices | Store APIs (#106, #107, #204) | Grant purchases, restore, refunds, fraud | CON, LEG, LI | PostgreSQL | `PurchaseRecordRetentionYears` after purchase | support, super admin | Hosting; Google, Apple |
 | D-18 | Offenses and penalties | Server (`docs/penalties.md`) | Fair play in ranked and casual matches | CON | PostgreSQL | `OffenseWindowDays` or `CasualOffenseWindowDays`, then `ExpiredOffenseRetentionDays` | support | Hosting |
@@ -117,10 +117,12 @@ The clock is server UTC (ADR 0007). Expiry runs as an idempotent daily job; "del
 
 | Visible to | Data |
 |---|---|
-| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank and leaderboard position, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4), earned medals chosen for the medal showcase (`docs/pass-missions-medals.md` 5.4) |
+| Everyone (profile, match, leaderboards) | Nickname, equipped cosmetics, level, statistics allowed by #59, rank, LP and leaderboard position, ranked wins of the season and mode on a leaderboard row, membership of a country board (which reveals D-8), earned leaderboard emblems chosen for the profile showcase (`docs/ranking.md` 8.3, 8.4), earned medals chosen for the medal showcase (`docs/pass-missions-medals.md` 5.4) |
 | Room members | Custom room name, seats, in-match emoji and quick messages |
 | Friends | Online presence (#153) |
 | Nobody | Email, auth identity, MMR, install id, IP, purchases, offenses, anti-cheat data, reports |
+
+A leaderboard row (`docs/ranking.md` 8.2) carries position, nickname, rank, apex tier, LP and ranked wins, and the random account id (D-1) that opens the player's profile; never MMR. Other players' LP is public on every board (owner decision 2026-11-21 on #852, https://github.com/Alievs-corp/hypedomino/issues/852#issuecomment-7065712190).
 
 On the client, `UI/Profile/PlayerProfile` (#75) reads `GET /profile/me` and `GET /profile/{account}` and shows only what the server sent: the own profile shows level, XP and games, wins, losses, win rate, streak and best streak, and games, wins and losses per mode; another player's profile shows level, games, win rate and best streak, the rank of each placed mode, and the medal and emblem showcases in the server's order. Every value, the win rate included, is the server's; the client works none of them out.
 

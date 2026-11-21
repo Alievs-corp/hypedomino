@@ -1,4 +1,5 @@
 using System.IO;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Cosmetics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -22,6 +23,12 @@ namespace HypeDomino.Content
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
+        {
+            Build();
+            StartupPhases.App.Mark(nameof(ContentBoot));
+        }
+
+        static void Build()
         {
             Cosmetics = new ActiveCosmeticManifest(CosmeticManifest.LoadBuiltin());
             if (Application.isEditor) return;

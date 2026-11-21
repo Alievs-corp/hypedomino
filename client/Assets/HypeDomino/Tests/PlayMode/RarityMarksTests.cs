@@ -13,9 +13,9 @@ namespace HypeDomino.Tests.PlayMode
         const float MinimumSize = 72f;
         const float Period = 2f;
         const string Table = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""plain"",""fill"":""#808080"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0,""glowScale"":1,""flow"":false},
-{""id"":""bright"",""fill"":""#FF0000"",""on"":""#00FF00"",""text"":""#FFFFFF"",""pips"":2,""glowAlpha"":0.5,""glowScale"":1.25,""flow"":false},
-{""id"":""top"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":3,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
+{""id"":""plain"",""ordinal"":1,""nameKey"":""rarity.plain.name"",""fill"":""#808080"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0,""glowScale"":1,""flow"":false},
+{""id"":""bright"",""ordinal"":2,""nameKey"":""rarity.bright.name"",""fill"":""#FF0000"",""on"":""#00FF00"",""text"":""#FFFFFF"",""pips"":2,""glowAlpha"":0.5,""glowScale"":1.25,""flow"":false},
+{""id"":""top"",""ordinal"":3,""nameKey"":""rarity.top.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":3,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
 
         GameObject root;
         RarityTable table;
