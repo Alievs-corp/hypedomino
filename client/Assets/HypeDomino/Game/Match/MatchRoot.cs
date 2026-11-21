@@ -28,6 +28,13 @@ namespace HypeDomino.Game.Match
             Emoji.Bind(connection.Session);
         }
 
+        public void Show(MatchSnapshot view)
+        {
+            Loading.Show(view);
+            Screen.Show(view);
+            Emoji.Show(view);
+        }
+
         public void Unbind()
         {
             Loading.Unbind();
