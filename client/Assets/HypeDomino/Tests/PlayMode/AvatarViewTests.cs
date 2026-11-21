@@ -20,7 +20,7 @@ namespace HypeDomino.Tests.PlayMode
         const string FrameStatic = "cosmetic/frame/a/static";
         const string FrameAnim = "cosmetic/frame/a/anim";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""top"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
+{""id"":""top"",""ordinal"":1,""nameKey"":""rarity.top.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.75,""glowScale"":1.5,""flow"":true}]}";
 
         GameObject root;
         FakeArtSource<Sprite> stills;

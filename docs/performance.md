@@ -107,6 +107,8 @@ adb shell am start -W -n <package>/<activity>
 
 `am start -W` prints `TotalTime` (process start to first frame). The gate is time to interactive lobby: the client's startup marker in `adb logcat -s Unity` minus the launch time. The marker is the one `Startup state=<state> ms=<n>` line `Game/StartupMarker` logs when the app first leaves its boot state (`client/README.md`, App flow). Only runs whose line says `state=Lobby` count; a run that shows sign-in, an update, maintenance or a running match first is run again. `ms` is Unity's time since startup, which starts after the process does, so it is a lower bound and the gate keeps using the logcat timestamps. iOS: Xcode Instruments "App Launch" template, same 10-run rule.
 
+To find where a slow start spends its time, read the `Startup phases` line logged right after the marker (`client/README.md`, App flow): the time since startup at which the scripts loaded, each boot before the first scene finished, the first scene loaded and the first screen showed. It is a profiling aid, not a gate; the gate stays the marker above.
+
 Leak check, reported but not gated until #191 sets a number: Memory Profiler snapshots after replay 1 and replay 3; managed and native totals must not grow.
 
 ## 4. Low tier target

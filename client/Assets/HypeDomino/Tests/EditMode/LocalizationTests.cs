@@ -217,6 +217,33 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(expected, text);
         }
 
+        [TestCase("tr", 2, 1, 5, 9, "49:05:09")]
+        [TestCase("tr", 0, 0, 4, 7, "0:04:07")]
+        [TestCase("ru", 0, 3, 15, 0, "3:15:00")]
+        [TestCase("ru", 0, 0, 0, 1, "0:00:01")]
+        public void TheShippedBundleWritesADurationInTurkishAndRussianAsAClockUntilTranslated(string language, int days, int hours, int minutes, int seconds, string expected)
+        {
+            var strings = BuiltinStrings.Load();
+            var args = new Dictionary<string, object> { ["left"] = new TimeSpan(days, hours, minutes, seconds) };
+            Assert.IsTrue(MessageFormat.TryFormat("{left}", language, language, args, unitKey => strings.Value(unitKey, language), out var text));
+            Assert.AreEqual(expected, text);
+        }
+
+        [TestCase("az")]
+        [TestCase("en")]
+        [TestCase("tr")]
+        [TestCase("ru")]
+        public void AKeyMissingEverywhereShowsTheShippedEnglishUnavailableText(string language)
+        {
+            var strings = new GameStrings(BuiltinStrings.Load(), Choice(language), false);
+            LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=test.missing.key language=" + language + " version=0$"));
+            Assert.AreEqual("Text unavailable", strings.Text("test.missing.key"));
+        }
+
+        [Test]
+        public void TheShippedUnavailableTextHasAnAzerbaijaniDraft() =>
+            Assert.AreEqual("Mətn əlçatan deyil", BuiltinStrings.Load().Value("common.text.unavailable", "az"));
+
         [Test]
         public void PlaceholdersPluralsAndSelectsFormat()
         {
