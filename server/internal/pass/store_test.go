@@ -140,6 +140,40 @@ func TestEnteringTheSeasonStartsAtLevelOneAndGrantsItsFreeRewardOnce(t *testing.
 	}
 }
 
+func TestTheViewPricesLevelsFromThePublishedConfig(t *testing.T) {
+	f := newFixture(t)
+	account := f.account(t)
+	view, err := f.store.View(context.Background(), account, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if view.Season != "season_1" || view.Level != 1 || view.LevelCoinPrice != 200 || view.LevelCrystalPrice != 40 {
+		t.Fatalf("view %+v", view)
+	}
+	config := pass.Default()
+	config.LevelCoinPrice, config.LevelCrystalPrice = 250, 45
+	config.Seasons = []pass.Season{testSeason("season_1", now.Add(-10*24*time.Hour), now.Add(80*24*time.Hour))}
+	raw, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := snapshot.Publish(context.Background(), f.pool, pass.Domain, raw); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.watcher.Load(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if view, err = f.store.View(context.Background(), account, now); err != nil {
+		t.Fatal(err)
+	}
+	if view.LevelCoinPrice != 250 || view.LevelCrystalPrice != 45 || view.ConfigVersion < 2 {
+		t.Fatalf("view after publish %+v", view)
+	}
+	if _, err := f.store.View(context.Background(), account, now.Add(81*24*time.Hour)); !errors.Is(err, pass.ErrNoSeason) {
+		t.Fatalf("View after the season = %v", err)
+	}
+}
+
 func TestThereIsNoPassOutsideASeason(t *testing.T) {
 	f := newFixture(t)
 	account := f.account(t)
