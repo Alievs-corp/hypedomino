@@ -41,6 +41,7 @@ namespace HypeDomino.Net.Api
             public string Method;
             public string PathAndQuery;
             public string Body;
+            public IReadOnlyList<ApiHeader> Headers;
             public Action<ApiReply> Done;
         }
 
@@ -61,17 +62,19 @@ namespace HypeDomino.Net.Api
             this.session = session;
         }
 
-        public void Get(string pathAndQuery, Action<ApiReply> done) => Send("GET", pathAndQuery, null, done);
+        public void Get(string pathAndQuery, Action<ApiReply> done) => Send("GET", pathAndQuery, null, null, done);
 
-        public void Post(string pathAndQuery, string json, Action<ApiReply> done) => Send("POST", pathAndQuery, json, done);
+        public void Post(string pathAndQuery, string json, Action<ApiReply> done) => Send("POST", pathAndQuery, json, null, done);
 
-        public void Put(string pathAndQuery, string json, Action<ApiReply> done) => Send("PUT", pathAndQuery, json, done);
+        public void Post(string pathAndQuery, string json, IReadOnlyList<ApiHeader> headers, Action<ApiReply> done) => Send("POST", pathAndQuery, json, headers, done);
 
-        public void Delete(string pathAndQuery, string json, Action<ApiReply> done) => Send("DELETE", pathAndQuery, json, done);
+        public void Put(string pathAndQuery, string json, Action<ApiReply> done) => Send("PUT", pathAndQuery, json, null, done);
 
-        void Send(string method, string pathAndQuery, string body, Action<ApiReply> done)
+        public void Delete(string pathAndQuery, string json, Action<ApiReply> done) => Send("DELETE", pathAndQuery, json, null, done);
+
+        void Send(string method, string pathAndQuery, string body, IReadOnlyList<ApiHeader> headers, Action<ApiReply> done)
         {
-            var request = new Request { Method = method, PathAndQuery = pathAndQuery, Body = body, Done = done };
+            var request = new Request { Method = method, PathAndQuery = pathAndQuery, Body = body, Headers = headers, Done = done };
             if (refreshing)
             {
                 waitingForRefresh.Add(request);
@@ -89,7 +92,13 @@ namespace HypeDomino.Net.Api
             }
             var access = session.AccessToken;
             var mac = request.Method == "GET" ? null : RequestMac.Sign(session.RequestKey, request.Method, request.PathAndQuery, access, request.Body ?? string.Empty);
-            transport.Send(request.Method, request.PathAndQuery, request.Body, "Bearer " + access, mac, reply => Answer(request, reply, afterRefresh));
+            Action<HttpReply> answered = reply => Answer(request, reply, afterRefresh);
+            if (request.Headers != null && request.Headers.Count > 0 && transport is IApiHeaderTransport withHeaders)
+            {
+                withHeaders.Send(request.Method, request.PathAndQuery, request.Body, "Bearer " + access, mac, request.Headers, answered);
+                return;
+            }
+            transport.Send(request.Method, request.PathAndQuery, request.Body, "Bearer " + access, mac, answered);
         }
 
         void Answer(Request request, HttpReply reply, bool afterRefresh)
