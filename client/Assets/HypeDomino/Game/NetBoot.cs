@@ -4,9 +4,11 @@ using HypeDomino.Core.Diagnostics;
 using HypeDomino.Game.FriendLobby;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
+using HypeDomino.Game.Login;
 using HypeDomino.Game.Medals;
 using HypeDomino.Game.Missions;
 using HypeDomino.Game.Pass;
+using HypeDomino.Game.Privacy;
 using HypeDomino.Game.Profile;
 using HypeDomino.Game.Shop;
 using HypeDomino.Net;
@@ -28,6 +30,7 @@ namespace HypeDomino.Game
         public static Connection Connection { get; private set; }
         public static MatchQueue Queue { get; private set; }
         public static MaintenanceScreen Maintenance { get; private set; }
+        public static LoginScreen Login { get; private set; }
         public static LobbyCommands Lobby { get; private set; }
         public static FriendRoom Room { get; private set; }
         public static ShopLoader Shop { get; private set; }
@@ -60,7 +63,8 @@ namespace HypeDomino.Game
             socket = endpoint.SocketUri;
             phases = new NetStartPhases(StartupPhases.App);
             var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
-            Auth = new AuthSession(http, new NoIdentityProvider(), new MemorySecureStore());
+            var identity = new NoIdentityProvider();
+            Auth = new AuthSession(http, identity, new MemorySecureStore());
             Api = new ApiClient(http, Auth);
             AnalyticsBoot.Start(Api);
             Integrity = new IntegrityProofs(Api, new NoDeviceAttestor());
@@ -85,6 +89,7 @@ namespace HypeDomino.Game
             PrivacyBoot.Start(Api, Auth, session);
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
+            Login = new LoginScreen(Auth, new AccountDeletion(http, identity), SignInOptions.Current, Dial);
             session.ErrorReceived += OnError;
             Maintenance = new MaintenanceScreen(Dial, () => Time.realtimeSinceStartupAsDouble);
             session.HelloReceived += Maintenance.Read;

@@ -97,7 +97,7 @@ Size: the `Release build` workflow below; the Build Report (`Library/LastBuild.b
 - `Unauthenticated`: the `Connection` has stopped. Another `Resume` runs, then the dial again (a redial on the same `Connection`).
 - After a `Resume`, `SignedIn` dials and `SignInRequired` sends the flow to `SignInNeeded`. Any other outcome is logged as `Net resume outcome=<outcome>`, and the app stays where it is; a retry policy for `Offline`, `Unavailable` and `RateLimited` is not decided.
 
-The `NetStartTests` and `ServerEndpointTests` EditMode tests cover the start order, the endpoint rules and the hello fields. A sign-in screen calling `AuthSession.SignIn` is not built; see Sign-in for the identity provider.
+The `NetStartTests` and `ServerEndpointTests` EditMode tests cover the start order, the endpoint rules and the hello fields. The `Login` state is driven by `NetBoot.Login`, a `LoginScreen` (see Sign-in).
 
 The `AppFlowTests` EditMode tests cover every transition, the `AppBootTests` EditMode tests which states count as in a match and that hellos and views read by a `Session` reach the flow and the catalog, and the `AppBootTests` PlayMode test that the running flow moves the frame rate in and out of a match. Scenes and DI beyond this root are not built yet.
 
@@ -213,6 +213,13 @@ Outcomes:
 `Net/Auth/SignInOptions` is the list of sign-in buttons the login screen shows, in order: Google on Android; Google, then Sign in with Apple next to it on iOS (`docs/store-listing.md` DC-5); none on platforms without a native sign-in, such as the editor and desktop. `Current` reads `Application.platform`. The `SignInOptionsTests` EditMode tests cover each platform. The native Google Sign-In and Sign in with Apple plugins and the Keystore and Keychain store are not built yet. Until they are, `NetBoot` uses two stand-ins:
 - `Net/Auth/NoIdentityProvider` supports no provider, so `SignIn` answers `Unsupported` (#56 replaces it).
 - `Net/Auth/MemorySecureStore` keeps the refresh token and device id in memory only and writes nothing to the device. Every start therefore begins without a stored session and shows `Login`.
+
+`Game/Login/LoginScreen` is the model of the `Login` state (#73), plain C# without a view. `Options` are the buttons of `SignInOptions.Current`. `TrySignIn(provider)` starts `AuthSession.SignIn` for an offered provider and refuses a second tap while `Busy`; a signed-in answer calls the start action, which `NetBoot` sets to its dial, so the hello then moves the flow on (a new account meets the profile setup in the lobby). Every other answer sets `MessageKey`, and `Changed` tells the view to redraw:
+- Closing the account picker shows nothing, and the player can tap again.
+- `login.unsupported` (no native provider on the device), `login.unavailable` (5xx or an unreadable reply), `login.rejected` (a refused ID token) and `login.banned` are new keys, `en` and `az` drafts in the built-in bundle. A ban shows no reason category until that owner decision is made (#186). The provider failure, offline, rate limit and deleted answers reuse the `account.deletion.*` texts, which say the same.
+- An account waiting for deletion sets `DeletionPending` and `DeleteAt` with the pending text of `AccountDeletionKeys`; `TryCancelDeletion` sends `AccountDeletion.Cancel` with the provider just used, and a restored account shows `account.deletion.restored` and signs in on the next tap (`docs/privacy.md` 8.2, Grace).
+
+The `LoginScreenTests` EditMode tests cover these rules and that every message key is in the built-in bundle in `az` and `en`. The view of the screen is art work.
 
 With no identity provider and no server dev identity path, a build reaches `Login` but cannot sign in or connect end to end yet.
 
