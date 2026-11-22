@@ -31,6 +31,7 @@ namespace HypeDomino.Game
         public static LobbyCommands Lobby { get; private set; }
         public static FriendRoom Room { get; private set; }
         public static ShopLoader Shop { get; private set; }
+        public static ShopCheckout Checkout { get; private set; }
         public static PassLoader Pass { get; private set; }
         public static MissionLoader Missions { get; private set; }
         public static InventoryLoader Inventory { get; private set; }
@@ -78,6 +79,7 @@ namespace HypeDomino.Game
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             FriendLobbyBoot.Start(session, Room, Api);
             BuildLoaders(Api);
+            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request, AnalyticsBoot.Queue));
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);

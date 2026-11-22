@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Core.Analytics;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Integrity;
 using Hypedomino.V1;
@@ -14,19 +15,22 @@ namespace HypeDomino.Game.Shop
         readonly ApiClient api;
         readonly IStoreBilling billing;
         readonly Action<IntegrityPurpose, Action<IntegrityProof>> requestProof;
+        readonly AnalyticsQueue analytics;
         readonly Action<ApiReply> begun;
         readonly Action<StoreBillingResult> billed;
         readonly Action<IntegrityProof> proved;
         readonly Action<ApiReply> completed;
         Action<ShopPurchaseResult> done;
         string offer;
+        string product;
         StoreReceipt receipt;
 
-        public ShopPurchase(ApiClient api, IStoreBilling billing, Action<IntegrityPurpose, Action<IntegrityProof>> requestProof)
+        public ShopPurchase(ApiClient api, IStoreBilling billing, Action<IntegrityPurpose, Action<IntegrityProof>> requestProof, AnalyticsQueue analytics = null)
         {
             this.api = api;
             this.billing = billing;
             this.requestProof = requestProof;
+            this.analytics = analytics;
             begun = Begun;
             billed = Billed;
             proved = Proved;
@@ -74,13 +78,16 @@ namespace HypeDomino.Game.Shop
                 Settle(new ShopPurchaseResult(ShopPurchaseOutcome.Failed, ShopPurchaseStep.Begin));
                 return;
             }
-            billing.Purchase(checkout.product_id, checkout.account_token, billed);
+            product = checkout.product_id;
+            analytics?.Track(AnalyticsEvents.PurchaseStart, product);
+            billing.Purchase(product, checkout.account_token, billed);
         }
 
         void Billed(StoreBillingResult result)
         {
             if (result.Outcome != StoreBillingOutcome.Purchased)
             {
+                if (result.Outcome == StoreBillingOutcome.Cancelled) analytics?.Track(AnalyticsEvents.PurchaseCancel, product);
                 Settle(ShopPurchaseResult.FromBilling(result.Outcome));
                 return;
             }

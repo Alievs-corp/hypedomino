@@ -8,6 +8,7 @@ import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
 import { evidenceSummary, nextQueueHref, queueApiPath, readReviewQuery, reviewCauses, signalWeight, type Review } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
+import { EarlierDecisions } from "./EarlierDecisions";
 import { QueueFilter } from "./QueueFilter";
 import { ReviewDecision } from "./ReviewDecision";
 
@@ -88,6 +89,7 @@ function ReviewEntry({ review, clientId, t }: { review: Review; clientId: string
           ))}
         </tbody>
       </table>
+      <EarlierDecisions decisions={review.decisions} t={t} />
       {clientId && <ReviewDecision id={review.id} clientId={clientId} />}
     </section>
   );
