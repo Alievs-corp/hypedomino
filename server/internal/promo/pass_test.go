@@ -117,8 +117,9 @@ func TestAPassPremiumCodeWaitsForASecondAdminAndUnlocksTheLevelsReached(t *testi
 	if _, err := f.store.Approve(ctx, "promo.backer_sky", "admin.bob", now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.store.Redeem(ctx, backer, created.Plaintext, now); err != nil {
-		t.Fatal(err)
+	redemption, err := f.store.Redeem(ctx, backer, created.Plaintext, now)
+	if err != nil || !redemption.PassPremium {
+		t.Fatalf("redemption %+v, %v", redemption, err)
 	}
 	after, err := passes.Premium(ctx, backer, now)
 	if err != nil || !after.Premium || after.Level != before.Level {

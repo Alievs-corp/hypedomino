@@ -139,10 +139,11 @@ type Created struct {
 }
 
 type Redemption struct {
-	Promo    string        `json:"promo"`
-	Campaign string        `json:"campaign"`
-	Grant    reward.Report `json:"grant"`
-	Spiked   bool          `json:"-"`
+	Promo       string        `json:"promo"`
+	Campaign    string        `json:"campaign"`
+	Grant       reward.Report `json:"grant"`
+	PassPremium bool          `json:"pass_premium"`
+	Spiked      bool          `json:"-"`
 }
 
 type database interface {
@@ -687,7 +688,7 @@ func (s *Store) redeem(ctx context.Context, account string, hash []byte, now tim
 	if err != nil {
 		return Redemption{}, err
 	}
-	return Redemption{Promo: code.ID, Campaign: code.Campaign, Grant: report, Spiked: spiked}, tx.Commit(ctx)
+	return Redemption{Promo: code.ID, Campaign: code.Campaign, Grant: report, PassPremium: code.PassPremium, Spiked: spiked}, tx.Commit(ctx)
 }
 
 func (s *Store) unlockPremium(ctx context.Context, tx pgx.Tx, code Code, account string, now time.Time) error {

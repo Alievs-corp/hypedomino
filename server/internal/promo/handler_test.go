@@ -53,7 +53,35 @@ func (f *fakePromos) Redeem(_ context.Context, account, code string, at time.Tim
 	if normalized == "SPKE2345" {
 		return promo.Redemption{Promo: "promo.leaky", Campaign: "campaign.launch_week", Spiked: true}, nil
 	}
+	if normalized == "PREM2345" {
+		return promo.Redemption{Promo: "promo.backer_sky", Campaign: "campaign.ideyanest_2026", Grant: reward.Report{Coins: 300}, PassPremium: true}, nil
+	}
 	return promo.Redemption{Promo: "promo.welcome", Campaign: "campaign.launch_week", Grant: reward.Report{Coins: 300}}, nil
+}
+
+func TestTheReplySaysWhetherThePremiumPassWasUnlocked(t *testing.T) {
+	handler := promo.NewHandler(fakeVerifier{}, &fakePromos{}, slog.New(slog.NewTextHandler(io.Discard, nil)), time.Now)
+	for _, c := range []struct {
+		code, promo string
+		premium     bool
+	}{
+		{"PREM2345", "promo.backer_sky", true},
+		{"prem-2345", "promo.backer_sky", true},
+		{"HYPE2345", "promo.welcome", false},
+		{"SPKE2345", "promo.leaky", false},
+	} {
+		request := httptest.NewRequest(http.MethodPost, "/promo/redeem", strings.NewReader(`{"code":"`+c.code+`"}`))
+		request.Header.Set("Authorization", "Bearer access:acc-1")
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		var body map[string]any
+		if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+			t.Fatalf("%s: %v", c.code, err)
+		}
+		if premium, present := body["pass_premium"].(bool); recorder.Code != http.StatusOK || body["promo"] != c.promo || !present || premium != c.premium {
+			t.Errorf("%s: %d %s, want %s with pass_premium %t", c.code, recorder.Code, recorder.Body.String(), c.promo, c.premium)
+		}
+	}
 }
 
 func TestTheHandlerRedeemsAndMapsEveryRefusal(t *testing.T) {
