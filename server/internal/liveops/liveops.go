@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 )
@@ -26,6 +27,10 @@ const (
 	AnalyticsQueueLimit   = "AnalyticsQueueLimit"
 	AnalyticsFlushSeconds = "AnalyticsFlushSeconds"
 	AnalyticsMaxBatchSize = 400
+	ReviewSlaHours        = "ReviewSlaHours"
+	ReportSlaHours        = "ReportSlaHours"
+	AppealSlaHours        = "AppealSlaHours"
+	MaxSlaHours           = 720
 )
 
 var keys = []Key{
@@ -38,6 +43,9 @@ var keys = []Key{
 	{Name: AnalyticsBatchSize, Unit: "events", Min: 1, Max: bound(AnalyticsMaxBatchSize), Default: 50},
 	{Name: AnalyticsQueueLimit, Unit: "events", Min: 1, Max: bound(5000), Default: 500},
 	{Name: AnalyticsFlushSeconds, Unit: "seconds", Min: 10, Max: bound(3600), Default: 60},
+	{Name: ReviewSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 24},
+	{Name: ReportSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 48},
+	{Name: AppealSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 72},
 }
 
 func bound(limit int) *int {
@@ -92,6 +100,20 @@ func (v Values) Analytics() Analytics {
 func (v Values) AnalyticsConfig() *pb.AnalyticsConfig {
 	analytics := v.Analytics()
 	return &pb.AnalyticsConfig{BatchSize: uint32(analytics.BatchSize), QueueLimit: uint32(analytics.QueueLimit), FlushSeconds: uint32(analytics.FlushSeconds)}
+}
+
+type QueueSla struct {
+	Review time.Duration
+	Report time.Duration
+	Appeal time.Duration
+}
+
+func (v Values) QueueSla() QueueSla {
+	return QueueSla{Review: v.hours(ReviewSlaHours), Report: v.hours(ReportSlaHours), Appeal: v.hours(AppealSlaHours)}
+}
+
+func (v Values) hours(name string) time.Duration {
+	return time.Duration(v.value(name)) * time.Hour
 }
 
 func (v Values) value(name string) int {

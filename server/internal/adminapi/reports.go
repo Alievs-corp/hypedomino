@@ -24,6 +24,7 @@ type reportsResponse struct {
 
 type reportTarget struct {
 	report.Target
+	queueDeadline
 	Decisions []playerrecord.Decision `json:"decisions"`
 }
 
@@ -57,9 +58,15 @@ func (h *Handler) listReports(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
+	sla, err := h.queueSla(r.Context())
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	now := h.now()
 	views := make([]reportTarget, len(targets))
 	for index, target := range targets {
-		views[index] = reportTarget{Target: target, Decisions: decisions[target.AccountID]}
+		views[index] = reportTarget{Target: target, queueDeadline: deadlineOf(target.Reports[0].UpdatedAt, sla.Report, now), Decisions: decisions[target.AccountID]}
 		if views[index].Decisions == nil {
 			views[index].Decisions = []playerrecord.Decision{}
 		}

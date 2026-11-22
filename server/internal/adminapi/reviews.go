@@ -27,6 +27,7 @@ type reviewsResponse struct {
 
 type reviewEntry struct {
 	risk.Review
+	queueDeadline
 	Decisions []playerrecord.Decision `json:"decisions"`
 }
 
@@ -74,9 +75,15 @@ func (h *Handler) listReviews(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
+	sla, err := h.queueSla(r.Context())
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	now := h.now()
 	views := make([]reviewEntry, len(reviews))
 	for index, review := range reviews {
-		views[index] = reviewEntry{Review: review, Decisions: decisions[review.Account]}
+		views[index] = reviewEntry{Review: review, queueDeadline: deadlineOf(review.OpenedAt, sla.Review, now), Decisions: decisions[review.Account]}
 		if views[index].Decisions == nil {
 			views[index].Decisions = []playerrecord.Decision{}
 		}

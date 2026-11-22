@@ -9,6 +9,7 @@ import type { Translate } from "@/i18n/translate";
 import { nextQueueHref, queueApiPath, readReportQuery, reportReasons, type ReportTarget } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
 import { EarlierDecisions } from "../reviews/EarlierDecisions";
+import { QueueDue } from "../reviews/QueueDue";
 import { QueueFilter } from "../reviews/QueueFilter";
 import { ReportDecision } from "./ReportDecision";
 
@@ -59,6 +60,7 @@ function TargetEntry({ target, clientId, t }: { target: ReportTarget; clientId: 
         <span>
           {t("reports.count")}: {target.reports.length}
         </span>
+        <QueueDue deadline={target} t={t} />
         {target.rename_required && <span>{t("reports.rename_required")}</span>}
       </div>
       <table>
