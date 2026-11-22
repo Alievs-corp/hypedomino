@@ -81,7 +81,7 @@ namespace HypeDomino.Game
             Lobby = new LobbyCommands();
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
-            FriendLobbyBoot.Start(session, Room, Api);
+            FriendLobbyBoot.Start(session, Room, Lobby, Api);
             BuildLoaders(Api);
             Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request, AnalyticsBoot.Queue));
             Language = new LanguageSync(Api, LanguageBoot.Choice);

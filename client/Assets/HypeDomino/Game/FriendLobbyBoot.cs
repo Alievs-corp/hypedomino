@@ -1,4 +1,5 @@
 using HypeDomino.Game.FriendLobby;
+using HypeDomino.Game.Friends;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
@@ -10,10 +11,11 @@ namespace HypeDomino.Game
     {
         public static FriendLobbyLink Link { get; private set; }
 
-        public static void Start(Session session, FriendRoom room, ApiClient api)
+        public static void Start(Session session, FriendRoom room, LobbyCommands commands, ApiClient api)
         {
-            Link = new FriendLobbyLink(room, api, ClockMs);
+            Link = new FriendLobbyLink(room, commands, api, ClockMs);
             Link.InventoryLoaded += InventoryLoaded;
+            Link.FriendsLoaded += FriendsLoaded;
             Link.Follow(session);
         }
 
@@ -22,6 +24,11 @@ namespace HypeDomino.Game
         static void InventoryLoaded(InventoryLoadResult result)
         {
             if (result.Outcome != InventoryLoadOutcome.Loaded) Debug.LogWarning($"Friend lobby inventory outcome={result.Outcome}");
+        }
+
+        static void FriendsLoaded(FriendListLoadOutcome outcome)
+        {
+            if (outcome != FriendListLoadOutcome.Loaded) Debug.LogWarning($"Friend lobby friends outcome={outcome}");
         }
     }
 }
