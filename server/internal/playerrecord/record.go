@@ -11,6 +11,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 const (
@@ -175,6 +176,7 @@ type Record struct {
 	PairSignals     []PairSignal        `json:"pair_signals"`
 	Missions        []MissionAssignment `json:"missions"`
 	Reports         []Report            `json:"reports"`
+	Sanctions       []sanction.Sanction `json:"sanctions"`
 }
 
 const summaryColumns = `select a.id::text, coalesce(p.nickname, ''), a.state, coalesce(a.country, ''), a.created_at
@@ -279,12 +281,18 @@ func Load(ctx context.Context, db Querier, accountID string, withIdentities bool
 	if err := loadIdentities(ctx, db, &r, withIdentities); err != nil {
 		return Record{}, err
 	}
-	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals, loadMissions, loadReports} {
+	for _, load := range []func(context.Context, Querier, *Record) error{loadProfile, loadNicknames, loadInventory, loadLedger, loadGrants, loadPurchases, loadMatches, loadPairSignals, loadMissions, loadReports, loadSanctions} {
 		if err := load(ctx, db, &r); err != nil {
 			return Record{}, err
 		}
 	}
 	return r, nil
+}
+
+func loadSanctions(ctx context.Context, db Querier, r *Record) error {
+	sanctions, err := sanction.List(ctx, db, r.Account.ID, ListLimit)
+	r.Sanctions = sanctions
+	return err
 }
 
 func collect[T any](ctx context.Context, db Querier, into *[]T, sql string, scan func(row pgx.CollectableRow, item *T) error, args ...any) error {

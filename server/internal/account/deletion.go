@@ -72,6 +72,7 @@ var erasures = map[string]erasure{
 	"risk_signals":         moveToTombstone,
 	"risk_reviews":         moveToTombstone,
 	"risk_actions":         moveToTombstone,
+	"account_sanctions":    moveToTombstone,
 	"player_reports":       moveToTombstone,
 	"consent_records":      moveToTombstone,
 	"data_exports":         moveToTombstone,

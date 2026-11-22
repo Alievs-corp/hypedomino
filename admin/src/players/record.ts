@@ -1,3 +1,5 @@
+import type { Sanction } from "./sanctions.ts";
+
 export type PlayerSummary = { id: string; nickname: string; state: string; country: string; created_at: string };
 
 export type PlayerAccount = PlayerSummary & {
@@ -26,6 +28,7 @@ export type PlayerRecord = {
   pair_signals: { kind: string; counterpart: string; mode: string; matches: number; wins: number; offenses: number; window_hours: number; first_seen: string; updated_at: string }[];
   missions: MissionAssignment[];
   reports: PlayerReport[];
+  sanctions: Sanction[];
 };
 
 export type PlayerReport = { id: number; reporter: string; target: string; reason: string; name_text: string; match_id: string | null; state: string; created_at: string; updated_at: string; decided_at: string | null };

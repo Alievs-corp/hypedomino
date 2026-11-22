@@ -30,7 +30,7 @@ namespace Hypedomino.V1 {
             "cGVkb21pbm8udjEuTW9kZVIEbW9kZRIuCgVxdWV1ZRgCIAEoDjIYLmh5cGVk",
             "b21pbm8udjEuUXVldWVLaW5kUgVxdWV1ZRI7CglpbnRlZ3JpdHkYAyABKAsy",
             "HS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mUglpbnRlZ3JpdHkiEgoQ",
-            "TGVhdmVRdWV1ZUludGVudCLcAgoKUXVldWVTdGF0ZRIyCgZzdGF0dXMYASAB",
+            "TGVhdmVRdWV1ZUludGVudCKVAwoKUXVldWVTdGF0ZRIyCgZzdGF0dXMYASAB",
             "KA4yGi5oeXBlZG9taW5vLnYxLlF1ZXVlU3RhdHVzUgZzdGF0dXMSJwoEbW9k",
             "ZRgCIAEoDjITLmh5cGVkb21pbm8udjEuTW9kZVIEbW9kZRIuCgVxdWV1ZRgD",
             "IAEoDjIYLmh5cGVkb21pbm8udjEuUXVldWVLaW5kUgVxdWV1ZRIkCg5qb2lu",
@@ -38,28 +38,35 @@ namespace Hypedomino.V1 {
             "dHNfdW5peF9tcxgFIAEoBFISc2VhcmNoU3RhcnRzVW5peE1zEjUKB3JlZnVz",
             "YWwYBiABKA4yGy5oeXBlZG9taW5vLnYxLlF1ZXVlUmVmdXNhbFIHcmVmdXNh",
             "bBIxChVyZWZ1c2VkX3VudGlsX3VuaXhfbXMYByABKARSEnJlZnVzZWRVbnRp",
-            "bFVuaXhNcypVCglRdWV1ZUtpbmQSGgoWUVVFVUVfS0lORF9VTlNQRUNJRklF",
-            "RBAAEhUKEVFVRVVFX0tJTkRfUkFOS0VEEAESFQoRUVVFVUVfS0lORF9DQVNV",
-            "QUwQAiqWAQoLUXVldWVTdGF0dXMSHAoYUVVFVUVfU1RBVFVTX1VOU1BFQ0lG",
-            "SUVEEAASGgoWUVVFVUVfU1RBVFVTX1NFQVJDSElORxABEhUKEVFVRVVFX1NU",
-            "QVRVU19MRUZUEAISHAoYUVVFVUVfU1RBVFVTX01BVENIX0ZPVU5EEAMSGAoU",
-            "UVVFVUVfU1RBVFVTX1JFRlVTRUQQBCr5AQoMUXVldWVSZWZ1c2FsEh0KGVFV",
-            "RVVFX1JFRlVTQUxfVU5TUEVDSUZJRUQQABIaChZRVUVVRV9SRUZVU0FMX0lO",
-            "X01BVENIEAESIQodUVVFVUVfUkVGVVNBTF9NQVRDSE1BS0lOR19CQU4QAhIf",
-            "ChtRVUVVRV9SRUZVU0FMX1JBTktFRF9DTE9TRUQQAxIdChlRVUVVRV9SRUZV",
-            "U0FMX1VOQVZBSUxBQkxFEAQSIgoeUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlf",
-            "RkFJTEVEEAUSJwojUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlfVU5BVkFJTEFC",
-            "TEUQBkLFAQoRY29tLmh5cGVkb21pbm8udjFCClF1ZXVlUHJvdG9QAVpPZ2l0",
-            "aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5h",
-            "bC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVk",
-            "b21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJN",
-            "ZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "bFVuaXhNcxI3CgpiYW5fcmVhc29uGAggASgOMhguaHlwZWRvbWluby52MS5C",
+            "YW5SZWFzb25SCWJhblJlYXNvbipVCglRdWV1ZUtpbmQSGgoWUVVFVUVfS0lO",
+            "RF9VTlNQRUNJRklFRBAAEhUKEVFVRVVFX0tJTkRfUkFOS0VEEAESFQoRUVVF",
+            "VUVfS0lORF9DQVNVQUwQAiqWAQoLUXVldWVTdGF0dXMSHAoYUVVFVUVfU1RB",
+            "VFVTX1VOU1BFQ0lGSUVEEAASGgoWUVVFVUVfU1RBVFVTX1NFQVJDSElORxAB",
+            "EhUKEVFVRVVFX1NUQVRVU19MRUZUEAISHAoYUVVFVUVfU1RBVFVTX01BVENI",
+            "X0ZPVU5EEAMSGAoUUVVFVUVfU1RBVFVTX1JFRlVTRUQQBCqXAgoMUXVldWVS",
+            "ZWZ1c2FsEh0KGVFVRVVFX1JFRlVTQUxfVU5TUEVDSUZJRUQQABIaChZRVUVV",
+            "RV9SRUZVU0FMX0lOX01BVENIEAESIQodUVVFVUVfUkVGVVNBTF9NQVRDSE1B",
+            "S0lOR19CQU4QAhIfChtRVUVVRV9SRUZVU0FMX1JBTktFRF9DTE9TRUQQAxId",
+            "ChlRVUVVRV9SRUZVU0FMX1VOQVZBSUxBQkxFEAQSIgoeUVVFVUVfUkVGVVNB",
+            "TF9JTlRFR1JJVFlfRkFJTEVEEAUSJwojUVVFVUVfUkVGVVNBTF9JTlRFR1JJ",
+            "VFlfVU5BVkFJTEFCTEUQBhIcChhRVUVVRV9SRUZVU0FMX1JBTktFRF9CQU4Q",
+            "ByrJAQoJQmFuUmVhc29uEhoKFkJBTl9SRUFTT05fVU5TUEVDSUZJRUQQABIX",
+            "ChNCQU5fUkVBU09OX0NIRUFUSU5HEAESGAoUQkFOX1JFQVNPTl9DT0xMVVNJ",
+            "T04QAhIaChZCQU5fUkVBU09OX0FGS19MRUFWSU5HEAMSHQoZQkFOX1JFQVNP",
+            "Tl9PRkZFTlNJVkVfTkFNRRAEEhwKGEJBTl9SRUFTT05fUEFZTUVOVF9GUkFV",
+            "RBAFEhQKEEJBTl9SRUFTT05fT1RIRVIQBkLFAQoRY29tLmh5cGVkb21pbm8u",
+            "djFCClF1ZXVlUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBl",
+            "ZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVk",
+            "b21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx",
+            "4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYx",
+            "YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Hypedomino.V1.HelloReflection.Descriptor, global::Hypedomino.V1.MatchReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.QueueKind), typeof(global::Hypedomino.V1.QueueStatus), typeof(global::Hypedomino.V1.QueueRefusal), }, null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.QueueKind), typeof(global::Hypedomino.V1.QueueStatus), typeof(global::Hypedomino.V1.QueueRefusal), typeof(global::Hypedomino.V1.BanReason), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.JoinQueueIntent), global::Hypedomino.V1.JoinQueueIntent.Parser, new[]{ "Mode", "Queue", "Integrity" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LeaveQueueIntent), global::Hypedomino.V1.LeaveQueueIntent.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.QueueState), global::Hypedomino.V1.QueueState.Parser, new[]{ "Status", "Mode", "Queue", "JoinedUnixMs", "SearchStartsUnixMs", "Refusal", "RefusedUntilUnixMs" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.QueueState), global::Hypedomino.V1.QueueState.Parser, new[]{ "Status", "Mode", "Queue", "JoinedUnixMs", "SearchStartsUnixMs", "Refusal", "RefusedUntilUnixMs", "BanReason" }, null, null, null, null)
           }));
     }
     #endregion
@@ -88,6 +95,17 @@ namespace Hypedomino.V1 {
     [pbr::OriginalName("QUEUE_REFUSAL_UNAVAILABLE")] Unavailable = 4,
     [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_FAILED")] IntegrityFailed = 5,
     [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE")] IntegrityUnavailable = 6,
+    [pbr::OriginalName("QUEUE_REFUSAL_RANKED_BAN")] RankedBan = 7,
+  }
+
+  public enum BanReason {
+    [pbr::OriginalName("BAN_REASON_UNSPECIFIED")] Unspecified = 0,
+    [pbr::OriginalName("BAN_REASON_CHEATING")] Cheating = 1,
+    [pbr::OriginalName("BAN_REASON_COLLUSION")] Collusion = 2,
+    [pbr::OriginalName("BAN_REASON_AFK_LEAVING")] AfkLeaving = 3,
+    [pbr::OriginalName("BAN_REASON_OFFENSIVE_NAME")] OffensiveName = 4,
+    [pbr::OriginalName("BAN_REASON_PAYMENT_FRAUD")] PaymentFraud = 5,
+    [pbr::OriginalName("BAN_REASON_OTHER")] Other = 6,
   }
 
   #endregion
@@ -577,6 +595,7 @@ namespace Hypedomino.V1 {
       searchStartsUnixMs_ = other.searchStartsUnixMs_;
       refusal_ = other.refusal_;
       refusedUntilUnixMs_ = other.refusedUntilUnixMs_;
+      banReason_ = other.banReason_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -670,6 +689,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "ban_reason" field.</summary>
+    public const int BanReasonFieldNumber = 8;
+    private global::Hypedomino.V1.BanReason banReason_ = global::Hypedomino.V1.BanReason.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.BanReason BanReason {
+      get { return banReason_; }
+      set {
+        banReason_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -692,6 +723,7 @@ namespace Hypedomino.V1 {
       if (SearchStartsUnixMs != other.SearchStartsUnixMs) return false;
       if (Refusal != other.Refusal) return false;
       if (RefusedUntilUnixMs != other.RefusedUntilUnixMs) return false;
+      if (BanReason != other.BanReason) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -706,6 +738,7 @@ namespace Hypedomino.V1 {
       if (SearchStartsUnixMs != 0UL) hash ^= SearchStartsUnixMs.GetHashCode();
       if (Refusal != global::Hypedomino.V1.QueueRefusal.Unspecified) hash ^= Refusal.GetHashCode();
       if (RefusedUntilUnixMs != 0UL) hash ^= RefusedUntilUnixMs.GetHashCode();
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) hash ^= BanReason.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -752,6 +785,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteUInt64(RefusedUntilUnixMs);
       }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        output.WriteRawTag(64);
+        output.WriteEnum((int) BanReason);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -790,6 +827,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteUInt64(RefusedUntilUnixMs);
       }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        output.WriteRawTag(64);
+        output.WriteEnum((int) BanReason);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -820,6 +861,9 @@ namespace Hypedomino.V1 {
       }
       if (RefusedUntilUnixMs != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(RefusedUntilUnixMs);
+      }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) BanReason);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -853,6 +897,9 @@ namespace Hypedomino.V1 {
       }
       if (other.RefusedUntilUnixMs != 0UL) {
         RefusedUntilUnixMs = other.RefusedUntilUnixMs;
+      }
+      if (other.BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        BanReason = other.BanReason;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -901,6 +948,10 @@ namespace Hypedomino.V1 {
             RefusedUntilUnixMs = input.ReadUInt64();
             break;
           }
+          case 64: {
+            BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
+            break;
+          }
         }
       }
     #endif
@@ -946,6 +997,10 @@ namespace Hypedomino.V1 {
           }
           case 56: {
             RefusedUntilUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 64: {
+            BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
             break;
           }
         }

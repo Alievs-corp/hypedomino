@@ -4,6 +4,7 @@ using Google.Protobuf;
 using HypeDomino.Game;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Net;
+using HypeDomino.UI.Localization;
 using Hypedomino.V1;
 using NUnit.Framework;
 
@@ -227,6 +228,7 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(QueueRefusal.Unavailable, "lobby.queue.refused.unavailable")]
         [TestCase(QueueRefusal.IntegrityFailed, "lobby.queue.refused.integrity_failed")]
         [TestCase(QueueRefusal.IntegrityUnavailable, "lobby.queue.refused.integrity_unavailable")]
+        [TestCase(QueueRefusal.RankedBan, "lobby.queue.refused.ranked_ban")]
         [TestCase(QueueRefusal.Unspecified, "notice.generic")]
         [TestCase((QueueRefusal)42, "notice.generic")]
         public void ARefusalShowsTheKeyOfItsReason(QueueRefusal refusal, string key)
@@ -365,6 +367,44 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.That(step, Allocates.Nothing);
             Assert.AreEqual(1d, seconds, 1e-6);
+        }
+
+        [TestCase(BanReason.Cheating, "ban.reason.cheating")]
+        [TestCase(BanReason.Collusion, "ban.reason.collusion")]
+        [TestCase(BanReason.AfkLeaving, "ban.reason.afk_leaving")]
+        [TestCase(BanReason.OffensiveName, "ban.reason.offensive_name")]
+        [TestCase(BanReason.PaymentFraud, "ban.reason.payment_fraud")]
+        [TestCase(BanReason.Other, "ban.reason.other")]
+        [TestCase((BanReason)42, "ban.reason.other")]
+        public void ABanReasonNamesItsCategoryKey(BanReason reason, string key)
+        {
+            Assert.AreEqual(key, BanReasonKeys.Of(reason));
+        }
+
+        [Test]
+        public void NoBanReasonHasNoKey()
+        {
+            Assert.IsNull(BanReasonKeys.Of(BanReason.Unspecified));
+        }
+
+        [Test]
+        public void TheShippedBundleHasEveryBanReasonAndTheRankedBanRefusalInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            var keys = new List<string> { QueueRefusalKeys.RankedBan };
+            foreach (BanReason reason in Enum.GetValues(typeof(BanReason)))
+            {
+                var key = BanReasonKeys.Of(reason);
+                if (key != null)
+                {
+                    keys.Add(key);
+                }
+            }
+            foreach (var key in keys)
+            {
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
         }
     }
 }

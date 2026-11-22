@@ -10,6 +10,7 @@ import type { MessageKey, Translate } from "@/i18n/translate";
 import { banActive, missionPlace, missionProgress, muteActive, playerApiPath, reportSide, type PlayerRecord } from "@/players/record";
 import { boardSeasons } from "@/players/leaderboard";
 import { ladders, type PenaltyView } from "@/players/penalties";
+import { banCategoryKeys, runningRankedBan, sanctionKindKeys } from "@/players/sanctions";
 import type { Season } from "@/ranked/seasons";
 import { Notice } from "../Notice";
 import { PlayerActions } from "./PlayerActions";
@@ -43,6 +44,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const penalties = penaltyReply.status === 200 ? penaltyReply.body : null;
   const seasons = seasonsReply?.status === 200 ? boardSeasons(seasonsReply.body.seasons) : [];
   const { account, profile } = record;
+  const rankedBan = runningRankedBan(record.sanctions, new Date());
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
       <Link href="/players" className="self-start text-sm text-text-secondary underline">
@@ -57,6 +59,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <Fact label={t("player.emails")} value={account.emails.join(", ")} />
         {account.identities && <Fact label={t("player.identities")} value={account.identities.map((identity) => `${identity.provider}:${identity.subject}`).join(", ")} />}
         <Fact label={t("player.banned_until")} value={banActive(account, new Date()) ? when(account.banned_until) : t("player.not_banned")} />
+        <Fact label={t("player.ranked_banned_until")} value={rankedBan ? `${when(rankedBan.ends_at)}, ${t(banCategoryKeys[rankedBan.category])}` : t("player.not_banned")} />
         <Fact label={t("player.shadowbanned_at")} value={account.shadowbanned_at ? when(account.shadowbanned_at) : t("player.not_banned")} />
         <Fact label={t("player.muted_until")} value={muteActive(account, new Date()) ? when(account.muted_until) : t("player.not_banned")} />
         {account.deletion_requested_at && <Fact label={t("player.deletion_requested_at")} value={when(account.deletion_requested_at)} />}
@@ -67,7 +70,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {profile?.rename_required && <Fact label={t("player.rename_required")} value={t("player.yes")} />}
       </dl>
       {can(admin.permissions, "players", "act_on_player") && account.state !== "deleted" && (
-        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} penalties={penalties} boardSeasons={seasons} />
+        <PlayerActions id={account.id} clientId={googleClientId()} banned={banActive(account, new Date())} rankedBanned={rankedBan !== null} shadowbanned={account.shadowbanned_at !== null} muted={muteActive(account, new Date())} renameRequired={profile?.rename_required ?? false} penalties={penalties} boardSeasons={seasons} />
       )}
       {penalties && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
@@ -83,6 +86,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         { label: "player.penalty_weight", cell: (row) => row.weight },
         { label: "player.at", cell: (row) => when(row.at) },
         { label: "player.penalty_expires", cell: (row) => when(row.expires_at) },
+      ]} />
+      <Rows title="player.sanctions" t={t} rows={record.sanctions} columns={[
+        { label: "player.at", cell: (row) => when(row.starts_at) },
+        { label: "player.sanction_kind", cell: (row) => t(sanctionKindKeys[row.kind]) },
+        { label: "player.sanction_category", cell: (row) => t(banCategoryKeys[row.category]) },
+        { label: "player.sanction_ends", cell: (row) => when(row.ends_at) },
+        { label: "player.lifted_at", cell: (row) => when(row.lifted_at) },
       ]} />
       <Rows title="player.reports" t={t} rows={record.reports.map((report) => ({ ...report, ...reportSide(account.id, report) }))} columns={[
         { label: "player.at", cell: (row) => when(row.updated_at) },

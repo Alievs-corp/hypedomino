@@ -14,13 +14,15 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
 const PermanentBanAction = "permanent_ban"
 
 type permanentBanChange struct {
-	ReviewID int64 `json:"review_id"`
+	ReviewID int64             `json:"review_id"`
+	Category sanction.Category `json:"category,omitempty"`
 }
 
 type accountState struct {
@@ -28,12 +30,14 @@ type accountState struct {
 }
 
 type permanentlyBannedState struct {
-	State           string `json:"state"`
-	SessionsRevoked int    `json:"sessions_revoked"`
+	State           string            `json:"state"`
+	SessionsRevoked int               `json:"sessions_revoked"`
+	SanctionID      int64             `json:"sanction_id"`
+	Category        sanction.Category `json:"category"`
 }
 
 func (h *Handler) proposePermanentBan(w http.ResponseWriter, r *http.Request, p principal) {
-	var note changeNote
+	var note banNote
 	if !decode(w, r, &note) {
 		return
 	}
@@ -42,12 +46,17 @@ func (h *Handler) proposePermanentBan(w http.ResponseWriter, r *http.Request, p 
 		h.refuse(w, risk.ErrNoReview)
 		return
 	}
-	change := marshal(permanentBanChange{ReviewID: id})
+	var change json.RawMessage
 	var proposal approval.Proposal
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
-		if err := h.sensitive(p, note, now); err != nil {
+		if err := h.sensitive(p, note.changeNote, now); err != nil {
 			return nil, err
 		}
+		category, err := sanction.ParseCategory(note.Category)
+		if err != nil {
+			return nil, err
+		}
+		change = marshal(permanentBanChange{ReviewID: id, Category: category})
 		accountID, err := risk.OpenReviewAccount(r.Context(), tx, id)
 		if err != nil {
 			return nil, err
@@ -80,6 +89,14 @@ func (h *Handler) banPermanently(ctx context.Context, tx pgx.Tx, p principal, pr
 	if _, err := tx.Exec(ctx, `update accounts set state = $2 where id = $1`, decided.Account, account.StateBanned); err != nil {
 		return err
 	}
+	category, err := sanction.ParseCategory(string(change.Category))
+	if err != nil {
+		category = sanction.Other
+	}
+	imposed, err := sanction.Impose(ctx, tx, decided.Account, sanction.PermanentBan, category, now, nil)
+	if err != nil {
+		return err
+	}
 	revoked, err := token.RevokeAccountIn(ctx, tx, decided.Account, token.ReasonBanned, now)
 	if err != nil {
 		return err
@@ -94,7 +111,7 @@ func (h *Handler) banPermanently(ctx context.Context, tx pgx.Tx, p principal, pr
 		{Action: ConfirmReviewAction, Object: audit.Object{Type: rbac.Queues, ID: strconv.FormatInt(change.ReviewID, 10)},
 			Before: marshal(reviewState{AccountID: decided.Account, Shadowbanned: decided.WasShadowbanned}), After: marshal(reviewed)},
 		{Action: PermanentBanAction, Object: proposal.Object, Before: marshal(accountState{State: before}),
-			After: marshal(permanentlyBannedState{State: account.StateBanned, SessionsRevoked: revoked})},
+			After: marshal(permanentlyBannedState{State: account.StateBanned, SessionsRevoked: revoked, SanctionID: imposed.ID, Category: category})},
 	}
 	for _, entry := range entries {
 		entry.Reason, entry.ApprovalID = proposal.Reason, recorded.ID

@@ -3,6 +3,7 @@ syntax = "proto3";
 package hypedomino.v1;
 
 import "hypedomino/v1/match.proto";
+import "hypedomino/v1/queue.proto";
 
 enum LobbyCommand {
   LOBBY_COMMAND_UNSPECIFIED = 0;
@@ -45,6 +46,7 @@ enum LobbyRefusal {
   LOBBY_REFUSAL_BLOCKED = 14;
   LOBBY_REFUSAL_UNKNOWN_ACTION = 15 [deprecated = true];
   LOBBY_REFUSAL_NOT_FRIEND = 16;
+  LOBBY_REFUSAL_RANKED_BAN = 17;
 }
 
 message LobbyIntent {
@@ -69,6 +71,8 @@ message LobbyState {
   Mode mode = 5;
   repeated LobbySeat seats = 6;
   LobbyRefusal refusal = 7;
+  uint64 refused_until_unix_ms = 8;
+  BanReason ban_reason = 9;
 }
 
 message LobbyRelay {

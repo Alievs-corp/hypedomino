@@ -30,6 +30,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		{`insert into purchases (platform, transaction_id, account_id, offer_id, product_id, environment, state, grant_key, purchased_at) values ('google', 'tx-1', $1, 'offer', 'product', 'production', 'granted', 'secret-grant-key', $2)`, own},
 		{`insert into risk_signals (account_id, kind, weight, dedupe_key, evidence, created_at) values ($1, 'clock_skew', 7, 'd-1', '{"detector":"hidden-evidence"}', $2::timestamptz - interval '1 day'), ($1, 'mac_failure', 5, 'd-2', '{}', $2::timestamptz + interval '1 day')`, own},
 		{`insert into risk_actions (account_id, action, score, wave, created_at) values ($1, 'shadowban', 987654321, $2, $2)`, own},
+		{`insert into account_sanctions (account_id, kind, category, starts_at, ends_at) values ($1, 'ranked_ban', 'collusion', $2, $2::timestamptz + interval '1 day')`, own},
 		{`update accounts set language = 'tr' where id = $1`, []any{ayla.ID}},
 		{`insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at) values ($1, 'promotional_push', true, 'p-3', 'settings', '1.0.0', $2)`, own},
 		{`insert into analytics_ids (analytics_id, account_id, first_seen_at) values ('6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b', $1, $2)`, own},
@@ -61,17 +62,18 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		t.Fatalf("header %d %v", document.SchemaVersion, document.GeneratedAt)
 	}
 	wants := map[string][]string{
-		"account":          {`"id":"` + ayla.ID + `"`, `"language":"tr"`},
-		"email":            {`"email":"g-ayla@example.com"`},
-		"profile":          {`"nickname":"Ayla"`},
-		"friends":          {`"nickname":"Ben"`},
-		"friend_requests":  {`"direction":"received"`, `"nickname":"Ben"`},
-		"purchases":        {`"transaction_id":"tx-1"`},
-		"sanctions":        {`"action":"shadowban"`},
-		"sanction_signals": {`"category":"clock_skew"`},
-		"consents":         {`"purpose":"promotional_push"`, `"granted":true`},
-		"analytics":        {`"analytics_id":"6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"`, `"name":"screen_view"`, `"label":"shop"`},
-		"blocks":           nil,
+		"account":           {`"id":"` + ayla.ID + `"`, `"language":"tr"`},
+		"email":             {`"email":"g-ayla@example.com"`},
+		"profile":           {`"nickname":"Ayla"`},
+		"friends":           {`"nickname":"Ben"`},
+		"friend_requests":   {`"direction":"received"`, `"nickname":"Ben"`},
+		"purchases":         {`"transaction_id":"tx-1"`},
+		"sanctions":         {`"action":"shadowban"`},
+		"sanction_signals":  {`"category":"clock_skew"`},
+		"account_sanctions": {`"kind":"ranked_ban"`, `"category":"collusion"`},
+		"consents":          {`"purpose":"promotional_push"`, `"granted":true`},
+		"analytics":         {`"analytics_id":"6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"`, `"name":"screen_view"`, `"label":"shop"`},
+		"blocks":            nil,
 	}
 	for name, fragments := range wants {
 		rows, present := document.Sections[name]

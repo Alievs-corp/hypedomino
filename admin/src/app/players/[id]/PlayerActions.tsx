@@ -11,7 +11,8 @@ import { validAdjustment } from "@/players/record";
 import { boardModes } from "@/players/leaderboard";
 import { ladders, penaltyRunning, type PenaltyView } from "@/players/penalties";
 import type { SeasonMode } from "@/ranked/seasons";
-import { adjustCoins, banTemporarily, forceRename, grantReward, liftPenalty, liftShadowban, liftTemporaryBan, mute, removeFromLeaderboard, removeOffense, shadowban, unmute, type PlayerActionResult } from "./actions";
+import { banCategories, banCategoryKeys, type BanCategory } from "@/players/sanctions";
+import { adjustCoins, banFromRanked, banTemporarily, forceRename, grantReward, liftPenalty, liftRankedBan, liftShadowban, liftTemporaryBan, mute, removeFromLeaderboard, removeOffense, shadowban, unmute, type PlayerActionResult } from "./actions";
 
 type Pending = { action: () => Promise<PlayerActionResult>; onApplied?: () => void };
 
@@ -29,10 +30,11 @@ function outcomeKey(result: PlayerActionResult): MessageKey {
   return result.repeated ? "actions.repeated" : "actions.done";
 }
 
-export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renameRequired, penalties, boardSeasons }: { id: string; clientId: string; banned: boolean; shadowbanned: boolean; muted: boolean; renameRequired: boolean; penalties: PenaltyView | null; boardSeasons: string[] }) {
+export function PlayerActions({ id, clientId, banned, rankedBanned, shadowbanned, muted, renameRequired, penalties, boardSeasons }: { id: string; clientId: string; banned: boolean; rankedBanned: boolean; shadowbanned: boolean; muted: boolean; renameRequired: boolean; penalties: PenaltyView | null; boardSeasons: string[] }) {
   const t = useTranslator();
   const router = useRouter();
   const [reason, setReason] = useState("");
+  const [category, setCategory] = useState<BanCategory | "">("");
   const [amount, setAmount] = useState(Number.NaN);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [grant, setGrant] = useState<GrantDraft>(emptyGrant);
@@ -44,6 +46,7 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renam
   const [pending, startTransition] = useTransition();
   const stepUp = result !== null && !result.ok && needsStepUp(result.error);
   const noReason = reason.trim() === "";
+  const noCategory = noReason || category === "";
 
   function run(next: Pending) {
     setLast(next);
@@ -76,6 +79,17 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renam
       <label className="flex flex-col gap-1 text-sm text-text-secondary">
         {t("actions.reason")}
         <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
+      </label>
+      <label className={labelClass}>
+        {t("actions.ban_category")}
+        <select value={category} onChange={(event) => setCategory(event.target.value as BanCategory | "")} className={fieldClass}>
+          <option value="">-</option>
+          {banCategories.map((option) => (
+            <option key={option} value={option}>
+              {t(banCategoryKeys[option])}
+            </option>
+          ))}
+        </select>
       </label>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
@@ -182,8 +196,17 @@ export function PlayerActions({ id, clientId, banned, shadowbanned, muted, renam
             {t("actions.lift_ban")}
           </button>
         ) : (
-          <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => banTemporarily(id, reason) })} className={buttonClass}>
+          <button type="button" disabled={pending || noCategory} onClick={() => category && run({ action: () => banTemporarily(id, reason, category) })} className={buttonClass}>
             {t("actions.ban")}
+          </button>
+        )}
+        {rankedBanned ? (
+          <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => liftRankedBan(id, reason) })} className={buttonClass}>
+            {t("actions.lift_ranked_ban")}
+          </button>
+        ) : (
+          <button type="button" disabled={pending || noCategory} onClick={() => category && run({ action: () => banFromRanked(id, reason, category) })} className={buttonClass}>
+            {t("actions.ranked_ban")}
           </button>
         )}
         <button type="button" disabled={pending || noReason} onClick={() => run({ action: () => (shadowbanned ? liftShadowban(id, reason) : shadowban(id, reason)) })} className={buttonClass}>
