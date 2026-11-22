@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Core.Analytics;
 using HypeDomino.Game.Shop;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
@@ -99,9 +100,22 @@ namespace HypeDomino.Tests.EditMode
             }
         }
 
+        sealed class AnalyticsSink : IAnalyticsSender
+        {
+            public readonly List<AnalyticsEvent> Sent = new();
+
+            public void Send(string analyticsId, IReadOnlyList<AnalyticsEvent> batch, Action<bool> done)
+            {
+                for (var i = 0; i < batch.Count; i++) Sent.Add(batch[i]);
+                done(true);
+            }
+        }
+
         Api api;
         Billing billing;
         Proofs proofs;
+        AnalyticsSink analytics;
+        AnalyticsQueue events;
         ShopPurchase purchase;
         List<ShopPurchaseResult> results;
 
@@ -117,7 +131,10 @@ namespace HypeDomino.Tests.EditMode
             auth.Refreshes[0](new HttpReply(200, "{\"access_token\":\"access-1\",\"refresh_token\":\"refresh-1\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"acc-1\"}"));
             billing = new Billing();
             proofs = new Proofs { Next = new IntegrityProof { PlayIntegrityToken = "play-token" } };
-            purchase = new ShopPurchase(new ApiClient(api, session), billing, proofs.Request);
+            analytics = new AnalyticsSink();
+            events = new AnalyticsQueue(analytics, () => 1700000000000, 10, 10);
+            events.Consent("3f2b8c1e-5a4d-4e8f-9b7a-1c2d3e4f5a6b");
+            purchase = new ShopPurchase(new ApiClient(api, session), billing, proofs.Request, events);
             results = new List<ShopPurchaseResult>();
         }
 
@@ -388,6 +405,110 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(1, billing.Finished.Count);
             Assert.IsFalse(billing.FinishedByServer[0]);
             Assert.IsFalse(purchase.CanRetry);
+        }
+
+        void AssertTracked(int index, string name)
+        {
+            Assert.AreEqual(name, analytics.Sent[index].Name);
+            Assert.AreEqual("crystals_tier2", analytics.Sent[index].Label);
+            Assert.AreEqual(0, analytics.Sent[index].Value);
+        }
+
+        [Test]
+        public void PurchaseStartIsTrackedWithTheStoreProductIdWhenTheStorePurchaseOpens()
+        {
+            Assert.IsTrue(purchase.Buy(Offer, results.Add));
+            Assert.AreEqual(0, events.Count);
+
+            api.Requests[0].Done(new HttpReply(200, CheckoutJson));
+            Assert.AreEqual(1, billing.Products.Count);
+            Assert.AreEqual(1, events.Count);
+
+            billing.Answer(new StoreBillingResult(StoreBillingOutcome.Purchased, new StoreReceipt(StorePlatform.Google, "purchase-token")));
+            api.Requests[1].Done(new HttpReply(200, GrantedJson));
+            events.Flush();
+
+            Assert.AreEqual(ShopPurchaseOutcome.Granted, results[0].Outcome);
+            Assert.AreEqual(1, analytics.Sent.Count);
+            AssertTracked(0, AnalyticsEvents.PurchaseStart);
+        }
+
+        [Test]
+        public void AStoreCancelTracksPurchaseCancelWithTheStoreProductId()
+        {
+            Assert.IsTrue(purchase.Buy(Offer, results.Add));
+            api.Requests[0].Done(new HttpReply(200, CheckoutJson));
+            billing.Answer(new StoreBillingResult(StoreBillingOutcome.Cancelled, null));
+            events.Flush();
+
+            Assert.AreEqual(ShopPurchaseOutcome.Cancelled, results[0].Outcome);
+            Assert.AreEqual(2, analytics.Sent.Count);
+            AssertTracked(0, AnalyticsEvents.PurchaseStart);
+            AssertTracked(1, AnalyticsEvents.PurchaseCancel);
+        }
+
+        [TestCase(StoreBillingOutcome.Deferred)]
+        [TestCase(StoreBillingOutcome.Unavailable)]
+        [TestCase(StoreBillingOutcome.Failed)]
+        public void AStoreAnswerOtherThanACancelTracksNoCancel(StoreBillingOutcome billed)
+        {
+            Assert.IsTrue(purchase.Buy(Offer, results.Add));
+            api.Requests[0].Done(new HttpReply(200, CheckoutJson));
+            billing.Answer(new StoreBillingResult(billed, null));
+            events.Flush();
+
+            Assert.AreEqual(1, analytics.Sent.Count);
+            AssertTracked(0, AnalyticsEvents.PurchaseStart);
+        }
+
+        [TestCase(409, "{\"error\":\"offer.owned\"}")]
+        [TestCase(503, "{\"error\":\"purchases.disabled\"}")]
+        [TestCase(HttpReply.NoResponse, null)]
+        [TestCase(200, "{}")]
+        public void APurchaseThatNeverReachesTheStoreTracksNothing(int status, string body)
+        {
+            Assert.IsTrue(purchase.Buy(Offer, results.Add));
+            api.Requests[0].Done(new HttpReply(status, body));
+
+            Assert.IsEmpty(billing.Products);
+            Assert.AreEqual(0, events.Count);
+        }
+
+        [Test]
+        public void WithoutStoreBillingNothingIsTracked()
+        {
+            var unavailable = new ShopPurchase(null, new NoStoreBilling(), proofs.Request, events);
+            Assert.IsTrue(unavailable.Buy(Offer, results.Add));
+
+            Assert.AreEqual(ShopPurchaseOutcome.StoreUnavailable, results[0].Outcome);
+            Assert.AreEqual(0, events.Count);
+        }
+
+        [Test]
+        public void ARetryOfAnUnsettledReceiptTracksNoNewStart()
+        {
+            PayInStore();
+            api.Requests[1].Done(new HttpReply(HttpReply.NoResponse, null));
+            Assert.IsTrue(purchase.Retry(results.Add));
+            api.Requests[2].Done(new HttpReply(200, GrantedJson));
+            events.Flush();
+
+            Assert.AreEqual(ShopPurchaseOutcome.Granted, results[1].Outcome);
+            Assert.AreEqual(1, analytics.Sent.Count);
+            AssertTracked(0, AnalyticsEvents.PurchaseStart);
+        }
+
+        [Test]
+        public void WithoutAnalyticsConsentThePurchaseRunsAndNothingIsTracked()
+        {
+            events.Withdraw();
+            Assert.IsTrue(purchase.Buy(Offer, results.Add));
+            api.Requests[0].Done(new HttpReply(200, CheckoutJson));
+            billing.Answer(new StoreBillingResult(StoreBillingOutcome.Cancelled, null));
+
+            Assert.AreEqual(1, billing.Products.Count);
+            Assert.AreEqual(ShopPurchaseOutcome.Cancelled, results[0].Outcome);
+            Assert.AreEqual(0, events.Count);
         }
 
         [Test]
