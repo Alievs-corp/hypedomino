@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Game.Friends;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
@@ -17,29 +18,36 @@ namespace HypeDomino.Game.FriendLobby
         readonly Action<LobbyState> onState;
         readonly Action<InventoryLoadResult> onInventory;
         readonly Action<MemberEmoji> onShown;
+        readonly Action<FriendListLoadOutcome> onFriends;
         Session session;
         LobbyState lastState;
+        bool inRoom;
         int wheelSlots;
 
-        public FriendLobbyLink(FriendRoom room, ApiClient api, Func<long> clockMs)
+        public FriendLobbyLink(FriendRoom room, LobbyCommands commands, ApiClient api, Func<long> clockMs)
         {
             this.room = room ?? throw new ArgumentNullException(nameof(room));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
             if (api == null) throw new ArgumentNullException(nameof(api));
             this.clockMs = clockMs ?? throw new ArgumentNullException(nameof(clockMs));
             Members = new RoomMembers(api);
+            Invites = new InvitePanel(room, commands, api);
             inventory = new InventoryLoader(api);
             onHello = Hello;
             onState = Read;
             onInventory = Loaded;
             onShown = Show;
+            onFriends = FriendsAnswered;
         }
 
         public RoomMembers Members { get; }
+        public InvitePanel Invites { get; }
         public EmojiWheel Wheel { get; private set; }
         public LobbyEmoji Emoji { get; private set; }
 
         public event Action<MemberEmoji> EmojiShown;
         public event Action<InventoryLoadResult> InventoryLoaded;
+        public event Action<FriendListLoadOutcome> FriendsLoaded;
 
         public void Follow(Session source)
         {
@@ -58,6 +66,8 @@ namespace HypeDomino.Game.FriendLobby
             Emoji?.Unbind();
             session = null;
         }
+
+        public bool TryInvite(Friend friend) => session != null && Invites.TryInvite(session, friend);
 
         public bool TrySend(int slot) => session != null && Emoji != null && Emoji.TrySend(session, slot, clockMs());
 
@@ -94,6 +104,9 @@ namespace HypeDomino.Game.FriendLobby
         {
             lastState = state;
             Members.Read(room);
+            Invites.RoomChanged();
+            if (room.InRoom && !inRoom) Invites.Load(onFriends);
+            inRoom = room.InRoom;
         }
 
         void Loaded(InventoryLoadResult result)
@@ -103,5 +116,7 @@ namespace HypeDomino.Game.FriendLobby
         }
 
         void Show(MemberEmoji shown) => EmojiShown?.Invoke(shown);
+
+        void FriendsAnswered(FriendListLoadOutcome outcome) => FriendsLoaded?.Invoke(outcome);
     }
 }

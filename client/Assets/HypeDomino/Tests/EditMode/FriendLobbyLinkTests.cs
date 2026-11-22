@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Google.Protobuf;
 using HypeDomino.Game.FriendLobby;
+using HypeDomino.Game.Friends;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
@@ -18,6 +19,7 @@ namespace HypeDomino.Tests.EditMode
         const ulong Nonce = 0x5EED_0000_0000_0279;
         const string Leader = "acc-leader";
         const string Friend = "acc-friend";
+        const string OnlineFriends = "{\"friends\":[{\"account_id\":\"acc-third\",\"nickname\":\"Nara\",\"since\":\"2026-11-01T10:00:00Z\",\"presence\":\"online\"}]}";
         const string TwoWorn = @"{""items"":[],""loadout"":{""emojis"":[""emoji.laugh"",""emoji.cry""]},""emoji_slots"":2}";
 
         sealed class FakeTransport : IFrameTransport
@@ -105,7 +107,7 @@ namespace HypeDomino.Tests.EditMode
             session = new Session();
             room = new FriendRoom();
             session.LobbyStateReceived += ReadRoom;
-            link = new FriendLobbyLink(room, new ApiClient(api, authSession), Now);
+            link = new FriendLobbyLink(room, new LobbyCommands(), new ApiClient(api, authSession), Now);
             shown = new List<MemberEmoji>();
             outcomes = new List<InventoryLoadOutcome>();
             link.EmojiShown += shown.Add;
@@ -333,6 +335,65 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0, link.Wheel.Count);
             Assert.IsEmpty(shown);
             Assert.IsFalse(link.TrySend(0));
+        }
+
+        void AnswerFriends(string json) => api.LastTo(FriendList.Path).Done(new HttpReply(200, json));
+
+        [Test]
+        public void EnteringARoomLoadsTheFriendsOnceForTheInvitePanel()
+        {
+            var friendOutcomes = new List<FriendListLoadOutcome>();
+            link.FriendsLoaded += friendOutcomes.Add;
+            Hello();
+
+            Assert.AreEqual(0, api.CountTo(FriendList.Path));
+
+            Enter();
+            Enter();
+
+            Assert.AreEqual(1, api.CountTo(FriendList.Path));
+            AnswerFriends(OnlineFriends);
+            Assert.AreEqual(new[] { FriendListLoadOutcome.Loaded }, friendOutcomes);
+            Assert.AreEqual(1, link.Invites.Friends.Count);
+            Assert.AreEqual("K7QM3X", link.Invites.Code);
+
+            Leave();
+            Enter();
+
+            Assert.AreEqual(2, api.CountTo(FriendList.Path));
+        }
+
+        [Test]
+        public void AnInviteIsSentOnceUntilTheRoomChanges()
+        {
+            Hello();
+            Enter();
+            AnswerFriends(OnlineFriends);
+            var nara = link.Invites.Friends[0];
+            var sent = transport.Sent.Count;
+
+            Assert.IsTrue(link.TryInvite(nara));
+            Assert.AreEqual(sent + 1, transport.Sent.Count);
+            Assert.AreEqual(FriendInviteState.Invited, link.Invites.StateOf(nara));
+            Assert.IsFalse(link.TryInvite(nara));
+            Assert.AreEqual(sent + 1, transport.Sent.Count);
+
+            Enter();
+
+            Assert.AreEqual(FriendInviteState.Invitable, link.Invites.StateOf(nara));
+        }
+
+        [Test]
+        public void NoInviteIsSentWithoutASession()
+        {
+            Hello();
+            Enter();
+            AnswerFriends(OnlineFriends);
+            var nara = link.Invites.Friends[0];
+            link.Unfollow();
+
+            Assert.IsFalse(link.TryInvite(nara));
+            Assert.AreEqual(FriendInviteState.Invitable, link.Invites.StateOf(nara));
         }
     }
 }
