@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using HypeDomino.Content;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.Net;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -21,6 +22,7 @@ namespace HypeDomino.Editor
         public const string SigningArgument = "-androidSigning";
         public const string ServerUrlArgument = "-serverUrl";
         public const string HttpTimeoutArgument = "-httpTimeoutSeconds";
+        public const string CrashReportingArgument = "-crashReporting";
         public const string EndpointFolder = "Assets/HypeDomino/Net/Resources";
         public const string AndroidRemoteFolder = "ServerData/Android";
         public const int MaxAndroidVersionCode = 2100000000;
@@ -46,6 +48,7 @@ namespace HypeDomino.Editor
             public string ApplicationId;
             public AndroidSigning Signing;
             public ServerEndpoint Endpoint;
+            public CrashReportSettings CrashReporting;
         }
 
         public static void BuildAndroid() => EditorMethod.Run(() => BuildAndroid(Argument(CatalogVersionArgument), Argument(OutputPathArgument) ?? DefaultAndroidOutput, ReleaseFromArguments()));
@@ -63,6 +66,7 @@ namespace HypeDomino.Editor
                 EditorUserBuildSettings.buildAppBundle = true;
                 Apply(release);
                 WriteEndpoint(release.Endpoint);
+                WriteCrashReporting(release.CrashReporting);
                 if (Directory.Exists(AndroidRemoteFolder)) Directory.Delete(AndroidRemoteFolder, true);
                 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
@@ -75,7 +79,7 @@ namespace HypeDomino.Editor
                 if (report.summary.result != BuildResult.Succeeded) throw new BuildFailedException($"Android release build {report.summary.result}");
                 var catalog = Path.Combine(AndroidRemoteFolder, ContentUrls.CatalogFile(catalogVersion));
                 if (!File.Exists(catalog)) throw new BuildFailedException($"{catalog} was not built");
-                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore} server={release.Endpoint?.serverUrl ?? "none"}");
+                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore} server={release.Endpoint?.serverUrl ?? "none"} crashReports={release.CrashReporting != null}");
             }
             finally
             {
@@ -128,7 +132,21 @@ namespace HypeDomino.Editor
             var signingFile = Argument(SigningArgument);
             var release = ParseRelease(Argument(AppVersionArgument), Argument(BuildNumberArgument), Argument(ApplicationIdArgument), signingFile == null ? null : File.ReadAllText(signingFile));
             release.Endpoint = ParseEndpoint(Argument(ServerUrlArgument), Argument(HttpTimeoutArgument));
+            var crashReportingFile = Argument(CrashReportingArgument);
+            release.CrashReporting = crashReportingFile == null ? null : ParseCrashReporting(File.ReadAllText(crashReportingFile));
             return release;
+        }
+
+        public static CrashReportSettings ParseCrashReporting(string json) =>
+            CrashReportSettings.FromJson(json) ?? throw new ArgumentException($"{CrashReportingArgument} has no dsn; leave the argument out to build without crash reports");
+
+        static void WriteCrashReporting(CrashReportSettings settings)
+        {
+            if (settings == null) return;
+            Directory.CreateDirectory(EndpointFolder);
+            var path = $"{EndpointFolder}/{CrashReportSettings.ResourceName}.json";
+            File.WriteAllText(path, JsonUtility.ToJson(settings));
+            AssetDatabase.ImportAsset(path);
         }
 
         static void WriteEndpoint(ServerEndpoint endpoint)

@@ -106,3 +106,40 @@ func TestSupportUpholdsOrRejectsTheOpenReportsOfAPlayer(t *testing.T) {
 		t.Fatalf("entries %v %v", rejected, upheld)
 	}
 }
+
+func TestTheReportQueueShowsTheEarlierDecisionsOnEachTarget(t *testing.T) {
+	a := newAPI(t)
+	a.now = time.Now().UTC()
+	a.create("orxan@example.com", rbac.Support)
+	support := a.signIn("orxan")
+	rude := a.player("g-1", "rude@mail.example", "Rude")
+	fresh := a.player("g-2", "fresh@mail.example", "Fresh")
+	first := a.player("g-3", "first@mail.example", "First")
+	second := a.player("g-4", "second@mail.example", "Second")
+	a.fileReport(first, rude, report.ReasonNickname, a.now.Add(-3*time.Hour))
+	a.fileReport(second, rude, report.ReasonImpersonation, a.now.Add(-3*time.Hour))
+	status, body := a.call("POST", "/admin/players/"+rude+"/reports/reject", support, map[string]any{"reason": "name is fine"})
+	expect(t, status, body, http.StatusOK, "")
+	a.fileReport(first, rude, report.ReasonNickname, a.now.Add(-time.Hour))
+	a.fileReport(first, fresh, report.ReasonOther, a.now.Add(-30*time.Minute))
+
+	status, body = a.call("GET", "/admin/reports", support, nil)
+	if status != http.StatusOK || len(body["targets"].([]any)) != 2 {
+		t.Fatalf("queue %d %v", status, body)
+	}
+	earlier := body["targets"].([]any)[0].(map[string]any)
+	decisions := earlier["decisions"].([]any)
+	if earlier["account_id"] != rude || len(earlier["reports"].([]any)) != 1 || len(decisions) != 1 {
+		t.Fatalf("earlier target %v", earlier)
+	}
+	decision := decisions[0].(map[string]any)
+	if decision["queue"] != "reports" || decision["outcome"] != report.StateRejected || decision["reports"] != float64(2) || len(decision["reasons"].([]any)) != 2 || decision["decided_at"] == nil {
+		t.Fatalf("decision %v", decision)
+	}
+	if _, leaked := decision["decided_by"]; leaked {
+		t.Fatalf("the decider left the audit log %v", decision)
+	}
+	if none := body["targets"].([]any)[1].(map[string]any)["decisions"].([]any); len(none) != 0 {
+		t.Fatalf("a first report has decisions %v", none)
+	}
+}

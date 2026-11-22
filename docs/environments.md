@@ -238,10 +238,12 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `CONTENT_STORE_SECRET_KEY` | With `CONTENT_STORE_URL` | `Release build` workflow, `content-publish` | `<content-store-secret-key>` | Yes | Repository secret |
 | `CLIENT_SERVER_URL` | Yes, for a `client-v*` tag | `Release build` workflow, passed as `-serverUrl` (2.5) | `https://play.example.com` | No | Repository variable |
 | `CLIENT_HTTP_TIMEOUT_SECONDS` | Yes, for a `client-v*` tag | `Release build` workflow, passed as `-httpTimeoutSeconds` (2.5) | not set: an owner decision (section 7) | No | Repository variable |
+| `CLIENT_SENTRY_DSN` | No: without it a tag build warns and sends no crash reports | `Release build` workflow, written to the `-crashReporting` file (2.5) for a `client-v*` tag | `https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>` | Yes | Repository secret |
+| `CLIENT_SENTRY_ENVIRONMENT` | No | `Release build` workflow, written to the `-crashReporting` file (2.5) | `staging` | No | Repository variable |
 
 ### 2.4 Not read yet
 
-The client reads no environment variable. Client crash reporting (#182) adds its build inputs when the code that reads them lands; that PR adds the row here with all columns filled and the secret to section 3 for each environment. The server and the admin API read `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` (2.1, 2.2).
+The client reads no environment variable; its crash reporting DSN is a build input (2.5). The server and the admin API read `HD_SENTRY_DSN` and `HD_SENTRY_ENVIRONMENT` (2.1, 2.2).
 
 ### 2.5 Client build inputs
 
@@ -251,6 +253,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 |---|---|---|---|---|
 | `-serverUrl` | Together with `-httpTimeoutSeconds`; one without the other fails the build | The player has no server, logs `Net no server endpoint` and stays at boot. In the editor: `http://localhost:8080`, the `server` port of `docker-compose.yml` | `https://play.example.com` | The base of `/auth` and the player API. The WebSocket is `<serverUrl>/ws` (`GET /ws`, `server/internal/app`), `wss` for `https` and `ws` for `http` |
 | `-httpTimeoutSeconds` | Together with `-serverUrl`; a whole number from 1 | In the editor: no timeout (`UnityWebRequest.timeout` 0) | not set: an owner decision (section 7) | The `UnityWebRequest` timeout of every `/auth` and player API request |
+| `-crashReporting` | No | No crash reports: nothing is hooked and nothing leaves the device | `Signing/crash-reporting.json` with `{"dsn": "https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>", "environment": "staging"}` | Client crash reports (#182, `client/README.md`, Error reports), written to `Resources/CrashReporting.json` for that build only. Only a Sentry EU data region DSN is accepted and a refused one is not echoed; a file without `dsn` fails the build. The DSN is a secret in CI (2.3) although it ships inside the build |
 
 ## 3. Where secrets live
 
@@ -265,6 +268,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
+| Client crash report DSN (`CLIENT_SENTRY_DSN`) | GitHub Actions repository secret; one DSN for the builds of a tag, from the Sentry EU data region project the owner creates | Written by the `Release build` workflow to `client/Signing/crash-reporting.json`, removed after the build, and built into the player as `Resources/CrashReporting.json`; unset until the Sentry account exists (section 7) |
 | Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods and of the admin API, which gets the same DSN; unset until the Sentry account exists (section 7) |
 
 Rules:
@@ -337,5 +341,5 @@ Rules:
 - The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
-- Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, panics of the server and the admin API are only logged and counted.
+- Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, panics of the server and the admin API are only logged and counted; until `CLIENT_SENTRY_DSN` is set, release builds send no crash reports. The CI token for the IL2CPP symbol and mapping upload is also the owner's (`docs/launch-runbook.md` OI-6).
 - Client HTTP timeout: no document or config sets the timeout of the player's `/auth` and API requests, so `-httpTimeoutSeconds` (2.5) and `CLIENT_HTTP_TIMEOUT_SECONDS` (2.3) have no value. A tag release fails before the build until the owner sets it (#66).

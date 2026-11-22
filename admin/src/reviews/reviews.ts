@@ -25,6 +25,22 @@ export function evidenceSummary(evidence: unknown): string {
     .join("; ");
 }
 
+export type ReportEntry = { id: number; reporter: string; reason: string; name_text: string; match_id: string | null; updated_at: string };
+
+export type EarlierDecision = { queue: "reports" | "reviews"; outcome: string; reasons: string[]; reports: number; decided_at: string };
+
+export type ReportTarget = { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[]; decisions: EarlierDecision[] };
+
+export function decidedReports(decisions: readonly EarlierDecision[]): { upheld: number; rejected: number } {
+  const totals = { upheld: 0, rejected: 0 };
+  for (const decision of decisions) {
+    if (decision.queue === "reports" && (decision.outcome === "upheld" || decision.outcome === "rejected")) {
+      totals[decision.outcome] += decision.reports;
+    }
+  }
+  return totals;
+}
+
 export const queuePageSize = 50;
 
 export const reviewCauses = ["score", "hard_signal"] as const;
