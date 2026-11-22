@@ -629,6 +629,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `GET /admin/me` | signed in | The account, the session and `permissions`: every object with the actions the roles grant (2.3), for the navigation |
 | `GET /admin/economy/monitors` | V on dashboards | The `docs/economy.md` section 10 monitors now: coins created and spent and the sink ratio over the last 7 days, the median balance, the source mix and the count of accounts above the daily earn alert for the last economy day, and the alerts raised. Aggregates only, no account ids |
 | `GET /admin/economy/monitors/compare?version=N` | V on dashboards | The same monitors for the 7 days before config version `N` was published and for the 7 days after it (up to now), with its domain and publish time |
+| `GET /admin/analytics/kpis?weeks=N` | V on dashboards | Aggregates without ids over the last `N` economy weeks (1 to 13, default 4), from the Monday of the oldest up to today's economy day, which is left out: completed matches (ended, not cancelled) per economy day of their end and mode, and per daily and weekly cohort of analytics ids (the economy day or week of their first `app_open`, by server receive time) the cohort size and the ids with an `app_open` on day 1 and on day 7; a retention count is `null` until that day has ended for every member |
 | `GET /admin/config/version` | V on dashboards | The active `configVersion`: the newest snapshot of any domain, with that `domain` and its `published_at`; 0 and no domain before the first publish |
 | `GET /admin/audit` | V on the audit log | Search: `actor`, `object_type`, `object_id`, `action`, `from`, `to` (RFC 3339), `reason`, `before_id`, `limit`, newest first (section 7) |
 | `POST /admin/audit/export?<search filters>` `{"reason","ref"}` | S: export on the audit log | Every entry the search filters match, newest first, as a JSON attachment; the export itself is an `export` entry with the filters and the entry count |
@@ -806,7 +807,7 @@ The panel UI is localized itself (#213) in `az` and `en`, default `az` (owner de
 | | A-31 Review queue; A-32 Reports; A-33 Appeals | `super_admin`, `support` | 6.4 |
 | | A-34 Moderation lists | `super_admin`, `support` | 5.16 |
 | | A-35 Rights requests | `super_admin`, `support` | 6.5 |
-| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version, with their CSV export (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
+| Analytics | A-36 KPIs, cohorts, economy sink and source, CSV export of aggregates. Built so far: economy monitors at `/analytics`, now and around a config version, with their CSV export; completed matches per day and mode (BS-5) and D1 and D7 retention per daily and weekly cohort (BS-6, BS-7, `docs/closed-beta.md` 4.1) at `/analytics/kpis` with their CSV export (`admin/README.md`) | All; event-level data `analyst`, `super_admin` | #147 |
 | Admin | A-37 Admin accounts and roles; A-38 Audit log; A-39 Retention and privacy config; A-40 Anti-cheat config | `super_admin`; A-38 per section 7 | 5.18, 7, 5.14 |
 
 Every list screen paginates on the server, filters by state and searches by id and name. Every object screen links to its history in the audit log and to the change sets that touched it.
