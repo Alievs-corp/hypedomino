@@ -209,6 +209,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ASC_APP_ID` | With the other `HD_ASC_*` | admin-api | empty | `<numeric-apple-app-id>` | No | from #585 |
 | `HD_TEMP_BAN_HOURS` | No | admin-api | none: temporary bans answer `not_configured` until set (`TempBanHours`, value owed before launch) | `<temp-ban-hours>` | No | from #144 |
 | `HD_MUTE_HOURS` | No | admin-api | 24 (`ModerationMuteHours`) | `<mute-hours>` | No | from #144 |
+| `HD_RANKED_BAN_HOURS` | No | admin-api | 72 (`RankedBanHours`, placeholder until the owner sets it) | `<ranked-ban-hours>` | No | from #186 |
 
 The admin web server (`admin/`) reads three variables on the server side only; the browser never sees the API address. A missing one stops the page that needs it with an error naming the variable.
 

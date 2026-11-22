@@ -64,6 +64,7 @@ A refused command comes back as the `LobbyRefusal` of the `LobbyState`, and the 
 | `WRONG_PHASE` | `lobby.room.refused.wrong_phase` | Bu, hazırda mümkün deyil | This is not possible right now |
 | `BLOCKED` | `lobby.room.refused.blocked` | Bu oyunçunu dəvət etmək olmur | This player cannot be invited |
 | `NOT_FRIEND` | `lobby.room.refused.not_friend` | Yalnız dostları dəvət etmək olar | Only friends can be invited |
+| `RANKED_BAN` | `lobby.room.refused.ranked_ban` | Reytinq oyunlarından ban olunmusan, ona görə custom otaqlar sənin üçün bağlıdır. Casual matçlar açıqdır | You are banned from ranked play, so custom rooms are closed for you. Casual matches stay open |
 | Any other refusal, including the deprecated `UNKNOWN_ACTION` | `notice.generic` | Nəsə alınmadı. Yenidən cəhd et | Something went wrong. Try again |
 
 ## 5. Decisions and open items
