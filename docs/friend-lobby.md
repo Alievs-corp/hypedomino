@@ -22,7 +22,7 @@ FL-5 follows the server: when the custom match ends, the server puts the room ba
 
 - Members: the creator plus invited friends, at most 4, the seat count of the largest mode (R-5). The room has a code for joining without an invite (#268).
 - Members panel: each member shows as their equipped avatar inside their equipped frame, animated where the effect level allows and the static fallback otherwise, with nickname and rank badge. There is no 3D scene and no character (owner decision 2026-11-12).
-- Invite: from the friends panel (#153), an online friend gets an in-game invite; anyone else gets a link that opens the game into the room (deep link) or the room code. A blocked player cannot invite or be invited (#153).
+- Invite: from the friends panel (#153), an online friend gets an in-game invite; anyone else gets a link that opens the game into the room (deep link) or the room code. Until the link format is decided (#154), the panel offers the room code only. A friend in a match or already in the room is not invited, and the panel sends one invite per friend until the room state changes (`client/README.md`, Friend lobby, `InvitePanel`). A blocked player cannot invite or be invited (#153).
 - Emoji: a member sends an owned emoji (#150); it shows over their avatar for every member. The server refuses an emoji the member does not own and applies the same spam limit as in a match (#151).
 - Leadership: the creator controls the room. When the creator leaves, control passes to the member who joined earliest; the room closes when the last member leaves.
 
