@@ -449,6 +449,43 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(LobbyRefusalKeys.SeatsOpen, room.RefusalKey);
         }
 
+        [TestCase(BanReason.Cheating, "ban.reason.cheating")]
+        [TestCase(BanReason.Collusion, "ban.reason.collusion")]
+        [TestCase(BanReason.AfkLeaving, "ban.reason.afk_leaving")]
+        [TestCase(BanReason.OffensiveName, "ban.reason.offensive_name")]
+        [TestCase(BanReason.PaymentFraud, "ban.reason.payment_fraud")]
+        [TestCase(BanReason.Other, "ban.reason.other")]
+        [TestCase((BanReason)42, "ban.reason.other")]
+        public void ARankedBanClosesCustomRoomsWithItsReasonAndEnd(BanReason reason, string reasonKey)
+        {
+            var room = new FriendRoom();
+            const ulong now = 1_800_000_000_000;
+
+            room.Read(new LobbyState { Refusal = LobbyRefusal.RankedBan, RefusedUntilUnixMs = now + 3_600_000, BanReason = reason }, Leader);
+
+            Assert.IsFalse(room.InRoom);
+            Assert.AreEqual(LobbyRefusalKeys.RankedBan, room.RefusalKey);
+            Assert.AreEqual(reasonKey, room.BanReasonKey);
+            Assert.AreEqual(now + 3_600_000, room.RefusedUntilUnixMs);
+            var clock = new ServerClock();
+            clock.Sync(now, 0, 0);
+            Assert.AreEqual(3_600d, room.SecondsUntilBanEnds(clock, 0), 1e-6);
+            Assert.AreEqual(0d, room.SecondsUntilBanEnds(new ServerClock(), 0));
+        }
+
+        [Test]
+        public void AStateWithoutABanNamesNoReasonAndCountsNothing()
+        {
+            var room = new FriendRoom();
+            var clock = new ServerClock();
+            clock.Sync(1_800_000_000_000, 0, 0);
+
+            room.Read(GoldenState(), Leader);
+
+            Assert.IsNull(room.BanReasonKey);
+            Assert.AreEqual(0d, room.SecondsUntilBanEnds(clock, 0));
+        }
+
         [Test]
         public void AStateWithoutARefusalNamesNoText()
         {

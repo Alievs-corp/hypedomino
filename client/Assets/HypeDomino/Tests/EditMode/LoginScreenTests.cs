@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
 using HypeDomino.Game.Privacy;
 using HypeDomino.Net.Auth;
@@ -167,6 +168,57 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(screen.Busy);
             Assert.IsFalse(screen.DeletionPending);
             Assert.AreEqual(0, signedIn);
+        }
+
+        [TestCase("cheating", "ban.reason.cheating")]
+        [TestCase("collusion", "ban.reason.collusion")]
+        [TestCase("afk_leaving", "ban.reason.afk_leaving")]
+        [TestCase("offensive_name", "ban.reason.offensive_name")]
+        [TestCase("payment_fraud", "ban.reason.payment_fraud")]
+        [TestCase("other", "ban.reason.other")]
+        [TestCase("a_future_category", "ban.reason.other")]
+        [TestCase("", "ban.reason.other")]
+        public void ABannedAccountShowsTheBlockAndTheReasonCategory(string category, string reasonKey)
+        {
+            SignInAnswering(403, "{\"error\":\"banned\",\"category\":\"" + category + "\"}");
+
+            Assert.AreEqual(LoginKeys.Banned, screen.MessageKey);
+            Assert.AreEqual(reasonKey, screen.BanReasonKey);
+            Assert.AreEqual(0, signedIn);
+        }
+
+        [Test]
+        public void ABanWithoutACategoryShowsTheOtherReason()
+        {
+            SignInAnswering(403, "{\"error\":\"banned\"}");
+
+            Assert.AreEqual(LoginKeys.Banned, screen.MessageKey);
+            Assert.AreEqual(BanReasonKeys.Other, screen.BanReasonKey);
+        }
+
+        [Test]
+        public void ANewTryClearsTheBanReasonAndOtherRefusalsShowNone()
+        {
+            SignInAnswering(403, "{\"error\":\"banned\",\"category\":\"cheating\"}");
+
+            Assert.IsTrue(screen.TrySignIn(AuthProvider.Google));
+            Assert.IsNull(screen.BanReasonKey);
+            transport.Answer(503, "");
+
+            Assert.AreEqual(LoginKeys.Unavailable, screen.MessageKey);
+            Assert.IsNull(screen.BanReasonKey);
+        }
+
+        [Test]
+        public void EveryBanReasonIsInTheShippedBundleInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            foreach (var category in new[] { "cheating", "collusion", "afk_leaving", "offensive_name", "payment_fraud", "other", "a_future_category", null })
+            {
+                var key = BanReasonKeys.Of(category);
+                Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
+                Assert.IsNotNull(strings.Value(key, "az"), key);
+            }
         }
 
         [Test]
