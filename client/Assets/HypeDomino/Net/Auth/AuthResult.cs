@@ -23,13 +23,15 @@ namespace HypeDomino.Net.Auth
         public readonly bool NewAccount;
         public readonly string Error;
         public readonly string DeleteAt;
+        public readonly string BanCategory;
 
-        public AuthResult(AuthOutcome outcome, bool newAccount = false, string error = null, string deleteAt = null)
+        public AuthResult(AuthOutcome outcome, bool newAccount = false, string error = null, string deleteAt = null, string banCategory = null)
         {
             Outcome = outcome;
             NewAccount = newAccount;
             Error = error;
             DeleteAt = deleteAt;
+            BanCategory = banCategory;
         }
     }
 }
