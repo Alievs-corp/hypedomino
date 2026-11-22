@@ -65,7 +65,7 @@ Every server event is written through `analytics.RecordServerIn` (or `analytics.
 
 `Game/Analytics/ApiAnalyticsSender` posts the batch to `POST /analytics/events` (section 5) through the signed API client, with the access token. It reports the batch as settled, so it leaves the queue, when the server answers 200, and when it refuses the batch for good: 400 (`analytics.malformed`), 403 `analytics.consent_required` and 409 `analytics.id_taken` (section 5). Every other answer keeps the batch for the next flush: no response (offline), a lost session, 429, 5xx and any other refusal. An expired access token is refreshed once by the API client before the answer counts.
 
-`Core/Analytics/AnalyticsFlushTimer` flushes every `AnalyticsFlushSeconds` of real time and at once when the app pauses. `Game/AnalyticsBoot` builds the queue, the sender and the timer when the network layer starts and drives the timer from a hidden object (`Update` and `OnApplicationPause`). The device time of an event is the UTC Unix time in milliseconds. A full batch does not trigger a send of its own: the docs define only the timer and the pause, and a size trigger would repeat a failing send while offline.
+`Core/Analytics/AnalyticsFlushTimer` flushes every `AnalyticsFlushSeconds` of real time (section 6) and at once when the app pauses. `Game/AnalyticsBoot` builds the queue, the sender and the timer when the network layer starts and drives the timer from a hidden object (`Update` and `OnApplicationPause`). The device time of an event is the UTC Unix time in milliseconds. A full batch does not trigger a send of its own: the docs define only the timer and the pause, and a size trigger would repeat a failing send while offline.
 
 ## 5. Server ingest
 
@@ -86,18 +86,14 @@ Not built yet: aggregates without ids (none exist yet, so nothing is kept past t
 
 ## 6. Config
 
-| Field | Meaning |
-|---|---|
-| `AnalyticsBatchSize` | Most events in one send |
-| `AnalyticsQueueLimit` | Most events held while offline |
-| `AnalyticsFlushSeconds` | Time between flushes |
+The three keys are in the `liveops` domain of remote config (`docs/admin.md` 3.1, 5.14), edited, published and rolled back at `/config/liveops`. Defaults are drafts; the values are owner decisions not yet made, and so are the bounds below.
 
-The values are owner decisions not yet made; they are meant to come from admin config. Until then the client uses `AnalyticsSettings.Draft`, a draft that the owner replaces:
+| Key | Default | Min | Max | Meaning |
+|---|---|---|---|---|
+| `AnalyticsBatchSize` | 50 | 1 | 400 | Most events in one send |
+| `AnalyticsQueueLimit` | 500 | 1 | 5000 | Most events held while offline |
+| `AnalyticsFlushSeconds` | 60 | 10 | 3600 | Time between flushes, in seconds |
 
-| Field | Draft |
-|---|---|
-| `AnalyticsBatchSize` | 50 |
-| `AnalyticsQueueLimit` | 500 |
-| `AnalyticsFlushSeconds` | 60 |
+The maximum batch is `AnalyticsSettings.MaxBatchSize` (400): 400 of the longest event the server accepts (a 64-character label) fit the 64 KiB body limit of section 5, so no batch is refused as too large. `AnalyticsQueueLimit` must be at least `AnalyticsBatchSize`, a key left out counting as its default; `server/internal/liveops` refuses any other snapshot, in the admin API and in `config-publish -domain liveops`.
 
-`AnalyticsBatchSize` is at most `AnalyticsSettings.MaxBatchSize` (400): 400 of the longest event the server accepts (a 64-character label) fit the 64 KiB body limit of section 5, so no batch is refused as too large. `AnalyticsQueueLimit` is at least `AnalyticsBatchSize` and `AnalyticsFlushSeconds` is positive.
+Delivery: the game server follows the published `liveops` snapshot and sends the three values, with the defaults for keys not published, in `ServerHello.analytics_config` of every accepted hello (`proto/README.md`). The client starts with `AnalyticsSettings.Draft` (the same defaults) and `Game/Analytics/AnalyticsTuning` applies the values of each accepted hello: the queue takes the new batch size and limit and drops its oldest events above the new limit, and the flush timer restarts its interval when the interval changes. Values outside the client limits (a batch of 0 or above 400, a queue below the batch, an interval of 0) are ignored and the current settings stay. A server without a database sends no values, and the client keeps its current settings.

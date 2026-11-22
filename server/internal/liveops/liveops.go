@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 )
 
 const Domain = "liveops"
@@ -13,9 +15,18 @@ var ErrInvalid = errors.New("liveops: invalid liveops snapshot")
 
 type Key struct {
 	Name    string
+	Unit    string
 	Min     int
+	Max     *int
 	Default int
 }
+
+const (
+	AnalyticsBatchSize    = "AnalyticsBatchSize"
+	AnalyticsQueueLimit   = "AnalyticsQueueLimit"
+	AnalyticsFlushSeconds = "AnalyticsFlushSeconds"
+	AnalyticsMaxBatchSize = 400
+)
 
 var keys = []Key{
 	{Name: "ContentGateMinAvatarsAnimated", Default: 30},
@@ -24,6 +35,13 @@ var keys = []Key{
 	{Name: "ContentGateMinTables", Default: 15},
 	{Name: "ContentGateMinEmoji", Default: 40},
 	{Name: "ContentGateMinMedals", Default: 40},
+	{Name: AnalyticsBatchSize, Unit: "events", Min: 1, Max: bound(AnalyticsMaxBatchSize), Default: 50},
+	{Name: AnalyticsQueueLimit, Unit: "events", Min: 1, Max: bound(5000), Default: 500},
+	{Name: AnalyticsFlushSeconds, Unit: "seconds", Min: 10, Max: bound(3600), Default: 60},
+}
+
+func bound(limit int) *int {
+	return &limit
 }
 
 func Keys() []Key {
@@ -50,9 +68,38 @@ func Parse(raw []byte) (Values, error) {
 		if number < key.Min {
 			return nil, fmt.Errorf("%w: %s %d below %d", ErrInvalid, name, number, key.Min)
 		}
+		if key.Max != nil && number > *key.Max {
+			return nil, fmt.Errorf("%w: %s %d above %d", ErrInvalid, name, number, *key.Max)
+		}
 		values[name] = number
 	}
+	if analytics := values.Analytics(); analytics.QueueLimit < analytics.BatchSize {
+		return nil, fmt.Errorf("%w: %s %d below %s %d", ErrInvalid, AnalyticsQueueLimit, analytics.QueueLimit, AnalyticsBatchSize, analytics.BatchSize)
+	}
 	return values, nil
+}
+
+type Analytics struct {
+	BatchSize    int
+	QueueLimit   int
+	FlushSeconds int
+}
+
+func (v Values) Analytics() Analytics {
+	return Analytics{BatchSize: v.value(AnalyticsBatchSize), QueueLimit: v.value(AnalyticsQueueLimit), FlushSeconds: v.value(AnalyticsFlushSeconds)}
+}
+
+func (v Values) AnalyticsConfig() *pb.AnalyticsConfig {
+	analytics := v.Analytics()
+	return &pb.AnalyticsConfig{BatchSize: uint32(analytics.BatchSize), QueueLimit: uint32(analytics.QueueLimit), FlushSeconds: uint32(analytics.FlushSeconds)}
+}
+
+func (v Values) value(name string) int {
+	if number, set := v[name]; set {
+		return number
+	}
+	key, _ := lookup(name)
+	return key.Default
 }
 
 func lookup(name string) (Key, bool) {

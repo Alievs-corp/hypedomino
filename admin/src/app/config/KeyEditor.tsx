@@ -7,7 +7,7 @@ import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 
-const unitLabels: Readonly<Record<string, MessageKey>> = { seconds: "config.unit.seconds", timeouts: "config.unit.timeouts" };
+const unitLabels: Readonly<Record<string, MessageKey>> = { seconds: "config.unit.seconds", timeouts: "config.unit.timeouts", events: "config.unit.events" };
 
 const fieldClass = "w-24 rounded-md bg-surface px-3 py-1 text-text-primary";
 

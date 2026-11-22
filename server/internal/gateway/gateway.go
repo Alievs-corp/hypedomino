@@ -109,6 +109,7 @@ type Options struct {
 	Origins   []string
 	Strings   func() Strings
 	Cosmetics func() *pb.CosmeticsManifest
+	Analytics func() *pb.AnalyticsConfig
 	Admission func() Admission
 }
 

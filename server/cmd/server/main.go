@@ -35,6 +35,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
@@ -171,6 +172,12 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 			return nil
 		}
 		return &pb.CosmeticsManifest{Version: uint32(published.Version), Hash: published.Hash}
+	})
+	liveopsConfig := snapshot.New(pool, liveops.Domain, liveops.Parse, logger)
+	watchConfig(ctx, a.AwaitBeforeReady, "liveops", config.ConfigPoll, liveopsConfig)
+	a.AnnounceAnalytics(func() *pb.AnalyticsConfig {
+		current, _, _ := liveopsConfig.Current()
+		return current.AnalyticsConfig()
 	})
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
