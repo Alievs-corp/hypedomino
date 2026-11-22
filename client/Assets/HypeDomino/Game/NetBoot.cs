@@ -78,7 +78,7 @@ namespace HypeDomino.Game
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
-            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request));
+            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request, AnalyticsBoot.Queue));
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
