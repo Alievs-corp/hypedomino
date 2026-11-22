@@ -171,7 +171,7 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AGrantIsReadFromTheWire()
         {
-            var appeal = SanctionAppeal.Of(new AppealGrant { SanctionId = 42, Token = "t", ExpiresUnixMs = 1_800_000_000_000 });
+            var appeal = SanctionAppeal.FromWire(new AppealGrant { SanctionId = 42, Token = "t", ExpiresUnixMs = 1_800_000_000_000 });
 
             Assert.IsTrue(appeal.Offered);
             Assert.AreEqual(42, appeal.SanctionId);
@@ -182,10 +182,10 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void AnIncompleteWireGrantOffersNoAppeal()
         {
-            Assert.IsFalse(SanctionAppeal.Of((AppealGrant)null).Offered);
-            Assert.IsFalse(SanctionAppeal.Of(new AppealGrant { Token = "t" }).Offered);
-            Assert.IsFalse(SanctionAppeal.Of(new AppealGrant { SanctionId = 42 }).Offered);
-            Assert.IsFalse(SanctionAppeal.Of(new AppealGrant { SanctionId = ulong.MaxValue, Token = "t" }).Offered);
+            Assert.IsFalse(SanctionAppeal.FromWire(null).Offered);
+            Assert.IsFalse(SanctionAppeal.FromWire(new AppealGrant { Token = "t" }).Offered);
+            Assert.IsFalse(SanctionAppeal.FromWire(new AppealGrant { SanctionId = 42 }).Offered);
+            Assert.IsFalse(SanctionAppeal.FromWire(new AppealGrant { SanctionId = ulong.MaxValue, Token = "t" }).Offered);
         }
 
         [Test]

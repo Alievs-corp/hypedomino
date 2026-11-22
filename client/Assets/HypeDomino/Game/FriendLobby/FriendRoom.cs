@@ -70,7 +70,7 @@ namespace HypeDomino.Game.FriendLobby
             Refusal = state.Refusal;
             RefusedUntilUnixMs = state.RefusedUntilUnixMs;
             BanReason = state.BanReason;
-            Appeal = SanctionAppeal.Of(state.Appeal);
+            Appeal = SanctionAppeal.FromWire(state.Appeal);
             LocalSeat = Seat.Unspecified;
             members.Clear();
             members.AddRange(state.MemberAccountIds);

@@ -87,7 +87,7 @@ namespace HypeDomino.Game.Lobby
                     Refusal = state.Refusal;
                     RefusedUntilUnixMs = state.RefusedUntilUnixMs;
                     BanReason = state.BanReason;
-                    Appeal = SanctionAppeal.Of(state.Appeal);
+                    Appeal = SanctionAppeal.FromWire(state.Appeal);
                     break;
                 default:
                     return;

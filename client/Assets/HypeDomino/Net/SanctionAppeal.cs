@@ -32,7 +32,7 @@ namespace HypeDomino.Net
             return new SanctionAppeal(reply.sanction_id, reply.token, expiresUnixMs);
         }
 
-        public static SanctionAppeal Of(AppealGrant grant)
+        public static SanctionAppeal FromWire(AppealGrant grant)
         {
             if (grant == null || grant.SanctionId == 0 || grant.SanctionId > (ulong)long.MaxValue || string.IsNullOrEmpty(grant.Token)) return default;
             return new SanctionAppeal((long)grant.SanctionId, grant.Token, grant.ExpiresUnixMs);
