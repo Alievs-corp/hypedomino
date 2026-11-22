@@ -178,6 +178,57 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsNull(store.Read(AuthSession.RefreshTokenKey));
         }
 
+        [TestCase("cheating")]
+        [TestCase("collusion")]
+        [TestCase("afk_leaving")]
+        [TestCase("offensive_name")]
+        [TestCase("payment_fraud")]
+        [TestCase("other")]
+        [TestCase("a_future_category")]
+        public void ABanCarriesTheCategoryTheServerNamed(string category)
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\",\"category\":\"" + category + "\"}"));
+
+            var result = SignIn(AuthProvider.Google);
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.AreEqual(category, result.BanCategory);
+        }
+
+        [Test]
+        public void ABanWithoutACategoryCarriesNone()
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\"}"));
+
+            var result = SignIn(AuthProvider.Google);
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.IsTrue(string.IsNullOrEmpty(result.BanCategory));
+        }
+
+        [Test]
+        public void ARefusedRefreshForABanCarriesItsCategory()
+        {
+            store.Write(AuthSession.RefreshTokenKey, "refresh-1");
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\",\"category\":\"collusion\"}"));
+
+            var result = Resume();
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.AreEqual("collusion", result.BanCategory);
+        }
+
+        [Test]
+        public void OnlyABanCarriesACategory()
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(401, "{\"error\":\"token_rejected\",\"category\":\"cheating\"}"));
+
+            Assert.IsNull(SignIn(AuthProvider.Google).BanCategory);
+        }
+
         [Test]
         public void APendingDeletionCarriesItsDate()
         {

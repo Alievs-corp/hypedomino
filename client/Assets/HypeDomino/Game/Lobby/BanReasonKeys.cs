@@ -21,5 +21,15 @@ namespace HypeDomino.Game.Lobby
             BanReason.PaymentFraud => PaymentFraud,
             _ => Other,
         };
+
+        public static string Of(string category) => category switch
+        {
+            "cheating" => Cheating,
+            "collusion" => Collusion,
+            "afk_leaving" => AfkLeaving,
+            "offensive_name" => OffensiveName,
+            "payment_fraud" => PaymentFraud,
+            _ => Other,
+        };
     }
 }

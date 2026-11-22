@@ -257,6 +257,48 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0d, queue.SecondsSearching(ClockAt(JoinedMs), 0));
         }
 
+        [TestCase(BanReason.Cheating, "ban.reason.cheating")]
+        [TestCase(BanReason.Collusion, "ban.reason.collusion")]
+        [TestCase(BanReason.AfkLeaving, "ban.reason.afk_leaving")]
+        [TestCase(BanReason.OffensiveName, "ban.reason.offensive_name")]
+        [TestCase(BanReason.PaymentFraud, "ban.reason.payment_fraud")]
+        [TestCase(BanReason.Other, "ban.reason.other")]
+        [TestCase((BanReason)42, "ban.reason.other")]
+        public void ARankedBanShowsItsReasonAndCountsDownToItsEnd(BanReason reason, string reasonKey)
+        {
+            var state = Refused(QueueRefusal.RankedBan, JoinedMs + 7_200_000);
+            state.BanReason = reason;
+
+            queue.Read(state);
+
+            Assert.AreEqual(QueueRefusalKeys.RankedBan, queue.RefusalKey);
+            Assert.AreEqual(reason, queue.BanReason);
+            Assert.AreEqual(reasonKey, queue.BanReasonKey);
+            Assert.AreEqual(7_200d, queue.SecondsUntilBanEnds(ClockAt(JoinedMs), 0), 1e-6);
+        }
+
+        [Test]
+        public void ARefusalWithoutABanReasonShowsNoReason()
+        {
+            queue.Read(Refused(QueueRefusal.RankedClosed));
+
+            Assert.AreEqual(BanReason.Unspecified, queue.BanReason);
+            Assert.IsNull(queue.BanReasonKey);
+        }
+
+        [Test]
+        public void TheBanReasonIsGoneOnceTheQueueMovesOn()
+        {
+            var state = Refused(QueueRefusal.MatchmakingBan, JoinedMs + 60_000);
+            state.BanReason = BanReason.AfkLeaving;
+            queue.Read(state);
+
+            queue.Read(Searching(Mode._1V1, QueueKind.Casual, JoinedMs));
+
+            Assert.AreEqual(BanReason.Unspecified, queue.BanReason);
+            Assert.IsNull(queue.BanReasonKey);
+        }
+
         [Test]
         public void ABanWithoutAnEndCountsNothing()
         {

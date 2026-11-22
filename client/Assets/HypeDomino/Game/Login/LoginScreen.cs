@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Privacy;
 using HypeDomino.Net.Auth;
 
@@ -53,6 +54,7 @@ namespace HypeDomino.Game.Login
         public bool DeletionPending { get; private set; }
         public DateTimeOffset DeleteAt { get; private set; }
         public string MessageKey { get; private set; }
+        public string BanReasonKey { get; private set; }
 
         public event Action Changed;
 
@@ -63,6 +65,7 @@ namespace HypeDomino.Game.Login
             Busy = true;
             DeletionPending = false;
             MessageKey = null;
+            BanReasonKey = null;
             Changed?.Invoke();
             auth.SignIn(chosen, signInAnswered);
             return true;
@@ -102,6 +105,7 @@ namespace HypeDomino.Game.Login
             else
             {
                 MessageKey = LoginKeys.Of(result.Outcome);
+                BanReasonKey = result.Outcome == AuthOutcome.Banned ? BanReasonKeys.Of(result.BanCategory) : null;
             }
             Changed?.Invoke();
             if (result.Outcome == AuthOutcome.SignedIn) signedIn();
