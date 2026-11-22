@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readReportQuery, readReviewQuery, readSuspiciousQuery, signalWeight } from "./reviews.ts";
+import { decidedReports, evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readReportQuery, readReviewQuery, readSuspiciousQuery, signalWeight } from "./reviews.ts";
 
 test("the listed signals add up to their weight", () => {
   assert.equal(signalWeight([]), 0);
@@ -32,4 +32,18 @@ test("the API path always asks for one page and the next link follows the last e
   const cursors = Array.from({ length: queuePageSize }, (_, at) => String(at + 1));
   assert.equal(nextQueueHref("/reviews", query, cursors), `/reviews?cause=hard_signal&after=${queuePageSize}`);
   assert.equal(nextQueueHref("/reports", { reason: "", account: "ab", after: "" }, cursors.slice(1)), null);
+});
+
+test("earlier report decisions add up the reports they upheld and rejected; review decisions are not reports", () => {
+  assert.deepEqual(decidedReports([]), { upheld: 0, rejected: 0 });
+  const at = "2026-11-05T00:00:00Z";
+  assert.deepEqual(
+    decidedReports([
+      { queue: "reports", outcome: "rejected", reasons: ["impersonation", "offensive_nickname"], reports: 2, decided_at: at },
+      { queue: "reviews", outcome: "confirm", reasons: ["hard_signal"], reports: 0, decided_at: at },
+      { queue: "reports", outcome: "upheld", reasons: ["other"], reports: 1, decided_at: at },
+      { queue: "reports", outcome: "rejected", reasons: ["other"], reports: 3, decided_at: at },
+    ]),
+    { upheld: 1, rejected: 5 },
+  );
 });

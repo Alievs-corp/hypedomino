@@ -547,6 +547,8 @@ Staff test accounts are flagged at creation by `super_admin`, hold no player dat
 
 Each entry shows its age, the evidence the support role may see and the account's earlier decisions.
 
+In the report queue (#186) each reported player carries `decisions`: the newest 50 earlier decisions on the account, newest first, from `player_reports` and `risk_reviews` (`server/internal/playerrecord`). A report decision is one uphold or reject, which closed every open report on the account at once, with its outcome (`upheld`, `rejected`), the reasons and the number of reports it closed. A review decision is a closed review with its outcome (`clear`, `confirm`) and cause. Each has its decision time. Who decided is not returned; it stays in the audit log. Forced renames, mutes and temporary bans are recorded only in the audit log, which about a player is `super_admin` only (D-27), so the queue does not list them; the player record shows the account's current ban, mute and rename state. The review and appeal queues do not show earlier decisions yet.
+
 ### 6.5 Rights requests
 
 Records of objections and other requests handled through support (`docs/privacy.md` 8.1): account, type, received, deadline (30 days), state, outcome. The list shows open requests by age (L-21).

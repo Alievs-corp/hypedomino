@@ -19,7 +19,12 @@ const (
 )
 
 type reportsResponse struct {
-	Targets []report.Target `json:"targets"`
+	Targets []reportTarget `json:"targets"`
+}
+
+type reportTarget struct {
+	report.Target
+	Decisions []playerrecord.Decision `json:"decisions"`
 }
 
 type reportsDecision struct {
@@ -43,10 +48,23 @@ func (h *Handler) listReports(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
-	if targets == nil {
-		targets = []report.Target{}
+	accounts := make([]string, len(targets))
+	for index, target := range targets {
+		accounts[index] = target.AccountID
 	}
-	reply(w, http.StatusOK, reportsResponse{Targets: targets})
+	decisions, err := playerrecord.Decisions(r.Context(), h.pool, accounts, playerrecord.ListLimit)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	views := make([]reportTarget, len(targets))
+	for index, target := range targets {
+		views[index] = reportTarget{Target: target, Decisions: decisions[target.AccountID]}
+		if views[index].Decisions == nil {
+			views[index].Decisions = []playerrecord.Decision{}
+		}
+	}
+	reply(w, http.StatusOK, reportsResponse{Targets: views})
 }
 
 func (h *Handler) decideReports(state, action string) authedHandler {
