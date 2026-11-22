@@ -81,10 +81,12 @@ namespace HypeDomino.Game
             Lobby = new LobbyCommands();
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
+            FriendLobbyBoot.Start(session, Room, Api);
             BuildLoaders(Api);
-            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request));
+            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request, AnalyticsBoot.Queue));
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
+            PrivacyBoot.Start(Api, Auth, session);
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
             Login = new LoginScreen(Auth, new AccountDeletion(http, identity), SignInOptions.Current, Dial);
