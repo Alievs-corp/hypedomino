@@ -26,6 +26,7 @@ namespace HypeDomino.Net.Auth
         public string error;
         public string delete_at;
         public string category;
+        public AppealGrantReply appeal;
     }
 
     [Serializable]

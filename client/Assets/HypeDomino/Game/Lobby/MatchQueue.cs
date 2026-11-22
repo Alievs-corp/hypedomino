@@ -27,6 +27,7 @@ namespace HypeDomino.Game.Lobby
         public QueueRefusal Refusal { get; private set; }
         public ulong RefusedUntilUnixMs { get; private set; }
         public BanReason BanReason { get; private set; }
+        public SanctionAppeal Appeal { get; private set; }
         public bool AwaitingReply => repliesDue > 0;
         public bool CanLeave => !leaveSent && (Phase == QueuePhase.Searching || repliesDue > 0);
         public string RefusalKey => Phase == QueuePhase.Refused ? QueueRefusalKeys.Of(Refusal) : null;
@@ -86,6 +87,7 @@ namespace HypeDomino.Game.Lobby
                     Refusal = state.Refusal;
                     RefusedUntilUnixMs = state.RefusedUntilUnixMs;
                     BanReason = state.BanReason;
+                    Appeal = SanctionAppeal.Of(state.Appeal);
                     break;
                 default:
                     return;
@@ -126,6 +128,7 @@ namespace HypeDomino.Game.Lobby
             Refusal = QueueRefusal.Unspecified;
             RefusedUntilUnixMs = 0;
             BanReason = BanReason.Unspecified;
+            Appeal = default;
         }
 
         void OnHello(ServerHello hello) => Reset();

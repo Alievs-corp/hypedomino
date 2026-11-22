@@ -41,6 +41,7 @@ namespace HypeDomino.Game.FriendLobby
         public ulong RefusedUntilUnixMs { get; private set; }
         public BanReason BanReason { get; private set; }
         public string BanReasonKey => BanReasonKeys.Of(BanReason);
+        public SanctionAppeal Appeal { get; private set; }
         public Seat LocalSeat { get; private set; }
         public IReadOnlyList<string> Members => members;
         public IReadOnlyList<string> Waiting => waiting;
@@ -69,6 +70,7 @@ namespace HypeDomino.Game.FriendLobby
             Refusal = state.Refusal;
             RefusedUntilUnixMs = state.RefusedUntilUnixMs;
             BanReason = state.BanReason;
+            Appeal = SanctionAppeal.Of(state.Appeal);
             LocalSeat = Seat.Unspecified;
             members.Clear();
             members.AddRange(state.MemberAccountIds);

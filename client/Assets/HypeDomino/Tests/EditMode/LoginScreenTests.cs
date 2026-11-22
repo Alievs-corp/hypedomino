@@ -188,6 +188,29 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ABannedAccountOffersItsAppealUntilTheNextTry()
+        {
+            SignInAnswering(403, "{\"error\":\"banned\",\"category\":\"cheating\",\"appeal\":{\"sanction_id\":42,\"token\":\"appeal-1\",\"expires_at\":\"2026-11-22T10:30:00Z\"}}");
+
+            Assert.IsTrue(screen.Appeal.Offered);
+            Assert.AreEqual(42, screen.Appeal.SanctionId);
+            Assert.AreEqual("appeal-1", screen.Appeal.Token);
+
+            Assert.IsTrue(screen.TrySignIn(AuthProvider.Google));
+            Assert.IsFalse(screen.Appeal.Offered);
+            transport.Answer(503, "");
+            Assert.IsFalse(screen.Appeal.Offered);
+        }
+
+        [Test]
+        public void ABanWithoutAGrantOffersNoAppeal()
+        {
+            SignInAnswering(403, "{\"error\":\"banned\",\"category\":\"cheating\"}");
+
+            Assert.IsFalse(screen.Appeal.Offered);
+        }
+
+        [Test]
         public void ABanWithoutACategoryShowsTheOtherReason()
         {
             SignInAnswering(403, "{\"error\":\"banned\"}");
