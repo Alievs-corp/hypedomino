@@ -10,9 +10,7 @@ namespace HypeDomino.Game.Privacy
         public const string Path = "/consents";
 
         readonly ApiClient api;
-        readonly AnalyticsQueue analytics;
-        readonly ErrorReports diagnostics;
-        readonly Func<string> newAnalyticsId;
+        readonly ConsentGates gates;
         readonly string policyVersion;
         readonly string appVersion;
 
@@ -21,9 +19,7 @@ namespace HypeDomino.Game.Privacy
             if (string.IsNullOrEmpty(policyVersion)) throw new ArgumentException("policy version required", nameof(policyVersion));
             if (string.IsNullOrEmpty(appVersion)) throw new ArgumentException("app version required", nameof(appVersion));
             this.api = api;
-            this.analytics = analytics ?? throw new ArgumentNullException(nameof(analytics));
-            this.diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
-            this.newAnalyticsId = newAnalyticsId ?? throw new ArgumentNullException(nameof(newAnalyticsId));
+            gates = new ConsentGates(analytics, diagnostics, newAnalyticsId);
             this.policyVersion = policyVersion;
             this.appVersion = appVersion;
         }
@@ -56,8 +52,7 @@ namespace HypeDomino.Game.Privacy
         {
             if (Busy || !Loaded) return false;
             Busy = true;
-            if (!analyticsOn) analytics.Withdraw();
-            if (!diagnosticsOn) diagnostics.Withdraw();
+            gates.Withdraw(analyticsOn, diagnosticsOn);
             var request = new ConsentChangeRequest { analytics = analyticsOn, diagnostics = diagnosticsOn, policyVersion = policyVersion, appVersion = appVersion };
             api.Put(Path, request.ToJson(), reply => Answer(reply, done));
             return true;
@@ -77,29 +72,8 @@ namespace HypeDomino.Game.Privacy
             Loaded = true;
             Analytics = choices.analytics;
             Diagnostics = choices.diagnostics;
-            GateAnalytics();
-            GateDiagnostics();
+            gates.Apply(choices);
             if (changed) Changed?.Invoke();
-        }
-
-        void GateAnalytics()
-        {
-            if (!Analytics)
-            {
-                analytics.Withdraw();
-                return;
-            }
-            if (!analytics.Consented) analytics.Consent(newAnalyticsId());
-        }
-
-        void GateDiagnostics()
-        {
-            if (Diagnostics)
-            {
-                diagnostics.Consent();
-                return;
-            }
-            diagnostics.Withdraw();
         }
     }
 }
