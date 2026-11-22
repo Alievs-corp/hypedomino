@@ -449,6 +449,23 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(LobbyRefusalKeys.SeatsOpen, room.RefusalKey);
         }
 
+        [Test]
+        public void ARankedBanOffersItsAppealUntilTheNextState()
+        {
+            var room = new FriendRoom();
+            var refused = new LobbyState { Refusal = LobbyRefusal.RankedBan, BanReason = BanReason.Cheating };
+            refused.Appeal = new AppealGrant { SanctionId = 42, Token = "appeal-1", ExpiresUnixMs = 1_800_000_000_000 };
+
+            room.Read(refused, Leader);
+
+            Assert.IsTrue(room.Appeal.Offered);
+            Assert.AreEqual(42, room.Appeal.SanctionId);
+            Assert.AreEqual("appeal-1", room.Appeal.Token);
+
+            room.Read(new LobbyState(), Leader);
+            Assert.IsFalse(room.Appeal.Offered);
+        }
+
         [TestCase(BanReason.Cheating, "ban.reason.cheating")]
         [TestCase(BanReason.Collusion, "ban.reason.collusion")]
         [TestCase(BanReason.AfkLeaving, "ban.reason.afk_leaving")]

@@ -130,6 +130,7 @@ namespace HypeDomino.UI.Profile
         public string FrameId { get; }
         public bool RenameRequired { get; private set; }
         public ulong RenameAvailableUnixMs { get; private set; }
+        public SanctionAppeal RenameAppeal { get; private set; }
         public int StatCount => stats.Length;
         public int ModeStatsCount => modeStats.Length;
         public int RankCount => ranks.Length;
@@ -167,6 +168,7 @@ namespace HypeDomino.UI.Profile
             {
                 RenameRequired = reply.rename_required,
                 RenameAvailableUnixMs = renameAvailableUnixMs,
+                RenameAppeal = reply.rename_required ? SanctionAppeal.Of(reply.rename_appeal) : default,
             };
             return true;
         }

@@ -286,6 +286,52 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsNull(queue.BanReasonKey);
         }
 
+        [TestCase(QueueRefusal.RankedBan)]
+        [TestCase(QueueRefusal.MatchmakingBan)]
+        public void ABanRefusalOffersItsAppealUntilTheQueueMovesOn(QueueRefusal refusal)
+        {
+            var state = Refused(refusal, JoinedMs + 60_000);
+            state.Appeal = new AppealGrant { SanctionId = 42, Token = "appeal-1", ExpiresUnixMs = JoinedMs + 1_800_000 };
+
+            queue.Read(state);
+
+            Assert.IsTrue(queue.Appeal.Offered);
+            Assert.AreEqual(42, queue.Appeal.SanctionId);
+            Assert.AreEqual("appeal-1", queue.Appeal.Token);
+            Assert.AreEqual(JoinedMs + 1_800_000, queue.Appeal.ExpiresUnixMs);
+
+            queue.Read(Searching(Mode._1V1, QueueKind.Casual, JoinedMs));
+            Assert.IsFalse(queue.Appeal.Offered);
+
+            queue.Read(state);
+            queue.Reset();
+            Assert.IsFalse(queue.Appeal.Offered);
+        }
+
+        [Test]
+        public void ARefusalWithoutAGrantOffersNoAppeal()
+        {
+            queue.Read(Refused(QueueRefusal.RankedBan, JoinedMs + 60_000));
+
+            Assert.IsFalse(queue.Appeal.Offered);
+        }
+
+        [Test]
+        public void ReadingABanRefusalWithItsAppealAllocatesNothing()
+        {
+            var refused = Refused(QueueRefusal.RankedBan, JoinedMs + 60_000);
+            refused.Appeal = new AppealGrant { SanctionId = 42, Token = "appeal-1", ExpiresUnixMs = JoinedMs + 1_800_000 };
+            var left = Left();
+            TestDelegate step = () =>
+            {
+                queue.Read(refused);
+                queue.Read(left);
+            };
+            step();
+
+            Assert.That(step, Allocates.Nothing);
+        }
+
         [Test]
         public void TheBanReasonIsGoneOnceTheQueueMovesOn()
         {

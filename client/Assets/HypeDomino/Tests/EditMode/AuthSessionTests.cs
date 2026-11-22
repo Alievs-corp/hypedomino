@@ -206,6 +206,23 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
             Assert.IsTrue(string.IsNullOrEmpty(result.BanCategory));
+            Assert.IsFalse(result.Appeal.Offered);
+        }
+
+        [Test]
+        public void ABanCarriesItsAppealGrant()
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"2026-12-01T00:00:00Z\",\"appeal\":{\"sanction_id\":42,\"token\":\"appeal-1\",\"expires_at\":\"2026-11-22T10:30:00Z\"}}"));
+
+            var result = SignIn(AuthProvider.Google);
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.IsTrue(result.Appeal.Offered);
+            Assert.AreEqual(42, result.Appeal.SanctionId);
+            Assert.AreEqual("appeal-1", result.Appeal.Token);
+            Assert.AreEqual((ulong)new DateTimeOffset(2026, 11, 22, 10, 30, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), result.Appeal.ExpiresUnixMs);
+            CollectionAssert.DoesNotContain(store.Values.Values, "appeal-1");
         }
 
         [Test]

@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Net;
 using HypeDomino.UI.Medals;
 using UnityEngine;
 
@@ -30,6 +31,7 @@ namespace HypeDomino.UI.Profile
         public bool setup_required;
         public bool rename_required;
         public string rename_available_at;
+        public AppealGrantReply rename_appeal;
         public int level;
         public long xp;
         public LoadoutReply loadout;

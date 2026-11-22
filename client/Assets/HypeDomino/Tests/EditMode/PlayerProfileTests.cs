@@ -45,6 +45,27 @@ namespace HypeDomino.Tests.EditMode
             return profile;
         }
 
+        const string RenameAppealJson = @",""rename_appeal"":{""sanction_id"":42,""token"":""appeal-1"",""expires_at"":""2026-11-22T10:30:00Z""}";
+
+        [Test]
+        public void AForcedRenameOffersItsAppeal()
+        {
+            var profile = Own(OwnJson.Replace(@"""rename_required"":false", @"""rename_required"":true" + RenameAppealJson));
+
+            Assert.IsTrue(profile.RenameRequired);
+            Assert.IsTrue(profile.RenameAppeal.Offered);
+            Assert.AreEqual(42, profile.RenameAppeal.SanctionId);
+            Assert.AreEqual("appeal-1", profile.RenameAppeal.Token);
+        }
+
+        [Test]
+        public void OnlyAPendingForcedRenameOffersAnAppeal()
+        {
+            Assert.IsFalse(Own().RenameAppeal.Offered);
+            Assert.IsFalse(Own(OwnJson.Replace(@"""rename_required"":false", @"""rename_required"":false" + RenameAppealJson)).RenameAppeal.Offered);
+            Assert.IsFalse(Own(OwnJson.Replace(@"""rename_required"":false", @"""rename_required"":true")).RenameAppeal.Offered);
+        }
+
         static void AssertStats(PlayerProfile profile, params (ProfileStat stat, int value)[] expected)
         {
             Assert.AreEqual(expected.Length, profile.StatCount);
