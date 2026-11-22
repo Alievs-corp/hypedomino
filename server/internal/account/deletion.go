@@ -59,6 +59,7 @@ var erasures = map[string]erasure{
 	"friend_codes":         eraseRows,
 	"ratings":              eraseRows,
 	"analytics_ids":        eraseRows,
+	"appeals":              eraseRows,
 	"match_participants":   moveToTombstone,
 	"rating_changes":       moveToTombstone,
 	"season_results":       moveToTombstone,

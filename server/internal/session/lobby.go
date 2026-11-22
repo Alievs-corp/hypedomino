@@ -29,6 +29,8 @@ type Friends interface {
 
 type RankedBanCheck func(ctx context.Context, account string, now time.Time) error
 
+type AppealFunc func(account string, sanctionID int64) *pb.AppealGrant
+
 type RemoteLobby interface {
 	Join(ctx context.Context, code, account, session string) (pb.LobbyRefusal, error)
 	Invite(ctx context.Context, to string, invite *pb.LobbyInvite) error
@@ -51,6 +53,10 @@ func (m *Manager) Reach(remote RemoteLobby) {
 
 func (m *Manager) Restrict(rankedBan RankedBanCheck) {
 	m.rankedBan = rankedBan
+}
+
+func (m *Manager) GrantAppeals(appeal AppealFunc) {
+	m.appeal = appeal
 }
 
 func (m *Manager) customRoomsOpen(account string) error {
@@ -221,11 +227,11 @@ func (c *connection) Lobby(intent *pb.LobbyIntent) {
 		state = stateMessage(r.State())
 	}
 	state.Refusal = refusalOf(err)
-	explainBan(state, err)
+	c.explainBan(state, err)
 	c.sendLobby(state)
 }
 
-func explainBan(state *pb.LobbyState, err error) {
+func (c *connection) explainBan(state *pb.LobbyState, err error) {
 	var ranked *sanction.RankedBanError
 	if !errors.As(err, &ranked) {
 		return
@@ -234,6 +240,9 @@ func explainBan(state *pb.LobbyState, err error) {
 		state.RefusedUntilUnixMs = uint64(ends.UnixMilli())
 	}
 	state.BanReason = ranked.Sanction.Category.Reason()
+	if c.manager.appeal != nil {
+		state.Appeal = c.manager.appeal(c.session.account, ranked.Sanction.ID)
+	}
 }
 
 func (c *connection) command(intent *pb.LobbyIntent) error {

@@ -98,21 +98,22 @@ func TestABannedSignInNamesTheCategoryOfTheRunningBan(t *testing.T) {
 	}
 	cases := []struct {
 		name  string
-		setup func(tx pgx.Tx) error
+		setup func(tx pgx.Tx) (int64, error)
 		want  string
 	}{
-		{"a ban set before categories", func(pgx.Tx) error { return nil }, "other"},
-		{"a row without a category", func(tx pgx.Tx) error {
-			_, err := tx.Exec(ctx, `insert into account_sanctions (account_id, kind, starts_at, ends_at) values ($1, 'temporary_ban', $2, $3)`, a.ID, now, until)
-			return err
+		{"a ban set before categories", func(pgx.Tx) (int64, error) { return 0, nil }, "other"},
+		{"a row without a category", func(tx pgx.Tx) (int64, error) {
+			var id int64
+			err := tx.QueryRow(ctx, `insert into account_sanctions (account_id, kind, starts_at, ends_at) values ($1, 'temporary_ban', $2, $3) returning id`, a.ID, now, until).Scan(&id)
+			return id, err
 		}, "other"},
-		{"a temporary ban", func(tx pgx.Tx) error {
-			_, err := sanction.Impose(ctx, tx, a.ID, sanction.TemporaryBan, sanction.Collusion, now, &until)
-			return err
+		{"a temporary ban", func(tx pgx.Tx) (int64, error) {
+			imposed, err := sanction.Impose(ctx, tx, a.ID, sanction.TemporaryBan, sanction.Collusion, now, &until)
+			return imposed.ID, err
 		}, "collusion"},
-		{"a ranked ban only", func(tx pgx.Tx) error {
+		{"a ranked ban only", func(tx pgx.Tx) (int64, error) {
 			_, err := sanction.Impose(ctx, tx, a.ID, sanction.RankedBan, sanction.Cheating, now, &until)
-			return err
+			return 0, err
 		}, "other"},
 	}
 	for _, c := range cases {
@@ -120,7 +121,8 @@ func TestABannedSignInNamesTheCategoryOfTheRunningBan(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := c.setup(tx); err != nil {
+		sanctionID, err := c.setup(tx)
+		if err != nil {
 			t.Fatal(err)
 		}
 		if err := tx.Commit(ctx); err != nil {
@@ -128,7 +130,8 @@ func TestABannedSignInNamesTheCategoryOfTheRunningBan(t *testing.T) {
 		}
 		_, _, err = store.SignIn(ctx, identity)
 		var banned *account.BannedError
-		if !errors.As(err, &banned) || !errors.Is(err, account.ErrBanned) || banned.Category != c.want {
+		if !errors.As(err, &banned) || !errors.Is(err, account.ErrBanned) || banned.Category != c.want || banned.SanctionID != sanctionID ||
+			banned.Until == nil || !banned.Until.Equal(until.Truncate(time.Microsecond)) {
 			t.Fatalf("%s: %v", c.name, err)
 		}
 		if _, err := pool.Exec(ctx, `delete from account_sanctions where account_id = $1`, a.ID); err != nil {

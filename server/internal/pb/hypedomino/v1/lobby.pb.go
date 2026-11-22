@@ -397,6 +397,7 @@ type LobbyState struct {
 	Refusal            LobbyRefusal           `protobuf:"varint,7,opt,name=refusal,proto3,enum=hypedomino.v1.LobbyRefusal" json:"refusal,omitempty"`
 	RefusedUntilUnixMs uint64                 `protobuf:"varint,8,opt,name=refused_until_unix_ms,json=refusedUntilUnixMs,proto3" json:"refused_until_unix_ms,omitempty"`
 	BanReason          BanReason              `protobuf:"varint,9,opt,name=ban_reason,json=banReason,proto3,enum=hypedomino.v1.BanReason" json:"ban_reason,omitempty"`
+	Appeal             *AppealGrant           `protobuf:"bytes,10,opt,name=appeal,proto3" json:"appeal,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -492,6 +493,13 @@ func (x *LobbyState) GetBanReason() BanReason {
 		return x.BanReason
 	}
 	return BanReason_BAN_REASON_UNSPECIFIED
+}
+
+func (x *LobbyState) GetAppeal() *AppealGrant {
+	if x != nil {
+		return x.Appeal
+	}
+	return nil
 }
 
 type LobbyRelay struct {
@@ -632,7 +640,7 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\tLobbySeat\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x02 \x01(\tR\taccountId\"\xa7\x03\n" +
+	"account_id\x18\x02 \x01(\tR\taccountId\"\xdb\x03\n" +
 	"\n" +
 	"LobbyState\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12*\n" +
@@ -644,7 +652,9 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\arefusal\x18\a \x01(\x0e2\x1b.hypedomino.v1.LobbyRefusalR\arefusal\x121\n" +
 	"\x15refused_until_unix_ms\x18\b \x01(\x04R\x12refusedUntilUnixMs\x127\n" +
 	"\n" +
-	"ban_reason\x18\t \x01(\x0e2\x18.hypedomino.v1.BanReasonR\tbanReason\"\x9c\x01\n" +
+	"ban_reason\x18\t \x01(\x0e2\x18.hypedomino.v1.BanReasonR\tbanReason\x122\n" +
+	"\x06appeal\x18\n" +
+	" \x01(\v2\x1a.hypedomino.v1.AppealGrantR\x06appeal\"\x9c\x01\n" +
 	"\n" +
 	"LobbyRelay\x12\x1d\n" +
 	"\n" +
@@ -725,6 +735,7 @@ var file_hypedomino_v1_lobby_proto_goTypes = []any{
 	(Mode)(0),           // 8: hypedomino.v1.Mode
 	(Seat)(0),           // 9: hypedomino.v1.Seat
 	(BanReason)(0),      // 10: hypedomino.v1.BanReason
+	(*AppealGrant)(nil), // 11: hypedomino.v1.AppealGrant
 }
 var file_hypedomino_v1_lobby_proto_depIdxs = []int32{
 	0,  // 0: hypedomino.v1.LobbyIntent.command:type_name -> hypedomino.v1.LobbyCommand
@@ -736,12 +747,13 @@ var file_hypedomino_v1_lobby_proto_depIdxs = []int32{
 	4,  // 6: hypedomino.v1.LobbyState.seats:type_name -> hypedomino.v1.LobbySeat
 	2,  // 7: hypedomino.v1.LobbyState.refusal:type_name -> hypedomino.v1.LobbyRefusal
 	10, // 8: hypedomino.v1.LobbyState.ban_reason:type_name -> hypedomino.v1.BanReason
-	9,  // 9: hypedomino.v1.LobbyRelay.requested_seat:type_name -> hypedomino.v1.Seat
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	11, // 9: hypedomino.v1.LobbyState.appeal:type_name -> hypedomino.v1.AppealGrant
+	9,  // 10: hypedomino.v1.LobbyRelay.requested_seat:type_name -> hypedomino.v1.Seat
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_lobby_proto_init() }

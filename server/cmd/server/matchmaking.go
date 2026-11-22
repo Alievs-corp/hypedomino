@@ -47,6 +47,7 @@ type matchmakingDeps struct {
 	penalties  *penalties.Store
 	friends    *friends.Store
 	emoji      room.EmojiLimit
+	appeal     matchqueue.AppealFunc
 	rankedOpen func() bool
 }
 
@@ -69,6 +70,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	rankedBan := sanction.RankedBanCheck(deps.pool)
 	gate := matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RankedBanned(rankedBan, matchqueue.RatedEntry(deps.ratings))), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
 	gate.Measure(deps.metrics)
+	gate.GrantAppeals(deps.appeal)
 	deps.sessions.Queue(gate)
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
 	muted := matchstart.Muted(deps.pool, time.Now)

@@ -33,7 +33,7 @@ namespace Hypedomino.V1 {
             "ASgOMhMuaHlwZWRvbWluby52MS5TZWF0UgRzZWF0EhoKBmFjdGlvbhgGIAEo",
             "CUICGAFSBmFjdGlvbiJTCglMb2JieVNlYXQSJwoEc2VhdBgBIAEoDjITLmh5",
             "cGVkb21pbm8udjEuU2VhdFIEc2VhdBIdCgphY2NvdW50X2lkGAIgASgJUglh",
-            "Y2NvdW50SWQipwMKCkxvYmJ5U3RhdGUSEgoEY29kZRgBIAEoCVIEY29kZRIq",
+            "Y2NvdW50SWQi2wMKCkxvYmJ5U3RhdGUSEgoEY29kZRgBIAEoCVIEY29kZRIq",
             "ChFsZWFkZXJfYWNjb3VudF9pZBgCIAEoCVIPbGVhZGVyQWNjb3VudElkEiwK",
             "Em1lbWJlcl9hY2NvdW50X2lkcxgDIAMoCVIQbWVtYmVyQWNjb3VudElkcxIv",
             "CgVwaGFzZRgEIAEoDjIZLmh5cGVkb21pbm8udjEuTG9iYnlQaGFzZVIFcGhh",
@@ -42,46 +42,47 @@ namespace Hypedomino.V1 {
             "cxI1CgdyZWZ1c2FsGAcgASgOMhsuaHlwZWRvbWluby52MS5Mb2JieVJlZnVz",
             "YWxSB3JlZnVzYWwSMQoVcmVmdXNlZF91bnRpbF91bml4X21zGAggASgEUhJy",
             "ZWZ1c2VkVW50aWxVbml4TXMSNwoKYmFuX3JlYXNvbhgJIAEoDjIYLmh5cGVk",
-            "b21pbm8udjEuQmFuUmVhc29uUgliYW5SZWFzb24inAEKCkxvYmJ5UmVsYXkS",
-            "HQoKYWNjb3VudF9pZBgBIAEoCVIJYWNjb3VudElkEhoKBmFjdGlvbhgCIAEo",
-            "CUICGAFSBmFjdGlvbhIXCgdpdGVtX2lkGAMgASgJUgZpdGVtSWQSOgoOcmVx",
-            "dWVzdGVkX3NlYXQYBCABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXRSDXJlcXVl",
-            "c3RlZFNlYXQiSQoLTG9iYnlJbnZpdGUSEgoEY29kZRgBIAEoCVIEY29kZRIm",
-            "Cg9mcm9tX2FjY291bnRfaWQYAiABKAlSDWZyb21BY2NvdW50SWQq4QIKDExv",
-            "YmJ5Q29tbWFuZBIdChlMT0JCWV9DT01NQU5EX1VOU1BFQ0lGSUVEEAASGAoU",
-            "TE9CQllfQ09NTUFORF9DUkVBVEUQARIWChJMT0JCWV9DT01NQU5EX0pPSU4Q",
-            "AhIXChNMT0JCWV9DT01NQU5EX0xFQVZFEAMSFwoTTE9CQllfQ09NTUFORF9U",
-            "RUFNUxAEEhYKEkxPQkJZX0NPTU1BTkRfQkFDSxAFEhcKE0xPQkJZX0NPTU1B",
-            "TkRfUExBQ0UQBhIYChRMT0JCWV9DT01NQU5EX1JFTU9WRRAHEhcKE0xPQkJZ",
-            "X0NPTU1BTkRfU1RBUlQQCBIZChFMT0JCWV9DT01NQU5EX0FDVBAJGgIIARIY",
-            "ChRMT0JCWV9DT01NQU5EX0lOVklURRAKEh4KGkxPQkJZX0NPTU1BTkRfUkVR",
-            "VUVTVF9TRUFUEAsSFQoRTE9CQllfQ09NTUFORF9BREQQDCpuCgpMb2JieVBo",
-            "YXNlEhsKF0xPQkJZX1BIQVNFX1VOU1BFQ0lGSUVEEAASFQoRTE9CQllfUEhB",
-            "U0VfTE9CQlkQARIVChFMT0JCWV9QSEFTRV9URUFNUxACEhUKEUxPQkJZX1BI",
-            "QVNFX01BVENIEAMqtQQKDExvYmJ5UmVmdXNhbBIdChlMT0JCWV9SRUZVU0FM",
-            "X1VOU1BFQ0lGSUVEEAASHQoZTE9CQllfUkVGVVNBTF9VTkFWQUlMQUJMRRAB",
-            "Eh4KGkxPQkJZX1JFRlVTQUxfVU5LTk9XTl9DT0RFEAISHAoYTE9CQllfUkVG",
-            "VVNBTF9OT1RfTEVBREVSEAMSHAoYTE9CQllfUkVGVVNBTF9TRUFUX1RBS0VO",
-            "EAQSHgoaTE9CQllfUkVGVVNBTF9OT1RfSU5fTE9CQlkQBRIiCh5MT0JCWV9S",
-            "RUZVU0FMX0FMUkVBRFlfSU5fTE9CQlkQBhIWChJMT0JCWV9SRUZVU0FMX0ZV",
-            "TEwQBxIcChhMT0JCWV9SRUZVU0FMX1NFQVRTX09QRU4QCBIZChVMT0JCWV9S",
-            "RUZVU0FMX1NUQVJURUQQCRIeChpMT0JCWV9SRUZVU0FMX0lOVkFMSURfU0VB",
-            "VBAKEh4KGkxPQkJZX1JFRlVTQUxfSU5WQUxJRF9NT0RFEAsSGgoWTE9CQllf",
-            "UkVGVVNBTF9JTl9NQVRDSBAMEh0KGUxPQkJZX1JFRlVTQUxfV1JPTkdfUEhB",
-            "U0UQDRIZChVMT0JCWV9SRUZVU0FMX0JMT0NLRUQQDhIkChxMT0JCWV9SRUZV",
-            "U0FMX1VOS05PV05fQUNUSU9OEA8aAggBEhwKGExPQkJZX1JFRlVTQUxfTk9U",
-            "X0ZSSUVORBAQEhwKGExPQkJZX1JFRlVTQUxfUkFOS0VEX0JBThARQsUBChFj",
-            "b20uaHlwZWRvbWluby52MUIKTG9iYnlQcm90b1ABWk9naXRodWIuY29tL0Fs",
-            "aWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVk",
-            "b21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoC",
-            "DUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIO",
-            "SHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
+            "b21pbm8udjEuQmFuUmVhc29uUgliYW5SZWFzb24SMgoGYXBwZWFsGAogASgL",
+            "MhouaHlwZWRvbWluby52MS5BcHBlYWxHcmFudFIGYXBwZWFsIpwBCgpMb2Ji",
+            "eVJlbGF5Eh0KCmFjY291bnRfaWQYASABKAlSCWFjY291bnRJZBIaCgZhY3Rp",
+            "b24YAiABKAlCAhgBUgZhY3Rpb24SFwoHaXRlbV9pZBgDIAEoCVIGaXRlbUlk",
+            "EjoKDnJlcXVlc3RlZF9zZWF0GAQgASgOMhMuaHlwZWRvbWluby52MS5TZWF0",
+            "Ug1yZXF1ZXN0ZWRTZWF0IkkKC0xvYmJ5SW52aXRlEhIKBGNvZGUYASABKAlS",
+            "BGNvZGUSJgoPZnJvbV9hY2NvdW50X2lkGAIgASgJUg1mcm9tQWNjb3VudElk",
+            "KuECCgxMb2JieUNvbW1hbmQSHQoZTE9CQllfQ09NTUFORF9VTlNQRUNJRklF",
+            "RBAAEhgKFExPQkJZX0NPTU1BTkRfQ1JFQVRFEAESFgoSTE9CQllfQ09NTUFO",
+            "RF9KT0lOEAISFwoTTE9CQllfQ09NTUFORF9MRUFWRRADEhcKE0xPQkJZX0NP",
+            "TU1BTkRfVEVBTVMQBBIWChJMT0JCWV9DT01NQU5EX0JBQ0sQBRIXChNMT0JC",
+            "WV9DT01NQU5EX1BMQUNFEAYSGAoUTE9CQllfQ09NTUFORF9SRU1PVkUQBxIX",
+            "ChNMT0JCWV9DT01NQU5EX1NUQVJUEAgSGQoRTE9CQllfQ09NTUFORF9BQ1QQ",
+            "CRoCCAESGAoUTE9CQllfQ09NTUFORF9JTlZJVEUQChIeChpMT0JCWV9DT01N",
+            "QU5EX1JFUVVFU1RfU0VBVBALEhUKEUxPQkJZX0NPTU1BTkRfQUREEAwqbgoK",
+            "TG9iYnlQaGFzZRIbChdMT0JCWV9QSEFTRV9VTlNQRUNJRklFRBAAEhUKEUxP",
+            "QkJZX1BIQVNFX0xPQkJZEAESFQoRTE9CQllfUEhBU0VfVEVBTVMQAhIVChFM",
+            "T0JCWV9QSEFTRV9NQVRDSBADKrUECgxMb2JieVJlZnVzYWwSHQoZTE9CQllf",
+            "UkVGVVNBTF9VTlNQRUNJRklFRBAAEh0KGUxPQkJZX1JFRlVTQUxfVU5BVkFJ",
+            "TEFCTEUQARIeChpMT0JCWV9SRUZVU0FMX1VOS05PV05fQ09ERRACEhwKGExP",
+            "QkJZX1JFRlVTQUxfTk9UX0xFQURFUhADEhwKGExPQkJZX1JFRlVTQUxfU0VB",
+            "VF9UQUtFThAEEh4KGkxPQkJZX1JFRlVTQUxfTk9UX0lOX0xPQkJZEAUSIgoe",
+            "TE9CQllfUkVGVVNBTF9BTFJFQURZX0lOX0xPQkJZEAYSFgoSTE9CQllfUkVG",
+            "VVNBTF9GVUxMEAcSHAoYTE9CQllfUkVGVVNBTF9TRUFUU19PUEVOEAgSGQoV",
+            "TE9CQllfUkVGVVNBTF9TVEFSVEVEEAkSHgoaTE9CQllfUkVGVVNBTF9JTlZB",
+            "TElEX1NFQVQQChIeChpMT0JCWV9SRUZVU0FMX0lOVkFMSURfTU9ERRALEhoK",
+            "FkxPQkJZX1JFRlVTQUxfSU5fTUFUQ0gQDBIdChlMT0JCWV9SRUZVU0FMX1dS",
+            "T05HX1BIQVNFEA0SGQoVTE9CQllfUkVGVVNBTF9CTE9DS0VEEA4SJAocTE9C",
+            "QllfUkVGVVNBTF9VTktOT1dOX0FDVElPThAPGgIIARIcChhMT0JCWV9SRUZV",
+            "U0FMX05PVF9GUklFTkQQEBIcChhMT0JCWV9SRUZVU0FMX1JBTktFRF9CQU4Q",
+            "EULFAQoRY29tLmh5cGVkb21pbm8udjFCCkxvYmJ5UHJvdG9QAVpPZ2l0aHVi",
+            "LmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9w",
+            "Yi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21p",
+            "bm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRh",
+            "ZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Hypedomino.V1.MatchReflection.Descriptor, global::Hypedomino.V1.QueueReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.LobbyCommand), typeof(global::Hypedomino.V1.LobbyPhase), typeof(global::Hypedomino.V1.LobbyRefusal), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyIntent), global::Hypedomino.V1.LobbyIntent.Parser, new[]{ "Command", "Code", "Mode", "AccountId", "Seat", "Action" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbySeat), global::Hypedomino.V1.LobbySeat.Parser, new[]{ "Seat", "AccountId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyState), global::Hypedomino.V1.LobbyState.Parser, new[]{ "Code", "LeaderAccountId", "MemberAccountIds", "Phase", "Mode", "Seats", "Refusal", "RefusedUntilUnixMs", "BanReason" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyState), global::Hypedomino.V1.LobbyState.Parser, new[]{ "Code", "LeaderAccountId", "MemberAccountIds", "Phase", "Mode", "Seats", "Refusal", "RefusedUntilUnixMs", "BanReason", "Appeal" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyRelay), global::Hypedomino.V1.LobbyRelay.Parser, new[]{ "AccountId", "Action", "ItemId", "RequestedSeat" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyInvite), global::Hypedomino.V1.LobbyInvite.Parser, new[]{ "Code", "FromAccountId" }, null, null, null, null)
           }));
@@ -802,6 +803,7 @@ namespace Hypedomino.V1 {
       refusal_ = other.refusal_;
       refusedUntilUnixMs_ = other.refusedUntilUnixMs_;
       banReason_ = other.banReason_;
+      appeal_ = other.appeal_ != null ? other.appeal_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -917,6 +919,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "appeal" field.</summary>
+    public const int AppealFieldNumber = 10;
+    private global::Hypedomino.V1.AppealGrant appeal_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.AppealGrant Appeal {
+      get { return appeal_; }
+      set {
+        appeal_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -941,6 +955,7 @@ namespace Hypedomino.V1 {
       if (Refusal != other.Refusal) return false;
       if (RefusedUntilUnixMs != other.RefusedUntilUnixMs) return false;
       if (BanReason != other.BanReason) return false;
+      if (!object.Equals(Appeal, other.Appeal)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -957,6 +972,7 @@ namespace Hypedomino.V1 {
       if (Refusal != global::Hypedomino.V1.LobbyRefusal.Unspecified) hash ^= Refusal.GetHashCode();
       if (RefusedUntilUnixMs != 0UL) hash ^= RefusedUntilUnixMs.GetHashCode();
       if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) hash ^= BanReason.GetHashCode();
+      if (appeal_ != null) hash ^= Appeal.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1005,6 +1021,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(72);
         output.WriteEnum((int) BanReason);
       }
+      if (appeal_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Appeal);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1045,6 +1065,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(72);
         output.WriteEnum((int) BanReason);
       }
+      if (appeal_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Appeal);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1077,6 +1101,9 @@ namespace Hypedomino.V1 {
       }
       if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) BanReason);
+      }
+      if (appeal_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Appeal);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1112,6 +1139,12 @@ namespace Hypedomino.V1 {
       }
       if (other.BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
         BanReason = other.BanReason;
+      }
+      if (other.appeal_ != null) {
+        if (appeal_ == null) {
+          Appeal = new global::Hypedomino.V1.AppealGrant();
+        }
+        Appeal.MergeFrom(other.Appeal);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1168,6 +1201,13 @@ namespace Hypedomino.V1 {
             BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
             break;
           }
+          case 82: {
+            if (appeal_ == null) {
+              Appeal = new global::Hypedomino.V1.AppealGrant();
+            }
+            input.ReadMessage(Appeal);
+            break;
+          }
         }
       }
     #endif
@@ -1221,6 +1261,13 @@ namespace Hypedomino.V1 {
           }
           case 72: {
             BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
+            break;
+          }
+          case 82: {
+            if (appeal_ == null) {
+              Appeal = new global::Hypedomino.V1.AppealGrant();
+            }
+            input.ReadMessage(Appeal);
             break;
           }
         }

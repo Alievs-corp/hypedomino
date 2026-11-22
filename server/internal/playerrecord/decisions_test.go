@@ -72,3 +72,45 @@ func TestDecisionsGroupTheReportsOneDecisionClosedAndAddClosedReviewsNewestFirst
 		t.Fatalf("limited %+v", newest)
 	}
 }
+
+func TestDecisionsListDecidedAppealsWithTheAppealedSanctionKind(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	at := time.Date(2026, 11, 22, 9, 0, 0, 0, time.UTC)
+	var player string
+	if err := pool.QueryRow(ctx, `insert into accounts default values returning id::text`).Scan(&player); err != nil {
+		t.Fatal(err)
+	}
+	for _, appealed := range []struct {
+		kind, state string
+		decided     *time.Time
+	}{
+		{"ranked_ban", "upheld", &at},
+		{"forced_rename", "lifted", ptr(at.Add(time.Hour))},
+		{"temporary_ban", "open", nil},
+	} {
+		var sanctionID int64
+		if err := pool.QueryRow(ctx, `insert into account_sanctions (account_id, kind, starts_at, ends_at)
+			values ($1, $2::text, $3, case when $2::text = 'forced_rename' then null else $3::timestamptz + interval '72 hours' end) returning id`,
+			player, appealed.kind, at.Add(-time.Hour)).Scan(&sanctionID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Exec(ctx, `insert into appeals (account_id, sanction_id, text, state, created_at, decided_at, decided_by) values ($1, $2, 'not me', $3, $4, $5, 'moderator')`,
+			player, sanctionID, appealed.state, at.Add(-time.Minute), appealed.decided); err != nil {
+			t.Fatal(err)
+		}
+	}
+	decisions, err := playerrecord.Decisions(ctx, pool, []string{player}, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := decisions[player]
+	if len(got) != 2 || got[0].Queue != "appeals" || got[0].Outcome != "lifted" || !slices.Equal(got[0].Reasons, []string{"forced_rename"}) ||
+		got[1].Outcome != "upheld" || !slices.Equal(got[1].Reasons, []string{"ranked_ban"}) || !got[1].DecidedAt.Equal(at) {
+		t.Fatalf("appeal decisions %+v", got)
+	}
+}
+
+func ptr(at time.Time) *time.Time {
+	return &at
+}

@@ -10,6 +10,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 func TestMain(m *testing.M) {
@@ -45,7 +46,16 @@ func TestTheStoreKeepsTheRecordAndAppliesEachMatchEndOnce(t *testing.T) {
 	if record.Ranked.Offenses[0].ConfigVersion != 3 {
 		t.Fatalf("offense config version %d", record.Ranked.Offenses[0].ConfigVersion)
 	}
-	if _, banned := record.Banned(now.Add(time.Hour)); !banned {
+	until, banned := record.Banned(now.Add(time.Hour))
+	if !banned {
 		t.Fatal("level 6 is not a matchmaking ban")
+	}
+	ban, running, err := sanction.Current(ctx, pool, account, now.Add(time.Hour), sanction.PenaltyBan)
+	if err != nil || !running || ban.ID != record.Ranked.BanSanction || ban.Category != sanction.AfkLeaving || ban.EndsAt == nil || !ban.EndsAt.Equal(until.Truncate(time.Microsecond)) {
+		t.Fatalf("penalty ban sanction %+v %v %v, record %+v", ban, running, err, record.Ranked)
+	}
+	history, err := sanction.List(ctx, pool, account, 50)
+	if err != nil || len(history) != len(record.Ranked.Bans) {
+		t.Fatalf("one sanction per ladder ban: %+v %v, bans %v", history, err, record.Ranked.Bans)
 	}
 }

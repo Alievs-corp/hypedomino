@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 func TestSupportForcesARenameThatThePlayerMustComplete(t *testing.T) {
@@ -32,9 +34,19 @@ func TestSupportForcesARenameThatThePlayerMustComplete(t *testing.T) {
 	if status != http.StatusOK || body["profile"].(map[string]any)["rename_required"] != true {
 		t.Fatalf("record %d %v", status, body)
 	}
+	forced, running, err := sanction.Current(context.Background(), a.pool, id, a.now, sanction.ForcedRename)
+	if err != nil || !running || forced.Category != sanction.OffensiveName || forced.EndsAt != nil {
+		t.Fatalf("forced rename sanction %+v %v %v", forced, running, err)
+	}
 	renamed, err := profile.NewStore(a.pool, profile.DefaultConfig()).SetNickname(context.Background(), id, "Kind_Name", start)
 	if err != nil || renamed.RenameRequired {
 		t.Fatalf("player rename %+v %v", renamed, err)
+	}
+	if _, running, err := sanction.Current(context.Background(), a.pool, id, a.now.Add(time.Second), sanction.ForcedRename); err != nil || running {
+		t.Fatalf("the forced rename still runs after the rename %v %v", running, err)
+	}
+	if history, err := sanction.List(context.Background(), a.pool, id, 50); err != nil || len(history) != 1 {
+		t.Fatalf("one sanction for two force calls %+v %v", history, err)
 	}
 
 	created, _, err := account.New(a.pool).SignIn(context.Background(), idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-2"})

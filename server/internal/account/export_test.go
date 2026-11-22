@@ -31,6 +31,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		{`insert into risk_signals (account_id, kind, weight, dedupe_key, evidence, created_at) values ($1, 'clock_skew', 7, 'd-1', '{"detector":"hidden-evidence"}', $2::timestamptz - interval '1 day'), ($1, 'mac_failure', 5, 'd-2', '{}', $2::timestamptz + interval '1 day')`, own},
 		{`insert into risk_actions (account_id, action, score, wave, created_at) values ($1, 'shadowban', 987654321, $2, $2)`, own},
 		{`insert into account_sanctions (account_id, kind, category, starts_at, ends_at) values ($1, 'ranked_ban', 'collusion', $2, $2::timestamptz + interval '1 day')`, own},
+		{`insert into appeals (account_id, sanction_id, text, created_at, decided_by) select $1, id, 'it was my brother', $2, 'hidden-moderator' from account_sanctions where account_id = $1`, own},
 		{`update accounts set language = 'tr' where id = $1`, []any{ayla.ID}},
 		{`insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at) values ($1, 'promotional_push', true, 'p-3', 'settings', '1.0.0', $2)`, own},
 		{`insert into analytics_ids (analytics_id, account_id, first_seen_at) values ('6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b', $1, $2)`, own},
@@ -45,7 +46,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, hidden := range []string{ben.ID, `"subject"`, `"provider"`, "g-ben", "secret-grant-key", "hidden-evidence", "987654321", "weight", "mac_failure", "win_trade"} {
+	for _, hidden := range []string{ben.ID, `"subject"`, `"provider"`, "g-ben", "secret-grant-key", "hidden-evidence", "987654321", "weight", "mac_failure", "win_trade", "hidden-moderator"} {
 		if strings.Contains(string(raw), hidden) {
 			t.Errorf("export reveals %q: %s", hidden, raw)
 		}
@@ -71,6 +72,7 @@ func TestExportHoldsTheAccountsOwnDataAndWithholdsOthersAndDetectionInternals(t 
 		"sanctions":         {`"action":"shadowban"`},
 		"sanction_signals":  {`"category":"clock_skew"`},
 		"account_sanctions": {`"kind":"ranked_ban"`, `"category":"collusion"`},
+		"appeals":           {`"text":"it was my brother"`, `"state":"open"`},
 		"consents":          {`"purpose":"promotional_push"`, `"granted":true`},
 		"analytics":         {`"analytics_id":"6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"`, `"name":"screen_view"`, `"label":"shop"`},
 		"blocks":            nil,
