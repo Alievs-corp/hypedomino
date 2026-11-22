@@ -7,8 +7,8 @@ namespace HypeDomino.Core.Analytics
     {
         readonly IAnalyticsSender sender;
         readonly Func<long> clockMs;
-        readonly int batchSize;
-        readonly int queueLimit;
+        int batchSize;
+        int queueLimit;
         readonly List<AnalyticsEvent> queued = new List<AnalyticsEvent>();
         readonly List<AnalyticsEvent> batch = new List<AnalyticsEvent>();
         string analyticsId;
@@ -28,6 +28,10 @@ namespace HypeDomino.Core.Analytics
 
         public bool Consented => analyticsId != null;
 
+        public int BatchSize => batchSize;
+
+        public int QueueLimit => queueLimit;
+
         public int Count => queued.Count;
 
         public void Consent(string id)
@@ -42,6 +46,15 @@ namespace HypeDomino.Core.Analytics
             queued.Clear();
             inFlight = 0;
             generation++;
+        }
+
+        public void Resize(int newBatchSize, int newQueueLimit)
+        {
+            if (newBatchSize < 1) throw new ArgumentOutOfRangeException(nameof(newBatchSize));
+            if (newQueueLimit < newBatchSize) throw new ArgumentOutOfRangeException(nameof(newQueueLimit));
+            batchSize = newBatchSize;
+            queueLimit = newQueueLimit;
+            while (queued.Count > queueLimit) DropOldest();
         }
 
         public bool Track(string name, string label = null, long value = 0)

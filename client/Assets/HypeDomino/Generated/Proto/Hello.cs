@@ -40,7 +40,7 @@ namespace Hypedomino.V1 {
             "a2VuEkIKCmFwcF9hdHRlc3QYAiABKAsyIS5oeXBlZG9taW5vLnYxLkFwcEF0",
             "dGVzdEFzc2VydGlvbkgAUglhcHBBdHRlc3RCBwoFcHJvb2YiXwoSQXBwQXR0",
             "ZXN0QXNzZXJ0aW9uEhUKBmtleV9pZBgBIAEoDFIFa2V5SWQSFAoFbm9uY2UY",
-            "AiABKAlSBW5vbmNlEhwKCWFzc2VydGlvbhgDIAEoDFIJYXNzZXJ0aW9uIsgE",
+            "AiABKAlSBW5vbmNlEhwKCWFzc2VydGlvbhgDIAEoDFIJYXNzZXJ0aW9uIpMF",
             "CgtTZXJ2ZXJIZWxsbxIyCgZzdGF0dXMYASABKA4yGi5oeXBlZG9taW5vLnYx",
             "LkhlbGxvU3RhdHVzUgZzdGF0dXMSLgoTbWluaW11bV9hcHBfdmVyc2lvbhgC",
             "IAEoCVIRbWluaW11bUFwcFZlcnNpb24SLQoTc2VydmVyX3RpbWVfdW5peF9t",
@@ -53,31 +53,36 @@ namespace Hypedomino.V1 {
             "KAoQY29udGVudF9iYXNlX3VybBgJIAEoCVIOY29udGVudEJhc2VVcmwSNwoY",
             "bWFpbnRlbmFuY2VfZW5kc191bml4X21zGAogASgEUhVtYWludGVuYW5jZUVu",
             "ZHNVbml4TXMSTwoSY29zbWV0aWNzX21hbmlmZXN0GAsgASgLMiAuaHlwZWRv",
-            "bWluby52MS5Db3NtZXRpY3NNYW5pZmVzdFIRY29zbWV0aWNzTWFuaWZlc3Qi",
-            "WAoMU3RyaW5nQnVuZGxlEhoKCGxhbmd1YWdlGAEgASgJUghsYW5ndWFnZRIY",
-            "Cgd2ZXJzaW9uGAIgASgNUgd2ZXJzaW9uEhIKBGhhc2gYAyABKAlSBGhhc2gi",
-            "QQoRQ29zbWV0aWNzTWFuaWZlc3QSGAoHdmVyc2lvbhgBIAEoDVIHdmVyc2lv",
-            "bhISCgRoYXNoGAIgASgJUgRoYXNoIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFu",
-            "Z3VhZ2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFu",
-            "Z3VhZ2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAAS",
-            "FAoQUExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKoYBCgtI",
-            "ZWxsb1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVI",
-            "RUxMT19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRF",
-            "X1JFUVVJUkVEEAISHAoYSEVMTE9fU1RBVFVTX01BSU5URU5BTkNFEANCxQEK",
-            "EWNvbS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20v",
-            "QWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlw",
-            "ZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYx",
-            "ygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHq",
-            "Ag5IeXBlZG9taW5vOjpWMWIGcHJvdG8z"));
+            "bWluby52MS5Db3NtZXRpY3NNYW5pZmVzdFIRY29zbWV0aWNzTWFuaWZlc3QS",
+            "SQoQYW5hbHl0aWNzX2NvbmZpZxgMIAEoCzIeLmh5cGVkb21pbm8udjEuQW5h",
+            "bHl0aWNzQ29uZmlnUg9hbmFseXRpY3NDb25maWciWAoMU3RyaW5nQnVuZGxl",
+            "EhoKCGxhbmd1YWdlGAEgASgJUghsYW5ndWFnZRIYCgd2ZXJzaW9uGAIgASgN",
+            "Ugd2ZXJzaW9uEhIKBGhhc2gYAyABKAlSBGhhc2giQQoRQ29zbWV0aWNzTWFu",
+            "aWZlc3QSGAoHdmVyc2lvbhgBIAEoDVIHdmVyc2lvbhISCgRoYXNoGAIgASgJ",
+            "UgRoYXNoInYKD0FuYWx5dGljc0NvbmZpZxIdCgpiYXRjaF9zaXplGAEgASgN",
+            "UgliYXRjaFNpemUSHwoLcXVldWVfbGltaXQYAiABKA1SCnF1ZXVlTGltaXQS",
+            "IwoNZmx1c2hfc2Vjb25kcxgDIAEoDVIMZmx1c2hTZWNvbmRzIkkKDUZhbGxi",
+            "YWNrQ2hhaW4SGgoIbGFuZ3VhZ2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1",
+            "YWdlcxgCIAMoCVIJbGFuZ3VhZ2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JN",
+            "X1VOU1BFQ0lGSUVEEAASFAoQUExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRG",
+            "T1JNX0lPUxACKoYBCgtIZWxsb1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5T",
+            "UEVDSUZJRUQQABIZChVIRUxMT19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxM",
+            "T19TVEFUVVNfVVBEQVRFX1JFUVVJUkVEEAISHAoYSEVMTE9fU1RBVFVTX01B",
+            "SU5URU5BTkNFEANCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3Rv",
+            "UAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIv",
+            "aW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiq",
+            "Ag1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9c",
+            "VjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ClientHello), global::Hypedomino.V1.ClientHello.Parser, new[]{ "AppVersion", "BuildHash", "Platform", "OsVersion", "DeviceModel", "SessionToken", "LastAckedSequence", "ClientTimeUnixMs", "Integrity", "DeviceRiskSignals", "HookSignals" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.IntegrityProof), global::Hypedomino.V1.IntegrityProof.Parser, new[]{ "PlayIntegrityToken", "AppAttest" }, new[]{ "Proof" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.AppAttestAssertion), global::Hypedomino.V1.AppAttestAssertion.Parser, new[]{ "KeyId", "Nonce", "Assertion" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains", "SessionNonce", "ContentBaseUrl", "MaintenanceEndsUnixMs", "CosmeticsManifest" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.ServerHello), global::Hypedomino.V1.ServerHello.Parser, new[]{ "Status", "MinimumAppVersion", "ServerTimeUnixMs", "CatalogVersion", "InMatch", "StringBundles", "FallbackChains", "SessionNonce", "ContentBaseUrl", "MaintenanceEndsUnixMs", "CosmeticsManifest", "AnalyticsConfig" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.StringBundle), global::Hypedomino.V1.StringBundle.Parser, new[]{ "Language", "Version", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.CosmeticsManifest), global::Hypedomino.V1.CosmeticsManifest.Parser, new[]{ "Version", "Hash" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.AnalyticsConfig), global::Hypedomino.V1.AnalyticsConfig.Parser, new[]{ "BatchSize", "QueueLimit", "FlushSeconds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
           }));
     }
@@ -1269,6 +1274,7 @@ namespace Hypedomino.V1 {
       contentBaseUrl_ = other.contentBaseUrl_;
       maintenanceEndsUnixMs_ = other.maintenanceEndsUnixMs_;
       cosmeticsManifest_ = other.cosmeticsManifest_ != null ? other.cosmeticsManifest_.Clone() : null;
+      analyticsConfig_ = other.analyticsConfig_ != null ? other.analyticsConfig_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1408,6 +1414,18 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "analytics_config" field.</summary>
+    public const int AnalyticsConfigFieldNumber = 12;
+    private global::Hypedomino.V1.AnalyticsConfig analyticsConfig_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.AnalyticsConfig AnalyticsConfig {
+      get { return analyticsConfig_; }
+      set {
+        analyticsConfig_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1434,6 +1452,7 @@ namespace Hypedomino.V1 {
       if (ContentBaseUrl != other.ContentBaseUrl) return false;
       if (MaintenanceEndsUnixMs != other.MaintenanceEndsUnixMs) return false;
       if (!object.Equals(CosmeticsManifest, other.CosmeticsManifest)) return false;
+      if (!object.Equals(AnalyticsConfig, other.AnalyticsConfig)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1452,6 +1471,7 @@ namespace Hypedomino.V1 {
       if (ContentBaseUrl.Length != 0) hash ^= ContentBaseUrl.GetHashCode();
       if (MaintenanceEndsUnixMs != 0UL) hash ^= MaintenanceEndsUnixMs.GetHashCode();
       if (cosmeticsManifest_ != null) hash ^= CosmeticsManifest.GetHashCode();
+      if (analyticsConfig_ != null) hash ^= AnalyticsConfig.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1508,6 +1528,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(90);
         output.WriteMessage(CosmeticsManifest);
       }
+      if (analyticsConfig_ != null) {
+        output.WriteRawTag(98);
+        output.WriteMessage(AnalyticsConfig);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1556,6 +1580,10 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(90);
         output.WriteMessage(CosmeticsManifest);
       }
+      if (analyticsConfig_ != null) {
+        output.WriteRawTag(98);
+        output.WriteMessage(AnalyticsConfig);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1594,6 +1622,9 @@ namespace Hypedomino.V1 {
       }
       if (cosmeticsManifest_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(CosmeticsManifest);
+      }
+      if (analyticsConfig_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(AnalyticsConfig);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1638,6 +1669,12 @@ namespace Hypedomino.V1 {
           CosmeticsManifest = new global::Hypedomino.V1.CosmeticsManifest();
         }
         CosmeticsManifest.MergeFrom(other.CosmeticsManifest);
+      }
+      if (other.analyticsConfig_ != null) {
+        if (analyticsConfig_ == null) {
+          AnalyticsConfig = new global::Hypedomino.V1.AnalyticsConfig();
+        }
+        AnalyticsConfig.MergeFrom(other.AnalyticsConfig);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1705,6 +1742,13 @@ namespace Hypedomino.V1 {
             input.ReadMessage(CosmeticsManifest);
             break;
           }
+          case 98: {
+            if (analyticsConfig_ == null) {
+              AnalyticsConfig = new global::Hypedomino.V1.AnalyticsConfig();
+            }
+            input.ReadMessage(AnalyticsConfig);
+            break;
+          }
         }
       }
     #endif
@@ -1769,6 +1813,13 @@ namespace Hypedomino.V1 {
               CosmeticsManifest = new global::Hypedomino.V1.CosmeticsManifest();
             }
             input.ReadMessage(CosmeticsManifest);
+            break;
+          }
+          case 98: {
+            if (analyticsConfig_ == null) {
+              AnalyticsConfig = new global::Hypedomino.V1.AnalyticsConfig();
+            }
+            input.ReadMessage(AnalyticsConfig);
             break;
           }
         }
@@ -2286,6 +2337,278 @@ namespace Hypedomino.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class AnalyticsConfig : pb::IMessage<AnalyticsConfig>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<AnalyticsConfig> _parser = new pb::MessageParser<AnalyticsConfig>(() => new AnalyticsConfig());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<AnalyticsConfig> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AnalyticsConfig() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AnalyticsConfig(AnalyticsConfig other) : this() {
+      batchSize_ = other.batchSize_;
+      queueLimit_ = other.queueLimit_;
+      flushSeconds_ = other.flushSeconds_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public AnalyticsConfig Clone() {
+      return new AnalyticsConfig(this);
+    }
+
+    /// <summary>Field number for the "batch_size" field.</summary>
+    public const int BatchSizeFieldNumber = 1;
+    private uint batchSize_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint BatchSize {
+      get { return batchSize_; }
+      set {
+        batchSize_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "queue_limit" field.</summary>
+    public const int QueueLimitFieldNumber = 2;
+    private uint queueLimit_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint QueueLimit {
+      get { return queueLimit_; }
+      set {
+        queueLimit_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "flush_seconds" field.</summary>
+    public const int FlushSecondsFieldNumber = 3;
+    private uint flushSeconds_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint FlushSeconds {
+      get { return flushSeconds_; }
+      set {
+        flushSeconds_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as AnalyticsConfig);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(AnalyticsConfig other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (BatchSize != other.BatchSize) return false;
+      if (QueueLimit != other.QueueLimit) return false;
+      if (FlushSeconds != other.FlushSeconds) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (BatchSize != 0) hash ^= BatchSize.GetHashCode();
+      if (QueueLimit != 0) hash ^= QueueLimit.GetHashCode();
+      if (FlushSeconds != 0) hash ^= FlushSeconds.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (BatchSize != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(BatchSize);
+      }
+      if (QueueLimit != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(QueueLimit);
+      }
+      if (FlushSeconds != 0) {
+        output.WriteRawTag(24);
+        output.WriteUInt32(FlushSeconds);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (BatchSize != 0) {
+        output.WriteRawTag(8);
+        output.WriteUInt32(BatchSize);
+      }
+      if (QueueLimit != 0) {
+        output.WriteRawTag(16);
+        output.WriteUInt32(QueueLimit);
+      }
+      if (FlushSeconds != 0) {
+        output.WriteRawTag(24);
+        output.WriteUInt32(FlushSeconds);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (BatchSize != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(BatchSize);
+      }
+      if (QueueLimit != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(QueueLimit);
+      }
+      if (FlushSeconds != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(FlushSeconds);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(AnalyticsConfig other) {
+      if (other == null) {
+        return;
+      }
+      if (other.BatchSize != 0) {
+        BatchSize = other.BatchSize;
+      }
+      if (other.QueueLimit != 0) {
+        QueueLimit = other.QueueLimit;
+      }
+      if (other.FlushSeconds != 0) {
+        FlushSeconds = other.FlushSeconds;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            BatchSize = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            QueueLimit = input.ReadUInt32();
+            break;
+          }
+          case 24: {
+            FlushSeconds = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            BatchSize = input.ReadUInt32();
+            break;
+          }
+          case 16: {
+            QueueLimit = input.ReadUInt32();
+            break;
+          }
+          case 24: {
+            FlushSeconds = input.ReadUInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class FallbackChain : pb::IMessage<FallbackChain>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2300,7 +2623,7 @@ namespace Hypedomino.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Hypedomino.V1.HelloReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
