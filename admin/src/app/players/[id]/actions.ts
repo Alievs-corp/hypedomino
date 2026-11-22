@@ -3,6 +3,7 @@
 import { adminApi } from "@/admin/api";
 import type { GrantRequest } from "@/players/grant";
 import { playerApiPath } from "@/players/record";
+import type { BanCategory } from "@/players/sanctions";
 
 export type PlayerActionResult = { ok: true; proposed: boolean; repeated: boolean } | { ok: false; error: string; detail: string };
 
@@ -22,12 +23,20 @@ export async function grantReward(id: string, grant: GrantRequest, requestId: st
   return act("POST", `${playerApiPath(id)}/grant`, { ...grant, request_id: requestId, reason });
 }
 
-export async function banTemporarily(id: string, reason: string): Promise<PlayerActionResult> {
-  return act("POST", `${playerApiPath(id)}/temporary-ban`, { reason });
+export async function banTemporarily(id: string, reason: string, category: BanCategory): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/temporary-ban`, { reason, category });
 }
 
 export async function liftTemporaryBan(id: string, reason: string): Promise<PlayerActionResult> {
   return act("DELETE", `${playerApiPath(id)}/temporary-ban`, { reason });
+}
+
+export async function banFromRanked(id: string, reason: string, category: BanCategory): Promise<PlayerActionResult> {
+  return act("POST", `${playerApiPath(id)}/ranked-ban`, { reason, category });
+}
+
+export async function liftRankedBan(id: string, reason: string): Promise<PlayerActionResult> {
+  return act("DELETE", `${playerApiPath(id)}/ranked-ban`, { reason });
 }
 
 export async function shadowban(id: string, reason: string): Promise<PlayerActionResult> {
