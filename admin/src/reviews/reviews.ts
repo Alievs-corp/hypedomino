@@ -2,7 +2,9 @@ import type { SearchParams } from "../audit/query.ts";
 
 export type ReviewSignal ={ kind: string; weight: number; evidence: unknown; at: string };
 
-export type Review = {
+export type QueueDeadline = { due_at: string; overdue: boolean };
+
+export type Review = QueueDeadline & {
   id: number;
   account_id: string;
   nickname: string;
@@ -30,7 +32,7 @@ export type ReportEntry = { id: number; reporter: string; reason: string; name_t
 
 export type EarlierDecision = { queue: "reports" | "reviews"; outcome: string; reasons: string[]; reports: number; decided_at: string };
 
-export type ReportTarget = { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[]; decisions: EarlierDecision[] };
+export type ReportTarget = QueueDeadline & { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[]; decisions: EarlierDecision[] };
 
 export function decidedReports(decisions: readonly EarlierDecision[]): { upheld: number; rejected: number } {
   const totals = { upheld: 0, rejected: 0 };

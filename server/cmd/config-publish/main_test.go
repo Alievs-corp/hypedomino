@@ -273,6 +273,8 @@ func TestLiveopsSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
 		{`{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}`, nil},
 		{`{"AnalyticsBatchSize": 401}`, liveops.ErrInvalid},
 		{`{"AnalyticsQueueLimit": 49}`, liveops.ErrInvalid},
+		{`{"ReviewSlaHours": 24, "ReportSlaHours": 48, "AppealSlaHours": 72}`, nil},
+		{`{"AppealSlaHours": 0}`, liveops.ErrInvalid},
 	}
 	for _, test := range tests {
 		if err := validate(liveops.Domain, []byte(test.raw)); !errors.Is(err, test.want) {

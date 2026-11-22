@@ -108,7 +108,7 @@ Published config is a sequence of immutable snapshots per environment. A snapsho
 | `privacy` | `docs/privacy.md` section 4 and section 11 | Policy and age values only |
 | `moderation` | Word filter, reserved names, confusables table version, nickname and report keys (`docs/localization.md` section 5) | Never |
 | `localization` | Active bundle version per language, `LocaleFallbackChains` | Bundle files on the CDN |
-| `liveops` | Live events, banners, push campaign definitions, feature flags, effect level and motion config (`docs/ui-motion.md` sections 7, 8), content gate minimums (`docs/launch-content-gate.md` section 5), client analytics queue (`docs/analytics.md` section 6) | With client config, except the content gate minimums |
+| `liveops` | Live events, banners, push campaign definitions, feature flags, effect level and motion config (`docs/ui-motion.md` sections 7, 8), content gate minimums (`docs/launch-content-gate.md` section 5), client analytics queue (`docs/analytics.md` section 6), moderation queue SLA (6.4) | With client config, except the content gate minimums and the queue SLA |
 
 - The game server loads a snapshot, validates it again (`docs/cosmetics.md` section 9) and swaps it in without a restart. A server that rejects a snapshot keeps its current one and alerts.
 - A snapshot records its parent version, its change set, author, approver, activation time and the revision of every domain. Files it references on the CDN (manifest, string bundles) are immutable and content-hashed (ADR 0002).
@@ -449,7 +449,7 @@ Remote config (#145) is one editor over every key of the domains in 3.1. The `ru
 
 Feature flags are boolean or enum keys of the `liveops` domain with an optional audience filter by platform and app version. Who edits which domain is the matrix in 2.3; anti-cheat values are hidden from every role but `super_admin` because they describe detection (`docs/privacy.md` 8.3).
 
-Built so far (#145): `rules` at `/config/rules`, `matchmaking` and `penalties` at their screens, and of `liveops` the content gate minimums and the three analytics queue keys at `/config/liveops` (9.1). The history of `rules` and `liveops` shows each key a version changed against the version before. No feature flag key is defined yet, so the `liveops` domain has no flags; of it only the analytics queue keys reach the client, in `ServerHello.analytics_config` (`docs/analytics.md` 6).
+Built so far (#145): `rules` at `/config/rules`, `matchmaking` and `penalties` at their screens, and of `liveops` the content gate minimums, the three analytics queue keys and the three moderation queue SLA keys (6.4) at `/config/liveops` (9.1). The history of `rules` and `liveops` shows each key a version changed against the version before. No feature flag key is defined yet, so the `liveops` domain has no flags; of it only the analytics queue keys reach the client, in `ServerHello.analytics_config` (`docs/analytics.md` 6).
 
 ### 5.15 Game strings
 
@@ -547,7 +547,17 @@ Staff test accounts are flagged at creation by `super_admin`, hold no player dat
 | Reports | Player reports (`docs/localization.md` 5.8) | Approve the name, force a rename, add a filter entry |
 | Appeals | Player appeals (#186, #209) | Uphold or reverse with a reason; the reversal undoes the sanction |
 
-Each entry shows its age, the evidence the support role may see and the account's earlier decisions.
+Each entry shows its age, its due time, the evidence the support role may see and the account's earlier decisions.
+
+Every queue has a service level: an entry is due a set number of hours after it entered the queue (owner decision 2026-11-22 on #186). The hours are keys of the `liveops` domain (3.1), edited at `/config/liveops`; they stay in the admin API and never reach the client. The bounds are proposals of #186.
+
+| Key | Default | Min | Max | Queue |
+|---|---|---|---|---|
+| `ReviewSlaHours` | 24 | 1 | 720 | Review, from the review's `opened_at` |
+| `ReportSlaHours` | 48 | 1 | 720 | Reports, from the oldest open report on the player |
+| `AppealSlaHours` | 72 | 1 | 720 | Appeals, from the appeal's submission |
+
+`GET /admin/reviews` and `GET /admin/reports` return on each entry `due_at` (UTC, the start time plus the SLA of the newest published `liveops` snapshot, or the default before the first publish) and `overdue`, true once the server time is past `due_at`; at `due_at` itself the entry is not yet overdue. A changed SLA applies to every open entry at the next listing. The order stays oldest first, so overdue entries lead the list; there is no overdue filter. `/reviews` and `/reports` show the due time and mark an overdue entry. `AppealSlaHours` is read by the appeal queue when it is built.
 
 In the report and review queues (#186) each reported player and each review carries `decisions`: the newest 50 earlier decisions on the account, newest first, from `player_reports` and `risk_reviews` (`server/internal/playerrecord`). A report decision is one uphold or reject, which closed every open report on the account at once, with its outcome (`upheld`, `rejected`), the reasons and the number of reports it closed. A review decision is a closed review with its outcome (`clear`, `confirm`) and cause. Each has its decision time. Who decided is not returned; it stays in the audit log. Forced renames and mutes are recorded only in the audit log, which about a player is `super_admin` only (D-27), so the queue does not list them; the player record shows the account's current mute and rename state and its bans as sanctions (6.2, Sanctions). The appeal queue does not exist yet.
 
@@ -647,7 +657,7 @@ The keys of section 11 are deployment config, changed by pull request, not in th
 | `PUT /admin/config/rules` `{"values"}` | P on config values | Publishes the next `rules` snapshot. A key left out keeps its default |
 | `GET /admin/config/rules/history` | V on config values | The last 50 `rules` snapshots, newest first |
 | `POST /admin/config/rules/rollback` `{"version"}` | P on config values and S: rollback on snapshots | Publishes the content of an earlier `rules` snapshot as the next version |
-| `GET`, `PUT /admin/config/liveops` `{"values"}`, `GET /admin/config/liveops/history`, `POST /admin/config/liveops/rollback` `{"version"}` | V or P on config values; rollback also S | The `liveops` domain like the four `rules` routes. So far the content gate minimums (`docs/launch-content-gate.md` section 5), integers from 0 with no `max` in the key view, and `AnalyticsBatchSize`, `AnalyticsQueueLimit` and `AnalyticsFlushSeconds` (`docs/analytics.md` section 6) with their `unit`, `min` and `max`; an unknown key, a value outside its bounds, a non-integer or an `AnalyticsQueueLimit` below the `AnalyticsBatchSize` (a key left out counting as its default) gets 400 `invalid`. Screen: `/config/liveops` |
+| `GET`, `PUT /admin/config/liveops` `{"values"}`, `GET /admin/config/liveops/history`, `POST /admin/config/liveops/rollback` `{"version"}` | V or P on config values; rollback also S | The `liveops` domain like the four `rules` routes. So far the content gate minimums (`docs/launch-content-gate.md` section 5), integers from 0 with no `max` in the key view, and `AnalyticsBatchSize`, `AnalyticsQueueLimit` and `AnalyticsFlushSeconds` (`docs/analytics.md` section 6) and `ReviewSlaHours`, `ReportSlaHours` and `AppealSlaHours` (6.4) with their `unit`, `min` and `max`; an unknown key, a value outside its bounds, a non-integer or an `AnalyticsQueueLimit` below the `AnalyticsBatchSize` (a key left out counting as its default) gets 400 `invalid`. Screen: `/config/liveops` |
 | `GET`, `PUT /admin/config/matchmaking`, `GET /admin/config/matchmaking/history`, `POST /admin/config/matchmaking/rollback` | V or P on config values; rollback also S | The `matchmaking` domain (`docs/matchmaking.md` section 3) as a whole JSON object; keys left out keep their default; an unknown key or a value out of range gets 400 `invalid`. Screen: `/config/matchmaking` (empty field = server default, bot levels `easy`, `medium`, `hard`) |
 | `GET`, `PUT /admin/config/penalties`, `GET /admin/config/penalties/history`, `POST /admin/config/penalties/rollback` | V or P on config values; rollback also S | The `penalties` domain (`docs/penalties.md` section 8) as a whole JSON object; keys left out keep their default; an unknown key or a broken ladder gets 400 `invalid`. Screen: `/config/penalties` (empty field = server default, lists comma separated) |
 | `GET /admin/config/shop` | V on shop offers | The published shop catalog (offers and rotations of 5.5), its `config_version`, and the server's `rotation` rules (`daily_slots`, `weekly_slots`, `reset_hour_utc`) and `reference_price_days` (`ReferencePriceDays`); `catalog` is null before the first publish |
@@ -835,7 +845,7 @@ Deployment config of the admin API (section 9), changed by pull request. Values 
 | `AdminRateSignInPerMinute` | 10 | 9.1 |
 | `AdminRateSignInBurst` | 10 | 9.1 |
 
-Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6), `RankedBanHours` (default 72, a placeholder until the owner sets it, section 6.2).
+Game config defined here and edited in the panel: `ModerationMuteHours` (default 24, section 6), `ReviewSlaHours` (default 24), `ReportSlaHours` (default 48) and `AppealSlaHours` (default 72) (6.4), `RankedBanHours` (default 72, a placeholder until the owner sets it, 6.2).
 
 Used here and defined elsewhere: `PromoCoinsApprovalThreshold`, `PromoCodeLength`, `PromoMaxValidityDays`, `ShopDailyRotationSlots`, `ShopWeeklyRotationSlots`, `ReferencePriceDays`, `DailyLoginCoins`, `CrystalPackCrystals`, `CrystalPackUsd`, `PassPremiumUsd`, `PassPremiumPlusUsd`, `StarterOfferUsd`, `RankRewardCoins`, `PassFreeTrackCoins`, `PassPremiumTrackCrystals` (`docs/economy.md`), `PassLevels`, `PassXpBase`, `PassXpStep`, `PassXpMax`, `EventMissionXpBudget`, `DailyMissionSlotCoins`, `DailyMissionSlotXp`, `WeeklyMissionSlotCoins`, `WeeklyMissionSlotXp` (`docs/pass-missions-medals.md`), `TableMaxLayers` (`docs/cosmetics.md`), `EmblemBrackets`, `SeasonResetTable`, `LeaderboardRegions`, `LeaderboardTopSize` (`docs/ranking.md`), `ReviewScore`, `TempBanHours` (`docs/anti-cheat.md`), `AdminAuditRetentionDays` (`docs/privacy.md`), `ReservedNames`, `LocaleFallbackChains` (`docs/localization.md`), `ContentGateMin*` (`docs/launch-content-gate.md`), `AnalyticsBatchSize`, `AnalyticsQueueLimit`, `AnalyticsFlushSeconds` (`docs/analytics.md`).
 
