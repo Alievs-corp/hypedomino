@@ -270,6 +270,9 @@ func TestLiveopsSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
 		{`{}`, nil},
 		{`{"ContentGateMinMedals": -1}`, liveops.ErrInvalid},
 		{`{"FeatureFlag": 1}`, liveops.ErrInvalid},
+		{`{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}`, nil},
+		{`{"AnalyticsBatchSize": 401}`, liveops.ErrInvalid},
+		{`{"AnalyticsQueueLimit": 49}`, liveops.ErrInvalid},
 	}
 	for _, test := range tests {
 		if err := validate(liveops.Domain, []byte(test.raw)); !errors.Is(err, test.want) {

@@ -401,6 +401,7 @@ type ServerHello struct {
 	ContentBaseUrl        string                 `protobuf:"bytes,9,opt,name=content_base_url,json=contentBaseUrl,proto3" json:"content_base_url,omitempty"`
 	MaintenanceEndsUnixMs uint64                 `protobuf:"varint,10,opt,name=maintenance_ends_unix_ms,json=maintenanceEndsUnixMs,proto3" json:"maintenance_ends_unix_ms,omitempty"`
 	CosmeticsManifest     *CosmeticsManifest     `protobuf:"bytes,11,opt,name=cosmetics_manifest,json=cosmeticsManifest,proto3" json:"cosmetics_manifest,omitempty"`
+	AnalyticsConfig       *AnalyticsConfig       `protobuf:"bytes,12,opt,name=analytics_config,json=analyticsConfig,proto3" json:"analytics_config,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -508,6 +509,13 @@ func (x *ServerHello) GetMaintenanceEndsUnixMs() uint64 {
 func (x *ServerHello) GetCosmeticsManifest() *CosmeticsManifest {
 	if x != nil {
 		return x.CosmeticsManifest
+	}
+	return nil
+}
+
+func (x *ServerHello) GetAnalyticsConfig() *AnalyticsConfig {
+	if x != nil {
+		return x.AnalyticsConfig
 	}
 	return nil
 }
@@ -624,6 +632,66 @@ func (x *CosmeticsManifest) GetHash() string {
 	return ""
 }
 
+type AnalyticsConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BatchSize     uint32                 `protobuf:"varint,1,opt,name=batch_size,json=batchSize,proto3" json:"batch_size,omitempty"`
+	QueueLimit    uint32                 `protobuf:"varint,2,opt,name=queue_limit,json=queueLimit,proto3" json:"queue_limit,omitempty"`
+	FlushSeconds  uint32                 `protobuf:"varint,3,opt,name=flush_seconds,json=flushSeconds,proto3" json:"flush_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsConfig) Reset() {
+	*x = AnalyticsConfig{}
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsConfig) ProtoMessage() {}
+
+func (x *AnalyticsConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsConfig.ProtoReflect.Descriptor instead.
+func (*AnalyticsConfig) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AnalyticsConfig) GetBatchSize() uint32 {
+	if x != nil {
+		return x.BatchSize
+	}
+	return 0
+}
+
+func (x *AnalyticsConfig) GetQueueLimit() uint32 {
+	if x != nil {
+		return x.QueueLimit
+	}
+	return 0
+}
+
+func (x *AnalyticsConfig) GetFlushSeconds() uint32 {
+	if x != nil {
+		return x.FlushSeconds
+	}
+	return 0
+}
+
 type FallbackChain struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Language      string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
@@ -634,7 +702,7 @@ type FallbackChain struct {
 
 func (x *FallbackChain) Reset() {
 	*x = FallbackChain{}
-	mi := &file_hypedomino_v1_hello_proto_msgTypes[6]
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -646,7 +714,7 @@ func (x *FallbackChain) String() string {
 func (*FallbackChain) ProtoMessage() {}
 
 func (x *FallbackChain) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_hello_proto_msgTypes[6]
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -659,7 +727,7 @@ func (x *FallbackChain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FallbackChain.ProtoReflect.Descriptor instead.
 func (*FallbackChain) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{6}
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *FallbackChain) GetLanguage() string {
@@ -705,7 +773,7 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x12AppAttestAssertion\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\fR\x05keyId\x12\x14\n" +
 	"\x05nonce\x18\x02 \x01(\tR\x05nonce\x12\x1c\n" +
-	"\tassertion\x18\x03 \x01(\fR\tassertion\"\xc8\x04\n" +
+	"\tassertion\x18\x03 \x01(\fR\tassertion\"\x93\x05\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
@@ -718,14 +786,21 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x10content_base_url\x18\t \x01(\tR\x0econtentBaseUrl\x127\n" +
 	"\x18maintenance_ends_unix_ms\x18\n" +
 	" \x01(\x04R\x15maintenanceEndsUnixMs\x12O\n" +
-	"\x12cosmetics_manifest\x18\v \x01(\v2 .hypedomino.v1.CosmeticsManifestR\x11cosmeticsManifest\"X\n" +
+	"\x12cosmetics_manifest\x18\v \x01(\v2 .hypedomino.v1.CosmeticsManifestR\x11cosmeticsManifest\x12I\n" +
+	"\x10analytics_config\x18\f \x01(\v2\x1e.hypedomino.v1.AnalyticsConfigR\x0fanalyticsConfig\"X\n" +
 	"\fStringBundle\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +
 	"\x04hash\x18\x03 \x01(\tR\x04hash\"A\n" +
 	"\x11CosmeticsManifest\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12\x12\n" +
-	"\x04hash\x18\x02 \x01(\tR\x04hash\"I\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash\"v\n" +
+	"\x0fAnalyticsConfig\x12\x1d\n" +
+	"\n" +
+	"batch_size\x18\x01 \x01(\rR\tbatchSize\x12\x1f\n" +
+	"\vqueue_limit\x18\x02 \x01(\rR\n" +
+	"queueLimit\x12#\n" +
+	"\rflush_seconds\x18\x03 \x01(\rR\fflushSeconds\"I\n" +
 	"\rFallbackChain\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x1c\n" +
 	"\tlanguages\x18\x02 \x03(\tR\tlanguages*L\n" +
@@ -754,7 +829,7 @@ func file_hypedomino_v1_hello_proto_rawDescGZIP() []byte {
 }
 
 var file_hypedomino_v1_hello_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_hypedomino_v1_hello_proto_goTypes = []any{
 	(Platform)(0),              // 0: hypedomino.v1.Platform
 	(HelloStatus)(0),           // 1: hypedomino.v1.HelloStatus
@@ -764,7 +839,8 @@ var file_hypedomino_v1_hello_proto_goTypes = []any{
 	(*ServerHello)(nil),        // 5: hypedomino.v1.ServerHello
 	(*StringBundle)(nil),       // 6: hypedomino.v1.StringBundle
 	(*CosmeticsManifest)(nil),  // 7: hypedomino.v1.CosmeticsManifest
-	(*FallbackChain)(nil),      // 8: hypedomino.v1.FallbackChain
+	(*AnalyticsConfig)(nil),    // 8: hypedomino.v1.AnalyticsConfig
+	(*FallbackChain)(nil),      // 9: hypedomino.v1.FallbackChain
 }
 var file_hypedomino_v1_hello_proto_depIdxs = []int32{
 	0, // 0: hypedomino.v1.ClientHello.platform:type_name -> hypedomino.v1.Platform
@@ -772,13 +848,14 @@ var file_hypedomino_v1_hello_proto_depIdxs = []int32{
 	4, // 2: hypedomino.v1.IntegrityProof.app_attest:type_name -> hypedomino.v1.AppAttestAssertion
 	1, // 3: hypedomino.v1.ServerHello.status:type_name -> hypedomino.v1.HelloStatus
 	6, // 4: hypedomino.v1.ServerHello.string_bundles:type_name -> hypedomino.v1.StringBundle
-	8, // 5: hypedomino.v1.ServerHello.fallback_chains:type_name -> hypedomino.v1.FallbackChain
+	9, // 5: hypedomino.v1.ServerHello.fallback_chains:type_name -> hypedomino.v1.FallbackChain
 	7, // 6: hypedomino.v1.ServerHello.cosmetics_manifest:type_name -> hypedomino.v1.CosmeticsManifest
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8, // 7: hypedomino.v1.ServerHello.analytics_config:type_name -> hypedomino.v1.AnalyticsConfig
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_hello_proto_init() }
@@ -796,7 +873,7 @@ func file_hypedomino_v1_hello_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_hello_proto_rawDesc), len(file_hypedomino_v1_hello_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

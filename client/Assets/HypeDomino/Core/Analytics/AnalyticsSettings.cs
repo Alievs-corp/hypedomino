@@ -14,12 +14,13 @@ namespace HypeDomino.Core.Analytics
 
         public AnalyticsSettings(int batchSize, int queueLimit, double flushSeconds)
         {
-            if (batchSize < 1 || batchSize > MaxBatchSize) throw new ArgumentOutOfRangeException(nameof(batchSize));
-            if (queueLimit < batchSize) throw new ArgumentOutOfRangeException(nameof(queueLimit));
-            if (!(flushSeconds > 0)) throw new ArgumentOutOfRangeException(nameof(flushSeconds));
+            if (!Valid(batchSize, queueLimit, flushSeconds)) throw new ArgumentOutOfRangeException(nameof(batchSize), "analytics settings outside their limits");
             BatchSize = batchSize;
             QueueLimit = queueLimit;
             FlushSeconds = flushSeconds;
         }
+
+        public static bool Valid(int batchSize, int queueLimit, double flushSeconds) =>
+            batchSize >= 1 && batchSize <= MaxBatchSize && queueLimit >= batchSize && flushSeconds > 0;
     }
 }

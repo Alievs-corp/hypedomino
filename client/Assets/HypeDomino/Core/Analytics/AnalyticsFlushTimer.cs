@@ -5,7 +5,7 @@ namespace HypeDomino.Core.Analytics
     public sealed class AnalyticsFlushTimer
     {
         readonly AnalyticsQueue queue;
-        readonly double intervalSeconds;
+        double intervalSeconds;
         double dueAt;
         bool started;
 
@@ -14,6 +14,16 @@ namespace HypeDomino.Core.Analytics
             if (!(intervalSeconds > 0)) throw new ArgumentOutOfRangeException(nameof(intervalSeconds));
             this.queue = queue ?? throw new ArgumentNullException(nameof(queue));
             this.intervalSeconds = intervalSeconds;
+        }
+
+        public double IntervalSeconds => intervalSeconds;
+
+        public void Retime(double newIntervalSeconds)
+        {
+            if (!(newIntervalSeconds > 0)) throw new ArgumentOutOfRangeException(nameof(newIntervalSeconds));
+            if (newIntervalSeconds == intervalSeconds) return;
+            intervalSeconds = newIntervalSeconds;
+            started = false;
         }
 
         public void Tick(double nowSeconds)

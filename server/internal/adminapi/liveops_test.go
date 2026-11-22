@@ -17,11 +17,15 @@ func TestTheLiveopsKeysArePublishedRolledBackAndAudited(t *testing.T) {
 	status, body := a.call("GET", path, liveOps, nil)
 	keys := body["keys"].([]any)
 	frames := keys[2].(map[string]any)
-	if value, set := ruleValue(t, body, "ContentGateMinFrames"); status != http.StatusOK || body["config_version"] != float64(0) || len(keys) != 6 || value != 20 || set {
+	if value, set := ruleValue(t, body, "ContentGateMinFrames"); status != http.StatusOK || body["config_version"] != float64(0) || len(keys) != 9 || value != 20 || set {
 		t.Fatalf("defaults %d %v", status, body)
 	}
 	if _, bounded := frames["max"]; bounded || frames["min"] != float64(0) || frames["default"] != float64(20) || frames["type"] != "integer" {
 		t.Fatalf("frames key %v", frames)
+	}
+	batch := keys[6].(map[string]any)
+	if batch["key"] != "AnalyticsBatchSize" || batch["min"] != float64(1) || batch["max"] != float64(400) || batch["default"] != float64(50) || batch["unit"] != "events" {
+		t.Fatalf("analytics batch key %v", batch)
 	}
 	status, body = a.call("PUT", path, liveOps, map[string]any{"values": map[string]int{"ContentGateMinFrames": 25}, "reason": "more frames at launch"})
 	if value, set := ruleValue(t, body, "ContentGateMinFrames"); status != http.StatusOK || body["config_version"] != float64(1) || value != 25 || !set {
@@ -65,6 +69,9 @@ func TestTheLiveopsKeysAreWholeNumbersFromZeroAndFollowTheRoleMatrix(t *testing.
 		{"string", map[string]any{"ContentGateMinEmoji": "40"}},
 		{"unknown key", map[string]any{"ContentGateMinChests": 3}},
 		{"rules key", map[string]any{"TurnSeconds": 20}},
+		{"analytics batch above the body limit", map[string]any{"AnalyticsBatchSize": 401}},
+		{"analytics flush below its minimum", map[string]any{"AnalyticsFlushSeconds": 9}},
+		{"analytics queue below the batch", map[string]any{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 99}},
 	}
 	for _, test := range tests {
 		status, body := a.call("PUT", path, liveOps, map[string]any{"values": test.values, "reason": "tune"})
