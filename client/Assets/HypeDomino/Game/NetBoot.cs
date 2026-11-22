@@ -31,6 +31,7 @@ namespace HypeDomino.Game
         public static LobbyCommands Lobby { get; private set; }
         public static FriendRoom Room { get; private set; }
         public static ShopLoader Shop { get; private set; }
+        public static ShopCheckout Checkout { get; private set; }
         public static PassLoader Pass { get; private set; }
         public static MissionLoader Missions { get; private set; }
         public static InventoryLoader Inventory { get; private set; }
@@ -70,12 +71,14 @@ namespace HypeDomino.Game
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
             session.CollectHookSignals = DeviceRiskProbe.CollectHooks;
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);
+            MatchBoot.Start(AppBoot.Flow, Connection);
             Queue = new MatchQueue();
             Queue.Follow(session, AppBoot.Flow);
             Lobby = new LobbyCommands();
             Room = new FriendRoom();
             session.LobbyStateReceived += state => Room.Read(state, Auth.AccountId);
             BuildLoaders(Api);
+            Checkout = new ShopCheckout(new ShopBuyer(Api), new ShopPurchase(Api, new NoStoreBilling(), Integrity.Request, AnalyticsBoot.Queue));
             Language = new LanguageSync(Api, LanguageBoot.Choice);
             session.HelloReceived += SyncLanguage;
             PrivacyBoot.Start(Api, Auth, session);
