@@ -139,6 +139,38 @@ func TestTheQueueSlaFallsBackToItsDefaults(t *testing.T) {
 	}
 }
 
+func TestTheAppealKeysMatchTheAppealTableOfTheAdminSpec(t *testing.T) {
+	documented := documentedRows(t, "../../../docs/admin.md", "| Key | Default | Min | Max | Use |\n|---|---|---|---|---|\n")
+	names := []string{AppealTextMaxLength, AppealTokenMinutes}
+	if len(documented) != len(names) {
+		t.Fatalf("admin.md lists %v", documented)
+	}
+	for _, name := range names {
+		key, _ := lookup(name)
+		row := documented[name]
+		if len(row) < 3 || key.Max == nil || row[0] != strconv.Itoa(key.Default) || row[1] != strconv.Itoa(key.Min) || row[2] != strconv.Itoa(*key.Max) {
+			t.Fatalf("%s: spec %v, code default %d min %d max %v", name, row, key.Default, key.Min, key.Max)
+		}
+	}
+}
+
+func TestTheAppealSettingsFallBackToTheirDefaults(t *testing.T) {
+	tests := []struct {
+		name   string
+		values Values
+		want   Appeals
+	}{
+		{"none published", nil, Appeals{TextMaxLength: 500, TokenLifetime: 30 * time.Minute}},
+		{"text only", Values{AppealTextMaxLength: 1000}, Appeals{TextMaxLength: 1000, TokenLifetime: 30 * time.Minute}},
+		{"both", Values{AppealTextMaxLength: 50, AppealTokenMinutes: 1440}, Appeals{TextMaxLength: 50, TokenLifetime: 24 * time.Hour}},
+	}
+	for _, test := range tests {
+		if got := test.values.Appeals(); got != test.want {
+			t.Errorf("%s: %+v, want %+v", test.name, got, test.want)
+		}
+	}
+}
+
 func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 	tests := []struct {
 		name string
@@ -154,6 +186,7 @@ func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 		{"analytics keys", `{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}`, Values{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}},
 		{"analytics bounds", `{"AnalyticsBatchSize": 400, "AnalyticsQueueLimit": 5000, "AnalyticsFlushSeconds": 3600}`, Values{"AnalyticsBatchSize": 400, "AnalyticsQueueLimit": 5000, "AnalyticsFlushSeconds": 3600}},
 		{"queue sla bounds", `{"ReviewSlaHours": 1, "ReportSlaHours": 720, "AppealSlaHours": 1}`, Values{"ReviewSlaHours": 1, "ReportSlaHours": 720, "AppealSlaHours": 1}},
+		{"appeal bounds", `{"AppealTextMaxLength": 2000, "AppealTokenMinutes": 5}`, Values{"AppealTextMaxLength": 2000, "AppealTokenMinutes": 5}},
 		{"queue limit equal to the batch", `{"AnalyticsBatchSize": 1, "AnalyticsQueueLimit": 1, "AnalyticsFlushSeconds": 10}`, Values{"AnalyticsBatchSize": 1, "AnalyticsQueueLimit": 1, "AnalyticsFlushSeconds": 10}},
 	}
 	for _, test := range tests {
@@ -185,6 +218,10 @@ func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 		"negative report sla":           `{"ReportSlaHours": -24}`,
 		"appeal sla above a month":      `{"AppealSlaHours": 721}`,
 		"fractional review sla":         `{"ReviewSlaHours": 1.5}`,
+		"appeal text below its minimum": `{"AppealTextMaxLength": 49}`,
+		"appeal text above its maximum": `{"AppealTextMaxLength": 2001}`,
+		"appeal token below 5 minutes":  `{"AppealTokenMinutes": 4}`,
+		"appeal token above a day":      `{"AppealTokenMinutes": 1441}`,
 	} {
 		if _, err := Parse([]byte(raw)); !errors.Is(err, ErrInvalid) {
 			t.Errorf("%s accepted: %v", name, err)

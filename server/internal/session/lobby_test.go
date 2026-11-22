@@ -187,19 +187,23 @@ func TestARankedBanRefusesCreatingAndJoiningCustomRoomsUntilItEnds(t *testing.T)
 		}
 		return &sanction.RankedBanError{Sanction: sanction.Sanction{ID: 3, Kind: sanction.RankedBan, Category: sanction.OffensiveName, EndsAt: &ends}}
 	})
+	tab.manager.GrantAppeals(func(account string, sanctionID int64) *pb.AppealGrant {
+		return &pb.AppealGrant{SanctionId: uint64(sanctionID), Token: "appeal:" + account}
+	})
 	ana, ben := tab.member("ana"), tab.member("ben")
 	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
 	code := ana.lobbyState().GetCode()
 	for _, intent := range []*pb.LobbyIntent{command(pb.LobbyCommand_LOBBY_COMMAND_CREATE), {Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code}} {
 		ben.lobby(intent)
 		state := ben.lobbyState()
-		if state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_RANKED_BAN || state.GetRefusedUntilUnixMs() != uint64(bannedUntilMs.Load()) || state.GetBanReason() != pb.BanReason_BAN_REASON_OFFENSIVE_NAME || state.GetCode() != "" {
+		if state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_RANKED_BAN || state.GetRefusedUntilUnixMs() != uint64(bannedUntilMs.Load()) || state.GetBanReason() != pb.BanReason_BAN_REASON_OFFENSIVE_NAME || state.GetCode() != "" ||
+			state.GetAppeal().GetSanctionId() != 3 || state.GetAppeal().GetToken() != "appeal:ben" {
 			t.Fatalf("%v during a ranked ban: %v", intent.GetCommand(), state)
 		}
 	}
 	bannedUntilMs.Store(tab.clock.Now().UnixMilli())
 	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code})
-	if state := ben.lobbyState(); state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED || !slices.Equal(state.GetMemberAccountIds(), []string{"ana", "ben"}) {
+	if state := ben.lobbyState(); state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED || state.GetAppeal() != nil || !slices.Equal(state.GetMemberAccountIds(), []string{"ana", "ben"}) {
 		t.Fatalf("join after the ranked ban ended %v", state)
 	}
 }

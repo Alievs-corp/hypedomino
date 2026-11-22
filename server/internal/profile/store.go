@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 var ErrUnknownAccount = errors.New("profile: unknown account")
@@ -172,6 +174,9 @@ func (s *Store) SetNickname(ctx context.Context, account, raw string, now time.T
 		}
 		_, err = tx.Exec(ctx, `update profiles set nickname = $2, nickname_key = $3, updated_at = $4, rename_required = false,
 			nickname_changed_at = case when rename_required then nickname_changed_at else $4 end where account_id = $1`, account, display, key, now)
+		if err == nil && current.RenameRequired {
+			err = sanction.End(ctx, tx, account, sanction.ForcedRename, now)
+		}
 	} else {
 		_, err = tx.Exec(ctx, `insert into profiles (account_id, nickname, nickname_key, updated_at) values ($1, $2, $3, $4)`, account, display, key, now)
 	}

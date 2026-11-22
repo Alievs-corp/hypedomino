@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -158,6 +159,26 @@ func TestANewAccountIsAskedForANicknameWithASuggestion(t *testing.T) {
 	status, body = f.call("GET", "/profile/me", "access:ayla", "")
 	if status != http.StatusOK || body["nickname"] != "Ayla" || body["setup_required"] != false || body["suggested_nickname"] != nil {
 		t.Fatalf("me after setup answered %d %v", status, body)
+	}
+}
+
+func TestAForcedRenameCarriesItsAppealGrantOnlyWhileRequired(t *testing.T) {
+	f := newFixture(t)
+	f.profiles.profiles["rude"] = profile.Profile{Account: "rude", Nickname: "Rude", RenameRequired: true}
+	f.handler.SetRenameAppeals(func(_ context.Context, account string) (any, error) {
+		return map[string]any{"sanction_id": 9, "token": "appeal:" + account}, nil
+	})
+	status, body := f.call("GET", "/profile/me", "access:rude", "")
+	if status != http.StatusOK || !reflect.DeepEqual(body["rename_appeal"], map[string]any{"sanction_id": float64(9), "token": "appeal:rude"}) {
+		t.Fatalf("me during a forced rename answered %d %v", status, body)
+	}
+	status, body = f.call("GET", "/profile/me", "access:ben", "")
+	if _, carried := body["rename_appeal"]; status != http.StatusOK || carried {
+		t.Fatalf("me without a forced rename answered %d %v", status, body)
+	}
+	f.handler.SetRenameAppeals(func(context.Context, string) (any, error) { return nil, errors.New("down") })
+	if status, _ := f.call("GET", "/profile/me", "access:rude", ""); status != http.StatusInternalServerError {
+		t.Fatalf("a failed grant answered %d", status)
 	}
 }
 

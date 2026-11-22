@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decidedReports, evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readReportQuery, readReviewQuery, readSuspiciousQuery, signalWeight } from "./reviews.ts";
+import { appealKinds, decidedReports, evidenceSummary, nextQueueHref, queueApiPath, queuePageSize, readAppealQuery, readReportQuery, readReviewQuery, readSuspiciousQuery, signalWeight } from "./reviews.ts";
 
 test("the listed signals add up to their weight", () => {
   assert.equal(signalWeight([]), 0);
@@ -46,4 +46,15 @@ test("earlier report decisions add up the reports they upheld and rejected; revi
     ]),
     { upheld: 1, rejected: 5 },
   );
+});
+
+test("the appeal queue keeps an appealable sanction kind, the account search and a numeric cursor", () => {
+  assert.deepEqual(readAppealQuery({ kind: "forced_rename", account: " 5f2c ", after: "17" }), { kind: "forced_rename", account: "5f2c", after: "17" });
+  assert.deepEqual(readAppealQuery({ kind: "shadowban", after: "abc" }), { kind: "", account: "", after: "" });
+  assert.deepEqual([...appealKinds], ["temporary_ban", "permanent_ban", "ranked_ban", "penalty_ban", "forced_rename"]);
+  const query = { kind: "ranked_ban", account: "", after: "" } as const;
+  assert.equal(queueApiPath("/admin/appeals", query), `/admin/appeals?kind=ranked_ban&limit=${queuePageSize}`);
+  const cursors = Array.from({ length: queuePageSize }, (_, at) => String(at + 1));
+  assert.equal(nextQueueHref("/appeals", query, cursors), `/appeals?kind=ranked_ban&after=${queuePageSize}`);
+  assert.equal(nextQueueHref("/appeals", query, cursors.slice(1)), null);
 });

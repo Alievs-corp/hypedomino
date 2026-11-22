@@ -77,6 +77,7 @@ type Manager struct {
 	friends   Friends
 	remote    RemoteLobby
 	rankedBan RankedBanCheck
+	appeal    AppealFunc
 	mu        sync.Mutex
 	sessions  map[string]*Session
 	accounts  map[string]map[string]*Session

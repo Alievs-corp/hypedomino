@@ -16,6 +16,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -241,6 +242,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/reviews/{id}/permanent-ban", h.allowed(rbac.Queues, rbac.ActOnQueue, h.proposePermanentBan))
 	h.mux.HandleFunc("POST /admin/reviews/{id}/confirm", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionConfirm, ConfirmReviewAction)))
 	h.mux.HandleFunc("GET /admin/reports", h.allowed(rbac.Queues, rbac.View, h.listReports))
+	h.mux.HandleFunc("GET /admin/appeals", h.allowed(rbac.Queues, rbac.View, h.listAppeals))
+	h.mux.HandleFunc("POST /admin/appeals/{id}/uphold", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideAppeal(appeal.StateUpheld, UpholdAppealAction)))
+	h.mux.HandleFunc("POST /admin/appeals/{id}/lift", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideAppeal(appeal.StateLifted, LiftAppealAction)))
 	h.mux.HandleFunc("POST /admin/players/{id}/reports/uphold", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReports(report.StateUpheld, UpholdReportsAction)))
 	h.mux.HandleFunc("POST /admin/players/{id}/reports/reject", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReports(report.StateRejected, RejectReportsAction)))
 	h.mux.HandleFunc("GET /admin/config/quick-messages", h.allowed(rbac.GameStrings, rbac.View, h.domainCatalog(quickmessage.Domain)))
@@ -551,6 +555,8 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "not_shadowbanned"
 	case errors.Is(err, report.ErrNothingOpen):
 		return http.StatusConflict, "no_open_reports"
+	case errors.Is(err, appeal.ErrNoAppeal):
+		return http.StatusNotFound, "no_open_appeal"
 	case errors.Is(err, errNotMuted):
 		return http.StatusConflict, "not_muted"
 	case errors.Is(err, errNothingToLift):

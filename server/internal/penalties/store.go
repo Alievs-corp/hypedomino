@@ -11,6 +11,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 type Store struct {
@@ -56,7 +57,13 @@ func (s *Store) MatchEnd(ctx context.Context, account string, config Config, que
 	if err := json.Unmarshal(raw, &record); err != nil {
 		return Notice{}, err
 	}
+	bans := len(record.Ranked.Bans)
 	notice := record.MatchEnd(config, queue, matchID, seat, report, configVersion, now)
+	if len(record.Ranked.Bans) > bans {
+		if record.Ranked.BanSanction, err = imposeBan(ctx, tx, account, record.Ranked, now); err != nil {
+			return Notice{}, err
+		}
+	}
 	if raw, err = json.Marshal(record); err != nil {
 		return Notice{}, err
 	}
@@ -64,4 +71,14 @@ func (s *Store) MatchEnd(ctx context.Context, account string, config Config, que
 		return Notice{}, err
 	}
 	return notice, tx.Commit(ctx)
+}
+
+func imposeBan(ctx context.Context, tx pgx.Tx, account string, ladder Ladder, now time.Time) (int64, error) {
+	var ends *time.Time
+	if !ladder.UnderReview {
+		until := ladder.BanUntil.UTC().Truncate(time.Microsecond)
+		ends = &until
+	}
+	imposed, err := sanction.Impose(ctx, tx, account, sanction.PenaltyBan, sanction.AfkLeaving, now, ends)
+	return imposed.ID, err
 }

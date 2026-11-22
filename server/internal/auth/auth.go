@@ -9,8 +9,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
+	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -45,6 +47,7 @@ type Connections interface {
 type Handler struct {
 	countryHeader string
 	deletion      Deletion
+	appeals       *appeal.Granter
 	verifier      Verifier
 	accounts      Accounts
 	tokens        Tokens
@@ -106,8 +109,10 @@ type tokenResponse struct {
 }
 
 type errorResponse struct {
-	Error    string `json:"error"`
-	Category string `json:"category,omitempty"`
+	Error       string        `json:"error"`
+	Category    string        `json:"category,omitempty"`
+	BannedUntil *time.Time    `json:"banned_until,omitempty"`
+	Appeal      *appeal.Grant `json:"appeal,omitempty"`
 }
 
 func (h *Handler) nonce(w http.ResponseWriter, r *http.Request) {
@@ -236,16 +241,24 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) string {
 	} else {
 		h.logger.Info("auth request refused", "reason", code)
 	}
-	reply(w, status, errorResponse{Error: code, Category: banCategory(err)})
+	reply(w, status, h.refusal(code, err))
 	return code
 }
 
-func banCategory(err error) string {
+func (h *Handler) EnableAppeals(appeals *appeal.Granter) {
+	h.appeals = appeals
+}
+
+func (h *Handler) refusal(code string, err error) errorResponse {
 	var banned *account.BannedError
-	if errors.As(err, &banned) {
-		return banned.Category
+	if !errors.As(err, &banned) {
+		return errorResponse{Error: code}
 	}
-	return ""
+	grant, grantErr := h.appeals.Grant(banned.Account, banned.SanctionID)
+	if grantErr != nil {
+		h.logger.Error("appeal grant failed", "error", grantErr)
+	}
+	return errorResponse{Error: code, Category: banned.Category, BannedUntil: banned.Until, Appeal: grant}
 }
 
 func classify(err error) (int, string) {

@@ -18,6 +18,8 @@ const (
 	TemporaryBan Kind = "temporary_ban"
 	PermanentBan Kind = "permanent_ban"
 	RankedBan    Kind = "ranked_ban"
+	PenaltyBan   Kind = "penalty_ban"
+	ForcedRename Kind = "forced_rename"
 )
 
 type Category string
@@ -33,7 +35,10 @@ const (
 
 var Categories = []Category{Cheating, Collusion, AfkLeaving, OffensiveName, PaymentFraud, Other}
 
-var ErrInvalidCategory = errors.New("sanction: unknown ban reason category")
+var (
+	ErrInvalidCategory = errors.New("sanction: unknown ban reason category")
+	ErrUnknown         = errors.New("sanction: no such sanction on the account")
+)
 
 var reasons = map[Category]pb.BanReason{
 	Cheating:      pb.BanReason_BAN_REASON_CHEATING,
@@ -99,6 +104,28 @@ func Impose(ctx context.Context, db Execer, account string, kind Kind, category 
 func Lift(ctx context.Context, db Execer, account string, kind Kind, now time.Time) (int64, error) {
 	tag, err := db.Exec(ctx, `update account_sanctions set lifted_at = $3 where account_id = $1 and kind = $2 and `+running, account, string(kind), now)
 	return tag.RowsAffected(), err
+}
+
+func (s Sanction) Running(now time.Time) bool {
+	return s.LiftedAt == nil && (s.EndsAt == nil || s.EndsAt.After(now))
+}
+
+func Lock(ctx context.Context, db Querier, account string, id int64) (Sanction, error) {
+	s, err := scan(db.QueryRow(ctx, `select `+columns+` from account_sanctions where id = $1 and account_id = $2 for update`, id, account))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Sanction{}, ErrUnknown
+	}
+	return s, err
+}
+
+func LiftByID(ctx context.Context, db Execer, id int64, now time.Time) (bool, error) {
+	tag, err := db.Exec(ctx, `update account_sanctions set lifted_at = $2 where id = $1 and lifted_at is null and (ends_at is null or ends_at > $2)`, id, now)
+	return tag.RowsAffected() == 1, err
+}
+
+func End(ctx context.Context, db Execer, account string, kind Kind, now time.Time) error {
+	_, err := db.Exec(ctx, `update account_sanctions set ends_at = greatest($3, starts_at + interval '1 microsecond') where account_id = $1 and kind = $2 and `+running, account, string(kind), now)
+	return err
 }
 
 func Current(ctx context.Context, db Querier, account string, now time.Time, kinds ...Kind) (Sanction, bool, error) {

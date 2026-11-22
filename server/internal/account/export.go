@@ -49,6 +49,7 @@ var exportSections = []exportSection{
 	{"purchases", "purchases", `select platform, transaction_id, order_id, offer_id, product_id, state, purchased_at, granted_at, refunded_at from purchases where account_id = $1 order by purchased_at`},
 	{"penalties", "penalty_records", `select record, updated_at from penalty_records where account_id = $1`},
 	{"account_sanctions", "account_sanctions", `select id, kind, category, starts_at, ends_at, lifted_at from account_sanctions where account_id = $1 order by starts_at, id`},
+	{"appeals", "appeals", `select sanction_id, text, state, created_at, decided_at from appeals where account_id = $1 order by created_at, id`},
 	{"sanctions", "risk_actions", `select action, created_at from risk_actions where account_id = $1 order by created_at`},
 	{"sanction_signals", "risk_signals", `select kind as category, created_at from risk_signals where account_id = $1
 		and created_at <= greatest((select max(created_at) from risk_actions where account_id = $1), (select shadowbanned_at from accounts where id = $1))

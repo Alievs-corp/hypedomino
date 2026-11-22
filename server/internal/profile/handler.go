@@ -41,6 +41,7 @@ type Handler struct {
 	cooldown  time.Duration
 	ranked    func(ctx context.Context, account string) (any, error)
 	medals    func(ctx context.Context, account string) (any, error)
+	appeal    func(ctx context.Context, account string) (any, error)
 	standing  func(ctx context.Context, account string, now time.Time) (int, int64, error)
 	logger    *slog.Logger
 	now       func() time.Time
@@ -75,6 +76,10 @@ func (h *Handler) SetMedals(medals func(ctx context.Context, account string) (an
 	h.medals = medals
 }
 
+func (h *Handler) SetRenameAppeals(appeal func(ctx context.Context, account string) (any, error)) {
+	h.appeal = appeal
+}
+
 func (h *Handler) SetStanding(standing func(ctx context.Context, account string, now time.Time) (int, int64, error)) {
 	h.standing = standing
 }
@@ -88,6 +93,7 @@ type ownView struct {
 	Nickname          string   `json:"nickname"`
 	SetupRequired     bool     `json:"setup_required"`
 	RenameRequired    bool     `json:"rename_required"`
+	RenameAppeal      any      `json:"rename_appeal,omitempty"`
 	SuggestedNickname string   `json:"suggested_nickname,omitempty"`
 	RenameAvailableAt string   `json:"rename_available_at,omitempty"`
 	Level             int      `json:"level"`
@@ -218,6 +224,12 @@ func (h *Handler) replyOwn(w http.ResponseWriter, r *http.Request, view ownView)
 	if view.Level, view.XP, err = h.progress(r.Context(), view.AccountID); err != nil {
 		h.fail(w, err)
 		return
+	}
+	if view.RenameRequired {
+		if view.RenameAppeal, err = section(r.Context(), h.appeal, view.AccountID); err != nil {
+			h.fail(w, err)
+			return
+		}
 	}
 	reply(w, http.StatusOK, view)
 }

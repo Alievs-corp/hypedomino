@@ -14,7 +14,34 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/queue.proto.
  */
 export const file_hypedomino_v1_queue: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL3F1ZXVlLnByb3RvEg1oeXBlZG9taW5vLnYxIo8BCg9Kb2luUXVldWVJbnRlbnQSIQoEbW9kZRgBIAEoDjITLmh5cGVkb21pbm8udjEuTW9kZRInCgVxdWV1ZRgCIAEoDjIYLmh5cGVkb21pbm8udjEuUXVldWVLaW5kEjAKCWludGVncml0eRgDIAEoCzIdLmh5cGVkb21pbm8udjEuSW50ZWdyaXR5UHJvb2YiEgoQTGVhdmVRdWV1ZUludGVudCK2AgoKUXVldWVTdGF0ZRIqCgZzdGF0dXMYASABKA4yGi5oeXBlZG9taW5vLnYxLlF1ZXVlU3RhdHVzEiEKBG1vZGUYAiABKA4yEy5oeXBlZG9taW5vLnYxLk1vZGUSJwoFcXVldWUYAyABKA4yGC5oeXBlZG9taW5vLnYxLlF1ZXVlS2luZBIWCg5qb2luZWRfdW5peF9tcxgEIAEoBBIdChVzZWFyY2hfc3RhcnRzX3VuaXhfbXMYBSABKAQSLAoHcmVmdXNhbBgGIAEoDjIbLmh5cGVkb21pbm8udjEuUXVldWVSZWZ1c2FsEh0KFXJlZnVzZWRfdW50aWxfdW5peF9tcxgHIAEoBBIsCgpiYW5fcmVhc29uGAggASgOMhguaHlwZWRvbWluby52MS5CYW5SZWFzb24qVQoJUXVldWVLaW5kEhoKFlFVRVVFX0tJTkRfVU5TUEVDSUZJRUQQABIVChFRVUVVRV9LSU5EX1JBTktFRBABEhUKEVFVRVVFX0tJTkRfQ0FTVUFMEAIqlgEKC1F1ZXVlU3RhdHVzEhwKGFFVRVVFX1NUQVRVU19VTlNQRUNJRklFRBAAEhoKFlFVRVVFX1NUQVRVU19TRUFSQ0hJTkcQARIVChFRVUVVRV9TVEFUVVNfTEVGVBACEhwKGFFVRVVFX1NUQVRVU19NQVRDSF9GT1VORBADEhgKFFFVRVVFX1NUQVRVU19SRUZVU0VEEAQqlwIKDFF1ZXVlUmVmdXNhbBIdChlRVUVVRV9SRUZVU0FMX1VOU1BFQ0lGSUVEEAASGgoWUVVFVUVfUkVGVVNBTF9JTl9NQVRDSBABEiEKHVFVRVVFX1JFRlVTQUxfTUFUQ0hNQUtJTkdfQkFOEAISHwobUVVFVUVfUkVGVVNBTF9SQU5LRURfQ0xPU0VEEAMSHQoZUVVFVUVfUkVGVVNBTF9VTkFWQUlMQUJMRRAEEiIKHlFVRVVFX1JFRlVTQUxfSU5URUdSSVRZX0ZBSUxFRBAFEicKI1FVRVVFX1JFRlVTQUxfSU5URUdSSVRZX1VOQVZBSUxBQkxFEAYSHAoYUVVFVUVfUkVGVVNBTF9SQU5LRURfQkFOEAcqyQEKCUJhblJlYXNvbhIaChZCQU5fUkVBU09OX1VOU1BFQ0lGSUVEEAASFwoTQkFOX1JFQVNPTl9DSEVBVElORxABEhgKFEJBTl9SRUFTT05fQ09MTFVTSU9OEAISGgoWQkFOX1JFQVNPTl9BRktfTEVBVklORxADEh0KGUJBTl9SRUFTT05fT0ZGRU5TSVZFX05BTUUQBBIcChhCQU5fUkVBU09OX1BBWU1FTlRfRlJBVUQQBRIUChBCQU5fUkVBU09OX09USEVSEAZCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpRdWV1ZVByb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z", [file_hypedomino_v1_hello, file_hypedomino_v1_match]);
+  fileDesc("ChloeXBlZG9taW5vL3YxL3F1ZXVlLnByb3RvEg1oeXBlZG9taW5vLnYxIkoKC0FwcGVhbEdyYW50EhMKC3NhbmN0aW9uX2lkGAEgASgEEg0KBXRva2VuGAIgASgJEhcKD2V4cGlyZXNfdW5peF9tcxgDIAEoBCKPAQoPSm9pblF1ZXVlSW50ZW50EiEKBG1vZGUYASABKA4yEy5oeXBlZG9taW5vLnYxLk1vZGUSJwoFcXVldWUYAiABKA4yGC5oeXBlZG9taW5vLnYxLlF1ZXVlS2luZBIwCglpbnRlZ3JpdHkYAyABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mIhIKEExlYXZlUXVldWVJbnRlbnQi4gIKClF1ZXVlU3RhdGUSKgoGc3RhdHVzGAEgASgOMhouaHlwZWRvbWluby52MS5RdWV1ZVN0YXR1cxIhCgRtb2RlGAIgASgOMhMuaHlwZWRvbWluby52MS5Nb2RlEicKBXF1ZXVlGAMgASgOMhguaHlwZWRvbWluby52MS5RdWV1ZUtpbmQSFgoOam9pbmVkX3VuaXhfbXMYBCABKAQSHQoVc2VhcmNoX3N0YXJ0c191bml4X21zGAUgASgEEiwKB3JlZnVzYWwYBiABKA4yGy5oeXBlZG9taW5vLnYxLlF1ZXVlUmVmdXNhbBIdChVyZWZ1c2VkX3VudGlsX3VuaXhfbXMYByABKAQSLAoKYmFuX3JlYXNvbhgIIAEoDjIYLmh5cGVkb21pbm8udjEuQmFuUmVhc29uEioKBmFwcGVhbBgJIAEoCzIaLmh5cGVkb21pbm8udjEuQXBwZWFsR3JhbnQqVQoJUXVldWVLaW5kEhoKFlFVRVVFX0tJTkRfVU5TUEVDSUZJRUQQABIVChFRVUVVRV9LSU5EX1JBTktFRBABEhUKEVFVRVVFX0tJTkRfQ0FTVUFMEAIqlgEKC1F1ZXVlU3RhdHVzEhwKGFFVRVVFX1NUQVRVU19VTlNQRUNJRklFRBAAEhoKFlFVRVVFX1NUQVRVU19TRUFSQ0hJTkcQARIVChFRVUVVRV9TVEFUVVNfTEVGVBACEhwKGFFVRVVFX1NUQVRVU19NQVRDSF9GT1VORBADEhgKFFFVRVVFX1NUQVRVU19SRUZVU0VEEAQqlwIKDFF1ZXVlUmVmdXNhbBIdChlRVUVVRV9SRUZVU0FMX1VOU1BFQ0lGSUVEEAASGgoWUVVFVUVfUkVGVVNBTF9JTl9NQVRDSBABEiEKHVFVRVVFX1JFRlVTQUxfTUFUQ0hNQUtJTkdfQkFOEAISHwobUVVFVUVfUkVGVVNBTF9SQU5LRURfQ0xPU0VEEAMSHQoZUVVFVUVfUkVGVVNBTF9VTkFWQUlMQUJMRRAEEiIKHlFVRVVFX1JFRlVTQUxfSU5URUdSSVRZX0ZBSUxFRBAFEicKI1FVRVVFX1JFRlVTQUxfSU5URUdSSVRZX1VOQVZBSUxBQkxFEAYSHAoYUVVFVUVfUkVGVVNBTF9SQU5LRURfQkFOEAcqyQEKCUJhblJlYXNvbhIaChZCQU5fUkVBU09OX1VOU1BFQ0lGSUVEEAASFwoTQkFOX1JFQVNPTl9DSEVBVElORxABEhgKFEJBTl9SRUFTT05fQ09MTFVTSU9OEAISGgoWQkFOX1JFQVNPTl9BRktfTEVBVklORxADEh0KGUJBTl9SRUFTT05fT0ZGRU5TSVZFX05BTUUQBBIcChhCQU5fUkVBU09OX1BBWU1FTlRfRlJBVUQQBRIUChBCQU5fUkVBU09OX09USEVSEAZCxQEKEWNvbS5oeXBlZG9taW5vLnYxQgpRdWV1ZVByb3RvUAFaT2dpdGh1Yi5jb20vQWxpZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRvbWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygINSHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5IeXBlZG9taW5vOjpWMWIGcHJvdG8z", [file_hypedomino_v1_hello, file_hypedomino_v1_match]);
+
+/**
+ * @generated from message hypedomino.v1.AppealGrant
+ */
+export type AppealGrant = Message<"hypedomino.v1.AppealGrant"> & {
+  /**
+   * @generated from field: uint64 sanction_id = 1;
+   */
+  sanctionId: bigint;
+
+  /**
+   * @generated from field: string token = 2;
+   */
+  token: string;
+
+  /**
+   * @generated from field: uint64 expires_unix_ms = 3;
+   */
+  expiresUnixMs: bigint;
+};
+
+/**
+ * Describes the message hypedomino.v1.AppealGrant.
+ * Use `create(AppealGrantSchema)` to create a new message.
+ */
+export const AppealGrantSchema: GenMessage<AppealGrant> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_queue, 0);
 
 /**
  * @generated from message hypedomino.v1.JoinQueueIntent
@@ -41,7 +68,7 @@ export type JoinQueueIntent = Message<"hypedomino.v1.JoinQueueIntent"> & {
  * Use `create(JoinQueueIntentSchema)` to create a new message.
  */
 export const JoinQueueIntentSchema: GenMessage<JoinQueueIntent> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_queue, 0);
+  messageDesc(file_hypedomino_v1_queue, 1);
 
 /**
  * @generated from message hypedomino.v1.LeaveQueueIntent
@@ -54,7 +81,7 @@ export type LeaveQueueIntent = Message<"hypedomino.v1.LeaveQueueIntent"> & {
  * Use `create(LeaveQueueIntentSchema)` to create a new message.
  */
 export const LeaveQueueIntentSchema: GenMessage<LeaveQueueIntent> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_queue, 1);
+  messageDesc(file_hypedomino_v1_queue, 2);
 
 /**
  * @generated from message hypedomino.v1.QueueState
@@ -99,6 +126,11 @@ export type QueueState = Message<"hypedomino.v1.QueueState"> & {
    * @generated from field: hypedomino.v1.BanReason ban_reason = 8;
    */
   banReason: BanReason;
+
+  /**
+   * @generated from field: hypedomino.v1.AppealGrant appeal = 9;
+   */
+  appeal?: AppealGrant | undefined;
 };
 
 /**
@@ -106,7 +138,7 @@ export type QueueState = Message<"hypedomino.v1.QueueState"> & {
  * Use `create(QueueStateSchema)` to create a new message.
  */
 export const QueueStateSchema: GenMessage<QueueState> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_queue, 2);
+  messageDesc(file_hypedomino_v1_queue, 3);
 
 /**
  * @generated from enum hypedomino.v1.QueueKind

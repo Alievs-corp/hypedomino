@@ -179,6 +179,8 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		current, _, _ := liveopsConfig.Current()
 		return current.AnalyticsConfig()
 	})
+	appealGrants := enableAppeals(a, pool, tokens, liveopsConfig, signIn, profiles, logger)
+	sessions.GrantAppeals(appealGrants)
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
 	inventoryHandler.FlagUnowned(unowned)
@@ -338,7 +340,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if members != nil {
 		queueMetrics := matchqueue.NewMetrics()
 		a.Expose(queueMetrics)
-		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, await: a.AwaitBeforeReady, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, await: a.AwaitBeforeReady, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, appeal: appealGrants, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})

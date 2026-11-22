@@ -1,4 +1,5 @@
 import type { SearchParams } from "../audit/query.ts";
+import type { Sanction } from "../players/sanctions.ts";
 
 export type ReviewSignal ={ kind: string; weight: number; evidence: unknown; at: string };
 
@@ -30,9 +31,21 @@ export function evidenceSummary(evidence: unknown): string {
 
 export type ReportEntry = { id: number; reporter: string; reason: string; name_text: string; match_id: string | null; updated_at: string };
 
-export type EarlierDecision = { queue: "reports" | "reviews"; outcome: string; reasons: string[]; reports: number; decided_at: string };
+export type EarlierDecision = { queue: "reports" | "reviews" | "appeals"; outcome: string; reasons: string[]; reports: number; decided_at: string };
 
 export type ReportTarget = QueueDeadline & { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[]; decisions: EarlierDecision[] };
+
+export type Appeal = QueueDeadline & {
+  id: number;
+  account_id: string;
+  nickname: string;
+  sanction_id: number;
+  text: string;
+  state: "open" | "upheld" | "lifted";
+  created_at: string;
+  sanction: Sanction;
+  decisions: EarlierDecision[];
+};
 
 export function decidedReports(decisions: readonly EarlierDecision[]): { upheld: number; rejected: number } {
   const totals = { upheld: 0, rejected: 0 };
@@ -52,7 +65,13 @@ export const reportReasons = ["offensive_nickname", "offensive_room_name", "impe
 
 export type ReviewQuery = { cause: (typeof reviewCauses)[number] | ""; account: string; after: string };
 
+export type QueueQuery = ReviewQuery | ReportQuery | AppealQuery | SuspiciousQuery;
+
 export type ReportQuery = { reason: (typeof reportReasons)[number] | ""; account: string; after: string };
+
+export const appealKinds = ["temporary_ban", "permanent_ban", "ranked_ban", "penalty_ban", "forced_rename"] as const;
+
+export type AppealQuery = { kind: (typeof appealKinds)[number] | ""; account: string; after: string };
 
 export const suspiciousSignals = ["win_trade", "feeding", "partner_fit"] as const;
 
@@ -80,12 +99,17 @@ export function readReportQuery(params: SearchParams): ReportQuery {
   return { reason: known(reportReasons, single(params.reason)), account: single(params.account), after: uuidPattern.test(after) ? after : "" };
 }
 
+export function readAppealQuery(params: SearchParams): AppealQuery {
+  const after = single(params.after);
+  return { kind: known(appealKinds, single(params.kind)), account: single(params.account), after: reviewIdPattern.test(after) ? after : "" };
+}
+
 export function readSuspiciousQuery(params: SearchParams): SuspiciousQuery {
   const after = single(params.after);
   return { signal: known(suspiciousSignals, single(params.signal)), account: single(params.account), after: uuidPattern.test(after) ? after : "" };
 }
 
-function searchOf(query: ReviewQuery | ReportQuery | SuspiciousQuery): URLSearchParams {
+function searchOf(query: QueueQuery): URLSearchParams {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value) {
@@ -95,13 +119,13 @@ function searchOf(query: ReviewQuery | ReportQuery | SuspiciousQuery): URLSearch
   return search;
 }
 
-export function queueApiPath(path: "/admin/reviews" | "/admin/reports" | "/admin/matches/suspicious", query: ReviewQuery | ReportQuery | SuspiciousQuery): string {
+export function queueApiPath(path: "/admin/reviews" | "/admin/reports" | "/admin/appeals" | "/admin/matches/suspicious", query: QueueQuery): string {
   const search = searchOf(query);
   search.set("limit", String(queuePageSize));
   return `${path}?${search}`;
 }
 
-export function nextQueueHref(screen: "/reviews" | "/reports" | "/matches", query: ReviewQuery | ReportQuery | SuspiciousQuery, cursors: readonly string[]): string | null {
+export function nextQueueHref(screen: "/reviews" | "/reports" | "/appeals" | "/matches", query: QueueQuery, cursors: readonly string[]): string | null {
   if (cursors.length < queuePageSize) {
     return null;
   }
