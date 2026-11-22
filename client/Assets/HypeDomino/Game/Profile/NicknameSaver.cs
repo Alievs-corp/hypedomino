@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Core.Analytics;
 using HypeDomino.Net.Api;
 using HypeDomino.UI.Profile;
 
@@ -103,10 +104,12 @@ namespace HypeDomino.Game.Profile
     public sealed class NicknameSaver
     {
         readonly ApiClient api;
+        readonly AnalyticsQueue analytics;
 
-        public NicknameSaver(ApiClient api)
+        public NicknameSaver(ApiClient api, AnalyticsQueue analytics)
         {
             this.api = api;
+            this.analytics = analytics ?? throw new ArgumentNullException(nameof(analytics));
         }
 
         public bool Busy { get; private set; }
@@ -125,7 +128,9 @@ namespace HypeDomino.Game.Profile
         void Answered(ApiReply reply, Action<NicknameSaveResult> done)
         {
             Busy = false;
-            done(Read(reply));
+            var result = Read(reply);
+            if (result.Outcome == NicknameSaveOutcome.Saved) analytics.Track(AnalyticsEvents.NicknameSet);
+            done(result);
         }
 
         static NicknameSaveResult Read(ApiReply reply)

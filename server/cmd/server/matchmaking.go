@@ -25,6 +25,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 	"github.com/Alievs-corp/hypedomino/server/internal/session"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
@@ -46,6 +47,7 @@ type matchmakingDeps struct {
 	penalties  *penalties.Store
 	friends    *friends.Store
 	emoji      room.EmojiLimit
+	appeal     matchqueue.AppealFunc
 	rankedOpen func() bool
 }
 
@@ -65,8 +67,10 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	prefix, node := config.Cluster.KeyPrefix, deps.members.NodeID()
 	store := matchqueue.NewStore(deps.client, prefix)
 	penaltyRecords := deps.penalties
-	gate := matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RatedEntry(deps.ratings)), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
+	rankedBan := sanction.RankedBanCheck(deps.pool)
+	gate := matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RankedBanned(rankedBan, matchqueue.RatedEntry(deps.ratings))), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
 	gate.Measure(deps.metrics)
+	gate.GrantAppeals(deps.appeal)
 	deps.sessions.Queue(gate)
 	dispatcher := matchqueue.NewDispatcher(deps.client, prefix, node)
 	muted := matchstart.Muted(deps.pool, time.Now)
@@ -79,6 +83,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	lobby.Route(lobbies)
 	deps.sessions.Host(lobby, matchstart.LobbyMember(deps.inventory.Freeze, muted), deps.friends)
 	deps.sessions.Reach(lobbies)
+	deps.sessions.Restrict(rankedBan)
 	go panics.Supervise(ctx, "lobby listener", config.MatchmakingTick, func(ctx context.Context, retry time.Duration) {
 		listenLobbies(ctx, lobbies, deps.sessions, retry, logger)
 	})

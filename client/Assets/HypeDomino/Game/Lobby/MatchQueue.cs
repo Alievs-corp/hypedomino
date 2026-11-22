@@ -26,11 +26,15 @@ namespace HypeDomino.Game.Lobby
         public ulong SearchStartsUnixMs { get; private set; }
         public QueueRefusal Refusal { get; private set; }
         public ulong RefusedUntilUnixMs { get; private set; }
+        public BanReason BanReason { get; private set; }
         public bool AwaitingReply => repliesDue > 0;
         public bool CanLeave => !leaveSent && (Phase == QueuePhase.Searching || repliesDue > 0);
         public string RefusalKey => Phase == QueuePhase.Refused ? QueueRefusalKeys.Of(Refusal) : null;
+        public string BanReasonKey => Phase == QueuePhase.Refused ? BanReasonKeys.Of(BanReason) : null;
 
         public event Action Changed;
+
+        public event Action<Mode, QueueKind> JoinSent;
 
         public void Follow(Session session, AppFlow flow)
         {
@@ -48,6 +52,7 @@ namespace HypeDomino.Game.Lobby
             join.Integrity = integrity;
             session.Send(Envelope.PayloadOneofCase.JoinQueueIntent, join);
             repliesDue++;
+            JoinSent?.Invoke(mode, kind);
             return true;
         }
 
@@ -80,6 +85,7 @@ namespace HypeDomino.Game.Lobby
                     Show(QueuePhase.Refused, state.Mode, state.Queue);
                     Refusal = state.Refusal;
                     RefusedUntilUnixMs = state.RefusedUntilUnixMs;
+                    BanReason = state.BanReason;
                     break;
                 default:
                     return;
@@ -119,6 +125,7 @@ namespace HypeDomino.Game.Lobby
             SearchStartsUnixMs = 0;
             Refusal = QueueRefusal.Unspecified;
             RefusedUntilUnixMs = 0;
+            BanReason = BanReason.Unspecified;
         }
 
         void OnHello(ServerHello hello) => Reset();

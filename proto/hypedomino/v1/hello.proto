@@ -26,6 +26,7 @@ message ClientHello {
   uint64 client_time_unix_ms = 8;
   IntegrityProof integrity = 9;
   repeated string device_risk_signals = 10;
+  repeated string hook_signals = 11;
 }
 
 message IntegrityProof {
@@ -53,6 +54,7 @@ message ServerHello {
   string content_base_url = 9;
   uint64 maintenance_ends_unix_ms = 10;
   CosmeticsManifest cosmetics_manifest = 11;
+  AnalyticsConfig analytics_config = 12;
 }
 
 message StringBundle {
@@ -64,6 +66,12 @@ message StringBundle {
 message CosmeticsManifest {
   uint32 version = 1;
   string hash = 2;
+}
+
+message AnalyticsConfig {
+  uint32 batch_size = 1;
+  uint32 queue_limit = 2;
+  uint32 flush_seconds = 3;
 }
 
 message FallbackChain {

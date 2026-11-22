@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using HypeDomino.Content;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using Hypedomino.V1;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using AnnouncedBundle = Hypedomino.V1.StringBundle;
 
 namespace HypeDomino.Game
@@ -15,12 +17,23 @@ namespace HypeDomino.Game
     {
         public static AppFlow Flow { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        static void AssembliesLoaded() => StartupPhases.App.Mark(StartupPhases.Assemblies);
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
             Flow = new AppFlow();
             Flow.Changed += OnChanged;
-            new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line));
+            new StartupMarker(Flow, () => Time.realtimeSinceStartupAsDouble, line => Debug.Log(line), StartupPhases.App);
+            SceneManager.sceneLoaded += FirstSceneLoaded;
+            StartupPhases.App.Mark(nameof(AppBoot));
+        }
+
+        static void FirstSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= FirstSceneLoaded;
+            StartupPhases.App.Mark(StartupPhases.Scene);
         }
 
         public static void Listen(Session session, AppFlow flow, CatalogUpdater catalog, GameStrings strings, StringBundleUpdater bundles, CosmeticManifestUpdater cosmetics, Action<HapticCue> playHaptic, Action<MatchSounds> playSounds)

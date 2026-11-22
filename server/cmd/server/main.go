@@ -35,6 +35,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/inventory"
 	"github.com/Alievs-corp/hypedomino/server/internal/leaderboard"
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
@@ -154,6 +155,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	profiles := profile.NewHandler(tokens, profileStore, logger, time.Now)
 	profiles.SetCountries(accounts, config.CountryCooldown)
+	profiles.SetLanguages(accounts)
 	a.Handle("/profile/", profiles)
 	catalog, err := loadCatalog(config.Cosmetics)
 	if err != nil {
@@ -171,6 +173,14 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		}
 		return &pb.CosmeticsManifest{Version: uint32(published.Version), Hash: published.Hash}
 	})
+	liveopsConfig := snapshot.New(pool, liveops.Domain, liveops.Parse, logger)
+	watchConfig(ctx, a.AwaitBeforeReady, "liveops", config.ConfigPoll, liveopsConfig)
+	a.AnnounceAnalytics(func() *pb.AnalyticsConfig {
+		current, _, _ := liveopsConfig.Current()
+		return current.AnalyticsConfig()
+	})
+	appealGrants := enableAppeals(a, pool, tokens, liveopsConfig, signIn, profiles, logger)
+	sessions.GrantAppeals(appealGrants)
 	unowned := risk.NewUnownedEquips(signals, config.Risk, systemClock{}, logger)
 	inventoryHandler := inventory.NewHandler(tokens, inventoryStore, logger, time.Now)
 	inventoryHandler.FlagUnowned(unowned)
@@ -330,7 +340,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	if members != nil {
 		queueMetrics := matchqueue.NewMetrics()
 		a.Expose(queueMetrics)
-		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, await: a.AwaitBeforeReady, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, rankedOpen: func() bool {
+		startMatchmaking(ctx, config, logger, matchmakingDeps{metrics: queueMetrics, await: a.AwaitBeforeReady, pool: pool, client: client, members: members, sessions: sessions, rooms: a.Rooms(), ratings: ratings, profiles: profileStore, inventory: inventoryStore, penalties: penaltyRecords, friends: friendStore, emoji: config.Emoji, appeal: appealGrants, rankedOpen: func() bool {
 			current, _, _ := controls.Current()
 			return !current.RankedDisabled
 		}})
@@ -341,7 +351,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		ratings.SetBoards(boards, logger)
 		reader = boards
 	}
-	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, logger, time.Now))
+	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, profileStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
 	go panics.Supervise(ctx, "pass season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		passes.RunSeasonEnd(ctx, logger, every, time.Now)

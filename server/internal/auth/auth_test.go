@@ -4,17 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
+	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
@@ -239,6 +243,65 @@ func TestSignInRefusalsCarryAStatusAndAReason(t *testing.T) {
 	}
 	if len(f.tokens.issued) != 0 {
 		t.Fatalf("a refused sign-in issued tokens: %v", f.tokens.issued)
+	}
+}
+
+func TestABannedSignInCarriesTheBanCategoryOnly(t *testing.T) {
+	f := newFixture(t)
+	f.verifier.identities["cheater"] = idtoken.Identity{Subject: "cheater"}
+	f.accounts.states["google-cheater"] = &account.BannedError{Category: "cheating"}
+	f.verifier.identities["deleted"] = idtoken.Identity{Subject: "deleted"}
+	f.accounts.states["google-deleted"] = account.ErrDeleted
+	cases := []struct {
+		token    string
+		status   int
+		category any
+	}{
+		{"cheater", http.StatusForbidden, "cheating"},
+		{"deleted", http.StatusGone, nil},
+	}
+	for _, c := range cases {
+		status, body := f.post("/auth/signin", `{"provider":"google","id_token":"`+c.token+`","nonce":"n","device_id":"d"}`)
+		if status != c.status || body["category"] != c.category {
+			t.Fatalf("%s answered %d %v", c.token, status, body)
+		}
+	}
+}
+
+type fakeAppealSigner struct {
+	expires time.Time
+}
+
+func (s fakeAppealSigner) IssueAppeal(account string, sanction int64, ttl time.Duration) (string, time.Time, error) {
+	return fmt.Sprintf("appeal:%s:%d:%s", account, sanction, ttl), s.expires, nil
+}
+
+func TestABannedSignInCarriesAnAppealGrantForItsSanction(t *testing.T) {
+	f := newFixture(t)
+	expires := time.Date(2026, 11, 22, 13, 0, 0, 0, time.UTC)
+	f.handler.EnableAppeals(appeal.NewGranter(fakeAppealSigner{expires: expires}, func() liveops.Appeals { return liveops.Values{}.Appeals() }))
+	f.verifier.identities["cheater"] = idtoken.Identity{Subject: "cheater"}
+	until := time.Date(2026, 11, 25, 12, 0, 0, 0, time.UTC)
+	f.accounts.states["google-cheater"] = &account.BannedError{Account: "acc-cheater", Category: "cheating", SanctionID: 41, Until: &until}
+	f.verifier.identities["legacy"] = idtoken.Identity{Subject: "legacy"}
+	f.accounts.states["google-legacy"] = &account.BannedError{Account: "acc-legacy", Category: "other"}
+	f.verifier.identities["deleted"] = idtoken.Identity{Subject: "deleted"}
+	f.accounts.states["google-deleted"] = account.ErrDeleted
+	cases := []struct {
+		token  string
+		status int
+		until  any
+		appeal any
+	}{
+		{"cheater", http.StatusForbidden, "2026-11-25T12:00:00Z", map[string]any{"sanction_id": float64(41), "token": "appeal:acc-cheater:41:30m0s", "expires_at": "2026-11-22T13:00:00Z"}},
+		{"legacy", http.StatusForbidden, nil, nil},
+		{"deleted", http.StatusGone, nil, nil},
+	}
+	for _, c := range cases {
+		status, body := f.post("/auth/signin", `{"provider":"google","id_token":"`+c.token+`","nonce":"n","device_id":"d"}`)
+		if status != c.status || body["banned_until"] != c.until || !reflect.DeepEqual(body["appeal"], c.appeal) {
+			t.Fatalf("%s answered %d %v", c.token, status, body)
+		}
 	}
 }
 

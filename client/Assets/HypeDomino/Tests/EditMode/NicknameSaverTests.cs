@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Core.Analytics;
 using HypeDomino.Game.Profile;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
@@ -74,7 +75,20 @@ namespace HypeDomino.Tests.EditMode
             public void Delete(string key) => values.Remove(key);
         }
 
+        sealed class AnalyticsSink : IAnalyticsSender
+        {
+            public readonly List<AnalyticsEvent> Sent = new();
+
+            public void Send(string analyticsId, IReadOnlyList<AnalyticsEvent> batch, Action<bool> done)
+            {
+                for (var i = 0; i < batch.Count; i++) Sent.Add(batch[i]);
+                done(true);
+            }
+        }
+
         Api api;
+        AnalyticsSink analytics;
+        AnalyticsQueue events;
         NicknameSaver saver;
         List<NicknameSaveResult> results;
 
@@ -88,7 +102,10 @@ namespace HypeDomino.Tests.EditMode
             store.Write(AuthSession.RefreshTokenKey, "refresh-0");
             session.Resume(_ => { });
             auth.Refreshes[0](new HttpReply(200, "{\"access_token\":\"access-1\",\"refresh_token\":\"refresh-1\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"acc-1\"}"));
-            saver = new NicknameSaver(new ApiClient(api, session));
+            analytics = new AnalyticsSink();
+            events = new AnalyticsQueue(analytics, () => 1700000000000, 10, 10);
+            events.Consent("3f2b8c1e-5a4d-4e8f-9b7a-1c2d3e4f5a6b");
+            saver = new NicknameSaver(new ApiClient(api, session), events);
             results = new List<NicknameSaveResult>();
         }
 
@@ -112,6 +129,46 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual("Leyla07", results[0].Profile.Nickname);
             Assert.IsTrue(results[0].Profile.IsOwn);
             Assert.AreEqual(RetryAtUnixMs, results[0].Profile.RenameAvailableUnixMs);
+        }
+
+        [Test]
+        public void AnAcceptedSaveTracksNicknameSetWithoutTheNickname()
+        {
+            Assert.IsTrue(saver.Save("Leyla07", results.Add));
+            Assert.AreEqual(0, events.Count);
+
+            api.Requests[0].Done(new HttpReply(200, RenamedJson));
+            events.Flush();
+
+            Assert.AreEqual(1, analytics.Sent.Count);
+            Assert.AreEqual(AnalyticsEvents.NicknameSet, analytics.Sent[0].Name);
+            Assert.IsNull(analytics.Sent[0].Label);
+            Assert.AreEqual(0, analytics.Sent[0].Value);
+        }
+
+        [TestCase(409, "{\"error\":\"nickname.taken\"}")]
+        [TestCase(200, "not json")]
+        [TestCase(500, "{\"error\":\"internal\"}")]
+        public void ARefusedOrUnreadableSaveTracksNothing(int status, string body)
+        {
+            Assert.IsTrue(saver.Save("Leyla07", results.Add));
+
+            api.Requests[0].Done(new HttpReply(status, body));
+
+            Assert.AreNotEqual(NicknameSaveOutcome.Saved, results[0].Outcome);
+            Assert.AreEqual(0, events.Count);
+        }
+
+        [Test]
+        public void ASaveWithoutAnalyticsConsentTracksNothing()
+        {
+            events.Withdraw();
+            Assert.IsTrue(saver.Save("Leyla07", results.Add));
+
+            api.Requests[0].Done(new HttpReply(200, RenamedJson));
+
+            Assert.AreEqual(NicknameSaveOutcome.Saved, results[0].Outcome);
+            Assert.AreEqual(0, events.Count);
         }
 
         [Test]

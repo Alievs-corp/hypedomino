@@ -38,6 +38,8 @@ namespace HypeDomino.Net.Auth
 
         public bool HasStoredSession => !string.IsNullOrEmpty(store.Read(RefreshTokenKey));
 
+        public event Action<AuthProvider> ProviderSignedIn;
+
         public void Resume(Action<AuthResult> done)
         {
             var refresh = store.Read(RefreshTokenKey);
@@ -110,7 +112,14 @@ namespace HypeDomino.Net.Auth
                 return;
             }
             var request = JsonUtility.ToJson(new SignInRequest { provider = ProviderName(provider), id_token = token.Token, nonce = nonce, device_id = DeviceId() });
-            transport.Post(SignInPath, request, reply => End(done, Tokens(reply, false)));
+            transport.Post(SignInPath, request, reply => ProviderAnswered(provider, reply, done));
+        }
+
+        void ProviderAnswered(AuthProvider provider, HttpReply reply, Action<AuthResult> done)
+        {
+            var result = Tokens(reply, false);
+            if (result.Outcome == AuthOutcome.SignedIn) ProviderSignedIn?.Invoke(provider);
+            End(done, result);
         }
 
         AuthResult Tokens(HttpReply reply, bool refreshing)
@@ -138,7 +147,7 @@ namespace HypeDomino.Net.Auth
             if (refreshing) Forget();
             switch (code)
             {
-                case "banned": return new AuthResult(AuthOutcome.Banned, error: code);
+                case "banned": return new AuthResult(AuthOutcome.Banned, error: code, banCategory: error.category);
                 case "deleted": return new AuthResult(AuthOutcome.Deleted, error: code);
                 case "deletion_pending": return new AuthResult(AuthOutcome.DeletionPending, error: code, deleteAt: error.delete_at);
             }

@@ -16,6 +16,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -43,6 +44,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
 	"github.com/Alievs-corp/hypedomino/server/internal/storesync"
@@ -63,6 +65,7 @@ type Config struct {
 
 	GrantApprovalCoins int64
 	TempBan            time.Duration
+	RankedBan          time.Duration
 	Mute               time.Duration
 	Limits             Limits
 
@@ -129,6 +132,7 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/economy/monitors", h.allowed(rbac.Dashboards, rbac.View, h.economyMonitors))
 	h.mux.HandleFunc("GET /admin/config/version", h.allowed(rbac.Dashboards, rbac.View, h.activeConfigVersion))
 	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
+	h.mux.HandleFunc("GET /admin/analytics/kpis", h.allowed(rbac.Dashboards, rbac.View, h.kpis))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
 	h.mux.HandleFunc("POST /admin/audit/export", h.allowed(rbac.AuditLog, rbac.ExportAudit, h.exportAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
@@ -160,6 +164,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/coins", h.allowed(rbac.Players, rbac.ActOnPlayer, h.adjustCoins))
 	h.mux.HandleFunc("POST /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banTemporarily))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
+	h.mux.HandleFunc("POST /admin/players/{id}/ranked-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banFromRanked))
+	h.mux.HandleFunc("DELETE /admin/players/{id}/ranked-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftRankedBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.shadowban))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftShadowban))
 	h.mux.HandleFunc("POST /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.mute))
@@ -236,6 +242,9 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/reviews/{id}/permanent-ban", h.allowed(rbac.Queues, rbac.ActOnQueue, h.proposePermanentBan))
 	h.mux.HandleFunc("POST /admin/reviews/{id}/confirm", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReview(risk.DecisionConfirm, ConfirmReviewAction)))
 	h.mux.HandleFunc("GET /admin/reports", h.allowed(rbac.Queues, rbac.View, h.listReports))
+	h.mux.HandleFunc("GET /admin/appeals", h.allowed(rbac.Queues, rbac.View, h.listAppeals))
+	h.mux.HandleFunc("POST /admin/appeals/{id}/uphold", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideAppeal(appeal.StateUpheld, UpholdAppealAction)))
+	h.mux.HandleFunc("POST /admin/appeals/{id}/lift", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideAppeal(appeal.StateLifted, LiftAppealAction)))
 	h.mux.HandleFunc("POST /admin/players/{id}/reports/uphold", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReports(report.StateUpheld, UpholdReportsAction)))
 	h.mux.HandleFunc("POST /admin/players/{id}/reports/reject", h.allowed(rbac.Queues, rbac.ActOnQueue, h.decideReports(report.StateRejected, RejectReportsAction)))
 	h.mux.HandleFunc("GET /admin/config/quick-messages", h.allowed(rbac.GameStrings, rbac.View, h.domainCatalog(quickmessage.Domain)))
@@ -536,12 +545,18 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "not_published"
 	case errors.Is(err, errNotBanned):
 		return http.StatusConflict, "not_banned"
+	case errors.Is(err, errNotRankedBanned):
+		return http.StatusConflict, "not_ranked_banned"
+	case errors.Is(err, sanction.ErrInvalidCategory):
+		return http.StatusBadRequest, "invalid_category"
 	case errors.Is(err, errShadowbanned):
 		return http.StatusConflict, "shadowbanned"
 	case errors.Is(err, errNotShadowbanned):
 		return http.StatusConflict, "not_shadowbanned"
 	case errors.Is(err, report.ErrNothingOpen):
 		return http.StatusConflict, "no_open_reports"
+	case errors.Is(err, appeal.ErrNoAppeal):
+		return http.StatusNotFound, "no_open_appeal"
 	case errors.Is(err, errNotMuted):
 		return http.StatusConflict, "not_muted"
 	case errors.Is(err, errNothingToLift):

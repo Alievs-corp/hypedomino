@@ -12,6 +12,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 type EntryFunc func(ctx context.Context, account string, mode rules.Mode, queue matchmaking.Queue, now time.Time) (matchmaking.Entry, error)
@@ -26,7 +27,10 @@ type Gate struct {
 	now        func() time.Time
 	logger     *slog.Logger
 	metrics    *Metrics
+	appeal     AppealFunc
 }
+
+type AppealFunc func(account string, sanctionID int64) *pb.AppealGrant
 
 func NewGate(store *Store, node, region string, entry EntryFunc, rankedOpen, accepting func() bool, now func() time.Time, logger *slog.Logger) *Gate {
 	return &Gate{store: store, node: node, region: region, entry: entry, rankedOpen: rankedOpen, accepting: accepting, now: now, logger: logger}
@@ -34,6 +38,17 @@ func NewGate(store *Store, node, region string, entry EntryFunc, rankedOpen, acc
 
 func (g *Gate) Measure(m *Metrics) {
 	g.metrics = m
+}
+
+func (g *Gate) GrantAppeals(appeal AppealFunc) {
+	g.appeal = appeal
+}
+
+func (g *Gate) appealFor(account string, sanctionID int64) *pb.AppealGrant {
+	if g.appeal == nil || sanctionID <= 0 {
+		return nil
+	}
+	return g.appeal(account, sanctionID)
 }
 
 func refused(intent *pb.JoinQueueIntent, refusal pb.QueueRefusal) *pb.QueueState {
@@ -71,12 +86,8 @@ func (g *Gate) Join(ctx context.Context, account, session string, intent *pb.Joi
 	}
 	now := g.now()
 	entry, err := g.entry(ctx, account, mode, queue, now)
-	var banned *BannedError
-	if errors.As(err, &banned) {
-		state := refused(intent, pb.QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN)
-		if !banned.Until.IsZero() {
-			state.RefusedUntilUnixMs = uint64(banned.Until.UnixMilli())
-		}
+	if state, sanctionID := banRefusal(intent, err); state != nil {
+		state.Appeal = g.appealFor(account, sanctionID)
 		return state
 	}
 	if err != nil {
@@ -92,6 +103,30 @@ func (g *Gate) Join(ctx context.Context, account, session string, intent *pb.Joi
 		return refused(intent, pb.QueueRefusal_QUEUE_REFUSAL_UNAVAILABLE)
 	}
 	return &pb.QueueState{Status: pb.QueueStatus_QUEUE_STATUS_SEARCHING, Mode: intent.GetMode(), Queue: intent.GetQueue(), JoinedUnixMs: uint64(now.UnixMilli()), SearchStartsUnixMs: uint64(entry.SearchFrom.UnixMilli())}
+}
+
+func banRefusal(intent *pb.JoinQueueIntent, err error) (*pb.QueueState, int64) {
+	var banned *BannedError
+	if errors.As(err, &banned) {
+		return bannedUntil(refused(intent, pb.QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN), banned.Until, sanction.AfkLeaving), banned.SanctionID
+	}
+	var ranked *sanction.RankedBanError
+	if errors.As(err, &ranked) {
+		var until time.Time
+		if ends := ranked.Sanction.EndsAt; ends != nil {
+			until = *ends
+		}
+		return bannedUntil(refused(intent, pb.QueueRefusal_QUEUE_REFUSAL_RANKED_BAN), until, ranked.Sanction.Category), ranked.Sanction.ID
+	}
+	return nil, 0
+}
+
+func bannedUntil(state *pb.QueueState, until time.Time, category sanction.Category) *pb.QueueState {
+	if !until.IsZero() {
+		state.RefusedUntilUnixMs = uint64(until.UnixMilli())
+	}
+	state.BanReason = category.Reason()
+	return state
 }
 
 func (g *Gate) Leave(ctx context.Context, account string) *pb.QueueState {
@@ -120,7 +155,8 @@ func RatedEntry(ratings *rating.Store) EntryFunc {
 }
 
 type BannedError struct {
-	Until time.Time
+	Until      time.Time
+	SanctionID int64
 }
 
 func (e *BannedError) Error() string {
@@ -134,7 +170,7 @@ func PenalizedEntry(records func(ctx context.Context, account string) (penalties
 			return matchmaking.Entry{}, err
 		}
 		if until, banned := record.Banned(now); banned {
-			return matchmaking.Entry{}, &BannedError{Until: until}
+			return matchmaking.Entry{}, &BannedError{Until: until, SanctionID: record.Ranked.BanSanction}
 		}
 		entry, err := next(ctx, account, mode, queue, now)
 		if err != nil {
@@ -144,5 +180,16 @@ func PenalizedEntry(records func(ctx context.Context, account string) (penalties
 			entry.SearchFrom = delayed
 		}
 		return entry, nil
+	}
+}
+
+func RankedBanned(check func(ctx context.Context, account string, now time.Time) error, next EntryFunc) EntryFunc {
+	return func(ctx context.Context, account string, mode rules.Mode, queue matchmaking.Queue, now time.Time) (matchmaking.Entry, error) {
+		if queue == matchmaking.QueueRanked {
+			if err := check(ctx, account, now); err != nil {
+				return matchmaking.Entry{}, err
+			}
+		}
+		return next(ctx, account, mode, queue, now)
 	}
 }

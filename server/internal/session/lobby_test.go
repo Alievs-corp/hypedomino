@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http/httptest"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 	"github.com/Alievs-corp/hypedomino/server/internal/secrand"
 )
 
@@ -172,6 +174,38 @@ func TestInvitesReachOnlineFriendsAndLeavingOrRemovalClearsTheLobby(t *testing.T
 	}
 	ana.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code})
 	ana.refusal(pb.LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_CODE)
+}
+
+func TestARankedBanRefusesCreatingAndJoiningCustomRoomsUntilItEnds(t *testing.T) {
+	tab, _ := newLobbyTable(t)
+	var bannedUntilMs atomic.Int64
+	bannedUntilMs.Store(tab.clock.Now().Add(time.Hour).UnixMilli())
+	tab.manager.Restrict(func(_ context.Context, account string, now time.Time) error {
+		ends := time.UnixMilli(bannedUntilMs.Load())
+		if account != "ben" || !now.Before(ends) {
+			return nil
+		}
+		return &sanction.RankedBanError{Sanction: sanction.Sanction{ID: 3, Kind: sanction.RankedBan, Category: sanction.OffensiveName, EndsAt: &ends}}
+	})
+	tab.manager.GrantAppeals(func(account string, sanctionID int64) *pb.AppealGrant {
+		return &pb.AppealGrant{SanctionId: uint64(sanctionID), Token: "appeal:" + account}
+	})
+	ana, ben := tab.member("ana"), tab.member("ben")
+	ana.lobby(command(pb.LobbyCommand_LOBBY_COMMAND_CREATE))
+	code := ana.lobbyState().GetCode()
+	for _, intent := range []*pb.LobbyIntent{command(pb.LobbyCommand_LOBBY_COMMAND_CREATE), {Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code}} {
+		ben.lobby(intent)
+		state := ben.lobbyState()
+		if state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_RANKED_BAN || state.GetRefusedUntilUnixMs() != uint64(bannedUntilMs.Load()) || state.GetBanReason() != pb.BanReason_BAN_REASON_OFFENSIVE_NAME || state.GetCode() != "" ||
+			state.GetAppeal().GetSanctionId() != 3 || state.GetAppeal().GetToken() != "appeal:ben" {
+			t.Fatalf("%v during a ranked ban: %v", intent.GetCommand(), state)
+		}
+	}
+	bannedUntilMs.Store(tab.clock.Now().UnixMilli())
+	ben.lobby(&pb.LobbyIntent{Command: pb.LobbyCommand_LOBBY_COMMAND_JOIN, Code: code})
+	if state := ben.lobbyState(); state.GetRefusal() != pb.LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED || state.GetAppeal() != nil || !slices.Equal(state.GetMemberAccountIds(), []string{"ana", "ben"}) {
+		t.Fatalf("join after the ranked ban ended %v", state)
+	}
 }
 
 func TestLobbyIntentsAreRefusedWithoutAHostedLobby(t *testing.T) {

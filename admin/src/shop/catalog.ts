@@ -480,3 +480,8 @@ export function editedVariant(variant: Variant, nameKey: string, position: numbe
 export function catalogNameKeys(catalog: ShopCatalog): string[] {
   return catalog.offers.flatMap((offer) => [offer.nameKey, ...(offer.variants ?? []).flatMap((variant) => (variant.nameKey ? [variant.nameKey] : []))]);
 }
+
+export function previewVariants(catalog: ShopCatalog, chosen: Record<string, string>): Record<string, string> {
+  const kept = catalog.offers.flatMap((offer) => (offer.variants ?? []).some((variant) => variant.id === chosen[offer.id]) ? [[offer.id, chosen[offer.id]] as const] : []);
+  return Object.fromEntries(kept);
+}

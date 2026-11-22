@@ -33,6 +33,7 @@ import {
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { publishCosmetics } from "./actions";
+import { StaticPreview } from "./StaticPreview";
 import { ItemsWithoutArt } from "@/app/assets/ItemsWithoutArt";
 import { UnnamedKeys } from "@/app/strings/UnnamedKeys";
 
@@ -81,9 +82,9 @@ function useLabel() {
   return (map: Record<string, MessageKey>, id: string) => (map[id] ? t(map[id]) : id);
 }
 
-type Props = { published: CosmeticItem[]; manifestVersion: number; version: number; rules: CosmeticRules; canPublish: boolean; canReview: boolean };
+type Props = { published: CosmeticItem[]; manifestVersion: number; version: number; rules: CosmeticRules; canPublish: boolean; canReview: boolean; canSeeArt: boolean };
 
-export function CosmeticsEditor({ published, manifestVersion, version, rules, canPublish, canReview }: Props) {
+export function CosmeticsEditor({ published, manifestVersion, version, rules, canPublish, canReview, canSeeArt }: Props) {
   const t = useTranslator();
   const router = useRouter();
   const [items, setItems] = useState(published);
@@ -137,6 +138,7 @@ export function CosmeticsEditor({ published, manifestVersion, version, rules, ca
           groups={emojiGroups(items, item.id)}
           rules={rules}
           canReview={canReview}
+          canSeeArt={canSeeArt}
           removable={!isPublished(published, item.id)}
           onChange={(next) => change(replaceItem(items, next))}
           onRemove={() => {
@@ -341,9 +343,9 @@ function ItemTable({ items, checked, selected, onCheck, onSelect }: TableProps) 
   );
 }
 
-type FormProps = { item: CosmeticItem; groups: string[]; rules: CosmeticRules; canReview: boolean; removable: boolean; onChange: (item: CosmeticItem) => void; onRemove: () => void };
+type FormProps = { item: CosmeticItem; groups: string[]; rules: CosmeticRules; canReview: boolean; canSeeArt: boolean; removable: boolean; onChange: (item: CosmeticItem) => void; onRemove: () => void };
 
-function ItemForm({ item, groups, rules, canReview, removable, onChange, onRemove }: FormProps) {
+function ItemForm({ item, groups, rules, canReview, canSeeArt, removable, onChange, onRemove }: FormProps) {
   const t = useTranslator();
   const label = useLabel();
   return (
@@ -352,6 +354,7 @@ function ItemForm({ item, groups, rules, canReview, removable, onChange, onRemov
       <p className="text-sm text-text-muted">
         {t("cosmetics.server_fields")}: {t("cosmetics.revision")} {item.revision || "—"} · <span className="font-mono">{item.nameKey ?? `cosmetic.${item.id}.name`}</span>
       </p>
+      {canSeeArt && <StaticPreview itemId={item.id} />}
       <div className="flex flex-wrap items-end gap-3">
         <SelectField label={t("cosmetics.rarity")} value={item.rarityId} options={rules.rarities} display={(id) => label(rarityLabel, id)} onChange={(rarityId) => onChange({ ...item, rarityId })} />
         <SelectField label={t("cosmetics.availability")} value={item.availability} options={rules.availability} display={(id) => label(availabilityLabel, id)} onChange={(availability) => onChange({ ...item, availability })} />

@@ -18,7 +18,7 @@ type exportSection struct {
 }
 
 var exportSections = []exportSection{
-	{"account", "accounts", `select id, state, country, created_at, country_changed_at, deletion_requested_at, banned_until, shadowbanned_at, muted_until from accounts where id = $1`},
+	{"account", "accounts", `select id, state, country, language, created_at, country_changed_at, deletion_requested_at, banned_until, shadowbanned_at, muted_until from accounts where id = $1`},
 	{"email", "auth_identities", `select email, created_at from auth_identities where account_id = $1 and email is not null order by created_at`},
 	{"profile", "profiles", `select nickname, nickname_changed_at, rename_required, loadout, stats, updated_at from profiles where account_id = $1`},
 	{"nickname_history", "nickname_history", `select nickname, replaced_at from nickname_history where account_id = $1 order by replaced_at`},
@@ -48,6 +48,8 @@ var exportSections = []exportSection{
 	{"daily_login", "daily_logins", `select claims, last_day, updated_at from daily_logins where account_id = $1`},
 	{"purchases", "purchases", `select platform, transaction_id, order_id, offer_id, product_id, state, purchased_at, granted_at, refunded_at from purchases where account_id = $1 order by purchased_at`},
 	{"penalties", "penalty_records", `select record, updated_at from penalty_records where account_id = $1`},
+	{"account_sanctions", "account_sanctions", `select id, kind, category, starts_at, ends_at, lifted_at from account_sanctions where account_id = $1 order by starts_at, id`},
+	{"appeals", "appeals", `select sanction_id, text, state, created_at, decided_at from appeals where account_id = $1 order by created_at, id`},
 	{"sanctions", "risk_actions", `select action, created_at from risk_actions where account_id = $1 order by created_at`},
 	{"sanction_signals", "risk_signals", `select kind as category, created_at from risk_signals where account_id = $1
 		and created_at <= greatest((select max(created_at) from risk_actions where account_id = $1), (select shadowbanned_at from accounts where id = $1))

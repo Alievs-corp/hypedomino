@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using HypeDomino.Game.Lobby;
 using HypeDomino.Net;
 using Hypedomino.V1;
 
@@ -36,6 +38,9 @@ namespace HypeDomino.Game.FriendLobby
         public Mode Mode { get; private set; }
         public LobbyRefusal Refusal { get; private set; }
         public string RefusalKey => LobbyRefusalKeys.Of(Refusal);
+        public ulong RefusedUntilUnixMs { get; private set; }
+        public BanReason BanReason { get; private set; }
+        public string BanReasonKey => BanReasonKeys.Of(BanReason);
         public Seat LocalSeat { get; private set; }
         public IReadOnlyList<string> Members => members;
         public IReadOnlyList<string> Waiting => waiting;
@@ -62,12 +67,17 @@ namespace HypeDomino.Game.FriendLobby
             Phase = state.Phase;
             Mode = state.Mode;
             Refusal = state.Refusal;
+            RefusedUntilUnixMs = state.RefusedUntilUnixMs;
+            BanReason = state.BanReason;
             LocalSeat = Seat.Unspecified;
             members.Clear();
             members.AddRange(state.MemberAccountIds);
             ReadSeats(state);
             ReadWaiting();
         }
+
+        public double SecondsUntilBanEnds(ServerClock clock, double nowSeconds) =>
+            RefusedUntilUnixMs != 0 && clock.Synced ? Math.Max(0d, clock.SecondsUntil(RefusedUntilUnixMs, nowSeconds)) : 0d;
 
         void ReadSeats(LobbyState state)
         {

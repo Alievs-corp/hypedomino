@@ -14,6 +14,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 const (
@@ -94,6 +95,9 @@ func (h *Handler) changePenalties(w http.ResponseWriter, r *http.Request, p prin
 		if _, err := tx.Exec(r.Context(), `update penalty_records set record = $2, updated_at = $3 where account_id = $1`, accountID, marshal(after), now); err != nil {
 			return nil, err
 		}
+		if err := liftEndedPenaltyBan(r.Context(), tx, accountID, before, after, now); err != nil {
+			return nil, err
+		}
 		return []audit.Entry{{Action: action, Object: audit.Object{Type: rbac.Players, ID: accountID}, Before: marshal(before), After: marshal(after), Reason: note.Reason, Ref: note.Ref}}, nil
 	})
 	if err != nil {
@@ -101,6 +105,16 @@ func (h *Handler) changePenalties(w http.ResponseWriter, r *http.Request, p prin
 		return
 	}
 	reply(w, http.StatusOK, after)
+}
+
+func liftEndedPenaltyBan(ctx context.Context, tx pgx.Tx, accountID string, before, after penalties.Record, now time.Time) error {
+	_, wasBanned := before.Banned(now)
+	_, stillBanned := after.Banned(now)
+	if !wasBanned || stillBanned {
+		return nil
+	}
+	_, err := sanction.Lift(ctx, tx, accountID, sanction.PenaltyBan, now)
+	return err
 }
 
 func lockedPenalties(ctx context.Context, tx pgx.Tx, accountID string) (penalties.Record, error) {

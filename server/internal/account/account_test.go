@@ -8,9 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 func TestMain(m *testing.M) {
@@ -75,6 +78,64 @@ func TestBannedAndDeletedAccountsAreRefused(t *testing.T) {
 		got, created, err := store.SignIn(ctx, identity)
 		if !errors.Is(err, want) || created || got.State != state {
 			t.Fatalf("%s: %+v %v %v", state, got, created, err)
+		}
+	}
+}
+
+func TestABannedSignInNamesTheCategoryOfTheRunningBan(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := account.New(pool)
+	ctx := context.Background()
+	identity := idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-3"}
+	a, _, err := store.SignIn(ctx, identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	until := now.Add(time.Hour)
+	if _, err := pool.Exec(ctx, `update accounts set banned_until = $2 where id = $1`, a.ID, until); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name  string
+		setup func(tx pgx.Tx) (int64, error)
+		want  string
+	}{
+		{"a ban set before categories", func(pgx.Tx) (int64, error) { return 0, nil }, "other"},
+		{"a row without a category", func(tx pgx.Tx) (int64, error) {
+			var id int64
+			err := tx.QueryRow(ctx, `insert into account_sanctions (account_id, kind, starts_at, ends_at) values ($1, 'temporary_ban', $2, $3) returning id`, a.ID, now, until).Scan(&id)
+			return id, err
+		}, "other"},
+		{"a temporary ban", func(tx pgx.Tx) (int64, error) {
+			imposed, err := sanction.Impose(ctx, tx, a.ID, sanction.TemporaryBan, sanction.Collusion, now, &until)
+			return imposed.ID, err
+		}, "collusion"},
+		{"a ranked ban only", func(tx pgx.Tx) (int64, error) {
+			_, err := sanction.Impose(ctx, tx, a.ID, sanction.RankedBan, sanction.Cheating, now, &until)
+			return 0, err
+		}, "other"},
+	}
+	for _, c := range cases {
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sanctionID, err := c.setup(tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			t.Fatal(err)
+		}
+		_, _, err = store.SignIn(ctx, identity)
+		var banned *account.BannedError
+		if !errors.As(err, &banned) || !errors.Is(err, account.ErrBanned) || banned.Category != c.want || banned.SanctionID != sanctionID ||
+			banned.Until == nil || !banned.Until.Equal(until.Truncate(time.Microsecond)) {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if _, err := pool.Exec(ctx, `delete from account_sanctions where account_id = $1`, a.ID); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
@@ -166,5 +227,39 @@ func TestCountryIsAdoptedOnceAndChangedWithinTheCooldown(t *testing.T) {
 	}
 	if _, err := store.Country(ctx, "00000000-0000-0000-0000-000000000000"); !errors.Is(err, account.ErrUnknown) {
 		t.Fatalf("unknown account country: %v", err)
+	}
+}
+
+func TestTheLanguageIsEmptyUntilSetAndOnlyALaunchLanguageIsStored(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := account.New(pool)
+	ctx := context.Background()
+	a, _, err := store.SignIn(ctx, idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-l", Email: "l@example.com", EmailVerified: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if language, err := store.Language(ctx, a.ID); err != nil || language != "" {
+		t.Fatalf("fresh %q %v", language, err)
+	}
+	for _, code := range []string{"", "de", "AZ", "az-Latn"} {
+		if _, err := store.SetLanguage(ctx, a.ID, code); !errors.Is(err, account.ErrLanguageInvalid) {
+			t.Fatalf("%q: %v", code, err)
+		}
+	}
+	if language, err := store.SetLanguage(ctx, a.ID, "ru"); err != nil || language != "ru" {
+		t.Fatalf("set %q %v", language, err)
+	}
+	if language, err := store.SetLanguage(ctx, a.ID, "az"); err != nil || language != "az" {
+		t.Fatalf("change %q %v", language, err)
+	}
+	if language, err := store.Language(ctx, a.ID); err != nil || language != "az" {
+		t.Fatalf("stored %q %v", language, err)
+	}
+	unknown := "00000000-0000-0000-0000-000000000000"
+	if _, err := store.SetLanguage(ctx, unknown, "az"); !errors.Is(err, account.ErrUnknown) {
+		t.Fatalf("unknown account: %v", err)
+	}
+	if _, err := store.Language(ctx, unknown); !errors.Is(err, account.ErrUnknown) {
+		t.Fatalf("unknown account language: %v", err)
 	}
 }

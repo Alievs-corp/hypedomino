@@ -27,6 +27,23 @@ enum QueueRefusal {
   QUEUE_REFUSAL_UNAVAILABLE = 4;
   QUEUE_REFUSAL_INTEGRITY_FAILED = 5;
   QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE = 6;
+  QUEUE_REFUSAL_RANKED_BAN = 7;
+}
+
+enum BanReason {
+  BAN_REASON_UNSPECIFIED = 0;
+  BAN_REASON_CHEATING = 1;
+  BAN_REASON_COLLUSION = 2;
+  BAN_REASON_AFK_LEAVING = 3;
+  BAN_REASON_OFFENSIVE_NAME = 4;
+  BAN_REASON_PAYMENT_FRAUD = 5;
+  BAN_REASON_OTHER = 6;
+}
+
+message AppealGrant {
+  uint64 sanction_id = 1;
+  string token = 2;
+  uint64 expires_unix_ms = 3;
 }
 
 message JoinQueueIntent {
@@ -45,4 +62,6 @@ message QueueState {
   uint64 search_starts_unix_ms = 5;
   QueueRefusal refusal = 6;
   uint64 refused_until_unix_ms = 7;
+  BanReason ban_reason = 8;
+  AppealGrant appeal = 9;
 }

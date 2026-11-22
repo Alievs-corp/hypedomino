@@ -6,16 +6,14 @@ import { currentAdmin } from "@/admin/session";
 import type { SearchParams } from "@/audit/query";
 import { serverTranslator } from "@/i18n/server";
 import type { Translate } from "@/i18n/translate";
-import { nextQueueHref, queueApiPath, readReportQuery, reportReasons } from "@/reviews/reviews";
+import { nextQueueHref, queueApiPath, readReportQuery, reportReasons, type ReportTarget } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
+import { EarlierDecisions } from "../reviews/EarlierDecisions";
+import { QueueDue } from "../reviews/QueueDue";
 import { QueueFilter } from "../reviews/QueueFilter";
 import { ReportDecision } from "./ReportDecision";
 
 export const dynamic = "force-dynamic";
-
-type ReportEntry = { id: number; reporter: string; reason: string; name_text: string; match_id: string | null; updated_at: string };
-
-type ReportTarget = { account_id: string; nickname: string; rename_required: boolean; reports: ReportEntry[] };
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const t = await serverTranslator();
@@ -62,6 +60,7 @@ function TargetEntry({ target, clientId, t }: { target: ReportTarget; clientId: 
         <span>
           {t("reports.count")}: {target.reports.length}
         </span>
+        <QueueDue deadline={target} t={t} />
         {target.rename_required && <span>{t("reports.rename_required")}</span>}
       </div>
       <table>
@@ -98,6 +97,7 @@ function TargetEntry({ target, clientId, t }: { target: ReportTarget; clientId: 
           ))}
         </tbody>
       </table>
+      <EarlierDecisions decisions={target.decisions} t={t} />
       {clientId && <ReportDecision accountId={target.account_id} clientId={clientId} />}
     </section>
   );

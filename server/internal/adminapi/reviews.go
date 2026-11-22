@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
+	"github.com/Alievs-corp/hypedomino/server/internal/playerrecord"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 )
@@ -21,7 +22,13 @@ const (
 )
 
 type reviewsResponse struct {
-	Reviews []risk.Review `json:"reviews"`
+	Reviews []reviewEntry `json:"reviews"`
+}
+
+type reviewEntry struct {
+	risk.Review
+	queueDeadline
+	Decisions []playerrecord.Decision `json:"decisions"`
 }
 
 type reviewState struct {
@@ -59,10 +66,29 @@ func (h *Handler) listReviews(w http.ResponseWriter, r *http.Request, p principa
 		h.refuse(w, err)
 		return
 	}
-	if reviews == nil {
-		reviews = []risk.Review{}
+	accounts := make([]string, len(reviews))
+	for index, review := range reviews {
+		accounts[index] = review.Account
 	}
-	reply(w, http.StatusOK, reviewsResponse{Reviews: reviews})
+	decisions, err := playerrecord.Decisions(r.Context(), h.pool, accounts, playerrecord.ListLimit)
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	sla, err := h.queueSla(r.Context())
+	if err != nil {
+		h.refuse(w, err)
+		return
+	}
+	now := h.now()
+	views := make([]reviewEntry, len(reviews))
+	for index, review := range reviews {
+		views[index] = reviewEntry{Review: review, queueDeadline: deadlineOf(review.OpenedAt, sla.Review, now), Decisions: decisions[review.Account]}
+		if views[index].Decisions == nil {
+			views[index].Decisions = []playerrecord.Decision{}
+		}
+	}
+	reply(w, http.StatusOK, reviewsResponse{Reviews: views})
 }
 
 func (h *Handler) decideReview(decision, action string) authedHandler {

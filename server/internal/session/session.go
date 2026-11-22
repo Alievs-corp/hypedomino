@@ -62,23 +62,25 @@ type Router interface {
 }
 
 type Manager struct {
-	config   Config
-	clock    Clock
-	random   Random
-	router   Router
-	auth     Authenticator
-	clocks   ClockObserver
-	replays  ReplayObserver
-	devices  DeviceObserver
-	checker  IntegrityChecker
-	queue    Queue
-	lobby    *custom.Lobby
-	members  LobbyMembers
-	friends  Friends
-	remote   RemoteLobby
-	mu       sync.Mutex
-	sessions map[string]*Session
-	accounts map[string]map[string]*Session
+	config    Config
+	clock     Clock
+	random    Random
+	router    Router
+	auth      Authenticator
+	clocks    ClockObserver
+	replays   ReplayObserver
+	devices   DeviceObserver
+	checker   IntegrityChecker
+	queue     Queue
+	lobby     *custom.Lobby
+	members   LobbyMembers
+	friends   Friends
+	remote    RemoteLobby
+	rankedBan RankedBanCheck
+	appeal    AppealFunc
+	mu        sync.Mutex
+	sessions  map[string]*Session
+	accounts  map[string]map[string]*Session
 }
 
 func New(config Config, clock Clock, random Random) *Manager {
@@ -102,7 +104,7 @@ type ReplayObserver interface {
 }
 
 type DeviceObserver interface {
-	Observe(ctx context.Context, account string, signals []string)
+	Observe(ctx context.Context, account string, deviceSignals, hookSignals []string)
 }
 
 type IntegrityChecker interface {
@@ -286,7 +288,7 @@ func (m *Manager) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 		m.clocks.Observe(ctx, c.session.account, hello.GetClientTimeUnixMs())
 	}
 	if m.devices != nil {
-		m.devices.Observe(ctx, c.session.account, hello.GetDeviceRiskSignals())
+		m.devices.Observe(ctx, c.session.account, hello.GetDeviceRiskSignals(), hello.GetHookSignals())
 	}
 	return c, nil
 }

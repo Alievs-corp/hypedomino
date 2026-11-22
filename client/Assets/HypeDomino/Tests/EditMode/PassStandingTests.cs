@@ -36,6 +36,20 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheLevelPricesAreWhatTheServerSent()
+        {
+            var reply = MidLevel();
+            reply.level_coin_price = 200;
+            reply.level_crystal_price = 40;
+            Assert.IsTrue(PassStanding.TryRead(reply, out var standing));
+
+            Assert.AreEqual(200, standing.LevelCoinPrice);
+            Assert.AreEqual(40, standing.LevelCrystalPrice);
+            Assert.AreEqual(0, Read(MidLevelJson).LevelCoinPrice);
+            Assert.AreEqual(0, Read(MidLevelJson).LevelCrystalPrice);
+        }
+
+        [Test]
         public void TheLevelBarFillsFromTheServerLevelBounds()
         {
             var standing = Read(MidLevelJson);
@@ -117,6 +131,8 @@ namespace HypeDomino.Tests.EditMode
             AssertRefused(reply => reply.ends_at = null);
             AssertRefused(reply => reply.ends_at = "soon");
             AssertRefused(reply => reply.ends_at = "1970-01-01T00:00:00Z");
+            AssertRefused(reply => reply.level_coin_price = -1);
+            AssertRefused(reply => reply.level_crystal_price = -1);
         }
 
         static void AssertRefused(Action<PassReply> spoil)

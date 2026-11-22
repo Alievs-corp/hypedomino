@@ -174,6 +174,7 @@ const (
 	// Deprecated: Marked as deprecated in hypedomino/v1/lobby.proto.
 	LobbyRefusal_LOBBY_REFUSAL_UNKNOWN_ACTION LobbyRefusal = 15
 	LobbyRefusal_LOBBY_REFUSAL_NOT_FRIEND     LobbyRefusal = 16
+	LobbyRefusal_LOBBY_REFUSAL_RANKED_BAN     LobbyRefusal = 17
 )
 
 // Enum value maps for LobbyRefusal.
@@ -196,6 +197,7 @@ var (
 		14: "LOBBY_REFUSAL_BLOCKED",
 		15: "LOBBY_REFUSAL_UNKNOWN_ACTION",
 		16: "LOBBY_REFUSAL_NOT_FRIEND",
+		17: "LOBBY_REFUSAL_RANKED_BAN",
 	}
 	LobbyRefusal_value = map[string]int32{
 		"LOBBY_REFUSAL_UNSPECIFIED":      0,
@@ -215,6 +217,7 @@ var (
 		"LOBBY_REFUSAL_BLOCKED":          14,
 		"LOBBY_REFUSAL_UNKNOWN_ACTION":   15,
 		"LOBBY_REFUSAL_NOT_FRIEND":       16,
+		"LOBBY_REFUSAL_RANKED_BAN":       17,
 	}
 )
 
@@ -384,16 +387,19 @@ func (x *LobbySeat) GetAccountId() string {
 }
 
 type LobbyState struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Code             string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	LeaderAccountId  string                 `protobuf:"bytes,2,opt,name=leader_account_id,json=leaderAccountId,proto3" json:"leader_account_id,omitempty"`
-	MemberAccountIds []string               `protobuf:"bytes,3,rep,name=member_account_ids,json=memberAccountIds,proto3" json:"member_account_ids,omitempty"`
-	Phase            LobbyPhase             `protobuf:"varint,4,opt,name=phase,proto3,enum=hypedomino.v1.LobbyPhase" json:"phase,omitempty"`
-	Mode             Mode                   `protobuf:"varint,5,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
-	Seats            []*LobbySeat           `protobuf:"bytes,6,rep,name=seats,proto3" json:"seats,omitempty"`
-	Refusal          LobbyRefusal           `protobuf:"varint,7,opt,name=refusal,proto3,enum=hypedomino.v1.LobbyRefusal" json:"refusal,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Code               string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	LeaderAccountId    string                 `protobuf:"bytes,2,opt,name=leader_account_id,json=leaderAccountId,proto3" json:"leader_account_id,omitempty"`
+	MemberAccountIds   []string               `protobuf:"bytes,3,rep,name=member_account_ids,json=memberAccountIds,proto3" json:"member_account_ids,omitempty"`
+	Phase              LobbyPhase             `protobuf:"varint,4,opt,name=phase,proto3,enum=hypedomino.v1.LobbyPhase" json:"phase,omitempty"`
+	Mode               Mode                   `protobuf:"varint,5,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
+	Seats              []*LobbySeat           `protobuf:"bytes,6,rep,name=seats,proto3" json:"seats,omitempty"`
+	Refusal            LobbyRefusal           `protobuf:"varint,7,opt,name=refusal,proto3,enum=hypedomino.v1.LobbyRefusal" json:"refusal,omitempty"`
+	RefusedUntilUnixMs uint64                 `protobuf:"varint,8,opt,name=refused_until_unix_ms,json=refusedUntilUnixMs,proto3" json:"refused_until_unix_ms,omitempty"`
+	BanReason          BanReason              `protobuf:"varint,9,opt,name=ban_reason,json=banReason,proto3,enum=hypedomino.v1.BanReason" json:"ban_reason,omitempty"`
+	Appeal             *AppealGrant           `protobuf:"bytes,10,opt,name=appeal,proto3" json:"appeal,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *LobbyState) Reset() {
@@ -473,6 +479,27 @@ func (x *LobbyState) GetRefusal() LobbyRefusal {
 		return x.Refusal
 	}
 	return LobbyRefusal_LOBBY_REFUSAL_UNSPECIFIED
+}
+
+func (x *LobbyState) GetRefusedUntilUnixMs() uint64 {
+	if x != nil {
+		return x.RefusedUntilUnixMs
+	}
+	return 0
+}
+
+func (x *LobbyState) GetBanReason() BanReason {
+	if x != nil {
+		return x.BanReason
+	}
+	return BanReason_BAN_REASON_UNSPECIFIED
+}
+
+func (x *LobbyState) GetAppeal() *AppealGrant {
+	if x != nil {
+		return x.Appeal
+	}
+	return nil
 }
 
 type LobbyRelay struct {
@@ -601,7 +628,7 @@ var File_hypedomino_v1_lobby_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/lobby.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/match.proto\"\xe5\x01\n" +
+	"\x19hypedomino/v1/lobby.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/match.proto\x1a\x19hypedomino/v1/queue.proto\"\xe5\x01\n" +
 	"\vLobbyIntent\x125\n" +
 	"\acommand\x18\x01 \x01(\x0e2\x1b.hypedomino.v1.LobbyCommandR\acommand\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12'\n" +
@@ -613,7 +640,7 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\tLobbySeat\x12'\n" +
 	"\x04seat\x18\x01 \x01(\x0e2\x13.hypedomino.v1.SeatR\x04seat\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x02 \x01(\tR\taccountId\"\xbb\x02\n" +
+	"account_id\x18\x02 \x01(\tR\taccountId\"\xdb\x03\n" +
 	"\n" +
 	"LobbyState\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12*\n" +
@@ -622,7 +649,12 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x05phase\x18\x04 \x01(\x0e2\x19.hypedomino.v1.LobbyPhaseR\x05phase\x12'\n" +
 	"\x04mode\x18\x05 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12.\n" +
 	"\x05seats\x18\x06 \x03(\v2\x18.hypedomino.v1.LobbySeatR\x05seats\x125\n" +
-	"\arefusal\x18\a \x01(\x0e2\x1b.hypedomino.v1.LobbyRefusalR\arefusal\"\x9c\x01\n" +
+	"\arefusal\x18\a \x01(\x0e2\x1b.hypedomino.v1.LobbyRefusalR\arefusal\x121\n" +
+	"\x15refused_until_unix_ms\x18\b \x01(\x04R\x12refusedUntilUnixMs\x127\n" +
+	"\n" +
+	"ban_reason\x18\t \x01(\x0e2\x18.hypedomino.v1.BanReasonR\tbanReason\x122\n" +
+	"\x06appeal\x18\n" +
+	" \x01(\v2\x1a.hypedomino.v1.AppealGrantR\x06appeal\"\x9c\x01\n" +
 	"\n" +
 	"LobbyRelay\x12\x1d\n" +
 	"\n" +
@@ -653,7 +685,7 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x17LOBBY_PHASE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOBBY_PHASE_LOBBY\x10\x01\x12\x15\n" +
 	"\x11LOBBY_PHASE_TEAMS\x10\x02\x12\x15\n" +
-	"\x11LOBBY_PHASE_MATCH\x10\x03*\x97\x04\n" +
+	"\x11LOBBY_PHASE_MATCH\x10\x03*\xb5\x04\n" +
 	"\fLobbyRefusal\x12\x1d\n" +
 	"\x19LOBBY_REFUSAL_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19LOBBY_REFUSAL_UNAVAILABLE\x10\x01\x12\x1e\n" +
@@ -672,7 +704,8 @@ const file_hypedomino_v1_lobby_proto_rawDesc = "" +
 	"\x19LOBBY_REFUSAL_WRONG_PHASE\x10\r\x12\x19\n" +
 	"\x15LOBBY_REFUSAL_BLOCKED\x10\x0e\x12$\n" +
 	"\x1cLOBBY_REFUSAL_UNKNOWN_ACTION\x10\x0f\x1a\x02\b\x01\x12\x1c\n" +
-	"\x18LOBBY_REFUSAL_NOT_FRIEND\x10\x10B\xc5\x01\n" +
+	"\x18LOBBY_REFUSAL_NOT_FRIEND\x10\x10\x12\x1c\n" +
+	"\x18LOBBY_REFUSAL_RANKED_BAN\x10\x11B\xc5\x01\n" +
 	"\x11com.hypedomino.v1B\n" +
 	"LobbyProtoP\x01ZOgithub.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1;hypedominov1\xa2\x02\x03HXX\xaa\x02\rHypedomino.V1\xca\x02\rHypedomino\\V1\xe2\x02\x19Hypedomino\\V1\\GPBMetadata\xea\x02\x0eHypedomino::V1b\x06proto3"
 
@@ -701,22 +734,26 @@ var file_hypedomino_v1_lobby_proto_goTypes = []any{
 	(*LobbyInvite)(nil), // 7: hypedomino.v1.LobbyInvite
 	(Mode)(0),           // 8: hypedomino.v1.Mode
 	(Seat)(0),           // 9: hypedomino.v1.Seat
+	(BanReason)(0),      // 10: hypedomino.v1.BanReason
+	(*AppealGrant)(nil), // 11: hypedomino.v1.AppealGrant
 }
 var file_hypedomino_v1_lobby_proto_depIdxs = []int32{
-	0, // 0: hypedomino.v1.LobbyIntent.command:type_name -> hypedomino.v1.LobbyCommand
-	8, // 1: hypedomino.v1.LobbyIntent.mode:type_name -> hypedomino.v1.Mode
-	9, // 2: hypedomino.v1.LobbyIntent.seat:type_name -> hypedomino.v1.Seat
-	9, // 3: hypedomino.v1.LobbySeat.seat:type_name -> hypedomino.v1.Seat
-	1, // 4: hypedomino.v1.LobbyState.phase:type_name -> hypedomino.v1.LobbyPhase
-	8, // 5: hypedomino.v1.LobbyState.mode:type_name -> hypedomino.v1.Mode
-	4, // 6: hypedomino.v1.LobbyState.seats:type_name -> hypedomino.v1.LobbySeat
-	2, // 7: hypedomino.v1.LobbyState.refusal:type_name -> hypedomino.v1.LobbyRefusal
-	9, // 8: hypedomino.v1.LobbyRelay.requested_seat:type_name -> hypedomino.v1.Seat
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	0,  // 0: hypedomino.v1.LobbyIntent.command:type_name -> hypedomino.v1.LobbyCommand
+	8,  // 1: hypedomino.v1.LobbyIntent.mode:type_name -> hypedomino.v1.Mode
+	9,  // 2: hypedomino.v1.LobbyIntent.seat:type_name -> hypedomino.v1.Seat
+	9,  // 3: hypedomino.v1.LobbySeat.seat:type_name -> hypedomino.v1.Seat
+	1,  // 4: hypedomino.v1.LobbyState.phase:type_name -> hypedomino.v1.LobbyPhase
+	8,  // 5: hypedomino.v1.LobbyState.mode:type_name -> hypedomino.v1.Mode
+	4,  // 6: hypedomino.v1.LobbyState.seats:type_name -> hypedomino.v1.LobbySeat
+	2,  // 7: hypedomino.v1.LobbyState.refusal:type_name -> hypedomino.v1.LobbyRefusal
+	10, // 8: hypedomino.v1.LobbyState.ban_reason:type_name -> hypedomino.v1.BanReason
+	11, // 9: hypedomino.v1.LobbyState.appeal:type_name -> hypedomino.v1.AppealGrant
+	9,  // 10: hypedomino.v1.LobbyRelay.requested_seat:type_name -> hypedomino.v1.Seat
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_lobby_proto_init() }
@@ -725,6 +762,7 @@ func file_hypedomino_v1_lobby_proto_init() {
 		return
 	}
 	file_hypedomino_v1_match_proto_init()
+	file_hypedomino_v1_queue_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

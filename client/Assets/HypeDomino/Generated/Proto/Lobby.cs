@@ -25,59 +25,64 @@ namespace Hypedomino.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChloeXBlZG9taW5vL3YxL2xvYmJ5LnByb3RvEg1oeXBlZG9taW5vLnYxGhlo",
-            "eXBlZG9taW5vL3YxL21hdGNoLnByb3RvIuUBCgtMb2JieUludGVudBI1Cgdj",
-            "b21tYW5kGAEgASgOMhsuaHlwZWRvbWluby52MS5Mb2JieUNvbW1hbmRSB2Nv",
-            "bW1hbmQSEgoEY29kZRgCIAEoCVIEY29kZRInCgRtb2RlGAMgASgOMhMuaHlw",
-            "ZWRvbWluby52MS5Nb2RlUgRtb2RlEh0KCmFjY291bnRfaWQYBCABKAlSCWFj",
-            "Y291bnRJZBInCgRzZWF0GAUgASgOMhMuaHlwZWRvbWluby52MS5TZWF0UgRz",
-            "ZWF0EhoKBmFjdGlvbhgGIAEoCUICGAFSBmFjdGlvbiJTCglMb2JieVNlYXQS",
-            "JwoEc2VhdBgBIAEoDjITLmh5cGVkb21pbm8udjEuU2VhdFIEc2VhdBIdCgph",
-            "Y2NvdW50X2lkGAIgASgJUglhY2NvdW50SWQiuwIKCkxvYmJ5U3RhdGUSEgoE",
-            "Y29kZRgBIAEoCVIEY29kZRIqChFsZWFkZXJfYWNjb3VudF9pZBgCIAEoCVIP",
-            "bGVhZGVyQWNjb3VudElkEiwKEm1lbWJlcl9hY2NvdW50X2lkcxgDIAMoCVIQ",
-            "bWVtYmVyQWNjb3VudElkcxIvCgVwaGFzZRgEIAEoDjIZLmh5cGVkb21pbm8u",
-            "djEuTG9iYnlQaGFzZVIFcGhhc2USJwoEbW9kZRgFIAEoDjITLmh5cGVkb21p",
-            "bm8udjEuTW9kZVIEbW9kZRIuCgVzZWF0cxgGIAMoCzIYLmh5cGVkb21pbm8u",
-            "djEuTG9iYnlTZWF0UgVzZWF0cxI1CgdyZWZ1c2FsGAcgASgOMhsuaHlwZWRv",
-            "bWluby52MS5Mb2JieVJlZnVzYWxSB3JlZnVzYWwinAEKCkxvYmJ5UmVsYXkS",
-            "HQoKYWNjb3VudF9pZBgBIAEoCVIJYWNjb3VudElkEhoKBmFjdGlvbhgCIAEo",
-            "CUICGAFSBmFjdGlvbhIXCgdpdGVtX2lkGAMgASgJUgZpdGVtSWQSOgoOcmVx",
-            "dWVzdGVkX3NlYXQYBCABKA4yEy5oeXBlZG9taW5vLnYxLlNlYXRSDXJlcXVl",
-            "c3RlZFNlYXQiSQoLTG9iYnlJbnZpdGUSEgoEY29kZRgBIAEoCVIEY29kZRIm",
-            "Cg9mcm9tX2FjY291bnRfaWQYAiABKAlSDWZyb21BY2NvdW50SWQq4QIKDExv",
-            "YmJ5Q29tbWFuZBIdChlMT0JCWV9DT01NQU5EX1VOU1BFQ0lGSUVEEAASGAoU",
-            "TE9CQllfQ09NTUFORF9DUkVBVEUQARIWChJMT0JCWV9DT01NQU5EX0pPSU4Q",
-            "AhIXChNMT0JCWV9DT01NQU5EX0xFQVZFEAMSFwoTTE9CQllfQ09NTUFORF9U",
-            "RUFNUxAEEhYKEkxPQkJZX0NPTU1BTkRfQkFDSxAFEhcKE0xPQkJZX0NPTU1B",
-            "TkRfUExBQ0UQBhIYChRMT0JCWV9DT01NQU5EX1JFTU9WRRAHEhcKE0xPQkJZ",
-            "X0NPTU1BTkRfU1RBUlQQCBIZChFMT0JCWV9DT01NQU5EX0FDVBAJGgIIARIY",
-            "ChRMT0JCWV9DT01NQU5EX0lOVklURRAKEh4KGkxPQkJZX0NPTU1BTkRfUkVR",
-            "VUVTVF9TRUFUEAsSFQoRTE9CQllfQ09NTUFORF9BREQQDCpuCgpMb2JieVBo",
-            "YXNlEhsKF0xPQkJZX1BIQVNFX1VOU1BFQ0lGSUVEEAASFQoRTE9CQllfUEhB",
-            "U0VfTE9CQlkQARIVChFMT0JCWV9QSEFTRV9URUFNUxACEhUKEUxPQkJZX1BI",
-            "QVNFX01BVENIEAMqlwQKDExvYmJ5UmVmdXNhbBIdChlMT0JCWV9SRUZVU0FM",
-            "X1VOU1BFQ0lGSUVEEAASHQoZTE9CQllfUkVGVVNBTF9VTkFWQUlMQUJMRRAB",
-            "Eh4KGkxPQkJZX1JFRlVTQUxfVU5LTk9XTl9DT0RFEAISHAoYTE9CQllfUkVG",
-            "VVNBTF9OT1RfTEVBREVSEAMSHAoYTE9CQllfUkVGVVNBTF9TRUFUX1RBS0VO",
-            "EAQSHgoaTE9CQllfUkVGVVNBTF9OT1RfSU5fTE9CQlkQBRIiCh5MT0JCWV9S",
-            "RUZVU0FMX0FMUkVBRFlfSU5fTE9CQlkQBhIWChJMT0JCWV9SRUZVU0FMX0ZV",
-            "TEwQBxIcChhMT0JCWV9SRUZVU0FMX1NFQVRTX09QRU4QCBIZChVMT0JCWV9S",
-            "RUZVU0FMX1NUQVJURUQQCRIeChpMT0JCWV9SRUZVU0FMX0lOVkFMSURfU0VB",
-            "VBAKEh4KGkxPQkJZX1JFRlVTQUxfSU5WQUxJRF9NT0RFEAsSGgoWTE9CQllf",
-            "UkVGVVNBTF9JTl9NQVRDSBAMEh0KGUxPQkJZX1JFRlVTQUxfV1JPTkdfUEhB",
-            "U0UQDRIZChVMT0JCWV9SRUZVU0FMX0JMT0NLRUQQDhIkChxMT0JCWV9SRUZV",
-            "U0FMX1VOS05PV05fQUNUSU9OEA8aAggBEhwKGExPQkJZX1JFRlVTQUxfTk9U",
-            "X0ZSSUVORBAQQsUBChFjb20uaHlwZWRvbWluby52MUIKTG9iYnlQcm90b1AB",
-            "Wk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2lu",
-            "dGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgIN",
-            "SHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYx",
-            "XEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
+            "eXBlZG9taW5vL3YxL21hdGNoLnByb3RvGhloeXBlZG9taW5vL3YxL3F1ZXVl",
+            "LnByb3RvIuUBCgtMb2JieUludGVudBI1Cgdjb21tYW5kGAEgASgOMhsuaHlw",
+            "ZWRvbWluby52MS5Mb2JieUNvbW1hbmRSB2NvbW1hbmQSEgoEY29kZRgCIAEo",
+            "CVIEY29kZRInCgRtb2RlGAMgASgOMhMuaHlwZWRvbWluby52MS5Nb2RlUgRt",
+            "b2RlEh0KCmFjY291bnRfaWQYBCABKAlSCWFjY291bnRJZBInCgRzZWF0GAUg",
+            "ASgOMhMuaHlwZWRvbWluby52MS5TZWF0UgRzZWF0EhoKBmFjdGlvbhgGIAEo",
+            "CUICGAFSBmFjdGlvbiJTCglMb2JieVNlYXQSJwoEc2VhdBgBIAEoDjITLmh5",
+            "cGVkb21pbm8udjEuU2VhdFIEc2VhdBIdCgphY2NvdW50X2lkGAIgASgJUglh",
+            "Y2NvdW50SWQi2wMKCkxvYmJ5U3RhdGUSEgoEY29kZRgBIAEoCVIEY29kZRIq",
+            "ChFsZWFkZXJfYWNjb3VudF9pZBgCIAEoCVIPbGVhZGVyQWNjb3VudElkEiwK",
+            "Em1lbWJlcl9hY2NvdW50X2lkcxgDIAMoCVIQbWVtYmVyQWNjb3VudElkcxIv",
+            "CgVwaGFzZRgEIAEoDjIZLmh5cGVkb21pbm8udjEuTG9iYnlQaGFzZVIFcGhh",
+            "c2USJwoEbW9kZRgFIAEoDjITLmh5cGVkb21pbm8udjEuTW9kZVIEbW9kZRIu",
+            "CgVzZWF0cxgGIAMoCzIYLmh5cGVkb21pbm8udjEuTG9iYnlTZWF0UgVzZWF0",
+            "cxI1CgdyZWZ1c2FsGAcgASgOMhsuaHlwZWRvbWluby52MS5Mb2JieVJlZnVz",
+            "YWxSB3JlZnVzYWwSMQoVcmVmdXNlZF91bnRpbF91bml4X21zGAggASgEUhJy",
+            "ZWZ1c2VkVW50aWxVbml4TXMSNwoKYmFuX3JlYXNvbhgJIAEoDjIYLmh5cGVk",
+            "b21pbm8udjEuQmFuUmVhc29uUgliYW5SZWFzb24SMgoGYXBwZWFsGAogASgL",
+            "MhouaHlwZWRvbWluby52MS5BcHBlYWxHcmFudFIGYXBwZWFsIpwBCgpMb2Ji",
+            "eVJlbGF5Eh0KCmFjY291bnRfaWQYASABKAlSCWFjY291bnRJZBIaCgZhY3Rp",
+            "b24YAiABKAlCAhgBUgZhY3Rpb24SFwoHaXRlbV9pZBgDIAEoCVIGaXRlbUlk",
+            "EjoKDnJlcXVlc3RlZF9zZWF0GAQgASgOMhMuaHlwZWRvbWluby52MS5TZWF0",
+            "Ug1yZXF1ZXN0ZWRTZWF0IkkKC0xvYmJ5SW52aXRlEhIKBGNvZGUYASABKAlS",
+            "BGNvZGUSJgoPZnJvbV9hY2NvdW50X2lkGAIgASgJUg1mcm9tQWNjb3VudElk",
+            "KuECCgxMb2JieUNvbW1hbmQSHQoZTE9CQllfQ09NTUFORF9VTlNQRUNJRklF",
+            "RBAAEhgKFExPQkJZX0NPTU1BTkRfQ1JFQVRFEAESFgoSTE9CQllfQ09NTUFO",
+            "RF9KT0lOEAISFwoTTE9CQllfQ09NTUFORF9MRUFWRRADEhcKE0xPQkJZX0NP",
+            "TU1BTkRfVEVBTVMQBBIWChJMT0JCWV9DT01NQU5EX0JBQ0sQBRIXChNMT0JC",
+            "WV9DT01NQU5EX1BMQUNFEAYSGAoUTE9CQllfQ09NTUFORF9SRU1PVkUQBxIX",
+            "ChNMT0JCWV9DT01NQU5EX1NUQVJUEAgSGQoRTE9CQllfQ09NTUFORF9BQ1QQ",
+            "CRoCCAESGAoUTE9CQllfQ09NTUFORF9JTlZJVEUQChIeChpMT0JCWV9DT01N",
+            "QU5EX1JFUVVFU1RfU0VBVBALEhUKEUxPQkJZX0NPTU1BTkRfQUREEAwqbgoK",
+            "TG9iYnlQaGFzZRIbChdMT0JCWV9QSEFTRV9VTlNQRUNJRklFRBAAEhUKEUxP",
+            "QkJZX1BIQVNFX0xPQkJZEAESFQoRTE9CQllfUEhBU0VfVEVBTVMQAhIVChFM",
+            "T0JCWV9QSEFTRV9NQVRDSBADKrUECgxMb2JieVJlZnVzYWwSHQoZTE9CQllf",
+            "UkVGVVNBTF9VTlNQRUNJRklFRBAAEh0KGUxPQkJZX1JFRlVTQUxfVU5BVkFJ",
+            "TEFCTEUQARIeChpMT0JCWV9SRUZVU0FMX1VOS05PV05fQ09ERRACEhwKGExP",
+            "QkJZX1JFRlVTQUxfTk9UX0xFQURFUhADEhwKGExPQkJZX1JFRlVTQUxfU0VB",
+            "VF9UQUtFThAEEh4KGkxPQkJZX1JFRlVTQUxfTk9UX0lOX0xPQkJZEAUSIgoe",
+            "TE9CQllfUkVGVVNBTF9BTFJFQURZX0lOX0xPQkJZEAYSFgoSTE9CQllfUkVG",
+            "VVNBTF9GVUxMEAcSHAoYTE9CQllfUkVGVVNBTF9TRUFUU19PUEVOEAgSGQoV",
+            "TE9CQllfUkVGVVNBTF9TVEFSVEVEEAkSHgoaTE9CQllfUkVGVVNBTF9JTlZB",
+            "TElEX1NFQVQQChIeChpMT0JCWV9SRUZVU0FMX0lOVkFMSURfTU9ERRALEhoK",
+            "FkxPQkJZX1JFRlVTQUxfSU5fTUFUQ0gQDBIdChlMT0JCWV9SRUZVU0FMX1dS",
+            "T05HX1BIQVNFEA0SGQoVTE9CQllfUkVGVVNBTF9CTE9DS0VEEA4SJAocTE9C",
+            "QllfUkVGVVNBTF9VTktOT1dOX0FDVElPThAPGgIIARIcChhMT0JCWV9SRUZV",
+            "U0FMX05PVF9GUklFTkQQEBIcChhMT0JCWV9SRUZVU0FMX1JBTktFRF9CQU4Q",
+            "EULFAQoRY29tLmh5cGVkb21pbm8udjFCCkxvYmJ5UHJvdG9QAVpPZ2l0aHVi",
+            "LmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9w",
+            "Yi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21p",
+            "bm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRh",
+            "ZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Hypedomino.V1.MatchReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Hypedomino.V1.MatchReflection.Descriptor, global::Hypedomino.V1.QueueReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.LobbyCommand), typeof(global::Hypedomino.V1.LobbyPhase), typeof(global::Hypedomino.V1.LobbyRefusal), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyIntent), global::Hypedomino.V1.LobbyIntent.Parser, new[]{ "Command", "Code", "Mode", "AccountId", "Seat", "Action" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbySeat), global::Hypedomino.V1.LobbySeat.Parser, new[]{ "Seat", "AccountId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyState), global::Hypedomino.V1.LobbyState.Parser, new[]{ "Code", "LeaderAccountId", "MemberAccountIds", "Phase", "Mode", "Seats", "Refusal" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyState), global::Hypedomino.V1.LobbyState.Parser, new[]{ "Code", "LeaderAccountId", "MemberAccountIds", "Phase", "Mode", "Seats", "Refusal", "RefusedUntilUnixMs", "BanReason", "Appeal" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyRelay), global::Hypedomino.V1.LobbyRelay.Parser, new[]{ "AccountId", "Action", "ItemId", "RequestedSeat" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.LobbyInvite), global::Hypedomino.V1.LobbyInvite.Parser, new[]{ "Code", "FromAccountId" }, null, null, null, null)
           }));
@@ -129,6 +134,7 @@ namespace Hypedomino.V1 {
     [global::System.ObsoleteAttribute]
     [pbr::OriginalName("LOBBY_REFUSAL_UNKNOWN_ACTION")] UnknownAction = 15,
     [pbr::OriginalName("LOBBY_REFUSAL_NOT_FRIEND")] NotFriend = 16,
+    [pbr::OriginalName("LOBBY_REFUSAL_RANKED_BAN")] RankedBan = 17,
   }
 
   #endregion
@@ -795,6 +801,9 @@ namespace Hypedomino.V1 {
       mode_ = other.mode_;
       seats_ = other.seats_.Clone();
       refusal_ = other.refusal_;
+      refusedUntilUnixMs_ = other.refusedUntilUnixMs_;
+      banReason_ = other.banReason_;
+      appeal_ = other.appeal_ != null ? other.appeal_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -886,6 +895,42 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "refused_until_unix_ms" field.</summary>
+    public const int RefusedUntilUnixMsFieldNumber = 8;
+    private ulong refusedUntilUnixMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ulong RefusedUntilUnixMs {
+      get { return refusedUntilUnixMs_; }
+      set {
+        refusedUntilUnixMs_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ban_reason" field.</summary>
+    public const int BanReasonFieldNumber = 9;
+    private global::Hypedomino.V1.BanReason banReason_ = global::Hypedomino.V1.BanReason.Unspecified;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.BanReason BanReason {
+      get { return banReason_; }
+      set {
+        banReason_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "appeal" field.</summary>
+    public const int AppealFieldNumber = 10;
+    private global::Hypedomino.V1.AppealGrant appeal_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Hypedomino.V1.AppealGrant Appeal {
+      get { return appeal_; }
+      set {
+        appeal_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -908,6 +953,9 @@ namespace Hypedomino.V1 {
       if (Mode != other.Mode) return false;
       if(!seats_.Equals(other.seats_)) return false;
       if (Refusal != other.Refusal) return false;
+      if (RefusedUntilUnixMs != other.RefusedUntilUnixMs) return false;
+      if (BanReason != other.BanReason) return false;
+      if (!object.Equals(Appeal, other.Appeal)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -922,6 +970,9 @@ namespace Hypedomino.V1 {
       if (Mode != global::Hypedomino.V1.Mode.Unspecified) hash ^= Mode.GetHashCode();
       hash ^= seats_.GetHashCode();
       if (Refusal != global::Hypedomino.V1.LobbyRefusal.Unspecified) hash ^= Refusal.GetHashCode();
+      if (RefusedUntilUnixMs != 0UL) hash ^= RefusedUntilUnixMs.GetHashCode();
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) hash ^= BanReason.GetHashCode();
+      if (appeal_ != null) hash ^= Appeal.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -962,6 +1013,18 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteEnum((int) Refusal);
       }
+      if (RefusedUntilUnixMs != 0UL) {
+        output.WriteRawTag(64);
+        output.WriteUInt64(RefusedUntilUnixMs);
+      }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        output.WriteRawTag(72);
+        output.WriteEnum((int) BanReason);
+      }
+      if (appeal_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Appeal);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -994,6 +1057,18 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(56);
         output.WriteEnum((int) Refusal);
       }
+      if (RefusedUntilUnixMs != 0UL) {
+        output.WriteRawTag(64);
+        output.WriteUInt64(RefusedUntilUnixMs);
+      }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        output.WriteRawTag(72);
+        output.WriteEnum((int) BanReason);
+      }
+      if (appeal_ != null) {
+        output.WriteRawTag(82);
+        output.WriteMessage(Appeal);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1020,6 +1095,15 @@ namespace Hypedomino.V1 {
       size += seats_.CalculateSize(_repeated_seats_codec);
       if (Refusal != global::Hypedomino.V1.LobbyRefusal.Unspecified) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Refusal);
+      }
+      if (RefusedUntilUnixMs != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(RefusedUntilUnixMs);
+      }
+      if (BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) BanReason);
+      }
+      if (appeal_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Appeal);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1049,6 +1133,18 @@ namespace Hypedomino.V1 {
       seats_.Add(other.seats_);
       if (other.Refusal != global::Hypedomino.V1.LobbyRefusal.Unspecified) {
         Refusal = other.Refusal;
+      }
+      if (other.RefusedUntilUnixMs != 0UL) {
+        RefusedUntilUnixMs = other.RefusedUntilUnixMs;
+      }
+      if (other.BanReason != global::Hypedomino.V1.BanReason.Unspecified) {
+        BanReason = other.BanReason;
+      }
+      if (other.appeal_ != null) {
+        if (appeal_ == null) {
+          Appeal = new global::Hypedomino.V1.AppealGrant();
+        }
+        Appeal.MergeFrom(other.Appeal);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1097,6 +1193,21 @@ namespace Hypedomino.V1 {
             Refusal = (global::Hypedomino.V1.LobbyRefusal) input.ReadEnum();
             break;
           }
+          case 64: {
+            RefusedUntilUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 72: {
+            BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
+            break;
+          }
+          case 82: {
+            if (appeal_ == null) {
+              Appeal = new global::Hypedomino.V1.AppealGrant();
+            }
+            input.ReadMessage(Appeal);
+            break;
+          }
         }
       }
     #endif
@@ -1142,6 +1253,21 @@ namespace Hypedomino.V1 {
           }
           case 56: {
             Refusal = (global::Hypedomino.V1.LobbyRefusal) input.ReadEnum();
+            break;
+          }
+          case 64: {
+            RefusedUntilUnixMs = input.ReadUInt64();
+            break;
+          }
+          case 72: {
+            BanReason = (global::Hypedomino.V1.BanReason) input.ReadEnum();
+            break;
+          }
+          case 82: {
+            if (appeal_ == null) {
+              Appeal = new global::Hypedomino.V1.AppealGrant();
+            }
+            input.ReadMessage(Appeal);
             break;
           }
         }

@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 var ErrUnknownAccount = errors.New("profile: unknown account")
@@ -100,6 +102,23 @@ func (s *Store) Get(ctx context.Context, account string) (Profile, bool, error) 
 	return p, err == nil, err
 }
 
+func (s *Store) Nicknames(ctx context.Context, accounts []string) (map[string]string, error) {
+	rows, err := s.pool.Query(ctx, `select account_id::text, nickname from profiles where account_id = any($1::uuid[])`, accounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	names := make(map[string]string, len(accounts))
+	for rows.Next() {
+		var account, nickname string
+		if err := rows.Scan(&account, &nickname); err != nil {
+			return nil, err
+		}
+		names[account] = nickname
+	}
+	return names, rows.Err()
+}
+
 func (s *Store) Exists(ctx context.Context, account string) (bool, error) {
 	var state string
 	err := s.pool.QueryRow(ctx, `select state from accounts where id = $1`, account).Scan(&state)
@@ -155,6 +174,9 @@ func (s *Store) SetNickname(ctx context.Context, account, raw string, now time.T
 		}
 		_, err = tx.Exec(ctx, `update profiles set nickname = $2, nickname_key = $3, updated_at = $4, rename_required = false,
 			nickname_changed_at = case when rename_required then nickname_changed_at else $4 end where account_id = $1`, account, display, key, now)
+		if err == nil && current.RenameRequired {
+			err = sanction.End(ctx, tx, account, sanction.ForcedRename, now)
+		}
 	} else {
 		_, err = tx.Exec(ctx, `insert into profiles (account_id, nickname, nickname_key, updated_at) values ($1, $2, $3, $4)`, account, display, key, now)
 	}

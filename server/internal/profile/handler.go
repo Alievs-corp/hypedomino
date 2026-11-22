@@ -28,13 +28,20 @@ type Countries interface {
 	SetCountry(ctx context.Context, id, code string, now time.Time, cooldown time.Duration) (account.Country, error)
 }
 
+type Languages interface {
+	Language(ctx context.Context, id string) (string, error)
+	SetLanguage(ctx context.Context, id, code string) (string, error)
+}
+
 type Handler struct {
 	verifier  token.Verifier
 	profiles  Profiles
 	countries Countries
+	languages Languages
 	cooldown  time.Duration
 	ranked    func(ctx context.Context, account string) (any, error)
 	medals    func(ctx context.Context, account string) (any, error)
+	appeal    func(ctx context.Context, account string) (any, error)
 	standing  func(ctx context.Context, account string, now time.Time) (int, int64, error)
 	logger    *slog.Logger
 	now       func() time.Time
@@ -47,6 +54,8 @@ func NewHandler(verifier token.Verifier, profiles Profiles, logger *slog.Logger,
 	h.mux.HandleFunc("PUT /profile/nickname", h.nickname)
 	h.mux.HandleFunc("GET /profile/country", h.country)
 	h.mux.HandleFunc("PUT /profile/country", h.setCountry)
+	h.mux.HandleFunc("GET /profile/language", h.language)
+	h.mux.HandleFunc("PUT /profile/language", h.setLanguage)
 	h.mux.HandleFunc("GET /profile/{account}", h.public)
 	return h
 }
@@ -55,12 +64,20 @@ func (h *Handler) SetCountries(countries Countries, cooldown time.Duration) {
 	h.countries, h.cooldown = countries, cooldown
 }
 
+func (h *Handler) SetLanguages(languages Languages) {
+	h.languages = languages
+}
+
 func (h *Handler) SetRanked(ranked func(ctx context.Context, account string) (any, error)) {
 	h.ranked = ranked
 }
 
 func (h *Handler) SetMedals(medals func(ctx context.Context, account string) (any, error)) {
 	h.medals = medals
+}
+
+func (h *Handler) SetRenameAppeals(appeal func(ctx context.Context, account string) (any, error)) {
+	h.appeal = appeal
 }
 
 func (h *Handler) SetStanding(standing func(ctx context.Context, account string, now time.Time) (int, int64, error)) {
@@ -76,6 +93,7 @@ type ownView struct {
 	Nickname          string   `json:"nickname"`
 	SetupRequired     bool     `json:"setup_required"`
 	RenameRequired    bool     `json:"rename_required"`
+	RenameAppeal      any      `json:"rename_appeal,omitempty"`
 	SuggestedNickname string   `json:"suggested_nickname,omitempty"`
 	RenameAvailableAt string   `json:"rename_available_at,omitempty"`
 	Level             int      `json:"level"`
@@ -206,6 +224,12 @@ func (h *Handler) replyOwn(w http.ResponseWriter, r *http.Request, view ownView)
 	if view.Level, view.XP, err = h.progress(r.Context(), view.AccountID); err != nil {
 		h.fail(w, err)
 		return
+	}
+	if view.RenameRequired {
+		if view.RenameAppeal, err = section(r.Context(), h.appeal, view.AccountID); err != nil {
+			h.fail(w, err)
+			return
+		}
 	}
 	reply(w, http.StatusOK, view)
 }

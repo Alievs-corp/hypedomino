@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"time"
 
 	"github.com/coder/websocket"
 
@@ -12,6 +13,7 @@ import (
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/room"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 var (
@@ -24,6 +26,10 @@ type LobbyMembers func(ctx context.Context, account string) (custom.Member, erro
 type Friends interface {
 	FriendIDs(ctx context.Context, account string) ([]string, error)
 }
+
+type RankedBanCheck func(ctx context.Context, account string, now time.Time) error
+
+type AppealFunc func(account string, sanctionID int64) *pb.AppealGrant
 
 type RemoteLobby interface {
 	Join(ctx context.Context, code, account, session string) (pb.LobbyRefusal, error)
@@ -43,6 +49,21 @@ func (m *Manager) Host(lobby *custom.Lobby, members LobbyMembers, friends Friend
 
 func (m *Manager) Reach(remote RemoteLobby) {
 	m.remote = remote
+}
+
+func (m *Manager) Restrict(rankedBan RankedBanCheck) {
+	m.rankedBan = rankedBan
+}
+
+func (m *Manager) GrantAppeals(appeal AppealFunc) {
+	m.appeal = appeal
+}
+
+func (m *Manager) customRoomsOpen(account string) error {
+	if m.rankedBan == nil {
+		return nil
+	}
+	return m.rankedBan(context.Background(), account, m.clock.Now())
 }
 
 var refusals = []struct {
@@ -69,6 +90,10 @@ func refusalOf(err error) pb.LobbyRefusal {
 	var remote refusalError
 	if errors.As(err, &remote) {
 		return pb.LobbyRefusal(remote)
+	}
+	var ranked *sanction.RankedBanError
+	if errors.As(err, &ranked) {
+		return pb.LobbyRefusal_LOBBY_REFUSAL_RANKED_BAN
 	}
 	for _, r := range refusals {
 		if errors.Is(err, r.err) {
@@ -202,21 +227,43 @@ func (c *connection) Lobby(intent *pb.LobbyIntent) {
 		state = stateMessage(r.State())
 	}
 	state.Refusal = refusalOf(err)
+	c.explainBan(state, err)
 	c.sendLobby(state)
+}
+
+func (c *connection) explainBan(state *pb.LobbyState, err error) {
+	var ranked *sanction.RankedBanError
+	if !errors.As(err, &ranked) {
+		return
+	}
+	if ends := ranked.Sanction.EndsAt; ends != nil {
+		state.RefusedUntilUnixMs = uint64(ends.UnixMilli())
+	}
+	state.BanReason = ranked.Sanction.Category.Reason()
+	if c.manager.appeal != nil {
+		state.Appeal = c.manager.appeal(c.session.account, ranked.Sanction.ID)
+	}
 }
 
 func (c *connection) command(intent *pb.LobbyIntent) error {
 	switch intent.GetCommand() {
 	case pb.LobbyCommand_LOBBY_COMMAND_CREATE:
-		return c.enter(c.create)
+		return c.openCustomRoom(func() error { return c.enter(c.create) })
 	case pb.LobbyCommand_LOBBY_COMMAND_JOIN:
-		return c.joinCode(intent.GetCode())
+		return c.openCustomRoom(func() error { return c.joinCode(intent.GetCode()) })
 	}
 	r := c.manager.lobbyOf(c.session)
 	if r == nil {
 		return custom.ErrNotInRoom
 	}
 	return c.inLobby(r, intent)
+}
+
+func (c *connection) openCustomRoom(open func() error) error {
+	if err := c.manager.customRoomsOpen(c.session.account); err != nil {
+		return err
+	}
+	return open()
 }
 
 func (c *connection) inLobby(r *custom.Room, intent *pb.LobbyIntent) error {

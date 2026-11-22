@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/hello.proto.
  */
 export const file_hypedomino_v1_hello: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIqsCCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBBIwCglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mEhsKE2RldmljZV9yaXNrX3NpZ25hbHMYCiADKAkicgoOSW50ZWdyaXR5UHJvb2YSHgoUcGxheV9pbnRlZ3JpdHlfdG9rZW4YASABKAlIABI3CgphcHBfYXR0ZXN0GAIgASgLMiEuaHlwZWRvbWluby52MS5BcHBBdHRlc3RBc3NlcnRpb25IAEIHCgVwcm9vZiJGChJBcHBBdHRlc3RBc3NlcnRpb24SDgoGa2V5X2lkGAEgASgMEg0KBW5vbmNlGAIgASgJEhEKCWFzc2VydGlvbhgDIAEoDCKbAwoLU2VydmVySGVsbG8SKgoGc3RhdHVzGAEgASgOMhouaHlwZWRvbWluby52MS5IZWxsb1N0YXR1cxIbChNtaW5pbXVtX2FwcF92ZXJzaW9uGAIgASgJEhsKE3NlcnZlcl90aW1lX3VuaXhfbXMYAyABKAQSFwoPY2F0YWxvZ192ZXJzaW9uGAQgASgJEhAKCGluX21hdGNoGAUgASgIEjMKDnN0cmluZ19idW5kbGVzGAYgAygLMhsuaHlwZWRvbWluby52MS5TdHJpbmdCdW5kbGUSNQoPZmFsbGJhY2tfY2hhaW5zGAcgAygLMhwuaHlwZWRvbWluby52MS5GYWxsYmFja0NoYWluEhUKDXNlc3Npb25fbm9uY2UYCCABKAYSGAoQY29udGVudF9iYXNlX3VybBgJIAEoCRIgChhtYWludGVuYW5jZV9lbmRzX3VuaXhfbXMYCiABKAQSPAoSY29zbWV0aWNzX21hbmlmZXN0GAsgASgLMiAuaHlwZWRvbWluby52MS5Db3NtZXRpY3NNYW5pZmVzdCI/CgxTdHJpbmdCdW5kbGUSEAoIbGFuZ3VhZ2UYASABKAkSDwoHdmVyc2lvbhgCIAEoDRIMCgRoYXNoGAMgASgJIjIKEUNvc21ldGljc01hbmlmZXN0Eg8KB3ZlcnNpb24YASABKA0SDAoEaGFzaBgCIAEoCSI0Cg1GYWxsYmFja0NoYWluEhAKCGxhbmd1YWdlGAEgASgJEhEKCWxhbmd1YWdlcxgCIAMoCSpMCghQbGF0Zm9ybRIYChRQTEFURk9STV9VTlNQRUNJRklFRBAAEhQKEFBMQVRGT1JNX0FORFJPSUQQARIQCgxQTEFURk9STV9JT1MQAiqGAQoLSGVsbG9TdGF0dXMSHAoYSEVMTE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVMTE9fU1RBVFVTX0FDQ0VQVEVEEAESIAocSEVMTE9fU1RBVFVTX1VQREFURV9SRVFVSVJFRBACEhwKGEhFTExPX1NUQVRVU19NQUlOVEVOQU5DRRADQsUBChFjb20uaHlwZWRvbWluby52MUIKSGVsbG9Qcm90b1ABWk9naXRodWIuY29tL0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5WMcoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw");
+  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIsECCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBBIwCglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mEhsKE2RldmljZV9yaXNrX3NpZ25hbHMYCiADKAkSFAoMaG9va19zaWduYWxzGAsgAygJInIKDkludGVncml0eVByb29mEh4KFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSAASNwoKYXBwX2F0dGVzdBgCIAEoCzIhLmh5cGVkb21pbm8udjEuQXBwQXR0ZXN0QXNzZXJ0aW9uSABCBwoFcHJvb2YiRgoSQXBwQXR0ZXN0QXNzZXJ0aW9uEg4KBmtleV9pZBgBIAEoDBINCgVub25jZRgCIAEoCRIRCglhc3NlcnRpb24YAyABKAwi1QMKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCBIzCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlEjUKD2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpbhIVCg1zZXNzaW9uX25vbmNlGAggASgGEhgKEGNvbnRlbnRfYmFzZV91cmwYCSABKAkSIAoYbWFpbnRlbmFuY2VfZW5kc191bml4X21zGAogASgEEjwKEmNvc21ldGljc19tYW5pZmVzdBgLIAEoCzIgLmh5cGVkb21pbm8udjEuQ29zbWV0aWNzTWFuaWZlc3QSOAoQYW5hbHl0aWNzX2NvbmZpZxgMIAEoCzIeLmh5cGVkb21pbm8udjEuQW5hbHl0aWNzQ29uZmlnIj8KDFN0cmluZ0J1bmRsZRIQCghsYW5ndWFnZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEgwKBGhhc2gYAyABKAkiMgoRQ29zbWV0aWNzTWFuaWZlc3QSDwoHdmVyc2lvbhgBIAEoDRIMCgRoYXNoGAIgASgJIlEKD0FuYWx5dGljc0NvbmZpZxISCgpiYXRjaF9zaXplGAEgASgNEhMKC3F1ZXVlX2xpbWl0GAIgASgNEhUKDWZsdXNoX3NlY29uZHMYAyABKA0iNAoNRmFsbGJhY2tDaGFpbhIQCghsYW5ndWFnZRgBIAEoCRIRCglsYW5ndWFnZXMYAiADKAkqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqhgEKC0hlbGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlSRUQQAhIcChhIRUxMT19TVEFUVVNfTUFJTlRFTkFOQ0UQA0LFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM");
 
 /**
  * @generated from message hypedomino.v1.ClientHello
@@ -65,6 +65,11 @@ export type ClientHello = Message<"hypedomino.v1.ClientHello"> & {
    * @generated from field: repeated string device_risk_signals = 10;
    */
   deviceRiskSignals: string[];
+
+  /**
+   * @generated from field: repeated string hook_signals = 11;
+   */
+  hookSignals: string[];
 };
 
 /**
@@ -188,6 +193,11 @@ export type ServerHello = Message<"hypedomino.v1.ServerHello"> & {
    * @generated from field: hypedomino.v1.CosmeticsManifest cosmetics_manifest = 11;
    */
   cosmeticsManifest?: CosmeticsManifest | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.AnalyticsConfig analytics_config = 12;
+   */
+  analyticsConfig?: AnalyticsConfig | undefined;
 };
 
 /**
@@ -247,6 +257,33 @@ export const CosmeticsManifestSchema: GenMessage<CosmeticsManifest> = /*@__PURE_
   messageDesc(file_hypedomino_v1_hello, 5);
 
 /**
+ * @generated from message hypedomino.v1.AnalyticsConfig
+ */
+export type AnalyticsConfig = Message<"hypedomino.v1.AnalyticsConfig"> & {
+  /**
+   * @generated from field: uint32 batch_size = 1;
+   */
+  batchSize: number;
+
+  /**
+   * @generated from field: uint32 queue_limit = 2;
+   */
+  queueLimit: number;
+
+  /**
+   * @generated from field: uint32 flush_seconds = 3;
+   */
+  flushSeconds: number;
+};
+
+/**
+ * Describes the message hypedomino.v1.AnalyticsConfig.
+ * Use `create(AnalyticsConfigSchema)` to create a new message.
+ */
+export const AnalyticsConfigSchema: GenMessage<AnalyticsConfig> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 6);
+
+/**
  * @generated from message hypedomino.v1.FallbackChain
  */
 export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
@@ -266,7 +303,7 @@ export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
  * Use `create(FallbackChainSchema)` to create a new message.
  */
 export const FallbackChainSchema: GenMessage<FallbackChain> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_hello, 6);
+  messageDesc(file_hypedomino_v1_hello, 7);
 
 /**
  * @generated from enum hypedomino.v1.Platform

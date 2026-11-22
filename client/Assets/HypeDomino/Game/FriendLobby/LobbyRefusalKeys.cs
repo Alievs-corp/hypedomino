@@ -19,6 +19,7 @@ namespace HypeDomino.Game.FriendLobby
         public const string WrongPhase = "lobby.room.refused.wrong_phase";
         public const string Blocked = "lobby.room.refused.blocked";
         public const string NotFriend = "lobby.room.refused.not_friend";
+        public const string RankedBan = "lobby.room.refused.ranked_ban";
         public const string Unknown = "notice.generic";
 
         public static string Of(LobbyRefusal refusal) => refusal switch
@@ -39,6 +40,7 @@ namespace HypeDomino.Game.FriendLobby
             LobbyRefusal.WrongPhase => WrongPhase,
             LobbyRefusal.Blocked => Blocked,
             LobbyRefusal.NotFriend => NotFriend,
+            LobbyRefusal.RankedBan => RankedBan,
             _ => Unknown,
         };
     }

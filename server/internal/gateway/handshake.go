@@ -113,6 +113,9 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Cosmetics != nil {
 		hello.CosmeticsManifest = c.options.Cosmetics()
 	}
+	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Analytics != nil {
+		hello.AnalyticsConfig = c.options.Analytics()
+	}
 	return &pb.Envelope{
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,

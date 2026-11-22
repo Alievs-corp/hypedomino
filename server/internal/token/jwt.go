@@ -20,6 +20,7 @@ var (
 	ErrUnknownKey = errors.New("token: unknown signing key")
 	ErrExpired    = errors.New("token: access token expired")
 	ErrIssuer     = errors.New("token: issuer not trusted")
+	ErrUse        = errors.New("token: not valid for this use")
 )
 
 const (
@@ -74,6 +75,8 @@ type Claims struct {
 	Device    string `json:"dev"`
 	IssuedAt  int64  `json:"iat"`
 	ExpiresAt int64  `json:"exp"`
+	Use       string `json:"use,omitempty"`
+	Sanction  int64  `json:"san,omitempty"`
 	KeyID     string `json:"-"`
 }
 
@@ -117,6 +120,17 @@ func (s *Signer) Sign(claims Claims) (string, error) {
 }
 
 func (s *Signer) Verify(token string, now time.Time) (Claims, error) {
+	claims, err := s.verify(token, now)
+	if err != nil {
+		return Claims{}, err
+	}
+	if claims.Session == "" || claims.Use != "" {
+		return Claims{}, ErrMalformed
+	}
+	return claims, nil
+}
+
+func (s *Signer) verify(token string, now time.Time) (Claims, error) {
 	if len(token) > maxTokenSize {
 		return Claims{}, ErrMalformed
 	}
@@ -145,7 +159,7 @@ func (s *Signer) Verify(token string, now time.Time) (Claims, error) {
 		return Claims{}, ErrMalformed
 	}
 	var claims Claims
-	if json.Unmarshal(body, &claims) != nil || claims.Account == "" || claims.Session == "" {
+	if json.Unmarshal(body, &claims) != nil || claims.Account == "" {
 		return Claims{}, ErrMalformed
 	}
 	claims.KeyID = head.KeyID
