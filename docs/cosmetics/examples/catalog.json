@@ -40,7 +40,7 @@
     {
       "id": "table.starter",
       "type": "table",
-      "revision": 1,
+      "revision": 2,
       "nameKey": "cosmetic.table.starter.name",
       "rarityId": "common",
       "animated": false,
@@ -51,7 +51,7 @@
           "type": "default"
         }
       ],
-      "artSource": "handmade",
+      "artSource": "ai_assisted",
       "culturalReview": "approved"
     },
     {
