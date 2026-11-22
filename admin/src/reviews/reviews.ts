@@ -10,6 +10,7 @@ export type Review = {
   opened_at: string;
   shadowbanned_at: string | null;
   signals: ReviewSignal[];
+  decisions: EarlierDecision[];
 };
 
 export function signalWeight(signals: readonly ReviewSignal[]): number {

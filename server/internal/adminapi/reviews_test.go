@@ -62,7 +62,7 @@ func TestSupportReadsAndClearsTheReviewQueue(t *testing.T) {
 		t.Fatalf("reviews %d %v", status, body)
 	}
 	review := reviews[0].(map[string]any)
-	if review["account_id"] != id || review["nickname"] != "Kamal" || review["cause"] != risk.CauseHardSignal || len(review["signals"].([]any)) != 2 {
+	if review["account_id"] != id || review["nickname"] != "Kamal" || review["cause"] != risk.CauseHardSignal || len(review["signals"].([]any)) != 2 || len(review["decisions"].([]any)) != 0 {
 		t.Fatalf("review %v", review)
 	}
 	path := "/admin/reviews/" + reviewID(t, body, 0) + "/clear"
@@ -122,8 +122,20 @@ func TestConfirmingAReviewKeepsTheShadowbanAndWaitsForNewSignals(t *testing.T) {
 	if _, err := wave.RunDue(context.Background(), decided.Add(2*config.BanWaveInterval)); err != nil {
 		t.Fatal(err)
 	}
-	if _, body := a.call("GET", "/admin/reviews", support, nil); len(body["reviews"].([]any)) != 1 {
+	_, body = a.call("GET", "/admin/reviews", support, nil)
+	if len(body["reviews"].([]any)) != 1 {
 		t.Fatalf("a new signal opened no review: %v", body)
+	}
+	decisions := body["reviews"].([]any)[0].(map[string]any)["decisions"].([]any)
+	if len(decisions) != 1 {
+		t.Fatalf("decisions %v", decisions)
+	}
+	earlier := decisions[0].(map[string]any)
+	if earlier["queue"] != "reviews" || earlier["outcome"] != "confirm" || len(earlier["reasons"].([]any)) != 1 || earlier["reports"] != float64(0) || earlier["decided_at"] == nil {
+		t.Fatalf("earlier decision %v", earlier)
+	}
+	if _, leaked := earlier["decided_by"]; leaked {
+		t.Fatalf("the decider left the audit log %v", earlier)
 	}
 }
 
