@@ -17,7 +17,7 @@ func TestTheLiveopsKeysArePublishedRolledBackAndAudited(t *testing.T) {
 	status, body := a.call("GET", path, liveOps, nil)
 	keys := body["keys"].([]any)
 	frames := keys[2].(map[string]any)
-	if value, set := ruleValue(t, body, "ContentGateMinFrames"); status != http.StatusOK || body["config_version"] != float64(0) || len(keys) != 12 || value != 20 || set {
+	if value, set := ruleValue(t, body, "ContentGateMinFrames"); status != http.StatusOK || body["config_version"] != float64(0) || len(keys) != 14 || value != 20 || set {
 		t.Fatalf("defaults %d %v", status, body)
 	}
 	if _, bounded := frames["max"]; bounded || frames["min"] != float64(0) || frames["default"] != float64(20) || frames["type"] != "integer" {

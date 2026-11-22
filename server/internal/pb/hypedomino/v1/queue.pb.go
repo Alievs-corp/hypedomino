@@ -250,6 +250,66 @@ func (BanReason) EnumDescriptor() ([]byte, []int) {
 	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{3}
 }
 
+type AppealGrant struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SanctionId    uint64                 `protobuf:"varint,1,opt,name=sanction_id,json=sanctionId,proto3" json:"sanction_id,omitempty"`
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	ExpiresUnixMs uint64                 `protobuf:"varint,3,opt,name=expires_unix_ms,json=expiresUnixMs,proto3" json:"expires_unix_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppealGrant) Reset() {
+	*x = AppealGrant{}
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppealGrant) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppealGrant) ProtoMessage() {}
+
+func (x *AppealGrant) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppealGrant.ProtoReflect.Descriptor instead.
+func (*AppealGrant) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AppealGrant) GetSanctionId() uint64 {
+	if x != nil {
+		return x.SanctionId
+	}
+	return 0
+}
+
+func (x *AppealGrant) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *AppealGrant) GetExpiresUnixMs() uint64 {
+	if x != nil {
+		return x.ExpiresUnixMs
+	}
+	return 0
+}
+
 type JoinQueueIntent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Mode          Mode                   `protobuf:"varint,1,opt,name=mode,proto3,enum=hypedomino.v1.Mode" json:"mode,omitempty"`
@@ -261,7 +321,7 @@ type JoinQueueIntent struct {
 
 func (x *JoinQueueIntent) Reset() {
 	*x = JoinQueueIntent{}
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[0]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -273,7 +333,7 @@ func (x *JoinQueueIntent) String() string {
 func (*JoinQueueIntent) ProtoMessage() {}
 
 func (x *JoinQueueIntent) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[0]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,7 +346,7 @@ func (x *JoinQueueIntent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinQueueIntent.ProtoReflect.Descriptor instead.
 func (*JoinQueueIntent) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{0}
+	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *JoinQueueIntent) GetMode() Mode {
@@ -318,7 +378,7 @@ type LeaveQueueIntent struct {
 
 func (x *LeaveQueueIntent) Reset() {
 	*x = LeaveQueueIntent{}
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[1]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -330,7 +390,7 @@ func (x *LeaveQueueIntent) String() string {
 func (*LeaveQueueIntent) ProtoMessage() {}
 
 func (x *LeaveQueueIntent) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[1]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -343,7 +403,7 @@ func (x *LeaveQueueIntent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveQueueIntent.ProtoReflect.Descriptor instead.
 func (*LeaveQueueIntent) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{1}
+	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{2}
 }
 
 type QueueState struct {
@@ -356,13 +416,14 @@ type QueueState struct {
 	Refusal            QueueRefusal           `protobuf:"varint,6,opt,name=refusal,proto3,enum=hypedomino.v1.QueueRefusal" json:"refusal,omitempty"`
 	RefusedUntilUnixMs uint64                 `protobuf:"varint,7,opt,name=refused_until_unix_ms,json=refusedUntilUnixMs,proto3" json:"refused_until_unix_ms,omitempty"`
 	BanReason          BanReason              `protobuf:"varint,8,opt,name=ban_reason,json=banReason,proto3,enum=hypedomino.v1.BanReason" json:"ban_reason,omitempty"`
+	Appeal             *AppealGrant           `protobuf:"bytes,9,opt,name=appeal,proto3" json:"appeal,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *QueueState) Reset() {
 	*x = QueueState{}
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[2]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -374,7 +435,7 @@ func (x *QueueState) String() string {
 func (*QueueState) ProtoMessage() {}
 
 func (x *QueueState) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_queue_proto_msgTypes[2]
+	mi := &file_hypedomino_v1_queue_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -387,7 +448,7 @@ func (x *QueueState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueueState.ProtoReflect.Descriptor instead.
 func (*QueueState) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{2}
+	return file_hypedomino_v1_queue_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *QueueState) GetStatus() QueueStatus {
@@ -446,16 +507,28 @@ func (x *QueueState) GetBanReason() BanReason {
 	return BanReason_BAN_REASON_UNSPECIFIED
 }
 
+func (x *QueueState) GetAppeal() *AppealGrant {
+	if x != nil {
+		return x.Appeal
+	}
+	return nil
+}
+
 var File_hypedomino_v1_queue_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\n" +
-	"\x19hypedomino/v1/queue.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"\xa7\x01\n" +
+	"\x19hypedomino/v1/queue.proto\x12\rhypedomino.v1\x1a\x19hypedomino/v1/hello.proto\x1a\x19hypedomino/v1/match.proto\"l\n" +
+	"\vAppealGrant\x12\x1f\n" +
+	"\vsanction_id\x18\x01 \x01(\x04R\n" +
+	"sanctionId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\x12&\n" +
+	"\x0fexpires_unix_ms\x18\x03 \x01(\x04R\rexpiresUnixMs\"\xa7\x01\n" +
 	"\x0fJoinQueueIntent\x12'\n" +
 	"\x04mode\x18\x01 \x01(\x0e2\x13.hypedomino.v1.ModeR\x04mode\x12.\n" +
 	"\x05queue\x18\x02 \x01(\x0e2\x18.hypedomino.v1.QueueKindR\x05queue\x12;\n" +
 	"\tintegrity\x18\x03 \x01(\v2\x1d.hypedomino.v1.IntegrityProofR\tintegrity\"\x12\n" +
-	"\x10LeaveQueueIntent\"\x95\x03\n" +
+	"\x10LeaveQueueIntent\"\xc9\x03\n" +
 	"\n" +
 	"QueueState\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.QueueStatusR\x06status\x12'\n" +
@@ -466,7 +539,8 @@ const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\arefusal\x18\x06 \x01(\x0e2\x1b.hypedomino.v1.QueueRefusalR\arefusal\x121\n" +
 	"\x15refused_until_unix_ms\x18\a \x01(\x04R\x12refusedUntilUnixMs\x127\n" +
 	"\n" +
-	"ban_reason\x18\b \x01(\x0e2\x18.hypedomino.v1.BanReasonR\tbanReason*U\n" +
+	"ban_reason\x18\b \x01(\x0e2\x18.hypedomino.v1.BanReasonR\tbanReason\x122\n" +
+	"\x06appeal\x18\t \x01(\v2\x1a.hypedomino.v1.AppealGrantR\x06appeal*U\n" +
 	"\tQueueKind\x12\x1a\n" +
 	"\x16QUEUE_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11QUEUE_KIND_RANKED\x10\x01\x12\x15\n" +
@@ -510,32 +584,34 @@ func file_hypedomino_v1_queue_proto_rawDescGZIP() []byte {
 }
 
 var file_hypedomino_v1_queue_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_hypedomino_v1_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_hypedomino_v1_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_hypedomino_v1_queue_proto_goTypes = []any{
 	(QueueKind)(0),           // 0: hypedomino.v1.QueueKind
 	(QueueStatus)(0),         // 1: hypedomino.v1.QueueStatus
 	(QueueRefusal)(0),        // 2: hypedomino.v1.QueueRefusal
 	(BanReason)(0),           // 3: hypedomino.v1.BanReason
-	(*JoinQueueIntent)(nil),  // 4: hypedomino.v1.JoinQueueIntent
-	(*LeaveQueueIntent)(nil), // 5: hypedomino.v1.LeaveQueueIntent
-	(*QueueState)(nil),       // 6: hypedomino.v1.QueueState
-	(Mode)(0),                // 7: hypedomino.v1.Mode
-	(*IntegrityProof)(nil),   // 8: hypedomino.v1.IntegrityProof
+	(*AppealGrant)(nil),      // 4: hypedomino.v1.AppealGrant
+	(*JoinQueueIntent)(nil),  // 5: hypedomino.v1.JoinQueueIntent
+	(*LeaveQueueIntent)(nil), // 6: hypedomino.v1.LeaveQueueIntent
+	(*QueueState)(nil),       // 7: hypedomino.v1.QueueState
+	(Mode)(0),                // 8: hypedomino.v1.Mode
+	(*IntegrityProof)(nil),   // 9: hypedomino.v1.IntegrityProof
 }
 var file_hypedomino_v1_queue_proto_depIdxs = []int32{
-	7, // 0: hypedomino.v1.JoinQueueIntent.mode:type_name -> hypedomino.v1.Mode
+	8, // 0: hypedomino.v1.JoinQueueIntent.mode:type_name -> hypedomino.v1.Mode
 	0, // 1: hypedomino.v1.JoinQueueIntent.queue:type_name -> hypedomino.v1.QueueKind
-	8, // 2: hypedomino.v1.JoinQueueIntent.integrity:type_name -> hypedomino.v1.IntegrityProof
+	9, // 2: hypedomino.v1.JoinQueueIntent.integrity:type_name -> hypedomino.v1.IntegrityProof
 	1, // 3: hypedomino.v1.QueueState.status:type_name -> hypedomino.v1.QueueStatus
-	7, // 4: hypedomino.v1.QueueState.mode:type_name -> hypedomino.v1.Mode
+	8, // 4: hypedomino.v1.QueueState.mode:type_name -> hypedomino.v1.Mode
 	0, // 5: hypedomino.v1.QueueState.queue:type_name -> hypedomino.v1.QueueKind
 	2, // 6: hypedomino.v1.QueueState.refusal:type_name -> hypedomino.v1.QueueRefusal
 	3, // 7: hypedomino.v1.QueueState.ban_reason:type_name -> hypedomino.v1.BanReason
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	4, // 8: hypedomino.v1.QueueState.appeal:type_name -> hypedomino.v1.AppealGrant
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_queue_proto_init() }
@@ -551,7 +627,7 @@ func file_hypedomino_v1_queue_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_queue_proto_rawDesc), len(file_hypedomino_v1_queue_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

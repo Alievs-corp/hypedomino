@@ -27,6 +27,10 @@ func Decisions(ctx context.Context, db Querier, accounts []string, limit int) (m
 				union all
 				select account_id::text, 'reviews', decision, array[cause], 0, closed_at
 				from risk_reviews where account_id = any($1::uuid[]) and closed_at is not null and decision is not null
+				union all
+				select a.account_id::text, 'appeals', a.state, array[s.kind], 0, a.decided_at
+				from appeals a join account_sanctions s on s.id = a.sanction_id
+				where a.account_id = any($1::uuid[]) and a.decided_at is not null
 			) d
 		) ranked where n <= $2 order by account, decided_at desc, queue`, accounts, limit)
 	if err != nil {

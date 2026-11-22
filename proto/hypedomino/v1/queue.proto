@@ -40,6 +40,12 @@ enum BanReason {
   BAN_REASON_OTHER = 6;
 }
 
+message AppealGrant {
+  uint64 sanction_id = 1;
+  string token = 2;
+  uint64 expires_unix_ms = 3;
+}
+
 message JoinQueueIntent {
   Mode mode = 1;
   QueueKind queue = 2;
@@ -57,4 +63,5 @@ message QueueState {
   QueueRefusal refusal = 6;
   uint64 refused_until_unix_ms = 7;
   BanReason ban_reason = 8;
+  AppealGrant appeal = 9;
 }

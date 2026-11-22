@@ -31,6 +31,8 @@ const (
 	ReportSlaHours        = "ReportSlaHours"
 	AppealSlaHours        = "AppealSlaHours"
 	MaxSlaHours           = 720
+	AppealTextMaxLength   = "AppealTextMaxLength"
+	AppealTokenMinutes    = "AppealTokenMinutes"
 )
 
 var keys = []Key{
@@ -46,6 +48,8 @@ var keys = []Key{
 	{Name: ReviewSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 24},
 	{Name: ReportSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 48},
 	{Name: AppealSlaHours, Unit: "hours", Min: 1, Max: bound(MaxSlaHours), Default: 72},
+	{Name: AppealTextMaxLength, Unit: "characters", Min: 50, Max: bound(2000), Default: 500},
+	{Name: AppealTokenMinutes, Unit: "minutes", Min: 5, Max: bound(1440), Default: 30},
 }
 
 func bound(limit int) *int {
@@ -110,6 +114,15 @@ type QueueSla struct {
 
 func (v Values) QueueSla() QueueSla {
 	return QueueSla{Review: v.hours(ReviewSlaHours), Report: v.hours(ReportSlaHours), Appeal: v.hours(AppealSlaHours)}
+}
+
+type Appeals struct {
+	TextMaxLength int
+	TokenLifetime time.Duration
+}
+
+func (v Values) Appeals() Appeals {
+	return Appeals{TextMaxLength: v.value(AppealTextMaxLength), TokenLifetime: time.Duration(v.value(AppealTokenMinutes)) * time.Minute}
 }
 
 func (v Values) hours(name string) time.Duration {

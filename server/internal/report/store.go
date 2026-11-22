@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 const (
@@ -151,6 +153,10 @@ func (s *Store) renameOnThreshold(ctx context.Context, tx pgx.Tx, target string,
 	if reporters < s.config.AutoRenameThreshold {
 		return nil
 	}
-	_, err := tx.Exec(ctx, `update profiles set rename_required = true, updated_at = $2 where account_id = $1 and not rename_required`, target, now)
+	tag, err := tx.Exec(ctx, `update profiles set rename_required = true, updated_at = $2 where account_id = $1 and not rename_required`, target, now)
+	if err != nil || tag.RowsAffected() == 0 {
+		return err
+	}
+	_, err = sanction.Impose(ctx, tx, target, sanction.ForcedRename, sanction.OffensiveName, now, nil)
 	return err
 }

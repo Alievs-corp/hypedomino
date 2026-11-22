@@ -164,3 +164,38 @@ func TestTheGateNamesTheRankedBanAndItsReason(t *testing.T) {
 		}
 	}
 }
+
+func TestABanRefusalCarriesAnAppealGrantForItsSanction(t *testing.T) {
+	ends := now.Add(time.Hour)
+	plain := func(context.Context, string, rules.Mode, matchmaking.Queue, time.Time) (matchmaking.Entry, error) {
+		return matchmaking.Entry{}, nil
+	}
+	penaltyBan := func(id int64) matchqueue.EntryFunc {
+		return func(context.Context, string, rules.Mode, matchmaking.Queue, time.Time) (matchmaking.Entry, error) {
+			return matchmaking.Entry{}, &matchqueue.BannedError{Until: ends, SanctionID: id}
+		}
+	}
+	grant := func(account string, sanctionID int64) *pb.AppealGrant {
+		return &pb.AppealGrant{SanctionId: uint64(sanctionID), Token: "appeal:" + account}
+	}
+	cases := []struct {
+		name    string
+		entry   matchqueue.EntryFunc
+		grant   matchqueue.AppealFunc
+		refusal pb.QueueRefusal
+		want    uint64
+	}{
+		{"ranked ban", matchqueue.RankedBanned(rankedBanUntil(ends, sanction.Cheating), plain), grant, pb.QueueRefusal_QUEUE_REFUSAL_RANKED_BAN, 7},
+		{"penalty ladder ban", penaltyBan(12), grant, pb.QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN, 12},
+		{"penalty ban recorded before sanctions", penaltyBan(0), grant, pb.QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN, 0},
+		{"no appeals wired", penaltyBan(12), nil, pb.QueueRefusal_QUEUE_REFUSAL_MATCHMAKING_BAN, 0},
+	}
+	for _, c := range cases {
+		gate := matchqueue.NewGate(nil, "node-a", "eu", c.entry, func() bool { return true }, func() bool { return true }, func() time.Time { return now }, slog.New(slog.NewTextHandler(io.Discard, nil)))
+		gate.GrantAppeals(c.grant)
+		state := gate.Join(context.Background(), "kamal", "s1", &pb.JoinQueueIntent{Mode: pb.Mode_MODE_1V1, Queue: pb.QueueKind_QUEUE_KIND_RANKED})
+		if state.GetRefusal() != c.refusal || state.GetAppeal().GetSanctionId() != c.want || (c.want != 0 && state.GetAppeal().GetToken() != "appeal:kamal") || (c.want == 0 && state.GetAppeal() != nil) {
+			t.Fatalf("%s: %v", c.name, state)
+		}
+	}
+}
