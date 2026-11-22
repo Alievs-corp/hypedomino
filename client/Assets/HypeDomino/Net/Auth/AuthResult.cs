@@ -25,8 +25,9 @@ namespace HypeDomino.Net.Auth
         public readonly string DeleteAt;
         public readonly string BanCategory;
         public readonly SanctionAppeal Appeal;
+        public readonly ulong BannedUntilUnixMs;
 
-        public AuthResult(AuthOutcome outcome, bool newAccount = false, string error = null, string deleteAt = null, string banCategory = null, SanctionAppeal appeal = default)
+        public AuthResult(AuthOutcome outcome, bool newAccount = false, string error = null, string deleteAt = null, string banCategory = null, SanctionAppeal appeal = default, ulong bannedUntilUnixMs = 0)
         {
             Outcome = outcome;
             NewAccount = newAccount;
@@ -34,6 +35,7 @@ namespace HypeDomino.Net.Auth
             DeleteAt = deleteAt;
             BanCategory = banCategory;
             Appeal = appeal;
+            BannedUntilUnixMs = bannedUntilUnixMs;
         }
     }
 }

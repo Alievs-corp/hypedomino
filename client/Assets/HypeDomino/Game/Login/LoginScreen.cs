@@ -13,6 +13,8 @@ namespace HypeDomino.Game.Login
         public const string Unavailable = "login.unavailable";
         public const string Rejected = "login.rejected";
         public const string Banned = "login.banned";
+        public const string BanEndsIn = "login.banned.ends_in";
+        public const string BanEndsInArgument = "time";
 
         public static string Of(AuthOutcome outcome) => outcome switch
         {
@@ -57,6 +59,7 @@ namespace HypeDomino.Game.Login
         public string MessageKey { get; private set; }
         public string BanReasonKey { get; private set; }
         public SanctionAppeal Appeal { get; private set; }
+        public ulong BannedUntilUnixMs { get; private set; }
 
         public event Action Changed;
 
@@ -69,6 +72,7 @@ namespace HypeDomino.Game.Login
             MessageKey = null;
             BanReasonKey = null;
             Appeal = default;
+            BannedUntilUnixMs = 0;
             Changed?.Invoke();
             auth.SignIn(chosen, signInAnswered);
             return true;
@@ -86,6 +90,9 @@ namespace HypeDomino.Game.Login
             Changed?.Invoke();
             return true;
         }
+
+        public double SecondsUntilBanEnds(ServerClock clock, double nowSeconds) =>
+            BannedUntilUnixMs != 0 && clock.Synced ? Math.Max(0d, clock.SecondsUntil(BannedUntilUnixMs, nowSeconds)) : 0d;
 
         bool Offers(AuthProvider chosen)
         {
@@ -110,6 +117,7 @@ namespace HypeDomino.Game.Login
                 MessageKey = LoginKeys.Of(result.Outcome);
                 BanReasonKey = result.Outcome == AuthOutcome.Banned ? BanReasonKeys.Of(result.BanCategory) : null;
                 Appeal = result.Outcome == AuthOutcome.Banned ? result.Appeal : default;
+                BannedUntilUnixMs = result.Outcome == AuthOutcome.Banned ? result.BannedUntilUnixMs : 0;
             }
             Changed?.Invoke();
             if (result.Outcome == AuthOutcome.SignedIn) signedIn();

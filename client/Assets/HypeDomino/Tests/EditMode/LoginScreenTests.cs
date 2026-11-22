@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
 using HypeDomino.Game.Privacy;
+using HypeDomino.Net;
 using HypeDomino.Net.Auth;
 using HypeDomino.UI.Localization;
 using NUnit.Framework;
@@ -200,6 +201,55 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(screen.Appeal.Offered);
             transport.Answer(503, "");
             Assert.IsFalse(screen.Appeal.Offered);
+        }
+
+        [Test]
+        public void ATemporaryBanCountsDownToItsEndOnServerTime()
+        {
+            var end = (ulong)new DateTimeOffset(2026, 12, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
+            SignInAnswering(403, "{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"2026-12-01T00:00:00Z\"}");
+
+            Assert.AreEqual(end, screen.BannedUntilUnixMs);
+            Assert.AreEqual(3_600d, screen.SecondsUntilBanEnds(ClockAt(end - 3_600_000), 0), 1e-6);
+            Assert.AreEqual(0d, screen.SecondsUntilBanEnds(ClockAt(end + 1_000), 0));
+            Assert.AreEqual(0d, screen.SecondsUntilBanEnds(new ServerClock(), 0));
+        }
+
+        [TestCase("{\"error\":\"banned\",\"category\":\"cheating\"}")]
+        [TestCase("{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"not-a-time\"}")]
+        public void APermanentOrUnreadableBanShowsNoEnd(string body)
+        {
+            SignInAnswering(403, body);
+
+            Assert.AreEqual(LoginKeys.Banned, screen.MessageKey);
+            Assert.AreEqual(0UL, screen.BannedUntilUnixMs);
+            Assert.AreEqual(0d, screen.SecondsUntilBanEnds(ClockAt(1_000), 0));
+        }
+
+        [Test]
+        public void ANewTryClearsTheBanEnd()
+        {
+            SignInAnswering(403, "{\"error\":\"banned\",\"banned_until\":\"2026-12-01T00:00:00Z\"}");
+
+            Assert.IsTrue(screen.TrySignIn(AuthProvider.Google));
+            Assert.AreEqual(0UL, screen.BannedUntilUnixMs);
+            transport.Answer(503, "");
+            Assert.AreEqual(0UL, screen.BannedUntilUnixMs);
+        }
+
+        [Test]
+        public void TheBanEndTextIsInTheShippedBundleInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            StringAssert.Contains("{" + LoginKeys.BanEndsInArgument + "}", strings.Value(LoginKeys.BanEndsIn, GameLanguage.English));
+            StringAssert.Contains("{" + LoginKeys.BanEndsInArgument + "}", strings.Value(LoginKeys.BanEndsIn, "az"));
+        }
+
+        static ServerClock ClockAt(ulong serverUnixMs)
+        {
+            var clock = new ServerClock();
+            clock.Sync(serverUnixMs, 0, 0);
+            return clock;
         }
 
         [Test]
