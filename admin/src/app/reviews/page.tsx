@@ -9,6 +9,7 @@ import type { Translate } from "@/i18n/translate";
 import { evidenceSummary, nextQueueHref, queueApiPath, readReviewQuery, reviewCauses, signalWeight, type Review } from "@/reviews/reviews";
 import { Notice } from "../players/Notice";
 import { EarlierDecisions } from "./EarlierDecisions";
+import { QueueDue } from "./QueueDue";
 import { QueueFilter } from "./QueueFilter";
 import { ReviewDecision } from "./ReviewDecision";
 
@@ -62,6 +63,7 @@ function ReviewEntry({ review, clientId, t }: { review: Review; clientId: string
         <span>
           {t("reviews.opened_at")}: {t.when(review.opened_at)}
         </span>
+        <QueueDue deadline={review} t={t} />
         <span>
           {t("reviews.total_weight")}: {signalWeight(review.signals)}
         </span>

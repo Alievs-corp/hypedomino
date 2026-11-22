@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func documentedRows(t *testing.T, path, header string) map[string][]string {
@@ -98,6 +99,46 @@ func TestTheAnalyticsValuesFallBackToTheirDefaults(t *testing.T) {
 	}
 }
 
+func TestTheQueueSlaKeysMatchTheConfigTableOfTheAdminSpec(t *testing.T) {
+	documented := documentedRows(t, "../../../docs/admin.md", "| Key | Default | Min | Max | Queue |\n|---|---|---|---|---|\n")
+	slaKeys := []Key{}
+	for _, key := range Keys() {
+		if strings.HasSuffix(key.Name, "SlaHours") {
+			slaKeys = append(slaKeys, key)
+		}
+	}
+	if len(documented) != 3 || len(slaKeys) != 3 {
+		t.Fatalf("admin.md lists %d keys, code has %d", len(documented), len(slaKeys))
+	}
+	for _, key := range slaKeys {
+		row := documented[key.Name]
+		if len(row) < 3 || key.Max == nil || key.Unit != "hours" || row[0] != strconv.Itoa(key.Default) || row[1] != strconv.Itoa(key.Min) || row[2] != strconv.Itoa(*key.Max) {
+			t.Fatalf("%s: spec %v, code default %d min %d max %v unit %s", key.Name, row, key.Default, key.Min, key.Max, key.Unit)
+		}
+		if key.Default < key.Min || key.Default > *key.Max {
+			t.Errorf("%s: default %d outside its bounds", key.Name, key.Default)
+		}
+	}
+}
+
+func TestTheQueueSlaFallsBackToItsDefaults(t *testing.T) {
+	tests := []struct {
+		name   string
+		values Values
+		want   QueueSla
+	}{
+		{"none published", nil, QueueSla{Review: 24 * time.Hour, Report: 48 * time.Hour, Appeal: 72 * time.Hour}},
+		{"one published", Values{ReportSlaHours: 12}, QueueSla{Review: 24 * time.Hour, Report: 12 * time.Hour, Appeal: 72 * time.Hour}},
+		{"every key", Values{ReviewSlaHours: 1, ReportSlaHours: 720, AppealSlaHours: 96}, QueueSla{Review: time.Hour, Report: 720 * time.Hour, Appeal: 96 * time.Hour}},
+		{"analytics only", Values{AnalyticsFlushSeconds: 120}, QueueSla{Review: 24 * time.Hour, Report: 48 * time.Hour, Appeal: 72 * time.Hour}},
+	}
+	for _, test := range tests {
+		if got := test.values.QueueSla(); got != test.want {
+			t.Errorf("%s: %+v, want %+v", test.name, got, test.want)
+		}
+	}
+}
+
 func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 	tests := []struct {
 		name string
@@ -112,6 +153,7 @@ func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 		{"no keys", `{}`, Values{}},
 		{"analytics keys", `{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}`, Values{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 1000, "AnalyticsFlushSeconds": 30}},
 		{"analytics bounds", `{"AnalyticsBatchSize": 400, "AnalyticsQueueLimit": 5000, "AnalyticsFlushSeconds": 3600}`, Values{"AnalyticsBatchSize": 400, "AnalyticsQueueLimit": 5000, "AnalyticsFlushSeconds": 3600}},
+		{"queue sla bounds", `{"ReviewSlaHours": 1, "ReportSlaHours": 720, "AppealSlaHours": 1}`, Values{"ReviewSlaHours": 1, "ReportSlaHours": 720, "AppealSlaHours": 1}},
 		{"queue limit equal to the batch", `{"AnalyticsBatchSize": 1, "AnalyticsQueueLimit": 1, "AnalyticsFlushSeconds": 10}`, Values{"AnalyticsBatchSize": 1, "AnalyticsQueueLimit": 1, "AnalyticsFlushSeconds": 10}},
 	}
 	for _, test := range tests {
@@ -139,6 +181,10 @@ func TestSnapshotsAreCheckedAgainstTheKeys(t *testing.T) {
 		"queue below the batch":         `{"AnalyticsBatchSize": 100, "AnalyticsQueueLimit": 99}`,
 		"queue below the default batch": `{"AnalyticsQueueLimit": 49}`,
 		"fractional flush":              `{"AnalyticsFlushSeconds": 60.5}`,
+		"review sla of zero":            `{"ReviewSlaHours": 0}`,
+		"negative report sla":           `{"ReportSlaHours": -24}`,
+		"appeal sla above a month":      `{"AppealSlaHours": 721}`,
+		"fractional review sla":         `{"ReviewSlaHours": 1.5}`,
 	} {
 		if _, err := Parse([]byte(raw)); !errors.Is(err, ErrInvalid) {
 			t.Errorf("%s accepted: %v", name, err)
