@@ -43,6 +43,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/risk"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
 	"github.com/Alievs-corp/hypedomino/server/internal/storeprice"
 	"github.com/Alievs-corp/hypedomino/server/internal/storesync"
@@ -63,6 +64,7 @@ type Config struct {
 
 	GrantApprovalCoins int64
 	TempBan            time.Duration
+	RankedBan          time.Duration
 	Mute               time.Duration
 	Limits             Limits
 
@@ -161,6 +163,8 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("POST /admin/players/{id}/coins", h.allowed(rbac.Players, rbac.ActOnPlayer, h.adjustCoins))
 	h.mux.HandleFunc("POST /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banTemporarily))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/temporary-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftTemporaryBan))
+	h.mux.HandleFunc("POST /admin/players/{id}/ranked-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.banFromRanked))
+	h.mux.HandleFunc("DELETE /admin/players/{id}/ranked-ban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftRankedBan))
 	h.mux.HandleFunc("POST /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.shadowban))
 	h.mux.HandleFunc("DELETE /admin/players/{id}/shadowban", h.allowed(rbac.Players, rbac.ActOnPlayer, h.liftShadowban))
 	h.mux.HandleFunc("POST /admin/players/{id}/mute", h.allowed(rbac.Players, rbac.ActOnPlayer, h.mute))
@@ -537,6 +541,10 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "not_published"
 	case errors.Is(err, errNotBanned):
 		return http.StatusConflict, "not_banned"
+	case errors.Is(err, errNotRankedBanned):
+		return http.StatusConflict, "not_ranked_banned"
+	case errors.Is(err, sanction.ErrInvalidCategory):
+		return http.StatusBadRequest, "invalid_category"
 	case errors.Is(err, errShadowbanned):
 		return http.StatusConflict, "shadowbanned"
 	case errors.Is(err, errNotShadowbanned):

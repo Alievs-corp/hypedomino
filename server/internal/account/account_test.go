@@ -8,9 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
+	"github.com/Alievs-corp/hypedomino/server/internal/sanction"
 )
 
 func TestMain(m *testing.M) {
@@ -75,6 +78,61 @@ func TestBannedAndDeletedAccountsAreRefused(t *testing.T) {
 		got, created, err := store.SignIn(ctx, identity)
 		if !errors.Is(err, want) || created || got.State != state {
 			t.Fatalf("%s: %+v %v %v", state, got, created, err)
+		}
+	}
+}
+
+func TestABannedSignInNamesTheCategoryOfTheRunningBan(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := account.New(pool)
+	ctx := context.Background()
+	identity := idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "g-3"}
+	a, _, err := store.SignIn(ctx, identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	until := now.Add(time.Hour)
+	if _, err := pool.Exec(ctx, `update accounts set banned_until = $2 where id = $1`, a.ID, until); err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name  string
+		setup func(tx pgx.Tx) error
+		want  string
+	}{
+		{"a ban set before categories", func(pgx.Tx) error { return nil }, "other"},
+		{"a row without a category", func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, `insert into account_sanctions (account_id, kind, starts_at, ends_at) values ($1, 'temporary_ban', $2, $3)`, a.ID, now, until)
+			return err
+		}, "other"},
+		{"a temporary ban", func(tx pgx.Tx) error {
+			_, err := sanction.Impose(ctx, tx, a.ID, sanction.TemporaryBan, sanction.Collusion, now, &until)
+			return err
+		}, "collusion"},
+		{"a ranked ban only", func(tx pgx.Tx) error {
+			_, err := sanction.Impose(ctx, tx, a.ID, sanction.RankedBan, sanction.Cheating, now, &until)
+			return err
+		}, "other"},
+	}
+	for _, c := range cases {
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := c.setup(tx); err != nil {
+			t.Fatal(err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			t.Fatal(err)
+		}
+		_, _, err = store.SignIn(ctx, identity)
+		var banned *account.BannedError
+		if !errors.As(err, &banned) || !errors.Is(err, account.ErrBanned) || banned.Category != c.want {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if _, err := pool.Exec(ctx, `delete from account_sanctions where account_id = $1`, a.ID); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

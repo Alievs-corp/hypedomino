@@ -106,7 +106,8 @@ type tokenResponse struct {
 }
 
 type errorResponse struct {
-	Error string `json:"error"`
+	Error    string `json:"error"`
+	Category string `json:"category,omitempty"`
 }
 
 func (h *Handler) nonce(w http.ResponseWriter, r *http.Request) {
@@ -235,8 +236,16 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) string {
 	} else {
 		h.logger.Info("auth request refused", "reason", code)
 	}
-	reply(w, status, errorResponse{Error: code})
+	reply(w, status, errorResponse{Error: code, Category: banCategory(err)})
 	return code
+}
+
+func banCategory(err error) string {
+	var banned *account.BannedError
+	if errors.As(err, &banned) {
+		return banned.Category
+	}
+	return ""
 }
 
 func classify(err error) (int, string) {

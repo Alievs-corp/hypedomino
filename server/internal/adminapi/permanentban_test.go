@@ -33,11 +33,15 @@ func TestAPermanentBanFromTheQueueWaitsForASecondAdmin(t *testing.T) {
 
 	status, body := a.call("POST", path, support, map[string]any{})
 	expect(t, status, body, http.StatusBadRequest, "reason_required")
-	status, body = a.call("POST", path, content, map[string]any{"reason": "fake receipts"})
+	status, body = a.call("POST", path, content, map[string]any{"reason": "fake receipts", "category": "payment_fraud"})
 	expect(t, status, body, http.StatusForbidden, "forbidden")
-	status, body = a.call("POST", "/admin/reviews/999999/permanent-ban", support, map[string]any{"reason": "none"})
+	status, body = a.call("POST", "/admin/reviews/999999/permanent-ban", support, map[string]any{"reason": "none", "category": "payment_fraud"})
 	expect(t, status, body, http.StatusNotFound, "not_found")
-	status, body = a.call("POST", path, support, map[string]any{"reason": "fake receipts", "ref": "REV-7"})
+	for _, category := range []any{nil, "", "speed_hack"} {
+		status, body = a.call("POST", path, support, map[string]any{"reason": "fake receipts", "category": category})
+		expect(t, status, body, http.StatusBadRequest, "invalid_category")
+	}
+	status, body = a.call("POST", path, support, map[string]any{"reason": "fake receipts", "ref": "REV-7", "category": "payment_fraud"})
 	if status != http.StatusAccepted || body["kind"] != "permanent_ban" || body["state"] != "pending" || body["object_id"] != id {
 		t.Fatalf("propose %d %v", status, body)
 	}
@@ -55,21 +59,25 @@ func TestAPermanentBanFromTheQueueWaitsForASecondAdmin(t *testing.T) {
 	if status != http.StatusOK || body["state"] != "approved" {
 		t.Fatalf("approve %d %v", status, body)
 	}
-	if err := a.playerSignIn("g-1"); !errors.Is(err, account.ErrBanned) {
+	var banned *account.BannedError
+	if err := a.playerSignIn("g-1"); !errors.As(err, &banned) || banned.Category != "payment_fraud" {
 		t.Fatalf("sign-in after the ban: %v", err)
 	}
 	if got := a.liveSessions(id); got != 0 {
 		t.Fatalf("live sessions %d", got)
 	}
+	if sanctions := a.sanctions(support, id); len(sanctions) != 1 || sanctions[0]["kind"] != "permanent_ban" || sanctions[0]["category"] != "payment_fraud" || sanctions[0]["ends_at"] != nil {
+		t.Fatalf("sanctions %v", sanctions)
+	}
 	if _, body := a.call("GET", "/admin/reviews", support, nil); len(body["reviews"].([]any)) != 0 {
 		t.Fatalf("the ban left the review open: %v", body)
 	}
-	status, body = a.call("POST", path, support, map[string]any{"reason": "again"})
+	status, body = a.call("POST", path, support, map[string]any{"reason": "again", "category": "cheating"})
 	expect(t, status, body, http.StatusConflict, "decided")
 
-	banned := a.entries(root, "object_type=players&action="+adminapi.PermanentBanAction)
-	if len(banned) != 1 || banned[0]["reason"] != "fake receipts" || banned[0]["after"].(map[string]any)["sessions_revoked"] != float64(1) {
-		t.Fatalf("ban entries %v", banned)
+	entries := a.entries(root, "object_type=players&action="+adminapi.PermanentBanAction)
+	if len(entries) != 1 || entries[0]["reason"] != "fake receipts" || entries[0]["after"].(map[string]any)["sessions_revoked"] != float64(1) || entries[0]["after"].(map[string]any)["category"] != "payment_fraud" {
+		t.Fatalf("ban entries %v", entries)
 	}
 	if confirmed := a.entries(root, "object_type=queues&action="+adminapi.ConfirmReviewAction); len(confirmed) != 1 {
 		t.Fatalf("review entries %v", confirmed)
@@ -89,7 +97,7 @@ func TestAnApprovedBanIsRefusedWhenTheReviewWasClearedMeanwhile(t *testing.T) {
 	}
 	_, body := a.call("GET", "/admin/reviews", support, nil)
 	review := "/admin/reviews/" + reviewID(t, body, 0)
-	status, body := a.call("POST", review+"/permanent-ban", support, map[string]any{"reason": "replays"})
+	status, body := a.call("POST", review+"/permanent-ban", support, map[string]any{"reason": "replays", "category": "cheating"})
 	if status != http.StatusAccepted {
 		t.Fatalf("propose %d %v", status, body)
 	}

@@ -242,6 +242,28 @@ func TestSignInRefusalsCarryAStatusAndAReason(t *testing.T) {
 	}
 }
 
+func TestABannedSignInCarriesTheBanCategoryOnly(t *testing.T) {
+	f := newFixture(t)
+	f.verifier.identities["cheater"] = idtoken.Identity{Subject: "cheater"}
+	f.accounts.states["google-cheater"] = &account.BannedError{Category: "cheating"}
+	f.verifier.identities["deleted"] = idtoken.Identity{Subject: "deleted"}
+	f.accounts.states["google-deleted"] = account.ErrDeleted
+	cases := []struct {
+		token    string
+		status   int
+		category any
+	}{
+		{"cheater", http.StatusForbidden, "cheating"},
+		{"deleted", http.StatusGone, nil},
+	}
+	for _, c := range cases {
+		status, body := f.post("/auth/signin", `{"provider":"google","id_token":"`+c.token+`","nonce":"n","device_id":"d"}`)
+		if status != c.status || body["category"] != c.category {
+			t.Fatalf("%s answered %d %v", c.token, status, body)
+		}
+	}
+}
+
 func TestSignInsAreCountedByProviderAndResult(t *testing.T) {
 	f := newFixture(t)
 	f.verifier.errs["expired"] = idtoken.ErrExpired

@@ -139,6 +139,12 @@ func configFromEnv(env lookup) (config, error) {
 		errs = append(errs, fmt.Errorf("HD_MUTE_HOURS: %d is not a positive hour count", muteHours))
 	}
 	c.api.Mute = time.Duration(muteHours) * time.Hour
+	rankedBanHours := adminapi.DefaultRankedBanHours
+	integer("HD_RANKED_BAN_HOURS", &rankedBanHours)
+	if rankedBanHours < 1 {
+		errs = append(errs, fmt.Errorf("HD_RANKED_BAN_HOURS: %d is not a positive hour count", rankedBanHours))
+	}
+	c.api.RankedBan = time.Duration(rankedBanHours) * time.Hour
 	integer("HD_SHOP_DAILY_SLOTS", &c.api.Shop.DailySlots)
 	integer("HD_SHOP_WEEKLY_SLOTS", &c.api.Shop.WeeklySlots)
 	integer("HD_SHOP_RESET_HOUR_UTC", &c.api.Shop.ResetHourUTC)
