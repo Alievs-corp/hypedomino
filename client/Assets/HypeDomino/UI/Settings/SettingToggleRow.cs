@@ -24,6 +24,8 @@ namespace HypeDomino.UI.Settings
             toggle.onValueChanged.AddListener(OnToggled);
         }
 
+        public void Show(bool on) => toggle.SetIsOnWithoutNotify(on);
+
         void OnToggled(bool on) => choose(on);
 
         void Unbind()
