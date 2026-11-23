@@ -21,7 +21,7 @@ namespace HypeDomino.Tests.PlayMode
     {
         const ulong ServerNowMs = 1_000_000;
         const int Slots = 4;
-        const string EmptyCatalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[]}";
+        const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[{""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""}]}";
 
         public sealed class HudParts
         {
@@ -54,7 +54,7 @@ namespace HypeDomino.Tests.PlayMode
             root = new GameObject("Match", typeof(RectTransform), typeof(Canvas));
             hud = NewHud(root.transform, Slots);
             connection = new Connection(() => throw new InvalidOperationException(), () => new ClientHello(), () => 0d, new System.Random(1));
-            Assert.IsTrue(CosmeticManifest.TryParse(EmptyCatalog, out var manifest));
+            Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out var manifest));
             host = new MatchHost(new AppFlow(), connection, new ActiveCosmeticManifest(manifest));
             strings = new GameStrings(BuiltinStrings.Load(), LanguageChoice.Load(GameLanguage.English, () => Array.Empty<string>()), false);
             hud.View.Bind(host, connection, strings);
