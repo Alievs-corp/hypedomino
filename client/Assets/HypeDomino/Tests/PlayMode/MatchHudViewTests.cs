@@ -127,7 +127,7 @@ namespace HypeDomino.Tests.PlayMode
             return text;
         }
 
-        static Hypedomino.V1.TileFace T(uint low, uint high) => new() { Low = low, High = high };
+        static Hypedomino.V1.Tile T(uint low, uint high) => new() { Low = low, High = high };
 
         static MatchView Playing(params LegalMove[] legal)
         {

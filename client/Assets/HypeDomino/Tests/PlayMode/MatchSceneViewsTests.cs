@@ -184,7 +184,7 @@ namespace HypeDomino.Tests.PlayMode
                 TurnWarningSeconds = 5,
             };
             view.Roster.Add(new RosterEntry { Seat = two ? Seat.Y : Seat.North, Avatar = "avatar.fox" });
-            view.Hand.Add(new Hypedomino.V1.TileFace { Low = 2, High = 5 });
+            view.Hand.Add(new Hypedomino.V1.Tile { Low = 2, High = 5 });
             return view;
         }
 
