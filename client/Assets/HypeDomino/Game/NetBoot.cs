@@ -36,6 +36,7 @@ namespace HypeDomino.Game
         public static ShopLoader Shop { get; private set; }
         public static ShopCheckout Checkout { get; private set; }
         public static PassLoader Pass { get; private set; }
+        public static PassLevelBuyer PassLevels { get; private set; }
         public static MissionLoader Missions { get; private set; }
         public static InventoryLoader Inventory { get; private set; }
         public static MedalLoader Medals { get; private set; }
@@ -130,6 +131,7 @@ namespace HypeDomino.Game
         {
             Shop = new ShopLoader(api);
             Pass = new PassLoader(api);
+            PassLevels = new PassLevelBuyer(api);
             Missions = new MissionLoader(api);
             Inventory = new InventoryLoader(api);
             Medals = new MedalLoader(api);
