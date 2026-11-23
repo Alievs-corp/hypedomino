@@ -238,6 +238,44 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ATemporaryBanCarriesItsEnd()
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"2026-12-01T00:00:00Z\"}"));
+
+            var result = SignIn(AuthProvider.Google);
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.AreEqual((ulong)new DateTimeOffset(2026, 12, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), result.BannedUntilUnixMs);
+        }
+
+        [TestCase("{\"error\":\"banned\",\"category\":\"cheating\"}")]
+        [TestCase("{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"\"}")]
+        [TestCase("{\"error\":\"banned\",\"category\":\"cheating\",\"banned_until\":\"not-a-time\"}")]
+        public void APermanentOrUnreadableBanCarriesNoEnd(string body)
+        {
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(403, body));
+
+            var result = SignIn(AuthProvider.Google);
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.AreEqual(0UL, result.BannedUntilUnixMs);
+        }
+
+        [Test]
+        public void ARefusedRefreshForABanCarriesItsEnd()
+        {
+            store.Write(AuthSession.RefreshTokenKey, "refresh-1");
+            transport.Replies.Enqueue(new HttpReply(403, "{\"error\":\"banned\",\"category\":\"collusion\",\"banned_until\":\"2026-12-01T00:00:00Z\"}"));
+
+            var result = Resume();
+
+            Assert.AreEqual(AuthOutcome.Banned, result.Outcome);
+            Assert.AreEqual((ulong)new DateTimeOffset(2026, 12, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds(), result.BannedUntilUnixMs);
+        }
+
+        [Test]
         public void OnlyABanCarriesACategory()
         {
             transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));

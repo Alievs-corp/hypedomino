@@ -147,7 +147,9 @@ namespace HypeDomino.Net.Auth
             if (refreshing) Forget();
             switch (code)
             {
-                case "banned": return new AuthResult(AuthOutcome.Banned, error: code, banCategory: error.category, appeal: SanctionAppeal.Of(error.appeal));
+                case "banned":
+                    ServerClock.TryReadUnixMs(error.banned_until, out var bannedUntilUnixMs);
+                    return new AuthResult(AuthOutcome.Banned, error: code, banCategory: error.category, appeal: SanctionAppeal.Of(error.appeal), bannedUntilUnixMs: bannedUntilUnixMs);
                 case "deleted": return new AuthResult(AuthOutcome.Deleted, error: code);
                 case "deletion_pending": return new AuthResult(AuthOutcome.DeletionPending, error: code, deleteAt: error.delete_at);
             }
