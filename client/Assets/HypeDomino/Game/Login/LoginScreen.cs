@@ -94,7 +94,7 @@ namespace HypeDomino.Game.Login
         public double SecondsUntilBanEnds(ServerClock clock, double nowSeconds) =>
             BannedUntilUnixMs != 0 && clock.Synced ? Math.Max(0d, clock.SecondsUntil(BannedUntilUnixMs, nowSeconds)) : 0d;
 
-        bool Offers(AuthProvider chosen)
+        public bool Offers(AuthProvider chosen)
         {
             for (var i = 0; i < Options.Count; i++)
             {
