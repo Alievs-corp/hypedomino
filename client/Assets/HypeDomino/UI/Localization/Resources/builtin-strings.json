@@ -9,6 +9,7 @@
     { "key": "duration.seconds", "en": "{seconds, plural, one {# second} other {# seconds}}", "az": "{seconds, plural, one {# saniyə} other {# saniyə}}" },
     { "key": "notice.generic", "en": "Something went wrong. Try again", "az": "Nəsə alınmadı. Yenidən cəhd et" },
     { "key": "promo.redeem.granted", "en": "Code redeemed", "az": "Kod qəbul olundu" },
+    { "key": "promo.redeem.granted_pass_premium", "en": "Code redeemed. Premium Hype Pass unlocked", "az": "Kod qəbul olundu. Premium Hype Pass açıldı" },
     { "key": "promo.redeem.code_invalid", "en": "This code is invalid", "az": "Bu kod etibarsızdır" },
     { "key": "promo.redeem.unknown", "en": "This code does not exist", "az": "Belə kod yoxdur" },
     { "key": "promo.redeem.not_active", "en": "This code is not active", "az": "Bu kod aktiv deyil" },

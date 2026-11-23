@@ -57,6 +57,7 @@ namespace HypeDomino.Game.Promo
     public static class PromoRedeemKeys
     {
         public const string Granted = "promo.redeem.granted";
+        public const string GrantedPassPremium = "promo.redeem.granted_pass_premium";
         public const string CodeInvalid = "promo.redeem.code_invalid";
         public const string Unknown = "promo.redeem.unknown";
         public const string NotActive = "promo.redeem.not_active";
@@ -115,7 +116,7 @@ namespace HypeDomino.Game.Promo
         public int PassXp { get; }
         public int PassXpDropped { get; }
         public bool PassPremium { get; }
-        public string MessageKey => PromoRedeemKeys.Of(Outcome);
+        public string MessageKey => PassPremium ? PromoRedeemKeys.GrantedPassPremium : PromoRedeemKeys.Of(Outcome);
 
         public static PromoRedeemResult Of(PromoRedeemOutcome outcome) => new(outcome);
 

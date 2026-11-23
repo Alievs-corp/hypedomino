@@ -75,15 +75,16 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsFalse(result.PassPremium);
         }
 
-        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":true}", true)]
-        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":false}", false)]
-        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500}}", false)]
-        public void AGrantSaysWhetherThePremiumPassWasUnlocked(string body, bool premium)
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":true}", true, "promo.redeem.granted_pass_premium")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500},\"pass_premium\":false}", false, "promo.redeem.granted")]
+        [TestCase("{\"promo\":\"promo-1\",\"grant\":{\"coins\":500}}", false, "promo.redeem.granted")]
+        public void AGrantSaysWhetherThePremiumPassWasUnlocked(string body, bool premium, string key)
         {
             var result = PromoRedeemResult.From(new ApiReply(ApiOutcome.Ok, 200, body));
             Assert.AreEqual(PromoRedeemOutcome.Granted, result.Outcome);
             Assert.AreEqual(500, result.Coins);
             Assert.AreEqual(premium, result.PassPremium);
+            Assert.AreEqual(key, result.MessageKey);
         }
 
         [Test]
@@ -209,6 +210,8 @@ namespace HypeDomino.Tests.EditMode
                 Assert.IsNotNull(strings.Value(key, GameLanguage.English), key);
                 Assert.IsNotNull(strings.Value(key, "az"), key);
             }
+            Assert.AreEqual("Kod qəbul olundu. Premium Hype Pass açıldı", strings.Value(PromoRedeemKeys.GrantedPassPremium, "az"));
+            Assert.AreEqual("Code redeemed. Premium Hype Pass unlocked", strings.Value(PromoRedeemKeys.GrantedPassPremium, GameLanguage.English));
             Assert.AreEqual("Bu kod etibarsızdır", strings.Value(PromoRedeemKeys.CodeInvalid, "az"));
             Assert.AreEqual("Bu kodun vaxtı keçib", strings.Value(PromoRedeemKeys.Expired, "az"));
             Assert.AreEqual("Bu kod artıq istifadə olunub", strings.Value(PromoRedeemKeys.AlreadyRedeemed, "az"));

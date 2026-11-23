@@ -370,6 +370,7 @@ A code has an id, a campaign id (what cosmetic `promo` sources reference), a bun
 | Reply | Key | `az` | `en` |
 |---|---|---|---|
 | Granted | `promo.redeem.granted` | Kod qəbul olundu | Code redeemed |
+| Granted with `pass_premium` true | `promo.redeem.granted_pass_premium` | Kod qəbul olundu. Premium Hype Pass açıldı | Code redeemed. Premium Hype Pass unlocked |
 | `promo.code_invalid`, or refused before sending | `promo.redeem.code_invalid` | Bu kod etibarsızdır | This code is invalid |
 | `promo.unknown` | `promo.redeem.unknown` | Belə kod yoxdur | This code does not exist |
 | `promo.not_active` | `promo.redeem.not_active` | Bu kod aktiv deyil | This code is not active |
