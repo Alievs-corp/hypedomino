@@ -7,6 +7,7 @@ using HypeDomino.Net.Auth;
 using HypeDomino.Net.Integrity;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
+using Hypedomino.V1;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
