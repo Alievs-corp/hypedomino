@@ -7,6 +7,7 @@ using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Medals;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Profile;
 using NUnit.Framework;
