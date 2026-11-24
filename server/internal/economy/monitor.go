@@ -61,6 +61,7 @@ type Report struct {
 	SinkRatioPercent      *int64           `json:"sinkRatioPercent"`
 	MedianBalance         int64            `json:"medianBalance"`
 	SourceMix             map[string]int64 `json:"sourceMix"`
+	SinkMix               map[string]int64 `json:"sinkMix"`
 	AccountsOverDailyEarn int              `json:"accountsOverDailyEarn"`
 	Alerts                []string         `json:"alerts"`
 	earners               map[string]int64
@@ -85,7 +86,11 @@ func (m *Monitor) Report(ctx context.Context, to time.Time) (Report, error) {
 	if err := m.median(ctx, &report); err != nil {
 		return report, err
 	}
-	if err := m.sourceMix(ctx, &report); err != nil {
+	var err error
+	if report.SourceMix, err = m.mix(ctx, day, SourceReasons, 1); err != nil {
+		return report, err
+	}
+	if report.SinkMix, err = m.mix(ctx, day, SinkReasons, -1); err != nil {
 		return report, err
 	}
 	if err := m.dailyEarners(ctx, &report); err != nil {
@@ -116,21 +121,21 @@ func (m *Monitor) median(ctx context.Context, report *Report) error {
 		order by account_id, created_at desc, id desc) latest`, report.From, report.To).Scan(&report.MedianBalance)
 }
 
-func (m *Monitor) sourceMix(ctx context.Context, report *Report) error {
-	rows, err := m.pool.Query(ctx, `select reason, sum(amount)::bigint from ledger_entries
-		where currency = 'coin' and amount > 0 and reason = any($3) and created_at >= $1 and created_at < $2 group by reason`,
-		report.Day, report.Day.Add(24*time.Hour), SourceReasons)
+func (m *Monitor) mix(ctx context.Context, day time.Time, reasons []string, sign int64) (map[string]int64, error) {
+	rows, err := m.pool.Query(ctx, `select reason, sum(amount * $4)::bigint from ledger_entries
+		where currency = 'coin' and amount * $4 > 0 and reason = any($3) and created_at >= $1 and created_at < $2 group by reason`,
+		day, day.Add(24*time.Hour), reasons, sign)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	report.SourceMix = map[string]int64{}
+	mix := map[string]int64{}
 	var reason string
 	var coins int64
 	_, err = pgx.ForEachRow(rows, []any{&reason, &coins}, func() error {
-		report.SourceMix[reason] = coins
+		mix[reason] = coins
 		return nil
 	})
-	return err
+	return mix, err
 }
 
 func (m *Monitor) dailyEarners(ctx context.Context, report *Report) error {

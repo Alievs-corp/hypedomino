@@ -76,6 +76,8 @@ func seed(t *testing.T) (*pgxpool.Pool, string) {
 	l.entry(player, "coin", "match_reward", 200, 200, yesterday.Add(-48*time.Hour))
 	l.entry(player, "coin", "shop_purchase", -100, 100, yesterday.Add(-24*time.Hour))
 	l.entry(player, "coin", "admin_adjust", 5000, 5100, yesterday)
+	l.entry(player, "coin", "rename", -50, 5050, yesterday.Add(30*time.Minute))
+	l.entry(player, "coin", "refund", -20, 5030, yesterday.Add(40*time.Minute))
 	l.entry(player, "crystal", "purchase", 1000, 1000, yesterday)
 	l.entry(gone, "coin", "match_reward", 90000, 90000, now.Add(-10*24*time.Hour))
 	l.entry(farmer, "coin", "match_reward", 30, 1630, now)
@@ -88,7 +90,7 @@ func TestReportMeasuresTheRollingWindowAndTheLastEconomyDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.CoinsCreated != 1800 || report.CoinsSpent != 100 || report.SinkRatioPercent == nil || *report.SinkRatioPercent != 5 {
+	if report.CoinsCreated != 1800 || report.CoinsSpent != 150 || report.SinkRatioPercent == nil || *report.SinkRatioPercent != 8 {
 		t.Fatalf("flow %+v", report)
 	}
 	if report.MedianBalance != 1600 {
@@ -96,6 +98,9 @@ func TestReportMeasuresTheRollingWindowAndTheLastEconomyDay(t *testing.T) {
 	}
 	if !report.Day.Equal(time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)) || len(report.SourceMix) != 2 || report.SourceMix["match_reward"] != 1000 || report.SourceMix["mission"] != 600 {
 		t.Fatalf("day %v mix %v", report.Day, report.SourceMix)
+	}
+	if len(report.SinkMix) != 1 || report.SinkMix["rename"] != 50 {
+		t.Fatalf("sink mix %v", report.SinkMix)
 	}
 	if report.AccountsOverDailyEarn != 1 || !slices.Equal(report.Alerts, []string{economy.AlertSinkRatio, economy.AlertAccountDailyEarn}) {
 		t.Fatalf("alerts %d %v", report.AccountsOverDailyEarn, report.Alerts)

@@ -11,6 +11,7 @@ export type EconomyReport = {
   sinkRatioPercent: number | null;
   medianBalance: number;
   sourceMix: Record<string, number>;
+  sinkMix: Record<string, number>;
   accountsOverDailyEarn: number;
   alerts: EconomyAlert[];
 };
@@ -23,14 +24,20 @@ export const alertLabels: Readonly<Record<EconomyAlert, MessageKey>> = {
   median_balance: "analytics.alert.median_balance",
 };
 
-export function sourceReasons(reports: readonly EconomyReport[]): string[] {
+export type Mix = "sourceMix" | "sinkMix";
+
+export function mixReasons(reports: readonly EconomyReport[], mix: Mix): string[] {
   const totals = new Map<string, number>();
   for (const report of reports) {
-    for (const [reason, coins] of Object.entries(report.sourceMix)) {
+    for (const [reason, coins] of Object.entries(report[mix])) {
       totals.set(reason, (totals.get(reason) ?? 0) + coins);
     }
   }
   return [...totals.keys()].sort((a, b) => totals.get(b)! - totals.get(a)! || a.localeCompare(b));
+}
+
+export function barPercent(coins: number, max: number): number {
+  return max > 0 ? Math.round((coins * 100) / max) : 0;
 }
 
 export function comparedVersion(value: string | undefined): number | null {
@@ -44,8 +51,10 @@ export type WindowReport = { window: MonitorWindow; report: EconomyReport };
 const csvHeader = "window,from,to,day,metric,reason,value";
 
 export function monitorsCsv(windows: readonly WindowReport[]): string {
-  const reasons = sourceReasons(windows.map((entry) => entry.report));
-  const lines = windows.flatMap((entry) => windowLines(entry, reasons));
+  const reports = windows.map((entry) => entry.report);
+  const sources = mixReasons(reports, "sourceMix");
+  const sinks = mixReasons(reports, "sinkMix");
+  const lines = windows.flatMap((entry) => windowLines(entry, sources, sinks));
   return [csvHeader, ...lines].join("\n") + "\n";
 }
 
@@ -54,14 +63,15 @@ export function monitorsCsvFileName(now: EconomyReport, version: number | null):
   return version === null ? `economy-monitors-${day}.csv` : `economy-monitors-${day}-v${version}.csv`;
 }
 
-function windowLines({ window, report }: WindowReport, reasons: readonly string[]): string[] {
+function windowLines({ window, report }: WindowReport, sources: readonly string[], sinks: readonly string[]): string[] {
   const metrics: [string, string, number | null][] = [
     ["coins_created", "", report.coinsCreated],
     ["coins_spent", "", report.coinsSpent],
     ["sink_ratio_percent", "", report.sinkRatioPercent],
     ["median_balance", "", report.medianBalance],
     ["accounts_over_daily_earn", "", report.accountsOverDailyEarn],
-    ...reasons.map((reason): [string, string, number] => ["source_mix", reason, report.sourceMix[reason] ?? 0]),
+    ...sources.map((reason): [string, string, number] => ["source_mix", reason, report.sourceMix[reason] ?? 0]),
+    ...sinks.map((reason): [string, string, number] => ["sink_mix", reason, report.sinkMix[reason] ?? 0]),
   ];
   return metrics.map(([metric, reason, value]) => [window, report.from, report.to, report.day, metric, reason, value === null ? "" : String(value)].map(csvField).join(","));
 }

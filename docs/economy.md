@@ -415,6 +415,7 @@ Monitors (#110, shown in the admin analytics #147):
 | Account daily earn | `match_reward` + `first_win` + `daily_login` + `mission` of one account in one economy day | Above `AccountDailyEarnAlertCoins` (1500): alert and a farm signal to #209 |
 | Median balance | Median balance of accounts active in the last 7 days | Above `BalanceMedianAlertCoins` (30000, one `mythic` avatar) |
 | Source mix | Coins created per reason per day | Report only |
+| Sink mix | Coins spent per reason per day | Report only |
 
 - Target sink ratio: 70% to 100%. Below 60% coins pile up with nothing worth buying; above 120% players are drawing savings down faster than they earn.
 - The account daily earn alert sits above the legitimate maximum of its reasons with the proposed values (400 + 100 + 150 + 120 + 600 = 1370), so crossing it means a defect or an exploit.
