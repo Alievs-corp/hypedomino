@@ -1,8 +1,10 @@
 using System;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
+using HypeDomino.UI.Effects;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using TMPro;
 using UnityEngine;
@@ -11,8 +13,10 @@ using UnityEngine.UI;
 
 namespace HypeDomino.Game.Match
 {
-    public sealed class MatchHudView : MonoBehaviour
+    public sealed class MatchHudView : MonoBehaviour, IEffectSettingsTarget
     {
+        const float MillisecondsPerSecond = 1000f;
+
         static readonly Color RingColor = TokenColor.GoldDefault;
         static readonly Color RingWarningColor = TokenColor.RoleWarningFill;
 
@@ -29,21 +33,32 @@ namespace HypeDomino.Game.Match
         [SerializeField] TMP_Text takeBackText;
         [SerializeField] TMP_Text[] seatBadges = new TMP_Text[TableSides.Count];
         [SerializeField] CanvasGroup[] passLabels = new CanvasGroup[TableSides.Count];
+        [SerializeField] RectTransform dealOrigin;
+        [SerializeField] RectTransform drawOrigin;
         [SerializeField] HandSummaryView summary;
 
         UnityAction[] tileTaps = Array.Empty<UnityAction>();
         MatchHost host;
         Connection connection;
         GameStrings strings;
+        TweenPool arrivalPool = TweenPool.For(EffectLevel.Medium);
+        TransformTweenSink arrivalSink;
+        Vector3[] restPositions = Array.Empty<Vector3>();
+        EffectLevel level = EffectLevel.Medium;
+        bool reduceMotion;
         int handVersion = -1;
+        int arrivalsVersion = -1;
         int noticesVersion = -1;
         int passVersion = -1;
         int summaryVersion = -1;
 
+        public int MovingCount => arrivalPool.Count;
+
         MatchScreen LiveScreen => host?.Root?.Screen;
 
         public void Configure(TileFaceSet faces, Button[] tiles, GameObject[] marks, Button drawButton, Button passButton, Button endTurnButton, Image ring,
-            TMP_Text networkText, TMP_Text afkText, Button takeBackButton, TMP_Text takeBackLabel, TMP_Text[] badges, CanvasGroup[] passGroups, HandSummaryView summaryView = null)
+            TMP_Text networkText, TMP_Text afkText, Button takeBackButton, TMP_Text takeBackLabel, TMP_Text[] badges, CanvasGroup[] passGroups,
+            RectTransform dealFrom, RectTransform drawFrom, HandSummaryView summaryView = null)
         {
             Unbind();
             faceSet = faces;
@@ -60,7 +75,18 @@ namespace HypeDomino.Game.Match
             takeBackText = takeBackLabel;
             seatBadges = badges;
             passLabels = passGroups;
+            dealOrigin = dealFrom;
+            drawOrigin = drawFrom;
             summary = summaryView;
+        }
+
+        public void Configure(EffectLevel effectLevel, bool reduce)
+        {
+            reduceMotion = reduce;
+            if (effectLevel == level) return;
+            level = effectLevel;
+            arrivalPool.FinishAll(ref arrivalSink);
+            arrivalPool = TweenPool.For(level);
         }
 
         public void Bind(MatchHost matchHost, Connection matchConnection, GameStrings texts)
@@ -71,8 +97,11 @@ namespace HypeDomino.Game.Match
             strings = texts ?? throw new ArgumentNullException(nameof(texts));
             strings.Changed += RedrawTexts;
             tileTaps = new UnityAction[handTiles.Length];
+            var moved = new Transform[handTiles.Length];
+            restPositions = new Vector3[handTiles.Length];
             for (var index = 0; index < handTiles.Length; index++)
             {
+                moved[index] = handTiles[index].transform;
                 var slot = index;
                 tileTaps[index] = () => LiveScreen?.TapTile(slot);
                 handTiles[index].onClick.AddListener(tileTaps[index]);
@@ -81,6 +110,8 @@ namespace HypeDomino.Game.Match
             pass.onClick.AddListener(Pass);
             endTurn.onClick.AddListener(EndTurn);
             takeBack.onClick.AddListener(TakeBack);
+            arrivalSink = new TransformTweenSink(moved);
+            arrivalsVersion = host.Hud.ArrivalsVersion;
             handVersion = noticesVersion = passVersion = summaryVersion = -1;
             Refresh();
         }
@@ -88,6 +119,7 @@ namespace HypeDomino.Game.Match
         public void Unbind()
         {
             if (host == null) return;
+            arrivalPool.FinishAll(ref arrivalSink);
             strings.Changed -= RedrawTexts;
             for (var index = 0; index < tileTaps.Length; index++) handTiles[index].onClick.RemoveListener(tileTaps[index]);
             tileTaps = Array.Empty<UnityAction>();
@@ -100,7 +132,9 @@ namespace HypeDomino.Game.Match
             strings = null;
         }
 
-        public void Refresh()
+        public void Refresh() => Refresh(Time.unscaledTime * MillisecondsPerSecond);
+
+        public void Refresh(float nowMs)
         {
             if (host == null) return;
             var hud = host.Hud;
@@ -109,6 +143,12 @@ namespace HypeDomino.Game.Match
                 handVersion = hud.HandVersion;
                 ShowHand(hud.Hand);
             }
+            if (hud.ArrivalsVersion != arrivalsVersion)
+            {
+                arrivalsVersion = hud.ArrivalsVersion;
+                ShowArrivals(hud.Arrivals, nowMs);
+            }
+            arrivalPool.Step(nowMs, ref arrivalSink);
             ShowTimer(hud.Timer);
             if (hud.NoticesVersion != noticesVersion)
             {
@@ -158,6 +198,28 @@ namespace HypeDomino.Game.Match
             SetActive(draw.gameObject, hand != null && hand.CanDraw);
             SetActive(pass.gameObject, hand != null && hand.CanPass);
             SetActive(endTurn.gameObject, hand != null && hand.CanEndTurn);
+        }
+
+        void ShowArrivals(HandArrivals arrivals, float nowMs)
+        {
+            if (arrivals == null)
+            {
+                arrivalPool.FinishAll(ref arrivalSink);
+                return;
+            }
+            var origin = arrivals.Kind == HandArrival.Deal ? dealOrigin : drawOrigin;
+            if (origin == null) return;
+            var arrived = arrivals.ArrivedTiles;
+            for (var order = 0; order < arrived.Length; order++)
+            {
+                var index = arrived[order];
+                if (index >= handTiles.Length) continue;
+                var tile = handTiles[index].transform;
+                if (!arrivalPool.IsMoving(index, TweenChannel.Position)) restPositions[index] = tile.localPosition;
+                var from = tile.parent.InverseTransformPoint(origin.position);
+                arrivalSink.Apply(index, TweenChannel.Position, from);
+                TileTravel.Arrive(arrivalPool, ref arrivalSink, index, order, from, restPositions[index], nowMs, reduceMotion);
+            }
         }
 
         void ShowTimer(TurnTimer timer)

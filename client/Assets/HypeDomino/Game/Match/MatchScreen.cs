@@ -21,6 +21,7 @@ namespace HypeDomino.Game.Match
     public interface IMatchHud
     {
         void ShowHand(HandChoice hand);
+        void ShowArrivals(HandArrivals arrivals);
         void ShowTurn(TurnTimer timer);
         void ShowPass(TableSide side, PassNotice notice);
         void HidePass(TableSide side);
@@ -60,6 +61,7 @@ namespace HypeDomino.Game.Match
 
         public ScoreBoard Score { get; } = new();
         public HandChoice Hand { get; } = new();
+        public HandArrivals Arrivals { get; } = new();
         public TurnTimer Timer { get; } = new();
         public MatchNotices Notices { get; } = new();
         public HandSummary Summary { get; } = new();
@@ -98,6 +100,7 @@ namespace HypeDomino.Game.Match
             Timer.Read(view);
             Hand.Read(view);
             hud.ShowHand(Hand);
+            if (Arrivals.Read(view) != HandArrival.None) hud.ShowArrivals(Arrivals);
             if (Notices.Read(view)) hud.ShowNotices(Notices);
             if (Summary.Read(view)) hud.ShowSummary(Summary);
             if (passed && TrySideOf(view, passer, out var side)) StartPass(side);

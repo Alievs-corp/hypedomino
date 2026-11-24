@@ -164,6 +164,8 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(new[] { InventoryLoadOutcome.Loaded }, outcomes);
             Assert.IsNotNull(link.Wheel);
             Assert.IsNotNull(link.Emoji);
+            CollectionAssert.AreEqual(new[] { "emoji.laugh", "emoji.cry" }, link.Worn.loadout.emojis);
+            Assert.AreEqual(2, link.Worn.emoji_slots);
         }
 
         [TestCase(HelloStatus.UpdateRequired)]
@@ -214,6 +216,7 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.AreEqual(new[] { InventoryLoadOutcome.Failed }, outcomes);
             Assert.IsNull(link.Wheel);
+            Assert.IsNull(link.Worn);
         }
 
         [Test]

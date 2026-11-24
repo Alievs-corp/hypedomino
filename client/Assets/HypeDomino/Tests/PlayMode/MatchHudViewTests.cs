@@ -7,6 +7,7 @@ using HypeDomino.UI.Board;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using NUnit.Framework;
@@ -39,6 +40,8 @@ namespace HypeDomino.Tests.PlayMode
             public TMP_Text TakeBackText;
             public TMP_Text[] Badges;
             public CanvasGroup[] PassLabels;
+            public RectTransform DealOrigin;
+            public RectTransform DrawOrigin;
         }
 
         GameObject root;
@@ -105,9 +108,20 @@ namespace HypeDomino.Tests.PlayMode
                 parts.PassLabels[side] = new GameObject("Pass " + side, typeof(RectTransform)).AddComponent<CanvasGroup>();
                 parts.PassLabels[side].transform.SetParent(hudTransform, false);
             }
+            parts.DealOrigin = NewAnchor("Deal origin", hudTransform, new Vector3(0f, 300f, 0f));
+            parts.DrawOrigin = NewAnchor("Draw origin", hudTransform, new Vector3(400f, 300f, 0f));
+            for (var at = 0; at < slots; at++) parts.Tiles[at].transform.localPosition = new Vector3(100f * at, -400f, 0f);
             parts.View.Configure(parts.Faces, parts.Tiles, parts.Marks, parts.Draw, parts.Pass, parts.EndTurn, parts.Ring,
-                parts.Network, parts.Afk, parts.TakeBack, parts.TakeBackText, parts.Badges, parts.PassLabels);
+                parts.Network, parts.Afk, parts.TakeBack, parts.TakeBackText, parts.Badges, parts.PassLabels, parts.DealOrigin, parts.DrawOrigin);
             return parts;
+        }
+
+        static RectTransform NewAnchor(string name, Transform parent, Vector3 localPosition)
+        {
+            var anchor = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+            anchor.SetParent(parent, false);
+            anchor.localPosition = localPosition;
+            return anchor;
         }
 
         static Sprite NewSprite() => Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
@@ -332,6 +346,107 @@ namespace HypeDomino.Tests.PlayMode
                 timer.Tick(connection.Clock, 1d);
                 hud.View.Refresh();
             }, Allocates.Nothing);
+        }
+
+        static Vector3 Rest(int slot) => new(100f * slot, -400f, 0f);
+
+        static void AssertNear(Vector3 expected, Vector3 actual) => Assert.Less(Vector3.Distance(expected, actual), 1e-3f, $"{expected} vs {actual}");
+
+        static MatchView WithBoard(MatchView view)
+        {
+            view.Board = new BoardView { Line = { new OrientedTile { First = 2, Second = 3 } } };
+            return view;
+        }
+
+        void Arrive(HandArrivals arrivals, MatchView view, float nowMs)
+        {
+            arrivals.Read(Read(view));
+            host.Hud.ShowArrivals(arrivals);
+            hud.View.Refresh(nowMs);
+        }
+
+        [Test]
+        public void ADealMovesEachTileFromTheDealOriginToItsSlotOneMicroApart()
+        {
+            var arrivals = new HandArrivals();
+
+            Arrive(arrivals, Playing(), 0f);
+
+            Assert.AreEqual(HandArrival.Deal, arrivals.Kind);
+            for (var at = 0; at < 3; at++) AssertNear(hud.DealOrigin.localPosition, hud.Tiles[at].transform.localPosition);
+            AssertNear(Rest(3), hud.Tiles[3].transform.localPosition);
+
+            hud.View.Refresh(TokenDurationMs.Base);
+            AssertNear(Rest(0), hud.Tiles[0].transform.localPosition);
+            Assert.Greater(Vector3.Distance(Rest(1), hud.Tiles[1].transform.localPosition), 1f);
+
+            hud.View.Refresh(TokenDurationMs.Base + 2 * TokenDurationMs.Micro);
+            for (var at = 0; at < 3; at++) AssertNear(Rest(at), hud.Tiles[at].transform.localPosition);
+            Assert.AreEqual(0, hud.View.MovingCount);
+        }
+
+        [Test]
+        public void ADrawnTileComesFromTheDrawOrigin()
+        {
+            var arrivals = new HandArrivals();
+            arrivals.Read(Read(WithBoard(Playing())));
+            var drawn = WithBoard(Playing());
+            drawn.Hand.Add(T(5, 5));
+
+            Arrive(arrivals, drawn, 0f);
+
+            Assert.AreEqual(HandArrival.Draw, arrivals.Kind);
+            AssertNear(hud.DrawOrigin.localPosition, hud.Tiles[3].transform.localPosition);
+            for (var at = 0; at < 3; at++) AssertNear(Rest(at), hud.Tiles[at].transform.localPosition);
+
+            hud.View.Refresh(TokenDurationMs.Base);
+            AssertNear(Rest(3), hud.Tiles[3].transform.localPosition);
+        }
+
+        [Test]
+        public void ReduceMotionDealsInTheFastDuration()
+        {
+            hud.View.Configure(EffectLevel.Medium, true);
+
+            Arrive(new HandArrivals(), Playing(), 0f);
+            hud.View.Refresh(TokenDurationMs.Fast + 2 * TokenDurationMs.Micro);
+
+            for (var at = 0; at < 3; at++) AssertNear(Rest(at), hud.Tiles[at].transform.localPosition);
+        }
+
+        [Test]
+        public void AClearedHudLandsTheMovingTiles()
+        {
+            Arrive(new HandArrivals(), Playing(), 0f);
+
+            host.Hud.Clear();
+            hud.View.Refresh(1f);
+
+            for (var at = 0; at < 3; at++) AssertNear(Rest(at), hud.Tiles[at].transform.localPosition);
+            Assert.AreEqual(0, hud.View.MovingCount);
+        }
+
+        [Test]
+        public void DealingAndMovingTheHandAllocatesNothing()
+        {
+            var arrivals = new HandArrivals();
+            var dealt = Playing().ToByteArray();
+            var finished = new MatchView { State = MatchState.Finished }.ToByteArray();
+            var nowMs = 0f;
+            TestDelegate frame = () =>
+            {
+                snapshot.TryRead(finished);
+                arrivals.Read(snapshot);
+                snapshot.TryRead(dealt);
+                arrivals.Read(snapshot);
+                host.Hud.ShowArrivals(arrivals);
+                hud.View.Refresh(nowMs += 10f);
+                hud.View.Refresh(nowMs += 10f);
+            };
+            frame();
+
+            Assert.That(frame, Allocates.Nothing);
+            Assert.Greater(hud.View.MovingCount, 0);
         }
 
         [Test]
