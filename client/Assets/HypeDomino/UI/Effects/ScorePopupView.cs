@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using TMPro;
@@ -9,9 +11,11 @@ namespace HypeDomino.UI.Effects
     public sealed class ScorePopupView : MonoBehaviour, IEffectSettingsTarget
     {
         const float MillisecondsPerSecond = 1000f;
+        const string Plus = "+";
 
         [SerializeField] TMP_Text[] popups = Array.Empty<TMP_Text>();
 
+        readonly Dictionary<uint, string> labels = new();
         EffectPool pool;
         float[] startedMs;
         int[] holdMs;
@@ -45,11 +49,11 @@ namespace HypeDomino.UI.Effects
             startedMs[slot] = startMs;
             holdMs[slot] = burst.HoldMs;
             var text = popups[slot];
-            text.canvasRenderer.cull = true;
             text.rectTransform.position = at;
             text.fontSize = burst.ScoreSize;
             text.color = TokenColor.RoleScoreText;
-            text.SetText("+{0}", points);
+            text.alpha = 0f;
+            text.text = LabelOf(points);
         }
 
         public void Tick(float nowMs)
@@ -71,10 +75,17 @@ namespace HypeDomino.UI.Effects
             holdMs = new int[Capacity];
             foreach (var text in popups)
             {
-                text.enabled = true;
-                text.SetText("+{0}", 0);
-                text.canvasRenderer.cull = true;
+                text.canvasRenderer.cullTransparentMesh = true;
+                text.alpha = 0f;
             }
+        }
+
+        string LabelOf(uint points)
+        {
+            if (labels.TryGetValue(points, out var label)) return label;
+            label = Plus + points.ToString(CultureInfo.InvariantCulture);
+            labels.Add(points, label);
+            return label;
         }
 
         void Animate(int slot, float nowMs)
@@ -83,10 +94,9 @@ namespace HypeDomino.UI.Effects
             var elapsedMs = nowMs - startedMs[slot];
             var popup = default(ScorePopup);
             var shown = pool.IsLive(slot) && elapsedMs >= 0f && ScorePopup.At(elapsedMs, holdMs[slot], reduceMotion, out popup);
-            if (text.canvasRenderer.cull == shown) text.canvasRenderer.cull = !shown;
-            if (!shown) return;
-            text.rectTransform.localScale = new Vector3(popup.Scale, popup.Scale, 1f);
-            text.alpha = popup.Alpha;
+            var alpha = shown ? popup.Alpha : 0f;
+            if (text.alpha != alpha) text.alpha = alpha;
+            if (shown) text.rectTransform.localScale = new Vector3(popup.Scale, popup.Scale, 1f);
         }
     }
 }

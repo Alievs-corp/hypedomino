@@ -1,3 +1,4 @@
+using System;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Effects;
@@ -90,7 +91,7 @@ namespace HypeDomino.Game.Match
 
         public MatchEffects(EffectPlayer player, TilePlaceLayer tiles, RectTransform board, RectTransform banner, RectTransform meterA, RectTransform meterB, ScorePopupView popups)
         {
-            this.popups = popups;
+            this.popups = popups ? popups : throw new ArgumentNullException(nameof(popups));
             this.player = player;
             this.tiles = tiles;
             this.board = board;

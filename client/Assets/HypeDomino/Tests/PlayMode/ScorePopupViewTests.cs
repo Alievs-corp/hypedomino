@@ -32,7 +32,7 @@ namespace HypeDomino.Tests.PlayMode
         [TearDown]
         public void Destroy() => Object.DestroyImmediate(root);
 
-        static bool Shown(TMP_Text text) => !text.canvasRenderer.cull;
+        static bool Shown(TMP_Text text) => text.alpha > 0f;
 
         [Test]
         public void APopupShowsPlusThePointsInTheScoreRoleSizedByItsStep()
@@ -89,7 +89,11 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(0, 0, Vector3.zero, 0f);
             view.Tick(TokenDurationMs.Fast);
 
-            foreach (var text in texts) Assert.IsFalse(Shown(text));
+            foreach (var text in texts)
+            {
+                Assert.IsFalse(Shown(text));
+                Assert.IsTrue(text.canvasRenderer.cullTransparentMesh);
+            }
         }
 
         [Test]
@@ -97,7 +101,7 @@ namespace HypeDomino.Tests.PlayMode
         {
             for (var at = 0; at < texts.Length; at++)
             {
-                view.Show(25, 5 + at % 2, Vector3.one, at);
+                view.Show(at % 2 == 0 ? 25u : 35u, 5 + at % 2, Vector3.one, at);
                 view.Tick(TokenDurationMs.Fast + at);
             }
             view.Tick(TokenEffect.ScorePopupDurationMs * 2f);
