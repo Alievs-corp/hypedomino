@@ -58,6 +58,8 @@ namespace HypeDomino.Tests.EditMode
         {
             public int HandsShown;
             public HandChoice Hand;
+            public int ArrivalsShown;
+            public HandArrivals Arrivals;
             public int TurnsShown;
             public float TurnRemaining;
             public int PassesShown;
@@ -72,6 +74,12 @@ namespace HypeDomino.Tests.EditMode
             {
                 HandsShown++;
                 Hand = hand;
+            }
+
+            public void ShowArrivals(HandArrivals arrivals)
+            {
+                ArrivalsShown++;
+                Arrivals = arrivals;
             }
 
             public void ShowTurn(TurnTimer timer)
@@ -285,6 +293,32 @@ namespace HypeDomino.Tests.EditMode
             Assert.Greater(screen.Board.Scale, 0f);
             Assert.AreEqual(1, hud.HandsShown);
             Assert.AreSame(screen.Hand, hud.Hand);
+        }
+
+        [Test]
+        public void ADealtHandReachesTheHudAsArrivalsAndARepeatedViewDoesNot()
+        {
+            var dealt = Playing(Seat.South);
+            dealt.Board = new BoardView();
+
+            Show(dealt);
+
+            Assert.AreEqual(1, hud.ArrivalsShown);
+            Assert.AreSame(screen.Arrivals, hud.Arrivals);
+            Assert.AreEqual(HandArrival.Deal, screen.Arrivals.Kind);
+            Assert.AreEqual(3, screen.Arrivals.ArrivedTiles.Length);
+
+            Show(dealt);
+
+            Assert.AreEqual(1, hud.ArrivalsShown);
+        }
+
+        [Test]
+        public void AJoinedHandInProgressShowsNoArrivals()
+        {
+            Show(Playing(Seat.South));
+
+            Assert.AreEqual(0, hud.ArrivalsShown);
         }
 
         [Test]

@@ -60,6 +60,10 @@ namespace HypeDomino.Tests.EditMode
             {
             }
 
+            public void ShowArrivals(HandArrivals arrivals)
+            {
+            }
+
             public void ShowTurn(TurnTimer timer)
             {
                 TurnsShown++;

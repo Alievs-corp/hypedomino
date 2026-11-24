@@ -6,6 +6,7 @@ using HypeDomino.Game.Match;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Cosmetics;
+using HypeDomino.UI.Emoji;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
@@ -24,11 +25,14 @@ namespace HypeDomino.Tests.PlayMode
         const ulong ServerNowMs = 1_000_000;
         const string FoxStatic = "cosmetic/avatar/fox/static";
         const string NeonStatic = "cosmetic/table/neon/static";
+        const string Laugh = "emoji.laugh";
+        const string LaughStatic = "cosmetic/emoji/laugh/static";
         const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
 {""id"":""common"",""ordinal"":1,""nameKey"":""rarity.common.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false}]}";
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
 {""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
-{""id"":""table.neon"",""type"":""table"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""}]}";
+{""id"":""table.neon"",""type"":""table"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""},
+{""id"":""emoji.laugh"",""type"":""emoji"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/laugh/static""}]}";
 
         sealed class ServerFrames : IFrameTransport
         {
@@ -53,6 +57,8 @@ namespace HypeDomino.Tests.PlayMode
         MatchLayoutView layout;
         MatchHudViewTests.HudParts hud;
         MatchSceneViews views;
+        SeatEmojiLayer emojiLayer;
+        AvatarView[] seatViews;
         TextAsset rarities;
         FakeArtSource<Sprite> stills;
         ServerFrames frames;
@@ -77,12 +83,17 @@ namespace HypeDomino.Tests.PlayMode
             {
                 seats[side] = NewChild<AvatarView>("Seat " + side);
                 seats[side].Configure(NewArt("Avatar", seats[side].transform), NewArt("Frame", seats[side].transform), null, null);
+                seats[side].transform.localPosition = new Vector3(100f * side, 50f, 0f);
             }
+            seatViews = seats;
             var loading = NewChild<LoadingScreenView>("Loading");
             loading.Configure(Array.Empty<LoadingCardView>(), NewImage("Total", loading.transform), NewTable(loading.transform));
             rarities = new TextAsset(Rarities);
             views = NewChild<MatchSceneViews>("Views");
-            views.Configure(layout, NewScorePanel(), tiles, seats, NewTable(root.transform), loading, hud.View, rarities, NewSprite(), NewSprite());
+            emojiLayer = NewChild<SeatEmojiLayer>("Emoji");
+            var popup = new GameObject("Popup", typeof(RectTransform), typeof(Image)).AddComponent<EmojiPopup>();
+            popup.transform.SetParent(root.transform, false);
+            views.Configure(layout, NewScorePanel(), tiles, seats, NewTable(root.transform), loading, hud.View, emojiLayer, popup, rarities, NewSprite(), NewSprite());
             stills = new FakeArtSource<Sprite>();
             frames = new ServerFrames();
             connection = new Connection(() => throw new InvalidOperationException(), () => new ClientHello(), () => 0d, new System.Random(1));
@@ -255,6 +266,67 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsFalse(host.Live);
             Assert.IsFalse(views.Ready);
+        }
+
+        static InventoryReply WornLaugh(int emojiSlots) => new() { loadout = new LoadoutReply { emojis = new[] { Laugh } }, emoji_slots = emojiSlots };
+
+        [Test]
+        public void TheEmojiWornBeforeAttachingArePrefetchedWhenTheMatchBegins()
+        {
+            views.Wear(WornLaugh(6));
+            Attach();
+
+            Receive(View(MatchState.Playing, Mode._2V2));
+
+            CollectionAssert.Contains(stills.Loads, LaughStatic);
+        }
+
+        [Test]
+        public void AnInventoryWithMoreSlotsArrivingAfterAttachReachesTheNextMatch()
+        {
+            Attach();
+            var before = views.Emoji;
+
+            views.Wear(WornLaugh(6));
+            Receive(View(MatchState.Playing, Mode._2V2));
+
+            Assert.AreNotSame(before, views.Emoji);
+            Assert.AreSame(views.Emoji, host.Root.Emoji);
+            CollectionAssert.Contains(stills.Loads, LaughStatic);
+        }
+
+        [Test]
+        public void NoInventoryLeavesTheWheelEmpty()
+        {
+            Attach();
+
+            Receive(View(MatchState.Playing, Mode._2V2));
+
+            CollectionAssert.DoesNotContain(stills.Loads, LaughStatic);
+        }
+
+        [Test]
+        public void AnEmojiShownAtASeatPopsOverThatSeat()
+        {
+            views.Wear(WornLaugh(6));
+            Attach();
+            Receive(View(MatchState.Playing, Mode._2V2));
+            stills.Finish(LaughStatic, NewSprite());
+
+            frames.Deliver(Envelope.PayloadOneofCase.EmojiShown, new EmojiShown { Seat = Seat.West, ItemId = Laugh });
+            connection.Session.Poll();
+
+            Assert.AreEqual(1, emojiLayer.LiveCount);
+            var shown = 0;
+            for (var side = 0; side < seatViews.Length; side++)
+            {
+                var popup = emojiLayer.LiveAt(side);
+                if (popup == null) continue;
+                shown++;
+                Assert.AreEqual(seatViews[side].transform.position, popup.transform.position);
+                Assert.IsNotNull(popup.Shown);
+            }
+            Assert.AreEqual(1, shown);
         }
     }
 }
