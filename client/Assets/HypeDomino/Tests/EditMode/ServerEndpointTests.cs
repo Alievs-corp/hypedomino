@@ -58,10 +58,41 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void ABuildTakesBothEndpointArgumentsOrNeither()
         {
-            Assert.IsNull(ReleaseBuild.ParseEndpoint(null, null));
-            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint("https://play.example.com", null));
-            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint(null, "7"));
-            Assert.AreEqual(7, ReleaseBuild.ParseEndpoint("https://play.example.com", "7").httpTimeoutSeconds);
+            Assert.IsNull(ReleaseBuild.ParseEndpoint(null, null, null));
+            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint("https://play.example.com", null, TlsPinsTests.BothPins));
+            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint(null, "7", TlsPinsTests.BothPins));
+            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint("https://play.example.com", "7", null));
+            Assert.AreEqual(7, ReleaseBuild.ParseEndpoint("https://play.example.com", "7", TlsPinsTests.BothPins).httpTimeoutSeconds);
+        }
+
+        [TestCase("https://play.example.com", "")]
+        [TestCase("https://play.example.com", TlsPinsTests.LivePin)]
+        [TestCase("http://play.example.com", TlsPinsTests.BothPins)]
+        public void AReleaseBuildNeedsHttpsAndALiveAndABackupPin(string serverUrl, string tlsPins)
+        {
+            Assert.Throws<ArgumentException>(() => ReleaseBuild.ParseEndpoint(serverUrl, "7", tlsPins));
+        }
+
+        [Test]
+        public void PinsSurviveTheBuildFile()
+        {
+            var built = ReleaseBuild.ParseEndpoint("https://play.example.com", "7", TlsPinsTests.BothPins);
+
+            var read = ServerEndpoint.FromJson(JsonUtility.ToJson(built));
+
+            Assert.IsFalse(read.Pins.IsOff);
+            Assert.IsTrue(read.MayConnect(false));
+        }
+
+        [Test]
+        public void OnlyADevelopmentBuildConnectsWithoutPins()
+        {
+            var unpinned = ServerEndpoint.Parse("https://play.example.com", "7");
+
+            Assert.IsTrue(unpinned.Pins.IsOff);
+            Assert.IsFalse(unpinned.MayConnect(false));
+            Assert.IsTrue(unpinned.MayConnect(true));
+            Assert.IsTrue(ServerEndpoint.Editor.MayConnect(true));
         }
 
         [TestCase(RuntimePlatform.Android, Platform.Android)]

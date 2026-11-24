@@ -50,6 +50,7 @@ namespace HypeDomino.Game
         static NetStart start;
         static SessionStartProof startProof;
         static Uri socket;
+        static TlsPins pins;
         static NetStartPhases phases;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -61,9 +62,15 @@ namespace HypeDomino.Game
                 Debug.LogWarning("Net no server endpoint");
                 return;
             }
+            if (!endpoint.MayConnect(Debug.isDebugBuild))
+            {
+                Debug.LogWarning("Net no TLS pins");
+                return;
+            }
+            pins = endpoint.Pins;
             socket = endpoint.SocketUri;
             phases = new NetStartPhases(StartupPhases.App);
-            var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds);
+            var http = new UnityHttpTransport(endpoint.serverUrl, endpoint.httpTimeoutSeconds, pins);
             var identity = new NoIdentityProvider();
             Auth = new AuthSession(http, identity, new MemorySecureStore());
             Api = new ApiClient(http, Auth);
@@ -97,7 +104,7 @@ namespace HypeDomino.Game
             var driver = new GameObject(nameof(NetBoot)) { hideFlags = HideFlags.HideInHierarchy };
             Object.DontDestroyOnLoad(driver);
             driver.AddComponent<Driver>();
-            Debug.Log($"Net server={endpoint.serverUrl} socket={socket}");
+            Debug.Log($"Net server={endpoint.serverUrl} socket={socket} pinned={!pins.IsOff}");
             StartupPhases.App.Mark(nameof(NetBoot));
             AnalyticsBoot.Follow(Auth, Queue, session);
             start.Begin();
@@ -174,7 +181,7 @@ namespace HypeDomino.Game
             Connection.Start(socket);
         }
 
-        static ISocketTransport OpenSocket() => phases.Dialing(new WebSocketTransport());
+        static ISocketTransport OpenSocket() => phases.Dialing(new WebSocketTransport(pins));
 
         static void OnError(Error error)
         {
