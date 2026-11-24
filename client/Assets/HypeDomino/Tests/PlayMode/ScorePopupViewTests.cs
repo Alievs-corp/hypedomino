@@ -97,10 +97,11 @@ namespace HypeDomino.Tests.PlayMode
         {
             for (var at = 0; at < texts.Length; at++)
             {
-                view.Show(25, 5, Vector3.one, at);
+                view.Show(25, 5 + at % 2, Vector3.one, at);
                 view.Tick(TokenDurationMs.Fast + at);
             }
             view.Tick(TokenEffect.ScorePopupDurationMs * 2f);
+            Canvas.ForceUpdateCanvases();
 
             Assert.That(() =>
             {
