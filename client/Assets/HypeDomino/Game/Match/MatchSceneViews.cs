@@ -3,6 +3,7 @@ using HypeDomino.Content;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Cosmetics;
+using HypeDomino.UI.Effects;
 using HypeDomino.UI.Emoji;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
@@ -28,10 +29,12 @@ namespace HypeDomino.Game.Match
         [SerializeField] TextAsset rarities;
         [SerializeField] Sprite builtInAvatar;
         [SerializeField] Sprite builtInFrame;
+        [SerializeField] ScorePopupView scorePopups;
 
         MatchHost host;
         CosmeticStage stage;
         CosmeticEffectsLink effects;
+        EffectSettingsLink popupSettings;
         MatchTable matchTable;
         LoadingScreen loading;
 
@@ -42,7 +45,7 @@ namespace HypeDomino.Game.Match
         public MatchEmoji Emoji { get; private set; }
 
         public void Configure(MatchLayoutView layoutView, ScorePanelView scorePanel, BoardTilesView boardTiles, AvatarView[] seatAvatars, TableView tableView,
-            LoadingScreenView loadingView, MatchHudView hudView, TextAsset rarityTable, Sprite avatar, Sprite frame)
+            LoadingScreenView loadingView, MatchHudView hudView, TextAsset rarityTable, Sprite avatar, Sprite frame, ScorePopupView popups = null)
         {
             Detach();
             layout = layoutView;
@@ -55,6 +58,7 @@ namespace HypeDomino.Game.Match
             rarities = rarityTable;
             builtInAvatar = avatar;
             builtInFrame = frame;
+            scorePopups = popups;
         }
 
         public void Attach(MatchHost matchHost, Connection connection, ActiveCosmeticManifest manifest, GameStrings strings,
@@ -67,6 +71,7 @@ namespace HypeDomino.Game.Match
             loading = new LoadingScreen(loadingScreen, stage, manifest, strings);
             Emoji = new MatchEmoji(new EmojiWheel(NoEmojiSlots), new SeatMessages(), strings, new EmojiArtShelf(manifest.Current, stage, ShowEmoji), ClockMs);
             effects = new CosmeticEffectsLink(stage, graphics, motion, RefreshEffects);
+            popupSettings = scorePopups != null ? new EffectSettingsLink(graphics, motion, scorePopups) : null;
             host = matchHost;
             hud.Bind(host, connection, strings);
             host.Attach(this);
@@ -78,6 +83,7 @@ namespace HypeDomino.Game.Match
             host.Detach(this);
             hud.Unbind();
             effects.Dispose();
+            popupSettings?.Dispose();
             host = null;
         }
 
