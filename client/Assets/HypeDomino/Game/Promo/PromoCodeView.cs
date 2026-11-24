@@ -37,6 +37,11 @@ namespace HypeDomino.Game.Promo
             Show();
         }
 
+        void Start()
+        {
+            if (entry == null && NetBoot.Api != null) Bind(new PromoCodeEntry(new PromoRedeemer(NetBoot.Api)), LanguageBoot.Strings);
+        }
+
         void OnDestroy() => Unbind();
 
         void Unbind()
