@@ -22,6 +22,7 @@ namespace HypeDomino.Editor
         public const string SigningArgument = "-androidSigning";
         public const string ServerUrlArgument = "-serverUrl";
         public const string HttpTimeoutArgument = "-httpTimeoutSeconds";
+        public const string TlsPinsArgument = "-tlsPins";
         public const string CrashReportingArgument = "-crashReporting";
         public const string EndpointFolder = "Assets/HypeDomino/Net/Resources";
         public const string AndroidRemoteFolder = "ServerData/Android";
@@ -79,7 +80,7 @@ namespace HypeDomino.Editor
                 if (report.summary.result != BuildResult.Succeeded) throw new BuildFailedException($"Android release build {report.summary.result}");
                 var catalog = Path.Combine(AndroidRemoteFolder, ContentUrls.CatalogFile(catalogVersion));
                 if (!File.Exists(catalog)) throw new BuildFailedException($"{catalog} was not built");
-                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore} server={release.Endpoint?.serverUrl ?? "none"} crashReports={release.CrashReporting != null}");
+                Debug.Log($"ReleaseBuild version={PlayerSettings.bundleVersion} versionCode={PlayerSettings.Android.bundleVersionCode} catalog={catalogVersion} signed={PlayerSettings.Android.useCustomKeystore} server={release.Endpoint?.serverUrl ?? "none"} pins={release.Endpoint?.tlsPins?.Length ?? 0} crashReports={release.CrashReporting != null}");
             }
             finally
             {
@@ -120,18 +121,21 @@ namespace HypeDomino.Editor
             return signing;
         }
 
-        public static ServerEndpoint ParseEndpoint(string serverUrl, string httpTimeoutSeconds)
+        public static ServerEndpoint ParseEndpoint(string serverUrl, string httpTimeoutSeconds, string tlsPins)
         {
-            if (serverUrl == null && httpTimeoutSeconds == null) return null;
-            if (serverUrl == null || httpTimeoutSeconds == null) throw new ArgumentException($"{ServerUrlArgument} and {HttpTimeoutArgument} are given together or not at all");
-            return ServerEndpoint.Parse(serverUrl, httpTimeoutSeconds);
+            if (serverUrl == null && httpTimeoutSeconds == null && tlsPins == null) return null;
+            if (serverUrl == null || httpTimeoutSeconds == null || tlsPins == null) throw new ArgumentException($"{ServerUrlArgument}, {HttpTimeoutArgument} and {TlsPinsArgument} are given together or not at all");
+            var endpoint = ServerEndpoint.Parse(serverUrl, httpTimeoutSeconds);
+            endpoint.tlsPins = TlsPins.Split(tlsPins);
+            if (!endpoint.MayConnect(false)) throw new ArgumentException($"a release build needs an https {ServerUrlArgument} and {TlsPinsArgument} with at least {TlsPins.MinPins} pins");
+            return endpoint;
         }
 
         static AndroidRelease ReleaseFromArguments()
         {
             var signingFile = Argument(SigningArgument);
             var release = ParseRelease(Argument(AppVersionArgument), Argument(BuildNumberArgument), Argument(ApplicationIdArgument), signingFile == null ? null : File.ReadAllText(signingFile));
-            release.Endpoint = ParseEndpoint(Argument(ServerUrlArgument), Argument(HttpTimeoutArgument));
+            release.Endpoint = ParseEndpoint(Argument(ServerUrlArgument), Argument(HttpTimeoutArgument), Argument(TlsPinsArgument));
             var crashReportingFile = Argument(CrashReportingArgument);
             release.CrashReporting = crashReportingFile == null ? null : ParseCrashReporting(File.ReadAllText(crashReportingFile));
             return release;

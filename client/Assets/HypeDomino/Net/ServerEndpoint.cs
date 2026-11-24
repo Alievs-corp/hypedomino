@@ -14,10 +14,16 @@ namespace HypeDomino.Net
 
         public string serverUrl;
         public int httpTimeoutSeconds;
+        public string[] tlsPins;
 
         public static ServerEndpoint Editor => new() { serverUrl = EditorServerUrl, httpTimeoutSeconds = NoTimeout };
 
         public Uri SocketUri => SocketUriOf(serverUrl);
+
+        public TlsPins Pins => TlsPins.Parse(tlsPins);
+
+        public bool MayConnect(bool developmentBuild) =>
+            developmentBuild || (new Uri(serverUrl).Scheme == Uri.UriSchemeHttps && !Pins.IsOff);
 
         public static ServerEndpoint Load(bool isEditor)
         {
@@ -29,7 +35,10 @@ namespace HypeDomino.Net
         public static ServerEndpoint FromJson(string json)
         {
             var read = JsonUtility.FromJson<ServerEndpoint>(json) ?? throw new ArgumentException("the server endpoint is empty");
-            return Parse(read.serverUrl, read.httpTimeoutSeconds.ToString(CultureInfo.InvariantCulture));
+            var endpoint = Parse(read.serverUrl, read.httpTimeoutSeconds.ToString(CultureInfo.InvariantCulture));
+            TlsPins.Parse(read.tlsPins);
+            endpoint.tlsPins = read.tlsPins;
+            return endpoint;
         }
 
         public static ServerEndpoint Parse(string serverUrl, string httpTimeoutSeconds)

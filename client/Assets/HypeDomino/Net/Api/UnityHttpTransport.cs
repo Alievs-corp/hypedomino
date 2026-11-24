@@ -9,11 +9,13 @@ namespace HypeDomino.Net.Api
     {
         readonly string baseUrl;
         readonly int timeoutSeconds;
+        readonly TlsPins pins;
 
-        public UnityHttpTransport(string baseUrl, int timeoutSeconds)
+        public UnityHttpTransport(string baseUrl, int timeoutSeconds, TlsPins pins)
         {
             this.baseUrl = baseUrl;
             this.timeoutSeconds = timeoutSeconds;
+            this.pins = pins;
         }
 
         public void Post(string path, string json, Action<HttpReply> done) => Send("POST", path, json, null, null, null, done);
@@ -25,6 +27,7 @@ namespace HypeDomino.Net.Api
         {
             var plan = HttpExchange.Plan(baseUrl, method, pathAndQuery, body, authorization, mac, headers);
             var request = new UnityWebRequest(plan.Url, plan.Method, new DownloadHandlerBuffer(), null) { timeout = timeoutSeconds };
+            if (!pins.IsOff) request.certificateHandler = new PinnedCertificateHandler(pins);
             if (plan.Body != null) request.uploadHandler = new UploadHandlerRaw(plan.Body);
             foreach (var header in plan.Headers) request.SetRequestHeader(header.Name, header.Value);
             request.SendWebRequest().completed += _ =>
