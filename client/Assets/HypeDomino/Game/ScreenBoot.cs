@@ -18,7 +18,7 @@ namespace HypeDomino.Game
             var motion = MotionBoot.Motion;
             stack.ReduceMotion = motion.ReduceMotion;
             motion.Changed += () => stack.ReduceMotion = motion.ReduceMotion;
-            Host = new ScreenHost(stack);
+            Host = new ScreenHost(stack, LanguageBoot.Strings);
             Host.Follow(AppBoot.Flow.State);
             AppBoot.Flow.Changed += Host.Follow;
         }
