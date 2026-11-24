@@ -101,11 +101,11 @@ namespace HypeDomino.Game.Shop
             var section = SelectedSection;
             var sectionSeconds = 0d;
             var sectionHas = section != null && section.TrySecondsLeft(clock, nowSeconds, out sectionSeconds) && sectionSeconds > 0;
-            ShowTimeLeft(sectionTimeLeft, sectionHas, sectionSeconds, ref shownSectionSecond);
+            ShowTimeLeft(sectionTimeLeft, sectionHas, sectionSeconds, ref shownSectionSecond, strings, durationArgs);
             var offer = checkout.Step == ShopCheckoutStep.Closed ? null : checkout.Offer;
             var offerSeconds = 0d;
             var offerHas = offer != null && offer.TrySecondsLeft(clock, nowSeconds, out offerSeconds) && offerSeconds > 0;
-            ShowTimeLeft(previewTimeLeft, offerHas, offerSeconds, ref shownPreviewSecond);
+            ShowTimeLeft(previewTimeLeft, offerHas, offerSeconds, ref shownPreviewSecond, strings, durationArgs);
         }
 
         void IRowBinder.Bind(RectTransform row, int index) => row.GetComponent<ShopOfferRow>().Show(SelectedSection.Offers[index], strings, openOffer);
@@ -272,7 +272,7 @@ namespace HypeDomino.Game.Shop
             _ => loadMessageKey,
         };
 
-        void ShowTimeLeft(TMP_Text text, bool has, double secondsLeft, ref long shown)
+        public static void ShowTimeLeft(TMP_Text text, bool has, double secondsLeft, ref long shown, GameStrings strings, Dictionary<string, object> durationArgs)
         {
             if (text.enabled != has) text.enabled = has;
             if (!has)
