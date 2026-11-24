@@ -44,6 +44,7 @@ namespace HypeDomino.Game.FriendLobby
         public InvitePanel Invites { get; }
         public EmojiWheel Wheel { get; private set; }
         public LobbyEmoji Emoji { get; private set; }
+        public InventoryReply Worn { get; private set; }
 
         public event Action<MemberEmoji> EmojiShown;
         public event Action<InventoryLoadResult> InventoryLoaded;
@@ -74,6 +75,7 @@ namespace HypeDomino.Game.FriendLobby
         public void Wear(InventoryReply worn)
         {
             if (worn == null) return;
+            Worn = worn;
             if (Wheel == null || worn.emoji_slots > wheelSlots) Build(worn.emoji_slots);
             Emoji.Wear(worn);
             if (lastState != null) Emoji.Enter(lastState);

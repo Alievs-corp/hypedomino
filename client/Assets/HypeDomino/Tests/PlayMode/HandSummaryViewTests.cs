@@ -198,7 +198,7 @@ namespace HypeDomino.Tests.PlayMode
             var host = new MatchHost(new AppFlow(), connection, new ActiveCosmeticManifest(manifest));
             var strings = new GameStrings(BuiltinStrings.Load(), LanguageChoice.Load(GameLanguage.English, () => Array.Empty<string>()), false);
             hud.View.Configure(hud.Faces, hud.Tiles, hud.Marks, hud.Draw, hud.Pass, hud.EndTurn, hud.Ring, hud.Network, hud.Afk, hud.TakeBack, hud.TakeBackText,
-                hud.Badges, hud.PassLabels, view);
+                hud.Badges, hud.PassLabels, hud.DealOrigin, hud.DrawOrigin, view);
             hud.View.Bind(host, connection, strings);
             Assert.IsFalse(view.gameObject.activeSelf);
 
