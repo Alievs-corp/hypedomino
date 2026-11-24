@@ -23,6 +23,7 @@ namespace HypeDomino.Net
         readonly SemaphoreSlim freeReceiveSlots = new(ReceiveSlots, ReceiveSlots);
         readonly SemaphoreSlim queuedSends = new(0, SendSlots);
         readonly CancellationTokenSource stop = new();
+        readonly TlsPins pins;
         ClientWebSocket socket;
         bool holdingReceived;
         int state;
@@ -32,11 +33,18 @@ namespace HypeDomino.Net
         public WebSocketCloseStatus CloseStatus { get; private set; }
         public string CloseDescription { get; private set; } = string.Empty;
 
+        public WebSocketTransport() : this(TlsPins.Off)
+        {
+        }
+
+        public WebSocketTransport(TlsPins pins) => this.pins = pins;
+
         public void Connect(Uri uri)
         {
             if (Interlocked.CompareExchange(ref state, (int)TransportState.Connecting, (int)TransportState.Idle) != (int)TransportState.Idle)
                 throw new InvalidOperationException("a transport connects once");
             socket = new ClientWebSocket();
+            if (!pins.IsOff) socket.Options.RemoteCertificateValidationCallback = (_, certificate, _, _) => pins.Allows(certificate?.GetRawCertData());
             StartThread(() => ReceiveLoop(uri), "HypeDomino.Net.Receive");
         }
 

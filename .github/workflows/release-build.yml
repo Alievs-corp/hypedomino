@@ -43,6 +43,7 @@ jobs:
           APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
           SERVER_URL: ${{ vars.CLIENT_SERVER_URL }}
           HTTP_TIMEOUT_SECONDS: ${{ vars.CLIENT_HTTP_TIMEOUT_SECONDS }}
+          TLS_PINS: ${{ vars.CLIENT_TLS_PINS }}
           CRASH_REPORTING: ${{ secrets.CLIENT_SENTRY_DSN != '' }}
         run: |
           parameters="-buildNumber $BUILD_NUMBER"
@@ -52,8 +53,9 @@ jobs:
             [[ "$APPLICATION_ID" =~ ^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$ ]] || { echo "set the repository variable ANDROID_APPLICATION_ID to the Play package name"; exit 1; }
             [[ "$SERVER_URL" =~ ^https://[^[:space:]?#]+$ ]] || { echo "set the repository variable CLIENT_SERVER_URL to the https server URL"; exit 1; }
             [[ "$HTTP_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || { echo "set the repository variable CLIENT_HTTP_TIMEOUT_SECONDS to the HTTP timeout in whole seconds"; exit 1; }
+            [[ "$TLS_PINS" =~ ^[A-Za-z0-9+/]{43}=(,[A-Za-z0-9+/]{43}=)+$ ]] || { echo "set the repository variable CLIENT_TLS_PINS to the live and backup SPKI SHA-256 pins, base64, comma separated (docs/environments.md 2.5)"; exit 1; }
             catalog="$version-$BUILD_NUMBER"
-            parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json -serverUrl $SERVER_URL -httpTimeoutSeconds $HTTP_TIMEOUT_SECONDS"
+            parameters="$parameters -appVersion $version -applicationId $APPLICATION_ID -androidSigning Signing/signing.json -serverUrl $SERVER_URL -httpTimeoutSeconds $HTTP_TIMEOUT_SECONDS -tlsPins $TLS_PINS"
             if [ "$CRASH_REPORTING" = true ]; then
               parameters="$parameters -crashReporting Signing/crash-reporting.json"
               echo "crash_reporting=true" >> "$GITHUB_OUTPUT"
