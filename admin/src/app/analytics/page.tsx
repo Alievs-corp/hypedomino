@@ -3,10 +3,12 @@ import { canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
 import {
   alertLabels,
+  barPercent,
   comparedVersion,
+  mixReasons,
   monitorsCsv,
   monitorsCsvFileName,
-  sourceReasons,
+  type Mix,
   type EconomyComparison,
   type EconomyReport,
   type WindowReport,
@@ -61,6 +63,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </p>
       )}
       <Monitors t={t} columns={columns} />
+      <MixChart t={t} columns={columns} mix="sourceMix" title={t("analytics.source_mix")} empty={t("analytics.no_sources")} barClass="bg-primary" />
+      <MixChart t={t} columns={columns} mix="sinkMix" title={t("analytics.sink_mix")} empty={t("analytics.no_sinks")} barClass="bg-text-muted" />
       <a
         href={`data:text/csv;charset=utf-8,${encodeURIComponent(monitorsCsv(columns))}`}
         download={monitorsCsvFileName(now.body, exportedVersion)}
@@ -95,7 +99,6 @@ function Monitors({ t, columns }: { t: Translate; columns: Column[] }) {
     [t("analytics.day"), (report) => t.when(report.day)],
     [t("analytics.accounts_over_daily_earn"), (report) => t.number(report.accountsOverDailyEarn)],
   ];
-  const reasons = sourceReasons(columns.map((column) => column.report));
   return (
     <table className="w-full text-left text-sm">
       <thead className="text-text-muted">
@@ -119,30 +122,39 @@ function Monitors({ t, columns }: { t: Translate; columns: Column[] }) {
             ))}
           </tr>
         ))}
-        <tr>
-          <td colSpan={columns.length + 1} className="pt-4 pb-1 font-semibold">
-            {t("analytics.source_mix")}
-          </td>
-        </tr>
-        {reasons.length === 0 && (
-          <tr>
-            <td colSpan={columns.length + 1} className="py-1 text-text-secondary">
-              {t("analytics.no_sources")}
-            </td>
-          </tr>
-        )}
-        {reasons.map((reason) => (
-          <tr key={reason}>
-            <td className="py-1 font-mono">{reason}</td>
-            {columns.map((column) => (
-              <td key={column.label} className="py-1">
-                {t.number(column.report.sourceMix[reason] ?? 0)}
-              </td>
-            ))}
-          </tr>
-        ))}
       </tbody>
     </table>
+  );
+}
+
+function MixChart({ t, columns, mix, title, empty, barClass }: { t: Translate; columns: Column[]; mix: Mix; title: string; empty: string; barClass: string }) {
+  const reasons = mixReasons(
+    columns.map((column) => column.report),
+    mix,
+  );
+  const max = Math.max(0, ...columns.flatMap((column) => Object.values(column.report[mix])));
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-semibold">{title}</h2>
+      {reasons.length === 0 && <p className="text-sm text-text-secondary">{empty}</p>}
+      {reasons.map((reason) => (
+        <div key={reason} className="flex flex-col gap-1 text-sm">
+          <span className="font-mono">{reason}</span>
+          {columns.map((column) => {
+            const coins = column.report[mix][reason] ?? 0;
+            return (
+              <div key={column.label} className="flex items-center gap-3">
+                {columns.length > 1 && <span className="w-28 shrink-0 text-text-muted">{column.label}</span>}
+                <div className="h-3 flex-1 rounded-sm bg-surface">
+                  <div className={`h-full rounded-sm ${barClass}`} style={{ width: `${barPercent(coins, max)}%` }} />
+                </div>
+                <span className="w-20 shrink-0 text-right tabular-nums">{t.number(coins)}</span>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </section>
   );
 }
 
