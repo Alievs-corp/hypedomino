@@ -67,6 +67,7 @@ namespace HypeDomino.Tests.EditMode
             public TableSide HiddenSide;
             public int NoticesShown;
             public MatchNotices Notices;
+            public int SummariesShown;
 
             public void ShowHand(HandChoice hand)
             {
@@ -97,6 +98,11 @@ namespace HypeDomino.Tests.EditMode
             {
                 NoticesShown++;
                 Notices = notices;
+            }
+
+            public void ShowSummary(HandSummary summary)
+            {
+                SummariesShown++;
             }
         }
 
@@ -545,6 +551,23 @@ namespace HypeDomino.Tests.EditMode
             Show(Playing(Seat.South));
             Assert.AreEqual(2, hud.NoticesShown);
             Assert.AreEqual(SeatNotice.None, screen.Notices.Seats.At(TableSide.Top));
+        }
+
+        [Test]
+        public void AHandEndReachesTheHudSummaryOnce()
+        {
+            var ended = Playing(Seat.South);
+            ended.HandsPlayed = 1;
+            ended.LastResult = new HandResult { Ending = HandEnding.Domino, Winner = Team.A };
+            ended.LastResult.Left.Add(new SeatTiles { Seat = Seat.East, Tiles = { T(2, 4) } });
+
+            Show(Playing(Seat.South));
+            Assert.AreEqual(0, hud.SummariesShown);
+
+            Show(ended);
+            Show(ended);
+            Assert.AreEqual(1, hud.SummariesShown);
+            Assert.AreEqual(HandEnding.Domino, screen.Summary.Ending);
         }
 
         [Test]

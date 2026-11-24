@@ -16,6 +16,8 @@ namespace HypeDomino.Game.Match
         public int HandVersion { get; private set; }
         public int NoticesVersion { get; private set; }
         public int PassVersion { get; private set; }
+        public HandSummary Summary { get; private set; }
+        public int SummaryVersion { get; private set; }
 
         public void ShowHand(HandChoice hand)
         {
@@ -44,6 +46,12 @@ namespace HypeDomino.Game.Match
             NoticesVersion++;
         }
 
+        public void ShowSummary(HandSummary summary)
+        {
+            Summary = summary;
+            SummaryVersion++;
+        }
+
         public bool TryGetPass(TableSide side, out PassNotice notice)
         {
             notice = passes[(int)side];
@@ -55,10 +63,12 @@ namespace HypeDomino.Game.Match
             Hand = null;
             Timer = null;
             Notices = null;
+            Summary = null;
             Array.Clear(passShown, 0, passShown.Length);
             HandVersion++;
             NoticesVersion++;
             PassVersion++;
+            SummaryVersion++;
         }
     }
 }
