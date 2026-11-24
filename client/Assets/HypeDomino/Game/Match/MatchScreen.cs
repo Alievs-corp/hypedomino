@@ -26,6 +26,7 @@ namespace HypeDomino.Game.Match
         void ShowPass(TableSide side, PassNotice notice);
         void HidePass(TableSide side);
         void ShowNotices(MatchNotices notices);
+        void ShowSummary(HandSummary summary);
     }
 
     public sealed class MatchScreen
@@ -63,6 +64,7 @@ namespace HypeDomino.Game.Match
         public HandArrivals Arrivals { get; } = new();
         public TurnTimer Timer { get; } = new();
         public MatchNotices Notices { get; } = new();
+        public HandSummary Summary { get; } = new();
         public ChainLayout Board => board.Layout;
         bool CanSend => connection != null && connection.Session.Accepted;
 
@@ -100,6 +102,7 @@ namespace HypeDomino.Game.Match
             hud.ShowHand(Hand);
             if (Arrivals.Read(view) != HandArrival.None) hud.ShowArrivals(Arrivals);
             if (Notices.Read(view)) hud.ShowNotices(Notices);
+            if (Summary.Read(view)) hud.ShowSummary(Summary);
             if (passed && TrySideOf(view, passer, out var side)) StartPass(side);
         }
 

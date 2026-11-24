@@ -63,6 +63,18 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void ACueCarriesThePointsTheServerAddedPerTeam()
+        {
+            Read(View(40, 100));
+
+            var cue = Read(HandEnd(HandEnding.Block, Team.A, 65, 100, 1));
+
+            Assert.AreEqual(25u, cue.PointsA);
+            Assert.AreEqual(0u, cue.PointsB);
+            Assert.AreEqual(5, cue.StepA);
+        }
+
+        [Test]
         public void ALaterPlacementOfAChainIsBoosted()
         {
             Read(View(0, 0));

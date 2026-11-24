@@ -31,11 +31,13 @@ namespace HypeDomino.Game.Match
         [SerializeField] TextAsset rarities;
         [SerializeField] Sprite builtInAvatar;
         [SerializeField] Sprite builtInFrame;
+        [SerializeField] ScorePopupView scorePopups;
 
         MatchHost host;
         CosmeticStage stage;
         CosmeticEffectsLink effects;
         EffectSettingsLink settings;
+        EffectSettingsLink popupSettings;
         MatchTable matchTable;
         LoadingScreen loading;
         ActiveCosmeticManifest cosmetics;
@@ -52,7 +54,8 @@ namespace HypeDomino.Game.Match
         public MatchEmoji Emoji { get; private set; }
 
         public void Configure(MatchLayoutView layoutView, ScorePanelView scorePanel, BoardTilesView boardTiles, AvatarView[] seatAvatars, TableView tableView,
-            LoadingScreenView loadingView, MatchHudView hudView, SeatEmojiLayer seatEmoji, EmojiPopup popup, TextAsset rarityTable, Sprite avatar, Sprite frame)
+            LoadingScreenView loadingView, MatchHudView hudView, SeatEmojiLayer seatEmoji, EmojiPopup popup, TextAsset rarityTable, Sprite avatar, Sprite frame,
+            ScorePopupView popups = null)
         {
             Detach();
             layout = layoutView;
@@ -67,6 +70,7 @@ namespace HypeDomino.Game.Match
             rarities = rarityTable;
             builtInAvatar = avatar;
             builtInFrame = frame;
+            scorePopups = popups;
         }
 
         public void Attach(MatchHost matchHost, Connection connection, ActiveCosmeticManifest manifest, GameStrings strings,
@@ -83,6 +87,7 @@ namespace HypeDomino.Game.Match
             BuildEmoji();
             effects = new CosmeticEffectsLink(stage, graphics, motion, RefreshEffects);
             settings = new EffectSettingsLink(graphics, motion, hud, emojiLayer);
+            popupSettings = scorePopups != null ? new EffectSettingsLink(graphics, motion, scorePopups) : null;
             host = matchHost;
             hud.Bind(host, connection, strings);
             host.Attach(this);
@@ -95,6 +100,7 @@ namespace HypeDomino.Game.Match
             hud.Unbind();
             effects.Dispose();
             settings.Dispose();
+            popupSettings?.Dispose();
             host = null;
         }
 

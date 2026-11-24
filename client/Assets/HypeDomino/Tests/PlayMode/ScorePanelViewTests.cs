@@ -26,6 +26,7 @@ namespace HypeDomino.Tests.PlayMode
             public Image Gem;
             public Image Meter;
             public GameObject Badge;
+            public RectTransform Mark;
             public TeamScoreView View;
         }
 
@@ -51,10 +52,13 @@ namespace HypeDomino.Tests.PlayMode
             view.transform.SetParent(root.transform, false);
             var meter = NewImage("Meter", view.transform);
             meter.type = Image.Type.Filled;
+            meter.fillMethod = Image.FillMethod.Horizontal;
+            var mark = new GameObject("Lock mark", typeof(RectTransform)).GetComponent<RectTransform>();
+            mark.SetParent(meter.transform, false);
             var badge = new GameObject("Lock", typeof(RectTransform));
             badge.transform.SetParent(view.transform, false);
-            var parts = new TeamParts { Score = NewText("Score", view.transform), Gem = NewImage("Gem", view.transform), Meter = meter, Badge = badge, View = view };
-            view.Configure(parts.Score, parts.Gem, parts.Meter, parts.Badge);
+            var parts = new TeamParts { Score = NewText("Score", view.transform), Gem = NewImage("Gem", view.transform), Meter = meter, Badge = badge, Mark = mark, View = view };
+            view.Configure(parts.Score, parts.Gem, parts.Meter, parts.Badge, parts.Mark);
             return parts;
         }
 
@@ -126,6 +130,42 @@ namespace HypeDomino.Tests.PlayMode
 
             Show(Snapshot(Seat.North, 305, 0, 365));
             Assert.IsFalse(mine.Badge.activeSelf);
+        }
+
+        [Test]
+        public void TheLockMarkSitsAtTheServerThresholdAlongTheMeterFill()
+        {
+            Show(Snapshot(Seat.South, 50, 20, 365));
+
+            Assert.IsTrue(mine.Mark.gameObject.activeSelf);
+            Assert.AreEqual(300f / 365, mine.Mark.anchorMin.x, 1e-6f);
+            Assert.AreEqual(300f / 365, mine.Mark.anchorMax.x, 1e-6f);
+            Assert.AreEqual(0f, mine.Mark.anchorMin.y);
+            Assert.AreEqual(1f, mine.Mark.anchorMax.y);
+            Assert.AreEqual(300f / 365, theirs.Mark.anchorMin.x, 1e-6f);
+        }
+
+        [Test]
+        public void TheLockMarkFollowsAVerticalMeterFromTheTop()
+        {
+            mine.Meter.fillMethod = Image.FillMethod.Vertical;
+            mine.Meter.fillOrigin = (int)Image.OriginVertical.Top;
+
+            Show(Snapshot(Seat.South, 50, 20, 365));
+
+            Assert.AreEqual(1f - 300f / 365, mine.Mark.anchorMin.y, 1e-6f);
+            Assert.AreEqual(0f, mine.Mark.anchorMin.x);
+            Assert.AreEqual(1f, mine.Mark.anchorMax.x);
+        }
+
+        [Test]
+        public void AMissingTargetHidesTheLockMark()
+        {
+            Show(Snapshot(Seat.South, 50, 20, 365));
+            Show(Snapshot(Seat.South, 50, 20, 0));
+
+            Assert.IsFalse(mine.Mark.gameObject.activeSelf);
+            Assert.IsFalse(theirs.Mark.gameObject.activeSelf);
         }
 
         [Test]

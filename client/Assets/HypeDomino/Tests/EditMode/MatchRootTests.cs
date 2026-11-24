@@ -81,6 +81,10 @@ namespace HypeDomino.Tests.EditMode
             public void ShowNotices(MatchNotices notices)
             {
             }
+
+            public void ShowSummary(HandSummary summary)
+            {
+            }
         }
 
         sealed class LoadingCardsScreen : ILoadingScreen

@@ -1,3 +1,4 @@
+using System;
 using HypeDomino.Net;
 using HypeDomino.UI.Board;
 using HypeDomino.UI.Effects;
@@ -12,14 +13,18 @@ namespace HypeDomino.Game.Match
     {
         public readonly int StepA;
         public readonly int StepB;
+        public readonly uint PointsA;
+        public readonly uint PointsB;
         public readonly HandEnding HandEnding;
         public readonly Team HandWinner;
         public readonly Team MatchWinner;
 
-        public EffectCue(int stepA, int stepB, HandEnding handEnding, Team handWinner, Team matchWinner)
+        public EffectCue(int stepA, int stepB, uint pointsA, uint pointsB, HandEnding handEnding, Team handWinner, Team matchWinner)
         {
             StepA = stepA;
             StepB = stepB;
+            PointsA = pointsA;
+            PointsB = pointsB;
             HandEnding = handEnding;
             HandWinner = handWinner;
             MatchWinner = matchWinner;
@@ -58,8 +63,12 @@ namespace HypeDomino.Game.Match
             var handWinner = handEnded ? view.LastResult.Winner : Team.Unspecified;
             var matchWinner = view.State == MatchState.Finished && state != MatchState.Finished ? view.Winner : Team.Unspecified;
             var placements = (int)view.TurnPlacements;
-            return new EffectCue(StepOf(view.Scores.TeamA, scoreA, handEnded, placements), StepOf(view.Scores.TeamB, scoreB, handEnded, placements), ending, handWinner, matchWinner);
+            var scores = view.Scores;
+            return new EffectCue(StepOf(scores.TeamA, scoreA, handEnded, placements), StepOf(scores.TeamB, scoreB, handEnded, placements),
+                GainOf(scores.TeamA, scoreA), GainOf(scores.TeamB, scoreB), ending, handWinner, matchWinner);
         }
+
+        static uint GainOf(uint score, uint before) => score > before ? score - before : 0;
 
         public static int StepOf(uint score, uint before, bool handEnded, int placements)
         {
@@ -77,10 +86,12 @@ namespace HypeDomino.Game.Match
         readonly RectTransform banner;
         readonly RectTransform meterA;
         readonly RectTransform meterB;
+        readonly ScorePopupView popups;
         readonly EffectCues cues = new();
 
-        public MatchEffects(EffectPlayer player, TilePlaceLayer tiles, RectTransform board, RectTransform banner, RectTransform meterA, RectTransform meterB)
+        public MatchEffects(EffectPlayer player, TilePlaceLayer tiles, RectTransform board, RectTransform banner, RectTransform meterA, RectTransform meterB, ScorePopupView popups)
         {
+            this.popups = popups ? popups : throw new ArgumentNullException(nameof(popups));
             this.player = player;
             this.tiles = tiles;
             this.board = board;
@@ -115,13 +126,13 @@ namespace HypeDomino.Game.Match
                 presentedMs += TokenEffect.BlockDurationMs;
             }
             var pointsMs = cue.HandEnded ? settledMs + TokenDurationMs.Emphasis : settledMs;
-            PlayPoints(Team.A, cue.StepA, cue.HandEnded, lastTile, pointsMs);
-            PlayPoints(Team.B, cue.StepB, cue.HandEnded, lastTile, pointsMs);
+            PlayPoints(Team.A, cue.StepA, cue.PointsA, cue.HandEnded, lastTile, pointsMs);
+            PlayPoints(Team.B, cue.StepB, cue.PointsB, cue.HandEnded, lastTile, pointsMs);
             if (cue.MatchWinner == Team.Unspecified) return;
             player.Play(EffectRequest.On(TokenEffectKind.MatchWin, banner, presentedMs).ForTeam(ScorePanel.ColourOf(cue.MatchWinner)));
         }
 
-        void PlayPoints(Team team, int step, bool handEnded, RectTransform lastTile, float startMs)
+        void PlayPoints(Team team, int step, uint points, bool handEnded, RectTransform lastTile, float startMs)
         {
             if (step == 0) return;
             var meter = team == Team.A ? meterA : meterB;
@@ -129,6 +140,7 @@ namespace HypeDomino.Game.Match
                 ? EffectRequest.On(TokenEffectKind.ScoreCascade, meter, startMs)
                 : EffectRequest.On(TokenEffectKind.ScoreCascade, lastTile, startMs).TrailTo(meter.position);
             player.Play(request.AtStep(step));
+            popups.Show(points, step, request.At, startMs);
         }
     }
 }
