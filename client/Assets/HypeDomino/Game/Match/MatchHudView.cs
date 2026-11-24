@@ -29,6 +29,7 @@ namespace HypeDomino.Game.Match
         [SerializeField] TMP_Text takeBackText;
         [SerializeField] TMP_Text[] seatBadges = new TMP_Text[TableSides.Count];
         [SerializeField] CanvasGroup[] passLabels = new CanvasGroup[TableSides.Count];
+        [SerializeField] HandSummaryView summary;
 
         UnityAction[] tileTaps = Array.Empty<UnityAction>();
         MatchHost host;
@@ -37,11 +38,12 @@ namespace HypeDomino.Game.Match
         int handVersion = -1;
         int noticesVersion = -1;
         int passVersion = -1;
+        int summaryVersion = -1;
 
         MatchScreen LiveScreen => host?.Root?.Screen;
 
         public void Configure(TileFaceSet faces, Button[] tiles, GameObject[] marks, Button drawButton, Button passButton, Button endTurnButton, Image ring,
-            TMP_Text networkText, TMP_Text afkText, Button takeBackButton, TMP_Text takeBackLabel, TMP_Text[] badges, CanvasGroup[] passGroups)
+            TMP_Text networkText, TMP_Text afkText, Button takeBackButton, TMP_Text takeBackLabel, TMP_Text[] badges, CanvasGroup[] passGroups, HandSummaryView summaryView = null)
         {
             Unbind();
             faceSet = faces;
@@ -58,6 +60,7 @@ namespace HypeDomino.Game.Match
             takeBackText = takeBackLabel;
             seatBadges = badges;
             passLabels = passGroups;
+            summary = summaryView;
         }
 
         public void Bind(MatchHost matchHost, Connection matchConnection, GameStrings texts)
@@ -78,7 +81,7 @@ namespace HypeDomino.Game.Match
             pass.onClick.AddListener(Pass);
             endTurn.onClick.AddListener(EndTurn);
             takeBack.onClick.AddListener(TakeBack);
-            handVersion = noticesVersion = passVersion = -1;
+            handVersion = noticesVersion = passVersion = summaryVersion = -1;
             Refresh();
         }
 
@@ -116,6 +119,11 @@ namespace HypeDomino.Game.Match
             {
                 passVersion = hud.PassVersion;
                 ShowPasses(hud);
+            }
+            if (summary != null && hud.SummaryVersion != summaryVersion)
+            {
+                summaryVersion = hud.SummaryVersion;
+                summary.Show(hud.Summary);
             }
         }
 
