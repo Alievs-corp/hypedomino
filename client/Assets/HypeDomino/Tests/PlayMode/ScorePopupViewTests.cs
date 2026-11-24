@@ -32,6 +32,8 @@ namespace HypeDomino.Tests.PlayMode
         [TearDown]
         public void Destroy() => Object.DestroyImmediate(root);
 
+        static bool Shown(TMP_Text text) => !text.canvasRenderer.cull;
+
         [Test]
         public void APopupShowsPlusThePointsInTheScoreRoleSizedByItsStep()
         {
@@ -39,12 +41,12 @@ namespace HypeDomino.Tests.PlayMode
             view.Tick(TokenDurationMs.Fast);
 
             var text = texts[0];
-            Assert.IsTrue(text.enabled);
+            Assert.IsTrue(Shown(text));
             Assert.AreEqual("+15", text.text);
             Assert.AreEqual((float)ScoreCascade.Burst(3, EffectLevel.High, false).ScoreSize, text.fontSize);
             Assert.AreEqual((Color)TokenColor.RoleScoreText, (Color)(Color32)text.color);
             Assert.AreEqual(new Vector3(10f, 20f, 0f), text.rectTransform.position);
-            for (var at = 1; at < texts.Length; at++) Assert.IsFalse(texts[at].enabled);
+            for (var at = 1; at < texts.Length; at++) Assert.IsFalse(Shown(texts[at]));
         }
 
         [Test]
@@ -53,10 +55,10 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(5, 1, Vector3.zero, 100f);
 
             view.Tick(50f);
-            Assert.IsFalse(texts[0].enabled);
+            Assert.IsFalse(Shown(texts[0]));
 
             view.Tick(100f + ScoreCascade.Burst(1, EffectLevel.High, false).LifetimeMs);
-            Assert.IsFalse(texts[0].enabled);
+            Assert.IsFalse(Shown(texts[0]));
         }
 
         [Test]
@@ -87,22 +89,25 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(0, 0, Vector3.zero, 0f);
             view.Tick(TokenDurationMs.Fast);
 
-            foreach (var text in texts) Assert.IsFalse(text.enabled);
+            foreach (var text in texts) Assert.IsFalse(Shown(text));
         }
 
         [Test]
         public void ShowingAndAnimatingAPopupAllocatesNothing()
         {
-            view.Show(25, 5, Vector3.zero, 0f);
-            view.Tick(TokenDurationMs.Fast);
-            view.Show(35, 6, Vector3.one, 10f);
-            view.Tick(TokenDurationMs.Fast + 10f);
+            for (var at = 0; at < texts.Length; at++)
+            {
+                view.Show(25, 5, Vector3.one, at);
+                view.Tick(TokenDurationMs.Fast + at);
+            }
+            view.Tick(TokenEffect.ScorePopupDurationMs * 2f);
 
             Assert.That(() =>
             {
-                view.Show(25, 5, Vector3.zero, 20f);
-                view.Tick(TokenDurationMs.Fast + 20f);
-                view.Tick(TokenDurationMs.Fast + 40f);
+                view.Show(35, 6, Vector3.zero, 3000f);
+                view.Tick(3000f + TokenDurationMs.Fast);
+                view.Tick(3000f + TokenDurationMs.Fast + 20f);
+                view.Tick(3000f + TokenEffect.ScorePopupDurationMs);
             }, Allocates.Nothing);
         }
     }

@@ -45,7 +45,7 @@ namespace HypeDomino.UI.Effects
             startedMs[slot] = startMs;
             holdMs[slot] = burst.HoldMs;
             var text = popups[slot];
-            text.enabled = false;
+            text.canvasRenderer.cull = true;
             text.rectTransform.position = at;
             text.fontSize = burst.ScoreSize;
             text.color = TokenColor.RoleScoreText;
@@ -69,7 +69,12 @@ namespace HypeDomino.UI.Effects
             pool = new EffectPool(TokenEffectKind.ScorePopup, new ParticleBudget(level, reduceMotion));
             startedMs = new float[Capacity];
             holdMs = new int[Capacity];
-            foreach (var text in popups) text.enabled = false;
+            foreach (var text in popups)
+            {
+                text.enabled = true;
+                text.SetText("+{0}", 0);
+                text.canvasRenderer.cull = true;
+            }
         }
 
         void Animate(int slot, float nowMs)
@@ -78,7 +83,7 @@ namespace HypeDomino.UI.Effects
             var elapsedMs = nowMs - startedMs[slot];
             var popup = default(ScorePopup);
             var shown = pool.IsLive(slot) && elapsedMs >= 0f && ScorePopup.At(elapsedMs, holdMs[slot], reduceMotion, out popup);
-            if (text.enabled != shown) text.enabled = shown;
+            if (text.canvasRenderer.cull == shown) text.canvasRenderer.cull = !shown;
             if (!shown) return;
             text.rectTransform.localScale = new Vector3(popup.Scale, popup.Scale, 1f);
             text.alpha = popup.Alpha;

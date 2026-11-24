@@ -36,13 +36,14 @@ namespace HypeDomino.Tests.PlayMode
         GameObject lockBadge;
         GameObject[] rows;
         Image[] tiles;
-        readonly HandSummary summary = new();
+        HandSummary summary;
         readonly MatchSnapshot snapshot = new();
 
         [SetUp]
         public void Build()
         {
             root = new GameObject("Match", typeof(RectTransform), typeof(Canvas));
+            summary = new HandSummary();
             hud = MatchHudViewTests.NewHud(root.transform, 1);
             view = new GameObject("Summary", typeof(RectTransform)).AddComponent<HandSummaryView>();
             view.transform.SetParent(root.transform, false);
