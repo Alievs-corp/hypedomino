@@ -10,10 +10,10 @@ namespace HypeDomino.Game.Screens
     {
         public static readonly string[] CardKeys =
         {
-            "ui.plain.lobby.ranked_1v1",
-            "ui.plain.lobby.ranked_2v2",
-            "ui.plain.lobby.casual_1v1",
-            "ui.plain.lobby.casual_2v2",
+            "ui.plain.lobby.ranked_solo",
+            "ui.plain.lobby.ranked_teams",
+            "ui.plain.lobby.casual_solo",
+            "ui.plain.lobby.casual_teams",
         };
 
         public static ScreenView Lobby(ScreenHost host, out Transform nav)
