@@ -28,16 +28,29 @@ namespace HypeDomino.UI.Screens
             Track(screen);
         }
 
+        public void Replace(ScreenView screen)
+        {
+            if (stack.Count == 1 && Top == screen) return;
+            for (var at = stack.Count - 1; at >= 0; at--) Leave(stack[at]);
+            stack.Clear();
+            if (screen != null) Push(screen);
+        }
+
         public bool Pop()
         {
             if (stack.Count <= 1) return false;
             var leaving = Top;
             stack.RemoveAt(stack.Count - 1);
-            leaving.TakeInput(false);
-            leaving.Exit();
-            Track(leaving);
+            Leave(leaving);
             RevealTop();
             return true;
+        }
+
+        void Leave(ScreenView screen)
+        {
+            screen.TakeInput(false);
+            screen.Exit();
+            Track(screen);
         }
 
         public void Advance(float deltaMs)
