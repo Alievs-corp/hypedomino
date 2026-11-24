@@ -51,8 +51,11 @@ namespace HypeDomino.Game.Privacy
 
         void Continue()
         {
+            if (choices == null) return;
+            var next = continued;
             startup.Hold(choices);
-            continued();
+            Unbind();
+            next();
         }
     }
 }
