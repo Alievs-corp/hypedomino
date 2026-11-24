@@ -14,6 +14,7 @@ namespace HypeDomino.Game.Shop
         public const string Chests = "shop.section.chests.title";
         public const string Pass = "shop.section.pass.title";
         public const string Crystals = "shop.section.crystals.title";
+        public const int Count = 7;
 
         public static string Title(string section) => section switch
         {

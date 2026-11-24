@@ -193,6 +193,23 @@
     { "key": "tutorial.offer.title", "en": "New here?", "az": "Yenisən?" },
     { "key": "tutorial.offer.body", "en": "Learn the rules in one short hand against a bot", "az": "Bot ilə qısa bir əldə qaydaları öyrən" },
     { "key": "tutorial.offer.play", "en": "Play", "az": "Oyna" },
-    { "key": "tutorial.offer.skip", "en": "Skip", "az": "Keç" }
+    { "key": "tutorial.offer.skip", "en": "Skip", "az": "Keç" },
+    { "key": "ui.plain.back", "en": "Back", "az": "Geri" },
+    { "key": "ui.plain.close", "en": "Close", "az": "Bağla" },
+    { "key": "ui.plain.login.google", "en": "Sign in with Google", "az": "Google ilə daxil ol" },
+    { "key": "ui.plain.login.apple", "en": "Sign in with Apple", "az": "Apple ilə daxil ol" },
+    { "key": "ui.plain.login.cancel_deletion", "en": "Cancel deletion", "az": "Silinməni ləğv et" },
+    { "key": "ui.plain.lobby.retry", "en": "Retry", "az": "Yenidən cəhd et" },
+    { "key": "ui.plain.lobby.ranked_1v1", "en": "Ranked 1v1", "az": "Reytinq 1v1" },
+    { "key": "ui.plain.lobby.ranked_2v2", "en": "Ranked 2v2", "az": "Reytinq 2v2" },
+    { "key": "ui.plain.lobby.casual_1v1", "en": "Casual 1v1", "az": "Casual 1v1" },
+    { "key": "ui.plain.lobby.casual_2v2", "en": "Casual 2v2", "az": "Casual 2v2" },
+    { "key": "ui.plain.lobby.cancel", "en": "Cancel search", "az": "Axtarışı dayandır" },
+    { "key": "ui.plain.nav.pass", "en": "Hype Pass", "az": "Hype Pass" },
+    { "key": "ui.plain.nav.promo", "en": "Promo code", "az": "Promo kod" },
+    { "key": "ui.plain.nav.shop", "en": "Shop", "az": "Mağaza" },
+    { "key": "ui.plain.shop.buy", "en": "Buy", "az": "Al" },
+    { "key": "ui.plain.promo.paste", "en": "Paste", "az": "Yapışdır" },
+    { "key": "ui.plain.promo.redeem", "en": "Redeem", "az": "Kodu tətbiq et" }
   ]
 }
