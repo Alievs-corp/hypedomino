@@ -89,6 +89,8 @@ namespace HypeDomino.Tests.PlayMode
         CosmeticStage stage;
         ActiveCosmeticManifest manifest;
         GameStrings strings;
+        ProfileLoader loader;
+        PlayerReport reporter;
 
         [SetUp]
         public void BuildView()
@@ -133,7 +135,9 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(CosmeticManifest.TryParse(Catalog, out var catalog));
             manifest = new ActiveCosmeticManifest(catalog);
             strings = new GameStrings(BuiltinStrings.Load(), LanguageChoice.Load("az", () => NoLocales), true);
-            view.Bind(new ProfileLoader(client), new PlayerReport(client), stage, manifest, strings, Target, "1v1", MatchId);
+            loader = new ProfileLoader(client);
+            reporter = new PlayerReport(client);
+            view.Bind(loader, reporter, stage, manifest, strings, Target, "1v1", MatchId);
         }
 
         [TearDown]
@@ -231,6 +235,27 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsFalse(reasonPanel.activeSelf);
             Assert.IsNull(api.To(PlayerReport.Path));
+        }
+
+        [Test]
+        public void ALateReplyForThePreviousPlayerIsDroppedAndTheNewPlayerIsLoaded()
+        {
+            const string Other = "acc-3";
+            view.Bind(loader, reporter, stage, manifest, strings, Other, "1v1", MatchId);
+            Assert.IsNull(api.To(PlayerProfile.PublicPath(Other)));
+
+            LoadProfile();
+
+            Assert.IsFalse(report.gameObject.activeSelf);
+            Assert.AreNotEqual("Murad", nickname.text);
+            Assert.AreEqual("GET", api.To(PlayerProfile.PublicPath(Other)).Method);
+
+            api.To(PlayerProfile.PublicPath(Other)).Done(new HttpReply(200, PublicJson.Replace("acc-2", Other).Replace("Murad", "Leyla")));
+            report.onClick.Invoke();
+            reasons[(int)PlayerReportReason.Other].onClick.Invoke();
+
+            Assert.AreEqual("Leyla", nickname.text);
+            Assert.AreEqual(@"{""target"":""acc-3"",""reason"":""other"",""match_id"":""match-9""}", api.To(PlayerReport.Path).Body);
         }
 
         [Test]
