@@ -193,5 +193,23 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.AreEqual(0, ShownRows().Count);
         }
+
+        [Test]
+        public void ABindWhileALoadIsInFlightDropsThatAnswerAndLoadsItsOwnBoard()
+        {
+            view.Bind(loader, "1v1", LeaderboardStanding.BoardGlobal, strings);
+            view.Bind(loader, "2v2", LeaderboardStanding.BoardFriends, strings);
+            Assert.AreEqual(1, api.Paths.Count);
+
+            api.Replies[0](new HttpReply(200, BoardJson));
+
+            Assert.AreEqual(0, ShownRows().Count);
+            Assert.AreEqual(2, api.Paths.Count);
+            Assert.AreEqual(LeaderboardStanding.PathOf("2v2", LeaderboardStanding.BoardFriends), api.Paths[1]);
+
+            api.Replies[1](new HttpReply(200, OverlapJson));
+
+            Assert.AreEqual(2, ShownRows().Count);
+        }
     }
 }

@@ -124,7 +124,7 @@ namespace HypeDomino.Game.Match
                 Wear(link.Worn);
             }
             Attach(MatchBoot.Host, NetBoot.Connection, ContentBoot.Cosmetics, LanguageBoot.Strings,
-                new AddressablesArtSource<Sprite>(), new StillsOnly(), GraphicsBoot.Quality, MotionBoot.Motion);
+                new AddressablesArtSource<Sprite>(), new StillsOnlyArtSource(), GraphicsBoot.Quality, MotionBoot.Motion);
         }
 
         void OnDestroy()

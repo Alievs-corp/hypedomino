@@ -1,9 +1,10 @@
 using System;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Motion;
 
-namespace HypeDomino.UI.Cosmetics
+namespace HypeDomino.Content
 {
-    public sealed class StillsOnly : ICosmeticArtSource<LoopArt>
+    public sealed class StillsOnlyArtSource : ICosmeticArtSource<LoopArt>
     {
         public void Load(string address, Action<LoopArt> done) => done(null);
 
