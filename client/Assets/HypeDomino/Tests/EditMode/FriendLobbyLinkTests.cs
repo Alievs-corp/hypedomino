@@ -235,6 +235,22 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheWheelIsFilledBeforeTheMembersPanelHearsOfTheRoom()
+        {
+            Hello();
+            AnswerInventory(TwoWorn);
+            var countAtChange = -1;
+            link.Members.Changed += () => countAtChange = link.Wheel.Count;
+
+            Enter();
+
+            Assert.AreEqual(2, countAtChange);
+        }
+
+        [Test]
+        public void NowReadsTheLinkClock() => Assert.AreEqual(Now(), link.NowMs);
+
+        [Test]
         public void AnInventoryArrivingInsideTheRoomFillsTheWheelAtOnce()
         {
             Hello();
