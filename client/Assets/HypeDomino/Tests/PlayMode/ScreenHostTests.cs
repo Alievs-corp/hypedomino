@@ -2,6 +2,8 @@ using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
+using HypeDomino.Game.Medals;
+using HypeDomino.Game.Missions;
 using HypeDomino.Game.Pass;
 using HypeDomino.Game.Privacy;
 using HypeDomino.Game.Promo;
@@ -10,6 +12,7 @@ using HypeDomino.Game.Shop;
 using HypeDomino.UI.Audio;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Lists;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Motion;
 using HypeDomino.UI.Screens;
@@ -24,7 +27,7 @@ namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
-        const int NavButtons = 4;
+        const int NavButtons = 6;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
         static readonly string[] NoLocales = { };
@@ -299,6 +302,56 @@ namespace HypeDomino.Tests.PlayMode
             Assert.AreSame(warning.transform, ButtonOf(screen, SettingsScreens.KeepAccountKey).transform.parent);
             Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.ExportDataKey).transform.parent);
             Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.DeleteAccountKey).transform.parent);
+        }
+
+        [Test]
+        public void TheMissionsScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = Pushed(MissionScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<MissionListView>());
+            Assert.IsNotNull(screen.GetComponentInChildren<RecyclingList>(true));
+            var row = screen.GetComponentInChildren<MissionRowSlot>(true);
+            Assert.IsNotNull(row);
+            Assert.IsFalse(row.gameObject.activeSelf);
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(MissionScreens.TabKeys.Length + 1, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [Test]
+        public void TheMedalsScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = Pushed(MedalScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<MedalGridView>());
+            Assert.IsNotNull(screen.GetComponentInChildren<RecyclingList>(true));
+            var row = screen.GetComponentInChildren<MedalRowSlot>(true);
+            Assert.IsNotNull(row);
+            Assert.IsFalse(row.gameObject.activeSelf);
+            Assert.AreEqual(MedalScreens.Columns, row.Columns);
+            Assert.AreEqual(MedalScreens.Columns, row.GetComponentsInChildren<CosmeticImage>(true).Length);
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(1, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [TestCase(MissionScreens.NavKey)]
+        [TestCase(MedalScreens.NavKey)]
+        public void TheMissionsAndMedalsNavButtonsPushTheirScreenAndBackPopsIt(string navKey)
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+            var screen = Pushed(navKey);
+
+            Assert.AreNotSame(lobby, screen);
+            Assert.AreEqual(2, stack.Count);
+            Assert.IsTrue(screen.TakesInput);
+            Assert.IsFalse(lobby.TakesInput);
+
+            ButtonOf(screen, ScreenHost.BackKey).onClick.Invoke();
+            Assert.AreSame(lobby, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(lobby.TakesInput);
         }
 
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);

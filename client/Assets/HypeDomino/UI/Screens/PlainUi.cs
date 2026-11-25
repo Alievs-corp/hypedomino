@@ -1,6 +1,8 @@
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Layout;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using HypeDomino.UI.Typography;
 using TMPro;
@@ -202,6 +204,18 @@ namespace HypeDomino.UI.Screens
             image.raycastTarget = false;
             mark.GetComponent<LayoutElement>().minHeight = TokenSpacing.Xs;
             return mark.gameObject;
+        }
+
+        public static CosmeticImage Icon(Transform parent)
+        {
+            var icon = Child(parent, "Icon", typeof(Image), typeof(LayoutElement));
+            var image = icon.GetComponent<Image>();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.enabled = false;
+            icon.GetComponent<LayoutElement>().minHeight = TokenSize.TouchTargetMin;
+            icon.gameObject.AddComponent<AnimatedImage>();
+            return icon.gameObject.AddComponent<CosmeticImage>();
         }
 
         static void Style(TMP_Text text)
