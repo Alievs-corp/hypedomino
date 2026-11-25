@@ -22,6 +22,7 @@ using HypeDomino.UI.Motion;
 using HypeDomino.UI.Screens;
 using HypeDomino.UI.Settings;
 using HypeDomino.UI.Tokens;
+using Hypedomino.V1;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
+        const string StoreUrl = "https://store.test/app";
         const int NavButtons = 9;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
@@ -541,6 +543,93 @@ namespace HypeDomino.Tests.PlayMode
             Assert.AreSame(lobby, stack.Top);
             Assert.AreEqual(1, stack.Count);
             Assert.IsTrue(lobby.TakesInput);
+        }
+
+        [Test]
+        public void TheUpdateAndMaintenanceStatesShowTheirScreens()
+        {
+            var update = host.ScreenOf(AppState.UpdateRequired);
+            var maintenance = host.ScreenOf(AppState.Maintenance);
+            Assert.IsFalse(update.IsShown);
+            Assert.IsFalse(maintenance.IsShown);
+
+            host.Follow(AppState.UpdateRequired);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.AreSame(update, stack.Top);
+            Assert.IsTrue(update.IsShown);
+            Assert.IsTrue(update.TakesInput);
+
+            host.Follow(AppState.Maintenance);
+            Assert.AreSame(maintenance, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(maintenance.TakesInput);
+            Assert.IsFalse(update.TakesInput);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.IsTrue(maintenance.IsShown);
+            Assert.IsFalse(update.IsShown);
+        }
+
+        [Test]
+        public void TheUpdateRequiredScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = host.ScreenOf(AppState.UpdateRequired);
+
+            Assert.IsNotNull(screen.GetComponent<UpdateRequiredView>());
+            Assert.AreEqual(1, screen.GetComponentsInChildren<Button>(true).Length);
+            AssertEveryLabelShowsItsString(screen, NoticeScreens.UpdateMessageKey, NoticeScreens.UpdateKey);
+        }
+
+        [Test]
+        public void TheBoundUpdateRequiredScreenShowsItsPanelAndOpensTheStoreLink()
+        {
+            var screen = host.ScreenOf(AppState.UpdateRequired);
+            var flow = new AppFlow();
+            string opened = null;
+            screen.GetComponent<UpdateRequiredView>().Bind(flow, StoreUrl, link => opened = link);
+            var panel = TextOf(screen, NoticeScreens.UpdateMessageKey).transform.parent.gameObject;
+            Assert.IsFalse(panel.activeSelf);
+
+            flow.Hello(new ServerHello { Status = HelloStatus.UpdateRequired });
+            ButtonOf(screen, NoticeScreens.UpdateKey).onClick.Invoke();
+
+            Assert.IsTrue(panel.activeSelf);
+            Assert.AreEqual(StoreUrl, opened);
+        }
+
+        [Test]
+        public void TheMaintenanceScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = host.ScreenOf(AppState.Maintenance);
+
+            Assert.IsNotNull(screen.GetComponent<MaintenanceScreenView>());
+            Assert.AreEqual(1, screen.GetComponentsInChildren<Button>(true).Length);
+            AssertEveryLabelShowsItsString(screen, NoticeScreens.MaintenanceMessageKey, NoticeScreens.RetryKey);
+        }
+
+        [Test]
+        public void TheBoundMaintenanceScreenShowsItsPanelAndRetries()
+        {
+            var screen = host.ScreenOf(AppState.Maintenance);
+            var dials = 0;
+            var maintenance = new MaintenanceScreen(() => dials++, () => 0);
+            screen.GetComponent<MaintenanceScreenView>().Bind(maintenance);
+            var panel = TextOf(screen, NoticeScreens.MaintenanceMessageKey).transform.parent.gameObject;
+            var retry = ButtonOf(screen, NoticeScreens.RetryKey);
+            Assert.IsFalse(panel.activeSelf);
+
+            maintenance.Read(new ServerHello { Status = HelloStatus.Maintenance });
+            retry.onClick.Invoke();
+
+            Assert.IsTrue(panel.activeSelf);
+            Assert.AreEqual(1, dials);
+            Assert.IsFalse(retry.interactable);
+        }
+
+        void AssertEveryLabelShowsItsString(ScreenView screen, params string[] keys)
+        {
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(keys.Length, labels.Length);
+            foreach (var key in keys) AssertShowsItsString(LabelOf(screen, key));
         }
 
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
