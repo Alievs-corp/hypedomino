@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Content;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
@@ -93,6 +94,15 @@ namespace HypeDomino.Game.Inventory
             Rebuild();
             loader.Load(loaded);
         }
+
+        void Start()
+        {
+            if (strings == null && NetBoot.Inventory != null)
+                Bind(NetBoot.Inventory, new LoadoutEquipper(NetBoot.Api), StillsStage(), ContentBoot.Cosmetics, LanguageBoot.Strings);
+        }
+
+        static CosmeticStage StillsStage() =>
+            new(new AddressablesArtSource<Sprite>(), new StillsOnlyArtSource(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 
