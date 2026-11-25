@@ -28,6 +28,7 @@ jobs:
       deploy: ${{ steps.areas.outputs.deploy }}
       backup: ${{ steps.areas.outputs.backup }}
       assets: ${{ steps.areas.outputs.assets }}
+      infra: ${{ steps.areas.outputs.infra }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +58,7 @@ jobs:
               - '.github/workflows/ci.yml'
             deploy:
               - 'server/**'
-              - 'deploy/**'
+              - 'deploy/k8s/**'
               - 'tools/deploy/**'
               - '.github/workflows/ci.yml'
             backup:
@@ -80,6 +81,9 @@ jobs:
               - 'admin/src/gen/**'
               - 'tools/proto-lint/**'
               - '.github/workflows/ci.yml'
+            infra:
+              - 'deploy/tofu/**'
+              - '.github/workflows/ci.yml'
       - id: areas
         env:
           SERVER_CHANGED: ${{ steps.filter.outputs.server }}
@@ -89,6 +93,7 @@ jobs:
           DEPLOY_CHANGED: ${{ steps.filter.outputs.deploy }}
           BACKUP_CHANGED: ${{ steps.filter.outputs.backup }}
           ASSETS_CHANGED: ${{ steps.filter.outputs.assets }}
+          INFRA_CHANGED: ${{ steps.filter.outputs.infra }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           emit() {
@@ -101,6 +106,7 @@ jobs:
           emit deploy "$DEPLOY_CHANGED" server/Dockerfile
           emit backup "$BACKUP_CHANGED" tools/backup-drill/drill.sh
           emit assets "$ASSETS_CHANGED" tools/asset-export/asset-export.mjs
+          emit infra "$INFRA_CHANGED" deploy/tofu/modules/cluster/main.tf
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:proto/buf.yaml" 2>/dev/null; then
             echo "proto_breaking=true" >> "$GITHUB_OUTPUT"
           else
@@ -440,10 +446,39 @@ jobs:
           drift=$(git status --porcelain -- server/internal/pb client/Assets/HypeDomino/Generated admin/src/gen)
           [ -z "$drift" ] || { echo "$drift"; echo "generated code differs from proto/, run npm run proto:gen and commit"; exit 1; }
 
+  infra:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TOFU_VERSION: 1.13.9
+      TOFU_SHA256: b34b327cc1ef07178207b6f2cd1f5276537d3e5b7be316500f6dac50d4c0a857
+    defaults:
+      run:
+        working-directory: deploy/tofu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenTofu
+        run: |
+          archive="tofu_${TOFU_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/$archive"
+          echo "$TOFU_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" tofu
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: tofu fmt -check -recursive -diff
+      - name: Environments declare the same variables
+        run: diff environments/staging/variables.tf environments/production/variables.tf
+      - name: Each environment initialises from its lock file and validates
+        run: |
+          for env in staging production; do
+            tofu -chdir="environments/$env" init -backend=false -input=false -lockfile=readonly
+            tofu -chdir="environments/$env" validate
+          done
+
   ci-complete:
     name: CI complete
     if: always()
-    needs: [changes, lint, secret-scan, pr-meta, server, image, backup-drill, admin, client, assets, proto]
+    needs: [changes, lint, secret-scan, pr-meta, server, image, backup-drill, admin, client, assets, proto, infra]
     runs-on: ubuntu-latest
     steps:
       - env:

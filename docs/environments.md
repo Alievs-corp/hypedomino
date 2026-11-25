@@ -276,6 +276,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
 | Client crash report DSN (`CLIENT_SENTRY_DSN`) | GitHub Actions repository secret; one DSN for the builds of a tag, from the Sentry EU data region project the owner creates | Written by the `Release build` workflow to `client/Signing/crash-reporting.json`, removed after the build, and built into the player as `Resources/CrashReporting.json`; unset until the Sentry account exists (section 7) |
+| Infrastructure as code: cloud API token, object storage keys, state passphrase, k3s join token, game TLS private key (section 8.3) | The password vaults of the owner and the server lead, one set per environment | Environment variables of the operator's shell for `tofu plan` and `tofu apply` only; never a GitHub secret, because no workflow applies infrastructure |
 | Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods and of the admin API, which gets the same DSN; unset until the Sentry account exists (section 7) |
 
 Rules:
@@ -343,10 +344,91 @@ Rules:
 
 ## 7. Open items
 
-- Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
+- Infrastructure as code: the OpenTofu code is in `deploy/tofu` (section 8) and has not been applied. The first apply needs the owner steps of 8.4: the Hetzner Cloud project, API token and Object Storage credentials per environment, the buckets, the game domain with its TLS key and certificate, and the overlays with the NodePort. GN-8 evidence (the apply log) depends on them.
 - Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above: `.github/workflows/server-deploy.yml` deploys each image `.github/workflows/server-image.yml` pushes from `main` to `staging` once the repository variable `STAGING_AUTO_DEPLOY` is `true` (2.3, `docs/launch-runbook.md` 5.1).
 - The GitHub environments `staging` and `production`, their protection rules (required reviewers for `production`, deployment branch `main` for both) and their secrets `KUBE_CONFIG`, `SERVER_ENV` and `MIGRATE_ENV` (2.3) are created by a repository admin before the first run of `.github/workflows/server-deploy.yml` (#25, `docs/launch-runbook.md` OI-2). A run without the secrets fails in its first step and deploys nothing. A run creates the environment it names if it does not exist yet, without protection rules, so the rules are set before the secrets are added.
-- Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
+- Encryption at rest of PostgreSQL volumes and backups (#25, #188, `docs/privacy.md` 9.1): volumes are encrypted by the default StorageClass the IaC installs (8.1) once `encryption-secret` exists (8.5); Kubernetes secrets by k3s secrets encryption; backups by WAL-G on the client (`docs/backup-restore.md`). Not yet proved on a running cluster.
 - Migration tool: #55.
 - Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, panics of the server and the admin API are only logged and counted; until `CLIENT_SENTRY_DSN` is set, release builds send no crash reports. The CI token for the IL2CPP symbol and mapping upload is also the owner's (`docs/launch-runbook.md` OI-6).
 - Client HTTP timeout: no document or config sets the timeout of the player's `/auth` and API requests, so `-httpTimeoutSeconds` (2.5) and `CLIENT_HTTP_TIMEOUT_SECONDS` (2.3) have no value. A tag release fails before the build until the owner sets it (#66).
+
+## 8. Infrastructure as code
+
+The clusters of ADR 0010 and ADR 0014 are OpenTofu code in `deploy/tofu`: the shared module `modules/cluster` and one root per environment, `environments/staging` and `environments/production`, each with its own state. Nothing here has been applied yet; the first apply needs the owner steps of 8.4.
+
+### 8.1 What one apply creates
+
+| Object | Shape |
+|---|---|
+| Private network | `hd-<environment>`, `10.0.0.0/16`, one subnet `10.0.1.0/24` in the `eu-central` network zone (`fsn1` and `nbg1`) |
+| Firewall | On the public interfaces of every node: ICMP; SSH (22) only from `ssh_allowed_cidrs`; the Kubernetes API (6443) only from `api_allowed_cidrs`; nothing else, NodePorts included. Traffic on the private network is not filtered by it |
+| `control` node | `hd-<environment>-control`, CX23 in `fsn1` (ADR 0014), private address `10.0.1.10`, a primary IPv4 that survives a server replacement. k3s server with secrets encryption at rest, `traefik`, `servicelb` and `local-storage` disabled, and the Hetzner CSI driver (Helm chart `hcloud-csi`) whose default StorageClass `hcloud-volumes` encrypts every volume with LUKS (`encryption-secret`, 8.5) and keeps it on release (`Retain`) |
+| `db` node | `hd-<environment>-db`, CX33 in `fsn1`, k3s agent. The PostgreSQL volume is not a separate OpenTofu object: the `postgres-data` claim (`docs/backup-restore.md` 3.5) provisions it through the default StorageClass in the node's location, so a restore that creates a new claim gets a new encrypted volume |
+| `game` nodes | One per entry of `game_nodes`, default `game-1`: CX33 in `fsn1`, k3s agent. A new entry joins the cluster, a removed entry leaves it; this is the upgrade path of ADR 0014 and `docs/launch-runbook.md` 5.6 |
+| Load balancer | `hd-<environment>-game`, LB11 in `fsn1`, on the private network. HTTPS on 443 with the uploaded certificate of `game_domain`, forwarded to `game_node_port` on every game node's private address; health check `GET /readyz` on that port expects 200 |
+| DNS | Only when `dns_zone` is set: `A` and `AAAA` records of `game_domain` pointing at the load balancer, in that zone of Hetzner DNS. Without it the records are made wherever the domain's zone lives, from the `load_balancer_ipv4` and `load_balancer_ipv6` outputs |
+
+Every node carries the label `hypedomino.io/role` (`control`, `game` or `db`) as a Kubernetes node label set by k3s at join, which the overlays pin workloads with (ADR 0014). Every node is joined over the private network. In `production`, the `control` and `db` servers, the network, the control IPv4 and the load balancer have delete protection, so a `tofu destroy` there fails until it is lifted on purpose; game nodes have none, so the move of `docs/launch-runbook.md` 5.6 can remove one; `staging` has none, because it is created for drills and destroyed (ADR 0014).
+
+Pinned versions: OpenTofu 1.13.9 (the `infra` CI job), provider `hetznercloud/hcloud` 1.70.2 (in `required_providers` and `.terraform.lock.hcl` of each root), k3s `v1.37.2+k3s1` with its `install.sh` checked by SHA-256 before it runs, chart `hcloud-csi` 2.24.1. A node reads its cloud-init only at its first boot and OpenTofu ignores later changes to it, so raising the k3s version in the module affects nodes created afterwards and never replaces a running node; upgrading a running cluster is a separate procedure.
+
+### 8.2 State
+
+The state of each environment is in the bucket `hypedomino-tofu-state-<environment>` (ADR 0014) at `cluster/terraform.tfstate`, in `nbg1`, the backup location (`docs/backup-restore.md` 3.1), so it survives the loss of `fsn1` where the cluster runs. A lock file next to it guards against two concurrent applies (`use_lockfile`). State and saved plans are encrypted by OpenTofu before they leave the machine (AES-GCM, key derived with PBKDF2 from `state_passphrase`); a state or plan that is not encrypted is refused. The state holds the TLS private key and the outputs; without the passphrase it cannot be read, so the passphrase is escrowed like the WAL-G key (`docs/backup-restore.md` 3.4). If a bucket name is taken and gets a suffix (ADR 0014), the `bucket` of the root's `backend "s3"` block changes in the same PR.
+
+### 8.3 Inputs
+
+All inputs come from the environment of the shell that runs `tofu`; `.tfvars` files are ignored by git (`deploy/tofu/.gitignore`). Secret values live in the password vaults of the owner and the server lead, one set per environment (E-1), and are exported from there, never typed into a command line or chat (S-5).
+
+| Name | Required | Secret | Meaning |
+|---|---|---|---|
+| `HCLOUD_TOKEN` | Yes | Yes | Read and write API token of the environment's Hetzner Cloud project |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Yes | Yes | Object Storage credentials of the same project, for the state bucket |
+| `TF_VAR_state_passphrase` | Yes | Yes | At least 32 characters, `openssl rand -base64 32`. Encrypts state and plans (8.2) |
+| `TF_VAR_k3s_token` | Yes | Yes | At least 32 characters, `openssl rand -hex 32`. Joins nodes to the cluster |
+| `TF_VAR_tls_private_key_pem` | Yes | Yes | PEM private key of the live certificate of `game_domain`; its SPKI hash is the live pin of `-tlsPins` (2.5), so a renewal keeps the key |
+| `TF_VAR_tls_certificate_pem` | Yes | No | PEM certificate chain of `game_domain` for that key. A new certificate is uploaded before the old one is removed |
+| `TF_VAR_game_domain` | Yes | No | Public host name of the game server, the host of `CLIENT_SERVER_URL` (2.3) |
+| `TF_VAR_game_node_port` | Yes | No | NodePort (30000 to 32767) of the `server` Service in the environment's overlay of `deploy/k8s`; the overlay and this value change together |
+| `TF_VAR_ssh_public_keys` | Yes | No | Map of name to OpenSSH public key of the operators, for example `{"server-lead"="ssh-ed25519 ..."}` |
+| `TF_VAR_ssh_allowed_cidrs` | Yes | No | Source ranges allowed to SSH, `[]` closes SSH |
+| `TF_VAR_api_allowed_cidrs` | Yes | No | Source ranges allowed to reach the Kubernetes API. `.github/workflows/server-deploy.yml` runs on GitHub-hosted runners, which have no fixed range, so a deploy from there needs `["0.0.0.0/0","::/0"]` (access then rests on the kubeconfig credential) or a runner with a fixed address; the owner decides |
+| `TF_VAR_dns_zone` | No | No | A zone in Hetzner DNS that contains `game_domain`; set it only when the domain's DNS is hosted there |
+| `TF_VAR_control_node`, `TF_VAR_db_node`, `TF_VAR_game_nodes` | No | No | Override the ADR 0014 node types and locations, for example when a type is not available (ADR 0014 fallback order) or for the 5.6 move to CCX23: `{"game-1"={server_type="cx33",location="fsn1"},"game-2"={server_type="ccx23",location="fsn1"}}` |
+
+### 8.4 Owner steps before the first apply
+
+1. A Hetzner Cloud project per environment (`hypedomino-staging`, `hypedomino-production`), so no token reaches both (E-1); in each, a read and write API token and Object Storage credentials.
+2. The buckets of ADR 0014 in each project, with the console or any S3 client; the `hcloud` provider has no Object Storage resource, so OpenTofu cannot create them:
+
+   | Bucket | Location | Versioning | Used by |
+   |---|---|---|---|
+   | `hypedomino-tofu-state-<environment>` | `nbg1` | On (ADR 0010) | 8.2 |
+   | `hypedomino-content-<environment>` | `fsn1` | On (`docs/backup-restore.md` section 5) | `docs/content-delivery.md` CD-27 |
+   | `hypedomino-walg-<environment>` | `nbg1` | As `docs/backup-restore.md` 3.1 says | WAL-G |
+   | `hypedomino-deletion-log-<environment>` | `nbg1` | As `docs/backup-restore.md` 3.7 says | Deletion job |
+   | `hypedomino-content-mirror-<environment>` | `nbg1` | As `docs/backup-restore.md` section 5 says | Content mirror |
+
+3. The game domain, and a TLS key pair with a certificate for it plus a backup key kept offline (2.5, `docs/anti-cheat.md` V-4).
+4. The operator SSH keys and source ranges, and the answer to the API exposure of 8.3.
+5. The `staging` and `production` overlays of `deploy/k8s` with the `server` Service as a NodePort on `game_node_port` and the role `nodeSelector` pins (OI-1).
+
+### 8.5 Plan, apply and the steps after it
+
+```bash
+cd deploy/tofu/environments/<environment>
+tofu init
+tofu plan -out=tfplan
+tofu apply tfplan 2>&1 | tee "apply-<environment>-$(date -u +%Y%m%dT%H%M%SZ).log"
+```
+
+The apply log of `production` is the GN-8 evidence (`docs/launch-runbook.md`); sensitive values appear in it only as `(sensitive value)`. It is attached to the release issue, never committed.
+
+After the first apply of an environment, by the server lead:
+1. Wait until cloud-init has finished on every node (`cloud-init status --wait` over SSH), then copy `/etc/rancher/k3s/k3s.yaml` from the control node and replace `127.0.0.1` with the `control_ipv4` output. This admin kubeconfig stays in the vault; the `KUBE_CONFIG` of the deploy workflow (2.3) is a narrower credential made from it.
+2. Create the two secrets the CSI driver waits for, each value read from standard input: `kubectl -n kube-system create secret generic hcloud --from-file=token=/dev/stdin` with a separate API token of the same project, and `kubectl -n kube-system create secret generic encryption-secret --from-file=encryption-passphrase=/dev/stdin` with a new passphrase escrowed like the WAL-G key. They stay out of cloud-init and state on purpose. A volume made with a lost passphrase cannot be read.
+3. Check: `kubectl get nodes -L hypedomino.io/role` lists `control`, `db` and every game node `Ready` with its role; `kubectl get storageclass` shows `hcloud-volumes` as the only default.
+
+Known limits:
+- The k3s join token is in each node's cloud-init, which the Hetzner metadata service returns to any process on that node; pods reach it unless their egress to `169.254.169.254` is blocked. Rotating the token means new nodes.
+- Whether Hetzner Object Storage honours the conditional write that the state lock relies on has not been tested; until it is, only one person applies an environment at a time.

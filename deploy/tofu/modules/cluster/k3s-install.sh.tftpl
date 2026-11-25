@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+mode="$1"
+
+private_ip=""
+for attempt in $(seq 1 60); do
+  private_ip=$(ip -o -4 addr show | awk '{split($4, a, "/"); if (index(a[1], "${node_subnet_prefix}") == 1) {print a[1]; exit}}')
+  [ -n "$private_ip" ] && break
+  sleep 5
+done
+[ -n "$private_ip" ] || { echo "no address in the private network after $attempt attempts" >&2; exit 1; }
+
+private_iface=$(ip -o -4 addr show | awk -v ip="$private_ip" '{split($4, a, "/"); if (a[1] == ip) {print $2; exit}}')
+
+installer=$(mktemp)
+curl -sSfL -o "$installer" "https://raw.githubusercontent.com/k3s-io/k3s/${k3s_version_url}/install.sh"
+echo "${install_sha256}  $installer" | sha256sum -c -
+
+INSTALL_K3S_VERSION='${k3s_version}' INSTALL_K3S_EXEC="$mode" sh "$installer" --node-ip "$private_ip" --flannel-iface "$private_iface"
+rm -f "$installer"
