@@ -85,6 +85,8 @@ What the player is told after a clear (CD-26) is one game string per outcome (`d
 | A bundle is in use, so the clear runs at the next start | `settings.cache.cleared_at_next_start` |
 | Refused in a match | `settings.cache.not_in_match` |
 
+The size of CD-25 is shown as `settings.cache.size` with the `decimal` placeholder `megabytes`: the bytes divided by 1,000,000, rounded half away from zero to one decimal and always written with that decimal (`Game/CacheSizeText`), so `12,400,000` bytes read `Cache: 12.4 MB` in `en` and `Keş: 12,4 MB` in `az` (`docs/localization.md` 4.4).
+
 Their `en` and `az` texts ship in the built-in bundle (`docs/localization.md`, Cache keys), so a fresh install or an offline start can tell the player. Admin may publish other texts like for any other key; until `tr` and `ru` are translated, those languages fall back to `en` (`docs/localization.md` 1.2).
 
 ## 8. Bucket, upload and CDN

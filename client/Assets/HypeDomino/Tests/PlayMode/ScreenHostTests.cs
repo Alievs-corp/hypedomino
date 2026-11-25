@@ -1,3 +1,4 @@
+using System.Collections;
 using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Game.Inventory;
@@ -23,6 +24,7 @@ using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 
 namespace HypeDomino.Tests.PlayMode
@@ -37,12 +39,30 @@ namespace HypeDomino.Tests.PlayMode
         static readonly string[] NoLocales = { };
         static readonly int[] Panel120 = { 60, 120 };
 
+        sealed class SizedStore : ICacheStore
+        {
+            public long OccupiedBytes { get; set; }
+
+            public bool ClearAtStart { get; set; }
+
+            public void ApplyLimits(long limitBytes, int unusedForSeconds)
+            {
+            }
+
+            public bool TryClear()
+            {
+                OccupiedBytes = 0;
+                return true;
+            }
+        }
+
         GameObject root;
         ScreenStack stack;
         ScreenHost host;
         LanguageChoice choice;
         GameStrings strings;
         SettingsModel settings;
+        SizedStore cacheStore;
 
         [SetUp]
         public void Build()
@@ -50,6 +70,7 @@ namespace HypeDomino.Tests.PlayMode
             root = new GameObject("Host");
             stack = root.AddComponent<ScreenStack>();
             stack.enabled = false;
+            cacheStore = new SizedStore();
             choice = LanguageChoice.Load("az", () => NoLocales);
             strings = new GameStrings(BuiltinStrings.Load(), choice, true);
             var graphics = new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false);
@@ -60,7 +81,7 @@ namespace HypeDomino.Tests.PlayMode
                 graphics,
                 new FrameRatePolicy(graphics, Panel120, null, false),
                 new HapticsPreference(true),
-                new ContentCache(new NoCacheStore(), () => false));
+                new ContentCache(cacheStore, () => false));
             host = new ScreenHost(stack, strings, settings);
         }
 
@@ -278,6 +299,28 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), text => text.text == cleared));
         }
 
+        [UnityTest]
+        public IEnumerator TheSettingsScreenShowsTheCacheSizeEachTimeItOpensAndAfterAClear()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+            Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+            cacheStore.OccupiedBytes = 12_400_000;
+            yield return null;
+            Assert.IsTrue(HasText(screen, "Keş: 12,4 MB"));
+
+            stack.Pop();
+            stack.Advance(TokenDurationMs.Base);
+            Assert.IsFalse(screen.IsShown);
+            yield return null;
+            cacheStore.OccupiedBytes = 3_000_000;
+            NavButton(SettingsScreens.NavKey).onClick.Invoke();
+            yield return null;
+            Assert.IsTrue(HasText(screen, "Keş: 3,0 MB"));
+
+            ButtonOf(screen, SettingsScreens.ClearCacheKey).onClick.Invoke();
+            Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+        }
+
         [Test]
         public void SettingsOpensTheSamePromoScreenAndBackReturnsToSettings()
         {
@@ -431,6 +474,9 @@ namespace HypeDomino.Tests.PlayMode
         static Button ButtonOf(ScreenView screen, string key) => LabelOf(screen, key).GetComponent<Button>();
 
         static TMP_Text TextOf(ScreenView screen, string key) => LabelOf(screen, key).GetComponentInChildren<TMP_Text>(true);
+
+        static bool HasText(ScreenView screen, string text) =>
+            System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), shown => shown.text == text);
 
         static PlainLabel LabelOf(ScreenView screen, string key)
         {

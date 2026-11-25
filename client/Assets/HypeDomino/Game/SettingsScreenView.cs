@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Screens;
 using HypeDomino.UI.Settings;
 using HypeDomino.UI.Tokens;
 using TMPro;
@@ -19,6 +20,7 @@ namespace HypeDomino.Game
         [SerializeField] SettingToggleRow autoFrameRate;
         [SerializeField] TMP_Dropdown frameRate;
         [SerializeField] SettingToggleRow batterySaver;
+        [SerializeField] TMP_Text cacheSize;
         [SerializeField] Button clearCache;
         [SerializeField] Button promoCode;
         [SerializeField] TMP_Text message;
@@ -28,10 +30,12 @@ namespace HypeDomino.Game
         GameStrings strings;
         Action openPromoCode;
         string messageKey;
+        ScreenView screen;
+        bool wasShown;
 
         public void Configure(LanguageRow languageRow, VolumeSliderRow[] volumeRows, SettingToggleRow reduceMotionRow, SettingToggleRow hapticsRow,
-            SettingToggleRow autoFrameRateRow, TMP_Dropdown frameRates, SettingToggleRow batterySaverRow, Button clearCacheButton, Button promoCodeButton,
-            TMP_Text messageLine)
+            SettingToggleRow autoFrameRateRow, TMP_Dropdown frameRates, SettingToggleRow batterySaverRow, TMP_Text cacheSizeLine, Button clearCacheButton,
+            Button promoCodeButton, TMP_Text messageLine)
         {
             Unbind();
             language = languageRow;
@@ -41,6 +45,7 @@ namespace HypeDomino.Game
             autoFrameRate = autoFrameRateRow;
             frameRate = frameRates;
             batterySaver = batterySaverRow;
+            cacheSize = cacheSizeLine;
             clearCache = clearCacheButton;
             promoCode = promoCodeButton;
             message = messageLine;
@@ -53,6 +58,8 @@ namespace HypeDomino.Game
             strings = texts;
             openPromoCode = openPromoCodeScreen;
             messageKey = null;
+            screen = GetComponent<ScreenView>();
+            wasShown = screen != null && screen.IsShown;
             language.Bind(settings.Language);
             foreach (var row in volumes) row.Bind(settings.Volumes);
             reduceMotion.Bind(settings.Motion.ReduceMotion, OnReduceMotion);
@@ -62,11 +69,21 @@ namespace HypeDomino.Game
             settings.Changed += ShowToggles;
             settings.FrameRate.Changed += ShowRates;
             strings.Changed += ShowMessage;
+            strings.Changed += ShowCacheSize;
             frameRate.onValueChanged.AddListener(OnRatePicked);
             clearCache.onClick.AddListener(OnClearCache);
             promoCode.onClick.AddListener(OnPromoCode);
             ShowRates();
             ShowMessage();
+            ShowCacheSize();
+        }
+
+        void LateUpdate()
+        {
+            if (settings == null) return;
+            var shown = screen != null && screen.IsShown;
+            if (shown && !wasShown) ShowCacheSize();
+            wasShown = shown;
         }
 
         void OnDestroy() => Unbind();
@@ -77,6 +94,7 @@ namespace HypeDomino.Game
             settings.Changed -= ShowToggles;
             settings.FrameRate.Changed -= ShowRates;
             strings.Changed -= ShowMessage;
+            strings.Changed -= ShowCacheSize;
             frameRate.onValueChanged.RemoveListener(OnRatePicked);
             clearCache.onClick.RemoveListener(OnClearCache);
             promoCode.onClick.RemoveListener(OnPromoCode);
@@ -101,6 +119,7 @@ namespace HypeDomino.Game
         {
             messageKey = CacheClearKeys.Of(settings.ClearCache());
             ShowMessage();
+            ShowCacheSize();
         }
 
         void ShowToggles()
@@ -124,6 +143,8 @@ namespace HypeDomino.Game
             frameRate.SetValueWithoutNotify(Mathf.Max(0, offeredRates.IndexOf(settings.FrameRate.Chosen)));
             frameRate.RefreshShownValue();
         }
+
+        void ShowCacheSize() => cacheSize.text = CacheSizeText.Of(strings, settings.CacheBytes);
 
         void ShowMessage()
         {
