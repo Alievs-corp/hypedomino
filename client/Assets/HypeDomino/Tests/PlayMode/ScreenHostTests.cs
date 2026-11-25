@@ -3,8 +3,10 @@ using HypeDomino.Game;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
+using HypeDomino.Game.Medals;
 using HypeDomino.Game.Pass;
 using HypeDomino.Game.Privacy;
+using HypeDomino.Game.Profile;
 using HypeDomino.Game.Promo;
 using HypeDomino.Game.Ranking;
 using HypeDomino.Game.Screens;
@@ -27,10 +29,11 @@ namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
-        const int NavButtons = 6;
+        const int NavButtons = 7;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
         const int RankingLabels = 3;
+        const int ProfileLabels = 9;
         static readonly string[] NoLocales = { };
         static readonly int[] Panel120 = { 60, 120 };
 
@@ -370,6 +373,45 @@ namespace HypeDomino.Tests.PlayMode
             ButtonOf(screen, ScreenHost.BackKey).onClick.Invoke();
             Assert.AreSame(lobby, stack.Top);
             Assert.AreEqual(1, stack.Count);
+            Assert.IsFalse(screen.TakesInput);
+        }
+
+        [Test]
+        public void TheProfileScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = Pushed(ProfileScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<ProfileScreenView>());
+            Assert.IsNotNull(screen.GetComponent<ProfileSummaryView>());
+            Assert.IsNotNull(screen.GetComponentInChildren<AvatarView>(true));
+            Assert.IsNotNull(screen.GetComponentInChildren<TMP_InputField>(true).textComponent);
+            Assert.IsNotNull(screen.GetComponentInChildren<ScrollRect>(true));
+            var showcase = screen.GetComponentsInChildren<MedalCellSlot>(true);
+            Assert.AreEqual(ProfileScreens.ShowcaseCells, showcase.Length);
+            foreach (var cell in showcase) Assert.IsFalse(cell.gameObject.activeSelf);
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(ProfileLabels, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+            AssertShowsItsString(TextOf(screen, ProfileScreens.LevelKey));
+            foreach (var key in ProfileScreens.StatKeys) AssertShowsItsString(TextOf(screen, key));
+            AssertShowsItsString(TextOf(screen, ProfileScreens.SaveNicknameKey));
+        }
+
+        [Test]
+        public void TheProfileNavButtonPushesItAndBackPopsIt()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+
+            var screen = Pushed(ProfileScreens.NavKey);
+            Assert.AreNotSame(lobby, screen);
+            Assert.AreEqual(2, stack.Count);
+            Assert.IsTrue(screen.TakesInput);
+            Assert.IsFalse(lobby.TakesInput);
+
+            ButtonOf(screen, ScreenHost.BackKey).onClick.Invoke();
+            Assert.AreSame(lobby, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(lobby.TakesInput);
             Assert.IsFalse(screen.TakesInput);
         }
 
