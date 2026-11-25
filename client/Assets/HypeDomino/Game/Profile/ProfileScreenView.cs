@@ -1,4 +1,5 @@
 using System;
+using HypeDomino.Content;
 using HypeDomino.Game.Medals;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Localization;
@@ -59,6 +60,15 @@ namespace HypeDomino.Game.Profile
             loader.Load(loaded);
             medalLoader.Load(medalsLoaded);
         }
+
+        void Start()
+        {
+            if (strings == null && NetBoot.Profile != null)
+                Bind(NetBoot.Profile, NetBoot.Medals, new NicknameSaver(NetBoot.Api, AnalyticsBoot.Queue), StillsStage(), ContentBoot.Cosmetics, LanguageBoot.Strings);
+        }
+
+        static CosmeticStage StillsStage() =>
+            new(new AddressablesArtSource<Sprite>(), new StillsOnly(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 
