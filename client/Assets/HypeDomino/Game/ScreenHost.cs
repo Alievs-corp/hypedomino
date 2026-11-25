@@ -15,7 +15,7 @@ namespace HypeDomino.Game
         readonly Dictionary<AppState, ScreenView> screens = new();
         readonly Transform nav;
 
-        public ScreenHost(ScreenStack stack, GameStrings strings)
+        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings)
         {
             this.stack = stack;
             Strings = strings;
@@ -25,6 +25,7 @@ namespace HypeDomino.Game
             Nav("ui.plain.nav.pass", PassScreens.Pass(this));
             Nav(PromoScreens.NavKey, Promo);
             Nav("ui.plain.nav.shop", ShopScreens.Shop(this));
+            Nav(SettingsScreens.NavKey, SettingsScreens.Settings(this, settings));
         }
 
         public GameStrings Strings { get; }
@@ -46,10 +47,12 @@ namespace HypeDomino.Game
 
         public void Back() => stack.Pop();
 
+        public void Open(ScreenView screen) => stack.Push(screen);
+
         public Button PushButton(Transform parent, string labelKey, ScreenView screen)
         {
             var button = PlainUi.Button(parent, labelKey, Strings);
-            button.onClick.AddListener(() => stack.Push(screen));
+            button.onClick.AddListener(() => Open(screen));
             return button;
         }
 

@@ -111,6 +111,72 @@ namespace HypeDomino.UI.Screens
             return field;
         }
 
+        public static Toggle Toggle(Transform parent)
+        {
+            var box = Child(parent, "Toggle", typeof(Image), typeof(LayoutElement));
+            var image = box.GetComponent<Image>();
+            image.color = TokenColor.SurfaceDefault;
+            box.GetComponent<LayoutElement>().minHeight = TokenSize.TouchTargetMin;
+            var check = Child(box, "Check", typeof(Image));
+            Stretch(check);
+            check.offsetMin = new Vector2(TokenSpacing.Sm, TokenSpacing.Sm);
+            check.offsetMax = new Vector2(-TokenSpacing.Sm, -TokenSpacing.Sm);
+            var mark = check.GetComponent<Image>();
+            mark.color = TokenColor.RolePrimaryFill;
+            mark.raycastTarget = false;
+            var toggle = box.gameObject.AddComponent<Toggle>();
+            toggle.targetGraphic = image;
+            toggle.graphic = mark;
+            return toggle;
+        }
+
+        public static Slider Slider(Transform parent)
+        {
+            var slider = DefaultControls.CreateSlider(new DefaultControls.Resources()).GetComponent<Slider>();
+            var rect = (RectTransform)slider.transform;
+            rect.SetParent(parent, false);
+            slider.gameObject.AddComponent<LayoutElement>().minHeight = TokenSize.TouchTargetMin;
+            rect.Find("Background").GetComponent<Image>().color = TokenColor.SurfaceDefault;
+            slider.fillRect.GetComponent<Image>().color = TokenColor.RolePrimaryFill;
+            slider.handleRect.GetComponent<Image>().color = TokenColor.TextPrimary;
+            return slider;
+        }
+
+        public static TMP_Dropdown Dropdown(Transform parent)
+        {
+            var dropdown = TMP_DefaultControls.CreateDropdown(new TMP_DefaultControls.Resources()).GetComponent<TMP_Dropdown>();
+            var rect = (RectTransform)dropdown.transform;
+            rect.SetParent(parent, false);
+            dropdown.gameObject.AddComponent<LayoutElement>().minHeight = TokenSize.TouchTargetMin;
+            dropdown.targetGraphic.color = TokenColor.SurfaceDefault;
+            dropdown.template.GetComponent<Image>().color = TokenColor.SurfaceRaised;
+            Style(dropdown.captionText);
+            Style(dropdown.itemText);
+            dropdown.itemText.color = TokenColor.RolePrimaryOn;
+            return dropdown;
+        }
+
+        public static Transform Scroll(Transform parent)
+        {
+            var holder = Child(parent, "Scroll", typeof(LayoutElement));
+            holder.GetComponent<LayoutElement>().flexibleHeight = 1f;
+            var viewport = Child(holder, "Viewport", typeof(Image), typeof(RectMask2D));
+            Stretch(viewport);
+            viewport.GetComponent<Image>().color = TokenColor.BackgroundBase;
+            var content = Child(viewport, "Content", typeof(ContentSizeFitter));
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = Vector2.zero;
+            Lay(content);
+            content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = holder.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            return content;
+        }
+
         public static RecyclingList List(Transform parent)
         {
             var holder = Child(parent, "List", typeof(LayoutElement));
@@ -136,6 +202,12 @@ namespace HypeDomino.UI.Screens
             image.raycastTarget = false;
             mark.GetComponent<LayoutElement>().minHeight = TokenSpacing.Xs;
             return mark.gameObject;
+        }
+
+        static void Style(TMP_Text text)
+        {
+            TypeSet.Loaded.Apply(text, TokenTextStyle.Label);
+            text.color = TokenColor.TextPrimary;
         }
 
         static RectTransform Child(Transform parent, string name, params System.Type[] components)
