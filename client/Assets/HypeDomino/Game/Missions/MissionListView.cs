@@ -53,6 +53,11 @@ namespace HypeDomino.Game.Missions
             if (strings != null) ShowRows();
         }
 
+        void Start()
+        {
+            if (strings == null && NetBoot.Missions != null) Bind(NetBoot.Missions, LanguageBoot.Strings);
+        }
+
         void OnDestroy() => Unbind();
 
         void Unbind()
