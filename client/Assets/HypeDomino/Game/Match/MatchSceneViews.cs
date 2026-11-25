@@ -124,7 +124,7 @@ namespace HypeDomino.Game.Match
                 Wear(link.Worn);
             }
             Attach(MatchBoot.Host, NetBoot.Connection, ContentBoot.Cosmetics, LanguageBoot.Strings,
-                new AddressablesArtSource<Sprite>(), new StillsOnly(), GraphicsBoot.Quality, MotionBoot.Motion);
+                new AddressablesArtSource<Sprite>(), new StillsOnlyArtSource(), GraphicsBoot.Quality, MotionBoot.Motion);
         }
 
         void OnDestroy()
@@ -158,14 +158,5 @@ namespace HypeDomino.Game.Match
         void ShowEmoji(TableSide side, LoopArt art) => emojiLayer.Show((int)side, art, Time.unscaledTime);
 
         static long ClockMs() => (long)(Time.realtimeSinceStartupAsDouble * 1000d);
-
-        sealed class StillsOnly : ICosmeticArtSource<LoopArt>
-        {
-            public void Load(string address, Action<LoopArt> done) => done(null);
-
-            public void Release(string address)
-            {
-            }
-        }
     }
 }
