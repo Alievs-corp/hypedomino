@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Generic;
 using HypeDomino.Game.Screens;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Screens;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace HypeDomino.Game
 {
@@ -21,12 +21,15 @@ namespace HypeDomino.Game
             Strings = strings;
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
-            Nav("ui.plain.nav.pass", PassScreens.Pass);
-            Nav("ui.plain.nav.promo", PromoScreens.Promo);
-            Nav("ui.plain.nav.shop", ShopScreens.Shop);
+            Promo = PromoScreens.Promo(this);
+            Nav("ui.plain.nav.pass", PassScreens.Pass(this));
+            Nav(PromoScreens.NavKey, Promo);
+            Nav("ui.plain.nav.shop", ShopScreens.Shop(this));
         }
 
         public GameStrings Strings { get; }
+
+        public ScreenView Promo { get; }
 
         public ScreenView ScreenOf(AppState state) => screens.TryGetValue(state, out var screen) ? screen : null;
 
@@ -43,10 +46,13 @@ namespace HypeDomino.Game
 
         public void Back() => stack.Pop();
 
-        void Nav(string labelKey, Func<ScreenHost, ScreenView> build)
+        public Button PushButton(Transform parent, string labelKey, ScreenView screen)
         {
-            var screen = build(this);
-            PlainUi.Button(nav, labelKey, Strings).onClick.AddListener(() => stack.Push(screen));
+            var button = PlainUi.Button(parent, labelKey, Strings);
+            button.onClick.AddListener(() => stack.Push(screen));
+            return button;
         }
+
+        void Nav(string labelKey, ScreenView screen) => PushButton(nav, labelKey, screen);
     }
 }
