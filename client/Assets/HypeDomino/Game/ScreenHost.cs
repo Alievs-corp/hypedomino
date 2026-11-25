@@ -28,6 +28,7 @@ namespace HypeDomino.Game
             Nav(SettingsScreens.NavKey, SettingsScreens.Settings(this, settings));
             Nav(RankingScreens.NavKey, RankingScreens.Ranking(this));
             Nav(CollectionScreens.NavKey, CollectionScreens.Collection(this));
+            Nav(ProfileScreens.NavKey, ProfileScreens.Profile(this));
         }
 
         public GameStrings Strings { get; }
