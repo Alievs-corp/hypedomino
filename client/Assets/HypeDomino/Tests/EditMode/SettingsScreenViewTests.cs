@@ -51,6 +51,7 @@ namespace HypeDomino.Tests.EditMode
         Toggle autoFrameRate;
         TMP_Dropdown frameRate;
         Toggle batterySaver;
+        TMP_Text cacheSize;
         Button clearCache;
         Button promoCode;
         TMP_Text message;
@@ -81,6 +82,7 @@ namespace HypeDomino.Tests.EditMode
             autoFrameRate = Add<Toggle>();
             frameRate = Add<TMP_Dropdown>();
             batterySaver = Add<Toggle>();
+            cacheSize = Add<TextMeshProUGUI>();
             clearCache = Add<Button>();
             promoCode = Add<Button>();
             message = Add<TextMeshProUGUI>();
@@ -115,8 +117,8 @@ namespace HypeDomino.Tests.EditMode
             var musicRow = Add<VolumeSliderRow>();
             musicRow.Configure(music, AudioGroup.Music);
             view = root.AddComponent<SettingsScreenView>();
-            view.Configure(languageRow, new[] { musicRow }, Row(reduceMotion), Row(haptics), Row(autoFrameRate), frameRate, Row(batterySaver), clearCache, promoCode,
-                message);
+            view.Configure(languageRow, new[] { musicRow }, Row(reduceMotion), Row(haptics), Row(autoFrameRate), frameRate, Row(batterySaver), cacheSize, clearCache,
+                promoCode, message);
             Rebind();
         }
 
@@ -230,6 +232,52 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.IsTrue(message.enabled);
             Assert.AreEqual(strings.Text(key), message.text);
+        }
+
+        [Test]
+        public void TheCacheSizeShowsTheOccupiedMegabytes()
+        {
+            store.OccupiedBytes = 12_400_000;
+
+            Show();
+
+            Assert.AreEqual("Cache: 12.4 MB", cacheSize.text);
+        }
+
+        [Test]
+        public void AClearThatClearedShowsTheNewSize()
+        {
+            store.OccupiedBytes = 12_400_000;
+            Show();
+
+            clearCache.onClick.Invoke();
+
+            Assert.AreEqual("Cache: 0.0 MB", cacheSize.text);
+        }
+
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void AClearThatDidNotRunKeepsTheSize(bool inUse, bool playing)
+        {
+            store.OccupiedBytes = 12_400_000;
+            store.InUse = inUse;
+            inMatch = playing;
+            Show();
+
+            clearCache.onClick.Invoke();
+
+            Assert.AreEqual("Cache: 12.4 MB", cacheSize.text);
+        }
+
+        [Test]
+        public void TheCacheSizeFollowsALanguageChange()
+        {
+            store.OccupiedBytes = 12_400_000;
+            Show();
+
+            settings.Language.Choose("az");
+
+            Assert.AreEqual("Keş: 12,4 MB", cacheSize.text);
         }
 
         [Test]

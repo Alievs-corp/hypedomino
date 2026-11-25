@@ -22,6 +22,8 @@ namespace HypeDomino.Game
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
             screens[AppState.Room] = RoomScreens.Room(this);
+            screens[AppState.UpdateRequired] = NoticeScreens.UpdateRequired(this);
+            screens[AppState.Maintenance] = NoticeScreens.Maintenance(this);
             Promo = PromoScreens.Promo(this);
             Nav("ui.plain.nav.pass", PassScreens.Pass(this));
             Nav(PromoScreens.NavKey, Promo);
@@ -29,6 +31,9 @@ namespace HypeDomino.Game
             Nav(SettingsScreens.NavKey, SettingsScreens.Settings(this, settings));
             Nav(RankingScreens.NavKey, RankingScreens.Ranking(this));
             Nav(CollectionScreens.NavKey, CollectionScreens.Collection(this));
+            Nav(ProfileScreens.NavKey, ProfileScreens.Profile(this));
+            Nav(MissionScreens.NavKey, MissionScreens.Missions(this));
+            Nav(MedalScreens.NavKey, MedalScreens.Medals(this));
         }
 
         public GameStrings Strings { get; }
