@@ -4,3 +4,9 @@ useDefault = true
 [[allowlists]]
 description = "Fixed UUID namespace of shop.AccountToken, used as the expected account token in store receipt tests; not a credential"
 regexes = ['''(?i)5f0d6a2e-3c7b-4e1a-9d8f-2b6c4a1e7f30''']
+
+[[allowlists]]
+description = "Localization strings of the lobby mode buttons in commit 54a73da (\"key\": \"ui.plain.lobby.ranked_1v1\" and the like) match generic-api-key; they are UI labels, not credentials"
+condition = "AND"
+commits = ["54a73da388f694423719586008c134f8cac60dd5"]
+paths = ['''^client/Assets/HypeDomino/UI/Localization/Resources/builtin-strings\.json$''']
