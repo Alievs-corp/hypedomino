@@ -12,8 +12,22 @@ namespace HypeDomino.Game.FriendLobby
         [SerializeField] GameObject leaderMark;
         [SerializeField] GameObject selectedMark;
         [SerializeField] Button tap;
+        [SerializeField] CosmeticImage emoji;
 
         public Button Tap => tap;
+
+        public void ConfigureEmoji(CosmeticImage emojiArt) => emoji = emojiArt;
+
+        public void ShowEmoji(CosmeticStage stage, CosmeticArt art)
+        {
+            emoji.gameObject.SetActive(true);
+            emoji.Show(stage, art, null);
+        }
+
+        public void HideEmoji()
+        {
+            if (emoji.gameObject.activeSelf) emoji.gameObject.SetActive(false);
+        }
 
         public void Configure(AvatarView avatarView, TMP_Text nicknameText, GameObject leaderMarker, GameObject selectedMarker, Button tapButton)
         {

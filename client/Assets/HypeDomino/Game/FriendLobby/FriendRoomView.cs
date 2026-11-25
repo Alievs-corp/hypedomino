@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Game.Inventory;
 using HypeDomino.Net;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using TMPro;
 using UnityEngine;
@@ -28,10 +30,21 @@ namespace HypeDomino.Game.FriendLobby
         [SerializeField] Button startTwoVsTwo;
         [SerializeField] Button startMatch;
         [SerializeField] Button back;
+        [SerializeField] CanvasGroup emojiRoot;
+        [SerializeField] Button wheel;
+        [SerializeField] GameObject wheelPanel;
+        [SerializeField] Button[] wheelSlots;
+        [SerializeField] CosmeticImage[] wheelArt;
 
         UnityAction[] teamATaps;
         UnityAction[] teamBTaps;
         UnityAction[] waitingTaps;
+        UnityAction[] slotTaps;
+        Action<MemberEmoji> onEmoji;
+        Action<InventoryLoadResult> onInventory;
+        string[] emojiAccounts;
+        long[] emojiEndsAtMs;
+        bool shownCalm;
         FriendRoom room;
         FriendLobbyLink link;
         LobbyCommands commands;
@@ -75,6 +88,17 @@ namespace HypeDomino.Game.FriendLobby
             waitingTaps = null;
         }
 
+        public void ConfigureEmoji(CanvasGroup root, Button wheelButton, GameObject panel, Button[] slotButtons, CosmeticImage[] slotArt)
+        {
+            Unbind();
+            emojiRoot = root;
+            wheel = wheelButton;
+            wheelPanel = panel;
+            wheelSlots = slotButtons;
+            wheelArt = slotArt;
+            slotTaps = null;
+        }
+
         public void Bind(FriendRoom friendRoom, FriendLobbyLink lobby, LobbyCommands lobbyCommands, Session source, CosmeticStage cosmetics, ActiveCosmeticManifest cosmeticManifest, GameStrings texts)
         {
             Unbind();
@@ -89,9 +113,21 @@ namespace HypeDomino.Game.FriendLobby
             teamATaps ??= Taps(teamASeats.Length, OnTeamASeat);
             teamBTaps ??= Taps(teamBSeats.Length, OnTeamBSeat);
             waitingTaps ??= Taps(waiting.Length, OnWaiting);
+            slotTaps ??= Taps(wheelSlots.Length, OnWheelSlot);
+            onEmoji ??= OnEmojiShown;
+            onInventory ??= OnInventoryLoaded;
+            emojiAccounts = new string[members.Length];
+            emojiEndsAtMs = new long[members.Length];
             Listen(teamASeats, teamATaps);
             Listen(teamBSeats, teamBTaps);
             Listen(waiting, waitingTaps);
+            for (var at = 0; at < wheelSlots.Length; at++) wheelSlots[at].onClick.AddListener(slotTaps[at]);
+            wheel.onClick.AddListener(OnWheel);
+            link.EmojiShown += onEmoji;
+            link.InventoryLoaded += onInventory;
+            HideEmoji();
+            shownCalm = false;
+            emojiRoot.alpha = 1f;
             leave.onClick.AddListener(OnLeave);
             invite.onClick.AddListener(invitePanel.Show);
             startOneVsOne.onClick.AddListener(OnStartOneVsOne);
@@ -113,6 +149,10 @@ namespace HypeDomino.Game.FriendLobby
             Forget(teamASeats, teamATaps);
             Forget(teamBSeats, teamBTaps);
             Forget(waiting, waitingTaps);
+            for (var at = 0; at < wheelSlots.Length; at++) wheelSlots[at].onClick.RemoveListener(slotTaps[at]);
+            wheel.onClick.RemoveListener(OnWheel);
+            link.EmojiShown -= onEmoji;
+            link.InventoryLoaded -= onInventory;
             leave.onClick.RemoveListener(OnLeave);
             invite.onClick.RemoveListener(invitePanel.Show);
             startOneVsOne.onClick.RemoveListener(OnStartOneVsOne);
@@ -220,9 +260,97 @@ namespace HypeDomino.Game.FriendLobby
             ShowSeats(teamASeats, room.TeamA);
             ShowSeats(teamBSeats, room.TeamB);
             ShowWaiting();
+            RedrawWheel();
             var key = room.RefusalKey;
             message.enabled = key != null;
             message.text = key == null ? string.Empty : strings.Text(key);
+        }
+
+        public void Tick()
+        {
+            if (room == null) return;
+            var nowMs = link.NowMs;
+            ShowCalm(link.Wheel != null && link.Wheel.Calm(nowMs));
+            for (var at = 0; at < emojiAccounts.Length; at++)
+            {
+                var account = emojiAccounts[at];
+                if (account == null) continue;
+                if (nowMs < emojiEndsAtMs[at] && lobbyPanel.activeSelf && link.Members.IndexOf(account) == at) continue;
+                members[at].HideEmoji();
+                emojiAccounts[at] = null;
+            }
+        }
+
+        void Update() => Tick();
+
+        void OnWheel()
+        {
+            link.Wheel?.Toggle();
+            RedrawWheel();
+        }
+
+        void OnWheelSlot(int index)
+        {
+            link.TrySend(index);
+            RedrawWheel();
+        }
+
+        void OnInventoryLoaded(InventoryLoadResult result) => RedrawWheel();
+
+        void OnEmojiShown(MemberEmoji shown)
+        {
+            if (!lobbyPanel.activeSelf) return;
+            var at = link.Members.IndexOf(shown.Account);
+            if (at < 0 || at >= members.Length || !TryEmojiArt(shown.ItemId, out var art)) return;
+            members[at].ShowEmoji(stage, art);
+            emojiAccounts[at] = shown.Account;
+            emojiEndsAtMs[at] = link.NowMs + TokenEffect.EmojiDurationMs;
+        }
+
+        void RedrawWheel()
+        {
+            var usable = link.Emoji != null && link.Emoji.CanSend;
+            if (!usable) link.Wheel?.Close();
+            emojiRoot.gameObject.SetActive(usable);
+            wheelPanel.SetActive(usable && link.Wheel.IsOpen);
+            if (!wheelPanel.activeSelf) return;
+            for (var at = 0; at < wheelSlots.Length; at++)
+            {
+                if (at < link.Wheel.Count && TryEmojiArt(link.Wheel.Slot(at), out var art))
+                {
+                    wheelSlots[at].gameObject.SetActive(true);
+                    wheelArt[at].Show(stage, art, null);
+                }
+                else
+                {
+                    wheelSlots[at].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        bool TryEmojiArt(string itemId, out CosmeticArt art)
+        {
+            art = default;
+            if (string.IsNullOrEmpty(itemId) || !manifest.Current.TryGet(itemId, out var item)) return false;
+            if (item.Type != CosmeticAddresses.Emoji || !item.IsRendered) return false;
+            art = item.Art;
+            return true;
+        }
+
+        void ShowCalm(bool calm)
+        {
+            if (calm == shownCalm) return;
+            shownCalm = calm;
+            emojiRoot.alpha = calm ? TokenOpacity.Disabled : 1f;
+        }
+
+        void HideEmoji()
+        {
+            for (var at = 0; at < emojiAccounts.Length; at++)
+            {
+                members[at].HideEmoji();
+                emojiAccounts[at] = null;
+            }
         }
 
         void ShowMembers()
