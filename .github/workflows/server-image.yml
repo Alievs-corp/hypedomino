@@ -57,7 +57,7 @@ jobs:
             echo "::endgroup::"
           done
       - name: Push
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Alievs-corp/hypedomino'
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
