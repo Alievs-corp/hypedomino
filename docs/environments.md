@@ -223,9 +223,9 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 
 | Name | Required | Service | Example placeholder | Secret | Stored as |
 |---|---|---|---|---|---|
-| `UNITY_LICENSE` | Yes, for the `client` job | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
-| `UNITY_EMAIL` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
-| `UNITY_PASSWORD` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
+| `UNITY_LICENSE` | No: the `client` job needs this or `UNITY_EMAIL` with `UNITY_PASSWORD` (Alievs-corp uses the pair); on a fork without any of them the Unity tests are skipped with a notice | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
+| `UNITY_EMAIL` | Yes, for the `client` job and the Unity workflows (with `UNITY_PASSWORD`) | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
+| `UNITY_PASSWORD` | Yes, for the `client` job and the Unity workflows (with `UNITY_EMAIL`) | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
 | `ANDROID_APPLICATION_ID` | Yes, for a `client-v*` tag | `Release build` workflow | `<play-package-name>` | No | Repository variable |
 | `ANDROID_KEYSTORE_BASE64` | Yes, for a `client-v*` tag | `Release build` workflow, upload key | `<base64-of-upload-keystore>` | Yes | Repository secret |
 | `ANDROID_KEYSTORE_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<keystore-password>` | Yes | Repository secret |
@@ -242,6 +242,10 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `CLIENT_TLS_PINS` | Yes, for a `client-v*` tag | `Release build` workflow, passed as `-tlsPins` (2.5) | `<live-spki-sha256-base64>,<backup-spki-sha256-base64>` | No | Repository variable |
 | `CLIENT_SENTRY_DSN` | No: without it a tag build warns and sends no crash reports | `Release build` workflow, written to the `-crashReporting` file (2.5) for a `client-v*` tag | `https://<public-key>@o<org-id>.ingest.de.sentry.io/<project-id>` | Yes | Repository secret |
 | `CLIENT_SENTRY_ENVIRONMENT` | No | `Release build` workflow, written to the `-crashReporting` file (2.5) | `staging` | No | Repository variable |
+| `KUBE_CONFIG` | Yes, for every deploy | `Server deploy` workflow: kubeconfig of the environment's cluster, allowed to read and apply the overlay's objects and the `server-env` and `migrate-env` secrets in its namespace | `<kubeconfig-yaml-of-the-cluster>` | Yes | Environment secret of `staging` and of `production` |
+| `SERVER_ENV` | Yes, for every deploy | `Server deploy` workflow, written to the `server-env` secret of the cluster: one `NAME=value` line per server variable of 2.1 that the environment sets | `<dotenv-of-server-variables>` | Yes | Environment secret of `staging` and of `production` |
+| `MIGRATE_ENV` | Yes, for every deploy | `Server deploy` workflow, written to the `migrate-env` secret of the cluster: `HD_DATABASE_URL` of the migration role (M-7) | `HD_DATABASE_URL=<migration-role-url>` | Yes | Environment secret of `staging` and of `production` |
+| `STAGING_AUTO_DEPLOY` | No: unless it is `true`, `staging` is deployed only by hand | `Server deploy` workflow: `true` deploys every image `Server image` pushes from `main` to `staging` | `true` | No | Repository variable |
 
 ### 2.4 Not read yet
 
@@ -263,8 +267,8 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | Secret use | Lives in | Reaches the consumer as |
 |---|---|---|
 | CI only (Unity license) | GitHub Actions repository secrets | Job environment variables, masked in logs |
-| `staging` runtime | GitHub Actions environment secrets of the `staging` environment | Environment variables injected by the staging deploy (#25) |
-| `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from protected refs | Environment variables injected by the production deploy (#25) |
+| `staging` runtime | GitHub Actions environment secrets of the `staging` environment (2.3) | Written by the `Server deploy` workflow to the `server-env` and `migrate-env` secrets of the staging cluster before each release (`docs/launch-runbook.md` 5.1), then environment variables of the pods |
+| `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from `main` after the environment's required reviewers approve (2.3) | Written by the `Server deploy` workflow to the `server-env` and `migrate-env` secrets of the production cluster before each release, then environment variables of the pods |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
 | Redis password (`HD_REDIS_URL`) | The `server-env` secret of each cluster (ADR 0010), from the environment secrets above | Environment variable of the server pods |
 | Database runtime role password (`HD_DATABASE_URL`) | The `server-env` secret of each cluster, from the environment secrets above; the migration role (M-7) is the `HD_DATABASE_URL` of the separate `migrate-env` secret of each cluster | Environment variable of the server pods; `migrate-env` only of the `migrate` Job pods |
@@ -340,8 +344,8 @@ Rules:
 ## 7. Open items
 
 - Infrastructure as code: the tool and state location are fixed by ADR 0010; the OpenTofu code needs the Hetzner Cloud project and its API token per environment, which the owner creates. GN-8 evidence (IaC apply log) depends on it.
-- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above; the image it deploys is pushed by `.github/workflows/server-image.yml` (`docs/launch-runbook.md` 5.1).
-- The GitHub environments `staging` and `production`, their protection rules and their secrets are created by a repository admin when the first deploy exists (#25).
+- Staging automatic deploy (acceptance criterion of #24) needs the staging cluster above: `.github/workflows/server-deploy.yml` deploys each image `.github/workflows/server-image.yml` pushes from `main` to `staging` once the repository variable `STAGING_AUTO_DEPLOY` is `true` (2.3, `docs/launch-runbook.md` 5.1).
+- The GitHub environments `staging` and `production`, their protection rules (required reviewers for `production`, deployment branch `main` for both) and their secrets `KUBE_CONFIG`, `SERVER_ENV` and `MIGRATE_ENV` (2.3) are created by a repository admin before the first run of `.github/workflows/server-deploy.yml` (#25, `docs/launch-runbook.md` OI-2). A run without the secrets fails in its first step and deploys nothing. A run creates the environment it names if it does not exist yet, without protection rules, so the rules are set before the secrets are added.
 - Encryption at rest of PostgreSQL volumes and backups is a hosting setting delivered with the IaC (#25, #188, `docs/privacy.md` 9.1).
 - Migration tool: #55.
 - Crash reporting (#182): the Sentry account in the EU data region, its project and one DSN per environment are created by the owner. Until `HD_SENTRY_DSN` is set, panics of the server and the admin API are only logged and counted; until `CLIENT_SENTRY_DSN` is set, release builds send no crash reports. The CI token for the IL2CPP symbol and mapping upload is also the owner's (`docs/launch-runbook.md` OI-6).
