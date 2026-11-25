@@ -1,6 +1,7 @@
 using System.Collections;
 using HypeDomino.Content;
 using HypeDomino.Game;
+using HypeDomino.Game.FriendLobby;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
@@ -38,6 +39,9 @@ namespace HypeDomino.Tests.PlayMode
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
         const int RankingLabels = 3;
+        const int RoomEntryButtons = 2;
+        const int RoomEntryLabels = 3;
+        const int RoomLabels = 20;
         const int ProfileLabels = 9;
         static readonly string[] NoLocales = { };
         static readonly int[] Panel120 = { 60, 120 };
@@ -115,7 +119,7 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsNotNull(login.GetComponent<LoginScreenView>());
             Assert.IsNotNull(lobby.GetComponent<LobbyScreenView>());
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons, lobby.GetComponentsInChildren<Button>(true).Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryButtons, lobby.GetComponentsInChildren<Button>(true).Length);
             Assert.IsFalse(login.IsShown);
             Assert.IsFalse(lobby.IsShown);
             Assert.IsNull(host.ScreenOf(AppState.Match));
@@ -157,7 +161,7 @@ namespace HypeDomino.Tests.PlayMode
             var lobby = host.ScreenOf(AppState.Lobby).GetComponentsInChildren<PlainLabel>(true);
 
             Assert.AreEqual(LoginButtons, login.Length);
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons, lobby.Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryLabels, lobby.Length);
             foreach (var label in login) AssertShowsItsString(label);
             foreach (var label in lobby) AssertShowsItsString(label);
         }
@@ -630,6 +634,54 @@ namespace HypeDomino.Tests.PlayMode
             var labels = screen.GetComponentsInChildren<PlainLabel>(true);
             Assert.AreEqual(keys.Length, labels.Length);
             foreach (var key in keys) AssertShowsItsString(LabelOf(screen, key));
+        }
+
+        [Test]
+        public void TheLobbyHasTheRoomEntry()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+
+            Assert.IsNotNull(lobby.GetComponent<RoomEntryView>());
+            Assert.IsNotNull(lobby.GetComponentInChildren<TMP_InputField>(true));
+            Assert.IsNotNull(ButtonOf(lobby, RoomScreens.CreateKey));
+            Assert.IsNotNull(ButtonOf(lobby, RoomScreens.JoinKey));
+            AssertShowsItsString(TextOf(lobby, RoomScreens.CodeKey));
+        }
+
+        [Test]
+        public void TheRoomScreenBuildsWithItsViewsAndEveryLabelShowsItsString()
+        {
+            var room = host.ScreenOf(AppState.Room);
+
+            Assert.IsNotNull(room.GetComponent<FriendRoomView>());
+            Assert.IsNotNull(room.GetComponent<InvitePanelView>());
+            Assert.IsNotNull(room.GetComponentInChildren<RecyclingList>(true));
+            Assert.IsFalse(room.GetComponentInChildren<FriendInviteRow>(true).gameObject.activeSelf);
+            Assert.AreEqual(FriendRoom.Capacity + 2 * RoomScreens.TeamSeats + RoomScreens.WaitingSeats, room.GetComponentsInChildren<RoomMemberCell>(true).Length);
+            Assert.AreEqual((int)FriendInviteState.RoomClosed + 1, RoomScreens.FriendStateKeys.Length);
+            Assert.IsFalse(room.IsShown);
+            var labels = room.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(RoomLabels, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [Test]
+        public void TheRoomStateShowsTheRoomScreen()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+            var room = host.ScreenOf(AppState.Room);
+            host.Follow(AppState.Lobby);
+            stack.Advance(TokenDurationMs.Slow);
+
+            host.Follow(AppState.Room);
+
+            Assert.AreSame(room, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(room.TakesInput);
+            Assert.IsFalse(lobby.TakesInput);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.IsTrue(room.IsShown);
+            Assert.IsFalse(lobby.IsShown);
         }
 
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
