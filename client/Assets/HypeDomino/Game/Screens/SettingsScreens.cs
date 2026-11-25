@@ -45,11 +45,12 @@ namespace HypeDomino.Game.Screens
             var autoFrameRate = Toggle(list, host, AutoFrameRateKey);
             var frameRate = PlainUi.Dropdown(Setting(list, host, FrameRateKey));
             var batterySaver = Toggle(list, host, BatterySaverKey);
+            var cacheSize = PlainUi.Text(list, TokenTextStyle.Body);
             var clearCache = PlainUi.Button(list, ClearCacheKey, host.Strings);
             var message = PlainUi.Text(list, TokenTextStyle.Body);
             var promoCode = PlainUi.Button(list, PromoScreens.NavKey, host.Strings);
             var view = screen.gameObject.AddComponent<SettingsScreenView>();
-            view.Configure(language, volumes, reduceMotion, haptics, autoFrameRate, frameRate, batterySaver, clearCache, promoCode, message);
+            view.Configure(language, volumes, reduceMotion, haptics, autoFrameRate, frameRate, batterySaver, cacheSize, clearCache, promoCode, message);
             view.Bind(model, host.Strings, () => host.Open(host.Promo));
             Account(screen, list, host);
             return screen;

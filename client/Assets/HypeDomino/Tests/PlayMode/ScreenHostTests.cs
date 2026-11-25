@@ -1,5 +1,7 @@
+using System.Collections;
 using HypeDomino.Content;
 using HypeDomino.Game;
+using HypeDomino.Game.FriendLobby;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
@@ -21,22 +23,57 @@ using HypeDomino.UI.Motion;
 using HypeDomino.UI.Screens;
 using HypeDomino.UI.Settings;
 using HypeDomino.UI.Tokens;
+using Hypedomino.V1;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UI;
 
 namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
+        const string StoreUrl = "https://store.test/app";
         const int NavButtons = 9;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
         const int RankingLabels = 3;
+        const int RoomEntryButtons = 2;
+        const int RoomEntryLabels = 3;
+        const int RoomLabels = 20;
         const int ProfileLabels = 9;
         static readonly string[] NoLocales = { };
         static readonly int[] Panel120 = { 60, 120 };
+
+        sealed class SizedStore : ICacheStore
+        {
+            long bytes;
+
+            public int Reads { get; private set; }
+
+            public long OccupiedBytes
+            {
+                get
+                {
+                    Reads++;
+                    return bytes;
+                }
+                set => bytes = value;
+            }
+
+            public bool ClearAtStart { get; set; }
+
+            public void ApplyLimits(long limitBytes, int unusedForSeconds)
+            {
+            }
+
+            public bool TryClear()
+            {
+                bytes = 0;
+                return true;
+            }
+        }
 
         GameObject root;
         ScreenStack stack;
@@ -44,6 +81,7 @@ namespace HypeDomino.Tests.PlayMode
         LanguageChoice choice;
         GameStrings strings;
         SettingsModel settings;
+        SizedStore cacheStore;
 
         [SetUp]
         public void Build()
@@ -51,6 +89,7 @@ namespace HypeDomino.Tests.PlayMode
             root = new GameObject("Host");
             stack = root.AddComponent<ScreenStack>();
             stack.enabled = false;
+            cacheStore = new SizedStore();
             choice = LanguageChoice.Load("az", () => NoLocales);
             strings = new GameStrings(BuiltinStrings.Load(), choice, true);
             var graphics = new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false);
@@ -61,7 +100,7 @@ namespace HypeDomino.Tests.PlayMode
                 graphics,
                 new FrameRatePolicy(graphics, Panel120, null, false),
                 new HapticsPreference(true),
-                new ContentCache(new NoCacheStore(), () => false));
+                new ContentCache(cacheStore, () => false));
             host = new ScreenHost(stack, strings, settings);
         }
 
@@ -80,7 +119,7 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsNotNull(login.GetComponent<LoginScreenView>());
             Assert.IsNotNull(lobby.GetComponent<LobbyScreenView>());
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons, lobby.GetComponentsInChildren<Button>(true).Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryButtons, lobby.GetComponentsInChildren<Button>(true).Length);
             Assert.IsFalse(login.IsShown);
             Assert.IsFalse(lobby.IsShown);
             Assert.IsNull(host.ScreenOf(AppState.Match));
@@ -122,7 +161,7 @@ namespace HypeDomino.Tests.PlayMode
             var lobby = host.ScreenOf(AppState.Lobby).GetComponentsInChildren<PlainLabel>(true);
 
             Assert.AreEqual(LoginButtons, login.Length);
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons, lobby.Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryLabels, lobby.Length);
             foreach (var label in login) AssertShowsItsString(label);
             foreach (var label in lobby) AssertShowsItsString(label);
         }
@@ -277,6 +316,50 @@ namespace HypeDomino.Tests.PlayMode
 
             var cleared = strings.Text(CacheClearKeys.Cleared);
             Assert.IsTrue(System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), text => text.text == cleared));
+        }
+
+        [Test]
+        public void BuildingTheHostReadsNoCacheSize()
+        {
+            Assert.AreEqual(0, cacheStore.Reads);
+        }
+
+        [UnityTest]
+        public IEnumerator TheSettingsScreenReadsTheCacheSizeOncePerOpeningAndAfterAClear()
+        {
+            cacheStore.OccupiedBytes = 12_400_000;
+            var screen = Pushed(SettingsScreens.NavKey);
+            yield return null;
+            yield return null;
+            Assert.AreEqual(1, cacheStore.Reads);
+            Assert.IsTrue(HasText(screen, "Keş: 12,4 MB"));
+
+            stack.Pop();
+            stack.Advance(TokenDurationMs.Base);
+            Assert.IsFalse(screen.IsShown);
+            yield return null;
+            cacheStore.OccupiedBytes = 3_000_000;
+            NavButton(SettingsScreens.NavKey).onClick.Invoke();
+            yield return null;
+            Assert.AreEqual(2, cacheStore.Reads);
+            Assert.IsTrue(HasText(screen, "Keş: 3,0 MB"));
+
+            ButtonOf(screen, SettingsScreens.ClearCacheKey).onClick.Invoke();
+            Assert.AreEqual(3, cacheStore.Reads);
+            Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+
+            choice.Choose(GameLanguage.English);
+            Assert.AreEqual(3, cacheStore.Reads);
+            Assert.IsTrue(HasText(screen, "Cache: 0.0 MB"));
+        }
+
+        [Test]
+        public void ASettledSettingsScreenFrameAllocatesNothing()
+        {
+            var view = Pushed(SettingsScreens.NavKey).GetComponent<SettingsScreenView>();
+            view.RefreshWhenShown();
+
+            Assert.That(view.RefreshWhenShown, Allocates.Nothing);
         }
 
         [Test]
@@ -466,6 +549,141 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(lobby.TakesInput);
         }
 
+        [Test]
+        public void TheUpdateAndMaintenanceStatesShowTheirScreens()
+        {
+            var update = host.ScreenOf(AppState.UpdateRequired);
+            var maintenance = host.ScreenOf(AppState.Maintenance);
+            Assert.IsFalse(update.IsShown);
+            Assert.IsFalse(maintenance.IsShown);
+
+            host.Follow(AppState.UpdateRequired);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.AreSame(update, stack.Top);
+            Assert.IsTrue(update.IsShown);
+            Assert.IsTrue(update.TakesInput);
+
+            host.Follow(AppState.Maintenance);
+            Assert.AreSame(maintenance, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(maintenance.TakesInput);
+            Assert.IsFalse(update.TakesInput);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.IsTrue(maintenance.IsShown);
+            Assert.IsFalse(update.IsShown);
+        }
+
+        [Test]
+        public void TheUpdateRequiredScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = host.ScreenOf(AppState.UpdateRequired);
+
+            Assert.IsNotNull(screen.GetComponent<UpdateRequiredView>());
+            Assert.AreEqual(1, screen.GetComponentsInChildren<Button>(true).Length);
+            AssertEveryLabelShowsItsString(screen, NoticeScreens.UpdateMessageKey, NoticeScreens.UpdateKey);
+        }
+
+        [Test]
+        public void TheBoundUpdateRequiredScreenShowsItsPanelAndOpensTheStoreLink()
+        {
+            var screen = host.ScreenOf(AppState.UpdateRequired);
+            var flow = new AppFlow();
+            string opened = null;
+            screen.GetComponent<UpdateRequiredView>().Bind(flow, StoreUrl, link => opened = link);
+            var panel = TextOf(screen, NoticeScreens.UpdateMessageKey).transform.parent.gameObject;
+            Assert.IsFalse(panel.activeSelf);
+
+            flow.Hello(new ServerHello { Status = HelloStatus.UpdateRequired });
+            ButtonOf(screen, NoticeScreens.UpdateKey).onClick.Invoke();
+
+            Assert.IsTrue(panel.activeSelf);
+            Assert.AreEqual(StoreUrl, opened);
+        }
+
+        [Test]
+        public void TheMaintenanceScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = host.ScreenOf(AppState.Maintenance);
+
+            Assert.IsNotNull(screen.GetComponent<MaintenanceScreenView>());
+            Assert.AreEqual(1, screen.GetComponentsInChildren<Button>(true).Length);
+            AssertEveryLabelShowsItsString(screen, NoticeScreens.MaintenanceMessageKey, NoticeScreens.RetryKey);
+        }
+
+        [Test]
+        public void TheBoundMaintenanceScreenShowsItsPanelAndRetries()
+        {
+            var screen = host.ScreenOf(AppState.Maintenance);
+            var dials = 0;
+            var maintenance = new MaintenanceScreen(() => dials++, () => 0);
+            screen.GetComponent<MaintenanceScreenView>().Bind(maintenance);
+            var panel = TextOf(screen, NoticeScreens.MaintenanceMessageKey).transform.parent.gameObject;
+            var retry = ButtonOf(screen, NoticeScreens.RetryKey);
+            Assert.IsFalse(panel.activeSelf);
+
+            maintenance.Read(new ServerHello { Status = HelloStatus.Maintenance });
+            retry.onClick.Invoke();
+
+            Assert.IsTrue(panel.activeSelf);
+            Assert.AreEqual(1, dials);
+            Assert.IsFalse(retry.interactable);
+        }
+
+        void AssertEveryLabelShowsItsString(ScreenView screen, params string[] keys)
+        {
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(keys.Length, labels.Length);
+            foreach (var key in keys) AssertShowsItsString(LabelOf(screen, key));
+        }
+
+        [Test]
+        public void TheLobbyHasTheRoomEntry()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+
+            Assert.IsNotNull(lobby.GetComponent<RoomEntryView>());
+            Assert.IsNotNull(lobby.GetComponentInChildren<TMP_InputField>(true));
+            Assert.IsNotNull(ButtonOf(lobby, RoomScreens.CreateKey));
+            Assert.IsNotNull(ButtonOf(lobby, RoomScreens.JoinKey));
+            AssertShowsItsString(TextOf(lobby, RoomScreens.CodeKey));
+        }
+
+        [Test]
+        public void TheRoomScreenBuildsWithItsViewsAndEveryLabelShowsItsString()
+        {
+            var room = host.ScreenOf(AppState.Room);
+
+            Assert.IsNotNull(room.GetComponent<FriendRoomView>());
+            Assert.IsNotNull(room.GetComponent<InvitePanelView>());
+            Assert.IsNotNull(room.GetComponentInChildren<RecyclingList>(true));
+            Assert.IsFalse(room.GetComponentInChildren<FriendInviteRow>(true).gameObject.activeSelf);
+            Assert.AreEqual(FriendRoom.Capacity + 2 * RoomScreens.TeamSeats + RoomScreens.WaitingSeats, room.GetComponentsInChildren<RoomMemberCell>(true).Length);
+            Assert.AreEqual((int)FriendInviteState.RoomClosed + 1, RoomScreens.FriendStateKeys.Length);
+            Assert.IsFalse(room.IsShown);
+            var labels = room.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(RoomLabels, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [Test]
+        public void TheRoomStateShowsTheRoomScreen()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+            var room = host.ScreenOf(AppState.Room);
+            host.Follow(AppState.Lobby);
+            stack.Advance(TokenDurationMs.Slow);
+
+            host.Follow(AppState.Room);
+
+            Assert.AreSame(room, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsTrue(room.TakesInput);
+            Assert.IsFalse(lobby.TakesInput);
+            stack.Advance(TokenDurationMs.Slow);
+            Assert.IsTrue(room.IsShown);
+            Assert.IsFalse(lobby.IsShown);
+        }
+
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
 
         static Slider SliderOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Slider>(true);
@@ -482,6 +700,9 @@ namespace HypeDomino.Tests.PlayMode
         static Button ButtonOf(ScreenView screen, string key) => LabelOf(screen, key).GetComponent<Button>();
 
         static TMP_Text TextOf(ScreenView screen, string key) => LabelOf(screen, key).GetComponentInChildren<TMP_Text>(true);
+
+        static bool HasText(ScreenView screen, string text) =>
+            System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), shown => shown.text == text);
 
         static PlainLabel LabelOf(ScreenView screen, string key)
         {

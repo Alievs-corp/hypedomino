@@ -21,6 +21,9 @@ namespace HypeDomino.Game
             Strings = strings;
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
+            screens[AppState.Room] = RoomScreens.Room(this);
+            screens[AppState.UpdateRequired] = NoticeScreens.UpdateRequired(this);
+            screens[AppState.Maintenance] = NoticeScreens.Maintenance(this);
             Promo = PromoScreens.Promo(this);
             Nav("ui.plain.nav.pass", PassScreens.Pass(this));
             Nav(PromoScreens.NavKey, Promo);
