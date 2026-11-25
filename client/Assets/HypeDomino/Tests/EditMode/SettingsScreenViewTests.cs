@@ -52,7 +52,10 @@ namespace HypeDomino.Tests.EditMode
         TMP_Dropdown frameRate;
         Toggle batterySaver;
         Button clearCache;
+        Button promoCode;
         TMP_Text message;
+        SettingsScreenView view;
+        int promoCodeOpens;
 
         [SetUp]
         public void Build()
@@ -79,7 +82,9 @@ namespace HypeDomino.Tests.EditMode
             frameRate = Add<TMP_Dropdown>();
             batterySaver = Add<Toggle>();
             clearCache = Add<Button>();
+            promoCode = Add<Button>();
             message = Add<TextMeshProUGUI>();
+            promoCodeOpens = 0;
         }
 
         [TearDown]
@@ -109,10 +114,15 @@ namespace HypeDomino.Tests.EditMode
             languageRow.Configure(languages);
             var musicRow = Add<VolumeSliderRow>();
             musicRow.Configure(music, AudioGroup.Music);
-            var view = root.AddComponent<SettingsScreenView>();
-            view.Configure(languageRow, new[] { musicRow }, Row(reduceMotion), Row(haptics), Row(autoFrameRate), frameRate, Row(batterySaver), clearCache, message);
-            view.Bind(settings, strings);
+            view = root.AddComponent<SettingsScreenView>();
+            view.Configure(languageRow, new[] { musicRow }, Row(reduceMotion), Row(haptics), Row(autoFrameRate), frameRate, Row(batterySaver), clearCache, promoCode,
+                message);
+            Rebind();
         }
+
+        void Rebind() => view.Bind(settings, strings, OpenPromoCode);
+
+        void OpenPromoCode() => promoCodeOpens++;
 
         static int[] Rates(TMP_Dropdown dropdown)
         {
@@ -220,6 +230,43 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.IsTrue(message.enabled);
             Assert.AreEqual(strings.Text(key), message.text);
+        }
+
+        [Test]
+        public void ThePromoCodeButtonOpensThePromoCodeScreenOncePerTap()
+        {
+            Show();
+            Assert.AreEqual(0, promoCodeOpens);
+
+            promoCode.onClick.Invoke();
+            Assert.AreEqual(1, promoCodeOpens);
+
+            promoCode.onClick.Invoke();
+            Assert.AreEqual(2, promoCodeOpens);
+        }
+
+        [Test]
+        public void BindingAgainKeepsOnePromoCodeOpenPerTap()
+        {
+            Show();
+            Rebind();
+
+            promoCode.onClick.Invoke();
+
+            Assert.AreEqual(1, promoCodeOpens);
+        }
+
+        [Test]
+        public void ThePromoCodeButtonChangesNoSetting()
+        {
+            var changes = 0;
+            Show();
+            settings.Changed += () => changes++;
+
+            promoCode.onClick.Invoke();
+
+            Assert.AreEqual(0, changes);
+            Assert.IsFalse(message.enabled);
         }
     }
 }

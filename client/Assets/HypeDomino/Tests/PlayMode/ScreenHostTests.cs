@@ -3,6 +3,7 @@ using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
 using HypeDomino.Game.Pass;
 using HypeDomino.Game.Promo;
+using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
@@ -150,9 +151,31 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsNotNull(shop.GetComponentInChildren<RecyclingList>(true));
             Assert.IsNotNull(shop.GetComponentInChildren<ShopOfferRow>(true));
             Assert.IsFalse(shop.GetComponentInChildren<ShopOfferRow>(true).gameObject.activeSelf);
-            Assert.AreEqual(ShopSectionKeys.Count + 4, shop.GetComponentsInChildren<Button>(true).Length);
+            Assert.AreEqual(ShopSectionKeys.Count + 5, shop.GetComponentsInChildren<Button>(true).Length);
             AssertShowsItsString(TextOf(shop, "ui.plain.shop.buy"));
             AssertShowsItsString(TextOf(shop, "ui.plain.close"));
+            AssertShowsItsString(TextOf(shop, PromoScreens.NavKey));
+        }
+
+        [Test]
+        public void TheShopOpensTheSamePromoScreenAsTheLobbyAndBackReturnsToTheShop()
+        {
+            var shop = Pushed("ui.plain.nav.shop");
+
+            ButtonOf(shop, PromoScreens.NavKey).onClick.Invoke();
+            Assert.AreSame(host.Promo, stack.Top);
+            Assert.AreEqual(3, stack.Count);
+            Assert.IsTrue(host.Promo.TakesInput);
+            Assert.IsFalse(shop.TakesInput);
+
+            ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
+            Assert.AreSame(shop, stack.Top);
+            Assert.IsTrue(shop.TakesInput);
+
+            ButtonOf(shop, ScreenHost.BackKey).onClick.Invoke();
+            NavButton(PromoScreens.NavKey).onClick.Invoke();
+            Assert.AreSame(host.Promo, stack.Top);
+            Assert.AreEqual(2, stack.Count);
         }
 
         [Test]

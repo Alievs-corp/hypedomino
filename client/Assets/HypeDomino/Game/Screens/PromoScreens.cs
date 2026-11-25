@@ -6,6 +6,8 @@ namespace HypeDomino.Game.Screens
 {
     public static class PromoScreens
     {
+        public const string NavKey = "ui.plain.nav.promo";
+
         public static ScreenView Promo(ScreenHost host)
         {
             var screen = host.PushedScreen("Promo", out var column);

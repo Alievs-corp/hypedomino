@@ -28,6 +28,7 @@ namespace HypeDomino.Game.Screens
             var timeLeft = PlainUi.Text(column, TokenTextStyle.Caption);
             var offers = PlainUi.List(column);
             var message = PlainUi.Text(column, TokenTextStyle.Body);
+            host.PushButton(column, PromoScreens.NavKey, host.Promo);
             var preview = PlainUi.Column(column);
             var title = PlainUi.Text(preview.transform, TokenTextStyle.Title);
             var price = PlainUi.Text(preview.transform, TokenTextStyle.Counter);

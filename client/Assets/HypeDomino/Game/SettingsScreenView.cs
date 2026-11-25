@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using HypeDomino.UI.Localization;
@@ -19,15 +20,18 @@ namespace HypeDomino.Game
         [SerializeField] TMP_Dropdown frameRate;
         [SerializeField] SettingToggleRow batterySaver;
         [SerializeField] Button clearCache;
+        [SerializeField] Button promoCode;
         [SerializeField] TMP_Text message;
 
         readonly List<int> offeredRates = new();
         SettingsModel settings;
         GameStrings strings;
+        Action openPromoCode;
         string messageKey;
 
         public void Configure(LanguageRow languageRow, VolumeSliderRow[] volumeRows, SettingToggleRow reduceMotionRow, SettingToggleRow hapticsRow,
-            SettingToggleRow autoFrameRateRow, TMP_Dropdown frameRates, SettingToggleRow batterySaverRow, Button clearCacheButton, TMP_Text messageLine)
+            SettingToggleRow autoFrameRateRow, TMP_Dropdown frameRates, SettingToggleRow batterySaverRow, Button clearCacheButton, Button promoCodeButton,
+            TMP_Text messageLine)
         {
             Unbind();
             language = languageRow;
@@ -38,14 +42,16 @@ namespace HypeDomino.Game
             frameRate = frameRates;
             batterySaver = batterySaverRow;
             clearCache = clearCacheButton;
+            promoCode = promoCodeButton;
             message = messageLine;
         }
 
-        public void Bind(SettingsModel model, GameStrings texts)
+        public void Bind(SettingsModel model, GameStrings texts, Action openPromoCodeScreen)
         {
             Unbind();
             settings = model;
             strings = texts;
+            openPromoCode = openPromoCodeScreen;
             messageKey = null;
             language.Bind(settings.Language);
             foreach (var row in volumes) row.Bind(settings.Volumes);
@@ -58,6 +64,7 @@ namespace HypeDomino.Game
             strings.Changed += ShowMessage;
             frameRate.onValueChanged.AddListener(OnRatePicked);
             clearCache.onClick.AddListener(OnClearCache);
+            promoCode.onClick.AddListener(OnPromoCode);
             ShowRates();
             ShowMessage();
         }
@@ -72,9 +79,13 @@ namespace HypeDomino.Game
             strings.Changed -= ShowMessage;
             frameRate.onValueChanged.RemoveListener(OnRatePicked);
             clearCache.onClick.RemoveListener(OnClearCache);
+            promoCode.onClick.RemoveListener(OnPromoCode);
             settings = null;
             strings = null;
+            openPromoCode = null;
         }
+
+        void OnPromoCode() => openPromoCode();
 
         void OnReduceMotion(bool on) => settings.Motion.Choose(on);
 
