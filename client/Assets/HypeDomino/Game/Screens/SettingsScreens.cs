@@ -1,3 +1,4 @@
+using HypeDomino.Game.Privacy;
 using HypeDomino.UI.Audio;
 using HypeDomino.UI.Screens;
 using HypeDomino.UI.Settings;
@@ -16,6 +17,12 @@ namespace HypeDomino.Game.Screens
         public const string FrameRateKey = "ui.plain.settings.frame_rate";
         public const string BatterySaverKey = "ui.plain.settings.battery_saver";
         public const string ClearCacheKey = "ui.plain.settings.clear_cache";
+        public const string ExportDataKey = "ui.plain.settings.export_data";
+        public const string DeleteAccountKey = "ui.plain.settings.delete_account";
+        public const string DeleteWarningKey = "ui.plain.settings.delete_warning";
+        public const string DeleteWithGoogleKey = "ui.plain.settings.delete_with_google";
+        public const string DeleteWithAppleKey = "ui.plain.settings.delete_with_apple";
+        public const string KeepAccountKey = "ui.plain.settings.keep_account";
 
         public static readonly string[] VolumeKeys =
         {
@@ -44,7 +51,24 @@ namespace HypeDomino.Game.Screens
             var view = screen.gameObject.AddComponent<SettingsScreenView>();
             view.Configure(language, volumes, reduceMotion, haptics, autoFrameRate, frameRate, batterySaver, clearCache, promoCode, message);
             view.Bind(model, host.Strings, () => host.Open(host.Promo));
+            Account(screen, list, host);
             return screen;
+        }
+
+        static void Account(ScreenView screen, Transform list, ScreenHost host)
+        {
+            var export = PlainUi.Button(list, ExportDataKey, host.Strings);
+            var delete = PlainUi.Button(list, DeleteAccountKey, host.Strings);
+            var warning = PlainUi.Column(list);
+            PlainUi.Text(warning.transform, TokenTextStyle.Body, DeleteWarningKey, host.Strings);
+            var google = PlainUi.Button(warning.transform, DeleteWithGoogleKey, host.Strings);
+            var apple = PlainUi.Button(warning.transform, DeleteWithAppleKey, host.Strings);
+            var keep = PlainUi.Button(warning.transform, KeepAccountKey, host.Strings);
+            warning.SetActive(false);
+            var pending = PlainUi.Mark(list);
+            pending.SetActive(false);
+            var message = PlainUi.Text(list, TokenTextStyle.Body);
+            screen.gameObject.AddComponent<AccountSettingsView>().Configure(export, delete, warning, google, apple, keep, pending, message);
         }
 
         static Transform Setting(Transform list, ScreenHost host, string labelKey)

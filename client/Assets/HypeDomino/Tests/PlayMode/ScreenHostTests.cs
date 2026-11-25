@@ -3,6 +3,7 @@ using HypeDomino.Game;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
 using HypeDomino.Game.Pass;
+using HypeDomino.Game.Privacy;
 using HypeDomino.Game.Promo;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
@@ -25,7 +26,7 @@ namespace HypeDomino.Tests.PlayMode
     {
         const int NavButtons = 4;
         const int LoginButtons = 3;
-        const int SettingsLabels = 12;
+        const int SettingsLabels = 18;
         static readonly string[] NoLocales = { };
         static readonly int[] Panel120 = { 60, 120 };
 
@@ -283,6 +284,21 @@ namespace HypeDomino.Tests.PlayMode
             ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
             Assert.AreSame(screen, stack.Top);
             Assert.IsTrue(screen.TakesInput);
+        }
+
+        [Test]
+        public void TheSettingsScreenHasTheAccountRowsWithTheWarningClosed()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<AccountSettingsView>());
+            var warning = TextOf(screen, SettingsScreens.DeleteWarningKey).transform.parent.gameObject;
+            Assert.IsFalse(warning.activeSelf);
+            Assert.AreSame(warning.transform, ButtonOf(screen, SettingsScreens.DeleteWithGoogleKey).transform.parent);
+            Assert.AreSame(warning.transform, ButtonOf(screen, SettingsScreens.DeleteWithAppleKey).transform.parent);
+            Assert.AreSame(warning.transform, ButtonOf(screen, SettingsScreens.KeepAccountKey).transform.parent);
+            Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.ExportDataKey).transform.parent);
+            Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.DeleteAccountKey).transform.parent);
         }
 
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
