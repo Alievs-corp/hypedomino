@@ -1,8 +1,10 @@
 using System;
+using HypeDomino.Content;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Medals;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
 
@@ -42,6 +44,14 @@ namespace HypeDomino.Game.Medals
             ShowRows();
             loader.Load(loaded);
         }
+
+        void Start()
+        {
+            if (strings == null && NetBoot.Medals != null) Bind(NetBoot.Medals, LobbyStage(), LanguageBoot.Strings);
+        }
+
+        static CosmeticStage LobbyStage() =>
+            new(new AddressablesArtSource<Sprite>(), new AddressablesArtSource<LoopArt>(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 
