@@ -223,9 +223,9 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 
 | Name | Required | Service | Example placeholder | Secret | Stored as |
 |---|---|---|---|---|---|
-| `UNITY_LICENSE` | Yes, for the `client` job | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
-| `UNITY_EMAIL` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
-| `UNITY_PASSWORD` | Yes, for the `client` job | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
+| `UNITY_LICENSE` | No: the `client` job needs this or `UNITY_EMAIL` with `UNITY_PASSWORD` (Alievs-corp uses the pair); on a fork without any of them the Unity tests are skipped with a notice | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
+| `UNITY_EMAIL` | Yes, for the `client` job and the Unity workflows (with `UNITY_PASSWORD`) | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
+| `UNITY_PASSWORD` | Yes, for the `client` job and the Unity workflows (with `UNITY_EMAIL`) | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
 | `ANDROID_APPLICATION_ID` | Yes, for a `client-v*` tag | `Release build` workflow | `<play-package-name>` | No | Repository variable |
 | `ANDROID_KEYSTORE_BASE64` | Yes, for a `client-v*` tag | `Release build` workflow, upload key | `<base64-of-upload-keystore>` | Yes | Repository secret |
 | `ANDROID_KEYSTORE_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<keystore-password>` | Yes | Repository secret |
