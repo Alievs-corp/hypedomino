@@ -145,6 +145,10 @@ namespace HypeDomino.Tests.PlayMode
             view.Configure(lobbyPanel, teamsPanel, members, code, message, leave, invite, invites);
             view.ConfigureStart(startOneVsOne, startTwoVsTwo);
             view.ConfigureTeams(teamA, teamB, waiting, startMatch, back);
+            var emojiRoot = Child("Emoji", lobbyPanel.transform).AddComponent<CanvasGroup>();
+            var wheelPanel = Child("Wheel", emojiRoot.transform);
+            var slot = NewButton("Slot", wheelPanel.transform);
+            view.ConfigureEmoji(emojiRoot, NewButton("Wheel button", emojiRoot.transform), wheelPanel, new[] { slot }, new[] { NewArt("Art", slot.transform) });
 
             api = new Api();
             var auth = new Auth();
@@ -204,6 +208,7 @@ namespace HypeDomino.Tests.PlayMode
                 avatar.Configure(NewArt("Art", avatar.transform), NewArt("Frame", avatar.transform), null, null);
                 cells[at] = cell.AddComponent<RoomMemberCell>();
                 cells[at].Configure(avatar, Text("Nickname", cell.transform), Child("Leader", cell.transform), Child("Selected", cell.transform), NewButton("Tap", cell.transform));
+                cells[at].ConfigureEmoji(NewArt("Emoji", cell.transform));
             }
             return cells;
         }

@@ -45,6 +45,7 @@ namespace HypeDomino.Game.FriendLobby
         public EmojiWheel Wheel { get; private set; }
         public LobbyEmoji Emoji { get; private set; }
         public InventoryReply Worn { get; private set; }
+        public long NowMs => clockMs();
 
         public event Action<MemberEmoji> EmojiShown;
         public event Action<InventoryLoadResult> InventoryLoaded;
@@ -105,6 +106,7 @@ namespace HypeDomino.Game.FriendLobby
         void Read(LobbyState state)
         {
             lastState = state;
+            Emoji?.Enter(state);
             Members.Read(room);
             Invites.RoomChanged();
             if (room.InRoom && !inRoom) Invites.Load(onFriends);
