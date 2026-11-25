@@ -13,6 +13,10 @@ namespace HypeDomino.Game.Ranking
         [SerializeField] Sprite[] tierBadges;
 
         GameStrings strings;
+        LeaderboardLoader loader;
+        string mode;
+        string board;
+        bool loadWaiting;
         Action<LeaderboardLoadResult> loaded;
         LeaderboardStanding standing;
         string[] positions = Array.Empty<string>();
@@ -28,10 +32,13 @@ namespace HypeDomino.Game.Ranking
             tierBadges = tierBadgeSprites;
         }
 
-        public void Bind(LeaderboardLoader loader, string mode, string board, GameStrings texts)
+        public void Bind(LeaderboardLoader boardLoader, string rankedMode, string boardName, GameStrings texts)
         {
             Unbind();
             strings = texts;
+            loader = boardLoader;
+            mode = rankedMode;
+            board = boardName;
             standing = null;
             loaded ??= OnLoaded;
             if (list.RowCount == 0)
@@ -41,7 +48,7 @@ namespace HypeDomino.Game.Ranking
             }
             strings.Changed += ShowRows;
             ShowRows();
-            loader.Load(mode, board, loaded);
+            loadWaiting = !loader.Load(mode, board, loaded);
         }
 
         void OnDestroy() => Unbind();
@@ -56,6 +63,11 @@ namespace HypeDomino.Game.Ranking
         void OnLoaded(LeaderboardLoadResult result)
         {
             if (strings == null) return;
+            if (loadWaiting)
+            {
+                loadWaiting = !loader.Load(mode, board, loaded);
+                return;
+            }
             standing = result.Outcome == LeaderboardLoadOutcome.Loaded ? result.Standing : null;
             ShowRows();
         }
