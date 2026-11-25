@@ -300,6 +300,20 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void AnOpenWheelIsClosedWhenTheLobbyPhaseEnds()
+        {
+            WearTwo();
+            Lobby();
+            wheel.onClick.Invoke();
+
+            Lobby(LobbyPhase.Teams);
+            Lobby();
+
+            Assert.IsTrue(emojiRoot.gameObject.activeSelf);
+            Assert.IsFalse(wheelPanel.activeSelf);
+        }
+
+        [Test]
         public void TheWheelButtonOpensTheWornSlotsWithTheirStaticArt()
         {
             WearTwo();

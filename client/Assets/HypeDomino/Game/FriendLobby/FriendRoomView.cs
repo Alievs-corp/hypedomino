@@ -153,7 +153,6 @@ namespace HypeDomino.Game.FriendLobby
             wheel.onClick.RemoveListener(OnWheel);
             link.EmojiShown -= onEmoji;
             link.InventoryLoaded -= onInventory;
-            HideEmoji();
             leave.onClick.RemoveListener(OnLeave);
             invite.onClick.RemoveListener(invitePanel.Show);
             startOneVsOne.onClick.RemoveListener(OnStartOneVsOne);
@@ -311,6 +310,7 @@ namespace HypeDomino.Game.FriendLobby
         void RedrawWheel()
         {
             var usable = link.Emoji != null && link.Emoji.CanSend;
+            if (!usable) link.Wheel?.Close();
             emojiRoot.gameObject.SetActive(usable);
             wheelPanel.SetActive(usable && link.Wheel.IsOpen);
             if (!wheelPanel.activeSelf) return;
