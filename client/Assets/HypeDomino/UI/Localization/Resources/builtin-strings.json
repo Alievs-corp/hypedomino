@@ -209,6 +209,7 @@
     { "key": "ui.plain.nav.promo", "en": "Promo code", "az": "Promo kod" },
     { "key": "ui.plain.nav.shop", "en": "Shop", "az": "Mağaza" },
     { "key": "ui.plain.nav.settings", "en": "Settings", "az": "Ayarlar" },
+    { "key": "ui.plain.nav.ranking", "en": "Ranking", "az": "Reytinq" },
     { "key": "ui.plain.settings.language", "en": "Language", "az": "Dil" },
     { "key": "ui.plain.settings.music", "en": "Music", "az": "Musiqi" },
     { "key": "ui.plain.settings.sfx", "en": "Sound effects", "az": "Səs effektləri" },
