@@ -69,6 +69,12 @@ namespace HypeDomino.Game.Privacy
             Refresh();
         }
 
+        void Start()
+        {
+            if (export == null && NetBoot.Api != null)
+                Bind(new DataExport(NetBoot.Api), NetBoot.Deletion, NetBoot.Auth, SignInOptions.Current, LanguageBoot.Strings, Application.OpenURL, NetBoot.SignedOut);
+        }
+
         void OnDestroy() => Unbind();
 
         void Unbind()

@@ -31,6 +31,7 @@ namespace HypeDomino.Game
         public static MatchQueue Queue { get; private set; }
         public static MaintenanceScreen Maintenance { get; private set; }
         public static LoginScreen Login { get; private set; }
+        public static AccountDeletion Deletion { get; private set; }
         public static LobbyCommands Lobby { get; private set; }
         public static FriendRoom Room { get; private set; }
         public static ShopLoader Shop { get; private set; }
@@ -97,7 +98,8 @@ namespace HypeDomino.Game
             PrivacyBoot.Start(Api, Auth, session);
             BuildLobby(Api, Integrity, Queue, AppBoot.Flow);
             start = new NetStart(Auth, AppBoot.Flow, Dial, outcome => Debug.LogWarning($"Net resume outcome={outcome}"));
-            Login = new LoginScreen(Auth, new AccountDeletion(http, identity), SignInOptions.Current, Dial);
+            Deletion = new AccountDeletion(http, identity);
+            Login = new LoginScreen(Auth, Deletion, SignInOptions.Current, Dial);
             session.ErrorReceived += OnError;
             Maintenance = new MaintenanceScreen(Dial, () => Time.realtimeSinceStartupAsDouble);
             session.HelloReceived += Maintenance.Read;
@@ -182,6 +184,12 @@ namespace HypeDomino.Game
         }
 
         static ISocketTransport OpenSocket() => phases.Dialing(new WebSocketTransport(pins));
+
+        public static void SignedOut()
+        {
+            Connection.Stop();
+            AppBoot.Flow.SignInNeeded();
+        }
 
         static void OnError(Error error)
         {
