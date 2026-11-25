@@ -41,7 +41,19 @@ namespace HypeDomino.Tests.PlayMode
 
         sealed class SizedStore : ICacheStore
         {
-            public long OccupiedBytes { get; set; }
+            long bytes;
+
+            public int Reads { get; private set; }
+
+            public long OccupiedBytes
+            {
+                get
+                {
+                    Reads++;
+                    return bytes;
+                }
+                set => bytes = value;
+            }
 
             public bool ClearAtStart { get; set; }
 
@@ -51,7 +63,7 @@ namespace HypeDomino.Tests.PlayMode
 
             public bool TryClear()
             {
-                OccupiedBytes = 0;
+                bytes = 0;
                 return true;
             }
         }
@@ -299,13 +311,20 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), text => text.text == cleared));
         }
 
-        [UnityTest]
-        public IEnumerator TheSettingsScreenShowsTheCacheSizeEachTimeItOpensAndAfterAClear()
+        [Test]
+        public void BuildingTheHostReadsNoCacheSize()
         {
-            var screen = Pushed(SettingsScreens.NavKey);
-            Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+            Assert.AreEqual(0, cacheStore.Reads);
+        }
+
+        [UnityTest]
+        public IEnumerator TheSettingsScreenReadsTheCacheSizeOncePerOpeningAndAfterAClear()
+        {
             cacheStore.OccupiedBytes = 12_400_000;
+            var screen = Pushed(SettingsScreens.NavKey);
             yield return null;
+            yield return null;
+            Assert.AreEqual(1, cacheStore.Reads);
             Assert.IsTrue(HasText(screen, "Keş: 12,4 MB"));
 
             stack.Pop();
@@ -315,10 +334,25 @@ namespace HypeDomino.Tests.PlayMode
             cacheStore.OccupiedBytes = 3_000_000;
             NavButton(SettingsScreens.NavKey).onClick.Invoke();
             yield return null;
+            Assert.AreEqual(2, cacheStore.Reads);
             Assert.IsTrue(HasText(screen, "Keş: 3,0 MB"));
 
             ButtonOf(screen, SettingsScreens.ClearCacheKey).onClick.Invoke();
+            Assert.AreEqual(3, cacheStore.Reads);
             Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+
+            choice.Choose(GameLanguage.English);
+            Assert.AreEqual(3, cacheStore.Reads);
+            Assert.IsTrue(HasText(screen, "Cache: 0.0 MB"));
+        }
+
+        [Test]
+        public void ASettledSettingsScreenFrameAllocatesNothing()
+        {
+            var view = Pushed(SettingsScreens.NavKey).GetComponent<SettingsScreenView>();
+            view.RefreshWhenShown();
+
+            Assert.That(view.RefreshWhenShown, Allocates.Nothing);
         }
 
         [Test]

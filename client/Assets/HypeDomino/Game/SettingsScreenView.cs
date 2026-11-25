@@ -32,6 +32,7 @@ namespace HypeDomino.Game
         string messageKey;
         ScreenView screen;
         bool wasShown;
+        long cacheBytes;
 
         public void Configure(LanguageRow languageRow, VolumeSliderRow[] volumeRows, SettingToggleRow reduceMotionRow, SettingToggleRow hapticsRow,
             SettingToggleRow autoFrameRateRow, TMP_Dropdown frameRates, SettingToggleRow batterySaverRow, TMP_Text cacheSizeLine, Button clearCacheButton,
@@ -69,22 +70,24 @@ namespace HypeDomino.Game
             settings.Changed += ShowToggles;
             settings.FrameRate.Changed += ShowRates;
             strings.Changed += ShowMessage;
-            strings.Changed += ShowCacheSize;
+            strings.Changed += WriteCacheSize;
             frameRate.onValueChanged.AddListener(OnRatePicked);
             clearCache.onClick.AddListener(OnClearCache);
             promoCode.onClick.AddListener(OnPromoCode);
             ShowRates();
             ShowMessage();
-            ShowCacheSize();
+            if (screen == null || wasShown) ReadCacheSize();
         }
 
-        void LateUpdate()
+        public void RefreshWhenShown()
         {
-            if (settings == null) return;
-            var shown = screen != null && screen.IsShown;
-            if (shown && !wasShown) ShowCacheSize();
+            if (settings == null || screen == null) return;
+            var shown = screen.IsShown;
+            if (shown && !wasShown) ReadCacheSize();
             wasShown = shown;
         }
+
+        void LateUpdate() => RefreshWhenShown();
 
         void OnDestroy() => Unbind();
 
@@ -94,7 +97,7 @@ namespace HypeDomino.Game
             settings.Changed -= ShowToggles;
             settings.FrameRate.Changed -= ShowRates;
             strings.Changed -= ShowMessage;
-            strings.Changed -= ShowCacheSize;
+            strings.Changed -= WriteCacheSize;
             frameRate.onValueChanged.RemoveListener(OnRatePicked);
             clearCache.onClick.RemoveListener(OnClearCache);
             promoCode.onClick.RemoveListener(OnPromoCode);
@@ -119,7 +122,7 @@ namespace HypeDomino.Game
         {
             messageKey = CacheClearKeys.Of(settings.ClearCache());
             ShowMessage();
-            ShowCacheSize();
+            ReadCacheSize();
         }
 
         void ShowToggles()
@@ -144,7 +147,13 @@ namespace HypeDomino.Game
             frameRate.RefreshShownValue();
         }
 
-        void ShowCacheSize() => cacheSize.text = CacheSizeText.Of(strings, settings.CacheBytes);
+        void ReadCacheSize()
+        {
+            cacheBytes = settings.CacheBytes;
+            WriteCacheSize();
+        }
+
+        void WriteCacheSize() => cacheSize.text = CacheSizeText.Of(strings, cacheBytes);
 
         void ShowMessage()
         {
