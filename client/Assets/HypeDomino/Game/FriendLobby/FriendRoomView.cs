@@ -149,7 +149,7 @@ namespace HypeDomino.Game.FriendLobby
         }
 
         static CosmeticStage StillsStage() =>
-            new(new AddressablesArtSource<Sprite>(), new StillsOnly(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
+            new(new AddressablesArtSource<Sprite>(), new StillsOnlyArtSource(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 

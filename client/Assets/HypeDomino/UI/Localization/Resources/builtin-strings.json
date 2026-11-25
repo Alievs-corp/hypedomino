@@ -229,6 +229,7 @@
     { "key": "ui.plain.nav.shop", "en": "Shop", "az": "Mağaza" },
     { "key": "ui.plain.nav.settings", "en": "Settings", "az": "Ayarlar" },
     { "key": "ui.plain.nav.ranking", "en": "Ranking", "az": "Reytinq" },
+    { "key": "ui.plain.nav.collection", "en": "Collection", "az": "Kolleksiya" },
     { "key": "ui.plain.settings.language", "en": "Language", "az": "Dil" },
     { "key": "ui.plain.settings.music", "en": "Music", "az": "Musiqi" },
     { "key": "ui.plain.settings.sfx", "en": "Sound effects", "az": "Səs effektləri" },
@@ -247,6 +248,14 @@
     { "key": "ui.plain.settings.keep_account", "en": "Keep my account", "az": "Hesabı saxla" },
     { "key": "ui.plain.shop.buy", "en": "Buy", "az": "Al" },
     { "key": "ui.plain.promo.paste", "en": "Paste", "az": "Yapışdır" },
-    { "key": "ui.plain.promo.redeem", "en": "Redeem", "az": "Kodu tətbiq et" }
+    { "key": "ui.plain.promo.redeem", "en": "Redeem", "az": "Kodu tətbiq et" },
+    { "key": "ui.plain.collection.avatar", "en": "Avatars", "az": "Avatarlar" },
+    { "key": "ui.plain.collection.frame", "en": "Frames", "az": "Çərçivələr" },
+    { "key": "ui.plain.collection.tile", "en": "Tiles", "az": "Daşlar" },
+    { "key": "ui.plain.collection.table", "en": "Tables", "az": "Masalar" },
+    { "key": "ui.plain.collection.emoji", "en": "Emoji", "az": "Emojilər" },
+    { "key": "ui.plain.collection.locked", "en": "Not in your collection", "az": "Kolleksiyanda yoxdur" },
+    { "key": "ui.plain.collection.equipped", "en": "Equipped", "az": "Taxılıb" },
+    { "key": "ui.plain.collection.equip", "en": "Equip", "az": "Tax" }
   ]
 }

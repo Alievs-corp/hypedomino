@@ -1,0 +1,187 @@
+name: Server deploy
+
+on:
+  workflow_run:
+    workflows: [Server image]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      sha:
+        description: Full commit SHA on main whose image server-image.yml pushed
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-deploy-${{ inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/alievs-corp/hypedomino-server
+
+jobs:
+  deploy:
+    if: >-
+      github.repository == 'Alievs-corp/hypedomino' && (
+        github.event_name == 'workflow_dispatch' || (
+          vars.STAGING_AUTO_DEPLOY == 'true' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event != 'pull_request' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ inputs.environment || 'staging' }}
+    permissions:
+      contents: read
+      packages: read
+      checks: read
+    env:
+      TARGET_ENVIRONMENT: ${{ inputs.environment || 'staging' }}
+      RELEASE_SHA: ${{ inputs.sha || github.event.workflow_run.head_sha }}
+    steps:
+      - name: Deploy credentials of the environment exist
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+          MIGRATE_ENV: ${{ secrets.MIGRATE_ENV }}
+        run: |
+          missing=""
+          [ -n "$KUBE_CONFIG" ] || missing="$missing KUBE_CONFIG"
+          [ -n "$SERVER_ENV" ] || missing="$missing SERVER_ENV"
+          [ -n "$MIGRATE_ENV" ] || missing="$missing MIGRATE_ENV"
+          if [ -n "$missing" ]; then
+            echo "::error::GitHub environment '$TARGET_ENVIRONMENT' lacks the secrets:$missing. Nothing was deployed. They are owner input OI-2 (docs/environments.md section 3, docs/launch-runbook.md 5.1)."
+            exit 1
+          fi
+      - name: Release is a full commit SHA dispatched from main
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Dispatch this workflow from main, not $GITHUB_REF."
+            exit 1
+          fi
+          if ! printf '%s' "$RELEASE_SHA" | grep -Eqx '[0-9a-f]{40}'; then
+            echo "::error::'$RELEASE_SHA' is not a full 40 character commit SHA."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Commit is on main
+        run: |
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "::error::$RELEASE_SHA is not on main; only commits of main are deployed."
+            exit 1
+          fi
+      - name: Overlay of the environment exists
+        run: |
+          if [ ! -f "deploy/k8s/overlays/$TARGET_ENVIRONMENT/kustomization.yaml" ]; then
+            echo "::error::deploy/k8s/overlays/$TARGET_ENVIRONMENT does not exist at $RELEASE_SHA. It is written with owner input OI-1 (docs/launch-runbook.md section 10)."
+            exit 1
+          fi
+      - name: CI complete passed on the commit
+        if: env.TARGET_ENVIRONMENT == 'production'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passed=$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_SHA/check-runs?check_name=CI%20complete&filter=latest" \
+            --jq '[.check_runs[] | select(.conclusion == "success")] | length')
+          if [ "$passed" = "0" ]; then
+            echo "::error::CI complete did not succeed on $RELEASE_SHA; production takes only a green commit."
+            exit 1
+          fi
+      - name: Resolve the image digest pushed for the commit
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          digest=$(docker buildx imagetools inspect "$IMAGE:$RELEASE_SHA" --format '{{json .Manifest}}' | jq -r '.digest')
+          if ! printf '%s' "$digest" | grep -Eqx 'sha256:[0-9a-f]{64}'; then
+            echo "::error::No image $IMAGE:$RELEASE_SHA. Server image pushes one only for a commit of main that changed server/; run it on main first."
+            exit 1
+          fi
+          docker logout ghcr.io
+          echo "RELEASE_DIGEST=$digest" >> "$GITHUB_ENV"
+      - name: Render the release pinned to the digest
+        run: |
+          mkdir -p deploy/k8s/release
+          cat > deploy/k8s/release/kustomization.yaml <<EOF
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - ../overlays/$TARGET_ENVIRONMENT
+          images:
+            - name: $IMAGE
+              digest: $RELEASE_DIGEST
+          patches:
+            - target:
+                kind: Deployment
+                name: server
+              patch: |-
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: server
+                spec:
+                  template:
+                    metadata:
+                      annotations:
+                        hypedomino.io/release: "$RELEASE_SHA.$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT"
+          EOF
+          kubectl kustomize deploy/k8s/release > "$RUNNER_TEMP/release.yaml"
+          images=$(yq -N '.. | select(tag == "!!map" and has("image")) | .image' "$RUNNER_TEMP/release.yaml" | grep hypedomino-server | sort -u || true)
+          echo "$images"
+          if [ "$images" != "$IMAGE@$RELEASE_DIGEST" ]; then
+            echo "::error::Every server container must run $IMAGE@$RELEASE_DIGEST; the release renders: ${images:-none}."
+            exit 1
+          fi
+          namespace=$(yq -N 'select(.kind == "Deployment" and .metadata.name == "server") | .metadata.namespace' "$RUNNER_TEMP/release.yaml")
+          if [ -z "$namespace" ] || [ "$namespace" = "null" ]; then
+            echo "::error::The overlay must set the namespace of deploy/server."
+            exit 1
+          fi
+          echo "RELEASE_NAMESPACE=$namespace" >> "$GITHUB_ENV"
+      - name: Cluster credentials
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          umask 077
+          printf '%s\n' "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - name: Runtime and migration secrets from the environment
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+          MIGRATE_ENV: ${{ secrets.MIGRATE_ENV }}
+        run: |
+          umask 077
+          printf '%s\n' "$SERVER_ENV" > "$RUNNER_TEMP/server.env"
+          printf '%s\n' "$MIGRATE_ENV" > "$RUNNER_TEMP/migrate.env"
+          trap 'rm -f "$RUNNER_TEMP/server.env" "$RUNNER_TEMP/migrate.env"' EXIT
+          namespaces=$(yq 'select(.kind == "Namespace")' "$RUNNER_TEMP/release.yaml")
+          if [ -n "$namespaces" ]; then
+            printf '%s\n' "$namespaces" | kubectl apply -f -
+          fi
+          for name in server migrate; do
+            kubectl -n "$RELEASE_NAMESPACE" create secret generic "$name-env" --from-env-file="$RUNNER_TEMP/$name.env" --dry-run=client -o yaml \
+              | kubectl apply -f -
+          done
+      - name: Migrate, then roll out
+        run: bash tools/deploy/apply-release.sh deploy/k8s/release "$RELEASE_NAMESPACE"
+      - name: Summary
+        if: success()
+        run: echo "Deployed $IMAGE@$RELEASE_DIGEST ($RELEASE_SHA) to $TARGET_ENVIRONMENT, namespace $RELEASE_NAMESPACE" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Remove cluster credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/kubeconfig"
