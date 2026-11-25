@@ -158,14 +158,5 @@ namespace HypeDomino.Game.Match
         void ShowEmoji(TableSide side, LoopArt art) => emojiLayer.Show((int)side, art, Time.unscaledTime);
 
         static long ClockMs() => (long)(Time.realtimeSinceStartupAsDouble * 1000d);
-
-        sealed class StillsOnly : ICosmeticArtSource<LoopArt>
-        {
-            public void Load(string address, Action<LoopArt> done) => done(null);
-
-            public void Release(string address)
-            {
-            }
-        }
     }
 }

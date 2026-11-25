@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HypeDomino.Content;
 using HypeDomino.Game.Inventory;
 using HypeDomino.Net;
 using HypeDomino.UI.Cosmetics;
@@ -140,6 +141,15 @@ namespace HypeDomino.Game.FriendLobby
             invitePanel.Bind(link);
             Redraw();
         }
+
+        void Start()
+        {
+            if (room == null && FriendLobbyBoot.Link != null)
+                Bind(NetBoot.Room, FriendLobbyBoot.Link, NetBoot.Lobby, NetBoot.Connection.Session, StillsStage(), ContentBoot.Cosmetics, LanguageBoot.Strings);
+        }
+
+        static CosmeticStage StillsStage() =>
+            new(new AddressablesArtSource<Sprite>(), new StillsOnly(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 

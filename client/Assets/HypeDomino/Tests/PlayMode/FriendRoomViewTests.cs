@@ -115,6 +115,7 @@ namespace HypeDomino.Tests.PlayMode
         Session session;
         FriendRoom room;
         FriendLobbyLink link;
+        LobbyCommands commands;
         GameStrings strings;
         string local;
 
@@ -161,7 +162,7 @@ namespace HypeDomino.Tests.PlayMode
             session = new Session();
             room = new FriendRoom();
             session.LobbyStateReceived += state => room.Read(state, local);
-            var commands = new LobbyCommands();
+            commands = new LobbyCommands();
             link = new FriendLobbyLink(room, commands, new ApiClient(api, authSession), () => 500);
             link.Follow(session);
             var stage = new CosmeticStage(new FakeArtSource<Sprite>(), new FakeArtSource<LoopArt>(), null, null, null, EffectLevel.Medium, false);
@@ -279,6 +280,17 @@ namespace HypeDomino.Tests.PlayMode
             var envelope = Envelope.Parser.ParseFrom(transport.Sent[transport.Sent.Count - 1]);
             Assert.AreEqual(Envelope.PayloadOneofCase.LobbyIntent, envelope.PayloadCase);
             return envelope.LobbyIntent;
+        }
+
+        void Entry(out Button create, out TMP_InputField typed, out Button join, out TMP_Text line)
+        {
+            create = NewButton("Create", root.transform);
+            typed = Child("Typed code", root.transform).AddComponent<TMP_InputField>();
+            join = NewButton("Join", root.transform);
+            line = Text("Entry message", root.transform);
+            var entry = Child("Entry", root.transform).AddComponent<RoomEntryView>();
+            entry.Configure(create, typed, join, line);
+            entry.Bind(room, link.Members, commands, session, strings);
         }
 
         static bool LeaderMarked(RoomMemberCell cell) => cell.transform.Find("Leader").gameObject.activeSelf;
@@ -460,6 +472,61 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsTrue(message.enabled);
             Assert.AreEqual(strings.Text(LobbyRefusalKeys.SeatsOpen), message.text);
+        }
+
+        [Test]
+        public void CreateSendsTheCreateIntent()
+        {
+            Entry(out var create, out _, out _, out var line);
+
+            create.onClick.Invoke();
+
+            Assert.AreEqual(LobbyCommand.Create, LastIntent().Command);
+            Assert.IsFalse(line.enabled);
+        }
+
+        [Test]
+        public void JoinSendsTheTypedCodeNormalised()
+        {
+            Entry(out _, out var typed, out var join, out var line);
+            typed.text = "k7qm 3x";
+
+            join.onClick.Invoke();
+
+            var intent = LastIntent();
+            Assert.AreEqual(LobbyCommand.Join, intent.Command);
+            Assert.AreEqual(Code, intent.Code);
+            Assert.IsFalse(line.enabled);
+        }
+
+        [Test]
+        public void ATypedCodeThatCannotExistIsNotSentAndShowsTheUnknownCodeText()
+        {
+            Entry(out _, out var typed, out var join, out var line);
+            typed.text = "K7QM30";
+
+            join.onClick.Invoke();
+
+            Assert.IsEmpty(transport.Sent);
+            Assert.IsTrue(line.enabled);
+            Assert.AreEqual(strings.Text(LobbyRefusalKeys.UnknownCode), line.text);
+        }
+
+        [Test]
+        public void ARefusalOutsideARoomShowsOnTheEntryAndTheNextStateClearsTheTypedOne()
+        {
+            Entry(out _, out var typed, out var join, out var line);
+            typed.text = "0";
+            join.onClick.Invoke();
+
+            Deliver(Envelope.PayloadOneofCase.LobbyState, new LobbyState { Refusal = LobbyRefusal.RankedBan });
+
+            Assert.IsTrue(line.enabled);
+            Assert.AreEqual(strings.Text(LobbyRefusalKeys.RankedBan), line.text);
+
+            Deliver(Envelope.PayloadOneofCase.LobbyState, new LobbyState());
+
+            Assert.IsFalse(line.enabled);
         }
     }
 }
