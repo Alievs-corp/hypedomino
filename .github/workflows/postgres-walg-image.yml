@@ -50,7 +50,7 @@ jobs:
             -t "$IMAGE:$GITHUB_SHA" -t "$IMAGE:$STABLE_TAG" tools/backup-drill
           docker run --rm --entrypoint wal-g "$IMAGE:$GITHUB_SHA" --version
       - name: Push
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Alievs-corp/hypedomino'
         env:
           STABLE_TAG: ${{ steps.tags.outputs.stable }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
