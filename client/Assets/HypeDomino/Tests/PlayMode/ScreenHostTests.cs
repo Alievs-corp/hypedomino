@@ -1,5 +1,6 @@
 using HypeDomino.Content;
 using HypeDomino.Game;
+using HypeDomino.Game.Inventory;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
 using HypeDomino.Game.Pass;
@@ -8,6 +9,7 @@ using HypeDomino.Game.Promo;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
 using HypeDomino.UI.Audio;
+using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
@@ -24,7 +26,7 @@ namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
-        const int NavButtons = 4;
+        const int NavButtons = 5;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
         static readonly string[] NoLocales = { };
@@ -299,6 +301,39 @@ namespace HypeDomino.Tests.PlayMode
             Assert.AreSame(warning.transform, ButtonOf(screen, SettingsScreens.KeepAccountKey).transform.parent);
             Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.ExportDataKey).transform.parent);
             Assert.AreNotSame(warning.transform, ButtonOf(screen, SettingsScreens.DeleteAccountKey).transform.parent);
+        }
+
+        [Test]
+        public void TheCollectionScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = Pushed(CollectionScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<CollectionScreenView>());
+            Assert.IsNotNull(screen.GetComponentInChildren<RecyclingList>(true));
+            var template = screen.GetComponentInChildren<CollectionRowSlot>(true);
+            Assert.IsFalse(template.gameObject.activeSelf);
+            Assert.AreEqual(CollectionScreens.Columns, template.Columns);
+            Assert.AreEqual(CollectionScreens.Columns + 1, screen.GetComponentsInChildren<CosmeticImage>(true).Length);
+            Assert.IsFalse(ButtonOf(screen, CollectionScreens.EquipKey).transform.parent.gameObject.activeSelf);
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(CollectionScreens.FilterKeys.Length + 5, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [Test]
+        public void TheCollectionNavButtonPushesItAndBackPopsIt()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+            var screen = Pushed(CollectionScreens.NavKey);
+
+            Assert.AreNotSame(lobby, screen);
+            Assert.AreEqual(2, stack.Count);
+            Assert.IsTrue(screen.TakesInput);
+
+            ButtonOf(screen, ScreenHost.BackKey).onClick.Invoke();
+            Assert.AreSame(lobby, stack.Top);
+            Assert.AreEqual(1, stack.Count);
+            Assert.IsFalse(screen.TakesInput);
         }
 
         static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
