@@ -1,3 +1,4 @@
+using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Game.Lobby;
 using HypeDomino.Game.Login;
@@ -5,9 +6,13 @@ using HypeDomino.Game.Pass;
 using HypeDomino.Game.Promo;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
+using HypeDomino.UI.Audio;
+using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Motion;
 using HypeDomino.UI.Screens;
+using HypeDomino.UI.Settings;
 using HypeDomino.UI.Tokens;
 using NUnit.Framework;
 using TMPro;
@@ -18,15 +23,18 @@ namespace HypeDomino.Tests.PlayMode
 {
     public sealed class ScreenHostTests
     {
-        const int NavButtons = 3;
+        const int NavButtons = 4;
         const int LoginButtons = 3;
+        const int SettingsLabels = 12;
         static readonly string[] NoLocales = { };
+        static readonly int[] Panel120 = { 60, 120 };
 
         GameObject root;
         ScreenStack stack;
         ScreenHost host;
         LanguageChoice choice;
         GameStrings strings;
+        SettingsModel settings;
 
         [SetUp]
         public void Build()
@@ -36,11 +44,24 @@ namespace HypeDomino.Tests.PlayMode
             stack.enabled = false;
             choice = LanguageChoice.Load("az", () => NoLocales);
             strings = new GameStrings(BuiltinStrings.Load(), choice, true);
-            host = new ScreenHost(stack, strings);
+            var graphics = new GraphicsQuality(DeviceTier.High, GraphicsLevel.High, 0, false);
+            settings = new SettingsModel(
+                choice,
+                new AudioVolumes(AudioVolumes.Full, AudioVolumes.Full, AudioVolumes.Full),
+                new MotionPreference(null, false),
+                graphics,
+                new FrameRatePolicy(graphics, Panel120, null, false),
+                new HapticsPreference(true),
+                new ContentCache(new NoCacheStore(), () => false));
+            host = new ScreenHost(stack, strings, settings);
         }
 
         [TearDown]
-        public void DestroyHost() => Object.Destroy(root);
+        public void DestroyHost()
+        {
+            Object.Destroy(root);
+            settings.Dispose();
+        }
 
         [Test]
         public void TheHostBuildsTheLoginAndLobbyScreensHidden()
@@ -204,6 +225,69 @@ namespace HypeDomino.Tests.PlayMode
             AssertShowsItsString(TextOf(promo, "ui.plain.promo.paste"));
             AssertShowsItsString(TextOf(promo, "ui.plain.promo.redeem"));
         }
+
+        [Test]
+        public void TheSettingsScreenBuildsWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<SettingsScreenView>());
+            Assert.IsNotNull(screen.GetComponentInChildren<LanguageRow>(true));
+            Assert.AreEqual(SettingsScreens.VolumeKeys.Length, screen.GetComponentsInChildren<VolumeSliderRow>(true).Length);
+            Assert.AreEqual(4, screen.GetComponentsInChildren<SettingToggleRow>(true).Length);
+            Assert.AreEqual(2, screen.GetComponentsInChildren<TMP_Dropdown>(true).Length);
+            Assert.IsNotNull(screen.GetComponentInChildren<ScrollRect>(true));
+            var labels = screen.GetComponentsInChildren<PlainLabel>(true);
+            Assert.AreEqual(SettingsLabels, labels.Length);
+            foreach (var label in labels) AssertShowsItsString(label);
+        }
+
+        [Test]
+        public void TheSettingsRowsStartAtTheModelAndChangeIt()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+            var haptics = ToggleOf(screen, SettingsScreens.HapticsKey);
+            var music = SliderOf(screen, SettingsScreens.VolumeKeys[(int)AudioGroup.Music]);
+
+            Assert.IsTrue(haptics.isOn);
+            Assert.AreEqual(AudioVolumes.Full, music.value);
+
+            haptics.isOn = false;
+            music.value = 0f;
+
+            Assert.IsFalse(settings.Haptics.Enabled);
+            Assert.AreEqual(0f, settings.Volumes.Level(AudioGroup.Music));
+        }
+
+        [Test]
+        public void ClearingTheCacheShowsItsOutcome()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            ButtonOf(screen, SettingsScreens.ClearCacheKey).onClick.Invoke();
+
+            var cleared = strings.Text(CacheClearKeys.Cleared);
+            Assert.IsTrue(System.Array.Exists(screen.GetComponentsInChildren<TMP_Text>(true), text => text.text == cleared));
+        }
+
+        [Test]
+        public void SettingsOpensTheSamePromoScreenAndBackReturnsToSettings()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            ButtonOf(screen, PromoScreens.NavKey).onClick.Invoke();
+            Assert.AreSame(host.Promo, stack.Top);
+            Assert.AreEqual(3, stack.Count);
+            Assert.IsFalse(screen.TakesInput);
+
+            ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
+            Assert.AreSame(screen, stack.Top);
+            Assert.IsTrue(screen.TakesInput);
+        }
+
+        static Toggle ToggleOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Toggle>(true);
+
+        static Slider SliderOf(ScreenView screen, string key) => LabelOf(screen, key).transform.parent.GetComponentInChildren<Slider>(true);
 
         ScreenView Pushed(string navKey)
         {
