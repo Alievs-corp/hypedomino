@@ -133,12 +133,24 @@ func (tab *table) rejection(seat rules.Seat) (Message, bool) {
 func (tab *table) humanStep(sequences map[rules.Seat]uint64) bool {
 	tab.t.Helper()
 	tab.settle()
+	seat, intent, ok := tab.nextIntent(sequences)
+	if !ok {
+		return false
+	}
+	tab.room.Intent(seat, sequences[seat], intent)
+	if m, rejected := tab.rejection(seat); rejected {
+		tab.t.Fatalf("%s: %v (intent %+v)", seat, m.Reason, intent)
+	}
+	return true
+}
+
+func (tab *table) nextIntent(sequences map[rules.Seat]uint64) (rules.Seat, replay.Intent, bool) {
 	var seat rules.Seat
 	var view View
 	for _, candidate := range tab.mode.Seats() {
 		v := tab.snapshot(candidate)
 		if v.State == StateFinished {
-			return false
+			return 0, replay.Intent{}, false
 		}
 		if v.Controllers[candidate] == rules.ControllerBot {
 			continue
@@ -149,7 +161,7 @@ func (tab *table) humanStep(sequences map[rules.Seat]uint64) bool {
 		}
 	}
 	if view.State == StateWaiting || view.State == StateLoading {
-		return false
+		return 0, replay.Intent{}, false
 	}
 	sequences[seat]++
 	intent := replay.Intent{Seat: seat}
@@ -167,11 +179,40 @@ func (tab *table) humanStep(sequences map[rules.Seat]uint64) bool {
 	default:
 		intent.Kind = replay.KindPass
 	}
-	tab.room.Intent(seat, sequences[seat], intent)
-	if m, rejected := tab.rejection(seat); rejected {
-		tab.t.Fatalf("%s: %v (view %+v)", seat, m.Reason, view)
+	return seat, intent, true
+}
+
+func TestOnlyTheMoversNextViewCarriesTheMoveReceiveTime(t *testing.T) {
+	tab := newTable(t, rules.Mode2v2, 1)
+	sequences := map[rules.Seat]uint64{}
+	for move := 0; move < 12; move++ {
+		tab.settle()
+		seat, intent, ok := tab.nextIntent(sequences)
+		if !ok {
+			break
+		}
+		tab.room.Intent(seat, sequences[seat], intent)
+		for _, other := range tab.mode.Seats() {
+			timed := 0
+			for _, m := range tab.inbox(other) {
+				if m.Rejected {
+					t.Fatalf("%s: %v", other, m.Reason)
+				}
+				if !m.MoveReceived.IsZero() {
+					timed++
+					if !m.MoveReceived.Equal(tab.clock.Now()) {
+						t.Fatalf("move received at %v, want %v", m.MoveReceived, tab.clock.Now())
+					}
+				}
+			}
+			if want := map[bool]int{true: 1, false: 0}[other == seat]; timed != want {
+				t.Fatalf("move %d by %s: %s got %d timed views, want %d", move, seat, other, timed, want)
+			}
+		}
 	}
-	return true
+	if len(sequences) == 0 {
+		t.Fatal("no move was played")
+	}
 }
 
 func TestViewsHideOtherHands(t *testing.T) {

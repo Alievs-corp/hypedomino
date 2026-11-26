@@ -18,7 +18,6 @@ type Rooms struct {
 	wg      sync.WaitGroup
 	changed chan struct{}
 	tune    func(rules.Config) rules.Config
-	moves   room.MoveObserver
 	emoji   room.EmojiLimit
 	quick   func(key string) bool
 }
@@ -41,9 +40,6 @@ func (rs *Rooms) Open(options room.Options) (*room.Room, error) {
 	}
 	if rs.tune != nil {
 		options.Config = rs.tune(options.Config)
-	}
-	if options.Moves == nil {
-		options.Moves = rs.moves
 	}
 	if options.Emoji == (room.EmojiLimit{}) {
 		options.Emoji = rs.emoji
@@ -119,10 +115,4 @@ func (rs *Rooms) AllowQuickMessages(allowed func(key string) bool) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	rs.quick = allowed
-}
-
-func (rs *Rooms) ObserveMoves(moves room.MoveObserver) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-	rs.moves = moves
 }

@@ -377,10 +377,10 @@ func TestDecodeIntentRefusesBadTiles(t *testing.T) {
 
 func TestRoomSessionDeliversRejectionsAsErrors(t *testing.T) {
 	_, r := roomServer(t, rules.Mode1v1, 1)
-	conn := &Conn{queue: make(chan *pb.Envelope, 4), closed: make(chan struct{})}
+	conn := &Conn{queue: make(chan outgoing, 4), closed: make(chan struct{})}
 	session := JoinRoom(r, rules.SeatX, conn)
 	session.Deliver(room.Message{View: room.View{State: room.StatePlaying, Mode: rules.Mode1v1, Acked: 4}, Rejected: true, Sequence: 5, Reason: errors.New("no")})
-	first, second := <-conn.queue, <-conn.queue
+	first, second := (<-conn.queue).frame, (<-conn.queue).frame
 	if first.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT || first.GetError().GetRejectedSequence() != 5 || first.GetAckedSequence() != 4 {
 		t.Fatalf("rejection frame %v", first)
 	}
@@ -397,7 +397,7 @@ func TestRoomSessionDeliversRejectionsAsErrors(t *testing.T) {
 
 func TestRoomSessionSendsTheTilesLeftOncePerHandEnd(t *testing.T) {
 	_, r := roomServer(t, rules.Mode1v1, 1)
-	conn := &Conn{queue: make(chan *pb.Envelope, 8), closed: make(chan struct{})}
+	conn := &Conn{queue: make(chan outgoing, 8), closed: make(chan struct{})}
 	session := JoinRoom(r, rules.SeatX, conn)
 	ended := func(hands int) room.View {
 		return room.View{
@@ -408,7 +408,7 @@ func TestRoomSessionSendsTheTilesLeftOncePerHandEnd(t *testing.T) {
 			LastEnd:       rules.HandEnd{Status: rules.HandBlocked, Left: map[rules.Seat]rules.Hand{rules.SeatX: {rules.MustTile(1, 2)}, rules.SeatY: {rules.MustTile(3, 4)}}},
 		}
 	}
-	left := func() int { return len((<-conn.queue).GetMatchView().GetLastResult().GetLeft()) }
+	left := func() int { return len((<-conn.queue).frame.GetMatchView().GetLastResult().GetLeft()) }
 	session.Deliver(room.Message{View: ended(1)})
 	session.Deliver(room.Message{View: ended(1)})
 	session.Deliver(room.Message{View: ended(2)})
@@ -419,6 +419,21 @@ func TestRoomSessionSendsTheTilesLeftOncePerHandEnd(t *testing.T) {
 	fresh.Deliver(room.Message{View: ended(2)})
 	if got := left(); got != 2 {
 		t.Fatalf("a new connection got the tiles left of %d seats, want 2", got)
+	}
+}
+
+func TestRoomSessionCarriesTheMoveReceiveTimeOnlyWithTheView(t *testing.T) {
+	_, r := roomServer(t, rules.Mode1v1, 1)
+	conn := &Conn{queue: make(chan outgoing, 4), closed: make(chan struct{})}
+	session := JoinRoom(r, rules.SeatX, conn)
+	received := time.UnixMilli(1761480000000)
+	session.Deliver(room.Message{View: room.View{State: room.StatePlaying, Mode: rules.Mode1v1, Acked: 4}, Rejected: true, Sequence: 5, Reason: errors.New("no"), MoveReceived: received})
+	rejection, view := <-conn.queue, <-conn.queue
+	if !rejection.moveReceived.IsZero() {
+		t.Fatalf("the rejection frame carries a move time %v", rejection.moveReceived)
+	}
+	if view.frame.GetMatchView() == nil || !view.moveReceived.Equal(received) {
+		t.Fatalf("view frame %v carries move time %v, want %v", view.frame, view.moveReceived, received)
 	}
 }
 

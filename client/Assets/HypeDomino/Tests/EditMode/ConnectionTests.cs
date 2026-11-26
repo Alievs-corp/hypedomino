@@ -151,7 +151,7 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void ADroppedSessionRedialsAtOnceThenBacksOff()
+        public void ADroppedSessionRedialsWithinAJitteredMomentThenBacksOff()
         {
             GoOnline();
             var waits = new List<double>();
@@ -169,7 +169,7 @@ namespace HypeDomino.Tests.EditMode
                 Assert.AreEqual(ConnectionState.Connecting, connection.State);
             }
 
-            CollectionAssert.AreEqual(new[] { 0, 0.5, 1, 2, 4, 5, 5 }, waits);
+            CollectionAssert.AreEqual(new[] { 0.05, 0.5, 1, 2, 4, 5, 5 }, waits);
             Assert.AreEqual(6, connection.FailedAttempts);
             Assert.AreEqual(8, sockets.Count);
             Assert.IsTrue(sockets[0].Disposed);
@@ -180,8 +180,10 @@ namespace HypeDomino.Tests.EditMode
         {
             GoOnline();
             DropAndTick();
+            now = connection.RetryAtSeconds;
             connection.Tick();
             DropAndTick();
+            Assert.AreEqual(1, connection.FailedAttempts);
             now = connection.RetryAtSeconds;
             connection.Tick();
             Socket.Deliver(AcceptedHello());
@@ -190,7 +192,7 @@ namespace HypeDomino.Tests.EditMode
             DropAndTick();
 
             Assert.AreEqual(0, connection.FailedAttempts);
-            Assert.AreEqual(now, connection.RetryAtSeconds);
+            Assert.AreEqual(0.05, connection.RetryAtSeconds - now, 1e-9);
         }
 
         [TestCase(0.0, 0.8)]
@@ -203,6 +205,16 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0.5 * factor, schedule.NextDelaySeconds(random), 1e-9);
         }
 
+        [TestCase(0.0, 0.0)]
+        [TestCase(0.5, 0.05)]
+        [TestCase(1.0, 0.1)]
+        public void TheFirstRedialIsSpreadOverAFifthOfTheNextDelay(double random, double expected)
+        {
+            var schedule = new ReconnectSchedule();
+
+            Assert.AreEqual(expected, schedule.NextDelaySeconds(random), 1e-9);
+        }
+
         [Test]
         public void TheResumeHelloCarriesTheLastAckedSequence()
         {
@@ -211,6 +223,7 @@ namespace HypeDomino.Tests.EditMode
             connection.Tick();
 
             DropAndTick();
+            now = connection.RetryAtSeconds;
             connection.Tick();
 
             var hello = Envelope.Parser.ParseFrom(Socket.Sent[0]);
@@ -346,6 +359,7 @@ namespace HypeDomino.Tests.EditMode
 
             DropAndTick();
             Assert.AreEqual(NetworkNotice.Reconnecting, ConnectionNotices.Network(connection, now));
+            now = connection.RetryAtSeconds;
             connection.Tick();
             Assert.AreEqual(ConnectionState.Connecting, connection.State);
             Assert.AreEqual(NetworkNotice.Reconnecting, ConnectionNotices.Network(connection, now));

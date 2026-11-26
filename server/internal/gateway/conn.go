@@ -20,7 +20,7 @@ import (
 type Conn struct {
 	socket  *websocket.Conn
 	options Options
-	queue   chan *pb.Envelope
+	queue   chan outgoing
 	closed  chan struct{}
 	once    sync.Once
 	status  websocket.StatusCode
@@ -39,22 +39,31 @@ func newConn(socket *websocket.Conn, options Options) *Conn {
 	return &Conn{
 		socket:  socket,
 		options: options,
-		queue:   make(chan *pb.Envelope, options.Config.WriteQueue),
+		queue:   make(chan outgoing, options.Config.WriteQueue),
 		closed:  make(chan struct{}),
 		served:  make(chan struct{}),
 		bucket:  newBucket(options.Config.IntentsPerSecond, options.Config.IntentBurst, options.Clock.Now()),
 	}
 }
 
+type outgoing struct {
+	frame        *pb.Envelope
+	moveReceived time.Time
+}
+
 func (c *Conn) Send(frame *pb.Envelope) error {
-	frame.ProtocolVersion = ProtocolVersion
+	return c.send(outgoing{frame: frame})
+}
+
+func (c *Conn) send(out outgoing) error {
+	out.frame.ProtocolVersion = ProtocolVersion
 	select {
 	case <-c.closed:
 		return ErrClosed
 	default:
 	}
 	select {
-	case c.queue <- frame:
+	case c.queue <- out:
 		return nil
 	case <-c.closed:
 		return ErrClosed
@@ -128,8 +137,8 @@ func (c *Conn) writeLoop() {
 		case <-c.closed:
 			c.flush(buffer)
 			return
-		case frame := <-c.queue:
-			data, ok := c.writeFrame(buffer, frame)
+		case out := <-c.queue:
+			data, ok := c.writeFrame(buffer, out)
 			if !ok {
 				return
 			}
@@ -141,8 +150,8 @@ func (c *Conn) writeLoop() {
 func (c *Conn) flush(buffer []byte) {
 	for {
 		select {
-		case frame := <-c.queue:
-			data, ok := c.writeFrame(buffer, frame)
+		case out := <-c.queue:
+			data, ok := c.writeFrame(buffer, out)
 			if !ok {
 				return
 			}
@@ -153,8 +162,8 @@ func (c *Conn) flush(buffer []byte) {
 	}
 }
 
-func (c *Conn) writeFrame(buffer []byte, frame *pb.Envelope) ([]byte, bool) {
-	data, err := proto.MarshalOptions{}.MarshalAppend(buffer[:0], frame)
+func (c *Conn) writeFrame(buffer []byte, out outgoing) ([]byte, bool) {
+	data, err := proto.MarshalOptions{}.MarshalAppend(buffer[:0], out.frame)
 	if err != nil {
 		c.Close(websocket.StatusInternalError, "encode")
 		return buffer, false
@@ -163,7 +172,15 @@ func (c *Conn) writeFrame(buffer []byte, frame *pb.Envelope) ([]byte, bool) {
 		c.Close(websocket.StatusAbnormalClosure, "write")
 		return data, false
 	}
+	c.observeMove(out.moveReceived)
 	return data, true
+}
+
+func (c *Conn) observeMove(received time.Time) {
+	if received.IsZero() || c.options.Moves == nil {
+		return
+	}
+	c.options.Moves.Observe(c.options.Clock.Now().Sub(received))
 }
 
 func (c *Conn) write(data []byte) error {

@@ -19,7 +19,7 @@ var moveBounds = []time.Duration{
 }
 
 func newMoveRoundTrip() *metrics.Histogram {
-	return metrics.NewHistogram("move_roundtrip_seconds", "Accepted move intent from receive to the resulting broadcast queued for every seat.", moveBounds)
+	return metrics.NewHistogram("move_roundtrip_seconds", "Accepted move intent from receive to the resulting view written to the mover's socket.", moveBounds)
 }
 
 func (a *App) metricsHandler() http.Handler {
