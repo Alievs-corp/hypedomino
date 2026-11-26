@@ -84,20 +84,21 @@ namespace HypeDomino.Game.Match
         readonly TilePlaceLayer tiles;
         readonly RectTransform board;
         readonly RectTransform banner;
-        readonly RectTransform meterA;
-        readonly RectTransform meterB;
+        readonly RectTransform meterMine;
+        readonly RectTransform meterTheirs;
         readonly ScorePopupView popups;
         readonly EffectCues cues = new();
+        Team mine = Team.A;
 
-        public MatchEffects(EffectPlayer player, TilePlaceLayer tiles, RectTransform board, RectTransform banner, RectTransform meterA, RectTransform meterB, ScorePopupView popups)
+        public MatchEffects(EffectPlayer player, TilePlaceLayer tiles, RectTransform board, RectTransform banner, RectTransform meterMine, RectTransform meterTheirs, ScorePopupView popups)
         {
             this.popups = popups ? popups : throw new ArgumentNullException(nameof(popups));
             this.player = player;
             this.tiles = tiles;
             this.board = board;
             this.banner = banner;
-            this.meterA = meterA;
-            this.meterB = meterB;
+            this.meterMine = meterMine;
+            this.meterTheirs = meterTheirs;
         }
 
         public void StartConnection() => cues.StartConnection();
@@ -105,6 +106,7 @@ namespace HypeDomino.Game.Match
         public EffectCue Read(MatchSnapshot view, float nowMs)
         {
             var cue = cues.Read(view);
+            mine = view.Seat == Seat.Unspecified ? Team.A : SeatOrder.TeamOf(view.Seat);
             Play(in cue, nowMs);
             return cue;
         }
@@ -135,7 +137,7 @@ namespace HypeDomino.Game.Match
         void PlayPoints(Team team, int step, uint points, bool handEnded, RectTransform lastTile, float startMs)
         {
             if (step == 0) return;
-            var meter = team == Team.A ? meterA : meterB;
+            var meter = team == mine ? meterMine : meterTheirs;
             var request = handEnded || lastTile == null
                 ? EffectRequest.On(TokenEffectKind.ScoreCascade, meter, startMs)
                 : EffectRequest.On(TokenEffectKind.ScoreCascade, lastTile, startMs).TrailTo(meter.position);

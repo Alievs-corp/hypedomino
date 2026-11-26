@@ -44,7 +44,15 @@ namespace HypeDomino.Tests.EditMode
             {
             }
 
-            public void ShowBoard(ChainLayout board)
+            public void ShowBoard(ChainLayout board, BoardPlacements placements)
+            {
+            }
+
+            public void ShowEffects(MatchSnapshot view)
+            {
+            }
+
+            public void StartConnection()
             {
             }
         }

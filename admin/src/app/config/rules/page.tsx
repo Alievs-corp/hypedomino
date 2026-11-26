@@ -7,6 +7,7 @@ export default function RulesPage() {
   return (
     <KeyedConfigPage
       path="/admin/config/rules"
+      object="game_config"
       text={{ title: "rules.title", loadFailed: "rules.load_failed", intro: "rules.applies_to_new_matches", historyEmpty: "rules.history_empty" }}
       publish={publishRules}
       rollback={rollbackRules}

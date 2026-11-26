@@ -55,7 +55,8 @@ message ServerHello {
   uint64 maintenance_ends_unix_ms = 10;
   CosmeticsManifest cosmetics_manifest = 11;
   AnalyticsConfig analytics_config = 12;
-  PrivacyVersions privacy_versions = 13;
+  RarityTableConfig rarity_table = 13;
+  PrivacyVersions privacy_versions = 14;
 }
 
 message StringBundle {
@@ -73,6 +74,25 @@ message AnalyticsConfig {
   uint32 batch_size = 1;
   uint32 queue_limit = 2;
   uint32 flush_seconds = 3;
+}
+
+message RarityTableConfig {
+  uint32 diamond_min_size = 1;
+  uint32 flow_period_ms = 2;
+  repeated RarityTierConfig tiers = 3;
+}
+
+message RarityTierConfig {
+  string id = 1;
+  uint32 ordinal = 2;
+  string name_key = 3;
+  string fill = 4;
+  string on = 5;
+  string text = 6;
+  uint32 pips = 7;
+  float glow_alpha = 8;
+  float glow_scale = 9;
+  bool flow = 10;
 }
 
 message PrivacyVersions {

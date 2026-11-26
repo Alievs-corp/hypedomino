@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { checkTokens, contrast, csharpPath, csharpTokens, loadSpec, loadTokens, rarityDefaults, rarityDefaultsPath, stepForPoints } from "./design-tokens.mjs";
+import { checkTokens, contrast, csharpPath, csharpTokens, loadSpec, loadTokens, rarityDefaults, rarityDefaultsPath, serverRarity, serverRarityPath, stepForPoints } from "./design-tokens.mjs";
 
 const repoRoot = new URL("../../", import.meta.url);
 const tokens = loadTokens(fileURLToPath(new URL("docs/design-tokens.json", repoRoot)));
@@ -241,6 +241,19 @@ test("C# tokens carry what the effect player resolves at load: colour paths, glo
 test("the built-in rarity defaults of the client match the tokens", () => {
   const committed = readFileSync(fileURLToPath(new URL(rarityDefaultsPath, repoRoot)), "utf8");
   assert.equal(committed, rarityDefaults(tokens), "run npm run tokens:gen and commit the result");
+});
+
+test("the server rarity defaults match the tokens", () => {
+  const committed = readFileSync(fileURLToPath(new URL(serverRarityPath, repoRoot)), "utf8");
+  assert.equal(committed, serverRarity(tokens), "run npm run tokens:gen and commit the result");
+});
+
+test("the server rarity defaults carry the table without its spec link, the glow levels and the ground layers", () => {
+  const { glow, grounds, table } = JSON.parse(serverRarity(tokens));
+  assert.deepEqual(glow, tokens.glow);
+  assert.deepEqual(grounds, [tokens.color.background.base, tokens.color.background.raised, tokens.color.surface.default, tokens.color.surface.raised]);
+  assert.equal(table.definedBy, undefined);
+  assert.deepEqual(table.tiers, tokens.rarity.tiers);
 });
 
 test("rarity defaults list tiers by ordinal with their glow values", () => {

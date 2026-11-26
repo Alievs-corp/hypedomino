@@ -111,6 +111,7 @@ type Options struct {
 	Cosmetics func() *pb.CosmeticsManifest
 	Analytics func() *pb.AnalyticsConfig
 	Privacy   func() *pb.PrivacyVersions
+	Rarity    func() *pb.RarityTableConfig
 	Admission func() Admission
 }
 

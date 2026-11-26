@@ -512,16 +512,18 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void APlacementInAViewFromTheSessionPlaysTheTileSoundForAnySeat()
+        public void AViewFromTheSessionPlaysItsSoundButAPlacementWaitsForItsTileToSettle()
         {
             var app = new Listened();
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
             app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.South, 1));
             Assert.AreEqual(MatchSounds.None, app.Heard);
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.West, 2));
+            Assert.AreEqual(MatchSounds.None, app.Heard, "a placement");
             app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.North, 2));
-            Assert.AreEqual(MatchSounds.TilePlace, app.Heard);
+            Assert.AreEqual(MatchSounds.Pass, app.Heard);
             app.Receive(Envelope.PayloadOneofCase.ServerHello, Hello(HelloStatus.Accepted, true));
-            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.East, 3));
+            app.Receive(Envelope.PayloadOneofCase.MatchView, Seated(Seat.East, 2));
             Assert.AreEqual(MatchSounds.None, app.Heard, "first view after a reconnect");
         }
 

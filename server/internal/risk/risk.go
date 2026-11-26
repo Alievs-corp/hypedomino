@@ -14,14 +14,15 @@ import (
 )
 
 const (
-	KindClockSkew    = "clock_skew"
-	KindFakeReceipt  = "fake_receipt"
-	KindRefund       = "refund"
-	KindReplay       = "replay_reject"
-	KindMacFailure   = "mac_failure"
-	KindUnownedEquip = "unowned_equip"
-	KindCollusion    = "collusion"
-	KindFarm         = "farm"
+	KindClockSkew     = "clock_skew"
+	KindFakeReceipt   = "fake_receipt"
+	KindRefund        = "refund"
+	KindReplay        = "replay_reject"
+	KindMacFailure    = "mac_failure"
+	KindUnownedEquip  = "unowned_equip"
+	KindIllegalIntent = "illegal_intent"
+	KindCollusion     = "collusion"
+	KindFarm          = "farm"
 )
 
 var ErrInvalidConfig = errors.New("risk: invalid config")

@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
@@ -26,6 +27,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
 	"github.com/Alievs-corp/hypedomino/server/internal/privacy"
+	"github.com/Alievs-corp/hypedomino/server/internal/rarity"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 	"github.com/Alievs-corp/hypedomino/server/internal/shop"
@@ -55,7 +57,7 @@ func main() {
 	}
 }
 
-var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, liveops.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, privacy.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
+var domains = []string{anticheat.Domain, cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, liveops.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, privacy.Domain, rarity.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
 
 var errDomain = errors.New("unknown config domain")
 
@@ -118,6 +120,9 @@ func validate(domain string, raw []byte) error {
 	case liveops.Domain:
 		_, err := liveops.Parse(raw)
 		return err
+	case anticheat.Domain:
+		_, err := anticheat.Parse(raw)
+		return err
 	case cosmetics.Domain:
 		_, err := cosmetics.ParseManifest(raw)
 		return err
@@ -126,6 +131,9 @@ func validate(domain string, raw []byte) error {
 		return err
 	case rating.Domain:
 		_, err := rating.Parse(raw)
+		return err
+	case rarity.Domain:
+		_, err := rarity.Parse(raw)
 		return err
 	case storeprice.Domain:
 		_, err := storeprice.Parse(raw)
