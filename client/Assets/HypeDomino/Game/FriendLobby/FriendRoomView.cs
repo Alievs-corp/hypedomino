@@ -36,6 +36,7 @@ namespace HypeDomino.Game.FriendLobby
         [SerializeField] GameObject wheelPanel;
         [SerializeField] Button[] wheelSlots;
         [SerializeField] CosmeticImage[] wheelArt;
+        [SerializeField] Button slotTemplate;
 
         UnityAction[] teamATaps;
         UnityAction[] teamBTaps;
@@ -89,7 +90,7 @@ namespace HypeDomino.Game.FriendLobby
             waitingTaps = null;
         }
 
-        public void ConfigureEmoji(CanvasGroup root, Button wheelButton, GameObject panel, Button[] slotButtons, CosmeticImage[] slotArt)
+        public void ConfigureEmoji(CanvasGroup root, Button wheelButton, GameObject panel, Button[] slotButtons, CosmeticImage[] slotArt, Button slotButtonTemplate)
         {
             Unbind();
             emojiRoot = root;
@@ -97,6 +98,7 @@ namespace HypeDomino.Game.FriendLobby
             wheelPanel = panel;
             wheelSlots = slotButtons;
             wheelArt = slotArt;
+            slotTemplate = slotButtonTemplate;
             slotTaps = null;
         }
 
@@ -181,13 +183,11 @@ namespace HypeDomino.Game.FriendLobby
         static UnityAction[] Taps(int count, Action<int> pick)
         {
             var taps = new UnityAction[count];
-            for (var at = 0; at < count; at++)
-            {
-                var index = at;
-                taps[at] = () => pick(index);
-            }
+            for (var at = 0; at < count; at++) taps[at] = Tap(pick, at);
             return taps;
         }
+
+        static UnityAction Tap(Action<int> pick, int index) => () => pick(index);
 
         static void Listen(RoomMemberCell[] cells, UnityAction[] taps)
         {
@@ -319,6 +319,7 @@ namespace HypeDomino.Game.FriendLobby
 
         void RedrawWheel()
         {
+            if (link.Wheel != null) GrowWheel(link.Wheel.Capacity);
             var usable = link.Emoji != null && link.Emoji.CanSend;
             if (!usable) link.Wheel?.Close();
             emojiRoot.gameObject.SetActive(usable);
@@ -335,6 +336,22 @@ namespace HypeDomino.Game.FriendLobby
                 {
                     wheelSlots[at].gameObject.SetActive(false);
                 }
+            }
+        }
+
+        void GrowWheel(int capacity)
+        {
+            var built = wheelSlots.Length;
+            if (slotTemplate == null || capacity <= built) return;
+            Array.Resize(ref wheelSlots, capacity);
+            Array.Resize(ref wheelArt, capacity);
+            Array.Resize(ref slotTaps, capacity);
+            for (var at = built; at < capacity; at++)
+            {
+                wheelSlots[at] = Instantiate(slotTemplate, wheelPanel.transform);
+                wheelArt[at] = wheelSlots[at].GetComponentInChildren<CosmeticImage>(true);
+                slotTaps[at] = Tap(OnWheelSlot, at);
+                wheelSlots[at].onClick.AddListener(slotTaps[at]);
             }
         }
 

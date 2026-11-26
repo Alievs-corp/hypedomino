@@ -44,8 +44,9 @@ namespace HypeDomino.Game.FriendLobby
 
         public void Read(LobbyState state)
         {
+            var moved = state.Code != CurrentRoom;
             CurrentRoom = state.Code;
-            if (Drop(CurrentRoom)) Changed?.Invoke();
+            if (Drop(CurrentRoom) || moved) Changed?.Invoke();
         }
 
         public bool TryAccept(Session session, LobbyCommands commands, string code)
