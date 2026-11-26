@@ -33,44 +33,46 @@ namespace HypeDomino.UI.Rarity
         public bool Flow { get; }
     }
 
+    [Serializable]
+    public sealed class RarityTierEntry
+    {
+        public string id;
+        public int ordinal;
+        public string nameKey;
+        public string fill;
+        public string on;
+        public string text;
+        public int pips;
+        public float glowAlpha;
+        public float glowScale;
+        public bool flow;
+    }
+
+    [Serializable]
+    public sealed class RarityTableFile
+    {
+        public int diamondMinSize;
+        public int flowPeriodMs;
+        public RarityTierEntry[] tiers;
+    }
+
     public sealed class RarityTable
     {
+        public const string BuiltinResource = "rarity-defaults";
+
         const float MillisecondsPerSecond = 1000f;
         const int MaxPips = 6;
         static readonly Regex TierId = new(@"^[a-z][a-z0-9_]*\z", RegexOptions.CultureInvariant);
         static readonly Regex Hex = new(@"^#[0-9A-Fa-f]{6}\z", RegexOptions.CultureInvariant);
 
-        [Serializable]
-        sealed class TierEntry
-        {
-            public string id;
-            public int ordinal;
-            public string nameKey;
-            public string fill;
-            public string on;
-            public string text;
-            public int pips;
-            public float glowAlpha;
-            public float glowScale;
-            public bool flow;
-        }
-
-        [Serializable]
-        sealed class TableFile
-        {
-            public int diamondMinSize;
-            public int flowPeriodMs;
-            public TierEntry[] tiers;
-        }
-
         readonly Dictionary<string, RarityTier> tiers = new();
 
-        RarityTable(TableFile file)
+        RarityTable(RarityTableFile file)
         {
             DiamondMinSize = file.diamondMinSize;
             FlowPeriodSeconds = file.flowPeriodMs / MillisecondsPerSecond;
-            var valid = new List<TierEntry>();
-            foreach (var entry in file.tiers ?? Array.Empty<TierEntry>())
+            var valid = new List<RarityTierEntry>();
+            foreach (var entry in file.tiers ?? Array.Empty<RarityTierEntry>())
             {
                 if (IsValid(entry)) valid.Add(entry);
             }
@@ -86,7 +88,22 @@ namespace HypeDomino.UI.Rarity
 
         public int Count => tiers.Count;
 
-        public static RarityTable Parse(string json) => new(JsonUtility.FromJson<TableFile>(json));
+        public static RarityTable Parse(string json) => new(JsonUtility.FromJson<RarityTableFile>(json));
+
+        public static RarityTable From(RarityTableFile file) => new(file ?? new RarityTableFile());
+
+        public static RarityTable LoadBuiltin()
+        {
+            var asset = Resources.Load<TextAsset>(BuiltinResource);
+            if (asset == null)
+            {
+                Debug.LogError($"Rarity builtin missing resource={BuiltinResource}");
+                return From(null);
+            }
+            var table = Parse(asset.text);
+            Resources.UnloadAsset(asset);
+            return table;
+        }
 
         public bool TryGet(string id, out RarityTier tier)
         {
@@ -94,7 +111,7 @@ namespace HypeDomino.UI.Rarity
             return !string.IsNullOrEmpty(id) && tiers.TryGetValue(id, out tier);
         }
 
-        static bool IsValid(TierEntry entry) =>
+        static bool IsValid(RarityTierEntry entry) =>
             entry != null
             && entry.id != null && TierId.IsMatch(entry.id)
             && entry.ordinal >= 1
@@ -104,7 +121,7 @@ namespace HypeDomino.UI.Rarity
 
         static bool IsHex(string value) => value != null && Hex.IsMatch(value);
 
-        static bool IsUnique(List<TierEntry> entries, TierEntry entry)
+        static bool IsUnique(List<RarityTierEntry> entries, RarityTierEntry entry)
         {
             foreach (var other in entries)
             {
@@ -114,7 +131,7 @@ namespace HypeDomino.UI.Rarity
             return true;
         }
 
-        void Add(TierEntry entry)
+        void Add(RarityTierEntry entry)
         {
             ColorUtility.TryParseHtmlString(entry.fill, out var fill);
             ColorUtility.TryParseHtmlString(entry.on, out var on);

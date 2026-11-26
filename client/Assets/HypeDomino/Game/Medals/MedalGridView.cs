@@ -51,7 +51,7 @@ namespace HypeDomino.Game.Medals
         }
 
         static CosmeticStage LobbyStage() =>
-            new(new AddressablesArtSource<Sprite>(), new AddressablesArtSource<LoopArt>(), null, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
+            new(new AddressablesArtSource<Sprite>(), new AddressablesArtSource<LoopArt>(), ContentBoot.Rarities.Current, null, null, GraphicsBoot.Quality.Effects, MotionBoot.Motion.ReduceMotion);
 
         void OnDestroy() => Unbind();
 

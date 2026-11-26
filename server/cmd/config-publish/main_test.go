@@ -20,6 +20,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
+	"github.com/Alievs-corp/hypedomino/server/internal/rarity"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
@@ -278,6 +279,22 @@ func TestLiveopsSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
 	}
 	for _, test := range tests {
 		if err := validate(liveops.Domain, []byte(test.raw)); !errors.Is(err, test.want) {
+			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
+		}
+	}
+}
+
+func TestRarityTablesAreCheckedBeforeTheyArePublished(t *testing.T) {
+	tests := []struct {
+		raw  []byte
+		want error
+	}{
+		{rarity.DefaultJSON(), nil},
+		{[]byte(`{}`), rarity.ErrInvalid},
+		{bytes.Replace(rarity.DefaultJSON(), []byte(`"diamondMinSize": 72`), []byte(`"diamondMinSize": 0`), 1), rarity.ErrInvalid},
+	}
+	for _, test := range tests {
+		if err := validate(rarity.Domain, test.raw); !errors.Is(err, test.want) {
 			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
 		}
 	}
