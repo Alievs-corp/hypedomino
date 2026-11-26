@@ -35,6 +35,8 @@ namespace HypeDomino.Tests.PlayMode
     public sealed class ScreenHostTests
     {
         const string StoreUrl = "https://store.test/app";
+        const string PolicyUrl = "https://policy.test/privacy";
+        const string TermsUrl = "https://policy.test/terms";
         const int NavButtons = 9;
         const int LoginButtons = 3;
         const int SettingsLabels = 18;
@@ -650,6 +652,44 @@ namespace HypeDomino.Tests.PlayMode
             maintenance.Read(new ServerHello { Status = HelloStatus.Maintenance, ServerTimeUnixMs = endsMs });
 
             Assert.IsFalse(ends.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void ThePrivacyNoticeScreenBuildsHiddenWithItsViewAndEveryLabelShowsItsString()
+        {
+            var screen = host.PrivacyNotice;
+
+            Assert.IsNotNull(screen.GetComponent<PrivacyNoticeView>());
+            Assert.IsFalse(screen.IsShown);
+            Assert.AreEqual(3, screen.GetComponentsInChildren<Button>(true).Length);
+            AssertEveryLabelShowsItsString(screen, FirstLaunchScreens.NoticeKey, FirstLaunchScreens.PolicyKey, FirstLaunchScreens.TermsKey, FirstLaunchScreens.ContinueKey);
+        }
+
+        [Test]
+        public void ThePrivacyNoticeHidesItsLinksWithoutUrlsAndContinues()
+        {
+            var screen = host.PrivacyNotice;
+            var continued = 0;
+            screen.GetComponent<PrivacyNoticeView>().Bind(null, null, _ => Assert.Fail("No link is configured"), () => continued++);
+
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.PolicyKey).gameObject.activeSelf);
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.TermsKey).gameObject.activeSelf);
+            ButtonOf(screen, FirstLaunchScreens.ContinueKey).onClick.Invoke();
+
+            Assert.AreEqual(1, continued);
+        }
+
+        [Test]
+        public void TheBoundPrivacyNoticeOpensEachConfiguredLink()
+        {
+            var screen = host.PrivacyNotice;
+            var opened = new System.Collections.Generic.List<string>();
+            screen.GetComponent<PrivacyNoticeView>().Bind(PolicyUrl, TermsUrl, opened.Add, () => { });
+
+            ButtonOf(screen, FirstLaunchScreens.PolicyKey).onClick.Invoke();
+            ButtonOf(screen, FirstLaunchScreens.TermsKey).onClick.Invoke();
+
+            CollectionAssert.AreEqual(new[] { PolicyUrl, TermsUrl }, opened);
         }
 
         void AssertEveryLabelShowsItsString(ScreenView screen, params string[] keys)
