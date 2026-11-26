@@ -1,12 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkAssetPaths, listFiles } from "./asset-naming.mjs";
+import { assetPaths, checkAssetPaths, listFiles } from "./asset-naming.mjs";
 
 const avatar = "cosmetic/avatar/comet_fox";
 const validTree = [
   "README.md",
   `${avatar}/provenance.md`,
+  `${avatar}/files.json`,
   `${avatar}/concept/20261026-01.png`,
   `${avatar}/work/comet_fox.psb`,
   `${avatar}/work/comet_fox_head.ai`,
@@ -34,6 +38,22 @@ test("a tree that follows the convention passes", () => {
 test("the repository assets-src passes", () => {
   const directory = fileURLToPath(new URL("../../assets-src/", import.meta.url));
   assert.deepEqual(checkAssetPaths(listFiles(directory)), []);
+});
+
+test("files listed in an item's files.json are checked as if on disk", () => {
+  const directory = mkdtempSync(join(tmpdir(), "asset-naming-"));
+  try {
+    const item = join(directory, "cosmetic/table/t");
+    mkdirSync(join(item, "export"), { recursive: true });
+    writeFileSync(join(item, "provenance.md"), "");
+    writeFileSync(join(item, "export/slice.json"), "{}");
+    writeFileSync(join(item, "files.json"), JSON.stringify({ files: [{ path: "export/Static.png", sha256: "0".repeat(64), changeset: 1 }] }));
+    const paths = assetPaths(directory);
+    assert.deepEqual(paths, ["cosmetic/table/t/export/Static.png", "cosmetic/table/t/export/slice.json", "cosmetic/table/t/files.json", "cosmetic/table/t/provenance.md"]);
+    assert.ok(checkAssetPaths(paths).some((error) => error.includes("invalid name Static.png")));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("capitals, spaces and unknown classes are rejected", () => {
@@ -64,4 +84,5 @@ test("concept and work names follow the convention", () => {
   assertReported([`${avatar}/provenance.md`, `${avatar}/concept/final_v2.png`], "must be concept/<YYYYMMDD>-<nn>");
   assertReported([`${avatar}/provenance.md`, `${avatar}/work/other_fox.psd`], "must be work/<slug>[_<part>].<ext>");
   assertReported([`${avatar}/provenance.md`, `${avatar}/notes.txt`], "notes.txt is not allowed in an item folder");
+  assertReported([`${avatar}/provenance.md`, `${avatar}/files.json/a.json`], "files.json must be a file");
 });

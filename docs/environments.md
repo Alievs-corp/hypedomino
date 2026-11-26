@@ -226,6 +226,9 @@ The admin web server (`admin/`) reads three variables on the server side only; t
 | `UNITY_LICENSE` | No: the `client` job needs this or `UNITY_EMAIL` with `UNITY_PASSWORD` (Alievs-corp uses the pair); on a fork without any of them the Unity tests are skipped with a notice | CI, Unity test runner | `<unity-license-file-contents>` | Yes | Repository secret |
 | `UNITY_EMAIL` | Yes, for the `client` job and the Unity workflows (with `UNITY_PASSWORD`) | CI, Unity test runner | `<unity-account-email>` | Yes | Repository secret |
 | `UNITY_PASSWORD` | Yes, for the `client` job and the Unity workflows (with `UNITY_EMAIL`) | CI, Unity test runner | `<unity-account-password>` | Yes | Repository secret |
+| `UVCS_SERVER` | Yes, once a changed item has `files.json`: without the three `UVCS_*` names the `assets` job fails for it; items without `files.json` are pulled from Git LFS and need none (ADR 0015) | `assets` job, `cm` sign-in and `asset-export pull` | `<organization>@unity` | No | Repository variable |
+| `UVCS_USER` | With `UVCS_SERVER` | `assets` job, `cm` sign-in: the Unity account that owns `UVCS_TOKEN`, with read access to `hypedomino-art` | `<unity-account-email>` | Yes | Repository secret |
+| `UVCS_TOKEN` | With `UVCS_SERVER` | `assets` job, `cm` sign-in: an access token of `UVCS_USER` (`cm accesstoken create "<name>" <lifetime> <organization>@unity`, then `cm accesstoken reveal`) | `<uvcs-access-token>` | Yes | Repository secret |
 | `ANDROID_APPLICATION_ID` | Yes, for a `client-v*` tag | `Release build` workflow | `<play-package-name>` | No | Repository variable |
 | `ANDROID_KEYSTORE_BASE64` | Yes, for a `client-v*` tag | `Release build` workflow, upload key | `<base64-of-upload-keystore>` | Yes | Repository secret |
 | `ANDROID_KEYSTORE_PASS` | Yes, for a `client-v*` tag | `Release build` workflow | `<keystore-password>` | Yes | Repository secret |
@@ -267,6 +270,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | Secret use | Lives in | Reaches the consumer as |
 |---|---|---|
 | CI only (Unity license) | GitHub Actions repository secrets | Job environment variables, masked in logs |
+| CI only (Unity Version Control read access, `UVCS_USER`, `UVCS_TOKEN`) | GitHub Actions repository secrets, not an environment, so pull request runs need no deployment approval; pull requests from forks do not receive them | Job environment variables of the `assets` job, written by `cm configure` and to `~/.plastic4/tokens.conf` of the runner, which is discarded after the job |
 | `staging` runtime | GitHub Actions environment secrets of the `staging` environment (2.3) | Written by the `Server deploy` workflow to the `server-env` and `migrate-env` secrets of the staging cluster before each release (`docs/launch-runbook.md` 5.1), then environment variables of the pods |
 | `production` runtime | GitHub Actions environment secrets of the `production` environment, deployable only from `main` after the environment's required reviewers approve (2.3) | Written by the `Server deploy` workflow to the `server-env` and `migrate-env` secrets of the production cluster before each release, then environment variables of the pods |
 | `dev` | A local `.env` file, ignored by `.gitignore` | The local stack (#22) |
@@ -314,6 +318,7 @@ When: on any suspected leak, when a person with access to it leaves the team or 
 | Hosting and infrastructure tokens: cloud API, object storage keys, registry and deploy tokens (ADR 0010) | 180 days | Broad power over the environment |
 | Store and vendor API credentials: Play service account key, App Store Connect API key, crash reporting (#106, #182) | 365 days | Narrow scope, issued and revoked in the vendor console |
 | CI-only credentials (Unity license and account) | 365 days, or when the license is renewed | CI only, never in a runtime environment |
+| Unity Version Control access token (`UVCS_TOKEN`) | Before the lifetime it was created with ends, at most 365 days | CI only and read access to source art; an expired token fails the `assets` job |
 | App signing keys: Play upload key, Apple distribution certificate | No cadence: only on a leak or when the issuer expires it | A new key changes the signing digest; the integrity allowlist (#205) is updated in the same change |
 
 Procedure for one secret in one environment:

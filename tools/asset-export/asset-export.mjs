@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { checkAssetPaths, listFiles } from "../asset-naming/asset-naming.mjs";
 import { checkManifest, itemTypes, loadSchema } from "../cosmetics-schema/cosmetics-schema.mjs";
+import { pullItem, readManifest } from "../asset-manifest/asset-manifest.mjs";
 
 const toolRoot = fileURLToPath(new URL("./", import.meta.url));
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -251,14 +252,16 @@ export function checkItems(directories, budgets) {
   return { ok, lines };
 }
 
-export function changedItems(paths, exists = existsSync) {
+const listsExport = (item, manifestOf) => (manifestOf(item)?.files ?? []).some((entry) => String(entry?.path).startsWith("export/"));
+
+export function changedItems(paths, exists = existsSync, manifestOf = readManifest) {
   const items = new Set();
   for (const path of paths) {
     const segments = path.trim().split("/");
     if (segments[0] !== "assets-src" || segments[1] !== "cosmetic" || segments.length < 5) continue;
     items.add(segments.slice(0, 4).join("/"));
   }
-  return [...items].filter((item) => exists(join(item, "export"))).sort();
+  return [...items].filter((item) => exists(join(item, "export")) || listsExport(item, manifestOf)).sort();
 }
 
 function parseSource(text) {
@@ -289,7 +292,7 @@ export function parseArguments(argv) {
   return options;
 }
 
-const usage = "usage: asset-export.mjs add <assets-src/cosmetic/<type>/<slug>> --manifest <file> [--rarity <id>] [--availability <state>] [--source <type>[:<ref>]]... [--group <ref>] [--layers <back,...,front>] [--client <dir> | --no-client]\n       asset-export.mjs check <item folder>...\n       asset-export.mjs items < changed paths";
+const usage = "usage: asset-export.mjs add <assets-src/cosmetic/<type>/<slug>> --manifest <file> [--rarity <id>] [--availability <state>] [--source <type>[:<ref>]]... [--group <ref>] [--layers <back,...,front>] [--client <dir> | --no-client]\n       asset-export.mjs check <item folder>...\n       asset-export.mjs pull <item folder>...\n       asset-export.mjs items < changed paths";
 
 function runAdd(options) {
   if (options.paths.length !== 1) throw new Error(usage);
@@ -310,10 +313,30 @@ function runCheck(options) {
   return result.ok ? 0 : 1;
 }
 
+export function pullItems(directories, server, run) {
+  if (!server) throw new Error("UVCS_SERVER is not set: the Unity Version Control server of the organization (docs/environments.md 2.3)");
+  const lines = [];
+  let ok = true;
+  for (const directory of directories) {
+    const result = pullItem(resolve(directory), { server, only: "export/", run });
+    ok &&= result.errors.length === 0;
+    lines.push(...result.errors.map((error) => `${directory}: ${error}`), `${directory}: ${result.pulled} export files pulled from Unity Version Control`);
+  }
+  return { ok, lines };
+}
+
+function runPull(options) {
+  if (options.paths.length === 0) throw new Error(usage);
+  const result = pullItems(options.paths, process.env.UVCS_SERVER);
+  for (const line of result.lines) console.log(line);
+  return result.ok ? 0 : 1;
+}
+
 function main(argv) {
   const options = parseArguments(argv);
   if (options.command === "add") return runAdd(options);
   if (options.command === "check") return runCheck(options);
+  if (options.command === "pull") return runPull(options);
   if (options.command === "items") {
     for (const item of changedItems(readFileSync(0, "utf8").split("\n").filter(Boolean))) console.log(item);
     return 0;
