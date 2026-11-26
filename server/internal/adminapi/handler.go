@@ -16,6 +16,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/adminaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/adminsession"
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
 	"github.com/Alievs-corp/hypedomino/server/internal/approval"
 	"github.com/Alievs-corp/hypedomino/server/internal/audit"
@@ -148,6 +149,11 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 		h.mux.HandleFunc("GET "+path+"/history", h.allowed(rbac.GameConfig, rbac.View, h.configValuesHistory(domain)))
 		h.mux.HandleFunc("POST "+path+"/rollback", h.allowed(rbac.GameConfig, rbac.Publish, h.rollbackConfigValues(domain)))
 	}
+	antiCheat := antiCheatDomain()
+	h.mux.HandleFunc("GET /admin/config/anticheat", h.allowed(rbac.AntiCheatConfig, rbac.View, h.configKeys(antiCheat)))
+	h.mux.HandleFunc("PUT /admin/config/anticheat", h.allowed(rbac.AntiCheatConfig, rbac.Publish, h.publishConfigValues(antiCheat)))
+	h.mux.HandleFunc("GET /admin/config/anticheat/history", h.allowed(rbac.AntiCheatConfig, rbac.View, h.configValuesHistory(antiCheat)))
+	h.mux.HandleFunc("POST /admin/config/anticheat/rollback", h.allowed(rbac.AntiCheatConfig, rbac.Publish, h.rollbackConfigValues(antiCheat)))
 	h.mux.HandleFunc("GET /admin/config/matchmaking", h.allowed(rbac.GameConfig, rbac.View, h.domainCatalog(matchmaking.Domain)))
 	h.mux.HandleFunc("PUT /admin/config/matchmaking", h.allowed(rbac.GameConfig, rbac.Publish, h.publishDomain(matchmakingDomain)))
 	h.mux.HandleFunc("GET /admin/config/matchmaking/history", h.allowed(rbac.GameConfig, rbac.View, h.domainHistory(matchmaking.Domain)))
@@ -619,7 +625,7 @@ func classify(err error) (int, string) {
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, audit.ErrForbidden), errors.Is(err, errForbidden):
 		return http.StatusForbidden, "forbidden"
-	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid), errors.Is(err, liveops.ErrInvalid),
+	case errors.Is(err, gamestrings.ErrInvalidLocalization), errors.Is(err, rulesconfig.ErrInvalid), errors.Is(err, liveops.ErrInvalid), errors.Is(err, anticheat.ErrInvalid),
 		errors.Is(err, shop.ErrInvalid), errors.Is(err, errOfferRemoved),
 		errors.Is(err, mission.ErrInvalidCatalog), errors.Is(err, errMissionRemoved),
 		errors.Is(err, dailylogin.ErrInvalidCalendar), errors.Is(err, storeprice.ErrInvalid),

@@ -49,7 +49,12 @@ function guardAt(body: string, pattern: RegExp): number {
 const signInGuard = /const admin = await currentAdmin\(\);\s*if \(!admin\) \{\s*return [^;]*auth\.required/;
 
 function viewGuard(object: string): RegExp {
-  return new RegExp(`if \\(!canView\\(admin\\.permissions, "${object}"\\)\\) \\{\\s*return [^;]*auth\\.forbidden`);
+  return new RegExp(`if \\(!canView\\(admin\\.permissions, ${object}\\)\\) \\{\\s*return [^;]*auth\\.forbidden`);
+}
+
+function keyedPage(route: string): string | null {
+  const source = readFileSync(new URL(`.${route}/page.tsx`, appDir), "utf8");
+  return source.includes("<KeyedConfigPage") ? source : null;
 }
 
 test("every page is a navigation screen, a detail page with a known object or the signed-in home", () => {
@@ -73,6 +78,12 @@ test("every page with an object refuses a role without view on it before it call
       continue;
     }
     const body = pageBody(route);
-    assert.ok(guardAt(body, viewGuard(object)) < firstApiCall(body), route);
+    const keyed = keyedPage(route);
+    if (keyed) {
+      assert.ok(keyed.includes(`object="${object}"`), route);
+      assert.ok(guardAt(body, viewGuard("object")) < firstApiCall(body), route);
+      continue;
+    }
+    assert.ok(guardAt(body, viewGuard(`"${object}"`)) < firstApiCall(body), route);
   }
 });

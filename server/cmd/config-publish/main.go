@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dailylogin"
 	"github.com/Alievs-corp/hypedomino/server/internal/db"
@@ -54,7 +55,7 @@ func main() {
 	}
 }
 
-var domains = []string{cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, liveops.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
+var domains = []string{anticheat.Domain, cosmetics.Domain, dailylogin.Domain, gamestrings.Domain, liveops.Domain, matchmaking.Domain, matchreward.Domain, medal.Domain, mission.Domain, pass.Domain, penalties.Domain, rating.Domain, rulesconfig.Domain, shop.Domain, storeprice.Domain}
 
 var errDomain = errors.New("unknown config domain")
 
@@ -113,6 +114,9 @@ func validate(domain string, raw []byte) error {
 		return err
 	case liveops.Domain:
 		_, err := liveops.Parse(raw)
+		return err
+	case anticheat.Domain:
+		_, err := anticheat.Parse(raw)
 		return err
 	case cosmetics.Domain:
 		_, err := cosmetics.ParseManifest(raw)

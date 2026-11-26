@@ -217,7 +217,7 @@ func TestIllegalIntentsAreRejectedWithTheirSequence(t *testing.T) {
 	wrong := v.ForcedOpening.Seat.Next()
 	tab.room.Intent(wrong, 1, replay.Intent{Kind: replay.KindOpen, Tile: v.ForcedOpening.Tile})
 	m, _ := tab.rejection(wrong)
-	if !m.Rejected || m.Sequence != 1 || !errors.Is(m.Reason, rules.ErrWrongOpener) || m.View.Acked != 0 {
+	if !m.Rejected || !m.Illegal || m.Sequence != 1 || !errors.Is(m.Reason, rules.ErrWrongOpener) || m.View.Acked != 0 {
 		t.Fatalf("wrong opener: %+v", m)
 	}
 	tab.room.Intent(v.ForcedOpening.Seat, 1, replay.Intent{Kind: replay.KindOpen, Tile: v.ForcedOpening.Tile})
@@ -228,7 +228,7 @@ func TestIllegalIntentsAreRejectedWithTheirSequence(t *testing.T) {
 	tab.room.Intent(v.ForcedOpening.Seat, 1, replay.Intent{Kind: replay.KindPass})
 	tab.room.Intent(v.ForcedOpening.Seat, 2, replay.Intent{Kind: replay.KindPass})
 	m, _ = tab.rejection(v.ForcedOpening.Seat)
-	if !m.Rejected || m.Sequence != 2 || !errors.Is(m.Reason, rules.ErrNotYourTurn) {
+	if !m.Rejected || !m.Illegal || m.Sequence != 2 || !errors.Is(m.Reason, rules.ErrNotYourTurn) {
 		t.Fatalf("stale sequence was answered or pass out of turn accepted: %+v", m)
 	}
 	tab.room.Intent(rules.SeatY, 1, replay.Intent{Kind: replay.KindPass})
@@ -237,7 +237,7 @@ func TestIllegalIntentsAreRejectedWithTheirSequence(t *testing.T) {
 	}
 	current := tab.snapshot(rules.SeatNorth).Current
 	tab.room.Intent(current, 1, replay.Intent{Kind: replay.KindPlace, Tile: rules.MustTile(6, 6), End: rules.End(9)})
-	if m, _ := tab.rejection(current); !m.Rejected || !(errors.Is(m.Reason, rules.ErrTileNotHeld) || errors.Is(m.Reason, rules.ErrIllegalPlacement)) {
+	if m, _ := tab.rejection(current); !m.Rejected || !m.Illegal || !(errors.Is(m.Reason, rules.ErrTileNotHeld) || errors.Is(m.Reason, rules.ErrIllegalPlacement)) {
 		t.Fatalf("bad placement: %+v", m)
 	}
 	if record := tab.record(); len(record.Intents) != 1 {
@@ -453,7 +453,7 @@ func TestIntentsBeforeTheMatchStartsAreRefused(t *testing.T) {
 		t.Fatalf("after the first join: %+v", m.View)
 	}
 	room.Intent(rules.SeatNorth, 1, replay.Intent{Kind: replay.KindPass})
-	if m := <-sink; !m.Rejected || !errors.Is(m.Reason, ErrNotStarted) {
+	if m := <-sink; !m.Rejected || m.Illegal || !errors.Is(m.Reason, ErrNotStarted) {
 		t.Fatalf("intent while waiting: %+v", m)
 	}
 	reply := make(chan replay.Record, 1)
