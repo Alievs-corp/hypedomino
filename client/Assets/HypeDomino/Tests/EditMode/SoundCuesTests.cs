@@ -76,12 +76,11 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void EverySeatsPlacementPlaysTheTileSound()
+        public void APlacementPlaysNoTileSoundWhenItsViewArrives()
         {
             Read(View(Seat.South, Seat.South, 1));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(View(Seat.South, Seat.West, 2)));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(View(Seat.South, Seat.North, 3)), "West placed");
-            Assert.AreEqual(MatchSounds.None, Read(View(Seat.South, Seat.North, 3)), "a view without a new tile");
+            Assert.AreEqual(MatchSounds.None, Read(View(Seat.South, Seat.West, 2)));
+            Assert.AreEqual(MatchSounds.None, Read(View(Seat.South, Seat.North, 3)), "West placed");
         }
 
         [Test]
@@ -89,7 +88,7 @@ namespace HypeDomino.Tests.EditMode
         {
             Read(OneOnOne(Seat.Y, 4, 10));
             Assert.AreEqual(MatchSounds.TileDraw, Read(OneOnOne(Seat.Y, 4, 9)));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(OneOnOne(Seat.X, 5, 9)));
+            Assert.AreEqual(MatchSounds.None, Read(OneOnOne(Seat.X, 5, 9)));
         }
 
         [Test]
@@ -105,7 +104,7 @@ namespace HypeDomino.Tests.EditMode
         public void EndingATurnOfSeveralDoublesIsNoPass()
         {
             Read(OneOnOne(Seat.X, 6, 5, 1));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(OneOnOne(Seat.X, 7, 5, 2)));
+            Assert.AreEqual(MatchSounds.None, Read(OneOnOne(Seat.X, 7, 5, 2)));
             Assert.AreEqual(MatchSounds.None, Read(OneOnOne(Seat.Y, 7, 5)));
         }
 
@@ -113,8 +112,8 @@ namespace HypeDomino.Tests.EditMode
         public void OnlyTheLocalTeamsPointsPlayAComboSound()
         {
             Read(View(Seat.East, Seat.East, 3, 10, 20));
-            Assert.AreEqual(MatchSounds.TilePlace | MatchSounds.Combo2, Read(View(Seat.East, Seat.South, 4, 10, 30)));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(View(Seat.East, Seat.West, 5, 25, 30)), "the other team scored");
+            Assert.AreEqual(MatchSounds.Combo2, Read(View(Seat.East, Seat.South, 4, 10, 30)));
+            Assert.AreEqual(MatchSounds.None, Read(View(Seat.East, Seat.West, 5, 25, 30)), "the other team scored");
         }
 
         [TestCase(5u, MatchSounds.Combo1)]
@@ -127,7 +126,7 @@ namespace HypeDomino.Tests.EditMode
         public void TheComboSoundFollowsTheScoreCascadeStep(uint points, MatchSounds combo)
         {
             Read(View(Seat.South, Seat.South, 3, 100, 0));
-            Assert.AreEqual(MatchSounds.TilePlace | combo, Read(View(Seat.South, Seat.West, 4, 100 + points, 0)));
+            Assert.AreEqual(combo, Read(View(Seat.South, Seat.West, 4, 100 + points, 0)));
         }
 
         [Test]
@@ -136,7 +135,7 @@ namespace HypeDomino.Tests.EditMode
             Read(OneOnOne(Seat.X, 6, 5, 1));
             var view = OneOnOne(Seat.X, 7, 5, 2);
             view.Scores.TeamA = 10;
-            Assert.AreEqual(MatchSounds.TilePlace | MatchSounds.Combo3, Read(view));
+            Assert.AreEqual(MatchSounds.Combo3, Read(view));
         }
 
         [Test]
@@ -152,7 +151,7 @@ namespace HypeDomino.Tests.EditMode
             Read(View(Seat.South, Seat.South, 3, 0, 0));
             var sounds = Read(View(Seat.South, Seat.West, 4, 20, 0));
             Assert.AreEqual(MatchSounds.None, sounds & MatchSounds.Score);
-            Assert.AreEqual(MatchSounds.Combo4, sounds & ~MatchSounds.TilePlace);
+            Assert.AreEqual(MatchSounds.Combo4, sounds);
         }
 
         [Test]
@@ -183,10 +182,10 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void AViewerHearsTheBoardButNoOutcomeOrScore()
+        public void AViewerHearsNoOutcomeOrScore()
         {
             Read(View(Seat.Unspecified, Seat.South, 1));
-            Assert.AreEqual(MatchSounds.TilePlace, Read(View(Seat.Unspecified, Seat.West, 2, 10, 0)));
+            Assert.AreEqual(MatchSounds.None, Read(View(Seat.Unspecified, Seat.West, 2, 10, 0)));
             Assert.AreEqual(MatchSounds.HandEnd, Read(Finished(Seat.Unspecified, Team.A)));
         }
 

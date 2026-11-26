@@ -15,7 +15,9 @@ namespace HypeDomino.Game.Match
         void ShowBackground(MatchSnapshot view);
         void ShowSeats(MatchSnapshot view);
         void ShowScore(ScoreBoard score);
-        void ShowBoard(ChainLayout board);
+        void ShowBoard(ChainLayout board, BoardPlacements placements);
+        void ShowEffects(MatchSnapshot view);
+        void StartConnection();
     }
 
     public interface IMatchHud
@@ -34,6 +36,7 @@ namespace HypeDomino.Game.Match
         readonly IMatchTable table;
         readonly IMatchHud hud;
         readonly BoardChain board = new();
+        readonly BoardPlacements placements = new();
         readonly SoundCues cues = new();
         readonly Action<MatchSounds> playSounds;
         readonly Action<MatchSnapshot> onView;
@@ -66,6 +69,7 @@ namespace HypeDomino.Game.Match
         public MatchNotices Notices { get; } = new();
         public HandSummary Summary { get; } = new();
         public ChainLayout Board => board.Layout;
+        public BoardPlacements Placements => placements;
         bool CanSend => connection != null && connection.Session.Accepted;
 
         public void Bind(Connection source)
@@ -96,7 +100,9 @@ namespace HypeDomino.Game.Match
             Score.Read(view);
             table.ShowScore(Score);
             board.Arrange(view, table.BoardSize, table.BoardMaxScale);
-            table.ShowBoard(board.Layout);
+            placements.Read(view);
+            table.ShowBoard(board.Layout, placements);
+            table.ShowEffects(view);
             Timer.Read(view);
             Hand.Read(view);
             hud.ShowHand(Hand);
@@ -156,6 +162,8 @@ namespace HypeDomino.Game.Match
         void StartConnection()
         {
             cues.StartConnection();
+            placements.StartConnection();
+            table.StartConnection();
             lastCurrent = Seat.Unspecified;
             passPending = false;
             if (!passShowing) return;
@@ -189,7 +197,7 @@ namespace HypeDomino.Game.Match
             hud.HidePass(passSide);
         }
 
-        static bool TrySideOf(MatchSnapshot view, Seat seat, out TableSide side)
+        internal static bool TrySideOf(MatchSnapshot view, Seat seat, out TableSide side)
         {
             side = TableSide.Bottom;
             if (view.Mode != Mode._1V1 && view.Mode != Mode._2V2) return false;

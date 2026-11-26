@@ -12,9 +12,17 @@ namespace HypeDomino.UI.Board
         [SerializeField] Sprite shadowSprite;
         [SerializeField] Image[] shadows = Array.Empty<Image>();
 
+        bool[] laid = Array.Empty<bool>();
+
         public int Count { get; private set; }
 
         public int Capacity => tiles.Length;
+
+        public RectTransform TileAt(int slot) => tiles[slot].rectTransform;
+
+        public RectTransform ShadowAt(int slot) => shadows[slot].rectTransform;
+
+        public static int SlotOf(PlacedDomino tile) => TileFaces.Index(new Domino(tile.Near, tile.Far));
 
         public void Configure(TileFaceSet faces, Image[] tileImages, Sprite shadow, Image[] shadowImages)
         {
@@ -23,6 +31,7 @@ namespace HypeDomino.UI.Board
             shadowSprite = shadow;
             shadows = shadowImages ?? Array.Empty<Image>();
             if (shadows.Length != tiles.Length) throw new ArgumentException($"{shadows.Length} shadows for {tiles.Length} tiles", nameof(shadowImages));
+            laid = new bool[tiles.Length];
             Color restingShadow = TokenColor.Shadow;
             restingShadow.a = TokenElevation.E1Alpha;
             for (var i = 0; i < tiles.Length; i++)
@@ -36,14 +45,27 @@ namespace HypeDomino.UI.Board
 
         public void Show(ChainLayout layout)
         {
-            Count = Mathf.Min(layout.Count, tiles.Length);
-            for (var i = 0; i < tiles.Length; i++)
+            if (laid.Length != tiles.Length) laid = new bool[tiles.Length];
+            Array.Clear(laid, 0, laid.Length);
+            Count = 0;
+            for (var i = 0; i < layout.Count; i++)
             {
-                var shown = i < Count;
-                tiles[i].enabled = shown;
-                shadows[i].enabled = shown;
-                if (shown) Place(i, layout[i], layout.OnBoard(layout[i].Center), layout.Scale);
+                var slot = SlotOf(layout[i]);
+                if (slot >= tiles.Length) continue;
+                laid[slot] = true;
+                Count++;
+                Place(slot, layout[i], layout.OnBoard(layout[i].Center), layout.Scale);
             }
+            for (var slot = 0; slot < tiles.Length; slot++)
+            {
+                Enable(tiles[slot], laid[slot]);
+                Enable(shadows[slot], laid[slot]);
+            }
+        }
+
+        static void Enable(Behaviour shown, bool enabled)
+        {
+            if (shown.enabled != enabled) shown.enabled = enabled;
         }
 
         void Place(int slot, PlacedDomino tile, Vector2 position, float shortSide)

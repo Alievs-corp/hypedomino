@@ -28,6 +28,12 @@ namespace HypeDomino.Tests.EditMode
             public MatchSnapshot Seats;
             public ScoreBoard Score;
             public ChainLayout Board;
+            public BoardPlacements Placements;
+            public BoardChange LastChange;
+            public int PlacedShown;
+            public int EffectsShown;
+            public MatchSnapshot Effects;
+            public int ConnectionsStarted;
 
             public void ShowBackground(MatchSnapshot view)
             {
@@ -47,11 +53,22 @@ namespace HypeDomino.Tests.EditMode
                 Score = score;
             }
 
-            public void ShowBoard(ChainLayout board)
+            public void ShowBoard(ChainLayout board, BoardPlacements placements)
             {
                 BoardsShown++;
                 Board = board;
+                Placements = placements;
+                LastChange = placements.Change;
+                PlacedShown += placements.PlacedTiles.Length;
             }
+
+            public void ShowEffects(MatchSnapshot view)
+            {
+                EffectsShown++;
+                Effects = view;
+            }
+
+            public void StartConnection() => ConnectionsStarted++;
         }
 
         sealed class Hud : IMatchHud
@@ -299,6 +316,46 @@ namespace HypeDomino.Tests.EditMode
             Assert.Greater(screen.Board.Scale, 0f);
             Assert.AreEqual(1, hud.HandsShown);
             Assert.AreSame(screen.Hand, hud.Hand);
+        }
+
+        [Test]
+        public void EveryViewReachesTheBoardWithItsPlacementsAndThenTheEffects()
+        {
+            Show(Playing(Seat.South));
+            Assert.AreSame(screen.Placements, table.Placements);
+            Assert.AreEqual(BoardChange.Snap, table.LastChange);
+            Assert.AreEqual(1, table.EffectsShown);
+            Assert.AreSame(snapshot, table.Effects);
+
+            var placed = Playing(Seat.West);
+            placed.Board.Line.Add(O(1, 4));
+            Show(placed);
+
+            Assert.AreEqual(BoardChange.Placed, table.LastChange);
+            Assert.AreEqual(1, table.PlacedShown);
+            Assert.AreEqual(2, table.EffectsShown);
+        }
+
+        [Test]
+        public void AHelloStartsTheBoardOfANewConnection()
+        {
+            var session = BoundSession();
+            Assert.AreEqual(1, table.ConnectionsStarted);
+            var frames = new ServerFrames();
+            session.Hello(frames, new ClientHello());
+            frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
+            session.Poll();
+            frames.Deliver(Envelope.PayloadOneofCase.MatchView, Playing(Seat.West));
+            session.Poll();
+            frames.Deliver(Envelope.PayloadOneofCase.ServerHello, new ServerHello { Status = HelloStatus.Accepted, SessionNonce = 1 });
+            session.Poll();
+            var placed = Playing(Seat.North);
+            placed.Board.Line.Add(O(1, 4));
+            frames.Deliver(Envelope.PayloadOneofCase.MatchView, placed);
+            session.Poll();
+
+            Assert.AreEqual(3, table.ConnectionsStarted);
+            Assert.AreEqual(BoardChange.Snap, table.LastChange, "a reconnect snaps the board");
         }
 
         [Test]
