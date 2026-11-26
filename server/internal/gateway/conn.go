@@ -94,17 +94,11 @@ func (c *Conn) serve(ctx context.Context) {
 	c.stalled.Stop()
 	stopAbort := context.AfterFunc(ctx, c.abortWrite)
 	defer stopAbort()
-	var writer sync.WaitGroup
-	writer.Add(1)
-	go func() {
-		defer writer.Done()
-		c.writeLoop()
-	}()
 	socketClosed := make(chan struct{})
 	go func() {
 		defer close(socketClosed)
+		c.writeLoop()
 		<-c.closed
-		writer.Wait()
 		c.closeSocket()
 	}()
 	c.readLoop(ctx)

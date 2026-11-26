@@ -121,6 +121,7 @@ assets-src/
   README.md
   cosmetic/<type>/<slug>/     type and slug of the item id <type>.<slug>
     provenance.md
+    files.json                file manifest of the binaries in Unity Version Control (4.3)
     concept/<YYYYMMDD>-<nn>.<png|jpg|jpeg|webp>
     work/<name>.<ext>
     export/static.png
@@ -139,10 +140,10 @@ assets-src/
 |---|---|
 | Characters | Every folder and file name is lowercase `[a-z0-9_]`, plus `-` only in concept file names and one `.` before the extension. No spaces, no capitals |
 | Slug | The slug of the item id (`[a-z0-9_]+`, `docs/cosmetics.md` section 3). It is stable like the id: a folder is never renamed or reused for another item |
-| Versions | No `_v2`, `_final`, `_new` in names. Git is the history; a changed asset replaces the file and the item gets a new `revision` at publish |
+| Versions | No `_v2`, `_final`, `_new` in names. Version control is the history (git, and Unity Version Control for binaries, 4.3); a changed asset replaces the file and the item gets a new `revision` at publish |
 | Concept files | `<YYYYMMDD>-<nn>`, date of generation, `nn` from `01` per day |
-| Work files | `<slug>` or `<slug>_<part>` (for example `comet_fox_head`), any tool format; heavy formats go through Git LFS (`.gitattributes`) |
-| Item folder | Holds only `provenance.md`, `concept/`, `work/` and `export/`. `provenance.md` exists from the first concept on |
+| Work files | `<slug>` or `<slug>_<part>` (for example `comet_fox_head`), any tool format; binary formats are stored as 4.3 says |
+| Item folder | Holds only `provenance.md`, `files.json`, `concept/`, `work/` and `export/`. `provenance.md` exists from the first concept on. `node tools/asset-naming/asset-naming.mjs` checks the paths listed in `files.json` as well as the files on disk |
 | Classes other than `cosmetic` | Folder roots only. Their addresses come from their own specs: medals `medal/<slug>/static` (`docs/admin.md` 5.9), UI kit `docs/ui-kit.md` (#168), tiles `docs/tiles.md` (#169), effects #176, sound `docs/sound.md` (#177) |
 
 ### 4.2 Export to Addressables
@@ -167,14 +168,51 @@ npm run asset:add -- assets-src/cosmetic/avatar/comet_fox --manifest <manifest.j
 `tools/asset-export` runs these steps in order and writes nothing when one fails:
 
 1. Naming of the item folder (section 4.1, `tools/asset-naming`).
-2. Export: `export/static.png` is present, every PNG has an alpha channel, loop frames are numbered without gaps and share the canvas of the static. A table has `export/slice.json` with a whole positive `depth` that leaves a field and a whole positive `step` shorter than the static, with an even remainder (`docs/cosmetics.md` 8.4). A Git LFS pointer instead of a PNG is reported as such.
+2. Export: `export/static.png` is present, every PNG has an alpha channel, loop frames are numbered without gaps and share the canvas of the static. A table has `export/slice.json` with a whole positive `depth` that leaves a field and a whole positive `step` shorter than the static, with an even remainder (`docs/cosmetics.md` 8.4). A Git LFS pointer instead of a PNG is reported as such. The export files must be on disk: an item in Unity Version Control is pulled first (4.3).
 3. Size: the budget of 5.4.
 4. `provenance.md` (section 3): `artSource` is `handmade` or `ai_assisted`, and the Cultural review line ends in `approved`. A manifest only holds reviewed items (`culturalReview` is `approved`, V-1).
 5. Entry: the id, `nameKey`, `animated`, the addresses and `layers` follow from the folder, and `artSource` from `provenance.md`. `rarityId` (`--rarity`), `availability` (`--availability`), `sources` (`--source <type>[:<ref>]`, repeated per source), `group` (`--group`, emoji) and the layer order (`--layers <back>,...,<front>`, a table with more than one layer) come from the options; an item already in the manifest keeps its values for the options left out. `revision` is 1 for a new item and rises by one when the entry changed (V-13). `manifestVersion` stays as it is, as the server sets it at publish (`docs/admin.md`, Cosmetics manifest note).
 6. The whole manifest passes `tools/cosmetics-schema` (V-1 to V-11, V-19); only then is the file written.
 7. The export is copied to `client/Assets/Cosmetics/<placement>/<type>/<slug>/`, where `<placement>` is `builtin` for an item with a `default` source and `remote` otherwise. The copy in the other placement and frames that are no longer exported are removed with their `.meta` files. `--client <dir>` changes the folder, `--no-client` skips the step.
 
-`--manifest` names an existing manifest file: the published manifest (`GET /admin/config/cosmetics`), a draft, or a copy of `docs/cosmetics/examples/minimal.json` to start from. The admin publish (W-7, W-8) stays the step that puts an item in front of players. After the command, `HypeDomino/Import Cosmetics` in Unity builds the content of 5.4; the PNGs and the generated assets under `client/Assets/Cosmetics` are committed, the PNGs through Git LFS (`.gitattributes`).
+`--manifest` names an existing manifest file: the published manifest (`GET /admin/config/cosmetics`), a draft, or a copy of `docs/cosmetics/examples/minimal.json` to start from. The admin publish (W-7, W-8) stays the step that puts an item in front of players. After the command, `HypeDomino/Import Cosmetics` in Unity builds the content of 5.4; the PNGs and the generated assets under `client/Assets/Cosmetics` are committed, the PNGs through Git LFS (`.gitattributes`; client art stays in Git LFS, ADR 0015).
+
+### 4.3 Where source art is stored
+
+ADR 0015: the binaries of `assets-src/` move from Git LFS to Unity Version Control, repository `hypedomino-art`, whose root is the content of `assets-src/`. A binary is a file with an extension of `sourceArtExtensions` in `tools/asset-manifest/asset-manifest.mjs` (the `assets-src` Git LFS rules of `.gitattributes`). Everything else of an item stays in git: `provenance.md`, `work/*.py`, `export/slice.json` and `files.json`. Until the migration below is done, every item is still in Git LFS and has no `files.json`.
+
+`files.json` lists every binary of the item, sorted by path:
+
+```json
+{
+  "files": [
+    { "path": "export/static.png", "sha256": "<64 lowercase hex digits>", "changeset": 12 },
+    { "path": "work/comet_fox.psd", "sha256": "<64 lowercase hex digits>", "changeset": 14 }
+  ]
+}
+```
+
+| Field | Rule |
+|---|---|
+| `path` | Relative to the item folder, forward slashes, a binary extension, named by 4.1 |
+| `sha256` | SHA-256 of the file content. For a Git LFS pointer it is the pointer's `oid`, the same value, so manifests can be written without pulling the content |
+| `changeset` | The Unity Version Control changeset that checked in this content; the file is fetched as `serverpath:/<item path>/<path>#cs:<changeset>@hypedomino-art@<server>` |
+
+| Command | Does |
+|---|---|
+| `node tools/asset-manifest/asset-manifest.mjs write --changeset <n> <assets-src or item>...` | Writes `files.json` of every item (a folder with `provenance.md`) from the binaries on disk. A new or changed file gets changeset `<n>`, an unchanged one keeps its changeset. A listed file no longer on disk is kept unless `--prune` is given, so a git checkout without the binaries never empties a manifest |
+| `node tools/asset-manifest/asset-manifest.mjs verify [--complete] <assets-src or item>...` | For every item with `files.json`: the format above; every binary on disk is listed with its hash. `--complete` also needs every listed file on disk (a full workspace) |
+| `node tools/asset-export/asset-export.mjs pull <item>...` | Fetches the `export/` files of the items with `cm cat` at their changesets and checks each hash. Needs `UVCS_SERVER` (`<organization>@unity`) and a signed-in `cm` |
+
+An art change after the migration: check in to Unity Version Control (locked formats `*.psd *.blend *.ai *.aep` need an exclusive checkout), run `write --changeset <n>` on the item, and commit `files.json` with the rest of the item. The `assets` CI job (5.4) verifies every manifest and pulls a changed item from Unity Version Control when it has `files.json`, from Git LFS otherwise.
+
+Migration, once the owner has created the organization (#751):
+
+1. Owner: Version Control on in the Unity Cloud organization, the team invited, repository `hypedomino-art`, a lock rule for `*.psd *.blend *.ai *.aep`, an access token for CI (`cm accesstoken create`) and the `UVCS_*` names of `docs/environments.md` 2.3.
+2. Check in the binaries of `assets-src/` at their paths under the repository root, as one changeset `<n>`.
+3. `node tools/asset-manifest/asset-manifest.mjs write --changeset <n> assets-src`, then `verify --complete assets-src`; LFS pointers are enough for `write`.
+4. In one pull request: the `files.json` of every item, the binaries removed from git (`git rm --cached`), the `assets-src` LFS rules of `.gitattributes` replaced by ignore rules for the binary extensions under `assets-src/`, and `assets-src/README.md`. The `assets` job of that pull request pulls the changed items from Unity Version Control, which is the end-to-end check of the CI sign-in.
+5. Git LFS clean-up: ADR 0015, Git LFS clean-up options.
 
 ## 5. From raw image to game
 
@@ -238,7 +276,7 @@ Size:
 - The animated frame limit leaves margin over the 256 px canvas of set 1: 17 sprites, 502,928 bytes. Owner decision 2026-11-16: the static frame limit is 125,000 bytes, raised from the first-named 100,000, and the four 512 px static frames of set 1 (118,336 bytes each) stay at 512 px and pass it; the other static frames are 256 px (29,584 bytes). A frame is never drawn larger than its canvas (`docs/art-direction.md` 5.2). An animated frame on a 512 px canvas (about 2,000,000 bytes) does not fit.
 - A layer of an animated table is a folder under `export/layer/`; it is animated when it holds more than one frame. The tool counts both and fails a table over either limit. Set 1's animated tables have a one-frame `base` layer and a 10-frame `motion` layer, 4,930,560 bytes.
 - A type and kind without a limit is reported and never fails.
-- CI job `assets`, part of `CI complete`, runs when `assets-src/` or these tools change: the naming check over all of `assets-src/`, then the export and size checks over every cosmetic item the change touches, with Git LFS files pulled for those items only. The estimates go to the job summary.
+- CI job `assets`, part of `CI complete`, runs when `assets-src/` or these tools change: the naming check and the file manifest check (4.3) over all of `assets-src/`, then the export and size checks over every cosmetic item the change touches, with the export files of those items only pulled from Unity Version Control (an item with `files.json`) or Git LFS (an item without). The estimates go to the job summary.
 - The admin measures format, size, atlas and frame count on upload (`docs/admin.md` 5.2).
 - A new or changed effect, or anything in the match scene, reports the measurements of `docs/performance.md` section 8.
 

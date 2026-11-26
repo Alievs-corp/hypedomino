@@ -51,5 +51,6 @@ What gets easier, what gets harder, what must be verified.
 | [0012](0012-animated-2d-asset-format.md) | Animated 2D cosmetics: sprite sheet loops | Proposed; device measurement owed |
 | [0013](0013-postgres-backup-wal-g.md) | PostgreSQL backups: WAL-G archiving to S3-compatible storage | Accepted |
 | [0014](0014-beta-launch-server-sizing.md) | Server sizing for closed beta and launch: shared vCPU, dedicated game node on demand | Accepted |
+| [0015](0015-source-art-in-unity-version-control.md) | Source art in Unity Version Control, code and file manifests in git | Accepted; migration waits for the organization (#751) |
 
 Related specs: `docs/rules.md` (game rules), `docs/performance.md` (#11), `docs/anti-cheat.md` (#201). The last two are separate issues and may not exist yet.

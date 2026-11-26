@@ -53,6 +53,7 @@ jobs:
             assets:
               - 'assets-src/**'
               - 'tools/asset-export/**'
+              - 'tools/asset-manifest/**'
               - 'tools/asset-naming/**'
               - 'tools/cosmetics-schema/**'
               - '.github/workflows/ci.yml'
@@ -397,7 +398,10 @@ jobs:
           node-version: 24
       - name: Naming of assets-src
         run: node tools/asset-naming/asset-naming.mjs
-      - name: Export and size budget of new and changed items
+      - name: File manifests of assets-src
+        run: node tools/asset-manifest/asset-manifest.mjs verify assets-src
+      - name: New and changed items
+        id: items
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -408,13 +412,62 @@ jobs:
             changed=$(git ls-files assets-src)
           fi
           mapfile -t items < <(printf '%s\n' "$changed" | node tools/asset-export/asset-export.mjs items)
+          lfs=()
+          uvcs=()
+          for item in "${items[@]}"; do
+            if [ -f "$item/files.json" ]; then uvcs+=("$item"); else lfs+=("$item"); fi
+          done
+          { echo "all=${items[*]}"; echo "lfs=${lfs[*]}"; echo "uvcs=${uvcs[*]}"; } >> "$GITHUB_OUTPUT"
           if [ "${#items[@]}" -eq 0 ]; then
             echo "No cosmetic item with an export changed" | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
           fi
+      - name: Pull export files from Git LFS
+        if: steps.items.outputs.lfs != ''
+        shell: bash
+        env:
+          LFS_ITEMS: ${{ steps.items.outputs.lfs }}
+        run: |
+          read -ra items <<< "$LFS_ITEMS"
           include=$(printf '%s/export/**,' "${items[@]}")
           git lfs install --local
           git lfs pull --include="${include%,}"
+      - name: Unity Version Control client
+        if: steps.items.outputs.uvcs != ''
+        shell: bash
+        env:
+          UVCS_SERVER: ${{ vars.UVCS_SERVER }}
+          UVCS_USER: ${{ secrets.UVCS_USER }}
+          UVCS_TOKEN: ${{ secrets.UVCS_TOKEN }}
+        run: |
+          if [ -z "$UVCS_SERVER" ] || [ -z "$UVCS_USER" ] || [ -z "$UVCS_TOKEN" ]; then
+            echo "::error title=Unity Version Control secrets missing::items with files.json need the UVCS_SERVER variable and the UVCS_USER and UVCS_TOKEN secrets (docs/environments.md 2.3)"
+            exit 1
+          fi
+          sudo install -d /etc/apt/keyrings
+          curl -sSfL https://uvcs.unity3d.com/linux/keys/public | sudo gpg --dearmor -o /etc/apt/keyrings/uvcs.gpg
+          echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/uvcs.gpg] https://uvcs.unity3d.com/linux/repos/deb stable main" | sudo tee /etc/apt/sources.list.d/uvcs.list
+          sudo apt-get update -q
+          sudo apt-get install -y -q plasticscm-client-core
+          cm configure --language=en --workingmode=SSOWorkingMode --server="$UVCS_SERVER" --user="$UVCS_USER" --token="$UVCS_TOKEN"
+          umask 077
+          printf 'server=%s user=%s token=%s seiddata=%s\n' "$UVCS_SERVER" "$UVCS_USER" "$UVCS_TOKEN" "$UVCS_USER" > "$HOME/.plastic4/tokens.conf"
+          cm repo list "$UVCS_SERVER" > /dev/null
+      - name: Pull export files from Unity Version Control
+        if: steps.items.outputs.uvcs != ''
+        shell: bash
+        env:
+          UVCS_SERVER: ${{ vars.UVCS_SERVER }}
+          UVCS_ITEMS: ${{ steps.items.outputs.uvcs }}
+        run: |
+          read -ra items <<< "$UVCS_ITEMS"
+          node tools/asset-export/asset-export.mjs pull "${items[@]}"
+      - name: Export and size budget of new and changed items
+        if: steps.items.outputs.all != ''
+        shell: bash
+        env:
+          ITEMS: ${{ steps.items.outputs.all }}
+        run: |
+          read -ra items <<< "$ITEMS"
           { echo '## Asset size budget'; echo; } >> "$GITHUB_STEP_SUMMARY"
           node tools/asset-export/asset-export.mjs check "${items[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
 
