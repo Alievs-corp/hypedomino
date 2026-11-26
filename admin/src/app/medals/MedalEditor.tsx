@@ -15,6 +15,8 @@ import {
   withNewSource,
   withoutSource,
   withSource,
+  withReview,
+  reviewApproved,
   type Medal,
   type MedalCatalog,
   type MedalRules,
@@ -36,9 +38,9 @@ const availabilityLabel: Record<string, MessageKey> = {
 
 const sourceLabel: Record<string, MessageKey> = { mission: "medals.source.mission", rank_reward: "medals.source.rank_reward" };
 
-type Props = { initialCatalog: MedalCatalog; version: number; rules: MedalRules; canPublish: boolean };
+type Props = { initialCatalog: MedalCatalog; version: number; rules: MedalRules; canPublish: boolean; canReview: boolean };
 
-export function MedalEditor({ initialCatalog, version, rules, canPublish }: Props) {
+export function MedalEditor({ initialCatalog, version, rules, canPublish, canReview }: Props) {
   const t = useTranslator();
   const [catalog, setCatalog] = useState(initialCatalog);
   const [selected, setSelected] = useState(initialCatalog.medals[0]?.id ?? "");
@@ -96,7 +98,7 @@ export function MedalEditor({ initialCatalog, version, rules, canPublish }: Prop
           }}
         />
       </section>
-      {medal && <MedalFields medal={medal} rules={rules} label={label} onChange={(next) => setCatalog((current) => replaceMedal(current, next))} />}
+      {medal && <MedalFields medal={medal} rules={rules} label={label} canReview={canReview} onChange={(next) => setCatalog((current) => replaceMedal(current, next))} />}
       {canPublish && (
         <section className="flex flex-col gap-3">
           <label className={labelClass}>
@@ -172,9 +174,9 @@ function NewMedal({ onAdd }: { onAdd: (slug: string) => boolean }) {
   );
 }
 
-type FieldsProps = { medal: Medal; rules: MedalRules; label: (map: Record<string, MessageKey>, id: string) => string; onChange: (medal: Medal) => void };
+type FieldsProps = { medal: Medal; rules: MedalRules; label: (map: Record<string, MessageKey>, id: string) => string; canReview: boolean; onChange: (medal: Medal) => void };
 
-function MedalFields({ medal, rules, label, onChange }: FieldsProps) {
+function MedalFields({ medal, rules, label, canReview, onChange }: FieldsProps) {
   const t = useTranslator();
   const found = medalIssues(medal);
   return (
@@ -205,7 +207,12 @@ function MedalFields({ medal, rules, label, onChange }: FieldsProps) {
             ))}
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm text-text-secondary">
+          <input type="checkbox" disabled={!canReview} checked={medal.culturalReview === reviewApproved} onChange={(event) => onChange(withReview(medal, event.target.checked))} />
+          {t("medals.review_approved")}
+        </label>
       </div>
+      <p className="text-sm text-text-muted">{t("medals.review_hint")}</p>
       <fieldset className="flex flex-col gap-3 rounded-md border border-surface p-3">
         <legend className="text-sm text-text-secondary">{t("medals.sources")}</legend>
         {medal.sources.map((source, index) => (

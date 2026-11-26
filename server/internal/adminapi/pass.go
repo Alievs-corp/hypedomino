@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -53,7 +54,13 @@ func (h *Handler) passDomain(rollback, noted bool) configDomain {
 			if err := h.frozenSeasonsKept(before, next, items, noted); err != nil {
 				return nil, err
 			}
-			return kept, trackSourcesIn(items, next)
+			if err := trackSourcesIn(items, next); err != nil {
+				return nil, err
+			}
+			if unnamed := next.Unnamed(); len(unnamed) > 0 {
+				return nil, fmt.Errorf("%w: no nameKey for %s", pass.ErrInvalidConfig, strings.Join(unnamed, ", "))
+			}
+			return kept, h.keysApprovedInEnglish(ctx, tx, pass.ErrInvalidConfig, next.NameKeys())
 		},
 		accept: func(_, after []byte) error {
 			_, err := pass.Parse(after)

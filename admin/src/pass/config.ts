@@ -8,6 +8,7 @@ export type Curve = { levels: number; xpBase: number; xpStep: number; xpMax: num
 
 export type Season = {
   id: string;
+  nameKey?: string;
   start: string;
   end: string;
   curve: Curve;
@@ -98,7 +99,7 @@ export function emptyBundle(seasonId: string, track: Track, level: number): Bund
 
 export function newSeason(config: PassConfig, start: string, end: string, curve: Curve): Season {
   const id = nextSeasonId(config);
-  return withPremiumLevels({ id, start, end, curve, free: {}, premium: {} });
+  return withPremiumLevels({ id, nameKey: "", start, end, curve, free: {}, premium: {} });
 }
 
 export function cloneSeason(config: PassConfig, source: Season, start: string, end: string): Season {
@@ -112,7 +113,7 @@ export function cloneSeason(config: PassConfig, source: Season, start: string, e
         })
         .filter(([, bundle]) => track === "premium" || grantsSomething(bundle)),
     );
-  return { id, start, end, curve: { ...source.curve }, free: copy("free"), premium: copy("premium") };
+  return { id, nameKey: "", start, end, curve: { ...source.curve }, free: copy("free"), premium: copy("premium") };
 }
 
 function withPremiumLevels(season: Season): Season {
@@ -189,9 +190,14 @@ export function rankedWindow(config: PassConfig, ranked: readonly Window[], now:
   return free ? { start: free.start, end: free.end } : null;
 }
 
+export function passTextKeys(config: PassConfig): string[] {
+  return config.seasons.flatMap((season) => (season.nameKey?.trim() ? [season.nameKey.trim()] : []));
+}
+
 export function seasonIssues(config: PassConfig, season: Season): MessageKey[] {
   const found: MessageKey[] = [];
   const { levels, xpBase, xpStep, xpMax } = season.curve;
+  if (!season.nameKey?.trim()) found.push("pass.issue.name_key");
   if (!(Date.parse(season.end) > Date.parse(season.start))) found.push("pass.issue.window");
   if (config.seasons.some((other) => other.id !== season.id && overlaps(other, season))) found.push("pass.issue.overlap");
   if (![levels, xpBase, xpStep, xpMax].every((value) => Number.isInteger(value) && value >= 1)) found.push("pass.issue.curve");

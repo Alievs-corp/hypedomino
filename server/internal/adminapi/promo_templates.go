@@ -23,6 +23,7 @@ type promoTemplateRequest struct {
 	ID       string          `json:"id"`
 	Campaign string          `json:"campaign"`
 	Kind     string          `json:"kind"`
+	Role     string          `json:"role"`
 	Bundle   json.RawMessage `json:"bundle"`
 	changeNote
 }
@@ -32,7 +33,7 @@ type promoTemplatesView struct {
 }
 
 func (r promoTemplateRequest) template(id, creator string) (promo.Template, error) {
-	t := promo.Template{ID: id, Campaign: r.Campaign, Kind: r.Kind, Creator: creator}
+	t := promo.Template{ID: id, Campaign: r.Campaign, Kind: r.Kind, Role: r.Role, Creator: creator}
 	if len(r.Bundle) == 0 || string(r.Bundle) == "null" {
 		return t, nil
 	}

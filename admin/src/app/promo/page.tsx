@@ -87,6 +87,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                 <th className="py-2 pr-4">{t("promo.campaign_column")}</th>
                 <th className="py-2 pr-4">{t("promo.kind")}</th>
                 <th className="py-2 pr-4">{t("promo.grants")}</th>
+                <th className="py-2 pr-4">{t("promo.template_role")}</th>
                 <th className="py-2 pr-4">{t("promo.template_creator")}</th>
                 <th className="py-2 pr-4">{t("promo.updated")}</th>
               </tr>
@@ -98,6 +99,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Promis
                   <td className="py-2 pr-4 font-mono">{template.campaign}</td>
                   <td className="py-2 pr-4">{template.kind}</td>
                   <td className="py-2 pr-4">{template.bundle ? bundleSummary(template.bundle) : t("promo.template_no_bundle")}</td>
+                  <td className="py-2 pr-4">{template.role ? t(`promo.template_role.${template.role}`) : t("promo.template_role_none")}</td>
                   <td className="py-2 pr-4 break-all">{template.creator}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{t.when(template.updated)}</td>
                 </tr>

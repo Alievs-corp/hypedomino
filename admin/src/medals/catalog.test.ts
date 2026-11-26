@@ -13,6 +13,7 @@ import {
   withNewSource,
   withoutSource,
   withSource,
+  withReview,
   type MedalCatalog,
   type MedalRules,
 } from "./catalog.ts";
@@ -32,6 +33,7 @@ const catalog: MedalCatalog = {
       staticAddress: "medal/wins_50/static",
       sources: [{ type: "mission", ref: "mission.win_50" }],
       availability: "live",
+      culturalReview: "approved",
     },
   ],
 };
@@ -46,6 +48,7 @@ test("a new medal takes the server's first rarity, source type and availability 
     staticAddress: "medal/first_cup/static",
     sources: [{ type: "mission", ref: "" }],
     availability: "live",
+    culturalReview: "",
   });
   assert.deepEqual(emptyMedalCatalog(), { schema: 1, profileMedalSlots: 0, medals: [] });
   assert.ok(validMedalSlug("wins_5") && !validMedalSlug("Wins-5") && !validMedalSlug(""));
@@ -68,7 +71,7 @@ test("sources are edited, added and removed by position", () => {
 test("issues name what the server would refuse or what cannot be meant", () => {
   assert.deepEqual(medalIssues(catalog.medals[0]), []);
   assert.deepEqual(medalIssues({ ...catalog.medals[0], sources: [] }), ["medals.issue.no_source"]);
-  assert.deepEqual(medalIssues(newMedal("cup", rules)), ["medals.issue.empty_ref"]);
+  assert.deepEqual(medalIssues(newMedal("cup", rules)), ["medals.issue.empty_ref", "medals.issue.review"]);
   const twice = withSource(withNewSource(catalog.medals[0], rules), 1, { type: "mission", ref: " mission.win_50 " });
   assert.deepEqual(medalIssues(twice), ["medals.issue.duplicate_source"]);
   assert.ok(validShowcaseSlots(0) && validShowcaseSlots(3) && !validShowcaseSlots(-1) && !validShowcaseSlots(1.5));
@@ -95,4 +98,19 @@ test("the keys checked before a medal publish are each medal's name and descript
     "medal.first_cup.description",
   ]);
   assert.deepEqual(medalTextKeys(emptyMedalCatalog()), []);
+});
+
+test("only a live medal needs an approved cultural review", () => {
+  const medal = catalog.medals[0];
+  const cases: { availability: string; approved: boolean; issue: boolean }[] = [
+    { availability: "live", approved: true, issue: false },
+    { availability: "live", approved: false, issue: true },
+    { availability: "retired", approved: false, issue: false },
+    { availability: "disabled", approved: false, issue: false },
+  ];
+  for (const { availability, approved, issue } of cases) {
+    const reviewed = withReview({ ...medal, availability }, approved);
+    assert.equal(reviewed.culturalReview, approved ? "approved" : "");
+    assert.equal(medalIssues(reviewed).includes("medals.issue.review"), issue);
+  }
 });

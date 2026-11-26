@@ -12,6 +12,7 @@ export type Medal = {
   staticAddress: string;
   sources: MedalSource[];
   availability: string;
+  culturalReview?: string;
 };
 
 export type MedalCatalog = {
@@ -24,6 +25,8 @@ export type MedalCatalog = {
 export type MedalRules = { rarities: string[]; source_types: string[]; availability: string[] };
 
 const slugPattern = /^[a-z0-9_]+$/;
+
+export const reviewApproved = "approved";
 
 export function emptyMedalCatalog(): MedalCatalog {
   return { schema: 1, profileMedalSlots: 0, medals: [] };
@@ -43,7 +46,12 @@ export function newMedal(slug: string, rules: MedalRules): Medal {
     staticAddress: `medal/${slug}/static`,
     sources: [{ type: rules.source_types[0] ?? "", ref: "" }],
     availability: rules.availability[0] ?? "",
+    culturalReview: "",
   };
+}
+
+export function withReview(medal: Medal, approved: boolean): Medal {
+  return { ...medal, culturalReview: approved ? reviewApproved : "" };
 }
 
 export function medalTextKeys(catalog: MedalCatalog): string[] {
@@ -79,6 +87,7 @@ export function medalIssues(medal: Medal): MessageKey[] {
   if (medal.sources.some((source) => !source.ref.trim())) found.push("medals.issue.empty_ref");
   const keys = medal.sources.map((source) => `${source.type}:${source.ref.trim()}`);
   if (new Set(keys).size !== keys.length) found.push("medals.issue.duplicate_source");
+  if (medal.availability === "live" && medal.culturalReview !== reviewApproved) found.push("medals.issue.review");
   return found;
 }
 

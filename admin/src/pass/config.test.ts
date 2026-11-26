@@ -10,6 +10,7 @@ import {
   newSeason,
   nextSeasonId,
   passChanges,
+  passTextKeys,
   rankedWindow,
   removeSeason,
   replaceSeason,
@@ -29,6 +30,7 @@ const curve = { levels: 4, xpBase: 300, xpStep: 50, xpMax: 340 };
 
 const season: Season = {
   id: "season_1",
+  nameKey: "pass.season_1.name",
   start: "2026-12-01T00:00:00Z",
   end: "2027-03-01T00:00:00Z",
   curve,
@@ -69,14 +71,16 @@ test("a clone takes the next id, the curve and the currencies, renames bundles, 
   assert.deepEqual(clone.free["1"], { id: "bundle.pass_season_2_free_1", revision: 1, coins: 30 });
   assert.equal(clone.free["3"], undefined);
   assert.equal(addSeason(config, clone).seasons.length, 2);
-  assert.deepEqual(seasonIssues(addSeason(config, clone), clone), []);
+  assert.equal(clone.nameKey, "");
+  assert.deepEqual(seasonIssues(addSeason(config, clone), clone), ["pass.issue.name_key"]);
+  assert.deepEqual(seasonIssues(addSeason(config, clone), { ...clone, nameKey: "pass.season_2.name" }), []);
 });
 
 test("a new season gets an empty premium bundle per level, and the curve keeps tracks within its levels", () => {
   const fresh = newSeason(config, "2027-03-01T00:00:00Z", "2027-06-01T00:00:00Z", { levels: 3, xpBase: 100, xpStep: 10, xpMax: 200 });
   assert.deepEqual(Object.keys(fresh.premium), ["1", "2", "3"]);
   assert.deepEqual(fresh.premium["2"], { id: "bundle.pass_season_2_premium_2", revision: 1, crystals: 0 });
-  assert.deepEqual(seasonIssues(addSeason(config, fresh), fresh), ["pass.issue.premium_empty"]);
+  assert.deepEqual(seasonIssues(addSeason(config, fresh), { ...fresh, nameKey: "pass.season_2.name" }), ["pass.issue.premium_empty"]);
   const shorter = withCurve(season, { ...curve, levels: 2 });
   assert.deepEqual(Object.keys(shorter.premium), ["1", "2"]);
   assert.deepEqual(Object.keys(shorter.free), ["1"]);
@@ -154,4 +158,19 @@ test("a new season defaults to the first ranked season not ended and free of pas
   const next = addSeason(config, newSeason(config, ranked[2].start, ranked[2].end, curve));
   assert.equal(rankedWindow(next, ranked, "2026-12-01T00:00:00Z"), null);
   assert.equal(rankedWindow(emptyPassConfig(), [], "2026-11-20T00:00:00Z"), null);
+});
+
+test("every season needs a name key, and the named keys are checked for an approved English value ahead of publish", () => {
+  const cases: { nameKey: string | undefined; issue: boolean }[] = [
+    { nameKey: "pass.season_1.name", issue: false },
+    { nameKey: undefined, issue: true },
+    { nameKey: "", issue: true },
+    { nameKey: "  ", issue: true },
+  ];
+  for (const { nameKey, issue } of cases) {
+    const named = { ...season, nameKey };
+    assert.equal(seasonIssues(config, named).includes("pass.issue.name_key"), issue);
+  }
+  const unnamed = { ...season, id: "season_2", nameKey: "" };
+  assert.deepEqual(passTextKeys({ ...config, seasons: [season, unnamed, { ...season, id: "season_3", nameKey: " pass.season_3.name " }] }), ["pass.season_1.name", "pass.season_3.name"]);
 });

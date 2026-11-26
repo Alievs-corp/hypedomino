@@ -94,6 +94,30 @@ func TestPublishRulesRefuseBrokenSeasons(t *testing.T) {
 	}
 }
 
+func TestASeasonWithoutANameKeyIsListedAsUnnamed(t *testing.T) {
+	cases := []struct {
+		name    string
+		nameKey string
+		unnamed bool
+	}{
+		{"named", "pass.season_1.name", false},
+		{"empty", "", true},
+		{"blank", "  ", true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			config := example(t)
+			config.Seasons[0].NameKey = c.nameKey
+			if got := len(config.Unnamed()) == 1; got != c.unnamed {
+				t.Fatalf("Unnamed() = %v", config.Unnamed())
+			}
+			if got := len(config.NameKeys()) == 1; got != (c.nameKey != "") {
+				t.Fatalf("NameKeys() = %v", config.NameKeys())
+			}
+		})
+	}
+}
+
 func TestAGapBetweenSeasonsIsAllowed(t *testing.T) {
 	snapshot := example(t)
 	next := snapshot.Seasons[0]

@@ -48,6 +48,7 @@ func TestPublishRulesRefuseBrokenMedals(t *testing.T) {
 		{"shop source", func(m *Medal) { m.Sources = []cosmetics.Source{{Type: "shop", Ref: "offer.x"}} }},
 		{"pass source", func(m *Medal) { m.Sources = []cosmetics.Source{{Type: "pass", Ref: "pass.season_1.premium.level_10"}} }},
 		{"source without ref", func(m *Medal) { m.Sources = []cosmetics.Source{{Type: SourceMission}} }},
+		{"unknown cultural review", func(m *Medal) { m.CulturalReview = "pending" }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -55,6 +56,33 @@ func TestPublishRulesRefuseBrokenMedals(t *testing.T) {
 			c.change(&catalog.Medals[0])
 			if err := catalog.Validate(cosmetics.DefaultRarities()); !errors.Is(err, ErrInvalidCatalog) {
 				t.Fatalf("Validate() = %v", err)
+			}
+		})
+	}
+}
+
+func TestOnlyALiveMedalNeedsAnApprovedCulturalReview(t *testing.T) {
+	cases := []struct {
+		name         string
+		availability string
+		review       string
+		unreviewed   bool
+	}{
+		{"live and approved", "live", ReviewApproved, false},
+		{"live without a review", "live", "", true},
+		{"retired without a review", "retired", "", false},
+		{"disabled without a review", "disabled", "", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			catalog := example(t)
+			catalog.Medals = catalog.Medals[:1]
+			catalog.Medals[0].Availability, catalog.Medals[0].CulturalReview = c.availability, c.review
+			if err := catalog.Validate(cosmetics.DefaultRarities()); err != nil {
+				t.Fatalf("Validate() = %v", err)
+			}
+			if got := len(catalog.Unreviewed()) == 1; got != c.unreviewed {
+				t.Fatalf("Unreviewed() = %v", catalog.Unreviewed())
 			}
 		})
 	}

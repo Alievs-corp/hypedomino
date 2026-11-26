@@ -2,6 +2,7 @@ package contentgate_test
 
 import (
 	"encoding/json"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -36,6 +37,8 @@ type fixture struct {
 	ranking          *rating.Snapshot
 	seasons          []rating.Season
 	templates        []promo.Template
+	campaigns        []string
+	shopRaw          []byte
 	unreadablePromos bool
 	thresholds       []contentgate.Threshold
 	unpublished      []string
@@ -78,10 +81,12 @@ func complete() *fixture {
 		cosmetics.Source{Type: mission.SourceMission, Ref: "mission.first_win"},
 		pass.TrackSource("season_1", pass.Free, 1),
 		cosmetics.Source{Type: promo.SourceType, Ref: "campaign.launch"},
+		cosmetics.Source{Type: promo.SourceType, Ref: "campaign.creator"},
 	))
 	f.medals = medal.Default()
 	f.medals.Medals = []medal.Medal{{ID: "medal.first", Revision: 1, NameKey: "medal.first.name", DescriptionKey: "medal.first.description", RarityID: "rare",
-		StaticAddress: medal.StaticAddress("medal.first"), Sources: []cosmetics.Source{{Type: medal.SourceMission, Ref: "mission.first_win"}}, Availability: cosmetics.Live}}
+		StaticAddress: medal.StaticAddress("medal.first"), Sources: []cosmetics.Source{{Type: medal.SourceMission, Ref: "mission.first_win"}}, Availability: cosmetics.Live,
+		CulturalReview: medal.ReviewApproved}}
 	f.missions = mission.Default()
 	for _, missionType := range []string{mission.Daily, mission.Weekly} {
 		for slot := 1; slot <= len(f.missions.Slots(missionType)); slot++ {
@@ -96,7 +101,7 @@ func complete() *fixture {
 		Event: mission.MatchWon, Target: 1, Bundle: &reward.Bundle{ID: "bundle.first_win", Revision: 1, Coins: 10, Cosmetics: []string{rewardItem}, Medals: []string{"medal.first"}}, Availability: mission.Live})
 	f.passConfig = pass.Default()
 	f.passConfig.PremiumPlusLevels = 0
-	f.passConfig.Seasons = []pass.Season{{ID: "season_1", Start: seasonStart, End: seasonEnd, Curve: pass.Curve{Levels: 1, XpBase: 100, XpStep: 10, XpMax: 200},
+	f.passConfig.Seasons = []pass.Season{{ID: "season_1", NameKey: "pass.season_1.name", Start: seasonStart, End: seasonEnd, Curve: pass.Curve{Levels: 1, XpBase: 100, XpStep: 10, XpMax: 200},
 		Free:    map[int]reward.Bundle{1: {ID: "bundle.free_1", Revision: 1, Coins: 5, Cosmetics: []string{rewardItem}}},
 		Premium: map[int]reward.Bundle{1: {ID: "bundle.premium_1", Revision: 1, Crystals: 5}}}}
 	f.ranking = rating.Default()
@@ -105,10 +110,11 @@ func complete() *fixture {
 	f.ranking.Modes.TwoVsTwo.RankRewards = rankRewards("2v2")
 	f.seasons = []rating.Season{{ID: "season.launch", NameKey: "season.launch.name", Start: seasonStart, End: seasonEnd}}
 	f.templates = []promo.Template{
-		{ID: "promo.welcome", Campaign: "campaign.launch", Kind: "multi_use", Bundle: &reward.Bundle{ID: "bundle.welcome", Revision: 1, Coins: 50, Cosmetics: []string{rewardItem}}},
-		{ID: "promo.creator", Campaign: "campaign.creator", Kind: "multi_use", Bundle: &reward.Bundle{ID: "bundle.creator", Revision: 1, Coins: 10}},
-		{ID: "promo.compensation", Campaign: "campaign.compensation", Kind: "single_use"},
+		{ID: "promo.welcome", Campaign: "campaign.launch", Kind: promo.MultiUse, Role: promo.RoleWelcome, Bundle: &reward.Bundle{ID: "bundle.welcome", Revision: 1, Coins: 50, Cosmetics: []string{rewardItem}}},
+		{ID: "promo.creator", Campaign: "campaign.creator", Kind: promo.MultiUse, Role: promo.RoleCreator, Bundle: &reward.Bundle{ID: "bundle.creator", Revision: 1, Cosmetics: []string{rewardItem}}},
+		{ID: "promo.compensation", Campaign: "campaign.compensation", Kind: promo.SingleUse, Role: promo.RoleCompensation},
 	}
+	f.campaigns = []string{"campaign.launch", "campaign.creator", "campaign.compensation"}
 	for _, key := range []string{"ContentGateMinAvatarsAnimated", "ContentGateMinAvatarsStatic", "ContentGateMinFrames", "ContentGateMinTables", "ContentGateMinEmoji", "ContentGateMinMedals"} {
 		f.thresholds = append(f.thresholds, contentgate.Threshold{Key: key, Value: 1, Default: 1})
 	}
@@ -157,6 +163,9 @@ func (f *fixture) inputs(t *testing.T) contentgate.Inputs {
 		pass.Domain:      encode(t, f.passConfig),
 		rating.Domain:    encode(t, f.ranking),
 	}
+	if f.shopRaw != nil {
+		snapshots[shop.Domain] = f.shopRaw
+	}
 	for _, domain := range f.unpublished {
 		delete(snapshots, domain)
 	}
@@ -177,6 +186,11 @@ func (f *fixture) inputs(t *testing.T) contentgate.Inputs {
 	for _, season := range f.seasons {
 		keys = append(keys, season.NameKey)
 	}
+	keys = append(keys, f.passConfig.NameKeys()...)
+	campaigns := map[string]bool{}
+	for _, campaign := range f.campaigns {
+		campaigns[campaign] = true
+	}
 	bundles := map[gamestrings.Language]map[string]bool{}
 	for _, language := range gamestrings.Languages {
 		bundles[language] = map[string]bool{}
@@ -185,7 +199,7 @@ func (f *fixture) inputs(t *testing.T) contentgate.Inputs {
 		}
 	}
 	return contentgate.Inputs{LaunchAt: launch, Now: f.now, Snapshots: snapshots, Shop: shop.DefaultConfig(), Thresholds: f.thresholds, RankedSeasons: f.seasons,
-		Templates: f.templates, TemplatesReadable: !f.unreadablePromos, PassedStatics: statics, Bundles: bundles}
+		Templates: f.templates, TemplatesReadable: !f.unreadablePromos, Campaigns: campaigns, PromoCoinsLimit: 2000, PassedStatics: statics, Bundles: bundles}
 }
 
 func checkOf(t *testing.T, result contentgate.Result, id string) contentgate.Check {
@@ -227,6 +241,9 @@ func TestACompleteCatalogueFailsNoCheckAndLeavesOnlyTheUncheckableRules(t *testi
 	if result.Verdict != contentgate.VerdictRed {
 		t.Fatalf("an unchecked rule never gives green: %s", result.Verdict)
 	}
+	if !slices.Contains(checkOf(t, result, "CG-2").Unchecked, contentgate.EventSourceGap) || slices.Contains(checkOf(t, result, "CG-6").Unchecked, contentgate.EventSourceGap) {
+		t.Fatalf("only a category with an event source leaves V-15 unchecked: %v %v", checkOf(t, result, "CG-2").Unchecked, checkOf(t, result, "CG-6").Unchecked)
+	}
 	if count := checkOf(t, result, "CG-2").Count; count == nil || *count != 4 {
 		t.Fatalf("animated avatars counted %v", count)
 	}
@@ -265,6 +282,11 @@ func TestEachCheckFailsOnOneMissingCondition(t *testing.T) {
 		{"CG-8 mythic medal", func(f *fixture) { f.medals.Medals[0].RarityID = promo.MythicRarity }, "CG-8", "MR-2", "mythic"},
 		{"CG-8 medal from a retired mission", func(f *fixture) { f.missions.Missions[len(f.missions.Missions)-1].Availability = mission.Retired }, "CG-8", "MR-3", "mission.first_win"},
 		{"CG-8 medal without a passed upload", func(f *fixture) { f.withoutStatic = []string{"medal.first"} }, "CG-8", "MR-4", "static upload"},
+		{"CG-8 item from an unknown mission", func(f *fixture) {
+			f.setItem("frame.rare", "sources", []cosmetics.Source{{Type: mission.SourceMission, Ref: "mission.none"}})
+		}, "CG-8", "CR-2", "V-15 mission mission.none"},
+		{"CG-7 medal without a cultural review", func(f *fixture) { f.medals.Medals[0].CulturalReview = "" }, "CG-7", "MC-7", "0 ready"},
+		{"CG-8 medal without a cultural review", func(f *fixture) { f.medals.Medals[0].CulturalReview = "" }, "CG-8", "MR-6", "culturalReview"},
 		{"CG-8 medal without an Azerbaijani description", func(f *fixture) {
 			f.withoutName[gamestrings.Azerbaijani] = []string{"medal.first.description"}
 		}, "CG-8", "MR-5", "missing in az"},
@@ -284,6 +306,10 @@ func TestEachCheckFailsOnOneMissingCondition(t *testing.T) {
 		}, "CG-10", "PS-1", "do not list"},
 		{"CG-10 window apart from the ranked season", func(f *fixture) { f.passConfig.Seasons[0].End = seasonEnd.Add(time.Hour) }, "CG-10", "PS-2", "season.launch"},
 		{"CG-10 track item that is not ready", func(f *fixture) { f.withoutStatic = []string{rewardItem} }, "CG-10", "PS-3", rewardItem},
+		{"CG-10 season without a nameKey", func(f *fixture) { f.passConfig.Seasons[0].NameKey = "" }, "CG-10", "PS-5", "no nameKey"},
+		{"CG-10 season without a Turkish name", func(f *fixture) {
+			f.withoutName[gamestrings.Turkish] = []string{"pass.season_1.name"}
+		}, "CG-10", "PS-5", "missing in tr"},
 		{"CG-11 without a ranked season at launch", func(f *fixture) { f.seasons = nil }, "CG-11", "CG-11", "no ranked season"},
 		{"CG-11 season closed", func(f *fixture) {
 			closed := launch
@@ -301,8 +327,17 @@ func TestEachCheckFailsOnOneMissingCondition(t *testing.T) {
 			f.withoutName[gamestrings.Russian] = []string{"season.launch.name"}
 		}, "CG-11", "RS-5", "missing in ru"},
 		{"CG-12 templates unreadable", func(f *fixture) { f.unreadablePromos = true }, "CG-12", "PT-1", "HD_PROMO_KEY"},
-		{"CG-12 two templates", func(f *fixture) { f.templates = f.templates[:2] }, "CG-12", "PT-1", "2 templates"},
+		{"CG-12 without a compensation template", func(f *fixture) { f.templates = f.templates[:2] }, "CG-12", "PT-1", "compensation role"},
+		{"CG-12 template without a role", func(f *fixture) { f.templates[1].Role = "" }, "CG-12", "PT-1", "creator role"},
+		{"CG-12 single use welcome template", func(f *fixture) { f.templates[0].Kind = promo.SingleUse }, "CG-12", "PT-1", "not multi_use"},
+		{"CG-12 welcome template without coins", func(f *fixture) { f.templates[0].Bundle.Coins = 0 }, "CG-12", "PT-1", "grants 0 coins"},
+		{"CG-12 welcome template above the approval threshold", func(f *fixture) { f.templates[0].Bundle.Coins = 2001 }, "CG-12", "PT-1", "grants 2001 coins"},
+		{"CG-12 creator template with two cosmetics", func(f *fixture) {
+			f.templates[1].Bundle.Cosmetics = append(f.templates[1].Bundle.Cosmetics, "frame.rare")
+		}, "CG-12", "PT-1", "exactly one cosmetic"},
+		{"CG-12 creator template without a bundle", func(f *fixture) { f.templates[1].Bundle = nil }, "CG-12", "PT-1", "exactly one cosmetic"},
 		{"CG-12 template bundle with crystals", func(f *fixture) { f.templates[1].Bundle.Crystals = 5 }, "CG-12", "PT-2", "crystals"},
+		{"CG-12 template without a campaign", func(f *fixture) { f.templates[2].Campaign = "" }, "CG-12", "PT-2", "no campaignId"},
 		{"CG-12 template item without the promo source", func(f *fixture) { f.templates[0].Campaign = "campaign.other" }, "CG-12", "PT-3", "promo source campaign.other"},
 		{"CG-13 threshold below its default", func(f *fixture) {
 			f.thresholds[5].Default = 40
@@ -333,5 +368,54 @@ func TestAnUnpublishedManifestFallsBackToTheBuiltInOneWhoseItemsLackUploads(t *t
 	result := contentgate.Run(inputs)
 	if check := checkOf(t, result, "CG-8"); !failsWith(check, "CR-5", "") || result.Info.LiveNotReady[cosmetics.TypeTile] != 1 {
 		t.Fatalf("builtin manifest %v %v", check.Failures, result.Info)
+	}
+}
+
+func TestEveryItemSourceResolvesToItsRecord(t *testing.T) {
+	shopExample, err := os.ReadFile("../../../docs/economy/examples/shop.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name     string
+		source   cosmetics.Source
+		shop     bool
+		resolved bool
+	}{
+		{"published mission", cosmetics.Source{Type: mission.SourceMission, Ref: "mission.first_win"}, true, true},
+		{"unknown mission", cosmetics.Source{Type: mission.SourceMission, Ref: "mission.none"}, true, false},
+		{"free track level with a bundle", pass.TrackSource("season_1", pass.Free, 1), true, true},
+		{"premium track level with a bundle", pass.TrackSource("season_1", pass.Premium, 1), true, true},
+		{"level past the curve", pass.TrackSource("season_1", pass.Free, 2), true, false},
+		{"unknown pass season", pass.TrackSource("season_9", pass.Free, 1), true, false},
+		{"campaign of a template", cosmetics.Source{Type: promo.SourceType, Ref: "campaign.compensation"}, true, true},
+		{"campaign of nothing", cosmetics.Source{Type: promo.SourceType, Ref: "campaign.none"}, true, false},
+		{"rank reward bundle", cosmetics.Source{Type: rating.SourceRankReward, Ref: "bundle.rank_2_gold"}, true, true},
+		{"unknown rank reward", cosmetics.Source{Type: rating.SourceRankReward, Ref: "bundle.none"}, true, false},
+		{"shop offer", cosmetics.Source{Type: shop.SourceType, Ref: "offer.avatar_comet_fox"}, true, true},
+		{"chest listed as a shop offer", cosmetics.Source{Type: shop.SourceType, Ref: "offer.chest_avatar"}, true, false},
+		{"unknown shop offer", cosmetics.Source{Type: shop.SourceType, Ref: "offer.none"}, true, false},
+		{"shop offer while the shop is unpublished", cosmetics.Source{Type: shop.SourceType, Ref: "offer.avatar_comet_fox"}, false, false},
+		{"chest offer", cosmetics.Source{Type: shop.SourceChest, Ref: "offer.chest_avatar"}, true, true},
+		{"shop offer listed as a chest", cosmetics.Source{Type: shop.SourceChest, Ref: "offer.avatar_comet_fox"}, true, false},
+		{"first-purchase bonus", cosmetics.Source{Type: shop.SourceFirstPurchase, Ref: "bundle.first_purchase"}, true, true},
+		{"another first-purchase bundle", cosmetics.Source{Type: shop.SourceFirstPurchase, Ref: "bundle.other"}, true, false},
+		{"event", cosmetics.Source{Type: cosmetics.SourceEvent, Ref: "launch_week"}, true, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := complete()
+			if c.shop {
+				f.shopRaw = shopExample
+			}
+			f.items = append(f.items, item("frame.probe", "rare", false, c.source))
+			check := checkOf(t, contentgate.Run(f.inputs(t)), "CG-8")
+			unresolved := slices.ContainsFunc(check.Failures, func(failure contentgate.Failure) bool {
+				return failure.Object == "frame.probe" && failure.Rule == "CR-2" && strings.HasPrefix(failure.Detail, "V-15 "+c.source.Type+" "+c.source.Ref)
+			})
+			if unresolved == c.resolved {
+				t.Fatalf("resolved %v, failures %v", !unresolved, check.Failures)
+			}
+		})
 	}
 }

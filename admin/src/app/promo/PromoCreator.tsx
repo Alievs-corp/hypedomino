@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useTranslator } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
-import { draftFromTemplate, draftReady, emptyDraft, maxBatchCount, promoKinds, promoRequest, templateRequest, type PromoDraft, type PromoTemplate } from "@/promo/codes";
+import { draftFromTemplate, draftReady, emptyDraft, maxBatchCount, promoKinds, promoRequest, promoRoles, templateRequest, withRole, type PromoDraft, type PromoTemplate } from "@/promo/codes";
 import { createPromo, createPromoBatch, saveTemplate, type CreatedResult, type TemplateResult } from "./actions";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
@@ -165,6 +165,20 @@ export function PromoCreator({ templates, mayEditTemplates }: { templates: reado
           </>
         )}
         {!batch && draft.kind === "targeted" && <p className="text-sm text-text-muted sm:col-span-2">{t("promo.targeted_hint")}</p>}
+        {!batch && (
+          <label className={`${labelClass} sm:col-span-2`}>
+            {t("promo.template_role")}
+            <select value={draft.role} onChange={(event) => setDraft((current) => withRole(current, event.target.value as PromoDraft["role"]))} className={`${fieldClass} self-start`}>
+              <option value="">{t("promo.template_role_none")}</option>
+              {promoRoles.map((role) => (
+                <option key={role} value={role}>
+                  {t(`promo.template_role.${role}`)}
+                </option>
+              ))}
+            </select>
+            <span className="text-text-muted">{t("promo.template_role_hint")}</span>
+          </label>
+        )}
         <label className={`${labelClass} sm:col-span-2`}>
           {t("promo.reason")}
           <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />

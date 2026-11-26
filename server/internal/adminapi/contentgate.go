@@ -130,12 +130,17 @@ func (h *Handler) gateReport(ctx context.Context, tx pgx.Tx, p principal, launch
 	if err != nil {
 		return gateReport{}, err
 	}
+	campaigns, err := promoCampaigns(ctx, tx)
+	if err != nil {
+		return gateReport{}, err
+	}
 	if manifest, err := publishedManifest(snapshots[cosmetics.Domain]); err == nil {
 		versions.ManifestVersion = manifest.ManifestVersion
 	}
 	result := contentgate.Run(contentgate.Inputs{
 		LaunchAt: launchAt, Now: now, Snapshots: snapshots, Shop: h.config.Shop, Thresholds: thresholds, RankedSeasons: seasons,
-		Templates: templates, TemplatesReadable: readable, PassedStatics: statics, Bundles: bundles,
+		Templates: templates, TemplatesReadable: readable, Campaigns: campaigns, PromoCoinsLimit: h.config.Promo.CoinsApprovalThreshold,
+		PassedStatics: statics, Bundles: bundles,
 	})
 	return gateReport{ID: uuid.NewString(), Environment: h.config.Environment, LaunchAt: launchAt, RanAt: now, Runner: p.account.ID,
 		Versions: versions, Thresholds: thresholds, Result: result}, nil
@@ -212,7 +217,15 @@ func (h *Handler) activeBundleKeys(ctx context.Context, tx pgx.Tx, raw []byte, v
 }
 
 func passedStatics(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
-	rows, err := tx.Query(ctx, `select distinct item_id from cosmetic_assets where slot = $1 and status = $2`, assetSlotStatic, assetPassed)
+	return idSet(ctx, tx, `select distinct item_id from cosmetic_assets where slot = $1 and status = $2`, assetSlotStatic, assetPassed)
+}
+
+func promoCampaigns(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
+	return idSet(ctx, tx, `select campaign_id from promo_codes union select campaign_id from promo_templates`)
+}
+
+func idSet(ctx context.Context, tx pgx.Tx, query string, args ...any) (map[string]bool, error) {
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,11 +233,11 @@ func passedStatics(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	passed := make(map[string]bool, len(ids))
+	set := make(map[string]bool, len(ids))
 	for _, id := range ids {
-		passed[id] = true
+		set[id] = true
 	}
-	return passed, nil
+	return set, nil
 }
 
 func (h *Handler) gateTemplates(ctx context.Context, tx pgx.Tx) ([]promo.Template, bool, error) {
