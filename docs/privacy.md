@@ -126,7 +126,7 @@ A leaderboard row (`docs/ranking.md` 8.2) carries position, nickname, rank, apex
 
 On the client, `UI/Profile/PlayerProfile` (#75) reads `GET /profile/me` and `GET /profile/{account}` and shows only what the server sent: the own profile shows level, XP and games, wins, losses, win rate, streak and best streak, and games, wins and losses per mode; another player's profile shows level, games, win rate and best streak, the rank of each placed mode, and the medal and emblem showcases in the server's order. Every value, the win rate included, is the server's; the client works none of them out.
 
-The privacy policy states this table. A deleted account appears in past matches and season snapshots as a neutral localized placeholder name, never its nickname.
+The privacy policy states this table. A deleted account appears in past matches and season snapshots as a neutral localized placeholder name, never its nickname. The client shows the `player.name.placeholder` string (`docs/localization.md` 2.4, draft text) for an empty nickname on a leaderboard row (`docs/ranking.md` 8.2).
 
 ## 6. Consent and analytics opt-out
 
