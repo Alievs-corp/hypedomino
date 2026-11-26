@@ -17,6 +17,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/analytics"
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
@@ -138,6 +139,15 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	signals := risk.NewStore(pool)
 	sessions.ObserveClocks(risk.NewClockSkew(signals, config.Risk, systemClock{}, logger))
 	sessions.ObserveReplays(risk.NewReplays(signals, config.Risk, systemClock{}, logger))
+	antiCheat := snapshot.New(pool, anticheat.Domain, anticheat.Parse, logger)
+	watchConfig(ctx, a.AwaitBeforeReady, "anti-cheat", config.ConfigPoll, antiCheat)
+	illegalIntents := risk.NewIllegalIntents(signals, func() anticheat.IllegalIntents {
+		current, _, _ := antiCheat.Current()
+		return current.IllegalIntents()
+	}, systemClock{}, logger)
+	go panics.Supervise(ctx, "illegal intents", config.ConfigPoll, illegalIntents.Run)
+	a.Expose(illegalIntents)
+	sessions.ObserveIllegalIntents(illegalIntents)
 	sessions.ObserveDevices(integrity.NewDeviceReports(config.IntegrityPolicy, risk.NewIntegrity(signals, systemClock{}, logger)))
 	macFailures := risk.NewMacFailures(signals, config.Risk, systemClock{}, logger)
 	critical := func(next http.Handler) http.Handler { return token.RequireMac(tokens, macFailures, next) }

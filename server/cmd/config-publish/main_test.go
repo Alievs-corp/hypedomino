@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
@@ -295,6 +296,24 @@ func TestRarityTablesAreCheckedBeforeTheyArePublished(t *testing.T) {
 	}
 	for _, test := range tests {
 		if err := validate(rarity.Domain, test.raw); !errors.Is(err, test.want) {
+			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
+		}
+	}
+}
+
+func TestAntiCheatSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want error
+	}{
+		{`{}`, nil},
+		{`{"IllegalIntentThreshold": 3, "IllegalIntentWindowMinutes": 10, "IllegalIntentWeight": 5}`, nil},
+		{`{"IllegalIntentThreshold": 3}`, anticheat.ErrInvalid},
+		{`{"IllegalIntentWeight": -1}`, anticheat.ErrInvalid},
+		{`{"HookSignalWeight": 1}`, anticheat.ErrInvalid},
+	}
+	for _, test := range tests {
+		if err := validate(anticheat.Domain, []byte(test.raw)); !errors.Is(err, test.want) {
 			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
 		}
 	}

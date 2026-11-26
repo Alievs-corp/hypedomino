@@ -7,6 +7,7 @@ export default function LiveopsPage() {
   return (
     <KeyedConfigPage
       path="/admin/config/liveops"
+      object="game_config"
       text={{ title: "liveops.title", loadFailed: "liveops.load_failed", intro: "liveops.intro", historyEmpty: "liveops.history_empty" }}
       publish={publishLiveops}
       rollback={rollbackLiveops}

@@ -23,9 +23,9 @@ type keyedDomain struct {
 	parse func(raw []byte) (map[string]int, error)
 }
 
-func newKeyedDomain(name string, keys []configKey, parse func(raw []byte) (map[string]int, error)) keyedDomain {
+func newKeyedDomain(name string, object rbac.Object, keys []configKey, parse func(raw []byte) (map[string]int, error)) keyedDomain {
 	return keyedDomain{
-		configDomain: configDomain{name: name, object: rbac.GameConfig, accept: func(_, after []byte) error {
+		configDomain: configDomain{name: name, object: object, accept: func(_, after []byte) error {
 			_, err := parse(after)
 			return err
 		}},

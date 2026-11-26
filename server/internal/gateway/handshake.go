@@ -130,6 +130,10 @@ type ReplayCounter interface {
 	Replayed()
 }
 
+type IllegalIntentCounter interface {
+	IllegalIntent()
+}
+
 type Queuer interface {
 	JoinQueue(intent *pb.JoinQueueIntent)
 	LeaveQueue()

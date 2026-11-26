@@ -61,6 +61,7 @@ type recordingSession struct {
 	inMatch  bool
 	attached bool
 	replays  int
+	illegal  int
 	closed   chan struct{}
 }
 
@@ -127,6 +128,18 @@ func (s *recordingSession) Replayed() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.replays++
+}
+
+func (s *recordingSession) IllegalIntent() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.illegal++
+}
+
+func (s *recordingSession) illegalCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.illegal
 }
 
 func (s *recordingSession) replayCount() int {
@@ -487,6 +500,9 @@ func TestIntentsReachTheSessionWithTheirSequence(t *testing.T) {
 	c.send(intentFrame(8, &pb.Envelope{Payload: &pb.Envelope_ServerHello{ServerHello: &pb.ServerHello{}}}))
 	if reply := c.recv(); reply.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT || reply.GetError().GetRejectedSequence() != 8 {
 		t.Fatalf("server payload from the client answered %v", reply)
+	}
+	if counted := h.session("ok").illegalCount(); counted != 2 {
+		t.Fatalf("%d illegal intents counted, want the two placements outside the set", counted)
 	}
 	want := []received{
 		{1, replay.Intent{Kind: replay.KindOpen, Tile: rules.MustTile(2, 3)}},
