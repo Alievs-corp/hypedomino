@@ -2,9 +2,11 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { itemTypes } from "../cosmetics-schema/cosmetics-schema.mjs";
+import { listedPaths, manifestName } from "../asset-manifest/asset-manifest.mjs";
 
 export const assetClasses = ["cosmetic", "medal", "effect", "ui", "tile", "board", "sound"];
-const itemParts = new Set(["provenance.md", "concept", "work", "export"]);
+const itemFiles = new Set(["provenance.md", manifestName]);
+const itemParts = new Set([...itemFiles, "concept", "work", "export"]);
 const exportFoldersByType = { avatar: ["anim"], frame: ["anim"], tile: ["anim"], emoji: ["anim"], table: ["layer"] };
 const slugPattern = /^[a-z0-9_]+$/;
 const boardSlugPattern = /^b_([1-9]|10)$/;
@@ -37,7 +39,7 @@ function cosmeticExportErrors(type, rest) {
 function partErrors(item, rest) {
   const [part, name] = rest;
   if (!itemParts.has(part)) return [`${part} is not allowed in an item folder`];
-  if (part === "provenance.md") return rest.length === 1 ? [] : ["provenance.md must be a file"];
+  if (itemFiles.has(part)) return rest.length === 1 ? [] : [`${part} must be a file`];
   if (rest.length < 2) return [`${part} must be a folder`];
   if (part === "concept") return rest.length === 2 && conceptPattern.test(name) ? [] : [`concept file ${rest.slice(1).join("/")} must be concept/<YYYYMMDD>-<nn>.<png|jpg|jpeg|webp>`];
   if (part === "work") {
@@ -84,9 +86,13 @@ export function listFiles(directory, prefix = "") {
   });
 }
 
+export function assetPaths(directory) {
+  const onDisk = listFiles(directory);
+  return [...new Set([...onDisk, ...listedPaths(directory, onDisk)])].sort();
+}
+
 function main(args) {
-  const directory = args[0] ?? "assets-src";
-  const paths = listFiles(directory);
+  const paths = assetPaths(args[0] ?? "assets-src");
   const errors = checkAssetPaths(paths);
   for (const error of errors) console.error(error);
   if (errors.length > 0) process.exit(1);
