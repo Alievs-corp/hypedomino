@@ -38,6 +38,7 @@ namespace HypeDomino.Tests.EditMode
         {
             var wheel = new EmojiWheel(4);
             wheel.Equip(Equipped, slotCount);
+            Assert.AreEqual(4, wheel.Capacity);
             Assert.AreEqual(expected, wheel.Count);
             for (var slot = expected; slot < 4; slot++) Assert.IsNull(wheel.Slot(slot));
         }

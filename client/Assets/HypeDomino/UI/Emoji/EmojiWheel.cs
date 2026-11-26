@@ -11,6 +11,7 @@ namespace HypeDomino.UI.Emoji
 
         public EmojiWheel(int capacity) => slots = new string[capacity];
 
+        public int Capacity => slots.Length;
         public int Count { get; private set; }
         public bool Visible => Count > 0;
         public bool IsOpen { get; private set; }
