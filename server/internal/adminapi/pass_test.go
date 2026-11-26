@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
+	"github.com/Alievs-corp/hypedomino/server/internal/gamestrings"
 	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/snapshot"
 )
@@ -28,7 +29,13 @@ func passWithListedCosmetics(t *testing.T) map[string]any {
 		}
 	}
 	premiumLevel(config, 0, "30")["cosmetics"] = []string{"avatar.tile_wizard"}
+	config["seasons"].([]any)[0].(map[string]any)["nameKey"] = "pass.season_1.name"
 	return config
+}
+
+func (a *api) namePassSeasons() {
+	a.t.Helper()
+	a.nameKeys(gamestrings.Approved, "pass.season_1.name", "pass.season_2.name")
 }
 
 func premiumLevel(config map[string]any, season int, level string) map[string]any {
@@ -37,7 +44,7 @@ func premiumLevel(config map[string]any, season int, level string) map[string]an
 
 func withSecondSeason(config map[string]any) map[string]any {
 	first := config["seasons"].([]any)[0].(map[string]any)
-	second := map[string]any{"id": "season_2", "start": "2027-03-01T00:00:00Z", "end": "2027-06-01T00:00:00Z", "curve": first["curve"], "free": first["free"], "premium": map[string]any{}}
+	second := map[string]any{"id": "season_2", "nameKey": "pass.season_2.name", "start": "2027-03-01T00:00:00Z", "end": "2027-06-01T00:00:00Z", "curve": first["curve"], "free": first["free"], "premium": map[string]any{}}
 	for level, bundle := range first["premium"].(map[string]any) {
 		copied := map[string]any{}
 		for key, value := range bundle.(map[string]any) {
@@ -79,6 +86,7 @@ func (a *api) publishItems(edit map[string]map[string]any) {
 func TestARunningSeasonReplacesADisabledItemWithALiveOneOfTheSameTypeAndRarity(t *testing.T) {
 	a := newAPI(t)
 	a.create("leyla@example.com", rbac.LiveOps)
+	a.namePassSeasons()
 	liveOps := a.signIn("leyla")
 	levelSource := []any{map[string]any{"type": "pass", "ref": "pass.season_1.premium.level_30"}}
 	a.publishItems(map[string]map[string]any{"avatar.comet_fox": {"sources": levelSource}})
@@ -119,6 +127,7 @@ func TestPassSeasonsArePublishedWithListedTrackItemsAndFrozenWhileRunning(t *tes
 	a := newAPI(t)
 	a.publishExampleCatalog()
 	a.create("leyla@example.com", rbac.LiveOps)
+	a.namePassSeasons()
 	liveOps, content := a.signIn("leyla"), a.signIn("ayla")
 
 	status, body := a.call("GET", "/admin/config/pass", content, nil)
@@ -201,5 +210,41 @@ func TestPassSeasonsArePublishedWithListedTrackItemsAndFrozenWhileRunning(t *tes
 	entries := a.entries(a.signIn("root"), "object_type=pass_seasons&object_id=pass")
 	if len(entries) != 5 || entries[0]["action"] != "rollback" || entries[4]["reason"] != "season 1" {
 		t.Fatalf("entries %v", entries)
+	}
+}
+
+func TestAPassSeasonIsPublishedOnlyWithANameKeyApprovedInEnglish(t *testing.T) {
+	cases := []struct {
+		name    string
+		nameKey any
+		status  gamestrings.Status
+		code    int
+		detail  string
+	}{
+		{"no nameKey", nil, gamestrings.Approved, http.StatusBadRequest, "no nameKey for season_1"},
+		{"a blank nameKey", " ", gamestrings.Approved, http.StatusBadRequest, "no nameKey for season_1"},
+		{"a draft English name", "pass.season_1.name", gamestrings.Draft, http.StatusBadRequest, "no approved en name for pass.season_1.name"},
+		{"an approved English name", "pass.season_1.name", gamestrings.Approved, http.StatusOK, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			a := newAPI(t)
+			a.publishExampleCatalog()
+			a.create("leyla@example.com", rbac.LiveOps)
+			a.nameKeys(c.status, "pass.season_1.name")
+			config := passWithListedCosmetics(t)
+			delete(config["seasons"].([]any)[0].(map[string]any), "nameKey")
+			if c.nameKey != nil {
+				config["seasons"].([]any)[0].(map[string]any)["nameKey"] = c.nameKey
+			}
+			status, body := a.call("PUT", "/admin/config/pass", a.signIn("leyla"), map[string]any{"catalog": config, "reason": "season 1"})
+			if c.code == http.StatusOK {
+				expect(t, status, body, http.StatusOK, "")
+				return
+			}
+			if status != c.code || body["error"] != "invalid" || !strings.HasSuffix(body["detail"].(string), c.detail) {
+				t.Fatalf("%d %v", status, body)
+			}
+		})
 	}
 }

@@ -140,6 +140,7 @@ func TestRewardBundlesCoverTheShopThePassAndPromoCampaigns(t *testing.T) {
 	a := newPromoAPI(t)
 	a.publishShopItems()
 	a.nameOffers()
+	a.namePassSeasons()
 	liveOps := a.signIn("leyla")
 
 	status, body := a.call("PUT", "/admin/config/shop", liveOps, map[string]any{"catalog": catalog(weekendPack(start, start.Add(time.Hour)), cometFox()), "reason": "weekend"})
@@ -281,6 +282,7 @@ func TestARewardBundleEditReachesThePassTracks(t *testing.T) {
 	a := newAPI(t)
 	a.publishExampleCatalog()
 	a.create("leyla@example.com", rbac.LiveOps)
+	a.namePassSeasons()
 	liveOps := a.signIn("leyla")
 	status, body := a.call("PUT", "/admin/config/pass", liveOps, map[string]any{"catalog": passWithListedCosmetics(t), "reason": "season"})
 	expect(t, status, body, http.StatusOK, "")

@@ -45,9 +45,15 @@ var matrix = map[Object]map[Role][]Action{
 		Support:    grant("V"),
 		Analyst:    grant("V"),
 	},
-	PassSeasons:        liveOpsOwned("VCEPRD"),
-	Missions:           liveOpsOwned("VCEPRD"),
-	Medals:             contentOwned("VCEPRD"),
+	PassSeasons: liveOpsOwned("VCEPRD"),
+	Missions:    liveOpsOwned("VCEPRD"),
+	Medals: {
+		SuperAdmin: grant("VCEPRD", CulturalReview),
+		Content:    grant("VCEPRD", CulturalReview),
+		LiveOps:    grant("V"),
+		Support:    grant("V"),
+		Analyst:    grant("V"),
+	},
 	LeaderboardEmblems: contentOwned("VCEPR"),
 	PromoCodes: {
 		SuperAdmin: grant("VCEPRD", ApprovePromo),

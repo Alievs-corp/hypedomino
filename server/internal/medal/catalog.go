@@ -19,6 +19,7 @@ const (
 	GroupAchievement = "achievement"
 	GroupEvent       = "event"
 	GroupRankReward  = "rank_reward"
+	ReviewApproved   = "approved"
 )
 
 var (
@@ -35,6 +36,7 @@ type Medal struct {
 	StaticAddress  string             `json:"staticAddress"`
 	Sources        []cosmetics.Source `json:"sources"`
 	Availability   string             `json:"availability"`
+	CulturalReview string             `json:"culturalReview,omitempty"`
 }
 
 func (m Medal) Lists(source cosmetics.Source) bool {
@@ -94,6 +96,16 @@ func (c *Catalog) Medal(id string) (Medal, bool) {
 	return Medal{}, false
 }
 
+func (c *Catalog) Unreviewed() []string {
+	var ids []string
+	for _, medal := range c.Medals {
+		if medal.Availability == cosmetics.Live && medal.CulturalReview != ReviewApproved {
+			ids = append(ids, medal.ID)
+		}
+	}
+	return ids
+}
+
 func (c *Catalog) Validate(rarities cosmetics.Rarities) error {
 	fail := func(format string, args ...any) error {
 		return fmt.Errorf("%w: %s", ErrInvalidCatalog, fmt.Sprintf(format, args...))
@@ -136,6 +148,8 @@ func validateMedal(medal Medal, rarities cosmetics.Rarities) error {
 		return fmt.Errorf("availability %q", medal.Availability)
 	case len(medal.Sources) == 0:
 		return errors.New("at least one source is required")
+	case medal.CulturalReview != "" && medal.CulturalReview != ReviewApproved:
+		return fmt.Errorf("culturalReview %q", medal.CulturalReview)
 	}
 	for _, source := range medal.Sources {
 		if (source.Type != SourceMission && source.Type != SourceRankReward) || strings.TrimSpace(source.Ref) == "" {

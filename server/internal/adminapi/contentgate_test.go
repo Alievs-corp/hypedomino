@@ -163,16 +163,20 @@ func TestAContentGateRunNeedsALaunchTimeAndAnUnknownReportIsNotFound(t *testing.
 	}
 }
 
-func TestTheContentGateCountsPromoTemplatesWhenPromoCodesAreConfigured(t *testing.T) {
+func TestTheContentGateReadsTheLaunchRolesOfPromoTemplates(t *testing.T) {
 	a := newPromoAPI(t)
 	liveOps := a.signIn("leyla")
-	status, body := a.call("POST", "/admin/promo-templates", liveOps, map[string]any{"id": "promo.welcome", "campaign": "campaign.launch", "kind": "multi_use", "reason": "launch"})
+	status, body := a.call("POST", "/admin/promo-templates", liveOps, map[string]any{"id": "promo.welcome", "campaign": "campaign.launch", "kind": "multi_use", "role": "welcome", "reason": "launch"})
 	expect(t, status, body, http.StatusCreated, "")
 	status, body = a.call("POST", gatePath, liveOps, launchAt)
 	expect(t, status, body, http.StatusCreated, "")
 	check := gateCheck(t, body["report"].(map[string]any), "CG-12")
-	failures := check["failures"].([]any)
-	if check["result"] != "fail" || len(failures) != 1 || failures[0].(map[string]any)["detail"] != "1 templates, the launch needs 3" {
+	var details []string
+	for _, failure := range check["failures"].([]any) {
+		details = append(details, failure.(map[string]any)["detail"].(string))
+	}
+	want := []string{"the welcome template grants exactly one cosmetic", "no template has the creator role", "no template has the compensation role"}
+	if check["result"] != "fail" || !slices.Equal(details, want) {
 		t.Fatalf("templates %v", check)
 	}
 }

@@ -233,6 +233,7 @@ Managed in admin (#141); art from #178.
 | `staticAddress` | `medal/<slug>/static`. Medals are static; the locked look is #178's |
 | `sources` | At least 1: `mission` (achievement or event mission id) or `rank_reward` (#120 reward id). No other source type is valid (PM-5) |
 | `availability` | `live`, `retired` or `disabled`, with the meanings of `docs/cosmetics.md` section 6 |
+| `culturalReview` | `approved` once the cultural review of `docs/localization.md` 6.1 step 3 passed, as for a cosmetic item (`docs/cosmetics.md` section 3). A `live` medal needs it; the admin rule is `docs/admin.md` 5.9 |
 
 ### 5.2 Conditions
 

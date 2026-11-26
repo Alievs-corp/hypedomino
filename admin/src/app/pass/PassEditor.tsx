@@ -11,6 +11,7 @@ import {
   cloneSeason,
   droppedSeasons,
   newSeason,
+  passTextKeys,
   rankedWindow,
   removeSeason,
   replaceSeason,
@@ -34,6 +35,7 @@ import {
 import { idList } from "@/missions/catalog";
 import { windowMinute } from "@/shop/catalog";
 import { publishPass } from "./actions";
+import { UnnamedKeys, UnnamedKeysAhead } from "@/app/strings/UnnamedKeys";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary disabled:opacity-50";
 const labelClass = "flex flex-col gap-1 text-sm text-text-secondary";
@@ -122,6 +124,7 @@ export function PassEditor({ initialConfig, published, version, serverTime, rank
             {t("pass.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
+          <UnnamedKeysAhead keys={passTextKeys(config)} />
           {!reviewing ? (
             <button
               type="button"
@@ -154,6 +157,7 @@ export function PassEditor({ initialConfig, published, version, serverTime, rank
               {result.ok ? `${t("pass.published")}: ${result.version}` : `${t("pass.refused")}: ${result.error} ${result.detail}`}
             </p>
           )}
+          {result && !result.ok && <UnnamedKeys keys={result.keys} />}
         </section>
       )}
     </div>
@@ -315,6 +319,11 @@ function SeasonFields({ config, season, published, state, onChange, onRemove }: 
         {season.id} · {t(stateLabel[state])}
       </h2>
       {frozen && <p className="text-sm text-text-muted">{t("pass.frozen_hint")}</p>}
+      <label className={labelClass}>
+        {t("pass.name_key")}
+        <input value={season.nameKey ?? ""} onChange={(event) => onChange({ ...season, nameKey: event.target.value })} className={`${fieldClass} self-start font-mono`} />
+        <span className="text-text-muted">{t("pass.name_key_hint")}</span>
+      </label>
       <div className="flex flex-wrap items-end gap-3">
         <label className={labelClass}>
           {t("pass.start")}

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -29,6 +30,7 @@ var (
 
 type Season struct {
 	ID      string                `json:"id"`
+	NameKey string                `json:"nameKey,omitempty"`
 	Start   time.Time             `json:"start"`
 	End     time.Time             `json:"end"`
 	Curve   Curve                 `json:"curve"`
@@ -108,6 +110,26 @@ func (s *Snapshot) Season(id string) (Season, bool) {
 		}
 	}
 	return Season{}, false
+}
+
+func (s *Snapshot) Unnamed() []string {
+	var ids []string
+	for _, season := range s.Seasons {
+		if strings.TrimSpace(season.NameKey) == "" {
+			ids = append(ids, season.ID)
+		}
+	}
+	return ids
+}
+
+func (s *Snapshot) NameKeys() []string {
+	keys := make([]string, 0, len(s.Seasons))
+	for _, season := range s.Seasons {
+		if season.NameKey != "" {
+			keys = append(keys, season.NameKey)
+		}
+	}
+	return keys
 }
 
 func (s *Snapshot) Validate() error {

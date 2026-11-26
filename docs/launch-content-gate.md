@@ -52,7 +52,7 @@ A thing is ready only when every rule of its table holds in production at report
 | Id | Rule | Source |
 |---|---|---|
 | CR-1 | In the active production manifest with `availability` `live` | `docs/cosmetics.md` 6, 7.3 |
-| CR-2 | V-1 to V-19 pass when the report runs them again on current data. This includes `culturalReview` `approved`, `artSource` recorded, every source resolving to an existing record (V-15) | `docs/cosmetics.md` 9 |
+| CR-2 | V-1 to V-19 pass when the report runs them again on current data. This includes `culturalReview` `approved`, `artSource` recorded, every source resolving to an existing record (V-15): a `shop` or `chest` source to an offer of that kind in the published shop, `first_purchase` to the published first-purchase bonus, `pass` to a level bundle of a published pass season, `mission` to a published mission, `promo` to the campaign of a promo code or template, `rank_reward` to a `rankRewards` bundle of the published ranking config | `docs/cosmetics.md` 5, 9 |
 | CR-3 | `rarityId` resolves in the active rarity table, so the item has its rarity marks and status colour (the tier's `fill`; the manifest has no colour field) | `docs/rarity.md` 1, 7; V-14 |
 | CR-4 | `staticAddress` (the static fallback) and, if `animated`, every animation address (`animationAddress`, every layer) resolve to an asset in the Addressables catalog version active in production | `docs/cosmetics.md` 8, V-2, V-17; ADR 0002 |
 | CR-5 | Every asset of the item passes its server checks (format, size, atlas, frame count, static present) | `docs/admin.md` 5.2, #93, #135 |
@@ -67,6 +67,7 @@ A thing is ready only when every rule of its table holds in production at report
 | MR-3 | Every source resolves: a `live` achievement mission, an event mission of a published event, or a rank reward of a ranked season | `docs/pass-missions-medals.md` 5.1, 5.2 |
 | MR-4 | `staticAddress` resolves in the active Addressables catalog version and its asset passes its server checks | `docs/admin.md` 5.2, 5.9 |
 | MR-5 | `nameKey` and `descriptionKey` in four languages | `docs/pass-missions-medals.md` 5.1 |
+| MR-6 | `culturalReview` is `approved` | `docs/pass-missions-medals.md` 5.1, `docs/localization.md` 6.1 |
 
 ### 3.3 Mission
 
@@ -89,7 +90,7 @@ The pass season whose window contains `launchAt`.
 | PS-2 | Window equals the window of ranked season 1 (3.5) | `docs/pass-missions-medals.md` 2.1, OQ-2 |
 | PS-3 | Every level 1 to `PassLevels` has a premium bundle; every cosmetic on either track is ready (3.1) | `docs/pass-missions-medals.md` 2.4 |
 | PS-4 | `pass_premium` and `pass_premium_plus` are bound to the season and their `storeStatus` is active in both stores | `docs/admin.md` 5.6, 5.7 |
-| PS-5 | `nameKey` in four languages | `docs/admin.md` 5.7 |
+| PS-5 | `nameKey` set and in four languages | `docs/admin.md` 5.7 |
 
 ### 3.5 Ranked season 1
 
@@ -109,7 +110,7 @@ A template is a promo code record with `template` true (`docs/admin.md` 5.11): i
 
 | Id | Rule | Source |
 |---|---|---|
-| PT-1 | The three launch templates of the table below exist | `docs/economy.md` 8 |
+| PT-1 | The three launch templates of the table below exist: for each role a template with that `role` (`docs/admin.md` 5.11), of the role's type and bundle. Welcome: exactly one cosmetic and 1 to `PromoCoinsApprovalThreshold` coins. Creator: exactly one cosmetic. Compensation: no bundle rule | `docs/economy.md` 8 |
 | PT-2 | `campaignId` is set; `bundle` resolves and is not a store product | `docs/economy.md` 8, `docs/admin.md` 5.11 |
 | PT-3 | Every cosmetic in the bundle is ready and lists the template's campaign as a `promo` source | `docs/cosmetics.md` 5, V-15 |
 
@@ -121,7 +122,7 @@ Launch templates (owner decision OD-2):
 | Creator | `multi_use` | One cosmetic exclusive to the creator's campaign | Once per creator, each clone with its own `campaignId`, so redemptions are reported per creator |
 | Compensation | `single_use` | Set at cloning by the product owner's compensation decision (`docs/launch-runbook.md` 6.5) | Per incident, as a generated batch |
 
-The compensation template's bundle is filled at cloning, so PT-2 and PT-3 check it on the clone, not on the template.
+The compensation template's bundle is filled at cloning, so PT-2 and PT-3 check it on the clone, not on the template. Templates without a role are not counted. That the creator cosmetic is exclusive to one creator's campaign is not checked: the template holds one cosmetic for all creators and each clone gets its own campaign.
 
 ## 4. Content gate report
 
@@ -138,6 +139,8 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 | Addressables catalog version | The catalog version active in production (ADR 0002, #26) |
 | String bundle version per language | The `localization` domain of that snapshot |
 | Promo templates | Promo code records (not snapshot content, `docs/admin.md` 3.1) at run time |
+| Promo campaigns | The campaign ids of every promo code and template at run time, for V-15 of `promo` sources |
+| `PromoCoinsApprovalThreshold` | The admin API's promo config (`HD_PROMO_COINS_APPROVAL_THRESHOLD`), for PT-1 |
 | Thresholds | Section 5 keys of the active snapshot and their repo defaults |
 
 ### 4.2 Checks
@@ -175,18 +178,15 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 
 ### 4.5 Not checkable yet
 
-Rules whose data the server does not hold yet. The report lists them under each check they affect as `unchecked` with the reason below, so no check that depends on them can pass. Each row leaves the report once its data exists.
+Rules whose data the server does not hold yet. The report lists them under each check they affect as `unchecked` with the reason below, so no check that depends on them can pass. Each row leaves the report once its data exists. The last column is what has to be decided or built first; none of it is defined by a spec yet, so none of it is implemented around.
 
-| Rule | Missing | Checks |
-|---|---|---|
-| CR-4, MR-4 (catalog part), V-17 | The admin API does not read the Addressables catalog active in production, so no address can be resolved in it; the active catalog version (`HD_CATALOG_VERSION`) is not given to the admin API either and is not recorded | CG-2 to CG-8, and CG-9 to CG-12 where a bundle grants a cosmetic or medal |
-| CR-5 (animation part) | Only the static slot has an upload with server checks (`docs/admin.md` 5.2); animation and table layer files have none, so only the static upload is checked | Same as CR-4 |
-| CR-2 (V-15 source to record) | No validator resolves each source `ref` to an existing record. The other direction, every granting record listed in the item's `sources`, is checked by the publish validators (missions, pass, ranking, shop) | Same as CR-4 |
-| MR-3 (event part) | Live events are not modelled, so an event mission's event is not checked for being published; the mission itself is checked to be `live` | CG-7, CG-8, and bundles granting medals |
-| Medal cultural review | The medal definition has no cultural review field (section 6) | CG-7, CG-8, and bundles granting medals |
-| PS-4 | Store products carry no season binding and no store status | CG-10 |
-| PS-5 | A pass season has no `nameKey` | CG-10 |
-| PT-1 (roles) | A template records no launch role, so only that at least three templates exist is checked, not that they are the welcome, creator and compensation templates. A template without a bundle is read as the compensation shape and its PT-2 and PT-3 bundle checks wait for the clone | CG-12 |
+| Rule | Missing | Checks | Needed |
+|---|---|---|---|
+| CR-4, MR-4 (catalog part), V-17 | The admin API does not read the Addressables catalog active in production, so no address can be resolved in it; the active catalog version (`HD_CATALOG_VERSION`) is not given to the admin API either and is not recorded | CG-2 to CG-8, and CG-9 to CG-12 where a bundle grants a cosmetic or medal | The catalog build and its publish with the item (`docs/admin.md` 5.2, `catalogVersion`, ADR 0002, #26): where the admin API reads the production catalog and its version from, and that version recorded as a 4.1 input |
+| CR-5 (animation part) | Only the static slot has an upload with server checks (`docs/admin.md` 5.2); animation and table layer files have none, so only the static upload is checked | Same as CR-4 | Owner acceptance of the `anim` and `layer/<name>` format of ADR 0012 and the atlas and frame limits O-5 and O-6 of `docs/asset-workflow.md`, then those upload slots and their checks |
+| CR-2 (V-15 of `event` sources) | Live events are not modelled, so an `event` source is not resolved to a published event. Listed only on the checks that count or grant an item with an `event` source; every other source type is resolved (3.1) | CG-2 to CG-8, and bundles granting such an item | The live event object of `docs/admin.md` 5.13 built (#146): its config domain, its publish rules and what "published" means for an event |
+| MR-3 (event part) | Live events are not modelled, so an event mission's event is not checked for being published; the mission itself is checked to be `live` | CG-7, CG-8, and bundles granting medals | Same as the row above |
+| PS-4 | Store products carry no season binding and no store status | CG-10 | A decision whether the season binding is a stored field of the pass season (`products`, `docs/admin.md` 5.7) or the purchase-time binding of `docs/economy.md` 7.2, which needs no data; and a store product record with `storeStatus` read from both stores (`docs/admin.md` 5.6): which store API call and which store states count as active |
 
 Without `HD_PROMO_KEY` the admin API cannot read promo templates, so CG-12 fails with PT-1.
 
@@ -209,9 +209,9 @@ Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `Dai
 
 ## 6. Implementation and open items
 
-- Built in #198. `contentgate.Run` re-runs the publish validators of `docs/admin.md` 3.3 on the published snapshots rather than a second copy of the rules: `cosmetics.ParseManifest` and `cosmetics.ValidateManifest` per item, `medal.Parse`, `mission.Parse`, `pass.Parse`, `rating.Parse`, `shop.Parse` and the `CheckSources` of missions, pass, ranking and shop. It reads the static uploads that passed their checks (#135), the active string bundles of the `localization` domain, the ranked seasons and the promo templates. It builds on #134 (roles, audit), #136 and #137 (catalogue), #140, #141, #142, #143, #145.
+- Built in #198. `contentgate.Run` re-runs the publish validators of `docs/admin.md` 3.3 on the published snapshots rather than a second copy of the rules: `cosmetics.ParseManifest` and `cosmetics.ValidateManifest` per item, `medal.Parse`, `mission.Parse`, `pass.Parse`, `rating.Parse`, `shop.Parse` and the `CheckSources` of missions, pass, ranking and shop. It reads the static uploads that passed their checks (#135), the active string bundles of the `localization` domain, the ranked seasons, the promo templates and the campaign ids of every promo code and template. It builds on #134 (roles, audit), #136 and #137 (catalogue), #140, #141, #142, #143, #145.
 - Its tests: for each CG check a seeded production-like catalogue that fails it by one missing condition, and one complete catalogue that fails no check (`server/internal/contentgate`); a lowered threshold gives `red`; a publish after a run makes the run stale; run, view, history, export, audit and the role matrix through the admin API (`server/internal/adminapi`).
-- The medal definition has no cultural review field, unlike cosmetics (`docs/cosmetics.md` 3), while `docs/localization.md` 6.1 requires the review for every asset. MR rules cannot check it until #141 adds the field; the report lists it as unchecked (4.5).
+- Made checkable in #198 after the first report: the medal `culturalReview` field (MR-6, `docs/admin.md` 5.9), the pass season `nameKey` (PS-5, `docs/admin.md` 5.7), the promo template launch `role` (PT-1, `docs/admin.md` 5.11, migration `00062`) and V-15 from each source `ref` to its record (CR-2), with table-driven tests per check in `server/internal/contentgate` and per validator in `server/internal/medal`, `server/internal/pass`, `server/internal/promo` and `server/internal/adminapi`.
 - #198 is closed when a `green` production report (or a waived `red` one) is linked at GN-3.
 
 ## 7. Owner decisions

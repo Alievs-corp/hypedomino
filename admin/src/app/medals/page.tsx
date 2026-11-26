@@ -37,6 +37,7 @@ export default async function MedalsPage() {
         version={medals.body.config_version}
         rules={medals.body.rules}
         canPublish={can(admin.permissions, "medals", "publish")}
+        canReview={can(admin.permissions, "medals", "cultural_review")}
       />
       <History versions={history.body.versions} rollback={canRollBack(admin.permissions, "medals") ? googleClientId() : null} t={t} />
     </main>

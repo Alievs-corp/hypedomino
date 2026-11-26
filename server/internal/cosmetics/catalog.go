@@ -30,7 +30,10 @@ const (
 	Disabled = "disabled"
 )
 
-const SourceDefault = "default"
+const (
+	SourceDefault = "default"
+	SourceEvent   = "event"
+)
 
 var (
 	ErrSchema  = errors.New("cosmetics: unsupported manifest schema")

@@ -12,7 +12,7 @@ import (
 const reviewApproved = "approved"
 
 var (
-	SourceTypes = []string{SourceDefault, "shop", "pass", "mission", "promo", "rank_reward", "first_purchase", "event", "chest"}
+	SourceTypes = []string{SourceDefault, "shop", "pass", "mission", "promo", "rank_reward", "first_purchase", SourceEvent, "chest"}
 	ArtSources  = []string{"handmade", "ai_assisted"}
 
 	referencePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]*$`)

@@ -113,7 +113,7 @@ func (h *Handler) missionDomain(rollback bool) configDomain {
 	}
 }
 
-func (h *Handler) medalDomain(rollback bool) configDomain {
+func (h *Handler) medalDomain(rollback bool, publisher string) configDomain {
 	return configDomain{name: medal.Domain, object: rbac.Medals,
 		prepare: func(ctx context.Context, tx pgx.Tx, before, after []byte) ([]byte, error) {
 			stamped, err := stampMedals(before, after, rollback)
@@ -122,6 +122,12 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 			}
 			medals, err := medal.Parse(stamped)
 			if err != nil {
+				return nil, err
+			}
+			if unreviewed := medals.Unreviewed(); len(unreviewed) > 0 {
+				return nil, fmt.Errorf("%w: no approved cultural review for %s", medal.ErrInvalidCatalog, strings.Join(unreviewed, ", "))
+			}
+			if err := reviewedByAnother(ctx, tx, newlyReviewed(before, medals), publisher); err != nil {
 				return nil, err
 			}
 			if err := medalArtPassed(ctx, tx, medals); err != nil {
@@ -146,6 +152,21 @@ func (h *Handler) medalDomain(rollback bool) configDomain {
 			return err
 		},
 	}
+}
+
+func newlyReviewed(before []byte, medals *medal.Catalog) []string {
+	published := medal.Default()
+	if before != nil {
+		json.Unmarshal(before, published)
+	}
+	var ids []string
+	for _, m := range medals.Medals {
+		old, existed := published.Medal(m.ID)
+		if m.CulturalReview == medal.ReviewApproved && (!existed || old.CulturalReview != medal.ReviewApproved) {
+			ids = append(ids, m.ID)
+		}
+	}
+	return ids
 }
 
 func medalSourcesKeptForMissions(ctx context.Context, tx pgx.Tx, medals *medal.Catalog) error {

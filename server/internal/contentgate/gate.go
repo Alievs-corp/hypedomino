@@ -28,7 +28,6 @@ const (
 	VerdictRed      = "red"
 	ThresholdPrefix = "ContentGateMin"
 	MedalCategory   = "medal"
-	LaunchTemplates = 3
 )
 
 var Domains = []string{cosmetics.Domain, medal.Domain, mission.Domain, pass.Domain, rating.Domain, shop.Domain, gamestrings.Domain, liveops.Domain}
@@ -80,6 +79,8 @@ type Inputs struct {
 	RankedSeasons     []rating.Season
 	Templates         []promo.Template
 	TemplatesReadable bool
+	Campaigns         map[string]bool
+	PromoCoinsLimit   int
 	PassedStatics     map[string]bool
 	Bundles           map[gamestrings.Language]map[string]bool
 }
@@ -88,19 +89,14 @@ var (
 	CosmeticGaps = []Gap{
 		{Rule: "CR-4", Reason: "the admin API does not read the Addressables catalog active in production, so no address is resolved in it (V-17)"},
 		{Rule: "CR-5", Reason: "only the static upload has server checks; animation and table layer files have no upload slot yet"},
-		{Rule: "CR-2", Reason: "V-15 from a source to its record (every ref resolving to an existing record) has no validator yet; the record-to-item direction is checked"},
 	}
-	MedalGaps = []Gap{
+	EventSourceGap = Gap{Rule: "CR-2", Reason: "live events are not modelled yet, so an event source is not resolved to a published event (V-15)"}
+	MedalGaps      = []Gap{
 		{Rule: "MR-3", Reason: "live events are not modelled yet, so an event mission's event is not checked for being published"},
 		{Rule: "MR-4", Reason: "the admin API does not read the Addressables catalog active in production; only the static upload checks are read"},
-		{Rule: "cultural_review", Reason: "the medal definition has no cultural review field yet (#141)"},
 	}
 	PassGaps = []Gap{
 		{Rule: "PS-4", Reason: "store products carry no season binding or store status yet"},
-		{Rule: "PS-5", Reason: "a pass season has no nameKey yet"},
-	}
-	PromoGaps = []Gap{
-		{Rule: "PT-1", Reason: "a template records no launch role, so only that three templates exist is checked, not that they are the welcome, creator and compensation templates"},
 	}
 )
 
@@ -149,10 +145,13 @@ type gate struct {
 	passFailure      *Failure
 	ranking          *rating.Snapshot
 	rankingFailure   *Failure
+	shop             *shop.Catalog
+	shopError        error
+	eventSourced     map[string]bool
 }
 
 func Run(in Inputs) Result {
-	g := &gate{in: in, rarities: cosmetics.DefaultRarities(), strictErrors: map[string]error{}, sourceErrors: map[string]error{}, itemFailures: map[string][]Failure{}, medalFailures: map[string][]Failure{}}
+	g := &gate{in: in, rarities: cosmetics.DefaultRarities(), strictErrors: map[string]error{}, sourceErrors: map[string]error{}, itemFailures: map[string][]Failure{}, medalFailures: map[string][]Failure{}, eventSourced: map[string]bool{}}
 	g.tiers = requiredTiers(g.rarities)
 	g.load()
 	g.judgeItems()
@@ -206,6 +205,11 @@ func (g *gate) load() {
 	} else {
 		g.ranking = parsed
 	}
+	if raw := g.in.Snapshots[shop.Domain]; raw == nil {
+		g.shopError = fmt.Errorf("the %s domain is not published", shop.Domain)
+	} else {
+		g.shop, g.shopError = shop.Parse(raw, g.in.Shop)
+	}
 }
 
 func (g *gate) loadCosmetics() {
@@ -258,6 +262,14 @@ func (g *gate) judgeItems() {
 		if err := g.strictErrors[item.ID]; err != nil {
 			fail("CR-2", err.Error())
 		}
+		for _, source := range item.Sources {
+			if source.Type == cosmetics.SourceEvent {
+				g.eventSourced[item.ID] = true
+			}
+			if detail := g.itemSourceProblem(source); detail != "" {
+				fail("CR-2", "V-15 "+detail)
+			}
+		}
 		if g.rarities[item.Rarity] == 0 {
 			fail("CR-3", fmt.Sprintf("rarityId %q is not in the rarity table", item.Rarity))
 		}
@@ -269,6 +281,56 @@ func (g *gate) judgeItems() {
 		}
 	}
 	g.catalogFailures = append(g.catalogFailures, g.grantListings()...)
+}
+
+func (g *gate) itemSourceProblem(source cosmetics.Source) string {
+	switch source.Type {
+	case shop.SourceType, shop.SourceChest:
+		if g.shop == nil {
+			return source.Type + " " + source.Ref + " cannot be resolved: " + g.shopError.Error()
+		}
+		offer, ok := g.shop.Offer(source.Ref)
+		if !ok || (offer.Kind == shop.KindChest) != (source.Type == shop.SourceChest) {
+			return source.Type + " " + source.Ref + " is not a " + source.Type + " offer of the published shop"
+		}
+	case shop.SourceFirstPurchase:
+		if g.shop == nil || g.shop.FirstPurchase == nil || g.shop.FirstPurchase.ID != source.Ref {
+			return "first_purchase " + source.Ref + " is not the first-purchase bonus of the published shop"
+		}
+	case pass.SourcePass:
+		if g.passConfig == nil || !g.passLevelExists(source.Ref) {
+			return "pass " + source.Ref + " is not a level bundle of a published pass season"
+		}
+	case mission.SourceMission:
+		if g.missions == nil {
+			return "mission " + source.Ref + " cannot be resolved: the missions are not readable"
+		}
+		if _, ok := g.missions.Mission(source.Ref); !ok {
+			return "mission " + source.Ref + " is not in the published missions"
+		}
+	case promo.SourceType:
+		if !g.in.Campaigns[source.Ref] {
+			return "promo " + source.Ref + " is the campaign of no promo code or template"
+		}
+	case rating.SourceRankReward:
+		if g.ranking == nil || !g.rankRewardExists(source.Ref) {
+			return "rank_reward " + source.Ref + " is not a rankRewards bundle of the published ranking config"
+		}
+	}
+	return ""
+}
+
+func (g *gate) passLevelExists(ref string) bool {
+	for _, season := range g.passConfig.Seasons {
+		for _, track := range []string{pass.Free, pass.Premium} {
+			for level := range season.Track(track) {
+				if pass.TrackSource(season.ID, track, level).Ref == ref {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (g *gate) grantListings() []Failure {
@@ -300,12 +362,10 @@ func (g *gate) grantListings() []Failure {
 	if g.ranking != nil {
 		record(rating.Domain, g.ranking.CheckSources(medalLists, itemLists))
 	}
-	if raw := g.in.Snapshots[shop.Domain]; raw != nil {
-		catalog, err := shop.Parse(raw, g.in.Shop)
-		if err == nil {
-			err = catalog.CheckSources(g.catalog)
-		}
-		record(shop.Domain, err)
+	if g.shop != nil {
+		record(shop.Domain, g.shop.CheckSources(g.catalog))
+	} else if g.in.Snapshots[shop.Domain] != nil {
+		record(shop.Domain, g.shopError)
 	}
 	return failures
 }
@@ -333,6 +393,9 @@ func (g *gate) judgeMedals() {
 			if missing := g.missingLanguages(key); len(missing) > 0 {
 				fail("MR-5", key+" missing in "+strings.Join(missing, ", "))
 			}
+		}
+		if m.CulturalReview != medal.ReviewApproved {
+			fail("MR-6", "culturalReview is not approved")
 		}
 	}
 }
@@ -429,13 +492,31 @@ func (c *Check) leaves(gaps ...Gap) {
 	}
 }
 
-func (c *Check) granting(cosmeticIDs, medalIDs []string) {
-	if len(cosmeticIDs) > 0 {
-		c.leaves(CosmeticGaps...)
-	}
+func (g *gate) granting(check *Check, cosmeticIDs, medalIDs []string) {
+	g.leavesCosmeticGaps(check, cosmeticIDs)
 	if len(medalIDs) > 0 {
-		c.leaves(MedalGaps...)
+		check.leaves(MedalGaps...)
 	}
+}
+
+func (g *gate) leavesCosmeticGaps(check *Check, ids []string) {
+	if len(ids) == 0 {
+		return
+	}
+	check.leaves(CosmeticGaps...)
+	if slices.ContainsFunc(ids, func(id string) bool { return g.eventSourced[id] }) {
+		check.leaves(EventSourceGap)
+	}
+}
+
+func (g *gate) liveItemIDs(category string) []string {
+	var ids []string
+	for _, item := range g.catalog.Items() {
+		if item.Availability == cosmetics.Live && (category == "" || CategoryOf(item) == category) {
+			ids = append(ids, item.ID)
+		}
+	}
+	return ids
 }
 
 func (c *Check) settle() Check {
@@ -483,6 +564,7 @@ func (g *gate) countCheck(c category) Check {
 		}
 	} else {
 		check.leaves(CosmeticGaps...)
+		g.leavesCosmeticGaps(check, g.liveItemIDs(c.name))
 	}
 	rarities := g.readyByCategory()[c.name]
 	count := len(rarities)
@@ -509,6 +591,7 @@ func (g *gate) countCheck(c category) Check {
 func (g *gate) readinessCheck() Check {
 	check := newCheck("CG-8")
 	check.leaves(CosmeticGaps...)
+	g.leavesCosmeticGaps(check, g.liveItemIDs(""))
 	check.leaves(MedalGaps...)
 	for _, failure := range g.catalogFailures {
 		check.fail(failure.Object, failure.Rule, failure.Detail)
@@ -573,7 +656,7 @@ func (g *gate) missionCheck() Check {
 }
 
 func (g *gate) bundleReady(check *Check, object, rule string, cosmeticIDs, medalIDs []string) {
-	check.granting(cosmeticIDs, medalIDs)
+	g.granting(check, cosmeticIDs, medalIDs)
 	for _, id := range cosmeticIDs {
 		if problem := g.cosmeticProblem(id); problem != "" {
 			check.fail(object, rule, problem)
@@ -614,6 +697,11 @@ func (g *gate) passCheck() Check {
 		check.fail(season.ID, "PS-2", "no ranked season contains launchAt")
 	} else if !ranked.Start.Equal(season.Start) || !ranked.End.Equal(season.End) {
 		check.fail(season.ID, "PS-2", fmt.Sprintf("window %s to %s, ranked season %s runs %s to %s", stamp(season.Start), stamp(season.End), ranked.ID, stamp(ranked.Start), stamp(ranked.End)))
+	}
+	if strings.TrimSpace(season.NameKey) == "" {
+		check.fail(season.ID, "PS-5", "no nameKey")
+	} else if missing := g.missingLanguages(season.NameKey); len(missing) > 0 {
+		check.fail(season.ID, "PS-5", season.NameKey+" missing in "+strings.Join(missing, ", "))
 	}
 	for level := 1; level <= season.Curve.Levels; level++ {
 		if _, ok := season.Premium[level]; !ok {
@@ -675,36 +763,59 @@ func (g *gate) rankedCheck() Check {
 
 func (g *gate) promoCheck() Check {
 	check := newCheck("CG-12")
-	check.leaves(PromoGaps...)
 	if !g.in.TemplatesReadable {
 		check.fail("promo_templates", "PT-1", "the promo templates cannot be read without HD_PROMO_KEY")
 		return check.settle()
 	}
-	if len(g.in.Templates) < LaunchTemplates {
-		check.fail("promo_templates", "PT-1", fmt.Sprintf("%d templates, the launch needs %d", len(g.in.Templates), LaunchTemplates))
-	}
-	for _, t := range g.in.Templates {
-		if strings.TrimSpace(t.Campaign) == "" {
-			check.fail(t.ID, "PT-2", "no campaignId")
-		}
-		if t.Bundle == nil {
+	for _, role := range promo.LaunchRoles {
+		at := slices.IndexFunc(g.in.Templates, func(t promo.Template) bool { return t.Role == role })
+		if at < 0 {
+			check.fail("promo_templates", "PT-1", "no template has the "+role+" role")
 			continue
 		}
-		if err := t.Bundle.ValidateFor(wallet.Promo); err != nil {
-			check.fail(t.ID, "PT-2", err.Error())
+		t := g.in.Templates[at]
+		if detail := g.roleShapeProblem(t); detail != "" {
+			check.fail(t.ID, "PT-1", detail)
 		}
-		check.granting(t.Bundle.Cosmetics, nil)
-		source := cosmetics.Source{Type: promo.SourceType, Ref: t.Campaign}
-		for _, id := range t.Bundle.Cosmetics {
-			if problem := g.cosmeticProblem(id); problem != "" {
-				check.fail(t.ID, "PT-3", problem)
-			}
-			if item, ok := g.catalog.Item(id); ok && !item.Grantable(source) {
-				check.fail(t.ID, "PT-3", id+" does not list the promo source "+t.Campaign)
-			}
-		}
+		g.templateReady(check, t)
 	}
 	return check.settle()
+}
+
+func (g *gate) roleShapeProblem(t promo.Template) string {
+	switch {
+	case t.Kind != promo.RoleKinds[t.Role]:
+		return fmt.Sprintf("the %s template is %s, not %s", t.Role, t.Kind, promo.RoleKinds[t.Role])
+	case t.Role == promo.RoleCompensation:
+		return ""
+	case t.Bundle == nil || len(t.Bundle.Cosmetics) != 1:
+		return "the " + t.Role + " template grants exactly one cosmetic"
+	case t.Role == promo.RoleWelcome && (t.Bundle.Coins < 1 || t.Bundle.Coins > int64(g.in.PromoCoinsLimit)):
+		return fmt.Sprintf("the welcome template grants %d coins, it needs 1 to PromoCoinsApprovalThreshold %d", t.Bundle.Coins, g.in.PromoCoinsLimit)
+	}
+	return ""
+}
+
+func (g *gate) templateReady(c *Check, t promo.Template) {
+	if strings.TrimSpace(t.Campaign) == "" {
+		c.fail(t.ID, "PT-2", "no campaignId")
+	}
+	if t.Bundle == nil {
+		return
+	}
+	if err := t.Bundle.ValidateFor(wallet.Promo); err != nil {
+		c.fail(t.ID, "PT-2", err.Error())
+	}
+	g.granting(c, t.Bundle.Cosmetics, nil)
+	source := cosmetics.Source{Type: promo.SourceType, Ref: t.Campaign}
+	for _, id := range t.Bundle.Cosmetics {
+		if problem := g.cosmeticProblem(id); problem != "" {
+			c.fail(t.ID, "PT-3", problem)
+		}
+		if item, ok := g.catalog.Item(id); ok && !item.Grantable(source) {
+			c.fail(t.ID, "PT-3", id+" does not list the promo source "+t.Campaign)
+		}
+	}
 }
 
 func (g *gate) thresholdCheck() Check {

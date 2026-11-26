@@ -330,7 +330,7 @@ func TestAMedalIsPublishedOnlyOnceItsStaticPassed(t *testing.T) {
 			a.nameExamples()
 			token := a.signIn("ayla")
 			c.prepare(t, a, store, token)
-			status, body := a.call("PUT", "/admin/config/medals", token, map[string]any{"catalog": exampleCatalog(t, "medals"), "reason": "launch medals"})
+			status, body := a.call("PUT", "/admin/config/medals", a.signIn("root"), map[string]any{"catalog": exampleCatalog(t, "medals"), "reason": "launch medals"})
 			expect(t, status, body, c.status, c.refusal)
 			if detail, _ := body["detail"].(string); c.status != http.StatusOK && !strings.HasSuffix(detail, ": medal.wins_50") {
 				t.Fatalf("detail %v", body)
@@ -379,4 +379,41 @@ func checkMedal(t *testing.T, a *api, store *memoryStore, token, uploadURL strin
 	id := strings.TrimSuffix(uploadURL[strings.LastIndex(uploadURL, "/")+1:], ".png")
 	status, body := a.call("POST", "/admin/assets/"+id+"/check", token, nil)
 	expect(t, status, body, http.StatusOK, "")
+}
+
+func TestALiveMedalIsPublishedOnlyWithACulturalReviewByAnotherAccountThanItsUploader(t *testing.T) {
+	a := newAPI(t)
+	a.publishExampleCatalog()
+	a.passMedalArt(exampleCatalog(t, "medals"))
+	a.uploadedBy("ayla@example.com", "medal.wins_50")
+	a.nameExamples()
+	content, root := a.signIn("ayla"), a.signIn("root")
+	steps := []struct {
+		name    string
+		token   string
+		change  func(medals map[string]any)
+		status  int
+		refusal string
+		detail  string
+	}{
+		{"a live medal without a review", root, func(m map[string]any) { delete(listed(m, "medals", "medal.wins_250"), "culturalReview") }, http.StatusBadRequest, "invalid", "no approved cultural review for medal.wins_250"},
+		{"an unknown review value", root, func(m map[string]any) { listed(m, "medals", "medal.wins_250")["culturalReview"] = "pending" }, http.StatusBadRequest, "invalid", "culturalReview"},
+		{"reviewed by its uploader", content, func(map[string]any) {}, http.StatusForbidden, "own_upload", ""},
+		{"reviewed by another account", root, func(map[string]any) {}, http.StatusOK, "", ""},
+		{"changed by its uploader after the review", content, func(m map[string]any) { listed(m, "medals", "medal.wins_50")["rarityId"] = "rare" }, http.StatusOK, "", ""},
+		{"a disabled medal without a review", content, func(m map[string]any) {
+			medal := listed(m, "medals", "medal.wins_250")
+			medal["availability"] = "disabled"
+			delete(medal, "culturalReview")
+		}, http.StatusOK, "", ""},
+	}
+	for _, step := range steps {
+		medals := exampleCatalog(t, "medals")
+		step.change(medals)
+		status, body := a.call("PUT", "/admin/config/medals", step.token, map[string]any{"catalog": medals, "reason": step.name})
+		expect(t, status, body, step.status, step.refusal)
+		if detail, _ := body["detail"].(string); !strings.Contains(detail, step.detail) {
+			t.Fatalf("%s: detail %v", step.name, body)
+		}
+	}
 }

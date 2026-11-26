@@ -5,6 +5,12 @@ export type PromoKind = "single_use" | "multi_use" | "targeted";
 
 export const promoKinds: readonly PromoKind[] = ["single_use", "multi_use", "targeted"];
 
+export type PromoRole = "welcome" | "creator" | "compensation";
+
+export const promoRoles: readonly PromoRole[] = ["welcome", "creator", "compensation"];
+
+export const roleKinds: Readonly<Record<PromoRole, PromoKind>> = { welcome: "multi_use", creator: "multi_use", compensation: "single_use" };
+
 export type PromoCode = {
   id: string;
   campaign: string;
@@ -47,6 +53,7 @@ export type PromoDraft = {
   code: string;
   count: number;
   passPremium: boolean;
+  role: PromoRole | "";
 };
 
 export const emptyDraft: PromoDraft = {
@@ -63,7 +70,12 @@ export const emptyDraft: PromoDraft = {
   code: "",
   count: 100,
   passPremium: false,
+  role: "",
 };
+
+export function withRole(draft: PromoDraft, role: PromoRole | ""): PromoDraft {
+  return role === "" ? { ...draft, role } : { ...draft, role, kind: roleKinds[role] };
+}
 
 export type PromoRequest = {
   id: string;
@@ -256,12 +268,13 @@ export type PromoTemplate = {
   id: string;
   campaign: string;
   kind: PromoKind;
+  role?: PromoRole;
   bundle: Bundle | null;
   creator: string;
   updated: string;
 };
 
-export type TemplateRequest = { id: string; campaign: string; kind: PromoKind; bundle: Bundle | null };
+export type TemplateRequest = { id: string; campaign: string; kind: PromoKind; role: PromoRole | ""; bundle: Bundle | null };
 
 export const templatesPath = "/admin/promo-templates";
 
@@ -272,7 +285,7 @@ export function templatePath(id: string): string {
 export function templateRequest(draft: PromoDraft): TemplateRequest {
   const bundle = bundleOf(draft);
   const grants = (bundle.coins ?? 0) > 0 || (bundle.cosmetics?.length ?? 0) > 0 || (bundle.passXp ?? 0) > 0;
-  return { id: draft.id.trim(), campaign: draft.campaign.trim(), kind: draft.kind, bundle: grants ? bundle : null };
+  return { id: draft.id.trim(), campaign: draft.campaign.trim(), kind: draft.kind, role: draft.role, bundle: grants ? bundle : null };
 }
 
 export function draftFromTemplate(template: PromoTemplate): PromoDraft {
@@ -282,6 +295,7 @@ export function draftFromTemplate(template: PromoTemplate): PromoDraft {
     id: template.id,
     campaign: template.campaign,
     kind: template.kind,
+    role: template.role ?? "",
     bundleId: bundle?.id ?? emptyDraft.bundleId,
     coins: bundle?.coins ?? 0,
     cosmetics: bundle?.cosmetics?.join(", ") ?? "",

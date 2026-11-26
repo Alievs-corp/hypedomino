@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,13 +14,24 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
 
-const StateDraft = "draft"
+const (
+	StateDraft       = "draft"
+	RoleWelcome      = "welcome"
+	RoleCreator      = "creator"
+	RoleCompensation = "compensation"
+)
+
+var (
+	LaunchRoles = []string{RoleWelcome, RoleCreator, RoleCompensation}
+	RoleKinds   = map[string]string{RoleWelcome: MultiUse, RoleCreator: MultiUse, RoleCompensation: SingleUse}
+)
 
 type Template struct {
 	ID       string         `json:"id"`
 	Campaign string         `json:"campaign"`
 	Kind     string         `json:"kind"`
 	Bundle   *reward.Bundle `json:"bundle"`
+	Role     string         `json:"role,omitempty"`
 	Template bool           `json:"template"`
 	State    string         `json:"state"`
 	Creator  string         `json:"creator"`
@@ -39,6 +51,10 @@ func validateTemplate(t Template) error {
 		return fail("kind %q", t.Kind)
 	case t.Creator == "":
 		return fail("creator is required")
+	case t.Role != "" && RoleKinds[t.Role] == "":
+		return fail("role %q", t.Role)
+	case t.Role != "" && RoleKinds[t.Role] != t.Kind:
+		return fail("the %s template is %s", t.Role, RoleKinds[t.Role])
 	case t.Bundle == nil:
 		return nil
 	case len(t.Bundle.Medals) > 0:
@@ -58,8 +74,11 @@ func (s *Store) CreateTemplate(ctx context.Context, t Template, now time.Time) (
 	if err != nil {
 		return Template{}, err
 	}
-	_, err = s.db.Exec(ctx, `insert into promo_templates (promo_id, campaign_id, kind, bundle, created_by, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $6)`,
-		t.ID, t.Campaign, t.Kind, encoded, t.Creator, now)
+	_, err = s.db.Exec(ctx, `insert into promo_templates (promo_id, campaign_id, kind, bundle, created_by, created_at, updated_at, launch_role) values ($1, $2, $3, $4, $5, $6, $6, nullif($7, ''))`,
+		t.ID, t.Campaign, t.Kind, encoded, t.Creator, now, t.Role)
+	if err := roleTaken(err, t.Role); err != nil {
+		return Template{}, err
+	}
 	if isUniqueViolation(err) {
 		return Template{}, fmt.Errorf("%w: template %s already exists", ErrDuplicate, t.ID)
 	}
@@ -82,7 +101,11 @@ func (s *Store) EditTemplate(ctx context.Context, t Template, now time.Time) (Te
 	if err != nil {
 		return Template{}, Template{}, err
 	}
-	if _, err := s.db.Exec(ctx, `update promo_templates set campaign_id = $2, kind = $3, bundle = $4, updated_at = $5 where promo_id = $1`, t.ID, t.Campaign, t.Kind, encoded, now); err != nil {
+	_, err = s.db.Exec(ctx, `update promo_templates set campaign_id = $2, kind = $3, bundle = $4, updated_at = $5, launch_role = nullif($6, '') where promo_id = $1`, t.ID, t.Campaign, t.Kind, encoded, now, t.Role)
+	if err := roleTaken(err, t.Role); err != nil {
+		return Template{}, Template{}, err
+	}
+	if err != nil {
 		return Template{}, Template{}, err
 	}
 	return before, drafted(t, now), nil
@@ -113,12 +136,19 @@ func (s *Store) lockedTemplate(ctx context.Context, id string) (Template, error)
 	return t, err
 }
 
-const templateColumns = `promo_id, campaign_id, kind, bundle, created_by, updated_at`
+const templateColumns = `promo_id, campaign_id, kind, bundle, created_by, updated_at, coalesce(launch_role, '')`
+
+func roleTaken(err error, role string) error {
+	if isUniqueViolation(err) && strings.Contains(err.Error(), "promo_templates_launch_role") {
+		return fmt.Errorf("%w: another template has the %s role", ErrDuplicate, role)
+	}
+	return nil
+}
 
 func scanTemplate(row pgx.Row) (Template, error) {
 	var t Template
 	var bundle []byte
-	if err := row.Scan(&t.ID, &t.Campaign, &t.Kind, &bundle, &t.Creator, &t.Updated); err != nil {
+	if err := row.Scan(&t.ID, &t.Campaign, &t.Kind, &bundle, &t.Creator, &t.Updated, &t.Role); err != nil {
 		return Template{}, err
 	}
 	if bundle != nil {

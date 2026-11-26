@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { batchLeads, bundleOf, codeGrants, detailPath, draftFromTemplate, templatePath, templateRequest, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, olderPromoHref, promoApiPath, promoChangeSummary, promoPageSize, readPromoQuery, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
+import { batchLeads, bundleOf, codeGrants, detailPath, draftFromTemplate, templatePath, templateRequest, withRole, type PromoTemplate, keepsRedeemers, targetsPath, disablePath, draftReady, emptyDraft, listOf, olderPromoHref, promoApiPath, promoChangeSummary, promoPageSize, readPromoQuery, promoRequest, shownState, type PromoCode, type PromoDraft } from "./codes.ts";
 
 const draft: PromoDraft = {
   ...emptyDraft,
@@ -124,7 +124,8 @@ test("a new account list keeps every account that redeemed", () => {
 });
 
 test("a template keeps only id, campaign, kind and what it grants", () => {
-  assert.deepEqual(templateRequest(draft), { id: "promo.launch", campaign: "campaign.launch_week", kind: "multi_use", bundle: { id: "bundle.launch", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "table.night_market"] } });
+  assert.deepEqual(templateRequest(draft), { id: "promo.launch", campaign: "campaign.launch_week", kind: "multi_use", role: "", bundle: { id: "bundle.launch", revision: 1, coins: 300, cosmetics: ["avatar.comet_fox", "table.night_market"] } });
+  assert.equal(templateRequest({ ...draft, role: "welcome" }).role, "welcome");
   assert.equal(templateRequest({ ...draft, coins: 0, cosmetics: "" }).bundle, null);
 });
 
@@ -134,5 +135,20 @@ test("cloning a template fills the code form and leaves the window, cap and code
   assert.deepEqual(clone, { ...emptyDraft, id: "promo.welcome", campaign: "campaign.launch", kind: "multi_use", bundleId: "bundle.welcome", coins: 200, cosmetics: "avatar.comet_fox", passXp: 0 });
   assert.equal(draftReady(clone, false), false);
   assert.deepEqual(draftFromTemplate({ ...template, kind: "single_use", bundle: null }), { ...emptyDraft, id: "promo.welcome", campaign: "campaign.launch", kind: "single_use" });
+  assert.equal(draftFromTemplate({ ...template, role: "welcome" }).role, "welcome");
   assert.equal(templatePath("promo.welcome"), "/admin/promo-templates/promo.welcome");
+});
+
+test("a launch role sets the type the content gate expects of its template", () => {
+  const cases: { role: "welcome" | "creator" | "compensation" | ""; kind: string }[] = [
+    { role: "welcome", kind: "multi_use" },
+    { role: "creator", kind: "multi_use" },
+    { role: "compensation", kind: "single_use" },
+    { role: "", kind: "targeted" },
+  ];
+  for (const { role, kind } of cases) {
+    const next = withRole({ ...draft, kind: "targeted" }, role);
+    assert.equal(next.role, role);
+    assert.equal(next.kind, kind);
+  }
 });

@@ -15,7 +15,8 @@
           "ref": "mission.win_50"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.wins_250",
@@ -30,7 +31,8 @@
           "ref": "mission.win_250"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.wins_1000",
@@ -45,7 +47,8 @@
           "ref": "mission.win_1000"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.wins_5000",
@@ -60,7 +63,8 @@
           "ref": "mission.win_5000"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.domino_100",
@@ -75,7 +79,8 @@
           "ref": "mission.domino_100"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.domino_1000",
@@ -90,7 +95,8 @@
           "ref": "mission.domino_1000"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.chain_first",
@@ -105,7 +111,8 @@
           "ref": "mission.chain_1"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.chain_100",
@@ -120,7 +127,8 @@
           "ref": "mission.chain_100"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.points_10k",
@@ -135,7 +143,8 @@
           "ref": "mission.points_10000"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     },
     {
       "id": "medal.points_100k",
@@ -150,7 +159,8 @@
           "ref": "mission.points_100000"
         }
       ],
-      "availability": "live"
+      "availability": "live",
+      "culturalReview": "approved"
     }
   ]
 }

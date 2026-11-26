@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -571,6 +572,51 @@ func TestATemplateStaysADraftOutsideTheCodes(t *testing.T) {
 	}
 	if codes, err := f.store.List(ctx, promo.ListQuery{Limit: 10}); err != nil || len(codes) != 0 {
 		t.Fatalf("codes %v %v", codes, err)
+	}
+}
+
+func TestALaunchRoleFixesTheTemplateKindAndBelongsToOneTemplate(t *testing.T) {
+	f := newFixture(t, promo.DefaultConfig())
+	ctx := context.Background()
+	cases := []struct {
+		name string
+		role string
+		kind string
+		want error
+	}{
+		{"unknown role", "launch", promo.MultiUse, promo.ErrInvalid},
+		{"single use welcome", promo.RoleWelcome, promo.SingleUse, promo.ErrInvalid},
+		{"targeted creator", promo.RoleCreator, promo.Targeted, promo.ErrInvalid},
+		{"multi use compensation", promo.RoleCompensation, promo.MultiUse, promo.ErrInvalid},
+		{"welcome", promo.RoleWelcome, promo.MultiUse, nil},
+		{"second welcome", promo.RoleWelcome, promo.MultiUse, promo.ErrDuplicate},
+		{"creator", promo.RoleCreator, promo.MultiUse, nil},
+		{"compensation", promo.RoleCompensation, promo.SingleUse, nil},
+		{"no role", "", promo.Targeted, nil},
+	}
+	for i, c := range cases {
+		template := promo.Template{ID: fmt.Sprintf("promo.role_%d", i), Campaign: "campaign.launch", Kind: c.kind, Role: c.role, Creator: "leyla"}
+		if _, err := f.store.CreateTemplate(ctx, template, now); !errors.Is(err, c.want) {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+	}
+	if _, _, err := f.store.EditTemplate(ctx, promo.Template{ID: "promo.role_8", Campaign: "campaign.launch", Kind: promo.MultiUse, Role: promo.RoleCreator}, now); !errors.Is(err, promo.ErrDuplicate) {
+		t.Fatalf("edit to a taken role: %v", err)
+	}
+	before, after, err := f.store.EditTemplate(ctx, promo.Template{ID: "promo.role_6", Campaign: "campaign.launch", Kind: promo.MultiUse}, now)
+	if err != nil || before.Role != promo.RoleCreator || after.Role != "" {
+		t.Fatalf("clear the role %+v %+v %v", before, after, err)
+	}
+	templates, err := f.store.Templates(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	roles := map[string]string{}
+	for _, template := range templates {
+		roles[template.ID] = template.Role
+	}
+	if want := map[string]string{"promo.role_4": promo.RoleWelcome, "promo.role_6": "", "promo.role_7": promo.RoleCompensation, "promo.role_8": ""}; !maps.Equal(roles, want) {
+		t.Fatalf("roles %v", roles)
 	}
 }
 
