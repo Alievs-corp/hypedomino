@@ -59,6 +59,7 @@ type Clock interface {
 type Message struct {
 	View     View
 	Rejected bool
+	Illegal  bool
 	Sequence uint64
 	Reason   error
 	Emoji    *Emoji
@@ -391,13 +392,13 @@ func (r *Room) leave(seat rules.Seat) {
 func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent, received time.Time) {
 	if err := r.admit(seat, sequence); err != nil {
 		if !errors.Is(err, ErrStaleSequence) {
-			r.reject(seat, sequence, err)
+			r.reject(seat, sequence, err, false)
 		}
 		return
 	}
 	intent.Seat = seat
 	if err := replay.Apply(r.recorder, intent); err != nil {
-		r.reject(seat, sequence, err)
+		r.reject(seat, sequence, err, true)
 		return
 	}
 	r.seats[seat].acked = sequence
@@ -550,9 +551,9 @@ func (r *Room) onTimer() {
 	r.settle()
 }
 
-func (r *Room) reject(seat rules.Seat, sequence uint64, reason error) {
+func (r *Room) reject(seat rules.Seat, sequence uint64, reason error, illegal bool) {
 	if sink := r.seats[seat].sink; sink != nil {
-		sink.Deliver(Message{View: r.view(seat), Rejected: true, Sequence: sequence, Reason: fmt.Errorf("rejected intent %d: %w", sequence, reason)})
+		sink.Deliver(Message{View: r.view(seat), Rejected: true, Illegal: illegal, Sequence: sequence, Reason: fmt.Errorf("rejected intent %d: %w", sequence, reason)})
 	}
 }
 

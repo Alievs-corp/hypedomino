@@ -69,6 +69,7 @@ type Manager struct {
 	auth      Authenticator
 	clocks    ClockObserver
 	replays   ReplayObserver
+	illegal   IllegalIntentObserver
 	devices   DeviceObserver
 	checker   IntegrityChecker
 	queue     Queue
@@ -103,6 +104,10 @@ type ReplayObserver interface {
 	Observe(ctx context.Context, account string)
 }
 
+type IllegalIntentObserver interface {
+	Observe(account string)
+}
+
 type DeviceObserver interface {
 	Observe(ctx context.Context, account string, deviceSignals, hookSignals []string)
 }
@@ -126,6 +131,16 @@ func (m *Manager) ObserveDevices(observer DeviceObserver) {
 
 func (m *Manager) ObserveReplays(observer ReplayObserver) {
 	m.replays = observer
+}
+
+func (m *Manager) ObserveIllegalIntents(observer IllegalIntentObserver) {
+	m.illegal = observer
+}
+
+func (c *connection) IllegalIntent() {
+	if c.manager.illegal != nil {
+		c.manager.illegal.Observe(c.session.account)
+	}
 }
 
 func (c *connection) Replayed() {
