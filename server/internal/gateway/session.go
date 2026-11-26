@@ -92,6 +92,9 @@ func (s *RoomSession) Deliver(message room.Message) {
 		return
 	}
 	s.acked.Store(message.View.Acked)
+	if message.Illegal {
+		s.conn.countIllegalIntent()
+	}
 	if message.Rejected {
 		s.conn.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, message.Sequence, message.View.Acked))
 	}

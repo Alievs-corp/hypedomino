@@ -1,6 +1,7 @@
 package adminapi
 
 import (
+	"github.com/Alievs-corp/hypedomino/server/internal/rbac"
 	"github.com/Alievs-corp/hypedomino/server/internal/rulesconfig"
 )
 
@@ -9,7 +10,7 @@ func rulesDomain() keyedDomain {
 	for _, key := range rulesconfig.Keys() {
 		keys = append(keys, configKey{Name: key.Name, Unit: key.Unit, Min: key.Min, Max: &key.Max, Default: key.Default()})
 	}
-	return newKeyedDomain(rulesconfig.Domain, keys, func(raw []byte) (map[string]int, error) {
+	return newKeyedDomain(rulesconfig.Domain, rbac.GameConfig, keys, func(raw []byte) (map[string]int, error) {
 		return rulesconfig.Parse(raw)
 	})
 }

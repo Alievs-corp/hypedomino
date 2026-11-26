@@ -111,7 +111,7 @@ A lever is a config key or admin object that already exists. A signal without a 
 | Mission effort | #127, #147 | Completion against the intended effort of `docs/pass-missions-medals.md` 4.4; tolerance OD-5 | Mission targets: add, retire or replace missions in a slot pool | Slot rewards (fixed per slot) |
 | Medal earn share | #147 | Outside the band of `docs/pass-missions-medals.md` 5.3 | The medal's `rarityId` | Condition changes on an earned medal |
 | Ranked distribution, placement, leaves, queue wait | #147, #28, #48 | OD-6 | `docs/ranking.md` section 4 coefficients mid-season; structural keys only through season 2 (5.1) | Bot fill in ranked (`docs/ranking.md` 9) |
-| D1, D7, ARPDAU, matches per day | #196 weekly KPI report | Targets of #196 (OD-4) | None directly; they set the weekly review's priorities | |
+| D1, D7, ARPDAU, matches per day | #196 weekly KPI report ([`docs/soft-launch.md`](soft-launch.md) section 6) | Targets of #196 (OD-4, `docs/soft-launch.md` 5.3) | None directly; they set the weekly review's priorities | |
 | Launch health signals | `docs/launch-runbook.md` 4.1 | As defined there | None: an incident (`docs/launch-runbook.md` section 6) | Any balance key |
 
 ### 6.2 Process

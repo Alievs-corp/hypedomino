@@ -17,7 +17,7 @@ type burstRule struct {
 
 type Burst struct {
 	store   *Store
-	rule    burstRule
+	rule    func() burstRule
 	clock   Clock
 	logger  *slog.Logger
 	mu      sync.Mutex
@@ -26,44 +26,59 @@ type Burst struct {
 }
 
 func NewReplays(store *Store, config Config, clock Clock, logger *slog.Logger) *Burst {
-	return newBurst(store, burstRule{kind: KindReplay, countName: "rejections", threshold: config.ReplayThreshold, window: config.ReplayWindow, weight: config.ReplayWeight}, clock, logger)
+	return newBurst(store, fixedRule(burstRule{kind: KindReplay, countName: "rejections", threshold: config.ReplayThreshold, window: config.ReplayWindow, weight: config.ReplayWeight}), clock, logger)
 }
 
 func NewMacFailures(store *Store, config Config, clock Clock, logger *slog.Logger) *Burst {
-	return newBurst(store, burstRule{kind: KindMacFailure, countName: "failures", threshold: config.MacFailureThreshold, window: config.MacFailureWindow, weight: config.MacFailureWeight}, clock, logger)
+	return newBurst(store, fixedRule(burstRule{kind: KindMacFailure, countName: "failures", threshold: config.MacFailureThreshold, window: config.MacFailureWindow, weight: config.MacFailureWeight}), clock, logger)
 }
 
 func NewUnownedEquips(store *Store, config Config, clock Clock, logger *slog.Logger) *Burst {
-	return newBurst(store, burstRule{kind: KindUnownedEquip, countName: "attempts", threshold: config.UnownedEquipThreshold, window: config.UnownedEquipWindow, weight: config.UnownedEquipWeight}, clock, logger)
+	return newBurst(store, fixedRule(burstRule{kind: KindUnownedEquip, countName: "attempts", threshold: config.UnownedEquipThreshold, window: config.UnownedEquipWindow, weight: config.UnownedEquipWeight}), clock, logger)
 }
 
-func newBurst(store *Store, rule burstRule, clock Clock, logger *slog.Logger) *Burst {
+func fixedRule(rule burstRule) func() burstRule {
+	return func() burstRule { return rule }
+}
+
+func newBurst(store *Store, rule func() burstRule, clock Clock, logger *slog.Logger) *Burst {
 	return &Burst{store: store, rule: rule, clock: clock, logger: logger, recent: map[string][]time.Time{}}
 }
 
 func (b *Burst) Observe(ctx context.Context, account string) {
+	rule := b.rule()
+	if rule.threshold < 1 || rule.window <= 0 {
+		b.forget()
+		return
+	}
 	now := b.clock.Now().UTC()
-	count, reached := b.count(account, now)
+	count, reached := b.count(account, now, rule)
 	if !reached {
 		return
 	}
 	signal := Signal{
-		Account: account, Kind: b.rule.kind, Weight: b.rule.weight, Dedupe: now.Truncate(b.rule.window).Format(time.RFC3339), At: now,
-		Evidence: map[string]any{b.rule.countName: count, "window_seconds": int64(b.rule.window.Seconds())},
+		Account: account, Kind: rule.kind, Weight: rule.weight, Dedupe: now.Truncate(rule.window).Format(time.RFC3339), At: now,
+		Evidence: map[string]any{rule.countName: count, "window_seconds": int64(rule.window.Seconds())},
 	}
 	if _, err := b.store.Record(ctx, signal); err != nil {
-		b.logger.Error("risk signal not recorded", "kind", b.rule.kind, "account", account, "error", err)
+		b.logger.Error("risk signal not recorded", "kind", rule.kind, "account", account, "error", err)
 	}
 }
 
-func (b *Burst) count(account string, now time.Time) (int, bool) {
+func (b *Burst) forget() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	since := now.Add(-b.rule.window)
-	b.sweep(now, since)
+	clear(b.recent)
+}
+
+func (b *Burst) count(account string, now time.Time, rule burstRule) (int, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	since := now.Add(-rule.window)
+	b.sweep(now, since, rule.window)
 	kept := within(b.recent[account], since)
 	kept = append(kept, now)
-	if len(kept) < b.rule.threshold {
+	if len(kept) < rule.threshold {
 		b.recent[account] = kept
 		return len(kept), false
 	}
@@ -71,11 +86,11 @@ func (b *Burst) count(account string, now time.Time) (int, bool) {
 	return len(kept), true
 }
 
-func (b *Burst) sweep(now, since time.Time) {
+func (b *Burst) sweep(now, since time.Time, window time.Duration) {
 	if now.Before(b.sweepAt) {
 		return
 	}
-	b.sweepAt = now.Add(b.rule.window)
+	b.sweepAt = now.Add(window)
 	for account, times := range b.recent {
 		if kept := within(times, since); len(kept) > 0 {
 			b.recent[account] = kept

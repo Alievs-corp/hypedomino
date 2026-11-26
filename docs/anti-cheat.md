@@ -91,6 +91,8 @@ Risk is the impact if the countermeasures did not exist. Every vector is verifie
 | Response | Block every illegal intent. Flag when illegal intents exceed `IllegalIntentThreshold` in `IllegalIntentWindowMinutes` |
 | Issues | #202, #203, #206, #209, #212 |
 
+Illegal match intents are counted in `server/internal/room`, `server/internal/gateway` and `server/internal/risk` (#212, F-3 of `docs/red-team.md`). A match intent the rules engine refuses (tile not in hand, out of turn, wrong end, pass or draw while a placement exists) and a placement whose tile or end is outside the set count for the account. Refusals that an honest client can meet in a race are not counted: an intent before the deal, after the match ended, on a seat the bot has taken over, or a stale sequence. Every counted intent adds to `hd_illegal_intents_total` on `/metrics`. The room goroutine only hands the account to a bounded queue without blocking or allocating; one goroutine per node drains it, and when `IllegalIntentThreshold` intents fall within `IllegalIntentWindowMinutes` it records an `illegal_intent` signal of weight `IllegalIntentWeight` with the count and window as evidence, at most once per window. A full queue drops the intent from the signal and adds to `hd_illegal_intents_dropped_total`. Counts live in node memory. The three keys are the `anticheat` admin domain (`docs/admin.md` 3.1); each ships at 0, and a threshold of 0 turns the signal off, so nothing is recorded until the owner publishes launch values. A weight of 0 keeps the signal as review evidence without moving the score. Economy refusals (buy without balance, equip of an unowned item) are not part of this count; unowned equips have their own signal (V-11).
+
 ### V-2. Repacked or modded app
 
 | | |
@@ -226,7 +228,7 @@ Promo locks and spikes are implemented in `server/internal/promo` (#211, `docs/e
 
 | Signal | Source | Kind | Weight (config) |
 |---|---|---|---|
-| Illegal intent rate over threshold | Rules engine, economy service | Soft | `IllegalIntentWeight` |
+| Illegal intent rate over threshold | Rules engine and gateway (V-1) | Soft | `IllegalIntentWeight` |
 | Attestation failure, unknown signing digest, unrecognised install source | #205 | Soft | `IntegrityFailureWeight` |
 | Build not on the allowlist | #210 | Soft | `UnknownBuildWeight` |
 | Hook, debugger or instrumentation signal | #206 | Soft | `HookSignalWeight` |
@@ -311,7 +313,7 @@ Accepted residual risks:
 
 | Field | Meaning |
 |---|---|
-| `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag |
+| `IllegalIntentThreshold`, `IllegalIntentWindowMinutes` | Illegal intents within the window that raise a flag. No launch values yet: `anticheat` admin domain, 0 until the owner decides, and a threshold of 0 turns the signal off (V-1). The window is at most 43200 minutes (30 days) |
 | `MacFailureThreshold`, `MacFailureWindowMinutes` | MAC failures within the window that raise a flag (launch defaults 5 and 10) |
 | `ReplayRejectThreshold`, `ReplayRejectWindowMinutes` | Rejected replays within the window that raise a flag (launch defaults 5 and 10) |
 | `UnownedEquipThreshold`, `UnownedEquipWindowMinutes` | Refused equips or showcases of unowned items within the window that raise a flag (launch defaults 5 and 10) |
@@ -322,7 +324,7 @@ Accepted residual risks:
 | `IntegrityMinDeviceLevel` | Minimum Play Integrity device verdict: none, basic, device or strong (launch default device) |
 | `IntegrityRequireLicensed` | Require the `LICENSED` Play licensing verdict (launch default off) |
 | Package name, signing certificate digest allowlist, App Attest team id and bundle id, App Attest root CA, develop environment switch | Deployment config of #205. The root CA is Apple's public certificate; the switch is off in production |
-| `IllegalIntentWeight`, `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `UnownedEquipWeight` (launch default 5), `PromoLockSignalWeight` (launch default 5, `docs/economy.md` 8), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight` (launch default 10), `AutomationWeight` | Risk score weight of each signal |
+| `IllegalIntentWeight` (no launch value; `anticheat` admin domain, 0 until the owner decides), `IntegrityFailureWeight` (launch default 20), `UnknownBuildWeight`, `HookSignalWeight`, `DeviceRiskWeight` (launch default 5), `MacFailureWeight` (launch default 5), `UnownedEquipWeight` (launch default 5), `PromoLockSignalWeight` (launch default 5, `docs/economy.md` 8), `ReplayRejectWeight` (launch default 5), `ClockSkewWeight` (launch default 1), `FakeReceiptWeight` (launch default 20), `RefundWeight` (launch default 3), `ImpossibleBalanceWeight`, `CollusionWeight` (launch default 10), `AutomationWeight` | Risk score weight of each signal |
 | `ClockSkewToleranceSeconds` | How far the device clock may be from server time before a `clock_skew` signal (launch default 300) |
 | `HD_RATE_IP_PER_MINUTE`, `HD_RATE_IP_BURST`, `HD_RATE_ACCOUNT_PER_MINUTE`, `HD_RATE_ACCOUNT_BURST`, `HD_RATE_SIGNIN_PER_MINUTE`, `HD_RATE_SIGNIN_BURST`, `HD_RATE_SPEND_PER_MINUTE`, `HD_RATE_SPEND_BURST` | Refill per minute and bucket size of the NT-12 limits. Launch: IP 60 and 20, account 30 and 10, sign-in 5 and 5, spend 5 and 5 |
 | `HD_READ_TIMEOUT`, `HD_IDLE_TIMEOUT` | Slow client cut-offs of NT-12. Launch: 15s and 60s |

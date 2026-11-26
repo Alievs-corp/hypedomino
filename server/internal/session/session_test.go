@@ -643,6 +643,36 @@ func TestAFrameFromAnEarlierConnectionIsCountedForTheAccount(t *testing.T) {
 	}
 }
 
+type illegalLog struct {
+	mu   sync.Mutex
+	seen []string
+}
+
+func (l *illegalLog) Observe(account string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.seen = append(l.seen, account)
+}
+
+func TestAnIntentTheRulesRefuseIsCountedForTheAccount(t *testing.T) {
+	tab := newTable(t, rules.Mode1v1)
+	illegal := &illegalLog{}
+	tab.manager.ObserveIllegalIntents(illegal)
+	_, waiting := tab.firstToAct()
+	waiting.intent(&pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}})
+	for frame := waiting.read(); frame.GetError() == nil; frame = waiting.read() {
+	}
+	account := "account-X"
+	if waiting.seat == pb.Seat_SEAT_Y {
+		account = "account-Y"
+	}
+	illegal.mu.Lock()
+	defer illegal.mu.Unlock()
+	if len(illegal.seen) != 1 || illegal.seen[0] != account {
+		t.Fatalf("observed illegal intents %v, want one for %s", illegal.seen, account)
+	}
+}
+
 type integrityLog struct {
 	mu      sync.Mutex
 	allow   bool
