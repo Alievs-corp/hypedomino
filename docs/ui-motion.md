@@ -365,6 +365,11 @@ The motion of `tilePlace` (section 7) for every placement, the local player's an
 - The time the last placement settles is kept, so the hand-end banners (Concurrency) can start after it.
 - The effect level changes only the pool size here; timing never depends on the level (`docs/art-direction.md` section 6). A level change lands every moving tile first.
 - The update runs inside the `Effect.tilePlace` profiler marker (section 7, Measurement).
+- A tile travels from the seat box of the seat that placed it, the one whose `hand_size` shrank in the view, upright, to its slot and board angle. Every tile of the set has its own board image, so a tile keeps its image while the chain grows on either side.
+- The board snaps, with no travel and no sound, on the first view of a connection, on a new hand and when a tile left the board; a tile still moving lands first. A placement whose seat is not known shows on its slot at once.
+- Each view lays the chain out again, so a tile still travelling or waiting keeps its timing and ends on its new slot.
+- Until the travelling shadow level is decided (`docs/tiles.md` section 6), a tile's shadow moves with it at the resting `elevation.e1` offset.
+- The moment a tile's settle ends (its travel, with reduce motion) is when `tile_place` plays (`docs/sound.md` 6.1).
 
 ### Haptics
 

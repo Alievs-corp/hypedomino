@@ -114,6 +114,7 @@ type Options struct {
 	Strings   func() Strings
 	Cosmetics func() *pb.CosmeticsManifest
 	Analytics func() *pb.AnalyticsConfig
+	Rarity    func() *pb.RarityTableConfig
 	Admission func() Admission
 	Moves     MoveObserver
 }

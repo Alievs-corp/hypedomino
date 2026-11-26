@@ -334,6 +334,9 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	lobby := frame.GetLobbyIntent()
 	intent, ok := DecodeIntent(frame)
 	if !ok && loading == nil && emoji == nil && quick == nil && join == nil && leave == nil && lobby == nil {
+		if frame.GetPlaceTileIntent() != nil {
+			c.countIllegalIntent()
+		}
 		return c.Send(ErrorFrame(pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT, sequence, c.session.Acked())) == nil
 	}
 	if !c.bucket.take(c.options.Clock.Now()) {
@@ -365,6 +368,12 @@ func (c *Conn) dispatch(frame *pb.Envelope) bool {
 	}
 	c.session.Intent(sequence, intent)
 	return true
+}
+
+func (c *Conn) countIllegalIntent() {
+	if counter, ok := c.session.(IllegalIntentCounter); ok {
+		counter.IllegalIntent()
+	}
 }
 
 func DecodeIntent(frame *pb.Envelope) (replay.Intent, bool) {

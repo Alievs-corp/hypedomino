@@ -1,5 +1,6 @@
 using System;
 using HypeDomino.UI.Tokens;
+using UnityEngine;
 
 namespace HypeDomino.UI.Motion
 {
@@ -46,6 +47,16 @@ namespace HypeDomino.UI.Motion
                 if (nowMs >= tween.EndMs) RemoveAt(at);
                 else at++;
             }
+        }
+
+        public bool Retarget<TSink>(int target, TweenChannel channel, Vector3 to, float nowMs, ref TSink sink) where TSink : ITweenSink
+        {
+            var at = IndexOf(target, channel);
+            if (at < 0) return false;
+            var old = tweens[at];
+            tweens[at] = new Tween(old.Target, old.Channel, old.From, to, old.StartMs, old.DurationMs, old.Curve, old.Cosmetic);
+            sink.Apply(target, channel, tweens[at].ValueAt(nowMs));
+            return true;
         }
 
         public void FinishAll<TSink>(ref TSink sink) where TSink : ITweenSink

@@ -333,7 +333,7 @@ Release manager owns the list and records its evidence in the release issue; it 
 | ST-16 | Declarations of section 7; the in-game help view cannot browse outside our FAQ pages (AR-13) | Release manager, Client lead | Console screenshots, device test |
 | ST-17 | In-app products created with the ids of `docs/economy.md` 7 and matching the admin shop; country prices pushed from the published `store_prices` table (or set from its CSV export as the fallback) per `docs/economy.md` 7.4, Azerbaijan and Turkey among them; product names and descriptions localized in four languages | Live-ops lead | GN-22 evidence |
 | ST-18 | Category and tags set (SF-16, SF-17) | Release manager | Console screenshot |
-| ST-19 | Countries: every store country except Russia, or the soft launch subset of #196 | Release manager | Console screenshot; `docs/privacy.md` 9.3 |
+| ST-19 | Countries: every store country except Russia, or the soft launch subset of #196 ([`docs/soft-launch.md`](soft-launch.md) section 2) | Release manager | Console screenshot; `docs/privacy.md` 9.3 |
 | ST-20 | Review notes entered (DC-3); `CasualBotFillSeconds` above 0 in the production config | Release manager, Live-ops lead | Notes text, config version |
 | ST-21 | Release held for manual release (App Store) and managed publishing (Play) | Release manager | `docs/launch-runbook.md` 4, T-7d |
 | ST-22 | If the Play account is a personal account, the closed test that Play requires before production access is done (#193) | Release manager | Console status |

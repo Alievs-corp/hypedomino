@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/anticheat"
 	"github.com/Alievs-corp/hypedomino/server/internal/bot"
 	"github.com/Alievs-corp/hypedomino/server/internal/botclient"
 	"github.com/Alievs-corp/hypedomino/server/internal/gateway"
@@ -495,8 +496,21 @@ func withUnknownField(data []byte) []byte {
 	return protowire.AppendVarint(data, 999_999)
 }
 
+func (h *redTeam) countIllegalIntents(t *testing.T) {
+	t.Helper()
+	publish(t, h.pool, anticheat.Domain, []byte(`{"IllegalIntentThreshold": 3, "IllegalIntentWindowMinutes": 60, "IllegalIntentWeight": 1}`))
+	deadline := time.Now().Add(10 * time.Second)
+	for !strings.Contains(h.logs.String(), `"msg":"config snapshot applied","domain":"anticheat"`) {
+		if time.Now().After(deadline) {
+			t.Fatalf("the server did not load the anti-cheat config:\n%s", h.logs.String())
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
 func TestRedTeamMatchRefusesIllegalIntentsAndReplays(t *testing.T) {
 	h := startRedTeam(t)
+	h.countIllegalIntents(t)
 	r, seated := h.seatedPair(t)
 	mover, idle := seated[0], seated[1]
 	if idle.view.GetCurrent() == idle.view.GetSeat() {
@@ -550,6 +564,7 @@ func TestRedTeamMatchRefusesIllegalIntentsAndReplays(t *testing.T) {
 	if record := <-records; len(record.Intents) != 1 {
 		t.Fatalf("the match recorded %d intents after one legal opening, want 1: %+v", len(record.Intents), record.Intents)
 	}
+	h.awaitSignal(t, mover.attacker, "illegal_intent")
 }
 
 func fitting(tiles []*pb.Tile, value uint32) *pb.Tile {

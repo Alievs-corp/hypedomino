@@ -11,6 +11,7 @@ using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
 using HypeDomino.UI.Motion;
+using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using NUnit.Framework;
 using TMPro;
@@ -55,6 +56,7 @@ namespace HypeDomino.Tests.PlayMode
 
         GameObject root;
         MatchLayoutView layout;
+        BoardTilesView boardTiles;
         MatchHudViewTests.HudParts hud;
         MatchSceneViews views;
         SeatEmojiLayer emojiLayer;
@@ -78,6 +80,7 @@ namespace HypeDomino.Tests.PlayMode
             var tiles = NewChild<BoardTilesView>("Board");
             hud = MatchHudViewTests.NewHud(root.transform, 1);
             tiles.Configure(hud.Faces, Array.Empty<Image>(), null, Array.Empty<Image>());
+            boardTiles = tiles;
             var seats = new AvatarView[TableSides.Count];
             for (var side = 0; side < seats.Length; side++)
             {
@@ -253,6 +256,30 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsTrue(hud.Tiles[0].gameObject.activeSelf);
             Assert.AreSame(hud.Faces.Face(new Domino(2, 5)), hud.Tiles[0].image.sprite);
+        }
+
+        [TestCase(DeviceTier.Low, TokenEffectLevel.LowMaxTweens)]
+        [TestCase(DeviceTier.Mid, TokenEffectLevel.MediumMaxTweens)]
+        public void AttachingGivesTheBoardATilePlaceLayerAtTheEffectLevel(DeviceTier tier, int capacity)
+        {
+            views.Attach(host, connection, manifest, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(tier, null, 0, false), new MotionPreference(null, false));
+
+            Assert.IsNotNull(views.TilePlacing);
+            Assert.AreSame(boardTiles.GetComponent<TilePlaceLayer>(), views.TilePlacing);
+            Assert.AreEqual(capacity, views.TilePlacing.Capacity);
+        }
+
+        [Test]
+        public void ReattachingKeepsOneTilePlaceLayer()
+        {
+            Attach();
+            var first = views.TilePlacing;
+
+            views.Detach();
+            Attach();
+
+            Assert.AreSame(first, views.TilePlacing);
+            Assert.AreEqual(1, boardTiles.GetComponents<TilePlaceLayer>().Length);
         }
 
         [Test]

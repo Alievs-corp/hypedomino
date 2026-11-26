@@ -32,6 +32,8 @@ namespace HypeDomino.Game.Match
         [SerializeField] Sprite builtInAvatar;
         [SerializeField] Sprite builtInFrame;
         [SerializeField] ScorePopupView scorePopups;
+        [SerializeField] EffectPlayer effectPlayer;
+        [SerializeField] RectTransform banner;
 
         MatchHost host;
         CosmeticStage stage;
@@ -39,6 +41,7 @@ namespace HypeDomino.Game.Match
         EffectSettingsLink settings;
         EffectSettingsLink popupSettings;
         MatchTable matchTable;
+        TilePlaceLayer tilePlacing;
         LoadingScreen loading;
         ActiveCosmeticManifest cosmetics;
         GameStrings texts;
@@ -52,10 +55,11 @@ namespace HypeDomino.Game.Match
         public ILoadingScreen LoadingScreen => loading;
         public CosmeticArtCache<Sprite> Stills => stage?.Stills;
         public MatchEmoji Emoji { get; private set; }
+        public TilePlaceLayer TilePlacing => tilePlacing;
 
         public void Configure(MatchLayoutView layoutView, ScorePanelView scorePanel, BoardTilesView boardTiles, AvatarView[] seatAvatars, TableView tableView,
             LoadingScreenView loadingView, MatchHudView hudView, SeatEmojiLayer seatEmoji, EmojiPopup popup, TextAsset rarityTable, Sprite avatar, Sprite frame,
-            ScorePopupView popups = null)
+            ScorePopupView popups = null, EffectPlayer player = null, RectTransform bannerAnchor = null)
         {
             Detach();
             layout = layoutView;
@@ -71,6 +75,9 @@ namespace HypeDomino.Game.Match
             builtInAvatar = avatar;
             builtInFrame = frame;
             scorePopups = popups;
+            effectPlayer = player;
+            banner = bannerAnchor;
+            tilePlacing = null;
         }
 
         public void Attach(MatchHost matchHost, Connection connection, ActiveCosmeticManifest manifest, GameStrings strings,
@@ -79,14 +86,16 @@ namespace HypeDomino.Game.Match
             if (matchHost == null) throw new ArgumentNullException(nameof(matchHost));
             Detach();
             BuildEmojiLayer();
+            BuildTilePlacing();
             cosmetics = manifest;
             texts = strings;
             stage = new CosmeticStage(stills, loops, RarityTable.Parse(rarities.text), builtInAvatar, builtInFrame, graphics.Effects, motion.ReduceMotion);
-            matchTable = new MatchTable(new SeatAvatars(stage, seats), new TableBackground(stage, table), manifest, score, tiles, layout, NoTileSizeCap);
+            var board = new MatchBoard(tiles, tilePlacing, SeatOrigins(), NewEffects(), NowMs, AudioBoot.PlayMatch);
+            matchTable = new MatchTable(new SeatAvatars(stage, seats), new TableBackground(stage, table), manifest, score, board, layout, NoTileSizeCap);
             loading = new LoadingScreen(loadingScreen, stage, manifest, strings);
             BuildEmoji();
             effects = new CosmeticEffectsLink(stage, graphics, motion, RefreshEffects);
-            settings = new EffectSettingsLink(graphics, motion, hud, emojiLayer);
+            settings = new EffectSettingsLink(graphics, motion, EffectTargets());
             popupSettings = scorePopups != null ? new EffectSettingsLink(graphics, motion, scorePopups) : null;
             host = matchHost;
             hud.Bind(host, connection, strings);
@@ -98,6 +107,7 @@ namespace HypeDomino.Game.Match
             if (host == null) return;
             host.Detach(this);
             hud.Unbind();
+            matchTable.Dispose();
             effects.Dispose();
             settings.Dispose();
             popupSettings?.Dispose();
@@ -142,6 +152,39 @@ namespace HypeDomino.Game.Match
             emojiLayerBuilt = true;
         }
 
+        void BuildTilePlacing()
+        {
+            if (tilePlacing != null) return;
+            if (!tiles.TryGetComponent(out tilePlacing)) tilePlacing = tiles.gameObject.AddComponent<TilePlaceLayer>();
+            var moved = new Transform[tiles.Capacity];
+            var shadows = new Transform[tiles.Capacity];
+            for (var slot = 0; slot < moved.Length; slot++)
+            {
+                moved[slot] = tiles.TileAt(slot);
+                shadows[slot] = tiles.ShadowAt(slot);
+            }
+            tilePlacing.Build(moved, shadows);
+            if (effectPlayer != null) tilePlacing.Attach(effectPlayer);
+        }
+
+        Transform[] SeatOrigins()
+        {
+            var origins = new Transform[seats.Length];
+            for (var side = 0; side < seats.Length; side++) origins[side] = seats[side] != null ? seats[side].transform : null;
+            return origins;
+        }
+
+        MatchEffects NewEffects()
+        {
+            if (effectPlayer == null || banner == null || scorePopups == null) return null;
+            return new MatchEffects(effectPlayer, tilePlacing, (RectTransform)tiles.transform, banner, score.Mine.Meter, score.Theirs.Meter, scorePopups);
+        }
+
+        IEffectSettingsTarget[] EffectTargets() =>
+            effectPlayer != null
+                ? new IEffectSettingsTarget[] { hud, emojiLayer, tilePlacing, effectPlayer }
+                : new IEffectSettingsTarget[] { hud, emojiLayer, tilePlacing };
+
         void BuildEmoji()
         {
             wheelSlots = Math.Max(0, worn?.emoji_slots ?? 0);
@@ -158,5 +201,7 @@ namespace HypeDomino.Game.Match
         void ShowEmoji(TableSide side, LoopArt art) => emojiLayer.Show((int)side, art, Time.unscaledTime);
 
         static long ClockMs() => (long)(Time.realtimeSinceStartupAsDouble * 1000d);
+
+        static float NowMs() => Time.unscaledTime * 1000f;
     }
 }

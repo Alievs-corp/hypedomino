@@ -81,6 +81,7 @@ namespace HypeDomino.Game
             Connection = new Connection(OpenSocket, NextHello, () => Time.realtimeSinceStartupAsDouble, new Random());
             var session = Connection.Session;
             session.HelloReceived += startProof.Read;
+            session.HelloReceived += new RarityDelivery(ContentBoot.Rarities).Read;
             DeviceRiskProbe.Collect(session.DeviceRiskSignals);
             session.CollectHookSignals = DeviceRiskProbe.CollectHooks;
             AppBoot.Listen(session, AppBoot.Flow, ContentBoot.Catalog, LanguageBoot.Strings, LanguageBoot.Bundles, ContentBoot.CosmeticsUpdater, Haptics.Play, AudioBoot.PlayMatch);

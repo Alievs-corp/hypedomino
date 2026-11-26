@@ -7,6 +7,7 @@ export type Screen = { href: string; labelKey: MessageKey; object: string | null
 export const screens: readonly Screen[] = [
   { href: "/cosmetics", labelKey: "nav.cosmetics", object: "cosmetic_items" },
   { href: "/assets", labelKey: "nav.assets", object: "assets" },
+  { href: "/rarity", labelKey: "nav.rarity", object: "rarity_table" },
   { href: "/rewards", labelKey: "nav.rewards", object: "reward_bundles" },
   { href: "/shop", labelKey: "nav.shop", object: "shop_offers" },
   { href: "/store-prices", labelKey: "nav.store_prices", object: "store_products" },
@@ -25,6 +26,7 @@ export const screens: readonly Screen[] = [
   { href: "/config/matchmaking", labelKey: "nav.matchmaking", object: "game_config" },
   { href: "/config/penalties", labelKey: "nav.penalties", object: "game_config" },
   { href: "/config/liveops", labelKey: "nav.liveops", object: "game_config" },
+  { href: "/config/anticheat", labelKey: "nav.anticheat", object: "anti_cheat_config" },
   { href: "/calendar", labelKey: "nav.calendar", object: "live_events" },
   { href: "/strings", labelKey: "nav.strings", object: "game_strings" },
   { href: "/analytics", labelKey: "nav.analytics", object: "dashboards" },
@@ -32,6 +34,7 @@ export const screens: readonly Screen[] = [
   { href: "/quick-messages", labelKey: "nav.quick_messages", object: "game_strings" },
   { href: "/moderation", labelKey: "nav.moderation", object: "moderation_config" },
   { href: "/live-controls", labelKey: "nav.live", object: "live_controls" },
+  { href: "/content-gate", labelKey: "nav.content_gate", object: "content_gate_reports" },
   { href: "/approvals", labelKey: "nav.approvals", object: null },
   { href: "/audit", labelKey: "nav.audit", object: "audit_log" },
   { href: "/accounts", labelKey: "nav.accounts", object: "admin_accounts" },
