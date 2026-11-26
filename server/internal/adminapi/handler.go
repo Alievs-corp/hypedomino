@@ -135,6 +135,10 @@ func New(config Config, verifier Verifier, buckets ratelimit.Buckets, pool *pgxp
 	h.mux.HandleFunc("GET /admin/config/version", h.allowed(rbac.Dashboards, rbac.View, h.activeConfigVersion))
 	h.mux.HandleFunc("GET /admin/economy/monitors/compare", h.allowed(rbac.Dashboards, rbac.View, h.compareEconomyMonitors))
 	h.mux.HandleFunc("GET /admin/analytics/kpis", h.allowed(rbac.Dashboards, rbac.View, h.kpis))
+	h.mux.HandleFunc("GET /admin/content-gate/reports", h.allowed(rbac.ContentGateReports, rbac.View, h.contentGateReports))
+	h.mux.HandleFunc("POST /admin/content-gate/reports", h.allowed(rbac.ContentGateReports, rbac.Create, h.runContentGate))
+	h.mux.HandleFunc("GET /admin/content-gate/reports/{id}", h.allowed(rbac.ContentGateReports, rbac.View, h.contentGateReport))
+	h.mux.HandleFunc("GET /admin/content-gate/reports/{id}/export", h.allowed(rbac.ContentGateReports, rbac.View, h.exportContentGateReport))
 	h.mux.HandleFunc("GET /admin/audit", h.allowed(rbac.AuditLog, rbac.View, h.searchAudit))
 	h.mux.HandleFunc("POST /admin/audit/export", h.allowed(rbac.AuditLog, rbac.ExportAudit, h.exportAudit))
 	h.mux.HandleFunc("GET /admin/accounts", h.allowed(rbac.AdminAccounts, rbac.View, h.listAccounts))
@@ -600,7 +604,7 @@ func classify(err error) (int, string) {
 		return http.StatusConflict, "asset_file_missing"
 	case errors.Is(err, errAssetChecked):
 		return http.StatusConflict, "asset_already_checked"
-	case errors.Is(err, errAssetUnknown):
+	case errors.Is(err, errAssetUnknown), errors.Is(err, errReportUnknown):
 		return http.StatusNotFound, "not_found"
 	case errors.Is(err, errAssetSlot):
 		return http.StatusBadRequest, "asset_slot_unsupported"

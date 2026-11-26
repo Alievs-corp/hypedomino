@@ -125,7 +125,7 @@ The compensation template's bundle is filled at cloning, so PT-2 and PT-3 check 
 
 ## 4. Content gate report
 
-Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from published data only (AP-2); the browser shows the result.
+Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from published data only (AP-2); the browser shows the result. Built in #198: `server/internal/contentgate` runs the checks, the admin API serves them at `/admin/content-gate/reports` (`docs/admin.md` 9.1) and the panel at `/content-gate`. What it cannot check yet is listed in 4.5.
 
 ### 4.1 Inputs
 
@@ -152,14 +152,15 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 | CG-12 | Promo templates | PT-1 to PT-3 hold for every template counted by PT-1 |
 | CG-13 | Thresholds | No section 5 key is below its repo default |
 
-- Each check is `pass` or `fail` and lists every failing object with the rule id it broke. No check is skipped: missing data is a `fail`.
-- Information only, never pass or fail: counts per category and `rarityId` (2.1), `live` items not ready per category, drafts of each category.
+- Each check is `pass`, `fail` or `unchecked` and lists every failing object with the rule id it broke. No check is skipped: missing data is a `fail`. A check is `unchecked` when nothing it can evaluate fails but one of its rules needs data the server does not hold yet (4.5); it lists those rules with the reason, and it is never a `pass`.
+- A count of MC-2 to MC-7 counts the items that pass every rule the server can evaluate. While a rule is unchecked that count is an upper bound, so a count below its minimum is a sure `fail` and a count at or above it leaves the check `unchecked`.
+- Information only, never pass or fail: counts per category and `rarityId` (2.1) and `live` items not ready per category. Drafts per category are not shown: published snapshots hold no drafts.
 
 ### 4.3 Verdict and record
 
-- The verdict is `green` when every check passes, otherwise `red`.
-- A run stores an immutable report record: id, environment, `launchAt`, run time (server UTC), runner, every version of 4.1, every threshold with its value, repo default and the `configVersion` that set it, every check with its result and failures, the verdict. Records are never edited or deleted; a JSON export is attached to the release issue.
-- A report is stale once any version of 4.1 it read is no longer active. The screen marks it stale; a stale report is not evidence.
+- The verdict is `green` when every check passes, otherwise `red`. An `unchecked` check makes it `red`.
+- A run stores an immutable report record: id, environment, `launchAt`, run time (server UTC), runner (admin account id), every version of 4.1, every threshold with its value, repo default and the `configVersion` that set it, every check with its result, failures and unchecked rules, the verdict. Records are never edited or deleted (table `content_gate_reports`, migration `00061`, a trigger refuses every `update`, `delete` and `truncate`); a JSON export is attached to the release issue.
+- A report is stale once any version of 4.1 it read is no longer active. The screen marks it stale; a stale report is not evidence. The record keeps the latest snapshot version of every domain it read (`cosmetics`, `medals`, `missions`, `pass`, `rating`, `shop`, `localization`, `liveops`); a publish or rollback of any of them makes it stale. Promo templates, ranked seasons and asset checks are records without a version, so a change to them does not mark a report stale; run it again after such a change.
 - GN-3 evidence: a `green`, non-stale `production` report run after the config freeze starts (T-3d) and still not stale at the go/no-go meeting. A content or config publish after the run makes it stale, so the report is run again.
 
 ### 4.4 Access, override and audit
@@ -168,9 +169,26 @@ Admin screen A-41 (`docs/admin.md` section 10). Computed by the admin API from p
 |---|---|
 | Run | `super_admin`, `content`, `live_ops` (`docs/admin.md` 2.3). Running reads only and needs no approval |
 | View | Every role. The report holds no personal data |
-| Audit | Each run is an audit entry: action `create`, object `content_gate_report` with the report id, the `configVersion` read (`docs/admin.md` section 7) |
+| Audit | Each run is an audit entry: action `create`, object `content_gate_reports` with the report id, the `configVersion` read, and the environment, `launchAt` and verdict as `after` (`docs/admin.md` section 7). Viewing and exporting write no entry |
 | Thresholds | Changed only by a `liveops` config publish (`docs/admin.md` section 3), which is audited and, during the config freeze, approved by the release manager. Lowering one below its repo default is allowed but fails CG-13, so editing a number never turns the report green; the repo default changes by PR to this document |
 | Override | No admin action marks a check passed or the verdict `green`. A `red` report is accepted only by a product owner waiver: a comment on #198 naming the report id and each waived check id (`docs/roadmap.md` section 4, `docs/launch-runbook.md` section 3). The release manager links the report and the waiver at GN-3 |
+
+### 4.5 Not checkable yet
+
+Rules whose data the server does not hold yet. The report lists them under each check they affect as `unchecked` with the reason below, so no check that depends on them can pass. Each row leaves the report once its data exists.
+
+| Rule | Missing | Checks |
+|---|---|---|
+| CR-4, MR-4 (catalog part), V-17 | The admin API does not read the Addressables catalog active in production, so no address can be resolved in it; the active catalog version (`HD_CATALOG_VERSION`) is not given to the admin API either and is not recorded | CG-2 to CG-8, and CG-9 to CG-12 where a bundle grants a cosmetic or medal |
+| CR-5 (animation part) | Only the static slot has an upload with server checks (`docs/admin.md` 5.2); animation and table layer files have none, so only the static upload is checked | Same as CR-4 |
+| CR-2 (V-15 source to record) | No validator resolves each source `ref` to an existing record. The other direction, every granting record listed in the item's `sources`, is checked by the publish validators (missions, pass, ranking, shop) | Same as CR-4 |
+| MR-3 (event part) | Live events are not modelled, so an event mission's event is not checked for being published; the mission itself is checked to be `live` | CG-7, CG-8, and bundles granting medals |
+| Medal cultural review | The medal definition has no cultural review field (section 6) | CG-7, CG-8, and bundles granting medals |
+| PS-4 | Store products carry no season binding and no store status | CG-10 |
+| PS-5 | A pass season has no `nameKey` | CG-10 |
+| PT-1 (roles) | A template records no launch role, so only that at least three templates exist is checked, not that they are the welcome, creator and compensation templates. A template without a bundle is read as the compensation shape and its PT-2 and PT-3 bundle checks wait for the clone | CG-12 |
+
+Without `HD_PROMO_KEY` the admin API cannot read promo templates, so CG-12 fails with PT-1.
 
 ## 5. Config
 
@@ -191,9 +209,9 @@ Used here and defined elsewhere: `DailyMissionSlots`, `WeeklyMissionSlots`, `Dai
 
 ## 6. Implementation and open items
 
-- No sub-issue of Epic 12 (#133) owns the report yet; it needs one. It reuses the publish validators of `docs/admin.md` 3.3 rather than a second copy of the rules, and builds on #134 (roles, audit), #135 (assets, catalog version), #136 and #137 (catalogue), #140, #141, #142, #143, #145.
-- Its tests: for each CG check a seeded production-like snapshot that fails it by one missing condition and one that passes; a lowered threshold gives `red`; a publish after a run makes the run stale.
-- The medal definition has no cultural review field, unlike cosmetics (`docs/cosmetics.md` 3), while `docs/localization.md` 6.1 requires the review for every asset. MR rules cannot check it until #141 adds the field.
+- Built in #198. `contentgate.Run` re-runs the publish validators of `docs/admin.md` 3.3 on the published snapshots rather than a second copy of the rules: `cosmetics.ParseManifest` and `cosmetics.ValidateManifest` per item, `medal.Parse`, `mission.Parse`, `pass.Parse`, `rating.Parse`, `shop.Parse` and the `CheckSources` of missions, pass, ranking and shop. It reads the static uploads that passed their checks (#135), the active string bundles of the `localization` domain, the ranked seasons and the promo templates. It builds on #134 (roles, audit), #136 and #137 (catalogue), #140, #141, #142, #143, #145.
+- Its tests: for each CG check a seeded production-like catalogue that fails it by one missing condition, and one complete catalogue that fails no check (`server/internal/contentgate`); a lowered threshold gives `red`; a publish after a run makes the run stale; run, view, history, export, audit and the role matrix through the admin API (`server/internal/adminapi`).
+- The medal definition has no cultural review field, unlike cosmetics (`docs/cosmetics.md` 3), while `docs/localization.md` 6.1 requires the review for every asset. MR rules cannot check it until #141 adds the field; the report lists it as unchecked (4.5).
 - #198 is closed when a `green` production report (or a waived `red` one) is linked at GN-3.
 
 ## 7. Owner decisions
