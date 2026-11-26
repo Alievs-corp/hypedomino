@@ -25,8 +25,9 @@ namespace HypeDomino.Game.Screens
             var screen = host.Screen(nameof(AppState.Maintenance), out var column);
             var panel = PlainUi.Column(column);
             PlainUi.Text(panel.transform, TokenTextStyle.Body, MaintenanceMessageKey, host.Strings);
+            var ends = PlainUi.Text(panel.transform, TokenTextStyle.Body);
             var retry = PlainUi.Button(panel.transform, RetryKey, host.Strings);
-            screen.gameObject.AddComponent<MaintenanceScreenView>().Configure(panel, retry);
+            screen.gameObject.AddComponent<MaintenanceScreenView>().Configure(panel, ends, retry);
             return screen;
         }
     }
