@@ -70,9 +70,8 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 		mux:    http.NewServeMux(),
 		addr:   make(chan string, 1),
 	}
-	a.rooms.ObserveMoves(a.moves)
 	a.rooms.LimitEmoji(config.Emoji)
-	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized, Cosmetics: a.announcedCosmetics, Analytics: a.announcedAnalytics, Rarity: a.announcedRarity, Privacy: a.announcedPrivacy, Admission: a.admitted})
+	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized, Cosmetics: a.announcedCosmetics, Analytics: a.announcedAnalytics, Rarity: a.announcedRarity, Privacy: a.announcedPrivacy, Admission: a.admitted, Moves: a.moves})
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
 	a.mux.HandleFunc("GET /ws", a.ws)

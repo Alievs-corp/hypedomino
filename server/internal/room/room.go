@@ -57,13 +57,14 @@ type Clock interface {
 }
 
 type Message struct {
-	View     View
-	Rejected bool
-	Illegal  bool
-	Sequence uint64
-	Reason   error
-	Emoji    *Emoji
-	Quick    *QuickMessage
+	View         View
+	Rejected     bool
+	Illegal      bool
+	Sequence     uint64
+	Reason       error
+	Emoji        *Emoji
+	Quick        *QuickMessage
+	MoveReceived time.Time
 }
 
 type QuickMessage struct {
@@ -88,10 +89,6 @@ func DefaultEmojiLimit() EmojiLimit {
 
 type Sink interface {
 	Deliver(Message)
-}
-
-type MoveObserver interface {
-	Observe(elapsed time.Duration)
 }
 
 type Player struct {
@@ -119,7 +116,6 @@ type Options struct {
 	Clock          Clock
 	Roster         []Player
 	ReconnectGrace time.Duration
-	Moves          MoveObserver
 	Emoji          EmojiLimit
 	QuickMessages  func(key string) bool
 }
@@ -177,6 +173,8 @@ type Room struct {
 	barred   [6]bool
 	finished chan struct{}
 	ended    bool
+	mover    rules.Seat
+	moveAt   time.Time
 }
 
 func New(options Options) *Room {
@@ -403,10 +401,9 @@ func (r *Room) intent(seat rules.Seat, sequence uint64, intent replay.Intent, re
 	}
 	r.seats[seat].acked = sequence
 	r.presence.Move(seat)
+	r.mover, r.moveAt = seat, received
 	r.settle()
-	if r.options.Moves != nil {
-		r.options.Moves.Observe(r.options.Clock.Now().Sub(received))
-	}
+	r.moveAt = time.Time{}
 }
 
 func (r *Room) emoji(seat rules.Seat, item string, received time.Time) {
@@ -560,9 +557,18 @@ func (r *Room) reject(seat rules.Seat, sequence uint64, reason error, illegal bo
 func (r *Room) broadcast() {
 	for _, seat := range r.options.Mode.Seats() {
 		if sink := r.seats[seat].sink; sink != nil {
-			sink.Deliver(Message{View: r.view(seat)})
+			sink.Deliver(Message{View: r.view(seat), MoveReceived: r.moveReceivedBy(seat)})
 		}
 	}
+}
+
+func (r *Room) moveReceivedBy(seat rules.Seat) time.Time {
+	if seat != r.mover || r.moveAt.IsZero() {
+		return time.Time{}
+	}
+	at := r.moveAt
+	r.moveAt = time.Time{}
+	return at
 }
 
 func (r *Room) open() {

@@ -17,6 +17,7 @@ import (
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	"github.com/Alievs-corp/hypedomino/server/internal/panics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/replay"
@@ -38,6 +39,23 @@ func (c *fakeClock) advance(d time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.now = c.now.Add(d)
+}
+
+type recordedMoves struct {
+	mu      sync.Mutex
+	elapsed []time.Duration
+}
+
+func (m *recordedMoves) Observe(elapsed time.Duration) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.elapsed = append(m.elapsed, elapsed)
+}
+
+func (m *recordedMoves) all() []time.Duration {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]time.Duration(nil), m.elapsed...)
 }
 
 type received struct {
@@ -169,6 +187,7 @@ type harness struct {
 	t        testing.TB
 	server   *httptest.Server
 	clock    *fakeClock
+	moves    *recordedMoves
 	config   Config
 	mu       sync.Mutex
 	sessions map[string]*recordingSession
@@ -176,8 +195,8 @@ type harness struct {
 
 func newHarness(t testing.TB, config Config) *harness {
 	t.Helper()
-	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, config: config, sessions: map[string]*recordingSession{}}
-	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics, Rarity: activeRarity, Privacy: activePrivacy})
+	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, moves: &recordedMoves{}, config: config, sessions: map[string]*recordingSession{}}
+	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics, Rarity: activeRarity, Privacy: activePrivacy, Moves: h.moves})
 	h.server = httptest.NewServer(gateway)
 	t.Cleanup(h.server.Close)
 	return h
@@ -839,6 +858,30 @@ func TestAStalledWriteClosesTheConnectionAfterTheWriteTimeout(t *testing.T) {
 	}
 }
 
+func TestAMoveViewIsTimedWhenItsWriteCompletes(t *testing.T) {
+	h := newHarness(t, testConfig())
+	c := h.dial()
+	c.handshake("ok-timed")
+	conn := h.session("ok-timed").conn
+	if err := conn.Send(&pb.Envelope{Payload: &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{ItemId: "emoji"}}}); err != nil {
+		t.Fatal(err)
+	}
+	c.recv()
+	if err := conn.send(outgoing{frame: &pb.Envelope{Payload: &pb.Envelope_MatchView{MatchView: &pb.MatchView{}}}, moveReceived: h.clock.Now().Add(-40 * time.Millisecond)}); err != nil {
+		t.Fatal(err)
+	}
+	if c.recv().GetMatchView() == nil {
+		t.Fatal("the move view did not arrive")
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for len(h.moves.all()) == 0 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if got := h.moves.all(); len(got) != 1 || got[0] != 40*time.Millisecond {
+		t.Fatalf("observed %v, want one 40ms sample for the move view and none for the untimed frame", got)
+	}
+}
+
 func BenchmarkSendToAReadingClient(b *testing.B) {
 	h := newHarness(b, testConfig())
 	c := h.dial()
@@ -847,6 +890,24 @@ func BenchmarkSendToAReadingClient(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		if err := conn.Send(&pb.Envelope{AckedSequence: 1, Payload: &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{ItemId: "emoji"}}}); err != nil {
+			b.Fatal(err)
+		}
+		if _, _, err := c.socket.Read(c.ctx); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSendAMoveViewToAReadingClient(b *testing.B) {
+	h := newHarness(b, testConfig())
+	c := h.dial()
+	c.handshake("ok-bench")
+	conn := h.session("ok-bench").conn
+	conn.options.Moves = metrics.NewHistogram("move_roundtrip_seconds", "bench", []time.Duration{time.Millisecond, time.Second})
+	received := h.clock.Now()
+	b.ReportAllocs()
+	for b.Loop() {
+		if err := conn.send(outgoing{frame: &pb.Envelope{AckedSequence: 1, Payload: &pb.Envelope_EmojiShown{EmojiShown: &pb.EmojiShown{ItemId: "emoji"}}}, moveReceived: received}); err != nil {
 			b.Fatal(err)
 		}
 		if _, _, err := c.socket.Read(c.ctx); err != nil {

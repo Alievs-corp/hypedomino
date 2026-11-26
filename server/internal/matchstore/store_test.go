@@ -4,15 +4,19 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/partnerfit"
+	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
 )
 
@@ -22,7 +26,7 @@ func TestMain(m *testing.M) {
 
 var start = time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)
 
-func accounts(t *testing.T, pool *pgxpool.Pool, n int) []string {
+func accounts(t testing.TB, pool *pgxpool.Pool, n int) []string {
 	t.Helper()
 	ids := make([]string, 0, n)
 	for i := 0; i < n; i++ {
@@ -103,6 +107,96 @@ func TestBeginWritesTheMatchAndItsParticipantsOnce(t *testing.T) {
 	if err := store.Begin(ctx, bad); !errors.Is(err, matchstore.ErrInvalid) {
 		t.Fatalf("a 2v2 with two participants accepted: %v", err)
 	}
+}
+
+func TestBeginWritesEveryParticipantColumnInOneStatement(t *testing.T) {
+	dsn, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	statements := &statementCounter{}
+	store := matchstore.New(tracedPool(t, dsn, statements))
+	players := accounts(t, pool, 3)
+	id := uuid.NewString()
+	m := started(id, matchstore.KindRanked, players)
+	m.Participants[0].Loadout = profile.Loadout{Avatar: "avatar.fox", Tile: "tile.ivory", Emojis: []string{"emoji.laugh"}}
+	if err := store.Begin(ctx, m); err != nil {
+		t.Fatal(err)
+	}
+	if n := statements.matching("insert into match_participants"); n != 1 {
+		t.Fatalf("%d participant insert statements for %d seats, want 1", n, len(m.Participants))
+	}
+	rows, err := pool.Query(ctx, "select seat, team, account_id::text, bot, loadout from match_participants where match_id = $1 order by seat", id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	seen := 0
+	for rows.Next() {
+		var seat, team int16
+		var account *string
+		var bot bool
+		var loadout profile.Loadout
+		if err := rows.Scan(&seat, &team, &account, &bot, &loadout); err != nil {
+			t.Fatal(err)
+		}
+		want := m.Participants[seen]
+		if rules.Seat(seat) != want.Seat || rules.Team(team) != want.Seat.Team() || bot != want.Bot {
+			t.Fatalf("row %d: seat %d team %d bot %v, want %+v", seen, seat, team, bot, want)
+		}
+		if want.Bot != (account == nil) || (account != nil && *account != want.Account) {
+			t.Fatalf("row %d: account %v, want %q", seen, account, want.Account)
+		}
+		if loadout.Avatar != want.Loadout.Avatar || loadout.Tile != want.Loadout.Tile || len(loadout.Emojis) != len(want.Loadout.Emojis) {
+			t.Fatalf("row %d: loadout %+v, want %+v", seen, loadout, want.Loadout)
+		}
+		seen++
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if seen != len(m.Participants) {
+		t.Fatalf("%d participant rows, want %d", seen, len(m.Participants))
+	}
+}
+
+type statementCounter struct {
+	mu  sync.Mutex
+	sql []string
+}
+
+func (c *statementCounter) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.sql = append(c.sql, data.SQL)
+	return ctx
+}
+
+func (c *statementCounter) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
+
+func (c *statementCounter) matching(prefix string) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	n := 0
+	for _, sql := range c.sql {
+		if strings.HasPrefix(sql, prefix) {
+			n++
+		}
+	}
+	return n
+}
+
+func tracedPool(t testing.TB, dsn string, tracer pgx.QueryTracer) *pgxpool.Pool {
+	t.Helper()
+	config, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.ConnConfig.Tracer = tracer
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	return pool
 }
 
 func TestFinishIsAtomicAndAppliedOnce(t *testing.T) {
@@ -343,5 +437,18 @@ func TestRunningSeesAnUnfinishedMatchUntilItEndsOrGoesStale(t *testing.T) {
 	}
 	if running(players[0], start.Add(-2*time.Hour)) {
 		t.Fatal("a finished match still counts")
+	}
+}
+
+func BenchmarkBeginA2v2Match(b *testing.B) {
+	_, pool := dbtest.Fresh(b)
+	store := matchstore.New(pool)
+	ctx := context.Background()
+	players := accounts(b, pool, 3)
+	b.ReportAllocs()
+	for b.Loop() {
+		if err := store.Begin(ctx, started(uuid.NewString(), matchstore.KindRanked, players)); err != nil {
+			b.Fatal(err)
+		}
 	}
 }

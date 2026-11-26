@@ -74,6 +74,10 @@ type Clock interface {
 
 type systemClock struct{}
 
+type MoveObserver interface {
+	Observe(elapsed time.Duration)
+}
+
 func (systemClock) Now() time.Time { return time.Now() }
 
 type Session interface {
@@ -113,6 +117,7 @@ type Options struct {
 	Privacy   func() *pb.PrivacyVersions
 	Rarity    func() *pb.RarityTableConfig
 	Admission func() Admission
+	Moves     MoveObserver
 }
 
 type Gateway struct {

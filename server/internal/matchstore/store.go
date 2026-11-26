@@ -124,21 +124,45 @@ func (s *Store) Begin(ctx context.Context, m Started) error {
 	if tag.RowsAffected() == 0 {
 		return nil
 	}
-	for _, p := range m.Participants {
-		var account *string
-		if !p.Bot && p.Account != "" {
-			account = &p.Account
-		}
-		loadout, err := json.Marshal(p.Loadout)
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `insert into match_participants (match_id, started_at, seat, team, account_id, bot, loadout)
-			values ($1, $2, $3, $4, $5, $6, $7)`, m.ID, m.StartedAt, int16(p.Seat), int16(p.Seat.Team()), account, p.Bot, loadout); err != nil {
-			return err
-		}
+	rows, err := participantRows(m.Participants)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `insert into match_participants (match_id, started_at, seat, team, account_id, bot, loadout)
+		select $1, $2, p.seat, p.team, p.account_id::uuid, p.bot, p.loadout::jsonb
+		from unnest($3::smallint[], $4::smallint[], $5::text[], $6::boolean[], $7::text[]) as p (seat, team, account_id, bot, loadout)`,
+		m.ID, m.StartedAt, rows.seats, rows.teams, rows.accounts, rows.bots, rows.loadouts); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
+}
+
+type participantColumns struct {
+	seats    []int16
+	teams    []int16
+	accounts []*string
+	bots     []bool
+	loadouts []string
+}
+
+func participantRows(participants []Participant) (participantColumns, error) {
+	n := len(participants)
+	rows := participantColumns{seats: make([]int16, n), teams: make([]int16, n), accounts: make([]*string, n), bots: make([]bool, n), loadouts: make([]string, n)}
+	for i := range participants {
+		p := &participants[i]
+		loadout, err := json.Marshal(p.Loadout)
+		if err != nil {
+			return participantColumns{}, err
+		}
+		rows.seats[i] = int16(p.Seat)
+		rows.teams[i] = int16(p.Seat.Team())
+		if !p.Bot && p.Account != "" {
+			rows.accounts[i] = &p.Account
+		}
+		rows.bots[i] = p.Bot
+		rows.loadouts[i] = string(loadout)
+	}
+	return rows, nil
 }
 
 func (s *Store) Finish(ctx context.Context, f Finished) error {

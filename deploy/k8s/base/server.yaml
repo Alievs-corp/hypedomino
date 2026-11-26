@@ -36,6 +36,9 @@ spec:
         runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+        sysctls:
+          - name: net.core.somaxconn
+            value: "65535"
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
