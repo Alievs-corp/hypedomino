@@ -47,10 +47,15 @@ func TestHistogramPercentilesAndWindows(t *testing.T) {
 func TestTokenRoundTripAndRejections(t *testing.T) {
 	token := Token(42, rules.Mode2v2, rules.SeatWest)
 	c, err := parseToken(token)
-	if err != nil || c.room != 42 || c.mode != rules.Mode2v2 || c.seat != rules.SeatWest {
+	if err != nil || c.room != 42 || c.mode != rules.Mode2v2 || c.seat != rules.SeatWest || c.seed != 42 {
 		t.Fatalf("%s -> %+v, %v", token, c, err)
 	}
-	for _, bad := range []string{"", "1/2v2", "x/2v2/N", "1/3v3/N", "1/2v2/Q", "1/1v1/N", "1/2v2/X"} {
+	seeded := SeededToken(43, rules.Mode1v1, rules.SeatY, 7)
+	c, err = parseToken(seeded)
+	if err != nil || c.room != 43 || c.mode != rules.Mode1v1 || c.seat != rules.SeatY || c.seed != 7 {
+		t.Fatalf("%s -> %+v, %v", seeded, c, err)
+	}
+	for _, bad := range []string{"", "1/2v2", "x/2v2/N", "1/3v3/N", "1/2v2/Q", "1/1v1/N", "1/2v2/X", "1/2v2/N/x", "1/2v2/N/1/2"} {
 		if _, err := parseToken(bad); !errors.Is(err, ErrBadToken) {
 			t.Errorf("%q accepted: %v", bad, err)
 		}
