@@ -196,7 +196,7 @@ type harness struct {
 func newHarness(t testing.TB, config Config) *harness {
 	t.Helper()
 	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, moves: &recordedMoves{}, config: config, sessions: map[string]*recordingSession{}}
-	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics, Rarity: activeRarity, Moves: h.moves})
+	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics, Rarity: activeRarity, Privacy: activePrivacy, Moves: h.moves})
 	h.server = httptest.NewServer(gateway)
 	t.Cleanup(h.server.Close)
 	return h
@@ -354,6 +354,10 @@ func activeRarity() *pb.RarityTableConfig {
 	return &pb.RarityTableConfig{DiamondMinSize: 72, FlowPeriodMs: 2400, Tiers: []*pb.RarityTierConfig{{Id: "common", Ordinal: 1, NameKey: "rarity.common.name", Fill: "#A3A6BF", On: "#0B0605", Text: "#C9CBDB", Pips: 1, GlowScale: 1}}}
 }
 
+func activePrivacy() *pb.PrivacyVersions {
+	return &pb.PrivacyVersions{PrivacyPolicyVersion: "2026-11-01", TermsVersion: "2026-10-01"}
+}
+
 func testConfig() Config {
 	config := DefaultConfig()
 	config.CatalogVersion = "2026.10.26-1"
@@ -386,9 +390,9 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	}
 	if want := activeStrings(); !proto.Equal(reply, &pb.ServerHello{
 		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1", ContentBaseUrl: "https://content.example.com/staging",
-		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(), CosmeticsManifest: activeManifest(), AnalyticsConfig: activeAnalytics(), RarityTable: activeRarity(),
+		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(), CosmeticsManifest: activeManifest(), AnalyticsConfig: activeAnalytics(), RarityTable: activeRarity(), PrivacyVersions: activePrivacy(),
 	}) || reply.GetSessionNonce() == 0 {
-		t.Fatalf("server hello carries the active string bundles, cosmetics manifest, analytics config and rarity table: %v", reply)
+		t.Fatalf("server hello carries the active string bundles, cosmetics manifest, analytics config, rarity table and privacy versions: %v", reply)
 	}
 	h.session("ok-resume").awaitAttached(t)
 }
@@ -403,8 +407,8 @@ func TestOldClientGetsUpdateRequiredAndIsClosed(t *testing.T) {
 	if frame.GetServerHello().GetStatus() != pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED || frame.GetServerHello().GetMinimumAppVersion() != "1.4.0" {
 		t.Fatalf("old client answered %v", frame)
 	}
-	if len(frame.GetServerHello().GetStringBundles()) != 0 || frame.GetServerHello().GetCosmeticsManifest() != nil || frame.GetServerHello().GetAnalyticsConfig() != nil || frame.GetServerHello().GetRarityTable() != nil {
-		t.Fatalf("an old client gets no string bundles, cosmetics manifest, analytics config or rarity table: %v", frame)
+	if len(frame.GetServerHello().GetStringBundles()) != 0 || frame.GetServerHello().GetCosmeticsManifest() != nil || frame.GetServerHello().GetAnalyticsConfig() != nil || frame.GetServerHello().GetRarityTable() != nil || frame.GetServerHello().GetPrivacyVersions() != nil {
+		t.Fatalf("an old client gets no string bundles, cosmetics manifest, analytics config, rarity table or privacy versions: %v", frame)
 	}
 	c.expectClose(websocket.StatusNormalClosure)
 	if h.session("ok") != nil {

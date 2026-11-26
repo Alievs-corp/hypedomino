@@ -80,6 +80,7 @@ namespace HypeDomino.Tests.EditMode
         ErrorReports diagnostics;
         ConsentStartup startup;
         int issuedIds;
+        string policyVersion;
 
         [SetUp]
         public void SignIn()
@@ -96,6 +97,7 @@ namespace HypeDomino.Tests.EditMode
             analytics = new AnalyticsQueue(analyticsSender, () => 1000, 2, 4);
             diagnostics = new ErrorReports(new ErrorSender());
             issuedIds = 0;
+            policyVersion = PolicyVersion;
             startup = new ConsentStartup(client, new ConsentGates(analytics, diagnostics, NextAnalyticsId));
         }
 
@@ -108,7 +110,7 @@ namespace HypeDomino.Tests.EditMode
 
         FirstLaunchConsents Chosen(bool analyticsOn, bool diagnosticsOn)
         {
-            var choices = new FirstLaunchConsents(PolicyVersion, AppVersion);
+            var choices = new FirstLaunchConsents(() => policyVersion, AppVersion);
             choices.Choose(ConsentPurpose.Diagnostics, diagnosticsOn);
             choices.Choose(ConsentPurpose.Analytics, analyticsOn);
             startup.Hold(choices);
@@ -184,6 +186,29 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsTrue(analytics.Consented);
             Assert.IsTrue(diagnostics.Consented);
             Assert.AreEqual("analytics-1", SentAnalyticsId());
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void HeldChoicesWaitForAPolicyVersionWhileTheStoredRecordApplies(string announced)
+        {
+            policyVersion = announced;
+            var choices = Chosen(true, true);
+            Assert.IsTrue(startup.SignedIn("acc-1"));
+            Assert.AreEqual(1, api.Requests.Count);
+            Assert.AreEqual("/consents", Last.PathAndQuery);
+            Last.Done(new HttpReply(200, Json(false, true)));
+            Assert.AreEqual(2, choices.Held);
+            Assert.AreEqual("acc-1", startup.AppliedAccount);
+            Assert.IsFalse(analytics.Consented);
+            Assert.IsTrue(diagnostics.Consented);
+
+            policyVersion = PolicyVersion;
+            Assert.IsTrue(startup.SignedIn("acc-1"));
+            Assert.AreEqual("/consents/first-launch", Last.PathAndQuery);
+            Last.Done(new HttpReply(200, Json(true, true)));
+            Assert.AreEqual(0, choices.Held);
+            Assert.IsTrue(analytics.Consented);
         }
 
         [Test]
@@ -285,7 +310,7 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0, api.Requests.Count);
             Assert.IsFalse(analytics.Consented);
 
-            startup.Hold(new FirstLaunchConsents(PolicyVersion, AppVersion));
+            startup.Hold(new FirstLaunchConsents(() => policyVersion, AppVersion));
             Assert.IsTrue(startup.SignedIn("acc-1"));
             Assert.IsFalse(startup.Busy);
             Assert.IsNull(startup.AppliedAccount);
