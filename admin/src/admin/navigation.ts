@@ -27,6 +27,7 @@ export const screens: readonly Screen[] = [
   { href: "/config/penalties", labelKey: "nav.penalties", object: "game_config" },
   { href: "/config/liveops", labelKey: "nav.liveops", object: "game_config" },
   { href: "/config/anticheat", labelKey: "nav.anticheat", object: "anti_cheat_config" },
+  { href: "/config/privacy", labelKey: "nav.privacy", object: "privacy_config" },
   { href: "/calendar", labelKey: "nav.calendar", object: "live_events" },
   { href: "/strings", labelKey: "nav.strings", object: "game_strings" },
   { href: "/analytics", labelKey: "nav.analytics", object: "dashboards" },

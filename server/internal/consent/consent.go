@@ -5,8 +5,9 @@ import "errors"
 type Purpose string
 
 const (
-	Analytics   Purpose = "analytics"
-	Diagnostics Purpose = "diagnostics"
+	Analytics       Purpose = "analytics"
+	Diagnostics     Purpose = "diagnostics"
+	PromotionalPush Purpose = "promotional_push"
 )
 
 var (
@@ -39,11 +40,20 @@ type FirstLaunch struct {
 
 func (f FirstLaunch) Known() bool {
 	for _, choice := range f.Choices {
-		if choice.Purpose != Analytics && choice.Purpose != Diagnostics {
+		if choice.Purpose != Analytics && choice.Purpose != Diagnostics && choice.Purpose != PromotionalPush {
 			return false
 		}
 	}
 	return true
+}
+
+func (f FirstLaunch) Promotional() (granted, chosen bool) {
+	for _, choice := range f.Choices {
+		if choice.Purpose == PromotionalPush {
+			granted, chosen = choice.Granted, true
+		}
+	}
+	return granted, chosen
 }
 
 func (c Choices) With(change Change) Choices {

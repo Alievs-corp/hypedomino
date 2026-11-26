@@ -107,8 +107,8 @@ namespace HypeDomino.Tests.EditMode
             session.Resume(_ => { });
             auth.Refreshes[0](new HttpReply(200, "{\"access_token\":\"access-1\",\"refresh_token\":\"refresh-1\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"acc-1\"}"));
             var client = new ApiClient(api, session);
-            privacy = new PrivacySettings(client, new AnalyticsQueue(new AnalyticsSender(), () => 1000, 2, 4), new ErrorReports(new ErrorSender()), PrivacySettings.RandomAnalyticsId, PolicyVersion, AppVersion);
-            push = new PushSettings(client, PolicyVersion, AppVersion);
+            privacy = new PrivacySettings(client, new AnalyticsQueue(new AnalyticsSender(), () => 1000, 2, 4), new ErrorReports(new ErrorSender()), PrivacySettings.RandomAnalyticsId, () => PolicyVersion, AppVersion);
+            push = new PushSettings(client, () => PolicyVersion, AppVersion);
             strings = new GameStrings(BuiltinStrings.Load(), LanguageChoice.Load(GameLanguage.English, Array.Empty<string>), false);
             analytics = Add<Toggle>();
             diagnostics = Add<Toggle>();

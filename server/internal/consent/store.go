@@ -6,6 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/push"
 )
 
 type Store struct {
@@ -87,11 +89,25 @@ func (s *Store) SaveFirstLaunch(ctx context.Context, account string, first First
 			return Choices{}, err
 		}
 	}
+	if err := applyPromotional(ctx, tx, account, first, now); err != nil {
+		return Choices{}, err
+	}
 	choices, err := latest(ctx, tx, account)
 	if err != nil {
 		return Choices{}, err
 	}
 	return choices, tx.Commit(ctx)
+}
+
+func applyPromotional(ctx context.Context, tx pgx.Tx, account string, first FirstLaunch, now time.Time) error {
+	granted, chosen := first.Promotional()
+	if !chosen {
+		return nil
+	}
+	_, err := tx.Exec(ctx, `insert into push_settings (account_id, gameplay, promotional, updated_at) values ($1, $2, $3, $4)
+		on conflict (account_id) do update set promotional = excluded.promotional, updated_at = excluded.updated_at`,
+		account, push.DefaultSettings.Gameplay, granted, now)
+	return err
 }
 
 func latest(ctx context.Context, q querier, account string) (Choices, error) {

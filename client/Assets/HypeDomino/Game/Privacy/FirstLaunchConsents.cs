@@ -8,6 +8,7 @@ namespace HypeDomino.Game.Privacy
     {
         Analytics,
         Diagnostics,
+        PromotionalPush,
     }
 
     public sealed class FirstLaunchConsents
@@ -15,14 +16,13 @@ namespace HypeDomino.Game.Privacy
         public const string Path = "/consents/first-launch";
 
         readonly List<FirstLaunchChoice> choices = new List<FirstLaunchChoice>();
-        readonly string policyVersion;
+        readonly Func<string> policyVersion;
         readonly string appVersion;
 
-        public FirstLaunchConsents(string policyVersion, string appVersion)
+        public FirstLaunchConsents(Func<string> policyVersion, string appVersion)
         {
-            if (string.IsNullOrEmpty(policyVersion)) throw new ArgumentException("policy version required", nameof(policyVersion));
             if (string.IsNullOrEmpty(appVersion)) throw new ArgumentException("app version required", nameof(appVersion));
-            this.policyVersion = policyVersion;
+            this.policyVersion = policyVersion ?? throw new ArgumentNullException(nameof(policyVersion));
             this.appVersion = appVersion;
         }
 
@@ -35,10 +35,11 @@ namespace HypeDomino.Game.Privacy
 
         public bool Write(ApiClient api, Action<FirstLaunchConsentsResult> done)
         {
-            if (Busy || choices.Count == 0) return false;
+            var version = policyVersion();
+            if (Busy || choices.Count == 0 || string.IsNullOrEmpty(version)) return false;
             Busy = true;
             var sent = choices.Count;
-            var request = new FirstLaunchConsentsRequest { choices = new List<FirstLaunchChoice>(choices), policyVersion = policyVersion, appVersion = appVersion };
+            var request = new FirstLaunchConsentsRequest { choices = new List<FirstLaunchChoice>(choices), policyVersion = version, appVersion = appVersion };
             api.Post(Path, request.ToJson(), reply => Answer(reply, sent, done));
             return true;
         }
@@ -47,6 +48,7 @@ namespace HypeDomino.Game.Privacy
         {
             ConsentPurpose.Analytics => "analytics",
             ConsentPurpose.Diagnostics => "diagnostics",
+            ConsentPurpose.PromotionalPush => "promotional_push",
             _ => throw new ArgumentOutOfRangeException(nameof(purpose)),
         };
 

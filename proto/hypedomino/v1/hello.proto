@@ -56,6 +56,7 @@ message ServerHello {
   CosmeticsManifest cosmetics_manifest = 11;
   AnalyticsConfig analytics_config = 12;
   RarityTableConfig rarity_table = 13;
+  PrivacyVersions privacy_versions = 14;
 }
 
 message StringBundle {
@@ -92,6 +93,11 @@ message RarityTierConfig {
   float glow_alpha = 8;
   float glow_scale = 9;
   bool flow = 10;
+}
+
+message PrivacyVersions {
+  string privacy_policy_version = 1;
+  string terms_version = 2;
 }
 
 message FallbackChain {

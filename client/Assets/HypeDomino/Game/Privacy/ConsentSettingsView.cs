@@ -49,6 +49,11 @@ namespace HypeDomino.Game.Privacy
             if (!push.Loaded) push.Load(OnPushAnswered);
         }
 
+        void Start()
+        {
+            if (privacy == null && PrivacyBoot.Settings != null) Bind(PrivacyBoot.Settings, PrivacyBoot.Push, LanguageBoot.Strings);
+        }
+
         void OnDestroy() => Unbind();
 
         void Unbind()
