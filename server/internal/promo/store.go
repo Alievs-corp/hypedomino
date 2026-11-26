@@ -606,23 +606,39 @@ func (s *Store) Redeem(ctx context.Context, account, raw string, now time.Time) 
 	if err != nil {
 		return Redemption{}, err
 	}
-	if err := s.throttle(ctx, account, now); err != nil {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
 		return Redemption{}, err
 	}
-	redemption, err := s.redeem(ctx, account, s.hasher.Hash(normalized), now)
+	defer tx.Rollback(ctx)
+	if err := reward.LockIn(ctx, tx, account); err != nil {
+		return Redemption{}, err
+	}
+	attempt := s.In(tx)
+	if err := attempt.throttle(ctx, account, now); err != nil {
+		return Redemption{}, err
+	}
+	redemption, err := attempt.redeem(ctx, account, s.hasher.Hash(normalized), now)
 	if err != nil && !refused(err) {
 		return Redemption{}, err
 	}
-	if err != nil {
-		if _, recordErr := s.db.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, false, $2)`, account, now); recordErr != nil {
-			return Redemption{}, recordErr
-		}
-		if lockErr := s.flagLock(ctx, account, now); lockErr != nil {
-			return Redemption{}, lockErr
-		}
-		return Redemption{}, err
+	if err == nil {
+		return redemption, tx.Commit(ctx)
 	}
-	return redemption, nil
+	if recordErr := attempt.recordRefusal(ctx, account, now); recordErr != nil {
+		return Redemption{}, recordErr
+	}
+	if commitErr := tx.Commit(ctx); commitErr != nil {
+		return Redemption{}, commitErr
+	}
+	return Redemption{}, err
+}
+
+func (s *Store) recordRefusal(ctx context.Context, account string, now time.Time) error {
+	if _, err := s.db.Exec(ctx, `insert into promo_attempts (account_id, ok, attempted_at) values ($1, false, $2)`, account, now); err != nil {
+		return err
+	}
+	return s.flagLock(ctx, account, now)
 }
 
 func refused(err error) bool {

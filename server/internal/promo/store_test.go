@@ -381,6 +381,85 @@ func TestFailedAttemptsLockAndAttemptsAreRateLimited(t *testing.T) {
 	}
 }
 
+func TestParallelAttemptsNeverPassTheThrottle(t *testing.T) {
+	cases := []struct {
+		name          string
+		perHour       int
+		beforeLock    int
+		validCodes    bool
+		parallel      int
+		wantPassed    int
+		wantRefusal   error
+		wantRedeemed  int
+		wantLockFlags int
+	}{
+		{name: "guesses stop at the hourly limit", perHour: 3, beforeLock: 100, parallel: 12, wantPassed: 3, wantRefusal: promo.ErrRateLimited},
+		{name: "guesses stop at the lock", perHour: 100, beforeLock: 2, parallel: 12, wantPassed: 2, wantRefusal: promo.ErrLocked, wantLockFlags: 1},
+		{name: "valid codes stop at the hourly limit", perHour: 3, beforeLock: 100, validCodes: true, parallel: 8, wantPassed: 3, wantRefusal: promo.ErrRateLimited, wantRedeemed: 3},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := newFixture(t, promo.Config{CodeLength: 12, MaxValidityDays: 90, AttemptsPerHour: c.perHour, FailedAttemptsBeforeLock: c.beforeLock, LockMinutes: 60, CoinsApprovalThreshold: 2000, LockSignalWeight: 5, SpikePercent: 100, SpikeWindowMinutes: 1})
+			a := f.account(t)
+			codes := make([]string, c.parallel)
+			for i := range codes {
+				if c.validCodes {
+					codes[i] = f.create(t, definition(fmt.Sprintf("promo.parallel_%d", i), promo.SingleUse, coins)).Plaintext
+					continue
+				}
+				guess, err := promo.Generate(16)
+				if err != nil {
+					t.Fatal(err)
+				}
+				codes[i] = guess
+			}
+			var wg sync.WaitGroup
+			results := make([]error, c.parallel)
+			for i, code := range codes {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					_, results[i] = f.store.Redeem(context.Background(), a, code, now)
+				}()
+			}
+			wg.Wait()
+			passed := 0
+			for i, err := range results {
+				switch {
+				case errors.Is(err, c.wantRefusal):
+				case err == nil && c.validCodes, errors.Is(err, promo.ErrUnknown) && !c.validCodes:
+					passed++
+				default:
+					t.Errorf("attempt %d: %v", i, err)
+				}
+			}
+			if passed != c.wantPassed {
+				t.Fatalf("%d of %d parallel attempts passed the throttle, want %d", passed, c.parallel, c.wantPassed)
+			}
+			var recorded int
+			if err := f.pool.QueryRow(context.Background(), `select count(*) from promo_attempts where account_id = $1`, a).Scan(&recorded); err != nil {
+				t.Fatal(err)
+			}
+			if recorded != c.wantPassed {
+				t.Fatalf("recorded attempts %d, want %d", recorded, c.wantPassed)
+			}
+			var redeemed int
+			if err := f.pool.QueryRow(context.Background(), `select count(*) from promo_redemptions where account_id = $1`, a).Scan(&redeemed); err != nil {
+				t.Fatal(err)
+			}
+			if redeemed != c.wantRedeemed {
+				t.Fatalf("redemptions %d, want %d", redeemed, c.wantRedeemed)
+			}
+			if balance, _ := f.wallet.Balance(context.Background(), a, wallet.Coin); balance != int64(c.wantRedeemed)*coins.Coins {
+				t.Fatalf("balance %d", balance)
+			}
+			if flags, _, _ := f.lockSignal(t, a); flags != c.wantLockFlags {
+				t.Fatalf("lock signals %d, want %d", flags, c.wantLockFlags)
+			}
+		})
+	}
+}
+
 func TestAnUnlistedSourceWritesNothing(t *testing.T) {
 	f := newFixture(t, promo.DefaultConfig())
 	a := f.account(t)
