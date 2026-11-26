@@ -35,6 +35,35 @@ func TestCounterWithoutLabelsWritesBareSeries(t *testing.T) {
 	}
 }
 
+func TestCounterAddsAmountsToItsSeries(t *testing.T) {
+	tests := []struct {
+		name    string
+		amounts []uint64
+		incs    int
+		want    string
+	}{
+		{"zero creates the series", []uint64{0}, 0, "hd_purged_total 0\n"},
+		{"amounts add up", []uint64{3, 0, 497}, 0, "hd_purged_total 500\n"},
+		{"add and inc mix", []uint64{2, 1}, 1, "hd_purged_total 4\n"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := NewCounter("hd_purged_total", "Purged.", Labels{})
+			for _, amount := range test.amounts {
+				c.Add(Labels{}, amount)
+			}
+			for range test.incs {
+				c.Inc(Labels{})
+			}
+			var out strings.Builder
+			c.WriteTo(&out)
+			if want := "# HELP hd_purged_total Purged.\n# TYPE hd_purged_total counter\n" + test.want; out.String() != want {
+				t.Fatalf("got %q, want %q", out.String(), want)
+			}
+		})
+	}
+}
+
 func TestHistogramsWriteOneHeaderAndLabeledSeries(t *testing.T) {
 	h := NewHistograms("wait_seconds", "Wait.", Labels{"queue", "mode"}, []time.Duration{time.Second})
 	h.Observe(Labels{"ranked", "1v1"}, 500*time.Millisecond)

@@ -12,7 +12,7 @@ Scope: device tokens, notification categories and the server's send path (#132).
 - **PN-1** A notification is sent only when the account's setting for its category is on. A category that is off sends nothing to any device.
 - **PN-2** The OS permission is asked at the first contextual moment, never at first launch (`docs/privacy.md` 6.1). Without it the client does not register a token.
 - **PN-3** Turning `promotional` on is the `promotional_push` consent; the client shows it with the other consent purposes and in Settings, Privacy (#157).
-- **PN-9** Every change of `promotional` writes one `consent_records` row (`docs/privacy.md` 6.3) in the same transaction as the setting: purpose `promotional_push`, the new state, the policy and app versions from the request, source `settings` and server time. Saving the same value again writes nothing.
+- **PN-9** Every change of `promotional` writes one `consent_records` row (`docs/privacy.md` 6.3) in the same transaction as the setting: purpose `promotional_push`, the new state, the policy and app versions from the request, source `settings` and server time. Saving the same value again writes nothing. A `promotional_push` choice made on the first-launch consent step is written by `POST /consents/first-launch` instead, with source `first_launch`, and sets `promotional` in the same transaction (`docs/privacy.md` 6.3).
 
 ## 2. Devices
 

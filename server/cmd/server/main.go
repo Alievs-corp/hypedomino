@@ -46,6 +46,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/pass"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
+	"github.com/Alievs-corp/hypedomino/server/internal/privacy"
 	"github.com/Alievs-corp/hypedomino/server/internal/profile"
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
@@ -203,6 +204,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	consentHandler := consent.NewHandler(tokens, consents, logger, time.Now)
 	a.Handle("/consents", consentHandler)
 	a.Handle(consent.FirstLaunchPath, consentHandler)
+	enablePrivacy(ctx, a, pool, consents, config, logger)
 	analyticsStore := analytics.NewStore(pool)
 	a.Handle("POST /analytics/events", analytics.NewHandler(tokens, analyticsStore, consents, logger, time.Now))
 	matchEnds := matchstore.NewRelay(matchstore.New(pool), analyticsStore, matchstore.TopicAnalytics, 0, time.Now)
@@ -422,6 +424,24 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
 	return a, pool.Close, nil
+}
+
+func enablePrivacy(ctx context.Context, a *app.App, pool *pgxpool.Pool, consents *consent.Store, config app.Config, logger *slog.Logger) {
+	privacyConfig := snapshot.New(pool, privacy.Domain, privacy.Parse, logger)
+	watchConfig(ctx, a.AwaitBeforeReady, "privacy", config.ConfigPoll, privacyConfig)
+	a.AnnouncePrivacy(func() *pb.PrivacyVersions {
+		current, _, _ := privacyConfig.Current()
+		return current.Versions()
+	})
+	purge := consent.NewPurge(consents, func() (int, bool) {
+		current, _, _ := privacyConfig.Current()
+		return current.RetentionYears(), privacyConfig.Synced()
+	}, logger)
+	a.Expose(purge.Runs())
+	a.Expose(purge.Purged())
+	go panics.Supervise(ctx, "consent record purge", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
+		purge.Run(ctx, every, time.Now)
+	})
 }
 
 func integrityGate(config app.Config, handler *integrity.Handler, nonces *integrity.Nonces, pool *pgxpool.Pool, signals integrity.SignalSink, logger *slog.Logger) (*integrity.Gate, error) {

@@ -110,6 +110,7 @@ type Options struct {
 	Strings   func() Strings
 	Cosmetics func() *pb.CosmeticsManifest
 	Analytics func() *pb.AnalyticsConfig
+	Privacy   func() *pb.PrivacyVersions
 	Admission func() Admission
 }
 

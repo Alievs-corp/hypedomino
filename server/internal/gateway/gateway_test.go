@@ -164,7 +164,7 @@ type harness struct {
 func newHarness(t testing.TB, config Config) *harness {
 	t.Helper()
 	h := &harness{t: t, clock: &fakeClock{now: time.UnixMilli(1761480000000)}, config: config, sessions: map[string]*recordingSession{}}
-	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics})
+	gateway := New(Options{Config: config, Handler: HandlerFunc(h.connect), Clock: h.clock, Strings: activeStrings, Cosmetics: activeManifest, Analytics: activeAnalytics, Privacy: activePrivacy})
 	h.server = httptest.NewServer(gateway)
 	t.Cleanup(h.server.Close)
 	return h
@@ -318,6 +318,10 @@ func activeAnalytics() *pb.AnalyticsConfig {
 	return &pb.AnalyticsConfig{BatchSize: 50, QueueLimit: 500, FlushSeconds: 60}
 }
 
+func activePrivacy() *pb.PrivacyVersions {
+	return &pb.PrivacyVersions{PrivacyPolicyVersion: "2026-11-01", TermsVersion: "2026-10-01"}
+}
+
 func testConfig() Config {
 	config := DefaultConfig()
 	config.CatalogVersion = "2026.10.26-1"
@@ -350,9 +354,9 @@ func TestHelloIsAcceptedWithServerTimeAndAckedSequence(t *testing.T) {
 	}
 	if want := activeStrings(); !proto.Equal(reply, &pb.ServerHello{
 		Status: reply.GetStatus(), MinimumAppVersion: "1.0.0", ServerTimeUnixMs: 1761480000000, CatalogVersion: "2026.10.26-1", ContentBaseUrl: "https://content.example.com/staging",
-		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(), CosmeticsManifest: activeManifest(), AnalyticsConfig: activeAnalytics(),
+		StringBundles: want.Bundles, FallbackChains: want.Chains, SessionNonce: reply.GetSessionNonce(), CosmeticsManifest: activeManifest(), AnalyticsConfig: activeAnalytics(), PrivacyVersions: activePrivacy(),
 	}) || reply.GetSessionNonce() == 0 {
-		t.Fatalf("server hello carries the active string bundles, cosmetics manifest and analytics config: %v", reply)
+		t.Fatalf("server hello carries the active string bundles, cosmetics manifest, analytics config and privacy versions: %v", reply)
 	}
 	h.session("ok-resume").awaitAttached(t)
 }
@@ -367,8 +371,8 @@ func TestOldClientGetsUpdateRequiredAndIsClosed(t *testing.T) {
 	if frame.GetServerHello().GetStatus() != pb.HelloStatus_HELLO_STATUS_UPDATE_REQUIRED || frame.GetServerHello().GetMinimumAppVersion() != "1.4.0" {
 		t.Fatalf("old client answered %v", frame)
 	}
-	if len(frame.GetServerHello().GetStringBundles()) != 0 || frame.GetServerHello().GetCosmeticsManifest() != nil || frame.GetServerHello().GetAnalyticsConfig() != nil {
-		t.Fatalf("an old client gets no string bundles, cosmetics manifest or analytics config: %v", frame)
+	if len(frame.GetServerHello().GetStringBundles()) != 0 || frame.GetServerHello().GetCosmeticsManifest() != nil || frame.GetServerHello().GetAnalyticsConfig() != nil || frame.GetServerHello().GetPrivacyVersions() != nil {
+		t.Fatalf("an old client gets no string bundles, cosmetics manifest, analytics config or privacy versions: %v", frame)
 	}
 	c.expectClose(websocket.StatusNormalClosure)
 	if h.session("ok") != nil {

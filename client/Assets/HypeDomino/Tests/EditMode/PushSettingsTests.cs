@@ -59,6 +59,7 @@ namespace HypeDomino.Tests.EditMode
         PushSettings settings;
         List<PushSettingsResult> results;
         int changes;
+        string policyVersion;
 
         [SetUp]
         public void SignIn()
@@ -71,7 +72,8 @@ namespace HypeDomino.Tests.EditMode
             session.Resume(_ => { });
             auth.Refreshes[0](new HttpReply(200, "{\"access_token\":\"access-1\",\"refresh_token\":\"refresh-1\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"acc-1\"}"));
             client = new ApiClient(api, session);
-            settings = new PushSettings(client, PolicyVersion, AppVersion);
+            policyVersion = PolicyVersion;
+            settings = new PushSettings(client, () => policyVersion, AppVersion);
             settings.Changed += () => changes++;
             results = new List<PushSettingsResult>();
             changes = 0;
@@ -88,13 +90,24 @@ namespace HypeDomino.Tests.EditMode
             changes = 0;
         }
 
-        [TestCase(null, AppVersion)]
-        [TestCase("", AppVersion)]
-        [TestCase(PolicyVersion, null)]
-        [TestCase(PolicyVersion, "")]
-        public void AConsentContextIsRequiredToBuildTheModel(string policyVersion, string appVersion)
+        [TestCase(null)]
+        [TestCase("")]
+        public void AConsentContextIsRequiredToBuildTheModel(string appVersion)
         {
-            Assert.Throws<ArgumentException>(() => new PushSettings(client, policyVersion, appVersion));
+            Assert.Throws<ArgumentException>(() => new PushSettings(client, () => PolicyVersion, appVersion));
+            Assert.Throws<ArgumentNullException>(() => new PushSettings(client, null, AppVersion));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void OnlyGameplayIsSavedBeforeTheServerAnnouncesAPolicyVersion(string announced)
+        {
+            LoadWith(true, false);
+            policyVersion = announced;
+            Assert.IsFalse(settings.SetPromotional(true, results.Add));
+            Assert.AreEqual(1, api.Requests.Count);
+            Assert.IsTrue(settings.SetGameplay(false, results.Add));
+            Assert.AreEqual("{\"gameplay\":false,\"promotional\":false,\"policyVersion\":\"" + announced + "\",\"appVersion\":\"0.4.2\"}", api.Requests[1].Body);
         }
 
         [Test]

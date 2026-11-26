@@ -203,7 +203,7 @@ func TestFirstLaunchChoicesAreWrittenInTheOrderTheyWereMade(t *testing.T) {
 	ayla := w.player()
 
 	w.expectFirstLaunch(ayla, `{`, http.StatusBadRequest, "map[error:consent.malformed]")
-	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"promotional_push","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusBadRequest, "map[error:consent.malformed]")
+	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"marketing","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusBadRequest, "map[error:consent.malformed]")
 	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}]}`, http.StatusBadRequest, "map[error:consent.context_required]")
 	w.expectFirstLaunch(ayla, `{"choices":[{"purpose":"analytics","granted":true}],"policyVersion":"2026-11"}`, http.StatusBadRequest, "map[error:consent.context_required]")
 	w.expectFirstLaunch(ayla, `{"choices":[]}`, http.StatusOK, neither)
@@ -240,5 +240,78 @@ func TestFirstLaunchKeepsTheRecordTheAccountHasForThatPolicy(t *testing.T) {
 	w.expectFirstLaunch(kamal, `{"choices":[{"purpose":"diagnostics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`, http.StatusOK, neither)
 	if got := w.records(kamal); got != "promotional_push/true/2026-11/settings/1.4.0" {
 		t.Fatalf("first launch wrote over the account's record: %s", got)
+	}
+}
+
+func (w *world) pushSettings(account string) string {
+	w.t.Helper()
+	var gameplay, promotional bool
+	err := w.pool.QueryRow(context.Background(), `select gameplay, promotional from push_settings where account_id = $1`, account).Scan(&gameplay, &promotional)
+	if err != nil {
+		return err.Error()
+	}
+	return fmt.Sprintf("gameplay:%t promotional:%t", gameplay, promotional)
+}
+
+func TestFirstLaunchWritesThePromotionalPushChoiceToTheRecordAndTheSetting(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing string
+		body     string
+		records  string
+		settings string
+	}{
+		{
+			name:     "granted with no setting yet keeps gameplay on",
+			body:     `{"choices":[{"purpose":"promotional_push","granted":true},{"purpose":"analytics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`,
+			records:  "promotional_push/true/2026-11/first_launch/1.4.0,analytics/true/2026-11/first_launch/1.4.0",
+			settings: "gameplay:true promotional:true",
+		},
+		{
+			name:     "the last choice wins",
+			body:     `{"choices":[{"purpose":"promotional_push","granted":true},{"purpose":"promotional_push","granted":false}],"policyVersion":"2026-11","appVersion":"1.4.0"}`,
+			records:  "promotional_push/true/2026-11/first_launch/1.4.0,promotional_push/false/2026-11/first_launch/1.4.0",
+			settings: "gameplay:true promotional:false",
+		},
+		{
+			name:     "an existing gameplay choice is kept",
+			existing: `insert into push_settings (account_id, gameplay, promotional, updated_at) values ($1, false, false, $2)`,
+			body:     `{"choices":[{"purpose":"promotional_push","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`,
+			records:  "promotional_push/true/2026-11/first_launch/1.4.0",
+			settings: "gameplay:false promotional:true",
+		},
+		{
+			name:     "no promotional choice leaves the setting alone",
+			body:     `{"choices":[{"purpose":"diagnostics","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`,
+			records:  "diagnostics/true/2026-11/first_launch/1.4.0",
+			settings: "no rows in result set",
+		},
+		{
+			name:     "a record for the policy keeps the setting",
+			existing: `insert into consent_records (account_id, purpose, granted, policy_version, source, app_version, recorded_at) values ($1, 'analytics', false, '2026-11', 'settings', '1.4.0', $2)`,
+			body:     `{"choices":[{"purpose":"promotional_push","granted":true}],"policyVersion":"2026-11","appVersion":"1.4.0"}`,
+			records:  "analytics/false/2026-11/settings/1.4.0",
+			settings: "no rows in result set",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			w := newWorld(t)
+			ayla := w.player()
+			if test.existing != "" {
+				if _, err := w.pool.Exec(context.Background(), test.existing, ayla, now); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if status, decoded := w.callAt("POST", consent.FirstLaunchPath, "access:"+ayla, test.body); status != http.StatusOK {
+				t.Fatalf("first launch answered %d %v", status, decoded)
+			}
+			if got := w.records(ayla); got != test.records {
+				t.Fatalf("records %s, want %s", got, test.records)
+			}
+			if got := w.pushSettings(ayla); got != test.settings {
+				t.Fatalf("push settings %s, want %s", got, test.settings)
+			}
+		})
 	}
 }

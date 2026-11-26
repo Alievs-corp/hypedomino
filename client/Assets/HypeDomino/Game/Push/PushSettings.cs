@@ -8,15 +8,14 @@ namespace HypeDomino.Game.Push
         public const string Path = "/push/settings";
 
         readonly ApiClient api;
-        readonly string policyVersion;
+        readonly Func<string> policyVersion;
         readonly string appVersion;
 
-        public PushSettings(ApiClient api, string policyVersion, string appVersion)
+        public PushSettings(ApiClient api, Func<string> policyVersion, string appVersion)
         {
-            if (string.IsNullOrEmpty(policyVersion)) throw new ArgumentException("policy version required", nameof(policyVersion));
             if (string.IsNullOrEmpty(appVersion)) throw new ArgumentException("app version required", nameof(appVersion));
             this.api = api;
-            this.policyVersion = policyVersion;
+            this.policyVersion = policyVersion ?? throw new ArgumentNullException(nameof(policyVersion));
             this.appVersion = appVersion;
         }
 
@@ -47,12 +46,13 @@ namespace HypeDomino.Game.Push
 
         bool Save(bool gameplay, bool promotional, Action<PushSettingsResult> done)
         {
-            if (Busy || !Loaded)
+            var version = policyVersion();
+            if (Busy || !Loaded || (promotional != Promotional && string.IsNullOrEmpty(version)))
             {
                 return false;
             }
             Busy = true;
-            var request = new PushSettingsRequest { gameplay = gameplay, promotional = promotional, policyVersion = policyVersion, appVersion = appVersion };
+            var request = new PushSettingsRequest { gameplay = gameplay, promotional = promotional, policyVersion = version, appVersion = appVersion };
             api.Put(Path, request.ToJson(), reply => Answer(reply, done));
             return true;
         }

@@ -46,8 +46,12 @@ func NewCounter(name, help string, labels Labels) *Counter {
 }
 
 func (c *Counter) Inc(values Labels) {
+	c.Add(values, 1)
+}
+
+func (c *Counter) Add(values Labels, n uint64) {
 	c.mu.Lock()
-	c.counts[values]++
+	c.counts[values] += n
 	c.mu.Unlock()
 }
 

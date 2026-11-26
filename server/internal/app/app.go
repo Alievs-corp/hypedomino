@@ -52,6 +52,7 @@ type App struct {
 	localization atomic.Pointer[func() gateway.Strings]
 	cosmetics    atomic.Pointer[func() *pb.CosmeticsManifest]
 	analytics    atomic.Pointer[func() *pb.AnalyticsConfig]
+	privacy      atomic.Pointer[func() *pb.PrivacyVersions]
 	admission    atomic.Pointer[func() gateway.Admission]
 	moves        *metrics.Histogram
 	responses    responseCounts
@@ -70,7 +71,7 @@ func New(config Config, logger *slog.Logger, handler gateway.Handler) *App {
 	}
 	a.rooms.ObserveMoves(a.moves)
 	a.rooms.LimitEmoji(config.Emoji)
-	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized, Cosmetics: a.announcedCosmetics, Analytics: a.announcedAnalytics, Admission: a.admitted})
+	a.gateway = gateway.New(gateway.Options{Config: config.Gateway, Handler: handler, Origins: config.Origins, Strings: a.localized, Cosmetics: a.announcedCosmetics, Analytics: a.announcedAnalytics, Privacy: a.announcedPrivacy, Admission: a.admitted})
 	a.mux.HandleFunc("GET /healthz", a.healthz)
 	a.mux.HandleFunc("GET /readyz", a.readyz)
 	a.mux.HandleFunc("GET /ws", a.ws)
@@ -133,6 +134,18 @@ func (a *App) AnnounceAnalytics(current func() *pb.AnalyticsConfig) {
 
 func (a *App) announcedAnalytics() *pb.AnalyticsConfig {
 	current := a.analytics.Load()
+	if current == nil {
+		return nil
+	}
+	return (*current)()
+}
+
+func (a *App) AnnouncePrivacy(current func() *pb.PrivacyVersions) {
+	a.privacy.Store(&current)
+}
+
+func (a *App) announcedPrivacy() *pb.PrivacyVersions {
+	current := a.privacy.Load()
 	if current == nil {
 		return nil
 	}

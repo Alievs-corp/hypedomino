@@ -9,17 +9,19 @@ namespace HypeDomino.Game.Privacy
     {
         [SerializeField] SettingToggleRow analytics;
         [SerializeField] SettingToggleRow diagnostics;
+        [SerializeField] SettingToggleRow promotionalPush;
         [SerializeField] Button proceed;
 
         FirstLaunchConsents choices;
         ConsentStartup startup;
         Action continued;
 
-        public void Configure(SettingToggleRow analyticsRow, SettingToggleRow diagnosticsRow, Button continueButton)
+        public void Configure(SettingToggleRow analyticsRow, SettingToggleRow diagnosticsRow, SettingToggleRow promotionalPushRow, Button continueButton)
         {
             Unbind();
             analytics = analyticsRow;
             diagnostics = diagnosticsRow;
+            promotionalPush = promotionalPushRow;
             proceed = continueButton;
         }
 
@@ -31,6 +33,7 @@ namespace HypeDomino.Game.Privacy
             continued = done;
             analytics.Bind(false, OnAnalytics);
             diagnostics.Bind(false, OnDiagnostics);
+            promotionalPush.Bind(false, OnPromotionalPush);
             proceed.onClick.AddListener(Continue);
         }
 
@@ -48,6 +51,8 @@ namespace HypeDomino.Game.Privacy
         void OnAnalytics(bool on) => choices?.Choose(ConsentPurpose.Analytics, on);
 
         void OnDiagnostics(bool on) => choices?.Choose(ConsentPurpose.Diagnostics, on);
+
+        void OnPromotionalPush(bool on) => choices?.Choose(ConsentPurpose.PromotionalPush, on);
 
         void Continue()
         {
