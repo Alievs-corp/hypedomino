@@ -1,6 +1,6 @@
 # Launch checklist and runbook
 
-How a release goes from candidate to players, and what happens when it goes wrong: the go/no-go checklist, the launch timeline, deploy, staged rollout and rollback procedures, incident management, on-call, player communication and support. It applies to the soft launch (#196), to the global launch and, from section 5 on, to every later release.
+How a release goes from candidate to players, and what happens when it goes wrong: the go/no-go checklist, the launch timeline, deploy, staged rollout and rollback procedures, incident management, on-call, player communication and support. It applies to the soft launch (#196, [`docs/soft-launch.md`](soft-launch.md)), to the global launch and, from section 5 on, to every later release.
 
 Scope boundaries: `docs/roadmap.md` section 4 is the release gate and is not restated here; this document adds the operational evidence needed to pass it. Budgets are in `docs/performance.md`. Kill switches, the build allowlist and ban responses are in `docs/anti-cheat.md` and #210. Architecture is ADR 0002 to 0006.
 
@@ -37,7 +37,7 @@ Rules: every item is green, or waived by an owner comment on the issue concerned
 | GN-1 | Gate 1: no open `priority:p0` or `priority:p1` issue | Release manager | Output of both `gh issue list` commands from the gate, pasted in the release issue |
 | GN-2 | Gate 2: performance budgets pass on the device matrix | Client lead, Server lead | Measurement reports in #191, #192, #161, #164 per `docs/performance.md` |
 | GN-3 | Gate 3: content gate | Live-ops lead | `green`, non-stale production content gate report run after the config freeze starts, or a `red` one with an owner waiver on #198 (`docs/launch-content-gate.md` 4.3, 4.4) |
-| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187); AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
+| GN-4 | Gate 4: legal documents published and linked | Product owner | Links open from the store pages and in-app settings (#195, #187), from the drafts of [`docs/legal/`](legal/README.md) after counsel review with no placeholder left; AI art terms and store disclosure rules reviewed (`docs/asset-workflow.md` O-2 to O-4) |
 | GN-5 | Gate 5: red team has no open critical finding | Security lead | #212 report and the result table of `docs/red-team.md` (gate in its section 6) |
 | GN-6 | Gate 6: this checklist green; backup and restore exercised; closed beta and soft launch KPI tracking done or waived | Release manager | This list, #188 drill record, #193 closed or waived after its exit record (`docs/closed-beta.md` 7.1), #196 closed or waived |
 | GN-7 | Gate 7: `CI complete` green on the release commit | Release manager | Link to the run on the tagged commit |
@@ -86,7 +86,7 @@ T-0 is the moment the release is made available in the stores. Server and config
 | T-0 | Release made available in both stores; announcement published | Release manager, Support lead |
 | T+15m | First installs, logins and matches visible on the launch dashboard | Analyst |
 | T+1h | Health review against section 4.1; then hourly until T+6h | Release manager |
-| T+24h | Daily review: section 4.1 signals, support ticket themes, store reviews, KPIs. Decide whether to continue, hold or widen availability (#196) | Product owner |
+| T+24h | Daily review: section 4.1 signals, support ticket themes, store reviews, KPIs. Decide whether to continue, hold or widen availability (#196, [`docs/soft-launch.md`](soft-launch.md) section 5) | Product owner |
 | T+48h | Daily review | Product owner |
 | T+72h | Launch exit: back to the normal on-call rotation, config freeze lifted, retrospective scheduled, this runbook updated with what was learned | Release manager |
 
@@ -130,7 +130,7 @@ Order with a client release: server first (backward compatible with every client
 
 ### 5.2 Client rollout
 
-First store release: percentage rollouts are not used. Exposure is limited by country availability (soft launch regions, #196) and by server-side controls (feature flags, matchmaking, kill switches).
+First store release: percentage rollouts are not used. Exposure is limited by country availability (soft launch regions, #196, [`docs/soft-launch.md`](soft-launch.md) section 2) and by server-side controls (feature flags, matchmaking, kill switches).
 
 Every later update:
 
@@ -335,7 +335,7 @@ Hosting (decided 2026-10-28): the FAQ is one set of web pages, and the game show
 |---|---|---|
 | How to play | Rules, scoring, 365 target, 1v1 and 2v2 | `docs/rules.md` |
 | Account and login | Sign-in methods, switching devices, lost account | #56, #57, #58 |
-| Purchases | Missing purchase, restore, refunds, pass purchase | #106, #107, #125, #195 |
+| Purchases | Missing purchase, restore, refunds, pass purchase | #106, #107, #125, #195, [`docs/legal/purchase-terms.en.md`](legal/purchase-terms.en.md) |
 | Coins and rewards | How coins and rewards are earned, daily rewards, promo codes | #7, #103, #108, #131 |
 | Ranked and seasons | Ranks, placement, season reset, leaderboards | `docs/ranking.md` |
 | Penalties and fair play | AFK, leaving, bans, appeals | `docs/penalties.md`, #186 |
