@@ -11,6 +11,7 @@ using HypeDomino.UI.Graphics;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Match;
 using HypeDomino.UI.Motion;
+using HypeDomino.UI.Rarity;
 using HypeDomino.UI.Tokens;
 using Hypedomino.V1;
 using NUnit.Framework;
@@ -28,11 +29,12 @@ namespace HypeDomino.Tests.PlayMode
         const string NeonStatic = "cosmetic/table/neon/static";
         const string Laugh = "emoji.laugh";
         const string LaughStatic = "cosmetic/emoji/laugh/static";
-        const string Rarities = @"{""diamondMinSize"":72,""flowPeriodMs"":2000,""tiers"":[
-{""id"":""common"",""ordinal"":1,""nameKey"":""rarity.common.name"",""fill"":""#0000FF"",""on"":""#000000"",""text"":""#FFFFFF"",""pips"":1,""glowAlpha"":0.5,""glowScale"":1.2,""flow"":false}]}";
+        const string Legendary = "legendary";
+        const float Tolerance = 0.001f;
         const string Catalog = @"{""schemaVersion"":1,""manifestVersion"":1,""items"":[
 {""id"":""avatar.fox"",""type"":""avatar"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/avatar/fox/static""},
 {""id"":""table.neon"",""type"":""table"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/table/neon/static""},
+{""id"":""frame.gold"",""type"":""frame"",""rarityId"":""legendary"",""availability"":""live"",""staticAddress"":""cosmetic/frame/gold/static""},
 {""id"":""emoji.laugh"",""type"":""emoji"",""rarityId"":""common"",""availability"":""live"",""staticAddress"":""cosmetic/emoji/laugh/static""}]}";
 
         sealed class ServerFrames : IFrameTransport
@@ -61,7 +63,8 @@ namespace HypeDomino.Tests.PlayMode
         MatchSceneViews views;
         SeatEmojiLayer emojiLayer;
         AvatarView[] seatViews;
-        TextAsset rarities;
+        RarityHalo[] halos;
+        ActiveRarityTable rarities;
         FakeArtSource<Sprite> stills;
         ServerFrames frames;
         Connection connection;
@@ -82,21 +85,23 @@ namespace HypeDomino.Tests.PlayMode
             tiles.Configure(hud.Faces, Array.Empty<Image>(), null, Array.Empty<Image>());
             boardTiles = tiles;
             var seats = new AvatarView[TableSides.Count];
+            halos = new RarityHalo[TableSides.Count];
             for (var side = 0; side < seats.Length; side++)
             {
                 seats[side] = NewChild<AvatarView>("Seat " + side);
-                seats[side].Configure(NewArt("Avatar", seats[side].transform), NewArt("Frame", seats[side].transform), null, null);
+                halos[side] = NewHalo(seats[side].transform);
+                seats[side].Configure(NewArt("Avatar", seats[side].transform), NewArt("Frame", seats[side].transform), halos[side], null);
                 seats[side].transform.localPosition = new Vector3(100f * side, 50f, 0f);
             }
             seatViews = seats;
             var loading = NewChild<LoadingScreenView>("Loading");
             loading.Configure(Array.Empty<LoadingCardView>(), NewImage("Total", loading.transform), NewTable(loading.transform));
-            rarities = new TextAsset(Rarities);
+            rarities = new ActiveRarityTable(RarityTable.LoadBuiltin());
             views = NewChild<MatchSceneViews>("Views");
             emojiLayer = NewChild<SeatEmojiLayer>("Emoji");
             var popup = new GameObject("Popup", typeof(RectTransform), typeof(Image)).AddComponent<EmojiPopup>();
             popup.transform.SetParent(root.transform, false);
-            views.Configure(layout, NewScorePanel(), tiles, seats, NewTable(root.transform), loading, hud.View, emojiLayer, popup, rarities, NewSprite(), NewSprite());
+            views.Configure(layout, NewScorePanel(), tiles, seats, NewTable(root.transform), loading, hud.View, emojiLayer, popup, NewSprite(), NewSprite());
             stills = new FakeArtSource<Sprite>();
             frames = new ServerFrames();
             connection = new Connection(() => throw new InvalidOperationException(), () => new ClientHello(), () => 0d, new System.Random(1));
@@ -118,12 +123,11 @@ namespace HypeDomino.Tests.PlayMode
             views.Detach();
             Object.DestroyImmediate(root);
             Object.DestroyImmediate(hud.Faces);
-            Object.DestroyImmediate(rarities);
         }
 
         void FollowView(MatchSnapshot view) => flow.View(view.State);
 
-        void Attach() => views.Attach(host, connection, manifest, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(DeviceTier.Mid, null, 0, false), new MotionPreference(null, false));
+        void Attach() => views.Attach(host, connection, manifest, rarities, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(DeviceTier.Mid, null, 0, false), new MotionPreference(null, false));
 
         T NewChild<T>(string name) where T : Component
         {
@@ -133,6 +137,15 @@ namespace HypeDomino.Tests.PlayMode
         }
 
         static Sprite NewSprite() => Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+
+        static RarityHalo NewHalo(Transform parent)
+        {
+            var halo = new GameObject("Halo", typeof(RectTransform), typeof(Image)).AddComponent<RarityHalo>();
+            halo.transform.SetParent(parent, false);
+            halo.Configure(NewSprite(), NewSprite());
+            halo.GetComponent<Image>().enabled = false;
+            return halo;
+        }
 
         static Image NewImage(string name, Transform parent)
         {
@@ -197,7 +210,7 @@ namespace HypeDomino.Tests.PlayMode
                 TurnSeconds = 15,
                 TurnWarningSeconds = 5,
             };
-            view.Roster.Add(new RosterEntry { Seat = two ? Seat.Y : Seat.North, Avatar = "avatar.fox" });
+            view.Roster.Add(new RosterEntry { Seat = two ? Seat.Y : Seat.North, Avatar = "avatar.fox", Frame = "frame.gold" });
             view.Hand.Add(new Hypedomino.V1.Tile { Low = 2, High = 5 });
             return view;
         }
@@ -262,7 +275,7 @@ namespace HypeDomino.Tests.PlayMode
         [TestCase(DeviceTier.Mid, TokenEffectLevel.MediumMaxTweens)]
         public void AttachingGivesTheBoardATilePlaceLayerAtTheEffectLevel(DeviceTier tier, int capacity)
         {
-            views.Attach(host, connection, manifest, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(tier, null, 0, false), new MotionPreference(null, false));
+            views.Attach(host, connection, manifest, rarities, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(tier, null, 0, false), new MotionPreference(null, false));
 
             Assert.IsNotNull(views.TilePlacing);
             Assert.AreSame(boardTiles.GetComponent<TilePlaceLayer>(), views.TilePlacing);
@@ -354,6 +367,86 @@ namespace HypeDomino.Tests.PlayMode
                 Assert.IsNotNull(popup.Shown);
             }
             Assert.AreEqual(1, shown);
+        }
+
+        static RarityTable Delivered(string fill, float glowAlpha) => RarityTable.From(new RarityTableFile
+        {
+            diamondMinSize = 72,
+            flowPeriodMs = 2000,
+            tiers = new[]
+            {
+                new RarityTierEntry { id = Legendary, ordinal = 1, nameKey = "rarity.legendary.name", fill = fill, on = "#000000", text = "#FFFFFF", pips = 1, glowAlpha = glowAlpha, glowScale = 1.25f },
+            },
+        });
+
+        RarityHalo ShownHalo()
+        {
+            RarityHalo found = null;
+            foreach (var halo in halos)
+            {
+                if (!halo.IsShown) continue;
+                Assert.IsNull(found);
+                found = halo;
+            }
+            Assert.IsNotNull(found);
+            return found;
+        }
+
+        static void AssertTint(Color fill, float glowAlpha, RarityHalo halo)
+        {
+            var tint = halo.GetComponent<Image>().color;
+            Assert.AreEqual(fill.r, tint.r, Tolerance);
+            Assert.AreEqual(fill.g, tint.g, Tolerance);
+            Assert.AreEqual(fill.b, tint.b, Tolerance);
+            Assert.AreEqual(glowAlpha, tint.a, Tolerance);
+        }
+
+        [Test]
+        public void WithoutADeliveredTableTheSeatHaloUsesTheShippedDefaults()
+        {
+            Assert.IsTrue(RarityTable.LoadBuiltin().TryGet(Legendary, out var shipped));
+            Attach();
+
+            Receive(View(MatchState.Playing, Mode._2V2));
+
+            AssertTint(shipped.Fill, shipped.GlowAlpha, ShownHalo());
+        }
+
+        [Test]
+        public void ADeliveredTableColoursTheSeatHalo()
+        {
+            rarities.Apply(Delivered("#00FF00", 0.6f));
+            Attach();
+
+            Receive(View(MatchState.Playing, Mode._2V2));
+
+            var halo = ShownHalo();
+            AssertTint(Color.green, 0.6f, halo);
+            Assert.AreEqual(1.25f, halo.transform.localScale.x, Tolerance);
+        }
+
+        [Test]
+        public void ATableDeliveredAfterAttachReachesTheSeatsAtTheNextAttach()
+        {
+            Assert.IsTrue(RarityTable.LoadBuiltin().TryGet(Legendary, out var shipped));
+            Attach();
+            rarities.Apply(Delivered("#00FF00", 0.6f));
+
+            Receive(View(MatchState.Playing, Mode._2V2));
+            AssertTint(shipped.Fill, shipped.GlowAlpha, ShownHalo());
+
+            views.Detach();
+            Attach();
+            Receive(View(MatchState.Playing, Mode._2V2));
+            AssertTint(Color.green, 0.6f, ShownHalo());
+        }
+
+        [Test]
+        public void AttachingNeedsARarityTable()
+        {
+            Assert.Throws<ArgumentNullException>(() => views.Attach(host, connection, manifest, null, strings, stills, new FakeArtSource<LoopArt>(), new GraphicsQuality(DeviceTier.Mid, null, 0, false), new MotionPreference(null, false)));
+
+            Assert.IsFalse(views.Ready);
         }
     }
 }

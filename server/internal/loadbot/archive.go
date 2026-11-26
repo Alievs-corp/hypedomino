@@ -76,7 +76,7 @@ func (s *Stores) timed(h *metrics.Histogram, write func(context.Context) error) 
 }
 
 func (s *Stores) track(c claim, r *room.Room) {
-	started := matchstore.Started{ID: uuid.NewString(), StartedAt: time.Now(), Mode: c.mode, Kind: matchstore.KindCasual, Seed: c.room}
+	started := matchstore.Started{ID: uuid.NewString(), StartedAt: time.Now(), Mode: c.mode, Kind: matchstore.KindCasual, Seed: c.seed}
 	for _, seat := range c.mode.Seats() {
 		started.Participants = append(started.Participants, matchstore.Participant{Seat: seat, Bot: true})
 	}

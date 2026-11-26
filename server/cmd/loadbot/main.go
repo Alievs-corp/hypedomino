@@ -38,6 +38,10 @@ func main() {
 		err = run(ctx, os.Args[2:])
 	case "local":
 		err = local(ctx, os.Args[2:])
+	case "record":
+		err = record(ctx, os.Args[2:])
+	case "replay":
+		err = replay(ctx, os.Args[2:])
 	default:
 		usage()
 	}
@@ -48,7 +52,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: loadbot serve|run|local [flags]")
+	fmt.Fprintln(os.Stderr, "usage: loadbot serve|run|local|record|replay [flags]")
 	os.Exit(2)
 }
 
@@ -190,6 +194,115 @@ func run(ctx context.Context, args []string) error {
 	}
 	level, _ := os.LookupEnv("HD_LOG_LEVEL")
 	return execute(ctx, config, *out, level)
+}
+
+func withTarget(ctx context.Context, target string, use func(target string) error) error {
+	if target != "" {
+		return use(target)
+	}
+	config, err := serverConfig()
+	if err != nil {
+		return err
+	}
+	config.ListenAddr = "127.0.0.1:0"
+	config.DrainTimeout = time.Second
+	serverCtx, stopServer := context.WithCancel(ctx)
+	defer stopServer()
+	addr, done, err := startServer(serverCtx, config)
+	if err != nil {
+		return err
+	}
+	useErr := use("ws://" + addr + "/ws")
+	stopServer()
+	select {
+	case <-done:
+	case <-time.After(config.ShutdownTimeout + config.DrainTimeout):
+	}
+	return useErr
+}
+
+func roomOrNow(room uint64) uint64 {
+	if room != 0 {
+		return room
+	}
+	return uint64(time.Now().UnixMilli()) * 1000
+}
+
+func record(ctx context.Context, args []string) error {
+	flags := flag.NewFlagSet("record", flag.ExitOnError)
+	config := loadbot.RecordConfig{AppVersion: "1.0.0", Mode: rules.Mode2v2, Seed: 1, ThinkMin: time.Second, ThinkMax: 3 * time.Second, ThinkFollow: 200 * time.Millisecond, Length: 3 * time.Minute}
+	target := flags.String("target", "", "WebSocket URL of a loadbot serve node; empty starts one in process")
+	mode := flags.String("mode", config.Mode.String(), "1v1 or 2v2")
+	flags.Uint64Var(&config.Seed, "seed", config.Seed, "match seed")
+	flags.Uint64Var(&config.Room, "room", 0, "room id on the node; 0 picks one from the clock")
+	flags.DurationVar(&config.ThinkMin, "think-min", config.ThinkMin, "shortest pause before a move")
+	flags.DurationVar(&config.ThinkMax, "think-max", config.ThinkMax, "longest pause before a move")
+	flags.DurationVar(&config.ThinkFollow, "think-follow", config.ThinkFollow, "pause before a further action in the same turn")
+	flags.DurationVar(&config.Length, "length", config.Length, "stop recording after this time; 0 records the whole match")
+	flags.StringVar(&config.AppVersion, "app-version", config.AppVersion, "app version sent in the hello")
+	out := flags.String("out", "", "file for the trace (required)")
+	flags.Parse(args)
+	if *out == "" {
+		return fmt.Errorf("record: -out is required")
+	}
+	parsed, err := rules.ParseMode(*mode)
+	if err != nil {
+		return err
+	}
+	config.Mode, config.Room = parsed, roomOrNow(config.Room)
+	return withTarget(ctx, *target, func(target string) error {
+		config.Target = target
+		trace, err := loadbot.Record(ctx, config)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("recorded %s seed %d: %d intents\n", trace.Mode, trace.Seed, trace.Intents())
+		return trace.Write(*out)
+	})
+}
+
+func replay(ctx context.Context, args []string) error {
+	flags := flag.NewFlagSet("replay", flag.ExitOnError)
+	config := loadbot.ReplayConfig{AppVersion: "1.0.0", Runs: 3, Parallel: 1, Budget: 100 * time.Millisecond, RunTimeout: 15 * time.Minute}
+	target := flags.String("target", "", "WebSocket URL of a loadbot serve node; empty starts one in process")
+	path := flags.String("trace", "", "trace written by record (required)")
+	flags.IntVar(&config.Runs, "runs", config.Runs, "replays played back to back")
+	flags.IntVar(&config.Parallel, "parallel", config.Parallel, "copies of each replay played at once, each in its own room")
+	flags.Uint64Var(&config.Room, "room", 0, "first room id on the node; 0 picks one from the clock")
+	flags.DurationVar(&config.Budget, "budget", config.Budget, "p99 budget of every run")
+	flags.DurationVar(&config.RunTimeout, "run-timeout", config.RunTimeout, "longest time one replay may take")
+	flags.StringVar(&config.AppVersion, "app-version", config.AppVersion, "app version sent in the hello")
+	out := flags.String("out", "", "file for the JSON report")
+	flags.Parse(args)
+	if *path == "" {
+		return fmt.Errorf("replay: -trace is required")
+	}
+	trace, err := loadbot.ReadTrace(*path)
+	if err != nil {
+		return err
+	}
+	config.Room = roomOrNow(config.Room)
+	return withTarget(ctx, *target, func(target string) error {
+		config.Target = target
+		report, err := loadbot.Replay(ctx, trace, config)
+		if err != nil {
+			return err
+		}
+		fmt.Print(report.Text())
+		if *out != "" {
+			data, err := json.MarshalIndent(report, "", "  ")
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(*out, data, 0o644); err != nil {
+				return err
+			}
+		}
+		if !report.Pass {
+			return fmt.Errorf("replay budget not met")
+		}
+		return nil
+	})
 }
 
 func localNode() (loadbot.NodeSample, error) {

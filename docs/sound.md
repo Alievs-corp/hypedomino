@@ -41,7 +41,7 @@ assets-src/sound/
     export/<name>.ogg
 ```
 
-`python -I assets-src/sound/<item>/work/<item>.py assets-src/sound/<item>/work assets-src/sound/<item>/export` from the repository root writes all files of an item. The scripts are deterministic: two runs write byte-identical files on the same Python, NumPy, SciPy and libsndfile versions (recorded in each `provenance.md`). A changed sound is made by changing the script and running it again, never by editing a file by hand. WAV and Ogg files go through Git LFS (`.gitattributes`).
+`python -I assets-src/sound/<item>/work/<item>.py assets-src/sound/<item>/work assets-src/sound/<item>/export` from the repository root writes all files of an item. The scripts are deterministic: two runs write byte-identical files on the same Python, NumPy, SciPy and libsndfile versions (recorded in each `provenance.md`). A changed sound is made by changing the script and running it again, never by editing a file by hand. WAV and Ogg files go through Git LFS (`.gitattributes`) until they move to Unity Version Control with the item's `files.json` (ADR 0015, `docs/asset-workflow.md` 4.3).
 
 ## 3. Formats
 

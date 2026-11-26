@@ -28,20 +28,31 @@ func Token(roomID uint64, mode rules.Mode, seat rules.Seat) string {
 	return strconv.FormatUint(roomID, 10) + "/" + mode.String() + "/" + seat.String()
 }
 
+func SeededToken(roomID uint64, mode rules.Mode, seat rules.Seat, seed uint64) string {
+	return Token(roomID, mode, seat) + "/" + strconv.FormatUint(seed, 10)
+}
+
 type claim struct {
 	room uint64
 	mode rules.Mode
 	seat rules.Seat
+	seed uint64
 }
 
 func parseToken(token string) (claim, error) {
 	parts := strings.Split(token, "/")
-	if len(parts) != 3 {
+	if len(parts) != 3 && len(parts) != 4 {
 		return claim{}, ErrBadToken
 	}
 	id, err := strconv.ParseUint(parts[0], 10, 64)
 	if err != nil {
 		return claim{}, fmt.Errorf("%w: %v", ErrBadToken, err)
+	}
+	seed := id
+	if len(parts) == 4 {
+		if seed, err = strconv.ParseUint(parts[3], 10, 64); err != nil {
+			return claim{}, fmt.Errorf("%w: %v", ErrBadToken, err)
+		}
 	}
 	mode, err := rules.ParseMode(parts[1])
 	if err != nil {
@@ -53,7 +64,7 @@ func parseToken(token string) (claim, error) {
 	}
 	for _, valid := range mode.Seats() {
 		if valid == seat {
-			return claim{room: id, mode: mode, seat: seat}, nil
+			return claim{room: id, mode: mode, seat: seat, seed: seed}, nil
 		}
 	}
 	return claim{}, fmt.Errorf("%w: seat %s is not in %s", ErrBadToken, seat, mode)
@@ -121,7 +132,7 @@ func (h *Handler) Connect(ctx context.Context, conn *gateway.Conn, hello *pb.Cli
 }
 
 func (h *Handler) open(c claim) (*table, error) {
-	r, err := h.rooms.Open(room.Options{Mode: c.mode, Config: h.config, Bot: h.bots, BotLevel: bot.Hard, Seed: c.room, Clock: systemClock{}})
+	r, err := h.rooms.Open(room.Options{Mode: c.mode, Config: h.config, Bot: h.bots, BotLevel: bot.Hard, Seed: c.seed, Clock: systemClock{}})
 	if err != nil {
 		return nil, err
 	}

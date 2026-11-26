@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { crc32, deflateSync } from "node:zlib";
-import { addItem, astcBytes, budgetLine, changedItems, checkItems, inspectItem, itemBudget, loadBudgets, parseArguments, readPng, readProvenance, sliceErrors } from "./asset-export.mjs";
+import { createHash } from "node:crypto";
+import { addItem, astcBytes, budgetLine, changedItems, checkItems, inspectItem, itemBudget, loadBudgets, parseArguments, pullItems, readPng, readProvenance, sliceErrors } from "./asset-export.mjs";
 import { loadSchema } from "../cosmetics-schema/cosmetics-schema.mjs";
 
 const repoRoot = new URL("../../", import.meta.url);
@@ -287,6 +288,31 @@ test("changed paths map to the cosmetic items that still have an export", () => 
     "tools/asset-export/asset-export.mjs",
   ];
   assert.deepEqual(changedItems(paths, (path) => existing.has(path.replaceAll("\\", "/"))), ["assets-src/cosmetic/avatar/comet_fox", "assets-src/cosmetic/table/garden"]);
+});
+
+test("an item whose export is only listed in files.json still counts as changed", () => {
+  const manifests = { "assets-src/cosmetic/avatar/moved": { files: [{ path: "export/static.png" }] }, "assets-src/cosmetic/avatar/work_only": { files: [{ path: "work/work_only.psd" }] } };
+  const paths = ["assets-src/cosmetic/avatar/moved/files.json", "assets-src/cosmetic/avatar/work_only/files.json"];
+  assert.deepEqual(changedItems(paths, () => false, (item) => manifests[item]), ["assets-src/cosmetic/avatar/moved"]);
+});
+
+test("pull fetches only the export files of each item from Unity Version Control", () => {
+  const item = join(mkdtempSync(join(tmpdir(), "asset-pull-")), "assets-src", "cosmetic", "avatar", "x");
+  temporaryRoots.push(dirname(dirname(dirname(dirname(item)))));
+  mkdirSync(item, { recursive: true });
+  const still = png(4, 4);
+  const sha256 = createHash("sha256").update(still).digest("hex");
+  writeFileSync(join(item, "files.json"), JSON.stringify({ files: [{ path: "export/static.png", sha256, changeset: 4 }, { path: "work/x.psd", sha256, changeset: 4 }] }));
+  const specs = [];
+  const run = ([, spec, file]) => {
+    specs.push(spec);
+    writeFileSync(file.slice("--file=".length), still);
+  };
+  assert.throws(() => pullItems([item], "", run), /UVCS_SERVER/);
+  const result = pullItems([item], "org@unity", run);
+  assert.equal(result.ok, true);
+  assert.deepEqual(specs, ["serverpath:/cosmetic/avatar/x/export/static.png#cs:4@hypedomino-art@org@unity"]);
+  assert.equal(existsSync(join(item, "work")), false);
 });
 
 test("arguments", () => {
