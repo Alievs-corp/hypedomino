@@ -191,20 +191,24 @@ func (c *Client) View() (*pb.MatchView, error) {
 }
 
 func (c *Client) Act(view *pb.MatchView) error {
+	return c.Send(NextIntent(view))
+}
+
+func NextIntent(view *pb.MatchView) *pb.Envelope {
 	switch {
 	case view.GetState() == pb.MatchState_MATCH_STATE_OPENING && view.GetForcedOpening() != nil:
-		return c.Send(place(view.GetForcedOpening().GetTile(), pb.BoardEnd_BOARD_END_UNSPECIFIED))
+		return place(view.GetForcedOpening().GetTile(), pb.BoardEnd_BOARD_END_UNSPECIFIED)
 	case view.GetState() == pb.MatchState_MATCH_STATE_OPENING && len(view.GetHand()) > 0:
-		return c.Send(place(view.GetHand()[0], pb.BoardEnd_BOARD_END_UNSPECIFIED))
+		return place(view.GetHand()[0], pb.BoardEnd_BOARD_END_UNSPECIFIED)
 	case len(view.GetLegalMoves()) > 0:
 		move := view.GetLegalMoves()[0]
-		return c.Send(place(move.GetTile(), move.GetEnd()))
+		return place(move.GetTile(), move.GetEnd())
 	case view.GetTurnPlacements() > 0:
-		return c.Send(&pb.Envelope{Payload: &pb.Envelope_EndTurnIntent{EndTurnIntent: &pb.EndTurnIntent{}}})
+		return &pb.Envelope{Payload: &pb.Envelope_EndTurnIntent{EndTurnIntent: &pb.EndTurnIntent{}}}
 	case view.GetMode() == pb.Mode_MODE_1V1 && view.GetBoneyardSize() > 1:
-		return c.Send(&pb.Envelope{Payload: &pb.Envelope_DrawIntent{DrawIntent: &pb.DrawIntent{}}})
+		return &pb.Envelope{Payload: &pb.Envelope_DrawIntent{DrawIntent: &pb.DrawIntent{}}}
 	}
-	return c.Send(&pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}})
+	return &pb.Envelope{Payload: &pb.Envelope_PassIntent{PassIntent: &pb.PassIntent{}}}
 }
 
 func place(tile *pb.Tile, end pb.BoardEnd) *pb.Envelope {

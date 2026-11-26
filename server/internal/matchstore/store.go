@@ -194,25 +194,8 @@ func (s *Store) Finish(ctx context.Context, f Finished) error {
 		f.ID, f.StartedAt, f.EndedAt, f.HandsPlayed, f.Scores[rules.TeamA], f.Scores[rules.TeamB], winner, f.Cancelled, f.Replay); err != nil {
 		return err
 	}
-	for seat, result := range f.Results {
-		tag, err := tx.Exec(ctx, `update match_participants set result = $4 where match_id = $1 and started_at = $2 and seat = $3`,
-			f.ID, f.StartedAt, int16(seat), result)
-		if err != nil {
-			return err
-		}
-		if tag.RowsAffected() == 0 {
-			return fmt.Errorf("%w: seat %s is not in match %s", ErrInvalid, seat, f.ID)
-		}
-	}
-	for seat, fit := range f.PartnerFit {
-		tag, err := tx.Exec(ctx, `update match_participants set partner_decisions = $4, partner_fits = $5 where match_id = $1 and started_at = $2 and seat = $3`,
-			f.ID, f.StartedAt, int16(seat), fit.Decisions, fit.Fits)
-		if err != nil {
-			return err
-		}
-		if tag.RowsAffected() == 0 {
-			return fmt.Errorf("%w: partner fit for seat %s outside match %s", ErrInvalid, seat, f.ID)
-		}
+	if err := updateSeatOutcomes(ctx, tx, f); err != nil {
+		return err
 	}
 	for _, e := range f.Events {
 		payload, err := json.Marshal(e.Payload)
@@ -244,6 +227,61 @@ func (s *Store) Finish(ctx context.Context, f Finished) error {
 		}
 	}
 	return tx.Commit(ctx)
+}
+
+type seatOutcomeColumns struct {
+	seats     []int16
+	results   []*string
+	decisions []*int32
+	fits      []*int32
+}
+
+func (c *seatOutcomeColumns) row(seat rules.Seat) int {
+	for i, s := range c.seats {
+		if s == int16(seat) {
+			return i
+		}
+	}
+	c.seats = append(c.seats, int16(seat))
+	c.results = append(c.results, nil)
+	c.decisions = append(c.decisions, nil)
+	c.fits = append(c.fits, nil)
+	return len(c.seats) - 1
+}
+
+func seatOutcomeRows(results map[rules.Seat]string, fits map[rules.Seat]partnerfit.Count) seatOutcomeColumns {
+	n := max(len(results), len(fits))
+	c := seatOutcomeColumns{seats: make([]int16, 0, n), results: make([]*string, 0, n), decisions: make([]*int32, 0, n), fits: make([]*int32, 0, n)}
+	for seat, result := range results {
+		c.results[c.row(seat)] = &result
+	}
+	for seat, fit := range fits {
+		decisions, fitted := int32(fit.Decisions), int32(fit.Fits)
+		i := c.row(seat)
+		c.decisions[i], c.fits[i] = &decisions, &fitted
+	}
+	return c
+}
+
+func updateSeatOutcomes(ctx context.Context, tx pgx.Tx, f Finished) error {
+	rows := seatOutcomeRows(f.Results, f.PartnerFit)
+	if len(rows.seats) == 0 {
+		return nil
+	}
+	tag, err := tx.Exec(ctx, `update match_participants p
+		set result = coalesce(o.result, p.result),
+			partner_decisions = coalesce(o.decisions, p.partner_decisions),
+			partner_fits = coalesce(o.fits, p.partner_fits)
+		from unnest($3::smallint[], $4::text[], $5::integer[], $6::integer[]) as o (seat, result, decisions, fits)
+		where p.match_id = $1 and p.started_at = $2 and p.seat = o.seat`,
+		f.ID, f.StartedAt, rows.seats, rows.results, rows.decisions, rows.fits)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != int64(len(rows.seats)) {
+		return fmt.Errorf("%w: %d of %d seat outcomes outside match %s", ErrInvalid, int64(len(rows.seats))-tag.RowsAffected(), len(rows.seats), f.ID)
+	}
+	return nil
 }
 
 func (s *Store) Running(ctx context.Context, account string, startedAfter time.Time) (bool, error) {

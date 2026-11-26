@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"runtime"
+	runtimemetrics "runtime/metrics"
 	"strings"
 	"sync"
 	"testing"
@@ -892,6 +894,82 @@ func BenchmarkSendToAReadingClient(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func connGoroutines() int {
+	buffer := make([]byte, 1<<22)
+	stacks := string(buffer[:runtime.Stack(buffer, true)])
+	n := 0
+	for _, stack := range strings.Split(stacks, "\n\n") {
+		if strings.Contains(stack, "internal/gateway.(*Conn)") {
+			n++
+		}
+	}
+	return n
+}
+
+func awaitConnGoroutines(t *testing.T, want int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		got := connGoroutines()
+		if got == want {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%d connection goroutines, want %d", got, want)
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func TestAnOpenConnectionRunsThreeGoroutinesAndAClosedOneNone(t *testing.T) {
+	cases := []struct {
+		name        string
+		connections int
+	}{
+		{name: "one connection", connections: 1},
+		{name: "eight connections", connections: 8},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			awaitConnGoroutines(t, 0)
+			h := newHarness(t, testConfig())
+			clients := make([]*client, 0, tc.connections)
+			for i := range tc.connections {
+				c := h.dial()
+				c.handshake(fmt.Sprintf("ok-goroutines-%d", i))
+				clients = append(clients, c)
+			}
+			awaitConnGoroutines(t, 3*tc.connections)
+			for _, c := range clients {
+				c.socket.Close(websocket.StatusNormalClosure, "")
+			}
+			awaitConnGoroutines(t, 0)
+		})
+	}
+}
+
+func goroutineStackBytes() float64 {
+	samples := []runtimemetrics.Sample{{Name: "/memory/classes/heap/stacks:bytes"}}
+	runtimemetrics.Read(samples)
+	return float64(samples[0].Value.Uint64())
+}
+
+func BenchmarkHoldAnOpenConnection(b *testing.B) {
+	h := newHarness(b, testConfig())
+	runtime.GC()
+	stacks, goroutines, opened := goroutineStackBytes(), runtime.NumGoroutine(), 0
+	b.ReportAllocs()
+	for b.Loop() {
+		c := h.dial()
+		c.handshake(fmt.Sprintf("ok-hold-%d", opened))
+		opened++
+	}
+	time.Sleep(100 * time.Millisecond)
+	runtime.GC()
+	b.ReportMetric((goroutineStackBytes()-stacks)/float64(opened), "stack-B/conn")
+	b.ReportMetric(float64(runtime.NumGoroutine()-goroutines)/float64(opened), "goroutines/conn")
 }
 
 func BenchmarkSendAMoveViewToAReadingClient(b *testing.B) {

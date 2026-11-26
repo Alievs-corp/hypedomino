@@ -452,3 +452,176 @@ func BenchmarkBeginA2v2Match(b *testing.B) {
 		}
 	}
 }
+
+func TestFinishWritesEverySeatOutcomeInOneStatement(t *testing.T) {
+	fit := func(decisions, fits int) partnerfit.Count { return partnerfit.Count{Decisions: decisions, Fits: fits} }
+	cases := []struct {
+		name       string
+		results    map[rules.Seat]string
+		fits       map[rules.Seat]partnerfit.Count
+		statements int
+		want       map[rules.Seat]seatOutcome
+	}{
+		{
+			name:       "results and partner fit of every seat",
+			results:    map[rules.Seat]string{rules.SeatNorth: matchstore.ResultWin, rules.SeatSouth: matchstore.ResultWin, rules.SeatEast: matchstore.ResultLoss, rules.SeatWest: matchstore.ResultLoss},
+			fits:       map[rules.Seat]partnerfit.Count{rules.SeatNorth: fit(12, 11), rules.SeatEast: fit(9, 4), rules.SeatSouth: fit(0, 0), rules.SeatWest: fit(3, 3)},
+			statements: 1,
+			want: map[rules.Seat]seatOutcome{
+				rules.SeatNorth: {result: "win", decisions: 12, fits: 11, measured: true},
+				rules.SeatEast:  {result: "loss", decisions: 9, fits: 4, measured: true},
+				rules.SeatSouth: {result: "win", measured: true},
+				rules.SeatWest:  {result: "loss", decisions: 3, fits: 3, measured: true},
+			},
+		},
+		{
+			name:       "partner fit of some seats keeps the others unmeasured",
+			results:    map[rules.Seat]string{rules.SeatNorth: matchstore.ResultCancelled, rules.SeatSouth: matchstore.ResultCancelled, rules.SeatEast: matchstore.ResultCancelled, rules.SeatWest: matchstore.ResultCancelled},
+			fits:       map[rules.Seat]partnerfit.Count{rules.SeatWest: fit(5, 2)},
+			statements: 1,
+			want: map[rules.Seat]seatOutcome{
+				rules.SeatNorth: {result: "cancelled"},
+				rules.SeatEast:  {result: "cancelled"},
+				rules.SeatSouth: {result: "cancelled"},
+				rules.SeatWest:  {result: "cancelled", decisions: 5, fits: 2, measured: true},
+			},
+		},
+		{
+			name:       "partner fit without a result",
+			fits:       map[rules.Seat]partnerfit.Count{rules.SeatEast: fit(1, 1)},
+			statements: 1,
+			want: map[rules.Seat]seatOutcome{
+				rules.SeatNorth: {},
+				rules.SeatEast:  {decisions: 1, fits: 1, measured: true},
+				rules.SeatSouth: {},
+				rules.SeatWest:  {},
+			},
+		},
+		{
+			name:       "no seat outcome sends no statement",
+			statements: 0,
+			want:       map[rules.Seat]seatOutcome{rules.SeatNorth: {}, rules.SeatEast: {}, rules.SeatSouth: {}, rules.SeatWest: {}},
+		},
+	}
+	dsn, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	players := accounts(t, pool, 4)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			statements := &statementCounter{}
+			store := matchstore.New(tracedPool(t, dsn, statements))
+			id := uuid.NewString()
+			if err := store.Begin(ctx, started(id, matchstore.KindRanked, players)); err != nil {
+				t.Fatal(err)
+			}
+			f := finished(id, matchstore.KindRanked)
+			f.Results, f.PartnerFit = tc.results, tc.fits
+			if err := store.Finish(ctx, f); err != nil {
+				t.Fatal(err)
+			}
+			if n := statements.matching("update match_participants"); n != tc.statements {
+				t.Fatalf("%d participant update statements, want %d", n, tc.statements)
+			}
+			got := seatOutcomes(t, pool, id)
+			if len(got) != len(tc.want) {
+				t.Fatalf("%d seats, want %d", len(got), len(tc.want))
+			}
+			for seat, want := range tc.want {
+				if got[seat] != want {
+					t.Errorf("seat %s: %+v, want %+v", seat, got[seat], want)
+				}
+			}
+		})
+	}
+}
+
+func TestFinishRefusesSeatOutcomesOutsideTheMatch(t *testing.T) {
+	cases := []struct {
+		name    string
+		results map[rules.Seat]string
+		fits    map[rules.Seat]partnerfit.Count
+	}{
+		{name: "a result outside the match", results: map[rules.Seat]string{rules.SeatNorth: matchstore.ResultWin, rules.SeatX: matchstore.ResultWin}},
+		{name: "a partner fit outside the match", fits: map[rules.Seat]partnerfit.Count{rules.SeatY: {Decisions: 1}}},
+		{name: "a fit outside beside a result inside", results: map[rules.Seat]string{rules.SeatEast: matchstore.ResultLoss}, fits: map[rules.Seat]partnerfit.Count{rules.SeatX: {Decisions: 2, Fits: 1}}},
+	}
+	_, pool := dbtest.Fresh(t)
+	store := matchstore.New(pool)
+	ctx := context.Background()
+	players := accounts(t, pool, 4)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			id := uuid.NewString()
+			if err := store.Begin(ctx, started(id, matchstore.KindRanked, players)); err != nil {
+				t.Fatal(err)
+			}
+			f := finished(id, matchstore.KindRanked)
+			f.Results, f.PartnerFit = tc.results, tc.fits
+			if err := store.Finish(ctx, f); !errors.Is(err, matchstore.ErrInvalid) {
+				t.Fatalf("finish: %v, want ErrInvalid", err)
+			}
+			if n := count(t, pool, "select count(*) from match_participants where match_id = $1 and (result is not null or partner_decisions is not null)", id); n != 0 {
+				t.Fatalf("a refused finish left %d seat outcomes", n)
+			}
+		})
+	}
+}
+
+type seatOutcome struct {
+	result    string
+	decisions int
+	fits      int
+	measured  bool
+}
+
+func seatOutcomes(t *testing.T, pool *pgxpool.Pool, id string) map[rules.Seat]seatOutcome {
+	t.Helper()
+	rows, err := pool.Query(context.Background(), "select seat, coalesce(result, ''), partner_decisions, partner_fits from match_participants where match_id = $1", id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	out := map[rules.Seat]seatOutcome{}
+	for rows.Next() {
+		var seat int16
+		var result string
+		var decisions, fits *int32
+		if err := rows.Scan(&seat, &result, &decisions, &fits); err != nil {
+			t.Fatal(err)
+		}
+		o := seatOutcome{result: result, measured: decisions != nil}
+		if decisions != nil {
+			o.decisions = int(*decisions)
+		}
+		if fits != nil {
+			o.fits = int(*fits)
+		}
+		out[rules.Seat(seat)] = o
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func BenchmarkFinishA2v2Match(b *testing.B) {
+	_, pool := dbtest.Fresh(b)
+	store := matchstore.New(pool)
+	ctx := context.Background()
+	players := accounts(b, pool, 4)
+	fits := map[rules.Seat]partnerfit.Count{rules.SeatNorth: {Decisions: 12, Fits: 11}, rules.SeatSouth: {Decisions: 10, Fits: 7}, rules.SeatEast: {Decisions: 9, Fits: 4}, rules.SeatWest: {Decisions: 11, Fits: 9}}
+	b.ReportAllocs()
+	for b.Loop() {
+		b.StopTimer()
+		id := uuid.NewString()
+		if err := store.Begin(ctx, started(id, matchstore.KindRanked, players)); err != nil {
+			b.Fatal(err)
+		}
+		f := finished(id, matchstore.KindRanked)
+		f.PartnerFit = fits
+		b.StartTimer()
+		if err := store.Finish(ctx, f); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
