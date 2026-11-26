@@ -149,7 +149,7 @@ namespace HypeDomino.Tests.PlayMode
             var emojiRoot = Child("Emoji", lobbyPanel.transform).AddComponent<CanvasGroup>();
             var wheelPanel = Child("Wheel", emojiRoot.transform);
             var slot = NewButton("Slot", wheelPanel.transform);
-            view.ConfigureEmoji(emojiRoot, NewButton("Wheel button", emojiRoot.transform), wheelPanel, new[] { slot }, new[] { NewArt("Art", slot.transform) });
+            view.ConfigureEmoji(emojiRoot, NewButton("Wheel button", emojiRoot.transform), wheelPanel, new[] { slot }, new[] { NewArt("Art", slot.transform) }, null);
 
             api = new Api();
             var auth = new Auth();

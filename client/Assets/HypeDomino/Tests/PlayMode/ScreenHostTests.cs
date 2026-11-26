@@ -41,6 +41,8 @@ namespace HypeDomino.Tests.PlayMode
         const int RankingLabels = 3;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
+        const int InvitePromptButtons = 2;
+        const int InvitePromptLabels = 2;
         const int RoomLabels = 20;
         const int ProfileLabels = 9;
         static readonly string[] NoLocales = { };
@@ -119,7 +121,7 @@ namespace HypeDomino.Tests.PlayMode
 
             Assert.IsNotNull(login.GetComponent<LoginScreenView>());
             Assert.IsNotNull(lobby.GetComponent<LobbyScreenView>());
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryButtons, lobby.GetComponentsInChildren<Button>(true).Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryButtons + InvitePromptButtons, lobby.GetComponentsInChildren<Button>(true).Length);
             Assert.IsFalse(login.IsShown);
             Assert.IsFalse(lobby.IsShown);
             Assert.IsNull(host.ScreenOf(AppState.Match));
@@ -161,7 +163,7 @@ namespace HypeDomino.Tests.PlayMode
             var lobby = host.ScreenOf(AppState.Lobby).GetComponentsInChildren<PlainLabel>(true);
 
             Assert.AreEqual(LoginButtons, login.Length);
-            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryLabels, lobby.Length);
+            Assert.AreEqual(PlayModes.Count + 2 + NavButtons + RoomEntryLabels + InvitePromptLabels, lobby.Length);
             foreach (var label in login) AssertShowsItsString(label);
             foreach (var label in lobby) AssertShowsItsString(label);
         }
@@ -667,6 +669,33 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsNotNull(ButtonOf(lobby, RoomScreens.CreateKey));
             Assert.IsNotNull(ButtonOf(lobby, RoomScreens.JoinKey));
             AssertShowsItsString(TextOf(lobby, RoomScreens.CodeKey));
+        }
+
+        [Test]
+        public void TheLobbyHasTheInvitePromptHiddenUntilAnInviteArrives()
+        {
+            var lobby = host.ScreenOf(AppState.Lobby);
+            var accept = ButtonOf(lobby, RoomScreens.AcceptInviteKey);
+            var decline = ButtonOf(lobby, RoomScreens.DeclineInviteKey);
+
+            Assert.IsNotNull(lobby.GetComponent<InvitePromptView>());
+            AssertShowsItsString(LabelOf(lobby, RoomScreens.AcceptInviteKey));
+            AssertShowsItsString(LabelOf(lobby, RoomScreens.DeclineInviteKey));
+            Assert.AreSame(accept.transform.parent, decline.transform.parent);
+            Assert.IsFalse(accept.transform.parent.parent.gameObject.activeSelf);
+        }
+
+        [Test]
+        public void TheRoomEmojiWheelStartsWithoutSlotsAndKeepsItsSlotTemplateHidden()
+        {
+            var room = host.ScreenOf(AppState.Room);
+            var wheel = ButtonOf(room, RoomScreens.EmojiKey).transform.parent;
+
+            Assert.AreEqual(1, wheel.GetComponentsInChildren<Button>(true).Length);
+            var template = System.Array.Find(room.GetComponentsInChildren<Button>(true), button => button.transform.parent == room.transform);
+            Assert.IsNotNull(template);
+            Assert.IsFalse(template.gameObject.activeSelf);
+            Assert.IsNotNull(template.GetComponentInChildren<CosmeticImage>(true));
         }
 
         [Test]
