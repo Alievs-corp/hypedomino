@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file hypedomino/v1/hello.proto.
  */
 export const file_hypedomino_v1_hello: GenFile = /*@__PURE__*/
-  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIsECCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBBIwCglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mEhsKE2RldmljZV9yaXNrX3NpZ25hbHMYCiADKAkSFAoMaG9va19zaWduYWxzGAsgAygJInIKDkludGVncml0eVByb29mEh4KFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSAASNwoKYXBwX2F0dGVzdBgCIAEoCzIhLmh5cGVkb21pbm8udjEuQXBwQXR0ZXN0QXNzZXJ0aW9uSABCBwoFcHJvb2YiRgoSQXBwQXR0ZXN0QXNzZXJ0aW9uEg4KBmtleV9pZBgBIAEoDBINCgVub25jZRgCIAEoCRIRCglhc3NlcnRpb24YAyABKAwi1QMKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCBIzCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlEjUKD2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpbhIVCg1zZXNzaW9uX25vbmNlGAggASgGEhgKEGNvbnRlbnRfYmFzZV91cmwYCSABKAkSIAoYbWFpbnRlbmFuY2VfZW5kc191bml4X21zGAogASgEEjwKEmNvc21ldGljc19tYW5pZmVzdBgLIAEoCzIgLmh5cGVkb21pbm8udjEuQ29zbWV0aWNzTWFuaWZlc3QSOAoQYW5hbHl0aWNzX2NvbmZpZxgMIAEoCzIeLmh5cGVkb21pbm8udjEuQW5hbHl0aWNzQ29uZmlnIj8KDFN0cmluZ0J1bmRsZRIQCghsYW5ndWFnZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEgwKBGhhc2gYAyABKAkiMgoRQ29zbWV0aWNzTWFuaWZlc3QSDwoHdmVyc2lvbhgBIAEoDRIMCgRoYXNoGAIgASgJIlEKD0FuYWx5dGljc0NvbmZpZxISCgpiYXRjaF9zaXplGAEgASgNEhMKC3F1ZXVlX2xpbWl0GAIgASgNEhUKDWZsdXNoX3NlY29uZHMYAyABKA0iNAoNRmFsbGJhY2tDaGFpbhIQCghsYW5ndWFnZRgBIAEoCRIRCglsYW5ndWFnZXMYAiADKAkqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqhgEKC0hlbGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlSRUQQAhIcChhIRUxMT19TVEFUVVNfTUFJTlRFTkFOQ0UQA0LFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM");
+  fileDesc("ChloeXBlZG9taW5vL3YxL2hlbGxvLnByb3RvEg1oeXBlZG9taW5vLnYxIsECCgtDbGllbnRIZWxsbxITCgthcHBfdmVyc2lvbhgBIAEoCRISCgpidWlsZF9oYXNoGAIgASgJEikKCHBsYXRmb3JtGAMgASgOMhcuaHlwZWRvbWluby52MS5QbGF0Zm9ybRISCgpvc192ZXJzaW9uGAQgASgJEhQKDGRldmljZV9tb2RlbBgFIAEoCRIVCg1zZXNzaW9uX3Rva2VuGAYgASgJEhsKE2xhc3RfYWNrZWRfc2VxdWVuY2UYByABKAQSGwoTY2xpZW50X3RpbWVfdW5peF9tcxgIIAEoBBIwCglpbnRlZ3JpdHkYCSABKAsyHS5oeXBlZG9taW5vLnYxLkludGVncml0eVByb29mEhsKE2RldmljZV9yaXNrX3NpZ25hbHMYCiADKAkSFAoMaG9va19zaWduYWxzGAsgAygJInIKDkludGVncml0eVByb29mEh4KFHBsYXlfaW50ZWdyaXR5X3Rva2VuGAEgASgJSAASNwoKYXBwX2F0dGVzdBgCIAEoCzIhLmh5cGVkb21pbm8udjEuQXBwQXR0ZXN0QXNzZXJ0aW9uSABCBwoFcHJvb2YiRgoSQXBwQXR0ZXN0QXNzZXJ0aW9uEg4KBmtleV9pZBgBIAEoDBINCgVub25jZRgCIAEoCRIRCglhc3NlcnRpb24YAyABKAwijQQKC1NlcnZlckhlbGxvEioKBnN0YXR1cxgBIAEoDjIaLmh5cGVkb21pbm8udjEuSGVsbG9TdGF0dXMSGwoTbWluaW11bV9hcHBfdmVyc2lvbhgCIAEoCRIbChNzZXJ2ZXJfdGltZV91bml4X21zGAMgASgEEhcKD2NhdGFsb2dfdmVyc2lvbhgEIAEoCRIQCghpbl9tYXRjaBgFIAEoCBIzCg5zdHJpbmdfYnVuZGxlcxgGIAMoCzIbLmh5cGVkb21pbm8udjEuU3RyaW5nQnVuZGxlEjUKD2ZhbGxiYWNrX2NoYWlucxgHIAMoCzIcLmh5cGVkb21pbm8udjEuRmFsbGJhY2tDaGFpbhIVCg1zZXNzaW9uX25vbmNlGAggASgGEhgKEGNvbnRlbnRfYmFzZV91cmwYCSABKAkSIAoYbWFpbnRlbmFuY2VfZW5kc191bml4X21zGAogASgEEjwKEmNvc21ldGljc19tYW5pZmVzdBgLIAEoCzIgLmh5cGVkb21pbm8udjEuQ29zbWV0aWNzTWFuaWZlc3QSOAoQYW5hbHl0aWNzX2NvbmZpZxgMIAEoCzIeLmh5cGVkb21pbm8udjEuQW5hbHl0aWNzQ29uZmlnEjYKDHJhcml0eV90YWJsZRgNIAEoCzIgLmh5cGVkb21pbm8udjEuUmFyaXR5VGFibGVDb25maWciPwoMU3RyaW5nQnVuZGxlEhAKCGxhbmd1YWdlGAEgASgJEg8KB3ZlcnNpb24YAiABKA0SDAoEaGFzaBgDIAEoCSIyChFDb3NtZXRpY3NNYW5pZmVzdBIPCgd2ZXJzaW9uGAEgASgNEgwKBGhhc2gYAiABKAkiUQoPQW5hbHl0aWNzQ29uZmlnEhIKCmJhdGNoX3NpemUYASABKA0SEwoLcXVldWVfbGltaXQYAiABKA0SFQoNZmx1c2hfc2Vjb25kcxgDIAEoDSJ1ChFSYXJpdHlUYWJsZUNvbmZpZxIYChBkaWFtb25kX21pbl9zaXplGAEgASgNEhYKDmZsb3dfcGVyaW9kX21zGAIgASgNEi4KBXRpZXJzGAMgAygLMh8uaHlwZWRvbWluby52MS5SYXJpdHlUaWVyQ29uZmlnIq0BChBSYXJpdHlUaWVyQ29uZmlnEgoKAmlkGAEgASgJEg8KB29yZGluYWwYAiABKA0SEAoIbmFtZV9rZXkYAyABKAkSDAoEZmlsbBgEIAEoCRIKCgJvbhgFIAEoCRIMCgR0ZXh0GAYgASgJEgwKBHBpcHMYByABKA0SEgoKZ2xvd19hbHBoYRgIIAEoAhISCgpnbG93X3NjYWxlGAkgASgCEgwKBGZsb3cYCiABKAgiNAoNRmFsbGJhY2tDaGFpbhIQCghsYW5ndWFnZRgBIAEoCRIRCglsYW5ndWFnZXMYAiADKAkqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqhgEKC0hlbGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFTExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVfUkVRVUlSRUQQAhIcChhIRUxMT19TVEFUVVNfTUFJTlRFTkFOQ0UQA0LFAQoRY29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM");
 
 /**
  * @generated from message hypedomino.v1.ClientHello
@@ -198,6 +198,11 @@ export type ServerHello = Message<"hypedomino.v1.ServerHello"> & {
    * @generated from field: hypedomino.v1.AnalyticsConfig analytics_config = 12;
    */
   analyticsConfig?: AnalyticsConfig | undefined;
+
+  /**
+   * @generated from field: hypedomino.v1.RarityTableConfig rarity_table = 13;
+   */
+  rarityTable?: RarityTableConfig | undefined;
 };
 
 /**
@@ -284,6 +289,95 @@ export const AnalyticsConfigSchema: GenMessage<AnalyticsConfig> = /*@__PURE__*/
   messageDesc(file_hypedomino_v1_hello, 6);
 
 /**
+ * @generated from message hypedomino.v1.RarityTableConfig
+ */
+export type RarityTableConfig = Message<"hypedomino.v1.RarityTableConfig"> & {
+  /**
+   * @generated from field: uint32 diamond_min_size = 1;
+   */
+  diamondMinSize: number;
+
+  /**
+   * @generated from field: uint32 flow_period_ms = 2;
+   */
+  flowPeriodMs: number;
+
+  /**
+   * @generated from field: repeated hypedomino.v1.RarityTierConfig tiers = 3;
+   */
+  tiers: RarityTierConfig[];
+};
+
+/**
+ * Describes the message hypedomino.v1.RarityTableConfig.
+ * Use `create(RarityTableConfigSchema)` to create a new message.
+ */
+export const RarityTableConfigSchema: GenMessage<RarityTableConfig> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 7);
+
+/**
+ * @generated from message hypedomino.v1.RarityTierConfig
+ */
+export type RarityTierConfig = Message<"hypedomino.v1.RarityTierConfig"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: uint32 ordinal = 2;
+   */
+  ordinal: number;
+
+  /**
+   * @generated from field: string name_key = 3;
+   */
+  nameKey: string;
+
+  /**
+   * @generated from field: string fill = 4;
+   */
+  fill: string;
+
+  /**
+   * @generated from field: string on = 5;
+   */
+  on: string;
+
+  /**
+   * @generated from field: string text = 6;
+   */
+  text: string;
+
+  /**
+   * @generated from field: uint32 pips = 7;
+   */
+  pips: number;
+
+  /**
+   * @generated from field: float glow_alpha = 8;
+   */
+  glowAlpha: number;
+
+  /**
+   * @generated from field: float glow_scale = 9;
+   */
+  glowScale: number;
+
+  /**
+   * @generated from field: bool flow = 10;
+   */
+  flow: boolean;
+};
+
+/**
+ * Describes the message hypedomino.v1.RarityTierConfig.
+ * Use `create(RarityTierConfigSchema)` to create a new message.
+ */
+export const RarityTierConfigSchema: GenMessage<RarityTierConfig> = /*@__PURE__*/
+  messageDesc(file_hypedomino_v1_hello, 8);
+
+/**
  * @generated from message hypedomino.v1.FallbackChain
  */
 export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
@@ -303,7 +397,7 @@ export type FallbackChain = Message<"hypedomino.v1.FallbackChain"> & {
  * Use `create(FallbackChainSchema)` to create a new message.
  */
 export const FallbackChainSchema: GenMessage<FallbackChain> = /*@__PURE__*/
-  messageDesc(file_hypedomino_v1_hello, 7);
+  messageDesc(file_hypedomino_v1_hello, 9);
 
 /**
  * @generated from enum hypedomino.v1.Platform

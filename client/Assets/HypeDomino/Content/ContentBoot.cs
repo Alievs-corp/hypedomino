@@ -1,6 +1,7 @@
 using System.IO;
 using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Cosmetics;
+using HypeDomino.UI.Rarity;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -21,6 +22,8 @@ namespace HypeDomino.Content
 
         public static CosmeticManifestUpdater CosmeticsUpdater { get; private set; }
 
+        public static ActiveRarityTable Rarities { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Start()
         {
@@ -31,6 +34,7 @@ namespace HypeDomino.Content
         static void Build()
         {
             Cosmetics = new ActiveCosmeticManifest(CosmeticManifest.LoadBuiltin());
+            Rarities = new ActiveRarityTable(RarityTable.LoadBuiltin());
             if (Application.isEditor) return;
             var folder = Folder;
             CosmeticsUpdater = new CosmeticManifestUpdater(new UnityCosmeticManifestSource(folder), Cosmetics);

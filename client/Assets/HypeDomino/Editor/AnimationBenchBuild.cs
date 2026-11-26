@@ -20,7 +20,7 @@ namespace HypeDomino.Editor
         const int AtlasSize = 768;
         const int CellSize = 192;
         const int FramesPerAvatar = 16;
-        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/Resources/rarity-defaults.json";
         const int DiamondCell = 0;
         const int HaloCell = 7;
         const int FlowHaloCell = 8;

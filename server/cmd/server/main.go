@@ -52,6 +52,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/purchase"
 	"github.com/Alievs-corp/hypedomino/server/internal/push"
 	"github.com/Alievs-corp/hypedomino/server/internal/quickmessage"
+	"github.com/Alievs-corp/hypedomino/server/internal/rarity"
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/report"
@@ -182,6 +183,15 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 			return nil
 		}
 		return &pb.CosmeticsManifest{Version: uint32(published.Version), Hash: published.Hash}
+	})
+	rarityTable := snapshot.New(pool, rarity.Domain, rarity.Parse, logger)
+	watchConfig(ctx, a.AwaitBeforeReady, "rarity", config.ConfigPoll, rarityTable)
+	a.AnnounceRarity(func() *pb.RarityTableConfig {
+		published, _, ok := rarityTable.Current()
+		if !ok {
+			return nil
+		}
+		return published.Hello()
 	})
 	liveopsConfig := snapshot.New(pool, liveops.Domain, liveops.Parse, logger)
 	watchConfig(ctx, a.AwaitBeforeReady, "liveops", config.ConfigPoll, liveopsConfig)

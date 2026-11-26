@@ -1,0 +1,84 @@
+{
+  "glow": {
+    "none": {
+      "alpha": 0,
+      "scale": 1
+    },
+    "soft": {
+      "alpha": 0.35,
+      "scale": 1.15
+    },
+    "strong": {
+      "alpha": 0.55,
+      "scale": 1.3
+    },
+    "intense": {
+      "alpha": 0.8,
+      "scale": 1.5
+    }
+  },
+  "grounds": [
+    "#0B0605",
+    "#1A0C0A",
+    "#2C1510",
+    "#4B1D0F"
+  ],
+  "textMinimumContrast": 4.5,
+  "nonTextMinimumContrast": 3,
+  "table": {
+    "diamondMinSize": 72,
+    "flowPeriodMs": 2400,
+    "tiers": {
+      "common": {
+        "ordinal": 1,
+        "nameKey": "rarity.common.name",
+        "fill": "#A3A6BF",
+        "on": "#0B0605",
+        "text": "#C9CBDB",
+        "pips": 1,
+        "glow": "none",
+        "flow": false
+      },
+      "rare": {
+        "ordinal": 2,
+        "nameKey": "rarity.rare.name",
+        "fill": "#5C78FF",
+        "on": "#0B0605",
+        "text": "#A3B3FF",
+        "pips": 2,
+        "glow": "soft",
+        "flow": false
+      },
+      "epic": {
+        "ordinal": 3,
+        "nameKey": "rarity.epic.name",
+        "fill": "#B45CFF",
+        "on": "#0B0605",
+        "text": "#D3A3FF",
+        "pips": 3,
+        "glow": "strong",
+        "flow": false
+      },
+      "legendary": {
+        "ordinal": 4,
+        "nameKey": "rarity.legendary.name",
+        "fill": "#FFC23D",
+        "on": "#0B0605",
+        "text": "#FFD98A",
+        "pips": 4,
+        "glow": "intense",
+        "flow": false
+      },
+      "mythic": {
+        "ordinal": 5,
+        "nameKey": "rarity.mythic.name",
+        "fill": "#FF4530",
+        "on": "#0B0605",
+        "text": "#FF9C8F",
+        "pips": 5,
+        "glow": "intense",
+        "flow": true
+      }
+    }
+  }
+}

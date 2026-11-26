@@ -8,7 +8,7 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class RarityTableTests
     {
-        const string DefaultsPath = "Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+        const string DefaultsPath = "Assets/HypeDomino/UI/Rarity/Resources/rarity-defaults.json";
         static readonly string[] TierIds = { "common", "rare", "epic", "legendary", "mythic" };
         const string ValidA = @"{""id"":""a"",""ordinal"":1,""nameKey"":""rarity.a.name"",""fill"":""#FF0000"",""on"":""#00FF00"",""text"":""#0000FF"",""pips"":1}";
         const string ValidB = @"{""id"":""b"",""ordinal"":2,""nameKey"":""rarity.b.name"",""fill"":""#FF0000"",""on"":""#00FF00"",""text"":""#0000FF"",""pips"":2}";

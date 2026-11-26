@@ -402,6 +402,7 @@ type ServerHello struct {
 	MaintenanceEndsUnixMs uint64                 `protobuf:"varint,10,opt,name=maintenance_ends_unix_ms,json=maintenanceEndsUnixMs,proto3" json:"maintenance_ends_unix_ms,omitempty"`
 	CosmeticsManifest     *CosmeticsManifest     `protobuf:"bytes,11,opt,name=cosmetics_manifest,json=cosmeticsManifest,proto3" json:"cosmetics_manifest,omitempty"`
 	AnalyticsConfig       *AnalyticsConfig       `protobuf:"bytes,12,opt,name=analytics_config,json=analyticsConfig,proto3" json:"analytics_config,omitempty"`
+	RarityTable           *RarityTableConfig     `protobuf:"bytes,13,opt,name=rarity_table,json=rarityTable,proto3" json:"rarity_table,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -516,6 +517,13 @@ func (x *ServerHello) GetCosmeticsManifest() *CosmeticsManifest {
 func (x *ServerHello) GetAnalyticsConfig() *AnalyticsConfig {
 	if x != nil {
 		return x.AnalyticsConfig
+	}
+	return nil
+}
+
+func (x *ServerHello) GetRarityTable() *RarityTableConfig {
+	if x != nil {
+		return x.RarityTable
 	}
 	return nil
 }
@@ -692,6 +700,182 @@ func (x *AnalyticsConfig) GetFlushSeconds() uint32 {
 	return 0
 }
 
+type RarityTableConfig struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DiamondMinSize uint32                 `protobuf:"varint,1,opt,name=diamond_min_size,json=diamondMinSize,proto3" json:"diamond_min_size,omitempty"`
+	FlowPeriodMs   uint32                 `protobuf:"varint,2,opt,name=flow_period_ms,json=flowPeriodMs,proto3" json:"flow_period_ms,omitempty"`
+	Tiers          []*RarityTierConfig    `protobuf:"bytes,3,rep,name=tiers,proto3" json:"tiers,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RarityTableConfig) Reset() {
+	*x = RarityTableConfig{}
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RarityTableConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RarityTableConfig) ProtoMessage() {}
+
+func (x *RarityTableConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RarityTableConfig.ProtoReflect.Descriptor instead.
+func (*RarityTableConfig) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RarityTableConfig) GetDiamondMinSize() uint32 {
+	if x != nil {
+		return x.DiamondMinSize
+	}
+	return 0
+}
+
+func (x *RarityTableConfig) GetFlowPeriodMs() uint32 {
+	if x != nil {
+		return x.FlowPeriodMs
+	}
+	return 0
+}
+
+func (x *RarityTableConfig) GetTiers() []*RarityTierConfig {
+	if x != nil {
+		return x.Tiers
+	}
+	return nil
+}
+
+type RarityTierConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Ordinal       uint32                 `protobuf:"varint,2,opt,name=ordinal,proto3" json:"ordinal,omitempty"`
+	NameKey       string                 `protobuf:"bytes,3,opt,name=name_key,json=nameKey,proto3" json:"name_key,omitempty"`
+	Fill          string                 `protobuf:"bytes,4,opt,name=fill,proto3" json:"fill,omitempty"`
+	On            string                 `protobuf:"bytes,5,opt,name=on,proto3" json:"on,omitempty"`
+	Text          string                 `protobuf:"bytes,6,opt,name=text,proto3" json:"text,omitempty"`
+	Pips          uint32                 `protobuf:"varint,7,opt,name=pips,proto3" json:"pips,omitempty"`
+	GlowAlpha     float32                `protobuf:"fixed32,8,opt,name=glow_alpha,json=glowAlpha,proto3" json:"glow_alpha,omitempty"`
+	GlowScale     float32                `protobuf:"fixed32,9,opt,name=glow_scale,json=glowScale,proto3" json:"glow_scale,omitempty"`
+	Flow          bool                   `protobuf:"varint,10,opt,name=flow,proto3" json:"flow,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RarityTierConfig) Reset() {
+	*x = RarityTierConfig{}
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RarityTierConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RarityTierConfig) ProtoMessage() {}
+
+func (x *RarityTierConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RarityTierConfig.ProtoReflect.Descriptor instead.
+func (*RarityTierConfig) Descriptor() ([]byte, []int) {
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RarityTierConfig) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RarityTierConfig) GetOrdinal() uint32 {
+	if x != nil {
+		return x.Ordinal
+	}
+	return 0
+}
+
+func (x *RarityTierConfig) GetNameKey() string {
+	if x != nil {
+		return x.NameKey
+	}
+	return ""
+}
+
+func (x *RarityTierConfig) GetFill() string {
+	if x != nil {
+		return x.Fill
+	}
+	return ""
+}
+
+func (x *RarityTierConfig) GetOn() string {
+	if x != nil {
+		return x.On
+	}
+	return ""
+}
+
+func (x *RarityTierConfig) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *RarityTierConfig) GetPips() uint32 {
+	if x != nil {
+		return x.Pips
+	}
+	return 0
+}
+
+func (x *RarityTierConfig) GetGlowAlpha() float32 {
+	if x != nil {
+		return x.GlowAlpha
+	}
+	return 0
+}
+
+func (x *RarityTierConfig) GetGlowScale() float32 {
+	if x != nil {
+		return x.GlowScale
+	}
+	return 0
+}
+
+func (x *RarityTierConfig) GetFlow() bool {
+	if x != nil {
+		return x.Flow
+	}
+	return false
+}
+
 type FallbackChain struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Language      string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
@@ -702,7 +886,7 @@ type FallbackChain struct {
 
 func (x *FallbackChain) Reset() {
 	*x = FallbackChain{}
-	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -714,7 +898,7 @@ func (x *FallbackChain) String() string {
 func (*FallbackChain) ProtoMessage() {}
 
 func (x *FallbackChain) ProtoReflect() protoreflect.Message {
-	mi := &file_hypedomino_v1_hello_proto_msgTypes[7]
+	mi := &file_hypedomino_v1_hello_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -727,7 +911,7 @@ func (x *FallbackChain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FallbackChain.ProtoReflect.Descriptor instead.
 func (*FallbackChain) Descriptor() ([]byte, []int) {
-	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{7}
+	return file_hypedomino_v1_hello_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FallbackChain) GetLanguage() string {
@@ -773,7 +957,7 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x12AppAttestAssertion\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\fR\x05keyId\x12\x14\n" +
 	"\x05nonce\x18\x02 \x01(\tR\x05nonce\x12\x1c\n" +
-	"\tassertion\x18\x03 \x01(\fR\tassertion\"\x93\x05\n" +
+	"\tassertion\x18\x03 \x01(\fR\tassertion\"\xd8\x05\n" +
 	"\vServerHello\x122\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1a.hypedomino.v1.HelloStatusR\x06status\x12.\n" +
 	"\x13minimum_app_version\x18\x02 \x01(\tR\x11minimumAppVersion\x12-\n" +
@@ -787,7 +971,8 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\x18maintenance_ends_unix_ms\x18\n" +
 	" \x01(\x04R\x15maintenanceEndsUnixMs\x12O\n" +
 	"\x12cosmetics_manifest\x18\v \x01(\v2 .hypedomino.v1.CosmeticsManifestR\x11cosmeticsManifest\x12I\n" +
-	"\x10analytics_config\x18\f \x01(\v2\x1e.hypedomino.v1.AnalyticsConfigR\x0fanalyticsConfig\"X\n" +
+	"\x10analytics_config\x18\f \x01(\v2\x1e.hypedomino.v1.AnalyticsConfigR\x0fanalyticsConfig\x12C\n" +
+	"\frarity_table\x18\r \x01(\v2 .hypedomino.v1.RarityTableConfigR\vrarityTable\"X\n" +
 	"\fStringBundle\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\x12\x12\n" +
@@ -800,7 +985,25 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"batch_size\x18\x01 \x01(\rR\tbatchSize\x12\x1f\n" +
 	"\vqueue_limit\x18\x02 \x01(\rR\n" +
 	"queueLimit\x12#\n" +
-	"\rflush_seconds\x18\x03 \x01(\rR\fflushSeconds\"I\n" +
+	"\rflush_seconds\x18\x03 \x01(\rR\fflushSeconds\"\x9a\x01\n" +
+	"\x11RarityTableConfig\x12(\n" +
+	"\x10diamond_min_size\x18\x01 \x01(\rR\x0ediamondMinSize\x12$\n" +
+	"\x0eflow_period_ms\x18\x02 \x01(\rR\fflowPeriodMs\x125\n" +
+	"\x05tiers\x18\x03 \x03(\v2\x1f.hypedomino.v1.RarityTierConfigR\x05tiers\"\xf5\x01\n" +
+	"\x10RarityTierConfig\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\aordinal\x18\x02 \x01(\rR\aordinal\x12\x19\n" +
+	"\bname_key\x18\x03 \x01(\tR\anameKey\x12\x12\n" +
+	"\x04fill\x18\x04 \x01(\tR\x04fill\x12\x0e\n" +
+	"\x02on\x18\x05 \x01(\tR\x02on\x12\x12\n" +
+	"\x04text\x18\x06 \x01(\tR\x04text\x12\x12\n" +
+	"\x04pips\x18\a \x01(\rR\x04pips\x12\x1d\n" +
+	"\n" +
+	"glow_alpha\x18\b \x01(\x02R\tglowAlpha\x12\x1d\n" +
+	"\n" +
+	"glow_scale\x18\t \x01(\x02R\tglowScale\x12\x12\n" +
+	"\x04flow\x18\n" +
+	" \x01(\bR\x04flow\"I\n" +
 	"\rFallbackChain\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x1c\n" +
 	"\tlanguages\x18\x02 \x03(\tR\tlanguages*L\n" +
@@ -829,7 +1032,7 @@ func file_hypedomino_v1_hello_proto_rawDescGZIP() []byte {
 }
 
 var file_hypedomino_v1_hello_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_hypedomino_v1_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_hypedomino_v1_hello_proto_goTypes = []any{
 	(Platform)(0),              // 0: hypedomino.v1.Platform
 	(HelloStatus)(0),           // 1: hypedomino.v1.HelloStatus
@@ -840,22 +1043,26 @@ var file_hypedomino_v1_hello_proto_goTypes = []any{
 	(*StringBundle)(nil),       // 6: hypedomino.v1.StringBundle
 	(*CosmeticsManifest)(nil),  // 7: hypedomino.v1.CosmeticsManifest
 	(*AnalyticsConfig)(nil),    // 8: hypedomino.v1.AnalyticsConfig
-	(*FallbackChain)(nil),      // 9: hypedomino.v1.FallbackChain
+	(*RarityTableConfig)(nil),  // 9: hypedomino.v1.RarityTableConfig
+	(*RarityTierConfig)(nil),   // 10: hypedomino.v1.RarityTierConfig
+	(*FallbackChain)(nil),      // 11: hypedomino.v1.FallbackChain
 }
 var file_hypedomino_v1_hello_proto_depIdxs = []int32{
-	0, // 0: hypedomino.v1.ClientHello.platform:type_name -> hypedomino.v1.Platform
-	3, // 1: hypedomino.v1.ClientHello.integrity:type_name -> hypedomino.v1.IntegrityProof
-	4, // 2: hypedomino.v1.IntegrityProof.app_attest:type_name -> hypedomino.v1.AppAttestAssertion
-	1, // 3: hypedomino.v1.ServerHello.status:type_name -> hypedomino.v1.HelloStatus
-	6, // 4: hypedomino.v1.ServerHello.string_bundles:type_name -> hypedomino.v1.StringBundle
-	9, // 5: hypedomino.v1.ServerHello.fallback_chains:type_name -> hypedomino.v1.FallbackChain
-	7, // 6: hypedomino.v1.ServerHello.cosmetics_manifest:type_name -> hypedomino.v1.CosmeticsManifest
-	8, // 7: hypedomino.v1.ServerHello.analytics_config:type_name -> hypedomino.v1.AnalyticsConfig
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	0,  // 0: hypedomino.v1.ClientHello.platform:type_name -> hypedomino.v1.Platform
+	3,  // 1: hypedomino.v1.ClientHello.integrity:type_name -> hypedomino.v1.IntegrityProof
+	4,  // 2: hypedomino.v1.IntegrityProof.app_attest:type_name -> hypedomino.v1.AppAttestAssertion
+	1,  // 3: hypedomino.v1.ServerHello.status:type_name -> hypedomino.v1.HelloStatus
+	6,  // 4: hypedomino.v1.ServerHello.string_bundles:type_name -> hypedomino.v1.StringBundle
+	11, // 5: hypedomino.v1.ServerHello.fallback_chains:type_name -> hypedomino.v1.FallbackChain
+	7,  // 6: hypedomino.v1.ServerHello.cosmetics_manifest:type_name -> hypedomino.v1.CosmeticsManifest
+	8,  // 7: hypedomino.v1.ServerHello.analytics_config:type_name -> hypedomino.v1.AnalyticsConfig
+	9,  // 8: hypedomino.v1.ServerHello.rarity_table:type_name -> hypedomino.v1.RarityTableConfig
+	10, // 9: hypedomino.v1.RarityTableConfig.tiers:type_name -> hypedomino.v1.RarityTierConfig
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_hypedomino_v1_hello_proto_init() }
@@ -873,7 +1080,7 @@ func file_hypedomino_v1_hello_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_hypedomino_v1_hello_proto_rawDesc), len(file_hypedomino_v1_hello_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
