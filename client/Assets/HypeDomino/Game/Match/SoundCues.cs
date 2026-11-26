@@ -95,7 +95,6 @@ namespace HypeDomino.Game.Match
             if (view.HandsPlayed != hand && view.HasLastResult && view.LeftSeats.Length > 0) return MatchSounds.HandEnd;
             var sounds = MatchSounds.None;
             var sameHand = view.HandsPlayed == hand;
-            if (sameHand && tiles > boardTiles) sounds |= MatchSounds.TilePlace;
             if (sameHand && view.State == MatchState.Playing && view.BoneyardSize < boneyard) sounds |= MatchSounds.TileDraw;
             if (sameHand && IsPass(view, tiles)) sounds |= MatchSounds.Pass;
             if (team != Team.Unspecified && score > teamScore)

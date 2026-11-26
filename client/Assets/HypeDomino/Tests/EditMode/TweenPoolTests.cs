@@ -245,6 +245,46 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void RetargetingAMovingTweenKeepsItsTimingAndShowsWhereItIsNow()
+        {
+            var pool = new TweenPool(4);
+            pool.Start(Move(1, 100f, 200f), ref sink);
+            var moved = new Vector3(30f, 40f, 0f);
+
+            Assert.IsTrue(pool.Retarget(1, TweenChannel.Position, moved, 200f, ref sink));
+
+            Assert.AreEqual(15f, sink.Of(1, TweenChannel.Position).x, 1e-3f);
+            Assert.AreEqual(20f, sink.Of(1, TweenChannel.Position).y, 1e-3f);
+            pool.Step(300f, ref sink);
+            Assert.AreEqual(moved, sink.Of(1, TweenChannel.Position));
+            Assert.AreEqual(0, pool.Count);
+        }
+
+        [Test]
+        public void RetargetingAWaitingTweenKeepsItOnItsStart()
+        {
+            var pool = new TweenPool(4);
+            pool.Start(Move(1, 100f, 200f), ref sink);
+
+            Assert.IsTrue(pool.Retarget(1, TweenChannel.Position, new Vector3(30f, 40f, 0f), 50f, ref sink));
+
+            Assert.AreEqual(Vector3.zero, sink.Of(1, TweenChannel.Position));
+            Assert.AreEqual(1, pool.Count);
+        }
+
+        [Test]
+        public void RetargetingWhatDoesNotMoveChangesNothing()
+        {
+            var pool = new TweenPool(4);
+            pool.Start(Move(1, 0f, 200f), ref sink);
+
+            Assert.IsFalse(pool.Retarget(2, TweenChannel.Position, Vector3.one, 50f, ref sink));
+            Assert.IsFalse(pool.Retarget(1, TweenChannel.Rotation, Vector3.one, 50f, ref sink));
+
+            Assert.AreEqual(0, sink.Applied);
+        }
+
+        [Test]
         public void StartingAndSteppingAllocateNothing()
         {
             var pool = TweenPool.For(EffectLevel.High);
@@ -255,6 +295,7 @@ namespace HypeDomino.Tests.EditMode
                 for (var tile = 0; tile < 8; tile++) TileTravel.Start(pool, ref sink, tile, Vector3.zero, 0f, Vector3.one, 90f, now, false);
                 for (var tile = 8; tile < 16; tile++) TileTravel.Arrive(pool, ref sink, tile, tile - 8, Vector3.zero, Vector3.one, now, false);
                 pool.Start(Move(0, now, 50f, cosmetic: true, channel: TweenChannel.Alpha), ref sink);
+                pool.Retarget(0, TweenChannel.Position, Vector3.one, now, ref sink);
                 pool.Step(now + 100f, ref sink);
                 pool.FinishAll(ref sink);
                 now += 16f;
