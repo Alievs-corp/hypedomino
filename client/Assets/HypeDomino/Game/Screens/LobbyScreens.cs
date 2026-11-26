@@ -33,6 +33,7 @@ namespace HypeDomino.Game.Screens
             var cancel = PlainUi.Button(column, "ui.plain.lobby.cancel", host.Strings);
             var countdown = PlainUi.Text(column, TokenTextStyle.Body);
             var message = PlainUi.Text(column, TokenTextStyle.Body);
+            RoomScreens.Invitation(screen, column, host.Strings);
             RoomScreens.Entry(screen, column, host.Strings);
             nav = PlainUi.Column(column).transform;
             screen.gameObject.AddComponent<LobbyScreenView>().Configure(cards, busy, cancel, countdown, message, coins, crystals, level, retryHeader);

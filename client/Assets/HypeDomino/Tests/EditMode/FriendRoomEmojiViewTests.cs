@@ -31,7 +31,8 @@ namespace HypeDomino.Tests.EditMode
         const string CryStill = "cosmetic/emoji/cry/static";
         const int SlotButtons = 3;
         const string TwoWorn = "{\"items\":[],\"loadout\":{\"emojis\":[\"emoji.laugh\",\"emoji.cry\"]},\"emoji_slots\":2}";
-        const string Catalog = "{\"schemaVersion\":1,\"manifestVersion\":1,\"items\":["
+        const string FourWornOfFive = "{\"items\":[],\"loadout\":{\"emojis\":[\"emoji.laugh\",\"emoji.cry\",\"emoji.laugh\",\"emoji.cry\"]},\"emoji_slots\":5}";
+        const string Catalog ="{\"schemaVersion\":1,\"manifestVersion\":1,\"items\":["
             + "{\"id\":\"emoji.laugh\",\"type\":\"emoji\",\"availability\":\"live\",\"staticAddress\":\"cosmetic/emoji/laugh/static\"},"
             + "{\"id\":\"emoji.cry\",\"type\":\"emoji\",\"availability\":\"live\",\"staticAddress\":\"cosmetic/emoji/cry/static\"},"
             + "{\"id\":\"emoji.gone\",\"type\":\"emoji\",\"availability\":\"disabled\",\"staticAddress\":\"cosmetic/emoji/gone/static\"},"
@@ -144,7 +145,10 @@ namespace HypeDomino.Tests.EditMode
             view.Configure(lobbyPanel, teamsPanel, members, Text("Code", root.transform), Text("Message", root.transform), NewButton("Leave", root.transform), NewButton("Invite", root.transform), invites);
             view.ConfigureStart(NewButton("1v1", lobbyPanel.transform), NewButton("2v2", lobbyPanel.transform));
             view.ConfigureTeams(Cells("Team A", 2, teamsPanel.transform), Cells("Team B", 2, teamsPanel.transform), Cells("Waiting", 2, teamsPanel.transform), NewButton("Start match", teamsPanel.transform), NewButton("Back", teamsPanel.transform));
-            view.ConfigureEmoji(emojiRoot, wheel, wheelPanel, slots, slotArt);
+            var slotTemplate = NewButton("Slot template", root.transform);
+            NewArt("Art", slotTemplate.transform);
+            slotTemplate.gameObject.SetActive(false);
+            view.ConfigureEmoji(emojiRoot, wheel, wheelPanel, slots, slotArt, slotTemplate);
 
             var auth = new Auth();
             var store = new Store();
@@ -412,6 +416,28 @@ namespace HypeDomino.Tests.EditMode
             view.Tick();
 
             Assert.IsFalse(ShowsEmoji(members[1]));
+        }
+
+        [Test]
+        public void MoreSlotsThanButtonsBuildTheMissingButtonsFromTheTemplateOnce()
+        {
+            api.Waiting[CosmeticCollection.InventoryPath](new HttpReply(200, FourWornOfFive));
+            Lobby();
+
+            wheel.onClick.Invoke();
+            wheel.onClick.Invoke();
+            wheel.onClick.Invoke();
+
+            var built = wheelPanel.GetComponentsInChildren<Button>(true);
+            Assert.AreEqual(5, built.Length);
+            for (var at = 0; at < 4; at++) Assert.IsTrue(built[at].gameObject.activeSelf);
+            Assert.IsFalse(built[4].gameObject.activeSelf);
+
+            built[3].onClick.Invoke();
+
+            Assert.AreEqual(1, transport.Sent.Count);
+            Assert.AreEqual(Cry, Envelope.Parser.ParseFrom(transport.Sent[0]).EmojiIntent.ItemId);
+            Assert.IsFalse(wheelPanel.activeSelf);
         }
 
         [Test]
