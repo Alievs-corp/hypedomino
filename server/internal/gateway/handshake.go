@@ -116,6 +116,9 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Analytics != nil {
 		hello.AnalyticsConfig = c.options.Analytics()
 	}
+	if status == pb.HelloStatus_HELLO_STATUS_ACCEPTED && c.options.Rarity != nil {
+		hello.RarityTable = c.options.Rarity()
+	}
 	return &pb.Envelope{
 		ProtocolVersion: ProtocolVersion,
 		AckedSequence:   acked,
@@ -125,6 +128,10 @@ func (c *Conn) serverHello(status pb.HelloStatus, acked uint64, inMatch bool) *p
 
 type ReplayCounter interface {
 	Replayed()
+}
+
+type IllegalIntentCounter interface {
+	IllegalIntent()
 }
 
 type Queuer interface {

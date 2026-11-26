@@ -13,13 +13,13 @@ type ConfigAction<T> = (value: T, reason: string) => Promise<ConfigResult>;
 
 type PageText = { title: MessageKey; loadFailed: MessageKey; intro: MessageKey; historyEmpty: MessageKey };
 
-export async function KeyedConfigPage({ path, text, publish, rollback }: { path: string; text: PageText; publish: ConfigAction<KeyValues>; rollback: ConfigAction<number> }) {
+export async function KeyedConfigPage({ path, object, text, publish, rollback }: { path: string; object: string; text: PageText; publish: ConfigAction<KeyValues>; rollback: ConfigAction<number> }) {
   const t = await serverTranslator();
   const admin = await currentAdmin();
   if (!admin) {
     return <Notice text={t("auth.required")} />;
   }
-  if (!canView(admin.permissions, "game_config")) {
+  if (!canView(admin.permissions, object)) {
     return <Notice text={t("auth.forbidden")} />;
   }
   const [config, history] = await Promise.all([adminApi<KeyedConfig>("GET", path), adminApi<{ versions: KeyedVersion[] }>("GET", `${path}/history`)]);
@@ -35,12 +35,12 @@ export async function KeyedConfigPage({ path, text, publish, rollback }: { path:
         </p>
         <p className="text-sm text-text-secondary">{t(text.intro)}</p>
       </div>
-      <KeyEditor keys={config.body.keys} canPublish={can(admin.permissions, "game_config", "publish")} publish={publish} />
+      <KeyEditor keys={config.body.keys} canPublish={can(admin.permissions, object, "publish")} publish={publish} />
       <History
         keys={config.body.keys}
         versions={history.body.versions}
         empty={t(text.historyEmpty)}
-        clientId={canRollBack(admin.permissions, "game_config") ? googleClientId() : null}
+        clientId={canRollBack(admin.permissions, object) ? googleClientId() : null}
         rollback={rollback}
         t={t}
       />
