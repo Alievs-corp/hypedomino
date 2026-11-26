@@ -125,8 +125,8 @@ Authored white or greyscale and tinted at runtime (`docs/art-direction.md` secti
 
 ## 6. Open items
 
-- Wiring `BoardTilesView` into the match screen with the board's `Image` pool and `TilePlaceLayer`; the match screen is not assembled yet.
-- The lifted and travelling shadow levels (`elevation.e2`, `elevation.e3`) during a tile's travel; laid tiles use `e1` (section 5).
+- The match scene asset that holds the board's `Image` pool; `MatchSceneViews` already drives `BoardTilesView` and `TilePlaceLayer` (`docs/ui-motion.md`, Tile place).
+- The lifted and travelling shadow levels (`elevation.e2`, `elevation.e3`) during a tile's travel; laid tiles use `e1` (section 5), and until this is decided a travelling tile's shadow moves with it at `e1`.
 - Size and placement of the face-down rows beside each seat and the hand tile size (`docs/art-direction.md` section 10).
 - The board's scale cap (`docs/ui-motion.md` section 9).
 - The shared effects atlas and the sheen's sweep timing (#176).

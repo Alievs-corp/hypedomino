@@ -8,22 +8,22 @@ using UnityEngine;
 
 namespace HypeDomino.Game.Match
 {
-    public sealed class MatchTable : IMatchTable
+    public sealed class MatchTable : IMatchTable, IDisposable
     {
         readonly SeatAvatars avatars;
         readonly TableBackground background;
         readonly ActiveCosmeticManifest manifest;
         readonly ScorePanelView score;
-        readonly BoardTilesView tiles;
+        readonly MatchBoard board;
         readonly MatchLayoutView layout;
 
-        public MatchTable(SeatAvatars avatars, TableBackground background, ActiveCosmeticManifest manifest, ScorePanelView score, BoardTilesView tiles, MatchLayoutView layout, float boardMaxScale)
+        public MatchTable(SeatAvatars avatars, TableBackground background, ActiveCosmeticManifest manifest, ScorePanelView score, MatchBoard board, MatchLayoutView layout, float boardMaxScale)
         {
             this.avatars = avatars ?? throw new ArgumentNullException(nameof(avatars));
             this.background = background ?? throw new ArgumentNullException(nameof(background));
             this.manifest = manifest ?? throw new ArgumentNullException(nameof(manifest));
             this.score = score ? score : throw new ArgumentNullException(nameof(score));
-            this.tiles = tiles ? tiles : throw new ArgumentNullException(nameof(tiles));
+            this.board = board ?? throw new ArgumentNullException(nameof(board));
             this.layout = layout ? layout : throw new ArgumentNullException(nameof(layout));
             BoardMaxScale = boardMaxScale;
         }
@@ -41,7 +41,13 @@ namespace HypeDomino.Game.Match
 
         public void ShowScore(ScoreBoard board) => ScorePanel.Show(score, board);
 
-        public void ShowBoard(ChainLayout board) => tiles.Show(board);
+        public void ShowBoard(ChainLayout chain, BoardPlacements placements) => board.Show(chain, placements);
+
+        public void ShowEffects(MatchSnapshot view) => board.ShowEffects(view);
+
+        public void StartConnection() => board.StartConnection();
+
+        public void Dispose() => board.Dispose();
 
         public void RefreshEffects()
         {

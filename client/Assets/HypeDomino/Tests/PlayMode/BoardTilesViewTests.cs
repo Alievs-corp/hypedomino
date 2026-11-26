@@ -81,10 +81,14 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(layout);
 
             Assert.AreEqual(3, view.Count);
+            var laid = new bool[images.Length];
             for (var i = 0; i < layout.Count; i++)
             {
                 var tile = layout[i];
-                var image = images[i];
+                var slot = BoardTilesView.SlotOf(tile);
+                laid[slot] = true;
+                var image = images[slot];
+                Assert.AreSame(image.rectTransform, view.TileAt(slot), $"tile {i}");
                 Assert.IsTrue(image.enabled, $"tile {i}");
                 Assert.AreSame(faces[TileFaces.Index(D(tile.Near, tile.Far))], image.sprite, $"tile {i}");
                 Assert.AreEqual(layout.Scale, image.rectTransform.sizeDelta.x, Tolerance, $"tile {i}");
@@ -93,7 +97,8 @@ namespace HypeDomino.Tests.PlayMode
                 Assert.AreEqual(0f, Mathf.DeltaAngle(TileFaces.Angle(tile), image.rectTransform.localEulerAngles.z), Tolerance, $"tile {i}");
                 Assert.IsFalse(image.raycastTarget, $"tile {i}");
             }
-            for (var i = layout.Count; i < images.Length; i++) Assert.IsFalse(images[i].enabled, $"slot {i}");
+            for (var slot = 0; slot < images.Length; slot++)
+                if (!laid[slot]) Assert.IsFalse(images[slot].enabled, $"slot {slot}");
         }
 
         [Test]
@@ -105,10 +110,14 @@ namespace HypeDomino.Tests.PlayMode
 
             view.Show(layout);
 
+            var laid = new bool[shadows.Length];
             for (var i = 0; i < layout.Count; i++)
             {
-                var cast = shadows[i];
-                var tile = images[i].rectTransform;
+                var slot = BoardTilesView.SlotOf(layout[i]);
+                laid[slot] = true;
+                var cast = shadows[slot];
+                var tile = images[slot].rectTransform;
+                Assert.AreSame(cast.rectTransform, view.ShadowAt(slot), $"shadow {i}");
                 Assert.IsTrue(cast.enabled, $"shadow {i}");
                 Assert.AreSame(shadow, cast.sprite, $"shadow {i}");
                 Assert.AreEqual(tint, (Color32)cast.color, $"shadow {i}");
@@ -119,7 +128,8 @@ namespace HypeDomino.Tests.PlayMode
                 Assert.AreEqual(ShadowCanvas.y * scale, cast.rectTransform.sizeDelta.y, Tolerance, $"shadow {i}");
                 Assert.AreEqual(0f, Mathf.DeltaAngle(tile.localEulerAngles.z, cast.rectTransform.localEulerAngles.z), Tolerance, $"shadow {i}");
             }
-            for (var i = layout.Count; i < shadows.Length; i++) Assert.IsFalse(shadows[i].enabled, $"shadow slot {i}");
+            for (var slot = 0; slot < shadows.Length; slot++)
+                if (!laid[slot]) Assert.IsFalse(shadows[slot].enabled, $"shadow slot {slot}");
         }
 
         [Test]
@@ -140,13 +150,31 @@ namespace HypeDomino.Tests.PlayMode
             view.Show(Arrange(new List<Domino> { D(3, 3) }, 0));
 
             Assert.AreEqual(1, view.Count);
-            Assert.AreSame(faces[TileFaces.Index(D(3, 3))], images[0].sprite);
-            for (var i = 1; i < images.Length; i++)
+            var kept = TileFaces.Index(D(3, 3));
+            Assert.AreSame(faces[kept], images[kept].sprite);
+            for (var slot = 0; slot < images.Length; slot++)
             {
-                Assert.IsFalse(images[i].enabled, $"slot {i}");
-                Assert.IsFalse(shadows[i].enabled, $"shadow slot {i}");
+                if (slot == kept) continue;
+                Assert.IsFalse(images[slot].enabled, $"slot {slot}");
+                Assert.IsFalse(shadows[slot].enabled, $"shadow slot {slot}");
             }
-            Assert.IsTrue(shadows[0].enabled);
+            Assert.IsTrue(images[kept].enabled);
+            Assert.IsTrue(shadows[kept].enabled);
+        }
+
+        [Test]
+        public void ATileKeepsItsOwnSlotWhenTheChainGrowsBeforeIt()
+        {
+            var placedLast = TileFaces.Index(D(2, 5));
+            view.Show(Arrange(new List<Domino> { D(2, 2), D(2, 5) }, 0));
+            var image = images[placedLast];
+
+            view.Show(Arrange(new List<Domino> { D(1, 2), D(2, 2), D(2, 5) }, 1));
+
+            Assert.AreSame(image, images[placedLast]);
+            Assert.IsTrue(image.enabled);
+            Assert.AreSame(faces[placedLast], image.sprite);
+            Assert.IsTrue(images[TileFaces.Index(D(1, 2))].enabled);
         }
 
         [Test]

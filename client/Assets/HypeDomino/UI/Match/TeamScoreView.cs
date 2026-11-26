@@ -17,6 +17,8 @@ namespace HypeDomino.UI.Match
         uint shownScore;
         float shownMark = -1f;
 
+        public RectTransform Meter => meter.rectTransform;
+
         public void Configure(TMP_Text scoreText, Graphic teamGem, Image meterFill, GameObject badge, RectTransform mark = null)
         {
             score = scoreText;
