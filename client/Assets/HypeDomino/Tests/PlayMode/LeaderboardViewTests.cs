@@ -148,7 +148,7 @@ namespace HypeDomino.Tests.PlayMode
             Assert.AreEqual("/leaderboard/1v1?board=global", api.Paths[0]);
             var rows = ShownRows();
             Assert.AreEqual(new[] { "1", "2", "12.344", "12.345" }, rows.Select(row => TextOf(row, "Position")).ToArray());
-            Assert.AreEqual(new[] { "Ayla", "", "Cem", "Me" }, rows.Select(row => TextOf(row, "Nickname")).ToArray());
+            Assert.AreEqual(new[] { "Ayla", "Oyunçu", "Cem", "Me" }, rows.Select(row => TextOf(row, "Nickname")).ToArray());
             Assert.AreEqual(new[] { "1.200", "80", "43", "42" }, rows.Select(row => TextOf(row, "LP")).ToArray());
             Assert.AreEqual(new[] { false, false, false, true }, rows.Select(row => row.Find("Own").gameObject.activeSelf).ToArray());
         }
@@ -182,6 +182,18 @@ namespace HypeDomino.Tests.PlayMode
             choice.Choose(GameLanguage.English);
 
             Assert.AreEqual("12,345", TextOf(ShownRows()[3], "Position"));
+        }
+
+        [Test]
+        public void AnEmptyNicknameShowsThePlaceholderNameOfTheChosenLanguage()
+        {
+            Load(LeaderboardStanding.BoardGlobal, BoardJson);
+            Assert.AreEqual("Oyunçu", TextOf(ShownRows()[1], "Nickname"));
+
+            choice.Choose(GameLanguage.English);
+
+            Assert.AreEqual("Player", TextOf(ShownRows()[1], "Nickname"));
+            Assert.AreEqual("Ayla", TextOf(ShownRows()[0], "Nickname"));
         }
 
         [Test]
