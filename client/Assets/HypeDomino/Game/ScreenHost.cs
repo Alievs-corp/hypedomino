@@ -24,6 +24,7 @@ namespace HypeDomino.Game
             screens[AppState.Room] = RoomScreens.Room(this);
             screens[AppState.UpdateRequired] = NoticeScreens.UpdateRequired(this);
             screens[AppState.Maintenance] = NoticeScreens.Maintenance(this);
+            PrivacyNotice = FirstLaunchScreens.PrivacyNotice(this);
             Promo = PromoScreens.Promo(this);
             Nav("ui.plain.nav.pass", PassScreens.Pass(this));
             Nav(PromoScreens.NavKey, Promo);
@@ -39,6 +40,8 @@ namespace HypeDomino.Game
         public GameStrings Strings { get; }
 
         public ScreenView Promo { get; }
+
+        public ScreenView PrivacyNotice { get; }
 
         public ScreenView ScreenOf(AppState state) => screens.TryGetValue(state, out var screen) ? screen : null;
 

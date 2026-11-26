@@ -377,10 +377,20 @@ func TestDecodeIntentRefusesBadTiles(t *testing.T) {
 
 func TestRoomSessionDeliversRejectionsAsErrors(t *testing.T) {
 	_, r := roomServer(t, rules.Mode1v1, 1)
-	conn := &Conn{queue: make(chan *pb.Envelope, 4), closed: make(chan struct{})}
+	counter := &recordingSession{}
+	conn := &Conn{queue: make(chan *pb.Envelope, 4), closed: make(chan struct{}), session: counter}
 	session := JoinRoom(r, rules.SeatX, conn)
-	session.Deliver(room.Message{View: room.View{State: room.StatePlaying, Mode: rules.Mode1v1, Acked: 4}, Rejected: true, Sequence: 5, Reason: errors.New("no")})
+	session.Deliver(room.Message{View: room.View{State: room.StatePlaying, Mode: rules.Mode1v1, Acked: 4}, Rejected: true, Sequence: 5, Reason: room.ErrNotStarted})
+	<-conn.queue
+	<-conn.queue
+	if counter.illegalCount() != 0 {
+		t.Fatal("a refusal outside the rules was counted as illegal")
+	}
+	session.Deliver(room.Message{View: room.View{State: room.StatePlaying, Mode: rules.Mode1v1, Acked: 4}, Rejected: true, Illegal: true, Sequence: 5, Reason: errors.New("no")})
 	first, second := <-conn.queue, <-conn.queue
+	if counter.illegalCount() != 1 {
+		t.Fatalf("%d illegal intents counted, want 1", counter.illegalCount())
+	}
 	if first.GetError().GetCode() != pb.ErrorCode_ERROR_CODE_ILLEGAL_INTENT || first.GetError().GetRejectedSequence() != 5 || first.GetAckedSequence() != 4 {
 		t.Fatalf("rejection frame %v", first)
 	}

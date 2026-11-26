@@ -1,6 +1,6 @@
 # Closed beta
 
-How the game reaches its first real players before the soft launch (#196): the beta phases on the Google Play testing tracks and TestFlight, who the testers are and how they join, how they send feedback, which crash, retention and match signals are tracked and reported, how the launch defaults are tuned from beta data, what happens to beta progress and purchases, and the exit criteria that close #193. Epic 17 (#189).
+How the game reaches its first real players before the soft launch (#196, [`docs/soft-launch.md`](soft-launch.md)): the beta phases on the Google Play testing tracks and TestFlight, who the testers are and how they join, how they send feedback, which crash, retention and match signals are tracked and reported, how the launch defaults are tuned from beta data, what happens to beta progress and purchases, and the exit criteria that close #193. Epic 17 (#189).
 
 **Status: draft, awaiting owner approval.** Every rule here is a proposal the owner approves by merging the pull request that adds or changes it. Decisions that only the owner can make are section 10, each with a proposed default; until the owner answers, a default is a plan, not a decision.
 
@@ -219,7 +219,7 @@ The beta exits when every item holds on the exit build, the release candidate bu
 | BX-4 | Resume success | At least 99% (*default*): a resume inside the grace with a valid token only fails on a defect | BS-10 | Server lead |
 | BX-5 | Move round-trip | p99 under 100 ms in region (`docs/performance.md`, CLAUDE.md) for every week of CB-3 | BS-11 | Server lead |
 | BX-6 | Economy integrity | Zero unexplained ledger reconciliation mismatches and zero unexplained hard signals over CB-2 and CB-3; no open economy integrity incident | BS-15 | Security lead |
-| BX-7 | KPI pipeline | D1, D7, active testers and matches per day reported for every weekly cohort of CB-3, and #147 figures match raw events (#147 acceptance), so the soft launch KPI report (#196) can start on day one | BS-5 to BS-7 | Analyst |
+| BX-7 | KPI pipeline | D1, D7, active testers and matches per day reported for every weekly cohort of CB-3, and #147 figures match raw events (#147 acceptance), so the soft launch KPI report (#196, [`docs/soft-launch.md`](soft-launch.md) section 6) can start on day one | BS-5 to BS-7 | Analyst |
 | BX-8 | Beta bugs | No open `priority:p0` or `priority:p1` issue found in the beta (search "Found in closed beta (#193)") | GitHub | QA lead |
 | BX-9 | Balance | Every BT measure reported against its reference; model keys replaced (5.2); values approved in the beta written back to the repo defaults | Section 5 | Live-ops lead |
 | BX-10 | Testers' rights | Every deletion and access request from a tester answered within its deadline (`docs/privacy.md` 8.1) | Support tool | Support lead |

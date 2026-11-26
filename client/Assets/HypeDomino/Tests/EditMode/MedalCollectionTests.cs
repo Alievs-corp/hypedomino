@@ -8,7 +8,7 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class MedalCollectionTests
     {
-        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/rarity-defaults.json";
+        const string RarityDefaultsPath = "Assets/HypeDomino/UI/Rarity/Resources/rarity-defaults.json";
 
         const string CollectionJson = @"{""version"":7,""slots"":3,""medals"":[
 {""id"":""medal.first_win"",""revision"":1,""nameKey"":""medal.first_win.name"",""descriptionKey"":""medal.first_win.description"",""rarityId"":""common"",""staticAddress"":""medal/first_win/static"",""sources"":[{""type"":""mission"",""ref"":""mission.first_win""}],""availability"":""live""},

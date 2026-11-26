@@ -7,6 +7,7 @@ export type Screen = { href: string; labelKey: MessageKey; object: string | null
 export const screens: readonly Screen[] = [
   { href: "/cosmetics", labelKey: "nav.cosmetics", object: "cosmetic_items" },
   { href: "/assets", labelKey: "nav.assets", object: "assets" },
+  { href: "/rarity", labelKey: "nav.rarity", object: "rarity_table" },
   { href: "/rewards", labelKey: "nav.rewards", object: "reward_bundles" },
   { href: "/shop", labelKey: "nav.shop", object: "shop_offers" },
   { href: "/store-prices", labelKey: "nav.store_prices", object: "store_products" },
@@ -25,6 +26,7 @@ export const screens: readonly Screen[] = [
   { href: "/config/matchmaking", labelKey: "nav.matchmaking", object: "game_config" },
   { href: "/config/penalties", labelKey: "nav.penalties", object: "game_config" },
   { href: "/config/liveops", labelKey: "nav.liveops", object: "game_config" },
+  { href: "/config/anticheat", labelKey: "nav.anticheat", object: "anti_cheat_config" },
   { href: "/calendar", labelKey: "nav.calendar", object: "live_events" },
   { href: "/strings", labelKey: "nav.strings", object: "game_strings" },
   { href: "/analytics", labelKey: "nav.analytics", object: "dashboards" },
