@@ -271,7 +271,7 @@ jobs:
       - name: Container health, bad config exit and SIGTERM drain
         run: bash tools/deploy/container-smoke.sh hypedomino-server:ci
       - name: Create the cluster
-        run: kind create cluster --name hd --wait 120s
+        run: kind create cluster --name hd --config tools/deploy/kind-cluster.yaml --wait 120s
       - name: Migration job before the rollout, rolling deploy drains old pods, rollback under 5 minutes
         run: bash tools/deploy/kind-rollout.sh hd hypedomino-server:ci
       - name: Debug port scraped from the monitoring namespace only

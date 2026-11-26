@@ -11,6 +11,15 @@ locals {
   control_private_ip = "10.0.1.10"
   network_zone       = "eu-central"
 
+  listen_backlog        = 65535
+  listen_backlog_sysctl = "net.core.somaxconn"
+  kubelet_args          = ["allowed-unsafe-sysctls=${local.listen_backlog_sysctl}"]
+  game_sysctl_file = {
+    path        = "/etc/sysctl.d/90-hypedomino-listen.conf"
+    permissions = "0644"
+    content     = "${local.listen_backlog_sysctl} = ${local.listen_backlog}\n"
+  }
+
   common_labels = {
     "hypedomino.io/environment" = var.environment
     "managed-by"                = "opentofu"
@@ -60,6 +69,7 @@ locals {
     "advertise-address"     = local.control_private_ip
     "tls-san"               = [hcloud_primary_ip.control.ip_address, local.control_private_ip]
     "node-label"            = ["hypedomino.io/role=control"]
+    "kubelet-arg"           = local.kubelet_args
     disable                 = ["traefik", "servicelb", "local-storage"]
     "secrets-encryption"    = true
     "write-kubeconfig-mode" = "0600"
@@ -182,19 +192,23 @@ resource "hcloud_server" "agent" {
   labels             = merge(local.common_labels, { "hypedomino.io/role" = each.value.role })
 
   user_data = "#cloud-config\n${yamlencode({
-    write_files = [
+    write_files = concat([
       {
         path        = "/etc/rancher/k3s/config.yaml"
         permissions = "0600"
         content = yamlencode({
-          token        = var.k3s_token
-          server       = "https://${local.control_private_ip}:6443"
-          "node-label" = ["hypedomino.io/role=${each.value.role}"]
+          token         = var.k3s_token
+          server        = "https://${local.control_private_ip}:6443"
+          "node-label"  = ["hypedomino.io/role=${each.value.role}"]
+          "kubelet-arg" = local.kubelet_args
         })
       },
       { path = "/usr/local/sbin/hypedomino-install-k3s", permissions = "0700", content = local.install_script },
-    ]
-    runcmd = [["/usr/local/sbin/hypedomino-install-k3s", "agent"]]
+    ], each.value.role == "game" ? [local.game_sysctl_file] : [])
+    runcmd = concat(
+      each.value.role == "game" ? [["sysctl", "-p", local.game_sysctl_file.path]] : [],
+      [["/usr/local/sbin/hypedomino-install-k3s", "agent"]],
+    )
   })}"
 
   public_net {
