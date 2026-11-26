@@ -83,6 +83,7 @@ namespace HypeDomino.Tests.EditMode
         List<PrivacySettingsResult> results;
         int changes;
         int issuedIds;
+        string policyVersion;
 
         [SetUp]
         public void SignIn()
@@ -99,7 +100,8 @@ namespace HypeDomino.Tests.EditMode
             analytics = new AnalyticsQueue(analyticsSender, () => 1000, 2, 4);
             diagnostics = new ErrorReports(new ErrorSender());
             issuedIds = 0;
-            settings = new PrivacySettings(client, analytics, diagnostics, NextAnalyticsId, PolicyVersion, AppVersion);
+            policyVersion = PolicyVersion;
+            settings = new PrivacySettings(client, analytics, diagnostics, NextAnalyticsId, () => policyVersion, AppVersion);
             settings.Changed += () => changes++;
             results = new List<PrivacySettingsResult>();
             changes = 0;
@@ -125,13 +127,29 @@ namespace HypeDomino.Tests.EditMode
             return analyticsSender.Ids[analyticsSender.Ids.Count - 1];
         }
 
-        [TestCase(null, AppVersion)]
-        [TestCase("", AppVersion)]
-        [TestCase(PolicyVersion, null)]
-        [TestCase(PolicyVersion, "")]
-        public void AConsentContextIsRequiredToBuildTheModel(string policyVersion, string appVersion)
+        [TestCase(null)]
+        [TestCase("")]
+        public void AConsentContextIsRequiredToBuildTheModel(string appVersion)
         {
-            Assert.Throws<ArgumentException>(() => new PrivacySettings(client, analytics, diagnostics, NextAnalyticsId, policyVersion, appVersion));
+            Assert.Throws<ArgumentException>(() => new PrivacySettings(client, analytics, diagnostics, NextAnalyticsId, () => PolicyVersion, appVersion));
+            Assert.Throws<ArgumentNullException>(() => new PrivacySettings(client, analytics, diagnostics, NextAnalyticsId, null, AppVersion));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void NothingIsSavedOrWithdrawnBeforeTheServerAnnouncesAPolicyVersion(string announced)
+        {
+            LoadWith(true, true);
+            policyVersion = announced;
+            Assert.IsFalse(settings.SetAnalytics(false, results.Add));
+            Assert.IsFalse(settings.SetDiagnostics(false, results.Add));
+            Assert.AreEqual(1, api.Requests.Count);
+            Assert.IsTrue(analytics.Consented);
+            Assert.IsTrue(diagnostics.Consented);
+
+            policyVersion = "2026-12-01";
+            Assert.IsTrue(settings.SetAnalytics(false, results.Add));
+            Assert.AreEqual("{\"analytics\":false,\"diagnostics\":true,\"policyVersion\":\"2026-12-01\",\"appVersion\":\"0.4.2\"}", api.Requests[1].Body);
         }
 
         [Test]

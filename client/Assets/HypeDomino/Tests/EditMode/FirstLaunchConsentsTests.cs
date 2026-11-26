@@ -57,6 +57,7 @@ namespace HypeDomino.Tests.EditMode
         ApiClient client;
         FirstLaunchConsents consents;
         List<FirstLaunchConsentsResult> results;
+        string policyVersion;
 
         [SetUp]
         public void SignIn()
@@ -69,7 +70,8 @@ namespace HypeDomino.Tests.EditMode
             session.Resume(_ => { });
             auth.Refreshes[0](new HttpReply(200, "{\"access_token\":\"access-1\",\"refresh_token\":\"refresh-1\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"acc-1\"}"));
             client = new ApiClient(api, session);
-            consents = new FirstLaunchConsents(PolicyVersion, AppVersion);
+            policyVersion = PolicyVersion;
+            consents = new FirstLaunchConsents(() => policyVersion, AppVersion);
             results = new List<FirstLaunchConsentsResult>();
         }
 
@@ -83,13 +85,45 @@ namespace HypeDomino.Tests.EditMode
             consents.Choose(ConsentPurpose.Analytics, false);
         }
 
-        [TestCase(null, AppVersion)]
-        [TestCase("", AppVersion)]
-        [TestCase(PolicyVersion, null)]
-        [TestCase(PolicyVersion, "")]
-        public void AConsentContextIsRequiredToHoldChoices(string policyVersion, string appVersion)
+        [TestCase(null)]
+        [TestCase("")]
+        public void AnAppVersionIsRequiredToHoldChoices(string appVersion)
         {
-            Assert.Throws<ArgumentException>(() => new FirstLaunchConsents(policyVersion, appVersion));
+            Assert.Throws<ArgumentException>(() => new FirstLaunchConsents(() => PolicyVersion, appVersion));
+            Assert.Throws<ArgumentNullException>(() => new FirstLaunchConsents(null, AppVersion));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void ChoicesAreHeldUntilTheServerAnnouncesAPolicyVersion(string announced)
+        {
+            policyVersion = announced;
+            ChooseThree();
+            Assert.IsFalse(consents.Write(client, results.Add));
+            Assert.AreEqual(0, api.Requests.Count);
+            Assert.AreEqual(3, consents.Held);
+            Assert.IsFalse(consents.Busy);
+
+            policyVersion = "2026-12-01";
+            Assert.IsTrue(consents.Write(client, results.Add));
+            Assert.AreEqual(AnalyticsOnThenDiagnosticsOnThenAnalyticsOff.Replace(PolicyVersion, "2026-12-01"), api.Requests[0].Body);
+        }
+
+        [Test]
+        public void APromotionalPushChoiceIsSentWithItsPurpose()
+        {
+            consents.Choose(ConsentPurpose.PromotionalPush, true);
+            consents.Choose(ConsentPurpose.Analytics, false);
+            Assert.IsTrue(consents.Write(client, results.Add));
+            Assert.AreEqual("{\"choices\":[{\"purpose\":\"promotional_push\",\"granted\":true},{\"purpose\":\"analytics\",\"granted\":false}],\"policyVersion\":\"2026-11-01\",\"appVersion\":\"0.4.2\"}", api.Requests[0].Body);
+        }
+
+        [TestCase(ConsentPurpose.Analytics, "analytics")]
+        [TestCase(ConsentPurpose.Diagnostics, "diagnostics")]
+        [TestCase(ConsentPurpose.PromotionalPush, "promotional_push")]
+        public void EveryPurposeHasTheServerName(ConsentPurpose purpose, string wire)
+        {
+            Assert.AreEqual(wire, FirstLaunchConsents.WireName(purpose));
         }
 
         [Test]

@@ -29,7 +29,7 @@ namespace HypeDomino.Game.Privacy
         public bool SignedIn(string accountId)
         {
             if (Busy || string.IsNullOrEmpty(accountId)) return false;
-            if (firstLaunch != null && firstLaunch.Held > 0) return Write(accountId);
+            if (firstLaunch != null && firstLaunch.Held > 0 && Write(accountId)) return true;
             if (accountId == AppliedAccount) return false;
             Busy = true;
             signingIn = accountId;

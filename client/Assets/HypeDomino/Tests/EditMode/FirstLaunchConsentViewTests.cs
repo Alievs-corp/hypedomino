@@ -74,6 +74,7 @@ namespace HypeDomino.Tests.EditMode
         ConsentStartup startup;
         Toggle analytics;
         Toggle diagnostics;
+        Toggle promotionalPush;
         Button proceed;
         int continued;
 
@@ -93,6 +94,7 @@ namespace HypeDomino.Tests.EditMode
             startup = new ConsentStartup(client, gates);
             analytics = Add<Toggle>();
             diagnostics = Add<Toggle>();
+            promotionalPush = Add<Toggle>();
             proceed = Add<Button>();
             continued = 0;
         }
@@ -118,9 +120,10 @@ namespace HypeDomino.Tests.EditMode
         {
             analytics.isOn = true;
             diagnostics.isOn = true;
-            var choices = new FirstLaunchConsents(PolicyVersion, AppVersion);
+            promotionalPush.isOn = true;
+            var choices = new FirstLaunchConsents(() => PolicyVersion, AppVersion);
             var view = root.AddComponent<FirstLaunchConsentView>();
-            view.Configure(Row(analytics), Row(diagnostics), proceed);
+            view.Configure(Row(analytics), Row(diagnostics), Row(promotionalPush), proceed);
             view.Bind(choices, startup, () => continued++);
             return choices;
         }
@@ -134,6 +137,7 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.IsFalse(analytics.isOn);
             Assert.IsFalse(diagnostics.isOn);
+            Assert.IsFalse(promotionalPush.isOn);
             Assert.AreEqual(0, choices.Held);
             Assert.AreEqual(0, api.Requests.Count);
         }
@@ -154,6 +158,20 @@ namespace HypeDomino.Tests.EditMode
 
             Assert.AreEqual(FirstLaunchConsents.Path, Last.PathAndQuery);
             Assert.AreEqual("{\"choices\":[{\"purpose\":\"diagnostics\",\"granted\":true},{\"purpose\":\"analytics\",\"granted\":true}],\"policyVersion\":\"2026-11-01\",\"appVersion\":\"0.4.2\"}", Last.Body);
+        }
+
+        [Test]
+        public void APromotionalPushChoiceIsHeldAndWrittenAtSignIn()
+        {
+            Show();
+
+            promotionalPush.isOn = true;
+            analytics.isOn = true;
+            proceed.onClick.Invoke();
+            startup.SignedIn("acc-1");
+
+            Assert.AreEqual(FirstLaunchConsents.Path, Last.PathAndQuery);
+            Assert.AreEqual("{\"choices\":[{\"purpose\":\"promotional_push\",\"granted\":true},{\"purpose\":\"analytics\",\"granted\":true}],\"policyVersion\":\"2026-11-01\",\"appVersion\":\"0.4.2\"}", Last.Body);
         }
 
         [Test]

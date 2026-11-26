@@ -11,16 +11,15 @@ namespace HypeDomino.Game.Privacy
 
         readonly ApiClient api;
         readonly ConsentGates gates;
-        readonly string policyVersion;
+        readonly Func<string> policyVersion;
         readonly string appVersion;
 
-        public PrivacySettings(ApiClient api, AnalyticsQueue analytics, ErrorReports diagnostics, Func<string> newAnalyticsId, string policyVersion, string appVersion)
+        public PrivacySettings(ApiClient api, AnalyticsQueue analytics, ErrorReports diagnostics, Func<string> newAnalyticsId, Func<string> policyVersion, string appVersion)
         {
-            if (string.IsNullOrEmpty(policyVersion)) throw new ArgumentException("policy version required", nameof(policyVersion));
             if (string.IsNullOrEmpty(appVersion)) throw new ArgumentException("app version required", nameof(appVersion));
             this.api = api;
             gates = new ConsentGates(analytics, diagnostics, newAnalyticsId);
-            this.policyVersion = policyVersion;
+            this.policyVersion = policyVersion ?? throw new ArgumentNullException(nameof(policyVersion));
             this.appVersion = appVersion;
         }
 
@@ -50,10 +49,11 @@ namespace HypeDomino.Game.Privacy
 
         bool Save(bool analyticsOn, bool diagnosticsOn, Action<PrivacySettingsResult> done)
         {
-            if (Busy || !Loaded) return false;
+            var version = policyVersion();
+            if (Busy || !Loaded || string.IsNullOrEmpty(version)) return false;
             Busy = true;
             gates.Withdraw(analyticsOn, diagnosticsOn);
-            var request = new ConsentChangeRequest { analytics = analyticsOn, diagnostics = diagnosticsOn, policyVersion = policyVersion, appVersion = appVersion };
+            var request = new ConsentChangeRequest { analytics = analyticsOn, diagnostics = diagnosticsOn, policyVersion = version, appVersion = appVersion };
             api.Put(Path, request.ToJson(), reply => Answer(reply, done));
             return true;
         }

@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
 	"github.com/Alievs-corp/hypedomino/server/internal/mission"
 	"github.com/Alievs-corp/hypedomino/server/internal/penalties"
+	"github.com/Alievs-corp/hypedomino/server/internal/privacy"
 	"github.com/Alievs-corp/hypedomino/server/internal/rarity"
 	"github.com/Alievs-corp/hypedomino/server/internal/rating"
 	"github.com/Alievs-corp/hypedomino/server/internal/rules"
@@ -280,6 +281,24 @@ func TestLiveopsSnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
 	}
 	for _, test := range tests {
 		if err := validate(liveops.Domain, []byte(test.raw)); !errors.Is(err, test.want) {
+			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
+		}
+	}
+}
+
+func TestPrivacySnapshotsAreCheckedBeforeTheyArePublished(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want error
+	}{
+		{`{"PrivacyPolicyVersion": "2026-11-01", "TermsVersion": "2026-10-01", "ConsentRecordRetentionYears": 3}`, nil},
+		{`{}`, nil},
+		{`{"PrivacyPolicyVersion": ""}`, privacy.ErrInvalid},
+		{`{"ConsentRecordRetentionYears": 0}`, privacy.ErrInvalid},
+		{`{"MinAccountAgeByCountry": 13}`, privacy.ErrInvalid},
+	}
+	for _, test := range tests {
+		if err := validate(privacy.Domain, []byte(test.raw)); !errors.Is(err, test.want) {
 			t.Errorf("%s: %v, want %v", test.raw, err, test.want)
 		}
 	}
