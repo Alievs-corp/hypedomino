@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/promo"
+	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 	"github.com/Alievs-corp/hypedomino/server/internal/reward"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
@@ -265,20 +266,42 @@ func TestRedTeamFloodsAreRateLimited(t *testing.T) {
 		}
 	})
 
-	t.Run("spending from one account", func(t *testing.T) {
-		a := h.attacker(t)
-		h.fund(t, a, wallet.Coin, startingCoins)
-		before := h.economy(t, a)
-		limited := 0
-		for attempt := range 10 {
-			r := h.write(t, a, http.MethodPost, "/shop/buy", map[string]any{"offer": "offer.unknown", "request_id": fmt.Sprintf("flood-%d", attempt)})
-			if r.status == http.StatusTooManyRequests {
-				limited++
+	spends := []struct {
+		name      string
+		path      string
+		body      func(attempt int) map[string]any
+		unchanged bool
+	}{
+		{"shop purchases", "/shop/buy", func(attempt int) map[string]any {
+			return map[string]any{"offer": "offer.unknown", "request_id": fmt.Sprintf("flood-%d", attempt)}
+		}, true},
+		{"pass levels", "/pass/levels", func(attempt int) map[string]any {
+			return map[string]any{"count": 1, "currency": "coin", "request_id": fmt.Sprintf("levels-flood-%d", attempt)}
+		}, false},
+	}
+	limits := ratelimit.DefaultConfig()
+	flood := limits.Spend.Burst + 1
+	if flood >= limits.Account.Burst {
+		t.Fatalf("a spend flood of %d would also empty the account bucket of %d", flood, limits.Account.Burst)
+	}
+	for _, spend := range spends {
+		t.Run("spending from one account: "+spend.name, func(t *testing.T) {
+			a := h.attacker(t)
+			h.fund(t, a, wallet.Coin, startingCoins)
+			before := h.economy(t, a)
+			limited := 0
+			for attempt := range flood {
+				r := h.write(t, a, http.MethodPost, spend.path, spend.body(attempt))
+				if r.status == http.StatusTooManyRequests && r.code() == "rate_limited" {
+					limited++
+				}
 			}
-		}
-		if limited == 0 {
-			t.Fatal("ten purchases from one account in a row were never rate limited")
-		}
-		h.unchanged(t, a, before, "a purchase flood")
-	})
+			if limited == 0 {
+				t.Fatalf("%d %s from one account in a row were never rate limited by the spend bucket", flood, spend.name)
+			}
+			if spend.unchanged {
+				h.unchanged(t, a, before, "a "+spend.name+" flood")
+			}
+		})
+	}
 }

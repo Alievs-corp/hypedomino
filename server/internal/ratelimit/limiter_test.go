@@ -131,6 +131,11 @@ func TestRequestsTakeFromTheirIPAccountSignInAndSpendBuckets(t *testing.T) {
 			{"POST", "/shop/buy", "1.1.1.1", "access:a", 200}, {"POST", "/promo/redeem", "1.1.1.1", "access:a", 429}, {"GET", "/shop", "1.1.1.1", "access:a", 200},
 			{"POST", "/shop/complete", "2.2.2.2", "access:b", 200}, {"POST", "/shop/begin", "2.2.2.2", "access:b", 429},
 		},
+		"pass levels take the spend bucket": {
+			{"POST", "/pass/levels", "1.1.1.1", "access:c", 200}, {"POST", "/pass/levels", "1.1.1.1", "access:c", 429}, {"GET", "/pass", "1.1.1.1", "access:c", 200},
+			{"POST", "/pass/levels", "2.2.2.2", "access:d", 200}, {"POST", "/shop/buy", "2.2.2.2", "access:d", 429},
+			{"POST", "/promo/redeem", "3.3.3.3", "access:e", 200}, {"POST", "/pass/levels", "3.3.3.3", "access:e", 429},
+		},
 		"probes and store notifications are not limited": {
 			{"GET", "/healthz", "1.1.1.1", "", 200}, {"GET", "/readyz", "1.1.1.1", "", 200}, {"GET", "/loadz", "1.1.1.1", "", 200}, {"GET", "/healthz", "1.1.1.1", "", 200},
 			{"POST", "/store/google/notifications", "1.1.1.1", "", 200}, {"GET", "/wallet", "1.1.1.1", "", 200},
