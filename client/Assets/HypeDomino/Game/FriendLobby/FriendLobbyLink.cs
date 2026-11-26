@@ -19,6 +19,8 @@ namespace HypeDomino.Game.FriendLobby
         readonly Action<InventoryLoadResult> onInventory;
         readonly Action<MemberEmoji> onShown;
         readonly Action<FriendListLoadOutcome> onFriends;
+        readonly Action<LobbyInvite> onInvite;
+        readonly RoomInvites invites = new();
         Session session;
         LobbyState lastState;
         bool inRoom;
@@ -32,16 +34,19 @@ namespace HypeDomino.Game.FriendLobby
             this.clockMs = clockMs ?? throw new ArgumentNullException(nameof(clockMs));
             Members = new RoomMembers(api);
             Invites = new InvitePanel(room, commands, api);
+            Incoming = new InvitePrompt(invites, api);
             inventory = new InventoryLoader(api);
             onHello = Hello;
             onState = Read;
             onInventory = Loaded;
             onShown = Show;
             onFriends = FriendsAnswered;
+            onInvite = invites.Read;
         }
 
         public RoomMembers Members { get; }
         public InvitePanel Invites { get; }
+        public InvitePrompt Incoming { get; }
         public EmojiWheel Wheel { get; private set; }
         public LobbyEmoji Emoji { get; private set; }
         public InventoryReply Worn { get; private set; }
@@ -57,6 +62,7 @@ namespace HypeDomino.Game.FriendLobby
             session = source ?? throw new ArgumentNullException(nameof(source));
             session.HelloReceived += onHello;
             session.LobbyStateReceived += onState;
+            session.LobbyInviteReceived += onInvite;
             Emoji?.Bind(session);
         }
 
@@ -65,6 +71,7 @@ namespace HypeDomino.Game.FriendLobby
             if (session == null) return;
             session.HelloReceived -= onHello;
             session.LobbyStateReceived -= onState;
+            session.LobbyInviteReceived -= onInvite;
             Emoji?.Unbind();
             session = null;
         }
@@ -107,6 +114,7 @@ namespace HypeDomino.Game.FriendLobby
         {
             lastState = state;
             Emoji?.Enter(state);
+            invites.Read(state);
             Members.Read(room);
             Invites.RoomChanged();
             if (room.InRoom && !inRoom) Invites.Load(onFriends);

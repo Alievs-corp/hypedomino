@@ -1,6 +1,7 @@
 using System;
 using HypeDomino.UI.Lists;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Profile;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
 
@@ -21,6 +22,7 @@ namespace HypeDomino.Game.Ranking
         LeaderboardStanding standing;
         string[] positions = Array.Empty<string>();
         string[] lps = Array.Empty<string>();
+        string placeholderName;
         int aroundStart;
         int rowCount;
 
@@ -74,6 +76,7 @@ namespace HypeDomino.Game.Ranking
 
         void ShowRows()
         {
+            placeholderName = PlayerNames.Placeholder(strings);
             aroundStart = standing == null ? 0 : FirstAroundBelowTop(standing);
             rowCount = standing == null ? 0 : standing.TopCount + standing.AroundCount - aroundStart;
             if (positions.Length < rowCount)
@@ -94,7 +97,7 @@ namespace HypeDomino.Game.Ranking
         {
             var shown = RowAt(index);
             var own = standing.Listed && string.Equals(shown.AccountId, standing.Me.AccountId, StringComparison.Ordinal);
-            row.GetComponent<LeaderboardRowSlot>().Show(positions[index], shown.Nickname, shown.Badge, tierBadges, lps[index], own);
+            row.GetComponent<LeaderboardRowSlot>().Show(positions[index], PlayerNames.Shown(shown.Nickname, placeholderName), shown.Badge, tierBadges, lps[index], own);
         }
 
         LeaderboardRow RowAt(int index) =>

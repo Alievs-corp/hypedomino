@@ -27,6 +27,8 @@ namespace HypeDomino.Game.Screens
         public const string WaitingKey = "ui.plain.room.waiting";
         public const string StartMatchKey = "ui.plain.room.start_match";
         public const string InviteFriendKey = "ui.plain.room.invite_friend";
+        public const string AcceptInviteKey = "ui.plain.lobby.accept_invite";
+        public const string DeclineInviteKey = "ui.plain.lobby.decline_invite";
 
         public static readonly string[] FriendStateKeys =
         {
@@ -55,7 +57,7 @@ namespace HypeDomino.Game.Screens
             var teams = PlainUi.Column(column);
             var view = screen.gameObject.AddComponent<FriendRoomView>();
             view.Configure(lobby, teams, Members(lobby.transform), code, message, leave, invite, invites);
-            LobbyPanel(view, lobby.transform, strings);
+            LobbyPanel(view, screen.transform, lobby.transform, strings);
             TeamsPanel(view, teams.transform, strings);
             teams.SetActive(false);
             return screen;
@@ -71,14 +73,38 @@ namespace HypeDomino.Game.Screens
             screen.gameObject.AddComponent<RoomEntryView>().Configure(create, code, join, message);
         }
 
-        static void LobbyPanel(FriendRoomView view, Transform lobby, GameStrings strings)
+        public static void Invitation(ScreenView screen, Transform column, GameStrings strings)
+        {
+            var panel = PlainUi.Column(column);
+            var at = panel.transform;
+            var message = PlainUi.Text(at, TokenTextStyle.Body);
+            var answers = PlainUi.Row(at).transform;
+            var accept = PlainUi.Button(answers, AcceptInviteKey, strings);
+            var decline = PlainUi.Button(answers, DeclineInviteKey, strings);
+            panel.SetActive(false);
+            screen.gameObject.AddComponent<InvitePromptView>().Configure(panel, message, accept, decline);
+        }
+
+        static void LobbyPanel(FriendRoomView view, Transform screen, Transform lobby, GameStrings strings)
         {
             var modes = PlainUi.Row(lobby).transform;
             view.ConfigureStart(PlainUi.Button(modes, SoloKey, strings), PlainUi.Button(modes, TeamsKey, strings));
             var emoji = PlainUi.Column(lobby).AddComponent<CanvasGroup>();
             var wheel = PlainUi.Button(emoji.transform, EmojiKey, strings);
             var slots = PlainUi.Row(emoji.transform);
-            view.ConfigureEmoji(emoji, wheel, slots, Array.Empty<Button>(), Array.Empty<CosmeticImage>());
+            view.ConfigureEmoji(emoji, wheel, slots, Array.Empty<Button>(), Array.Empty<CosmeticImage>(), WheelSlot(screen));
+        }
+
+        static Button WheelSlot(Transform parent)
+        {
+            var slot = PlainUi.Button(parent);
+            var art = (RectTransform)PlainUi.Icon(slot.transform).transform;
+            art.anchorMin = Vector2.zero;
+            art.anchorMax = Vector2.one;
+            art.offsetMin = Vector2.zero;
+            art.offsetMax = Vector2.zero;
+            slot.gameObject.SetActive(false);
+            return slot;
         }
 
         static void TeamsPanel(FriendRoomView view, Transform teams, GameStrings strings)
