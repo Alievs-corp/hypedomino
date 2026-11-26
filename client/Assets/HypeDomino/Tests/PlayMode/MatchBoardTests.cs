@@ -113,7 +113,7 @@ namespace HypeDomino.Tests.PlayMode
 
         void Show(byte[] view)
         {
-            Assert.IsTrue(snapshot.TryRead(view));
+            if (!snapshot.TryRead(view)) Assert.Fail("the view does not parse");
             chain.Arrange(snapshot, BoardSize, float.MaxValue);
             placements.Read(snapshot);
             board.Show(chain.Layout, placements);
@@ -329,21 +329,17 @@ namespace HypeDomino.Tests.PlayMode
         {
             var before = View(6, 6, 6, 6, O(2, 3)).ToByteArray();
             var after = View(6, 5, 6, 6, O(2, 3), O(3, 6)).ToByteArray();
-            TestDelegate snap = () => Show(before);
-            TestDelegate read = () => snapshot.TryRead(after);
-            TestDelegate arrange = () => chain.Arrange(snapshot, BoardSize, float.MaxValue);
-            TestDelegate place = () => placements.Read(snapshot);
-            TestDelegate show = () => board.Show(chain.Layout, placements);
-            TestDelegate travel = () => Tick(nowMs + 16f);
-            TestDelegate settle = () => Tick(nowMs + PlaceMs);
-            TestDelegate[] steps = { snap, read, arrange, place, show, travel, settle };
-            for (var warm = 0; warm < 2; warm++)
-                foreach (var step in steps) step();
+            TestDelegate move = () =>
+            {
+                Show(before);
+                Show(after);
+                Tick(nowMs + 16f);
+                Tick(nowMs + PlaceMs);
+            };
+            move();
+            move();
 
-            var counts = new int[steps.Length];
-            for (var at = 0; at < steps.Length; at++) counts[at] = AllocatesNothingConstraint.CountOnCallingThread(steps[at]);
-
-            Assert.AreEqual(new int[steps.Length], counts, "GC allocations of snap, read, arrange, place, show, travel, settle");
+            Assert.That(move, Allocates.Nothing);
             Assert.AreEqual(3, tilePlaces);
         }
     }
