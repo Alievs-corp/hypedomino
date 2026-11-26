@@ -618,7 +618,7 @@ namespace HypeDomino.Tests.PlayMode
             var screen = host.ScreenOf(AppState.Maintenance);
             var dials = 0;
             var maintenance = new MaintenanceScreen(() => dials++, () => 0);
-            screen.GetComponent<MaintenanceScreenView>().Bind(maintenance);
+            screen.GetComponent<MaintenanceScreenView>().Bind(maintenance, strings);
             var panel = TextOf(screen, NoticeScreens.MaintenanceMessageKey).transform.parent.gameObject;
             var retry = ButtonOf(screen, NoticeScreens.RetryKey);
             Assert.IsFalse(panel.activeSelf);
@@ -629,6 +629,27 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsTrue(panel.activeSelf);
             Assert.AreEqual(1, dials);
             Assert.IsFalse(retry.interactable);
+        }
+
+        [Test]
+        public void TheBoundMaintenanceScreenShowsTheServerEndTimeInUtcOnlyWhenSent()
+        {
+            const ulong endsMs = 1_800_000_060_000;
+            var screen = host.ScreenOf(AppState.Maintenance);
+            var maintenance = new MaintenanceScreen(() => { }, () => 0);
+            screen.GetComponent<MaintenanceScreenView>().Bind(maintenance, strings);
+            var shown = strings.Text(MaintenanceScreenView.EndsKey, new System.Collections.Generic.Dictionary<string, object> { [MaintenanceScreenView.EndArgument] = "15.01.2027 08:01" });
+
+            maintenance.Read(new ServerHello { Status = HelloStatus.Maintenance, ServerTimeUnixMs = endsMs - 60_000, MaintenanceEndsUnixMs = endsMs });
+            var ends = System.Array.Find(screen.GetComponentsInChildren<TMP_Text>(true), text => text.text == shown);
+
+            Assert.IsNotNull(ends);
+            Assert.IsTrue(ends.gameObject.activeSelf);
+            StringAssert.Contains("UTC", shown);
+
+            maintenance.Read(new ServerHello { Status = HelloStatus.Maintenance, ServerTimeUnixMs = endsMs });
+
+            Assert.IsFalse(ends.gameObject.activeSelf);
         }
 
         void AssertEveryLabelShowsItsString(ScreenView screen, params string[] keys)

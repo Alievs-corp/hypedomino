@@ -233,6 +233,7 @@
     { "key": "ui.plain.update.message", "en": "A new version is ready. Update to keep playing.", "az": "Yeni versiya hazırdır. Oynamağa davam etmək üçün yenilə." },
     { "key": "ui.plain.update.update", "en": "Update", "az": "Yenilə" },
     { "key": "ui.plain.maintenance.message", "en": "We are making HypeDomino better.", "az": "HypeDomino-nu daha da yaxşılaşdırırıq." },
+    { "key": "ui.plain.maintenance.ends", "en": "Back at {end} UTC.", "az": "Qayıdış vaxtı: {end} UTC." },
     { "key": "ui.plain.nav.pass", "en": "Hype Pass", "az": "Hype Pass" },
     { "key": "ui.plain.nav.promo", "en": "Promo code", "az": "Promo kod" },
     { "key": "ui.plain.nav.shop", "en": "Shop", "az": "Mağaza" },
