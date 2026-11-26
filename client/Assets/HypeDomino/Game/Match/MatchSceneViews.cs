@@ -28,7 +28,6 @@ namespace HypeDomino.Game.Match
         [SerializeField] MatchHudView hud;
         [SerializeField] SeatEmojiLayer emojiLayer;
         [SerializeField] EmojiPopup emojiPopup;
-        [SerializeField] TextAsset rarities;
         [SerializeField] Sprite builtInAvatar;
         [SerializeField] Sprite builtInFrame;
         [SerializeField] ScorePopupView scorePopups;
@@ -58,7 +57,7 @@ namespace HypeDomino.Game.Match
         public TilePlaceLayer TilePlacing => tilePlacing;
 
         public void Configure(MatchLayoutView layoutView, ScorePanelView scorePanel, BoardTilesView boardTiles, AvatarView[] seatAvatars, TableView tableView,
-            LoadingScreenView loadingView, MatchHudView hudView, SeatEmojiLayer seatEmoji, EmojiPopup popup, TextAsset rarityTable, Sprite avatar, Sprite frame,
+            LoadingScreenView loadingView, MatchHudView hudView, SeatEmojiLayer seatEmoji, EmojiPopup popup, Sprite avatar, Sprite frame,
             ScorePopupView popups = null, EffectPlayer player = null, RectTransform bannerAnchor = null)
         {
             Detach();
@@ -71,7 +70,6 @@ namespace HypeDomino.Game.Match
             hud = hudView;
             emojiLayer = seatEmoji;
             emojiPopup = popup;
-            rarities = rarityTable;
             builtInAvatar = avatar;
             builtInFrame = frame;
             scorePopups = popups;
@@ -80,16 +78,17 @@ namespace HypeDomino.Game.Match
             tilePlacing = null;
         }
 
-        public void Attach(MatchHost matchHost, Connection connection, ActiveCosmeticManifest manifest, GameStrings strings,
+        public void Attach(MatchHost matchHost, Connection connection, ActiveCosmeticManifest manifest, ActiveRarityTable rarities, GameStrings strings,
             ICosmeticArtSource<Sprite> stills, ICosmeticArtSource<LoopArt> loops, GraphicsQuality graphics, MotionPreference motion)
         {
             if (matchHost == null) throw new ArgumentNullException(nameof(matchHost));
+            if (rarities == null) throw new ArgumentNullException(nameof(rarities));
             Detach();
             BuildEmojiLayer();
             BuildTilePlacing();
             cosmetics = manifest;
             texts = strings;
-            stage = new CosmeticStage(stills, loops, RarityTable.Parse(rarities.text), builtInAvatar, builtInFrame, graphics.Effects, motion.ReduceMotion);
+            stage = new CosmeticStage(stills, loops, rarities.Current, builtInAvatar, builtInFrame, graphics.Effects, motion.ReduceMotion);
             var board = new MatchBoard(tiles, tilePlacing, SeatOrigins(), NewEffects(), NowMs, AudioBoot.PlayMatch);
             matchTable = new MatchTable(new SeatAvatars(stage, seats), new TableBackground(stage, table), manifest, score, board, layout, NoTileSizeCap);
             loading = new LoadingScreen(loadingScreen, stage, manifest, strings);
@@ -133,7 +132,7 @@ namespace HypeDomino.Game.Match
                 link.InventoryLoaded += wearLoaded;
                 Wear(link.Worn);
             }
-            Attach(MatchBoot.Host, NetBoot.Connection, ContentBoot.Cosmetics, LanguageBoot.Strings,
+            Attach(MatchBoot.Host, NetBoot.Connection, ContentBoot.Cosmetics, ContentBoot.Rarities, LanguageBoot.Strings,
                 new AddressablesArtSource<Sprite>(), new StillsOnlyArtSource(), GraphicsBoot.Quality, MotionBoot.Motion);
         }
 
