@@ -252,7 +252,7 @@ namespace HypeDomino.Tests.EditMode
 
             clearCache.onClick.Invoke();
 
-            Assert.AreEqual("Cache: 0.0 MB", cacheSize.text);
+            Assert.AreEqual("Cache: < 1 MB", cacheSize.text);
         }
 
         [TestCase(true, false)]
