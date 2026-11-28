@@ -98,6 +98,26 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void TheResultKeepsTheMatchIdAndDropsTheRewardsOfTheLastMatch()
+        {
+            const string first = "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10";
+            var view = Finished(Seat.X, Team.A, 150, 90, Mode._1V1);
+            view.MatchId = first;
+            Assert.IsTrue(Read(view));
+            Assert.AreEqual(first, result.MatchId);
+            Assert.IsTrue(MatchRewards.TryRead("{\"match\":\"" + first + "\",\"pending\":[],\"coins\":{\"match\":30,\"first_win\":0},\"pass_xp\":0,\"missions\":[],\"rating\":null}", out var rewards));
+            Assert.IsTrue(result.ShowRewards(rewards));
+            Assert.AreSame(rewards, result.Rewards);
+
+            Assert.IsFalse(Read(Playing(Seat.X, Mode._1V1)));
+            Assert.IsFalse(result.ShowRewards(rewards));
+            Assert.IsTrue(Read(Finished(Seat.X, Team.B, 90, 150, Mode._1V1)));
+            Assert.AreEqual(string.Empty, result.MatchId);
+            Assert.IsNull(result.Rewards);
+            Assert.IsFalse(result.ShowRewards(rewards));
+        }
+
+        [Test]
         public void ReadingAllocatesNothing()
         {
             Assert.IsTrue(snapshot.TryRead(Finished(Seat.South, Team.A, 370, 300).ToByteArray()));

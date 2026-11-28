@@ -65,6 +65,7 @@ namespace HypeDomino.Net
         public uint TurnSeconds { get; private set; }
         public uint TurnWarningSeconds { get; private set; }
         public string Table { get; private set; } = string.Empty;
+        public string MatchId { get; private set; } = string.Empty;
 
         public ReadOnlySpan<TileFace> Hand => new(hand, 0, handCount);
         public ReadOnlySpan<SeatState> Seats => new(seats, 0, seatCount);
@@ -119,6 +120,7 @@ namespace HypeDomino.Net
             HandPointsLockThreshold = 0;
             TurnSeconds = 0;
             TurnWarningSeconds = 0;
+            MatchId = string.Empty;
             lockedA = lockedB = false;
             handCount = seatCount = lineCount = topCount = bottomCount = openEndCount = legalMoveCount = leftSeatCount = leftTileCount = 0;
             rosterRead = false;
@@ -231,6 +233,10 @@ namespace HypeDomino.Net
                 case (27 << 3) | Varint:
                     if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;
                     TurnWarningSeconds = (uint)value;
+                    return true;
+                case (28 << 3) | Bytes:
+                    if (!WireFormat.TryReadBytes(view, ref at, out bytes)) return false;
+                    MatchId = Encoding.UTF8.GetString(bytes);
                     return true;
                 case (25 << 3) | Varint:
                     if (!WireFormat.TryReadVarint(view, ref at, out value)) return false;

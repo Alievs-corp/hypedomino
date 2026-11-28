@@ -9,7 +9,7 @@ namespace HypeDomino.Tests.EditMode
 {
     public sealed class MatchSnapshotTests
     {
-        static readonly string[] GoldenViews = { "match_view", "match_view_loading", "match_view_waiting" };
+        static readonly string[] GoldenViews = { "match_view", "match_view_loading", "match_view_waiting", "match_view_finished" };
 
         static MatchView GoldenView(string name)
         {
@@ -134,6 +134,7 @@ namespace HypeDomino.Tests.EditMode
 
             CollectionAssert.AreEqual(expected.Roster, actual.Roster, name + " roster");
             Assert.AreEqual(expected.Table, actual.Table, name);
+            Assert.AreEqual(expected.MatchId, actual.MatchId, name);
         }
 
         [Test]
@@ -181,6 +182,7 @@ namespace HypeDomino.Tests.EditMode
             view.AfkConsecutiveTimeouts = 3;
             view.TurnSeconds = 20;
             view.TurnWarningSeconds = 5;
+            view.MatchId = "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10";
             view.Seats[1].Disconnected = true;
             view.Seats[1].ConsecutiveTimeouts = 2;
 
@@ -273,6 +275,15 @@ namespace HypeDomino.Tests.EditMode
             var bytes = GoldenView("match_view").ToByteArray();
 
             Assert.IsFalse(new MatchSnapshot().TryRead(new System.ReadOnlySpan<byte>(bytes, 0, bytes.Length - 1)));
+        }
+
+        [Test]
+        public void TheMatchIdIsOnlyThatOfTheLatestView()
+        {
+            var snapshot = Read(GoldenView("match_view_finished"));
+            Assert.AreEqual("0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10", snapshot.MatchId);
+            Read(GoldenView("match_view"), snapshot);
+            Assert.AreEqual(string.Empty, snapshot.MatchId);
         }
 
         [Test]

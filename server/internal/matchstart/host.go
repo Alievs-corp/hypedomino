@@ -68,7 +68,7 @@ func (h *Host) Open(ctx context.Context, placement matchqueue.Placement) {
 		h.requeue(ctx, placement, err)
 		return
 	}
-	r, err := h.rooms.Open(room.Options{Kind: kind(match.Queue), Mode: match.Mode, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: h.config().BotLevel(match.Queue), Seed: seed, Clock: h.clock, Roster: roster})
+	r, err := h.rooms.Open(room.Options{Kind: kind(match.Queue), MatchID: begun.ID, Mode: match.Mode, Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), BotLevel: h.config().BotLevel(match.Queue), Seed: seed, Clock: h.clock, Roster: roster})
 	if err != nil {
 		h.abandon(begun)
 		h.requeue(ctx, placement, err)

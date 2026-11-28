@@ -196,6 +196,7 @@ func ViewMessage(view room.View, withStatic, withLeft bool) *pb.MatchView {
 		out.Winner = teamMessage(view.Winner)
 	}
 	if view.State == room.StateFinished {
+		out.MatchId = view.MatchID
 		return out
 	}
 	out.Current = seatMessage(view.Current)

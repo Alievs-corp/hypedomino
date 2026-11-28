@@ -39,6 +39,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/livecontrol"
 	"github.com/Alievs-corp/hypedomino/server/internal/liveops"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchqueue"
+	"github.com/Alievs-corp/hypedomino/server/internal/matchresult"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchreward"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchstore"
 	"github.com/Alievs-corp/hypedomino/server/internal/medal"
@@ -383,6 +384,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	}
 	a.Handle("GET /leaderboard/", leaderboard.NewHandler(tokens, reader, ratings, friendStore, profileStore, logger, time.Now))
 	a.Handle("/ranked/", rating.NewHandler(tokens, ratings, logger, time.Now))
+	a.Handle(matchresult.Route, matchresult.NewHandler(tokens, matchresult.NewStore(pool, config.OutboxPoll), logger))
 	go panics.Supervise(ctx, "pass season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		passes.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
