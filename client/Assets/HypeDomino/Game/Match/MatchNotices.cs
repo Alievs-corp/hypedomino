@@ -8,6 +8,10 @@ namespace HypeDomino.Game.Match
         public bool AfkWarning { get; private set; }
         public SeatBadges Seats { get; } = new();
         public TakeBackBanner TakeBack { get; } = new();
+        public bool ShowsAfkWarning => AfkWarning && !Reconnecting;
+        public bool ShowsTakeBack => TakeBack.Shown && !Reconnecting;
+
+        bool Reconnecting => Network == NetworkNotice.Reconnecting;
 
         public bool Read(MatchSnapshot view)
         {

@@ -80,6 +80,14 @@ namespace HypeDomino.Tests.EditMode
             connection.Tick();
         }
 
+        bool Reconnect()
+        {
+            now += 60;
+            connection.Tick();
+            AcceptHello();
+            return notices.Tick(connection, now);
+        }
+
         static MatchSnapshot View(Controller own, uint ownTimeouts, bool otherDisconnected, MatchState state = MatchState.Playing)
         {
             var view = new MatchView { State = state, Seat = Seat.X, Mode = Mode._1V1, AfkConsecutiveTimeouts = 3 };
@@ -159,6 +167,66 @@ namespace HypeDomino.Tests.EditMode
             AcceptHello();
             Assert.IsTrue(notices.Tick(connection, now));
             Assert.AreEqual(NetworkNotice.None, notices.Network);
+        }
+
+        [Test]
+        public void ReconnectingHidesTheAfkWarningUntilTheConnectionIsBack()
+        {
+            GoOnline();
+            notices.Read(View(Controller.Player, 2, false));
+            Assert.IsTrue(notices.ShowsAfkWarning);
+
+            DropAndTick();
+            Assert.IsTrue(notices.Tick(connection, now));
+            Assert.IsTrue(notices.AfkWarning);
+            Assert.IsFalse(notices.ShowsAfkWarning);
+
+            Assert.IsTrue(Reconnect());
+            Assert.IsTrue(notices.ShowsAfkWarning);
+        }
+
+        [Test]
+        public void ReconnectingHidesTheTakeBackBannerUntilTheConnectionIsBack()
+        {
+            GoOnline();
+            notices.Read(View(Controller.Bot, 3, false));
+            Assert.IsTrue(notices.ShowsTakeBack);
+
+            DropAndTick();
+            Assert.IsTrue(notices.Tick(connection, now));
+            Assert.IsTrue(notices.TakeBack.Shown);
+            Assert.IsFalse(notices.ShowsTakeBack);
+
+            Assert.IsTrue(Reconnect());
+            Assert.IsTrue(notices.ShowsTakeBack);
+        }
+
+        [Test]
+        public void AnAfkWarningThatEndsDuringTheReconnectStaysHidden()
+        {
+            GoOnline();
+            notices.Read(View(Controller.Player, 2, false));
+            DropAndTick();
+            notices.Tick(connection, now);
+
+            Assert.IsTrue(notices.Read(View(Controller.Player, 0, false)));
+            Assert.IsTrue(Reconnect());
+            Assert.IsFalse(notices.AfkWarning);
+            Assert.IsFalse(notices.ShowsAfkWarning);
+        }
+
+        [Test]
+        public void ATakeBackBannerThatEndsDuringTheReconnectStaysHidden()
+        {
+            GoOnline();
+            notices.Read(View(Controller.Bot, 3, false));
+            DropAndTick();
+            notices.Tick(connection, now);
+
+            Assert.IsTrue(notices.Read(View(Controller.Bot, 3, false, MatchState.Finished)));
+            Assert.IsTrue(Reconnect());
+            Assert.IsFalse(notices.TakeBack.Shown);
+            Assert.IsFalse(notices.ShowsTakeBack);
         }
 
         [Test]
