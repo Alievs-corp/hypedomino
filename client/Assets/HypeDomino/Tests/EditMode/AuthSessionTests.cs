@@ -322,6 +322,24 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsTrue(session.SignedIn);
         }
 
+        [Test]
+        public void EverySignedInAnswerNamesItsAccountBeforeTheProviderSignInIsRaised()
+        {
+            var raised = new List<string>();
+            session.AccountSignedIn += account => raised.Add("account:" + account);
+            session.ProviderSignedIn += provider => raised.Add("provider:" + AuthSession.ProviderName(provider));
+            transport.Replies.Enqueue(new HttpReply(200, "{\"nonce\":\"n-1\"}"));
+            transport.Replies.Enqueue(new HttpReply(200, TokensJson));
+            transport.Replies.Enqueue(new HttpReply(200, TokensJson.Replace("acc-1", "acc-2")));
+            transport.Replies.Enqueue(new HttpReply(503, "{\"error\":\"unavailable\"}"));
+
+            SignIn(AuthProvider.Google);
+            Resume();
+            Resume();
+
+            CollectionAssert.AreEqual(new[] { "account:acc-1", "provider:google", "account:acc-2" }, raised);
+        }
+
         [TestCase(401, "{\"error\":\"refresh_expired\"}", AuthOutcome.SignInRequired)]
         [TestCase(401, "{\"error\":\"refresh_reused\"}", AuthOutcome.SignInRequired)]
         [TestCase(403, "{\"error\":\"banned\"}", AuthOutcome.Banned)]

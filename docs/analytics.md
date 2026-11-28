@@ -6,6 +6,7 @@ First-party product analytics (#181). Privacy rules are `docs/privacy.md` sectio
 
 - Nothing is tracked, queued or written to disk before the `analytics` consent purpose is on (`docs/privacy.md` 6.2). An event tracked before consent is dropped, not held.
 - Withdrawing consent drops every queued event at once and stops sending; the caller rotates the analytics id.
+- An analytics id belongs to the account signed in when it was drawn. A sign-in of a different account on the same device drops the events not yet sent and closes the queue; the new account's `analytics` choice opens it with a new id (`docs/privacy.md` 6.4, #73). The same account signing in again or a token refresh keeps the id and its queued events. As after a withdrawal, the new id gets its first `app_open` on the next run.
 - An event carries the analytics id, its name, one optional label, one optional integer value and the device time. Never an account id, email, nickname, IP, install id or free text.
 - Events go only to the game's own server. No third-party analytics SDK ships.
 - Analytics never decides anything: revenue and economy KPIs (#147) come from the ledger and purchase records, not from these events.
