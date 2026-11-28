@@ -234,8 +234,8 @@ namespace HypeDomino.Game.Match
         void ShowNotices(MatchNotices notices)
         {
             ShowKey(network, notices == null ? null : ConnectionNoticeKeys.Of(notices.Network));
-            ShowKey(afkWarning, notices != null && notices.AfkWarning ? ConnectionNoticeKeys.OneTimeoutFromBot : null);
-            var banner = notices != null && notices.TakeBack.Shown;
+            ShowKey(afkWarning, notices != null && notices.ShowsAfkWarning ? ConnectionNoticeKeys.OneTimeoutFromBot : null);
+            var banner = notices != null && notices.ShowsTakeBack;
             SetActive(takeBack.gameObject, banner);
             if (banner) takeBackText.text = strings.Text(ConnectionNoticeKeys.TakeBack);
             for (var side = 0; side < seatBadges.Length; side++)

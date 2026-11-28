@@ -25,16 +25,35 @@ First-party product analytics (#181). Privacy rules are `docs/privacy.md` sectio
 
 The client sends only names on this list (`AnalyticsEvents.IsClientEvent`); any other name is ignored.
 
-Where the client tracks them (`Game/Analytics/AppAnalytics`, `Game/Profile/NicknameSaver`, `Game/Shop/ShopPurchase`). An event tracked while `analytics` is off is dropped (section 1), so every call site runs only through `AnalyticsQueue.Track`:
+Where the client tracks them (`Game/Analytics/AppAnalytics`, `Game/Profile/NicknameSaver`, `Game/Shop/ShopPurchase`, `Game/ScreenHost`). An event tracked while `analytics` is off is dropped (section 1), so every call site runs only through `AnalyticsQueue.Track`:
 
 - `app_open`: once per app run, on the first frame the queue holds the `analytics` consent. Consent is known only after the account's choices are read, so the event cannot fire at the first frame of the run. A withdrawal and a new grant in the same run do not track it again; the new analytics id gets its first `app_open` on the next run.
 - `sign_in`: when a provider sign-in (`AuthSession.SignIn`) ends signed in, labeled `google` or `apple` (`AuthSession.ProviderName`). Resuming a stored session is not a sign-in. A sign-in on a fresh install happens before the account's consent is read, so it is dropped unless the queue already holds consent from earlier in the run.
 - `nickname_set`: when the server accepts a nickname save (`NicknameSaver`, `PUT /profile/nickname`). The nickname itself is never tracked.
+- `screen_view`: every time a screen becomes the top screen of the screen stack (`ScreenStack.TopShown`): a state screen shown for a new app state, a screen opened from the lobby or another screen, and the screen revealed again by Back. A screen that is already the top is not tracked again: a new app state with the same screen, opening a screen already on the stack, and Back on the root screen track nothing. The match has no screen on the stack and tracks none. The label is the screen's id (owner decision of 2026-11-28), its screen name in snake_case (`ScreenViewIds.Of`), and `ScreenHost` gives each screen its id when it builds it:
+
+  | Screen id | Screen |
+  |---|---|
+  | `login` | Login (app state `Login`) |
+  | `lobby` | Lobby (app state `Lobby`) |
+  | `room` | Friend room (app state `Room`) |
+  | `update_required` | Update required notice (app state `UpdateRequired`) |
+  | `maintenance` | Maintenance notice (app state `Maintenance`) |
+  | `privacy_notice` | First-launch privacy notice |
+  | `pass` | Pass |
+  | `promo` | Promo code |
+  | `shop` | Shop |
+  | `settings` | Settings |
+  | `ranking` | Ranking |
+  | `collection` | Collection |
+  | `profile` | Profile |
+  | `missions` | Missions |
+  | `medals` | Medals |
+
+  Like `sign_in`, a screen shown before the account's consent is read is dropped, so the first screen of a run is usually not tracked; it is tracked again when it is next shown with consent. A new screen gets its id from its name the same way; renaming a screen changes its id, so a screen keeps its name once shipped.
 - `queue_join`: when a join intent is sent (`MatchQueue.TryJoin` returns true). The label is the queue and the mode as `docs/matchmaking.md` names them: `ranked_1v1`, `ranked_2v2`, `casual_1v1` or `casual_2v2` (draft form, owner to confirm). A join that is not sent is not tracked.
 - `purchase_start`: when the store purchase of an offer opens (`docs/economy.md` 7.5 step 2), that is when `ShopPurchase` hands the store product id from the `POST /shop/begin` answer to the billing SDK (`IStoreBilling.Purchase`). The label is that store product id, never the offer id, price or currency. A purchase that never reaches the store (no store billing on the device, a refused or unreadable begin, no response) is not tracked, and a retry of an unsettled receipt (`ShopPurchase.Retry`) does not track it again.
 - `purchase_cancel`: when the store answers that the player cancelled that purchase (`StoreBillingOutcome.Cancelled`), labeled with the same store product id. A deferred, failed or unavailable store answer is not a cancel; a completed purchase is the server's `purchase_complete` (section 3).
-
-Not tracked yet: `screen_view` (no list of screen ids is decided).
 
 ## 3. Server events
 
