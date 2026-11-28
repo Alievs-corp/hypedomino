@@ -18,6 +18,7 @@ type Mailbox interface {
 	Showcase(ctx context.Context, account string) ([]string, error)
 	SetShowcase(ctx context.Context, account string, chosen []string, now time.Time) ([]string, error)
 	Standing(ctx context.Context, account string, now time.Time) (Standing, error)
+	SeasonHistory(ctx context.Context, account string) (SeasonHistory, error)
 }
 
 type Handler struct {
@@ -31,6 +32,7 @@ type Handler struct {
 func NewHandler(verifier token.Verifier, mailbox Mailbox, logger *slog.Logger, now func() time.Time) *Handler {
 	h := &Handler{verifier: verifier, mailbox: mailbox, logger: logger, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("GET /ranked/me", h.standing)
+	h.mux.HandleFunc("GET /ranked/seasons/history", h.seasonHistory)
 	h.mux.HandleFunc("GET /ranked/rewards", h.rewards)
 	h.mux.HandleFunc("POST /ranked/rewards/seen", h.seen)
 	h.mux.HandleFunc("GET /ranked/emblems", h.emblems)
@@ -73,6 +75,19 @@ func (h *Handler) standing(w http.ResponseWriter, r *http.Request) {
 	default:
 		reply(w, http.StatusOK, standing)
 	}
+}
+
+func (h *Handler) seasonHistory(w http.ResponseWriter, r *http.Request) {
+	claims, ok := h.authenticate(w, r)
+	if !ok {
+		return
+	}
+	history, err := h.mailbox.SeasonHistory(r.Context(), claims.Account)
+	if err != nil {
+		h.fail(w, err)
+		return
+	}
+	reply(w, http.StatusOK, history)
 }
 
 func (h *Handler) rewards(w http.ResponseWriter, r *http.Request) {

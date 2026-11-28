@@ -5,19 +5,22 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/ratelimit"
 )
 
 type Limits struct {
-	Account ratelimit.Rule
-	SignIn  ratelimit.Rule
+	Account           ratelimit.Rule
+	SignIn            ratelimit.Rule
+	BreakGlassPerHour int
 }
 
 func DefaultLimits() Limits {
 	return Limits{
-		Account: ratelimit.Rule{PerMinute: 120, Burst: 40},
-		SignIn:  ratelimit.Rule{PerMinute: 10, Burst: 10},
+		Account:           ratelimit.Rule{PerMinute: 120, Burst: 40},
+		SignIn:            ratelimit.Rule{PerMinute: 10, Burst: 10},
+		BreakGlassPerHour: 3,
 	}
 }
 
@@ -26,6 +29,9 @@ func (l Limits) Validate() error {
 		if rule.PerMinute < 1 || rule.Burst < 1 {
 			return errors.New("every per-minute rate and burst must be at least 1")
 		}
+	}
+	if l.BreakGlassPerHour < 1 {
+		return errors.New("the break-glass limit per hour must be at least 1")
 	}
 	return nil
 }
@@ -52,4 +58,13 @@ func (h *Handler) throttled(w http.ResponseWriter, r *http.Request, key string, 
 	w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(wait.Seconds()))))
 	reply(w, http.StatusTooManyRequests, errorResponse{Error: "rate_limited"})
 	return true
+}
+
+func (h *Handler) announceRetry(w http.ResponseWriter, err error) string {
+	var limited breakGlassLimitError
+	if !errors.As(err, &limited) {
+		return ""
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(limited.retryAt.Sub(h.now()).Seconds()))))
+	return limited.retryAt.UTC().Format(time.RFC3339)
 }

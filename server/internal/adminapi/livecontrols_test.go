@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,11 +131,11 @@ func (a *api) unconfirmedBreakGlass(token string) []any {
 	return body["proposals"].([]any)
 }
 
-func TestBreakGlassRefusesWithoutARoleOrADeclaredIncident(t *testing.T) {
+func TestBreakGlassRefusesWithoutSuperAdminOrADeclaredIncident(t *testing.T) {
 	a := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
 	a.create("leyla@example.com", rbac.LiveOps)
 	a.create("orxan@example.com", rbac.Support)
-	liveOps, support := a.signIn("leyla"), a.signIn("orxan")
+	liveOps, support, root := a.signIn("leyla"), a.signIn("orxan"), a.signIn("root")
 	cases := []struct {
 		name       string
 		token      string
@@ -142,12 +143,13 @@ func TestBreakGlassRefusesWithoutARoleOrADeclaredIncident(t *testing.T) {
 		wantStatus int
 		wantError  string
 	}{
+		{"live_ops role", liveOps, breakGlassBody("1.4.0", "SEV1", "INC-12"), http.StatusForbidden, "forbidden"},
 		{"support role", support, breakGlassBody("1.4.0", "SEV1", "INC-12"), http.StatusForbidden, "forbidden"},
-		{"sev3", liveOps, breakGlassBody("1.4.0", "SEV3", "INC-12"), http.StatusBadRequest, "incident_required"},
-		{"no severity", liveOps, breakGlassBody("1.4.0", "", "INC-12"), http.StatusBadRequest, "incident_required"},
-		{"no incident id", liveOps, breakGlassBody("1.4.0", "SEV1", ""), http.StatusBadRequest, "incident_required"},
-		{"bad controls", liveOps, breakGlassBody("latest", "SEV1", "INC-12"), http.StatusBadRequest, "invalid"},
-		{"no reason", liveOps, map[string]any{"controls": map[string]any{"minimum_app_version": "1.4.0"}, "break_glass": map[string]any{"severity": "SEV1", "id": "INC-12"}}, http.StatusBadRequest, "reason_required"},
+		{"sev3", root, breakGlassBody("1.4.0", "SEV3", "INC-12"), http.StatusBadRequest, "incident_required"},
+		{"no severity", root, breakGlassBody("1.4.0", "", "INC-12"), http.StatusBadRequest, "incident_required"},
+		{"no incident id", root, breakGlassBody("1.4.0", "SEV1", ""), http.StatusBadRequest, "incident_required"},
+		{"bad controls", root, breakGlassBody("latest", "SEV1", "INC-12"), http.StatusBadRequest, "invalid"},
+		{"no reason", root, map[string]any{"controls": map[string]any{"minimum_app_version": "1.4.0"}, "break_glass": map[string]any{"severity": "SEV1", "id": "INC-12"}}, http.StatusBadRequest, "reason_required"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -159,6 +161,9 @@ func TestBreakGlassRefusesWithoutARoleOrADeclaredIncident(t *testing.T) {
 	if status != http.StatusOK || body["config_version"] != float64(0) || len(a.unconfirmedBreakGlass(liveOps)) != 0 {
 		t.Fatalf("a refused break-glass changed something: %d %v", status, body)
 	}
+	if entries := a.entries(root, "object_type=live_controls"); len(entries) != 0 {
+		t.Fatalf("a refused break-glass was audited: %v", entries)
+	}
 }
 
 func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
@@ -168,7 +173,7 @@ func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
 	liveOps, root, support := a.signIn("leyla"), a.signIn("root"), a.signIn("orxan")
 
 	_, pending := a.call("PUT", "/admin/live-controls", liveOps, controlsBody("1.3.0", false))
-	status, body := a.call("PUT", "/admin/live-controls", liveOps, breakGlassBody("1.4.0", "SEV1", "INC-12"))
+	status, body := a.call("PUT", "/admin/live-controls", root, breakGlassBody("1.4.0", "SEV1", "INC-12"))
 	if status != http.StatusOK || body["config_version"] != float64(1) || body["break_glass_id"] == nil {
 		t.Fatalf("break-glass %d %v", status, body)
 	}
@@ -190,11 +195,11 @@ func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
 
 	status, body = a.call("POST", fmt.Sprintf("/admin/approvals/%.0f/approve", pending["approval_id"].(float64)), root, map[string]any{"reason": "checked"})
 	expect(t, status, body, http.StatusConflict, "stale_proposal")
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", liveOps, map[string]any{"reason": "mine"})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", root, map[string]any{"reason": "mine"})
 	expect(t, status, body, http.StatusForbidden, "self_decision")
 	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", support, map[string]any{"reason": "seen"})
 	expect(t, status, body, http.StatusForbidden, "forbidden")
-	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", root, map[string]any{"reason": "confirmed in the incident channel"})
+	status, body = a.call("POST", "/admin/approvals/"+id+"/approve", liveOps, map[string]any{"reason": "confirmed in the incident channel"})
 	if status != http.StatusOK || body["state"] != "approved" {
 		t.Fatalf("confirm %d %v", status, body)
 	}
@@ -208,5 +213,111 @@ func TestBreakGlassSwitchesAtOnceAndWaitsForASecondAdmin(t *testing.T) {
 	}
 	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.4.0" {
 		t.Fatalf("confirmation changed the controls %+v", controls)
+	}
+}
+
+func TestBreakGlassIsLimitedPerAdminPerHour(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) {
+		c.Environment = "production"
+		c.Limits.BreakGlassPerHour = 2
+	})
+	a.create("vusal@example.com", rbac.SuperAdmin)
+	root, other := a.signIn("root"), a.signIn("vusal")
+	for minute, minimum := range []string{"1.4.0", "1.5.0"} {
+		a.now = start.Add(time.Duration(minute) * time.Minute)
+		if status, body := a.call("PUT", "/admin/live-controls", root, breakGlassBody(minimum, "SEV1", "INC-12")); status != http.StatusOK {
+			t.Fatalf("break-glass %d within the limit: %d %v", minute+1, status, body)
+		}
+	}
+
+	a.now = start.Add(3 * time.Minute)
+	refused := a.raw("PUT", "/admin/live-controls", root, `{"controls":{"minimum_app_version":"1.6.0"},"reason":"incident","break_glass":{"severity":"SEV1","id":"INC-12"}}`)
+	if refused.Code != http.StatusTooManyRequests || !strings.Contains(refused.Body.String(), `"error":"break_glass_rate_limited"`) ||
+		!strings.Contains(refused.Body.String(), `"retry_at":"2026-11-01T10:00:00Z"`) || refused.Header().Get("Retry-After") != "3420" {
+		t.Fatalf("over the limit: %d %v %s", refused.Code, refused.Header(), refused.Body.String())
+	}
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.5.0" {
+		t.Fatalf("a refused break-glass switched the controls %+v", controls)
+	}
+	if status, body := a.call("PUT", "/admin/live-controls", other, breakGlassBody("1.6.0", "SEV1", "INC-12")); status != http.StatusOK {
+		t.Fatalf("another super_admin shares the limit: %d %v", status, body)
+	}
+
+	a.now = start.Add(time.Hour)
+	root = a.signIn("root")
+	if status, body := a.call("PUT", "/admin/live-controls", root, breakGlassBody("1.7.0", "SEV1", "INC-12")); status != http.StatusOK {
+		t.Fatalf("the oldest switch left the hour: %d %v", status, body)
+	}
+}
+
+func TestRejectingABreakGlassRevertsTheControls(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
+	a.create("leyla@example.com", rbac.LiveOps)
+	liveOps, root := a.signIn("leyla"), a.signIn("root")
+	_, proposed := a.call("PUT", "/admin/live-controls", liveOps, controlsBody("1.3.0", false))
+	if status, body := a.call("POST", fmt.Sprintf("/admin/approvals/%.0f/approve", proposed["approval_id"].(float64)), root, map[string]any{"reason": "checked"}); status != http.StatusOK {
+		t.Fatalf("approve %d %v", status, body)
+	}
+	_, glass := a.call("PUT", "/admin/live-controls", root, breakGlassBody("1.4.0", "SEV1", "INC-12"))
+
+	reject := fmt.Sprintf("/admin/approvals/%.0f/reject", glass["break_glass_id"].(float64))
+	status, body := a.call("POST", reject, liveOps, map[string]any{})
+	expect(t, status, body, http.StatusBadRequest, "reason_required")
+	status, body = a.call("POST", reject, liveOps, map[string]any{"reason": "no incident was declared"})
+	if status != http.StatusOK || body["state"] != "rejected" || body["revert_config_version"] != float64(3) {
+		t.Fatalf("reject %d %v", status, body)
+	}
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.3.0" || controls.PurchasesDisabled {
+		t.Fatalf("not reverted %+v", controls)
+	}
+	if listed := a.unconfirmedBreakGlass(liveOps); len(listed) != 0 {
+		t.Fatalf("rejected still listed %v", listed)
+	}
+	switched := a.entries(root, "object_type=live_controls&action="+adminapi.BreakGlassAction)
+	rejected := a.entries(root, "object_type=live_controls&action=reject")
+	reverted := a.entries(root, "object_type=live_controls&action="+adminapi.RevertBreakGlassAction)
+	if len(rejected) != 1 || rejected[0]["approval_id"] != switched[0]["id"] || rejected[0]["ref"] != "INC-12" || rejected[0]["reason"] != "no incident was declared" {
+		t.Fatalf("rejection entries %v", rejected)
+	}
+	if len(reverted) != 1 || reverted[0]["approval_id"] != rejected[0]["id"] || reverted[0]["reason"] != "no incident was declared" ||
+		reverted[0]["ref"] != "INC-12" || reverted[0]["config_version"] != float64(3) || reverted[0]["actor_id"] != rejected[0]["actor_id"] ||
+		reverted[0]["before"].(map[string]any)["minimum_app_version"] != "1.4.0" || reverted[0]["after"].(map[string]any)["minimum_app_version"] != "1.3.0" {
+		t.Fatalf("revert entries %v", reverted)
+	}
+}
+
+func TestARejectedBreakGlassKeepsANewerSwitchAndAnUnpublishedStart(t *testing.T) {
+	a := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
+	a.create("leyla@example.com", rbac.LiveOps)
+	a.create("vusal@example.com", rbac.SuperAdmin)
+	liveOps, root, other := a.signIn("leyla"), a.signIn("root"), a.signIn("vusal")
+	_, first := a.call("PUT", "/admin/live-controls", root, breakGlassBody("1.4.0", "SEV1", "INC-12"))
+	_, second := a.call("PUT", "/admin/live-controls", other, breakGlassBody("1.5.0", "SEV1", "INC-13"))
+	rejectFirst := fmt.Sprintf("/admin/approvals/%.0f/reject", first["break_glass_id"].(float64))
+	status, body := a.call("POST", rejectFirst, liveOps, map[string]any{"reason": "disputed"})
+	if status != http.StatusOK || body["state"] != "rejected" || body["revert_config_version"] != nil {
+		t.Fatalf("reject under a newer switch %d %v", status, body)
+	}
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.5.0" {
+		t.Fatalf("a newer switch was undone %+v", controls)
+	}
+	rejectSecond := fmt.Sprintf("/admin/approvals/%.0f/reject", second["break_glass_id"].(float64))
+	status, body = a.call("POST", rejectSecond, liveOps, map[string]any{"reason": "disputed"})
+	if status != http.StatusOK || body["revert_config_version"] != float64(3) {
+		t.Fatalf("reject the newest %d %v", status, body)
+	}
+	if controls := a.publishedControls(); controls.MinimumAppVersion != "1.4.0" {
+		t.Fatalf("the newest switch was not reverted %+v", controls)
+	}
+
+	fresh := newAPIWith(t, func(c *adminapi.Config) { c.Environment = "production" })
+	fresh.create("leyla@example.com", rbac.LiveOps)
+	_, only := fresh.call("PUT", "/admin/live-controls", fresh.signIn("root"), breakGlassBody("1.4.0", "SEV1", "INC-12"))
+	status, body = fresh.call("POST", fmt.Sprintf("/admin/approvals/%.0f/reject", only["break_glass_id"].(float64)), fresh.signIn("leyla"), map[string]any{"reason": "disputed"})
+	if status != http.StatusOK || body["revert_config_version"] != nil {
+		t.Fatalf("reject with nothing to restore %d %v", status, body)
+	}
+	if controls := fresh.publishedControls(); controls.MinimumAppVersion != "1.4.0" {
+		t.Fatalf("controls without an earlier version changed %+v", controls)
 	}
 }

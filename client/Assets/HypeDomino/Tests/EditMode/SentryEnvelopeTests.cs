@@ -52,6 +52,18 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void AMissingKeyReportIsAWarningWithTheKeyLanguageAndAppVersion()
+        {
+            var item = Lines(Envelope().Build(new ErrorReport(LogType.Warning, "Strings missing key=lobby.title language=az version=3", string.Empty), EventId, At))[2];
+
+            StringAssert.Contains("\"level\":\"warning\"", item);
+            StringAssert.Contains("\"release\":\"1.4.2\"", item);
+            StringAssert.Contains("\"tags\":{\"log_type\":\"Warning\"}", item);
+            StringAssert.Contains("\"value\":\"Strings missing key=lobby.title language=az version=3\"", item);
+            StringAssert.Contains("\"frames\":[]", item);
+        }
+
+        [Test]
         public void AnEmptyEnvironmentIsLeftOut()
         {
             var item = Lines(Envelope(string.Empty).Build(new ErrorReport(LogType.Error, "boom", ""), EventId, At))[2];

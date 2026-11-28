@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { breakGlassOf, buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, unpublishedControls, validIncidentId, validVersion } from "./liveControls.ts";
+import type { AuditEntry } from "../audit/query.ts";
+import { breakGlassLimited, breakGlassOf, breakGlassRevertOf, buildsFromText, emptyEnforcedAllowlist, maintenanceEnd, maintenanceInput, sameControls, unpublishedControls, validIncidentId, validVersion } from "./liveControls.ts";
 
 test("an incident id is non-empty, unpadded, short and printable like the API asks", () => {
   assert.equal(validIncidentId("INC-12"), true);
@@ -51,4 +52,32 @@ test("the maintenance end is a UTC minute and an empty field turns it off", () =
   assert.equal(maintenanceInput(undefined), "");
   assert.equal(maintenanceEnd("2026-11-09T06:30"), "2026-11-09T06:30:00Z");
   assert.equal(maintenanceEnd(""), null);
+});
+
+const revertEntry: AuditEntry = {
+  id: 9,
+  at: "2026-11-28T10:05:00Z",
+  actor_id: "acct-leyla",
+  actor_roles: ["live_ops"],
+  environment: "production",
+  action: "revert_break_glass_live_controls",
+  object_type: "live_controls",
+  object_id: "live_controls",
+  reason: "no incident was declared",
+  ref: "INC-12",
+  config_version: 3,
+  approval_id: 8,
+  session_id: "s",
+};
+
+test("a revert entry reads its incident, restored version, reason and second admin", () => {
+  assert.deepEqual(breakGlassRevertOf(revertEntry), { id: 9, incident: "INC-12", version: 3, reason: "no incident was declared", actor: "acct-leyla", at: "2026-11-28T10:05:00Z" });
+  assert.equal(breakGlassRevertOf({ ...revertEntry, action: "reject" }), null);
+  assert.equal(breakGlassRevertOf({ ...revertEntry, config_version: undefined }), null);
+});
+
+test("only the break-glass limit refusal reads as the hourly limit", () => {
+  assert.equal(breakGlassLimited("break_glass_rate_limited"), true);
+  assert.equal(breakGlassLimited("rate_limited"), false);
+  assert.equal(breakGlassLimited("forbidden"), false);
 });

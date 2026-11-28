@@ -50,7 +50,7 @@ var rules = map[Kind]rule{
 	PermanentBan:    {object: rbac.Players, proposers: []rbac.Role{rbac.Support}, approvers: []rbac.Role{rbac.Support, rbac.SuperAdmin}},
 	LiveControl:     {object: rbac.LiveControls, proposers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}},
 	SuperAdminGrant: {object: rbac.AdminAccounts, proposers: []rbac.Role{rbac.SuperAdmin}, approvers: []rbac.Role{rbac.SuperAdmin}},
-	BreakGlass:      {object: rbac.LiveControls, proposers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, confirmed: true},
+	BreakGlass:      {object: rbac.LiveControls, proposers: []rbac.Role{rbac.SuperAdmin}, approvers: []rbac.Role{rbac.LiveOps, rbac.SuperAdmin}, confirmed: true},
 }
 
 type State string

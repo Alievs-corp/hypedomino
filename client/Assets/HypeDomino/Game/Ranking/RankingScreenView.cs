@@ -12,28 +12,32 @@ namespace HypeDomino.Game.Ranking
 
         [SerializeField] RankScreenView rank;
         [SerializeField] LeaderboardView leaderboard;
+        [SerializeField] SeasonHistoryView history;
         [SerializeField] Button solo;
         [SerializeField] Button teams;
 
         RankStandingLoader standings;
         LeaderboardLoader boards;
+        SeasonHistoryLoader pastSeasons;
         ServerClock clock;
         GameStrings strings;
 
-        public void Configure(RankScreenView rankView, LeaderboardView leaderboardView, Button soloButton, Button teamsButton)
+        public void Configure(RankScreenView rankView, LeaderboardView leaderboardView, SeasonHistoryView historyView, Button soloButton, Button teamsButton)
         {
             Unbind();
             rank = rankView;
             leaderboard = leaderboardView;
+            history = historyView;
             solo = soloButton;
             teams = teamsButton;
         }
 
-        public void Bind(RankStandingLoader standingLoader, LeaderboardLoader leaderboardLoader, ServerClock serverClock, GameStrings texts)
+        public void Bind(RankStandingLoader standingLoader, LeaderboardLoader leaderboardLoader, SeasonHistoryLoader historyLoader, ServerClock serverClock, GameStrings texts)
         {
             Unbind();
             standings = standingLoader;
             boards = leaderboardLoader;
+            pastSeasons = historyLoader;
             clock = serverClock;
             strings = texts;
             solo.onClick.AddListener(ShowSolo);
@@ -44,7 +48,7 @@ namespace HypeDomino.Game.Ranking
         void Start()
         {
             if (strings == null && NetBoot.Api != null)
-                Bind(new RankStandingLoader(NetBoot.Api), new LeaderboardLoader(NetBoot.Api), NetBoot.Connection.Clock, LanguageBoot.Strings);
+                Bind(new RankStandingLoader(NetBoot.Api), new LeaderboardLoader(NetBoot.Api), new SeasonHistoryLoader(NetBoot.Api), NetBoot.Connection.Clock, LanguageBoot.Strings);
         }
 
         void OnDestroy() => Unbind();
@@ -56,6 +60,7 @@ namespace HypeDomino.Game.Ranking
             teams.onClick.RemoveListener(ShowTeams);
             standings = null;
             boards = null;
+            pastSeasons = null;
             clock = null;
             strings = null;
         }
@@ -68,6 +73,7 @@ namespace HypeDomino.Game.Ranking
         {
             rank.Bind(standings, mode, clock, strings);
             leaderboard.Bind(boards, mode, LeaderboardStanding.BoardGlobal, strings);
+            history.Bind(pastSeasons, mode, strings);
             solo.interactable = mode != SoloMode;
             teams.interactable = mode != TeamsMode;
         }
