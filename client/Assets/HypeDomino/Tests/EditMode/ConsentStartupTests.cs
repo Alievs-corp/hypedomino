@@ -58,10 +58,12 @@ namespace HypeDomino.Tests.EditMode
         sealed class AnalyticsSender : IAnalyticsSender
         {
             public readonly List<string> Ids = new();
+            public readonly List<string> Events = new();
 
             public void Send(string analyticsId, IReadOnlyList<AnalyticsEvent> batch, Action<bool> done)
             {
                 Ids.Add(analyticsId);
+                for (var i = 0; i < batch.Count; i++) Events.Add(analyticsId + ":" + batch[i].Name);
                 done(true);
             }
         }
@@ -78,6 +80,7 @@ namespace HypeDomino.Tests.EditMode
         AnalyticsSender analyticsSender;
         AnalyticsQueue analytics;
         ErrorReports diagnostics;
+        ConsentGates gates;
         ConsentStartup startup;
         int issuedIds;
         string policyVersion;
@@ -98,7 +101,8 @@ namespace HypeDomino.Tests.EditMode
             diagnostics = new ErrorReports(new ErrorSender());
             issuedIds = 0;
             policyVersion = PolicyVersion;
-            startup = new ConsentStartup(client, new ConsentGates(analytics, diagnostics, NextAnalyticsId));
+            gates = new ConsentGates(analytics, diagnostics, NextAnalyticsId);
+            startup = new ConsentStartup(client, gates);
         }
 
         string NextAnalyticsId() => "analytics-" + ++issuedIds;
@@ -328,7 +332,6 @@ namespace HypeDomino.Tests.EditMode
         [Test]
         public void TheGatesWithdrawOnlyThePurposesTurnedOff()
         {
-            var gates = new ConsentGates(analytics, diagnostics, NextAnalyticsId);
             gates.Apply(ConsentChoicesReply.FromJson(Json(true, true)));
             Assert.IsTrue(analytics.Consented);
             Assert.IsTrue(diagnostics.Consented);
@@ -338,6 +341,112 @@ namespace HypeDomino.Tests.EditMode
             gates.Withdraw(true, false);
             Assert.IsFalse(diagnostics.Consented);
             Assert.Throws<ArgumentNullException>(() => gates.Apply(null));
+        }
+
+        [Test]
+        public void TheSameAccountSigningInAgainKeepsItsAnalyticsIdAndItsQueuedEvents()
+        {
+            gates.SignedIn("acc-1");
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            analytics.Track(AnalyticsEvents.SignIn, "google");
+
+            gates.SignedIn("acc-1");
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+
+            Assert.IsTrue(analytics.Consented);
+            Assert.AreEqual(1, analytics.Count);
+            Assert.AreEqual("analytics-1", SentAnalyticsId());
+            CollectionAssert.AreEqual(new[] { "analytics-1:sign_in", "analytics-1:app_open" }, analyticsSender.Events);
+        }
+
+        [Test]
+        public void AnotherAccountDropsTheUnsentEventsAndGetsANewAnalyticsId()
+        {
+            gates.SignedIn("acc-1");
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            analytics.Track(AnalyticsEvents.AppOpen);
+            analytics.Track(AnalyticsEvents.QueueJoin, "casual_1v1");
+
+            gates.SignedIn("acc-2");
+
+            Assert.IsFalse(analytics.Consented);
+            Assert.AreEqual(0, analytics.Count);
+            Assert.IsFalse(analytics.Track(AnalyticsEvents.SignIn, "apple"));
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            analytics.Flush();
+            Assert.IsEmpty(analyticsSender.Ids);
+            Assert.AreEqual("analytics-2", SentAnalyticsId());
+            CollectionAssert.AreEqual(new[] { "analytics-2:app_open" }, analyticsSender.Events);
+        }
+
+        [Test]
+        public void ASignInBeforeAnyConsentDrawsNoAnalyticsId()
+        {
+            gates.SignedIn("acc-1");
+            gates.SignedIn("acc-2");
+            Assert.AreEqual(0, issuedIds);
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            Assert.AreEqual("analytics-1", SentAnalyticsId());
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        public void ASignInWithoutAnAccountKeepsTheAnalyticsId(string accountId)
+        {
+            gates.SignedIn("acc-1");
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            gates.SignedIn(accountId);
+            Assert.IsTrue(analytics.Consented);
+            Assert.AreEqual("analytics-1", SentAnalyticsId());
+        }
+
+        [Test]
+        public void SigningOutAndBackInKeepsTheIdAndAnotherAccountAfterThatGetsANewOne()
+        {
+            var refreshes = new Auth();
+            var store = new Store();
+            var session = new AuthSession(refreshes, new Identity(), store);
+            session.AccountSignedIn += gates.SignedIn;
+            ResumeAs(session, store, refreshes, "acc-1");
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            analytics.Track(AnalyticsEvents.AppOpen);
+
+            session.SignOut(() => { });
+            ResumeAs(session, store, refreshes, "acc-1");
+            ResumeAs(session, store, refreshes, "acc-1");
+            Assert.IsTrue(analytics.Consented);
+            Assert.AreEqual(1, analytics.Count);
+
+            session.SignOut(() => { });
+            ResumeAs(session, store, refreshes, "acc-2");
+            Assert.IsFalse(analytics.Consented);
+            Assert.AreEqual(0, analytics.Count);
+            gates.Apply(ConsentChoicesReply.FromJson(Json(true, false)));
+            Assert.AreEqual("analytics-2", SentAnalyticsId());
+            CollectionAssert.AreEqual(new[] { "analytics-2:app_open" }, analyticsSender.Events);
+        }
+
+        static void ResumeAs(AuthSession session, Store store, Auth refreshes, string accountId)
+        {
+            store.Write(AuthSession.RefreshTokenKey, "refresh-" + accountId);
+            session.Resume(_ => { });
+            refreshes.Refreshes[refreshes.Refreshes.Count - 1](new HttpReply(200, "{\"access_token\":\"access-" + accountId + "\",\"refresh_token\":\"refresh-" + accountId + "\",\"expires_in\":900,\"request_key\":\"" + Convert.ToBase64String(new byte[32]) + "\",\"account_id\":\"" + accountId + "\"}"));
+        }
+
+        [Test]
+        public void AnotherAccountSignedInThroughTheStartupSendsUnderItsOwnId()
+        {
+            gates.SignedIn("acc-1");
+            startup.SignedIn("acc-1");
+            Last.Done(new HttpReply(200, Json(true, false)));
+            analytics.Track(AnalyticsEvents.QueueJoin, "ranked_1v1");
+
+            gates.SignedIn("acc-2");
+            Assert.IsTrue(startup.SignedIn("acc-2"));
+            Last.Done(new HttpReply(200, Json(true, false)));
+
+            Assert.AreEqual("analytics-2", SentAnalyticsId());
+            CollectionAssert.AreEqual(new[] { "analytics-2:app_open" }, analyticsSender.Events);
         }
     }
 }

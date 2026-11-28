@@ -38,6 +38,8 @@ namespace HypeDomino.Net.Auth
 
         public bool HasStoredSession => !string.IsNullOrEmpty(store.Read(RefreshTokenKey));
 
+        public event Action<string> AccountSignedIn;
+
         public event Action<AuthProvider> ProviderSignedIn;
 
         public void Resume(Action<AuthResult> done)
@@ -134,6 +136,7 @@ namespace HypeDomino.Net.Auth
             AccessToken = tokens.access_token;
             RequestKey = key;
             ExpiresInSeconds = tokens.expires_in;
+            AccountSignedIn?.Invoke(AccountId);
             return new AuthResult(AuthOutcome.SignedIn, tokens.created);
         }
 
