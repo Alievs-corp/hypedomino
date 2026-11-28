@@ -31,14 +31,18 @@ namespace HypeDomino.Game.Inventory
 
     public readonly struct InventoryLoadResult
     {
-        InventoryLoadResult(InventoryLoadOutcome outcome, InventoryReply inventory = null)
+        InventoryLoadResult(InventoryLoadOutcome outcome, InventoryReply inventory = null, bool transient = false, long retryAfterMs = 0)
         {
             Outcome = outcome;
             Inventory = inventory;
+            Transient = transient;
+            RetryAfterMs = retryAfterMs;
         }
 
         public InventoryLoadOutcome Outcome { get; }
         public InventoryReply Inventory { get; }
+        public bool Transient { get; }
+        public long RetryAfterMs { get; }
         public string MessageKey => InventoryLoadKeys.Of(Outcome);
 
         public static InventoryLoadResult Loaded(InventoryReply inventory) => new(InventoryLoadOutcome.Loaded, inventory);
@@ -49,7 +53,10 @@ namespace HypeDomino.Game.Inventory
             ApiOutcome.SignInRequired => InventoryLoadOutcome.SignInRequired,
             ApiOutcome.RateLimited => InventoryLoadOutcome.RateLimited,
             _ => InventoryLoadOutcome.Failed,
-        });
+        }, null, IsTransient(reply.Outcome), reply.RetryAfterSeconds * 1000L);
+
+        static bool IsTransient(ApiOutcome outcome) =>
+            outcome is ApiOutcome.Offline or ApiOutcome.Unavailable or ApiOutcome.RateLimited;
 
         public static InventoryLoadResult Unreadable() => new(InventoryLoadOutcome.Failed);
     }

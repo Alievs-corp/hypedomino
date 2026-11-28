@@ -12,17 +12,17 @@ namespace HypeDomino.Game.FriendLobby
     public sealed class FriendLobbyLink
     {
         readonly FriendRoom room;
-        readonly InventoryLoader inventory;
+        readonly InventoryRetry inventory;
         readonly Func<long> clockMs;
         readonly Action<ServerHello> onHello;
         readonly Action<LobbyState> onState;
-        readonly Action<InventoryLoadResult> onInventory;
         readonly Action<MemberEmoji> onShown;
         readonly Action<FriendListLoadOutcome> onFriends;
         readonly Action<LobbyInvite> onInvite;
         readonly RoomInvites invites = new();
         Session session;
         LobbyState lastState;
+        string signedInAccount;
         bool inRoom;
         int wheelSlots;
 
@@ -35,10 +35,9 @@ namespace HypeDomino.Game.FriendLobby
             Members = new RoomMembers(api);
             Invites = new InvitePanel(room, commands, api);
             Incoming = new InvitePrompt(invites, api);
-            inventory = new InventoryLoader(api);
+            inventory = new InventoryRetry(new InventoryLoader(api), this.clockMs, Loaded);
             onHello = Hello;
             onState = Read;
-            onInventory = Loaded;
             onShown = Show;
             onFriends = FriendsAnswered;
             onInvite = invites.Read;
@@ -76,6 +75,20 @@ namespace HypeDomino.Game.FriendLobby
             session = null;
         }
 
+        public void Tick() => inventory.Tick();
+
+        public void SignedIn(string accountId)
+        {
+            if (signedInAccount != null && signedInAccount != accountId) inventory.Cancel();
+            signedInAccount = accountId;
+        }
+
+        public void SignedOut()
+        {
+            signedInAccount = null;
+            inventory.Cancel();
+        }
+
         public bool TryInvite(Friend friend) => session != null && Invites.TryInvite(session, friend);
 
         public bool TrySend(int slot) => session != null && Emoji != null && Emoji.TrySend(session, slot, clockMs());
@@ -107,7 +120,7 @@ namespace HypeDomino.Game.FriendLobby
 
         void Hello(ServerHello hello)
         {
-            if (hello.Status == HelloStatus.Accepted) inventory.Load(onInventory);
+            if (hello.Status == HelloStatus.Accepted) inventory.Load();
         }
 
         void Read(LobbyState state)

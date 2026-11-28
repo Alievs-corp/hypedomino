@@ -87,10 +87,25 @@ namespace HypeDomino.Tests.EditMode
         [TestCase(UnityWebRequest.Result.InProgress)]
         public void UnansweredResultMapsToNoResponseWithoutBody(UnityWebRequest.Result result)
         {
-            var reply = HttpExchange.Reply(result, 0, "partial");
+            var reply = HttpExchange.Reply(result, 0, "partial", "5");
 
             Assert.AreEqual(HttpReply.NoResponse, reply.Status);
             Assert.IsNull(reply.Body);
+            Assert.AreEqual(0, reply.RetryAfterSeconds);
+        }
+
+        [TestCase("30", 30)]
+        [TestCase("0", 0)]
+        [TestCase(null, 0)]
+        [TestCase("", 0)]
+        [TestCase("-5", 0)]
+        [TestCase("1.5", 0)]
+        [TestCase("Wed, 21 Oct 2026 07:28:00 GMT", 0)]
+        public void AnAnsweredReplyKeepsTheRetryAfterSeconds(string header, int seconds)
+        {
+            var reply = HttpExchange.Reply(UnityWebRequest.Result.ProtocolError, 429, "{\"error\":\"rate_limited\"}", header);
+
+            Assert.AreEqual(seconds, reply.RetryAfterSeconds);
         }
     }
 }

@@ -32,7 +32,7 @@ namespace HypeDomino.Net.Api
             foreach (var header in plan.Headers) request.SetRequestHeader(header.Name, header.Value);
             request.SendWebRequest().completed += _ =>
             {
-                var reply = HttpExchange.Reply(request.result, request.responseCode, request.downloadHandler.text);
+                var reply = HttpExchange.Reply(request.result, request.responseCode, request.downloadHandler.text, request.GetResponseHeader(HttpExchange.RetryAfter));
                 request.Dispose();
                 done(reply);
             };

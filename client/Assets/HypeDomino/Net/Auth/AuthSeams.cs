@@ -40,11 +40,13 @@ namespace HypeDomino.Net.Auth
 
         public readonly int Status;
         public readonly string Body;
+        public readonly int RetryAfterSeconds;
 
-        public HttpReply(int status, string body)
+        public HttpReply(int status, string body, int retryAfterSeconds = 0)
         {
             Status = status;
             Body = body;
+            RetryAfterSeconds = retryAfterSeconds;
         }
     }
 

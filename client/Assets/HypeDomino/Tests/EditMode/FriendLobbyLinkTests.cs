@@ -92,10 +92,12 @@ namespace HypeDomino.Tests.EditMode
         FriendLobbyLink link;
         List<MemberEmoji> shown;
         List<InventoryLoadOutcome> outcomes;
+        long nowMs;
 
         [SetUp]
         public void Build()
         {
+            nowMs = 500;
             api = new Api();
             var auth = new Auth();
             var store = new Store();
@@ -118,7 +120,7 @@ namespace HypeDomino.Tests.EditMode
         [TearDown]
         public void Release() => link.Unfollow();
 
-        static long Now() => 500;
+        long Now() => nowMs;
 
         void ReadRoom(LobbyState state) => room.Read(state, Leader);
 
@@ -150,6 +152,17 @@ namespace HypeDomino.Tests.EditMode
             Deliver(Envelope.PayloadOneofCase.LobbyRelay, new LobbyRelay { AccountId = account, ItemId = item });
 
         void AnswerInventory(string json) => api.LastTo(CosmeticCollection.InventoryPath).Done(new HttpReply(200, json));
+
+        void FailInventory(int status, string body = "", int retryAfterSeconds = 0) =>
+            api.LastTo(CosmeticCollection.InventoryPath).Done(new HttpReply(status, body, retryAfterSeconds));
+
+        int InventoryRequests() => api.CountTo(CosmeticCollection.InventoryPath);
+
+        void Wait(long ms)
+        {
+            nowMs += ms;
+            link.Tick();
+        }
 
         static string Worn(int slots, params string[] emojis) =>
             "{\"items\":[],\"loadout\":{\"emojis\":[" + (emojis.Length == 0 ? "" : "\"" + string.Join("\",\"", emojis) + "\"") + "]},\"emoji_slots\":" + slots + "}";
@@ -207,16 +220,201 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsEmpty(transport.Sent);
         }
 
-        [Test]
-        public void AFailedInventoryLoadIsReportedAndBuildsNoWheel()
+        [TestCase(404, "{\"error\":\"not_found\"}", InventoryLoadOutcome.Failed)]
+        [TestCase(403, "{\"error\":\"forbidden\"}", InventoryLoadOutcome.Failed)]
+        [TestCase(401, "{\"error\":\"access_rejected\"}", InventoryLoadOutcome.SignInRequired)]
+        [TestCase(200, "not json", InventoryLoadOutcome.Failed)]
+        public void ARejectedInventoryLoadIsReportedAtOnceAndNeverRetried(int status, string body, InventoryLoadOutcome outcome)
         {
             Hello();
 
-            api.LastTo(CosmeticCollection.InventoryPath).Done(new HttpReply(500, string.Empty));
+            FailInventory(status, body);
+            Wait(60000);
 
-            Assert.AreEqual(new[] { InventoryLoadOutcome.Failed }, outcomes);
+            Assert.AreEqual(new[] { outcome }, outcomes);
+            Assert.AreEqual(1, InventoryRequests());
             Assert.IsNull(link.Wheel);
             Assert.IsNull(link.Worn);
+        }
+
+        [TestCase(HttpReply.NoResponse, InventoryLoadOutcome.Offline)]
+        [TestCase(500, InventoryLoadOutcome.Failed)]
+        [TestCase(503, InventoryLoadOutcome.Failed)]
+        [TestCase(429, InventoryLoadOutcome.RateLimited)]
+        public void AFailedLoadIsRetriedThreeTimesAfterTwoFourAndEightSeconds(int status, InventoryLoadOutcome outcome)
+        {
+            Hello();
+
+            foreach (var backoffMs in new long[] { 2000, 4000, 8000 })
+            {
+                var asked = InventoryRequests();
+                FailInventory(status);
+                Wait(backoffMs - 1);
+                Assert.AreEqual(asked, InventoryRequests());
+                Wait(1);
+                Assert.AreEqual(asked + 1, InventoryRequests());
+                Assert.IsEmpty(outcomes);
+            }
+            FailInventory(status);
+            Wait(60000);
+
+            Assert.AreEqual(new[] { outcome }, outcomes);
+            Assert.AreEqual(4, InventoryRequests());
+            Assert.IsNull(link.Wheel);
+        }
+
+        [Test]
+        public void AnInventoryArrivingOnARetryStopsRetrying()
+        {
+            Hello();
+            FailInventory(503);
+            Wait(2000);
+
+            AnswerInventory(TwoWorn);
+            Wait(60000);
+
+            Assert.AreEqual(new[] { InventoryLoadOutcome.Loaded }, outcomes);
+            Assert.AreEqual(2, InventoryRequests());
+            Assert.IsNotNull(link.Wheel);
+        }
+
+        [Test]
+        public void ARetryAfterLongerThanTheBackoffIsWaitedOut()
+        {
+            Hello();
+
+            FailInventory(429, "{\"error\":\"rate_limited\"}", 30);
+            Wait(29999);
+            Assert.AreEqual(1, InventoryRequests());
+            Wait(1);
+
+            Assert.AreEqual(2, InventoryRequests());
+        }
+
+        [Test]
+        public void ARetryAfterShorterThanTheBackoffKeepsTheBackoff()
+        {
+            Hello();
+
+            FailInventory(429, "{\"error\":\"rate_limited\"}", 1);
+            Wait(1999);
+            Assert.AreEqual(1, InventoryRequests());
+            Wait(1);
+
+            Assert.AreEqual(2, InventoryRequests());
+        }
+
+        [Test]
+        public void AfterTheRetriesTheNextAcceptedHelloLoadsAgainWithAFreshBackoff()
+        {
+            Hello();
+            FailInventory(503);
+            Wait(2000);
+            FailInventory(503);
+            Wait(4000);
+            FailInventory(503);
+            Wait(8000);
+            FailInventory(503);
+
+            Hello();
+            Assert.AreEqual(5, InventoryRequests());
+            FailInventory(503);
+            Wait(2000);
+
+            Assert.AreEqual(6, InventoryRequests());
+            AnswerInventory(TwoWorn);
+            Assert.AreEqual(new[] { InventoryLoadOutcome.Failed, InventoryLoadOutcome.Loaded }, outcomes);
+        }
+
+        [Test]
+        public void AnAcceptedHelloDuringTheBackoffLoadsAtOnce()
+        {
+            Hello();
+            FailInventory(503);
+            Wait(1000);
+
+            Hello();
+
+            Assert.AreEqual(2, InventoryRequests());
+        }
+
+        [Test]
+        public void SigningOutCancelsThePendingRetry()
+        {
+            Hello();
+            FailInventory(503);
+
+            link.SignedOut();
+            Wait(60000);
+
+            Assert.AreEqual(1, InventoryRequests());
+            Assert.IsEmpty(outcomes);
+        }
+
+        [Test]
+        public void ARefreshOfTheSameAccountKeepsThePendingRetry()
+        {
+            link.SignedIn("acc-1");
+            Hello();
+            FailInventory(503);
+
+            link.SignedIn("acc-1");
+            Wait(2000);
+
+            Assert.AreEqual(2, InventoryRequests());
+        }
+
+        [Test]
+        public void AnotherAccountCancelsThePendingRetry()
+        {
+            link.SignedIn("acc-1");
+            Hello();
+            FailInventory(503);
+
+            link.SignedIn("acc-2");
+            Wait(60000);
+
+            Assert.AreEqual(1, InventoryRequests());
+            Assert.IsEmpty(outcomes);
+        }
+
+        [Test]
+        public void AnInventoryInFlightAtSignOutIsDropped()
+        {
+            Hello();
+
+            link.SignedOut();
+            AnswerInventory(TwoWorn);
+
+            Assert.IsEmpty(outcomes);
+            Assert.IsNull(link.Worn);
+        }
+
+        [Test]
+        public void AHelloAfterSignOutLoadsAgainOnceTheDroppedAnswerArrives()
+        {
+            Hello();
+            link.SignedOut();
+            Hello();
+            Assert.AreEqual(1, InventoryRequests());
+
+            AnswerInventory(TwoWorn);
+            Assert.AreEqual(2, InventoryRequests());
+            AnswerInventory(TwoWorn);
+
+            Assert.AreEqual(new[] { InventoryLoadOutcome.Loaded }, outcomes);
+        }
+
+        [Test]
+        public void ATickWithNoRetryDueAllocatesNothing()
+        {
+            Hello();
+            FailInventory(503);
+            link.Tick();
+
+            Assert.That(link.Tick, Allocates.Nothing);
+            link.SignedOut();
+            Assert.That(link.Tick, Allocates.Nothing);
         }
 
         [Test]
