@@ -21,13 +21,15 @@ namespace HypeDomino.Net.Api
         public readonly int Status;
         public readonly string Body;
         public readonly string Error;
+        public readonly int RetryAfterSeconds;
 
-        public ApiReply(ApiOutcome outcome, int status = HttpReply.NoResponse, string body = null, string error = null)
+        public ApiReply(ApiOutcome outcome, int status = HttpReply.NoResponse, string body = null, string error = null, int retryAfterSeconds = 0)
         {
             Outcome = outcome;
             Status = status;
             Body = body;
             Error = error;
+            RetryAfterSeconds = retryAfterSeconds;
         }
     }
 
@@ -109,7 +111,7 @@ namespace HypeDomino.Net.Api
                 Refresh(request);
                 return;
             }
-            request.Done(new ApiReply(OutcomeOf(reply.Status, error), reply.Status, reply.Body, error));
+            request.Done(new ApiReply(OutcomeOf(reply.Status, error), reply.Status, reply.Body, error, reply.RetryAfterSeconds));
         }
 
         void Refresh(Request request)

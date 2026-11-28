@@ -123,5 +123,31 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(key, results[0].MessageKey);
             Assert.IsNull(results[0].Inventory);
         }
+
+        [TestCase(HttpReply.NoResponse, null, true)]
+        [TestCase(500, "{\"error\":\"internal\"}", true)]
+        [TestCase(503, "", true)]
+        [TestCase(429, "{\"error\":\"rate_limited\"}", true)]
+        [TestCase(401, "{\"error\":\"access_rejected\"}", false)]
+        [TestCase(403, "{\"error\":\"forbidden\"}", false)]
+        [TestCase(404, "{\"error\":\"not_found\"}", false)]
+        [TestCase(200, "not json", false)]
+        [TestCase(200, InventoryJson, false)]
+        public void OnlyNoAnswerAServerErrorOrARateLimitIsTransient(int status, string body, bool transient)
+        {
+            loader.Load(results.Add);
+            api.Requests[0].Done(new HttpReply(status, body));
+
+            Assert.AreEqual(transient, results[0].Transient);
+        }
+
+        [Test]
+        public void ARateLimitCarriesItsRetryAfter()
+        {
+            loader.Load(results.Add);
+            api.Requests[0].Done(new HttpReply(429, "{\"error\":\"rate_limited\"}", 12));
+
+            Assert.AreEqual(12000, results[0].RetryAfterMs);
+        }
     }
 }

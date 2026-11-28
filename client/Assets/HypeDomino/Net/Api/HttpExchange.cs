@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using HypeDomino.Net.Auth;
 using UnityEngine.Networking;
@@ -26,6 +27,7 @@ namespace HypeDomino.Net.Api
         public const string ContentType = "Content-Type";
         public const string JsonMediaType = "application/json";
         public const string Authorization = "Authorization";
+        public const string RetryAfter = "Retry-After";
 
         public static HttpRequestPlan Plan(string baseUrl, string method, string pathAndQuery, string body, string authorization, string mac, IReadOnlyList<ApiHeader> extraHeaders)
         {
@@ -38,8 +40,11 @@ namespace HypeDomino.Net.Api
             return new HttpRequestPlan(baseUrl.TrimEnd('/') + pathAndQuery, method, bytes, headers);
         }
 
-        public static HttpReply Reply(UnityWebRequest.Result result, long responseCode, string text) =>
-            IsAnswered(result) ? new HttpReply((int)responseCode, text) : new HttpReply(HttpReply.NoResponse, null);
+        public static HttpReply Reply(UnityWebRequest.Result result, long responseCode, string text, string retryAfter = null) =>
+            IsAnswered(result) ? new HttpReply((int)responseCode, text, RetryAfterSeconds(retryAfter)) : new HttpReply(HttpReply.NoResponse, null);
+
+        public static int RetryAfterSeconds(string header) =>
+            int.TryParse(header, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) ? seconds : 0;
 
         static bool IsAnswered(UnityWebRequest.Result result) =>
             result is UnityWebRequest.Result.Success or UnityWebRequest.Result.ProtocolError;
