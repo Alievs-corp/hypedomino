@@ -230,15 +230,47 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(expected, text);
         }
 
-        [TestCase("az")]
-        [TestCase("en")]
-        [TestCase("tr")]
-        [TestCase("ru")]
-        public void AKeyMissingEverywhereShowsTheShippedEnglishUnavailableText(string language)
+        [TestCase("az", "Mətn əlçatan deyil")]
+        [TestCase("en", "Text unavailable")]
+        [TestCase("tr", "Text unavailable")]
+        [TestCase("ru", "Text unavailable")]
+        public void AKeyMissingEverywhereShowsTheShippedUnavailableTextOfTheSelectedLanguageElseEnglish(string language, string expected)
         {
             var strings = new GameStrings(BuiltinStrings.Load(), Choice(language), false);
             LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=test.missing.key language=" + language + " version=0$"));
-            Assert.AreEqual("Text unavailable", strings.Text("test.missing.key"));
+            Assert.AreEqual(expected, strings.Text("test.missing.key"));
+        }
+
+        [Test]
+        public void TheSelectedLanguageUnavailableTextWinsOverTheEnglishOne()
+        {
+            var strings = OwnUnavailableTextStrings("az");
+            LogAssert.Expect(LogType.Warning, new Regex("key=nope"));
+            Assert.AreEqual("Yoxdur", strings.Text("nope"));
+        }
+
+        [Test]
+        public void TheEnglishUnavailableTextShowsWhenTheSelectedLanguageHasNone()
+        {
+            var strings = OwnUnavailableTextStrings("tr");
+            LogAssert.Expect(LogType.Warning, new Regex("key=nope"));
+            Assert.AreEqual("Unavailable", strings.Text("nope"));
+        }
+
+        [Test]
+        public void ADownloadedValueWinsOverBothUnavailableTexts()
+        {
+            var strings = OwnUnavailableTextStrings("az");
+            var missing = new List<string>();
+            strings.KeyMissingInWholeChain += (key, language, version) => missing.Add(key + " " + language + " " + version);
+            var content = Encoding.UTF8.GetBytes(@"{""language"":""az"",""strings"":{""k"":""A""}}");
+            Assert.IsTrue(strings.Stage("az", 3, StringBundle.Sha256Hex(content), content));
+            Assert.IsTrue(strings.ApplyStaged(false));
+            Assert.AreEqual("A", strings.Text("k"));
+            CollectionAssert.IsEmpty(missing);
+            LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=nope language=az version=3$"));
+            Assert.AreEqual("Yoxdur", strings.Text("nope"));
+            CollectionAssert.AreEqual(new[] { "nope az 3" }, missing);
         }
 
         [Test]
@@ -475,6 +507,11 @@ namespace HypeDomino.Tests.EditMode
         static GameStrings Strings(string language) => Strings(Choice(language));
 
         static GameStrings Strings(LanguageChoice choice) => new(BuiltinStrings.Parse(Builtin), choice, false);
+
+        static GameStrings OwnUnavailableTextStrings(string language) =>
+            new(BuiltinStrings.Parse(@"{""entries"":[
+{""key"":""k"",""en"":""E""},
+{""key"":""common.text.unavailable"",""en"":""Unavailable"",""az"":""Yoxdur""}]}"), Choice(language), false);
 
         static string Format(string pattern, string language, IReadOnlyDictionary<string, object> args)
         {
