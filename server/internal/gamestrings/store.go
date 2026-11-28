@@ -268,6 +268,9 @@ func (s *Store) Publish(ctx context.Context, language Language, by string, now t
 	if problems != nil {
 		return Published{}, problems, fmt.Errorf("%w: %d values fail their checks", ErrBlocked, len(problems))
 	}
+	if problems := bundle.UndrawableProblems(); problems != nil {
+		return Published{}, problems, fmt.Errorf("%w: %d values", ErrUndrawable, len(problems))
+	}
 	content, hash, err := bundle.Encode()
 	if err != nil {
 		return Published{}, nil, err
