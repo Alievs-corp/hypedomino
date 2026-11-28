@@ -50,6 +50,7 @@ namespace HypeDomino.Game.Privacy
 
         void Show()
         {
+            if (policy == null || terms == null) return;
             policy.gameObject.SetActive(!string.IsNullOrEmpty(versions?.PrivacyPolicyUrl));
             terms.gameObject.SetActive(!string.IsNullOrEmpty(versions?.TermsOfUseUrl));
         }
