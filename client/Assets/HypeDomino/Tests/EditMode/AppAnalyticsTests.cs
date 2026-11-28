@@ -226,6 +226,25 @@ namespace HypeDomino.Tests.EditMode
             Assert.IsEmpty(Sent());
         }
 
+        [Test]
+        public void AShownScreenIsTrackedWithItsId()
+        {
+            queue.Consent(AnalyticsId);
+
+            app.ScreenShown("lobby");
+
+            AssertOne(Sent(), AnalyticsEvents.ScreenView, "lobby");
+        }
+
+        [Test]
+        public void AScreenShownBeforeConsentIsDropped()
+        {
+            app.ScreenShown("login");
+            queue.Consent(AnalyticsId);
+
+            Assert.IsEmpty(Sent());
+        }
+
         [TestCase(QueueKind.Ranked, Mode._1V1, "ranked_1v1")]
         [TestCase(QueueKind.Ranked, Mode._2V2, "ranked_2v2")]
         [TestCase(QueueKind.Casual, Mode._1V1, "casual_1v1")]
