@@ -1,5 +1,6 @@
 using HypeDomino.Game.Push;
 using HypeDomino.UI.Localization;
+using HypeDomino.UI.Screens;
 using HypeDomino.UI.Settings;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,8 @@ namespace HypeDomino.Game.Privacy
         PushSettings push;
         GameStrings strings;
         string messageKey;
+        ScreenView screen;
+        bool wasShown;
 
         public void Configure(SettingToggleRow analyticsRow, SettingToggleRow diagnosticsRow, SettingToggleRow gameplayPushRow,
             SettingToggleRow promotionalPushRow, TMP_Text messageLine)
@@ -44,9 +47,26 @@ namespace HypeDomino.Game.Privacy
             privacy.Changed += ShowChoices;
             push.Changed += ShowChoices;
             strings.Changed += ShowMessage;
+            screen = GetComponent<ScreenView>();
+            wasShown = screen != null && screen.IsShown;
             ShowMessage();
-            if (!privacy.Loaded) privacy.Load(OnPrivacyAnswered);
-            if (!push.Loaded) push.Load(OnPushAnswered);
+            if (screen == null || wasShown) LoadKeptChoices();
+        }
+
+        public void LoadWhenShown()
+        {
+            if (privacy == null || screen == null) return;
+            var shown = screen.IsShown;
+            if (shown && !wasShown) LoadKeptChoices();
+            wasShown = shown;
+        }
+
+        void LateUpdate() => LoadWhenShown();
+
+        void LoadKeptChoices()
+        {
+            privacy.Load(OnPrivacyAnswered);
+            push.Load(OnPushAnswered);
         }
 
         void Start()

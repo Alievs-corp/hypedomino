@@ -14,7 +14,7 @@ func TestThePrivacyConfigIsPublishedBySuperAdminsOnlyAndValidated(t *testing.T) 
 	a.create("orxan@example.com", rbac.Support)
 	root := a.signIn("root")
 	path := "/admin/config/privacy"
-	config := map[string]any{"PrivacyPolicyVersion": "2026-11-01", "TermsVersion": "2026-10-01", "ConsentRecordRetentionYears": 3}
+	config := map[string]any{"PrivacyPolicyVersion": "2026-11-01", "TermsVersion": "2026-10-01", "ConsentRecordRetentionYears": 3, "PrivacyPolicyUrl": "https://example.com/privacy", "TermsOfUseUrl": "https://example.com/terms"}
 
 	for _, token := range []string{a.signIn("ayla"), a.signIn("leyla"), a.signIn("orxan")} {
 		status, body := a.call("GET", path, token, nil)
@@ -27,7 +27,8 @@ func TestThePrivacyConfigIsPublishedBySuperAdminsOnlyAndValidated(t *testing.T) 
 		{"TermsVersion": "two words"},
 		{"ConsentRecordRetentionYears": 0},
 		{"ConsentRecordRetentionYears": 11},
-		{"PrivacyPolicyUrl": "https://example.com/privacy"},
+		{"PrivacyPolicyUrl": "http://example.com/privacy"},
+		{"TermsUrl": "https://example.com/terms"},
 	} {
 		status, body := a.call("PUT", path, root, map[string]any{"catalog": invalid, "reason": "launch"})
 		expect(t, status, body, http.StatusBadRequest, "invalid")

@@ -14,6 +14,7 @@ using HypeDomino.Game.Promo;
 using HypeDomino.Game.Ranking;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Audio;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Graphics;
@@ -39,7 +40,7 @@ namespace HypeDomino.Tests.PlayMode
         const string TermsUrl = "https://policy.test/terms";
         const int NavButtons = 9;
         const int LoginButtons = 3;
-        const int SettingsLabels = 18;
+        const int SettingsLabels = 25;
         const int RankingLabels = 3;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
@@ -86,6 +87,7 @@ namespace HypeDomino.Tests.PlayMode
         GameStrings strings;
         SettingsModel settings;
         SizedStore cacheStore;
+        TutorialOffer tutorial;
 
         [SetUp]
         public void Build()
@@ -105,7 +107,8 @@ namespace HypeDomino.Tests.PlayMode
                 new FrameRatePolicy(graphics, Panel120, null, false),
                 new HapticsPreference(true),
                 new ContentCache(cacheStore, () => false));
-            host = new ScreenHost(stack, strings, settings);
+            tutorial = new TutorialOffer();
+            host = new ScreenHost(stack, strings, settings, tutorial);
         }
 
         [TearDown]
@@ -333,7 +336,7 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsNotNull(screen.GetComponent<SettingsScreenView>());
             Assert.IsNotNull(screen.GetComponentInChildren<LanguageRow>(true));
             Assert.AreEqual(SettingsScreens.VolumeKeys.Length, screen.GetComponentsInChildren<VolumeSliderRow>(true).Length);
-            Assert.AreEqual(4, screen.GetComponentsInChildren<SettingToggleRow>(true).Length);
+            Assert.AreEqual(8, screen.GetComponentsInChildren<SettingToggleRow>(true).Length);
             Assert.AreEqual(2, screen.GetComponentsInChildren<TMP_Dropdown>(true).Length);
             Assert.IsNotNull(screen.GetComponentInChildren<ScrollRect>(true));
             var labels = screen.GetComponentsInChildren<PlainLabel>(true);
@@ -426,6 +429,53 @@ namespace HypeDomino.Tests.PlayMode
             ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
             Assert.AreSame(screen, stack.Top);
             Assert.IsTrue(screen.TakesInput);
+        }
+
+        [Test]
+        public void TheTutorialRowSitsUnderThePromoCodeButtonAndReplaysAFinishedRunFromTheFirstStep()
+        {
+            tutorial.Run.Start();
+            tutorial.Run.Continue();
+            tutorial.Run.Skip();
+            var screen = Pushed(SettingsScreens.NavKey);
+            var replay = ButtonOf(screen, SettingsScreens.ReplayTutorialKey);
+
+            Assert.AreEqual(ButtonOf(screen, PromoScreens.NavKey).transform.GetSiblingIndex() + 1, replay.transform.GetSiblingIndex());
+            replay.onClick.Invoke();
+
+            Assert.AreEqual(TutorialState.Running, tutorial.Run.State);
+            Assert.AreEqual(0, tutorial.Run.StepIndex);
+            Assert.AreEqual(0u, tutorial.Run.PlayerPoints);
+            Assert.AreEqual(0u, tutorial.Run.BotPoints);
+            Assert.AreSame(screen, stack.Top);
+        }
+
+        [Test]
+        public void TheSettingsScreenHasTheConsentRowsBetweenTheCacheAndTheAccountRows()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+            string[] consentKeys = { SettingsScreens.AnalyticsKey, SettingsScreens.DiagnosticsKey, SettingsScreens.GameplayPushKey, SettingsScreens.PromotionalPushKey };
+
+            Assert.IsNotNull(screen.GetComponent<ConsentSettingsView>());
+            var previous = LabelOf(screen, SettingsScreens.ClearCacheKey).transform.GetSiblingIndex();
+            foreach (var key in consentKeys)
+            {
+                Assert.IsNotNull(ToggleOf(screen, key).GetComponent<SettingToggleRow>());
+                var row = LabelOf(screen, key).transform.parent.GetSiblingIndex();
+                Assert.Greater(row, previous);
+                previous = row;
+            }
+            Assert.Greater(LabelOf(screen, SettingsScreens.ExportDataKey).transform.GetSiblingIndex(), previous);
+        }
+
+        [Test]
+        public void TheSettingsScreenHasTheLegalLinkRowsHiddenUntilAUrlIsAnnounced()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<LegalLinksView>());
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.PolicyKey).gameObject.activeSelf);
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.TermsKey).gameObject.activeSelf);
         }
 
         [Test]

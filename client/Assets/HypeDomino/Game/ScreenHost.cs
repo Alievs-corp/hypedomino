@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HypeDomino.Game.Analytics;
 using HypeDomino.Game.Screens;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Screens;
 using UnityEngine;
@@ -18,10 +19,11 @@ namespace HypeDomino.Game
         readonly Dictionary<ScreenView, string> screenIds = new();
         readonly Transform nav;
 
-        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings)
+        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings, TutorialOffer tutorial)
         {
             this.stack = stack;
             Strings = strings;
+            Tutorial = tutorial;
             stack.TopShown += TopShown;
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
@@ -44,6 +46,8 @@ namespace HypeDomino.Game
         public event Action<string> ScreenShown;
 
         public GameStrings Strings { get; }
+
+        public TutorialOffer Tutorial { get; }
 
         public ScreenView Promo { get; }
 

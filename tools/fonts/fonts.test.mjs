@@ -7,7 +7,11 @@ import {
   checkFonts,
   cmapCodePoints,
   coverageErrors,
+  drawnByEveryChain,
   fontAssetFacts,
+  fontCharactersErrors,
+  fontCharactersJson,
+  fontCharactersPath,
   manifestErrors,
   manifestPath,
   metaGuid,
@@ -28,7 +32,34 @@ const code = (character) => character.codePointAt(0);
 test("the committed font set covers every role chain and matches its font assets", () => {
   const { errors, report } = checkFonts(repoRoot);
   assert.deepEqual(errors, []);
-  assert.equal(report.length, manifest.faces.length + 1);
+  assert.equal(report.length, manifest.faces.length + 2);
+});
+
+test("the characters the server lets a published bundle hold are the ones every chain draws", () => {
+  const committed = readFileSync(`${repoRoot}/${fontCharactersPath}`, "utf8");
+  assert.equal(committed, checkFonts(repoRoot).fontCharacters);
+  const characters = JSON.parse(committed).characters;
+  for (const character of "Aə₼ЖёÂ…«") assert.ok(characters.includes(character), character);
+  for (const character of "éßі\ń") assert.ok(!characters.includes(character), character);
+});
+
+test("a character outside one chain is not drawn by every chain, and a stale list is reported", () => {
+  const small = {
+    faces: [
+      { id: "display-900", fallbacks: ["ui-400"] },
+      { id: "ui-400", fallbacks: [] },
+      { id: "numeral-900", fallbacks: [] },
+    ],
+  };
+  const glyphs = { "display-900": new Set([code("A"), code("Ж")]), "ui-400": new Set([code("A"), code("ə")]), "numeral-900": new Set([code("A"), code("ə")]) };
+  const drawn = drawnByEveryChain(small, (id) => glyphs[id]);
+  assert.deepEqual(drawn, [code("A"), code("ə")]);
+  assert.equal(fontCharactersJson(drawn), '{\n  "characters": "Aə"\n}\n');
+  assert.deepEqual(fontCharactersErrors(drawn, { characters: "Aə" }), []);
+  assert.deepEqual(fontCharactersErrors(drawn, { characters: "AЖ" }), [
+    `${fontCharactersPath} misses characters every chain draws: ə U+0259; run node tools/fonts/fonts.mjs --write-font-characters`,
+    `${fontCharactersPath} lists characters not every chain draws: Ж U+0416; run node tools/fonts/fonts.mjs --write-font-characters`,
+  ]);
 });
 
 test("the nickname characters the server allows are the letters of the name style sets", () => {

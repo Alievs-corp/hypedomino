@@ -98,6 +98,8 @@ message RarityTierConfig {
 message PrivacyVersions {
   string privacy_policy_version = 1;
   string terms_version = 2;
+  string privacy_policy_url = 3;
+  string terms_of_use_url = 4;
 }
 
 message FallbackChain {
