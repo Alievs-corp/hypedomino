@@ -58,6 +58,7 @@ namespace HypeDomino.Game.Screens
             view.Bind(model, host.Strings, () => host.Open(host.Promo));
             Consents(screen, list, host);
             Account(screen, list, host);
+            Legal(screen, list, host);
             return screen;
         }
 
@@ -69,6 +70,13 @@ namespace HypeDomino.Game.Screens
             var promotionalPush = Toggle(list, host, PromotionalPushKey);
             var message = PlainUi.Text(list, TokenTextStyle.Body);
             screen.gameObject.AddComponent<ConsentSettingsView>().Configure(analytics, diagnostics, gameplayPush, promotionalPush, message);
+        }
+
+        static void Legal(ScreenView screen, Transform list, ScreenHost host)
+        {
+            var policy = PlainUi.Button(list, FirstLaunchScreens.PolicyKey, host.Strings);
+            var terms = PlainUi.Button(list, FirstLaunchScreens.TermsKey, host.Strings);
+            screen.gameObject.AddComponent<LegalLinksView>().Configure(policy, terms);
         }
 
         static void Account(ScreenView screen, Transform list, ScreenHost host)

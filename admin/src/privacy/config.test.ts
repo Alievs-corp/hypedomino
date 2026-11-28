@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { badFields, clearsPolicyVersion, configFromFields, fieldsFromConfig } from "./config.ts";
+import { badFields, clearsPolicyVersion, configFromFields, fieldsFromConfig, maxLinkLength, validLink } from "./config.ts";
 
 test("an empty field leaves its key out of the snapshot", () => {
   const fields = fieldsFromConfig({ PrivacyPolicyVersion: "2026-11-01", ConsentRecordRetentionYears: 5 });
-  assert.deepEqual(fields, { PrivacyPolicyVersion: "2026-11-01", TermsVersion: "", ConsentRecordRetentionYears: "5" });
+  assert.deepEqual(fields, { PrivacyPolicyVersion: "2026-11-01", TermsVersion: "", PrivacyPolicyUrl: "", TermsOfUseUrl: "", ConsentRecordRetentionYears: "5" });
   assert.deepEqual(configFromFields(fields), { PrivacyPolicyVersion: "2026-11-01", ConsentRecordRetentionYears: 5 });
   assert.deepEqual(configFromFields(fieldsFromConfig(null)), {});
 });
@@ -18,6 +18,28 @@ test("versions follow the server format", () => {
   for (const version of invalid) {
     assert.deepEqual(badFields({ ...fieldsFromConfig(null), PrivacyPolicyVersion: version, TermsVersion: version }), ["PrivacyPolicyVersion", "TermsVersion"], version);
   }
+});
+
+test("legal links are https URLs with a host, like on the server", () => {
+  const longest = "https://a.example/" + "x".repeat(maxLinkLength - 18);
+  for (const link of ["https://hypedomino.example/privacy", "https://hypedomino.example/terms?lang=az#top", longest]) {
+    assert.equal(validLink(link), true, link);
+    assert.deepEqual(badFields({ ...fieldsFromConfig(null), PrivacyPolicyUrl: link, TermsOfUseUrl: link }), [], link);
+  }
+  const invalid = [
+    "http://hypedomino.example/privacy",
+    "hypedomino.example/privacy",
+    "https://user:pass@hypedomino.example/privacy",
+    "https://hypedomino.example/a b",
+    "javascript:alert(1)",
+    longest + "x",
+  ];
+  for (const link of invalid) {
+    assert.deepEqual(badFields({ ...fieldsFromConfig(null), PrivacyPolicyUrl: link, TermsOfUseUrl: link }), ["PrivacyPolicyUrl", "TermsOfUseUrl"], link);
+  }
+  const fields = { ...fieldsFromConfig(null), PrivacyPolicyUrl: "https://hypedomino.example/privacy" };
+  assert.deepEqual(configFromFields(fields), { PrivacyPolicyUrl: "https://hypedomino.example/privacy" });
+  assert.deepEqual(fieldsFromConfig(configFromFields(fields)), fields);
 });
 
 test("the consent record retention is a whole number of years from 1 to 10", () => {

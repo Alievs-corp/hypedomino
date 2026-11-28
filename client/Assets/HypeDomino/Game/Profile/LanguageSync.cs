@@ -40,6 +40,7 @@ namespace HypeDomino.Game.Profile
         bool accountRead;
         bool readNeeded;
         bool unsaved;
+        bool applying;
 
         public LanguageSync(ApiClient api, LanguageChoice choice)
         {
@@ -67,7 +68,7 @@ namespace HypeDomino.Game.Profile
 
         void ChoiceChanged()
         {
-            if (account == null) return;
+            if (account == null || applying) return;
             unsaved = true;
             Pump();
         }
@@ -107,7 +108,21 @@ namespace HypeDomino.Game.Profile
             }
             accountRead = true;
             if (!GameLanguage.IsLaunch(stored)) unsaved = true;
+            else if (!unsaved) Apply(stored);
             Pump();
+        }
+
+        void Apply(string language)
+        {
+            applying = true;
+            try
+            {
+                choice.Choose(language);
+            }
+            finally
+            {
+                applying = false;
+            }
         }
 
         void Saved(ApiReply reply)
