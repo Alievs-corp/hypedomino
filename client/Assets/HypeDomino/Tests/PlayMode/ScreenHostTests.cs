@@ -14,6 +14,7 @@ using HypeDomino.Game.Promo;
 using HypeDomino.Game.Ranking;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Audio;
 using HypeDomino.UI.Cosmetics;
 using HypeDomino.UI.Graphics;
@@ -39,7 +40,7 @@ namespace HypeDomino.Tests.PlayMode
         const string TermsUrl = "https://policy.test/terms";
         const int NavButtons = 9;
         const int LoginButtons = 3;
-        const int SettingsLabels = 24;
+        const int SettingsLabels = 25;
         const int RankingLabels = 3;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
@@ -86,6 +87,7 @@ namespace HypeDomino.Tests.PlayMode
         GameStrings strings;
         SettingsModel settings;
         SizedStore cacheStore;
+        TutorialOffer tutorial;
 
         [SetUp]
         public void Build()
@@ -105,7 +107,8 @@ namespace HypeDomino.Tests.PlayMode
                 new FrameRatePolicy(graphics, Panel120, null, false),
                 new HapticsPreference(true),
                 new ContentCache(cacheStore, () => false));
-            host = new ScreenHost(stack, strings, settings);
+            tutorial = new TutorialOffer();
+            host = new ScreenHost(stack, strings, settings, tutorial);
         }
 
         [TearDown]
@@ -379,6 +382,25 @@ namespace HypeDomino.Tests.PlayMode
             ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
             Assert.AreSame(screen, stack.Top);
             Assert.IsTrue(screen.TakesInput);
+        }
+
+        [Test]
+        public void TheTutorialRowSitsUnderThePromoCodeButtonAndReplaysAFinishedRunFromTheFirstStep()
+        {
+            tutorial.Run.Start();
+            tutorial.Run.Continue();
+            tutorial.Run.Skip();
+            var screen = Pushed(SettingsScreens.NavKey);
+            var replay = ButtonOf(screen, SettingsScreens.ReplayTutorialKey);
+
+            Assert.AreEqual(ButtonOf(screen, PromoScreens.NavKey).transform.GetSiblingIndex() + 1, replay.transform.GetSiblingIndex());
+            replay.onClick.Invoke();
+
+            Assert.AreEqual(TutorialState.Running, tutorial.Run.State);
+            Assert.AreEqual(0, tutorial.Run.StepIndex);
+            Assert.AreEqual(0u, tutorial.Run.PlayerPoints);
+            Assert.AreEqual(0u, tutorial.Run.BotPoints);
+            Assert.AreSame(screen, stack.Top);
         }
 
         [Test]
