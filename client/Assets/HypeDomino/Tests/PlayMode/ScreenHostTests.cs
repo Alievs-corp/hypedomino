@@ -400,11 +400,11 @@ namespace HypeDomino.Tests.PlayMode
 
             ButtonOf(screen, SettingsScreens.ClearCacheKey).onClick.Invoke();
             Assert.AreEqual(3, cacheStore.Reads);
-            Assert.IsTrue(HasText(screen, "Keş: 0,0 MB"));
+            Assert.IsTrue(HasText(screen, "Keş: < 1 MB"));
 
             choice.Choose(GameLanguage.English);
             Assert.AreEqual(3, cacheStore.Reads);
-            Assert.IsTrue(HasText(screen, "Cache: 0.0 MB"));
+            Assert.IsTrue(HasText(screen, "Cache: < 1 MB"));
         }
 
         [Test]
