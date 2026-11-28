@@ -73,10 +73,13 @@ namespace HypeDomino.UI.Localization
             KeyMissingInWholeChain?.Invoke(key, Language, BundleVersion());
             Log(key);
             if (showMissingKeys) return "[!" + key + "]";
-            return builtin.Value(UnavailableKey, GameLanguage.English) ?? string.Empty;
+            return UnavailableText();
         }
 
         void OnLanguageChosen() => Changed?.Invoke();
+
+        string UnavailableText() =>
+            builtin.Value(UnavailableKey, Language) ?? builtin.Value(UnavailableKey, GameLanguage.English) ?? string.Empty;
 
         string[] Chain(string language) =>
             language != null && chains.TryGetValue(language, out var chain) ? chain : GameLanguage.DefaultChain(language);
