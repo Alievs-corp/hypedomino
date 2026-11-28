@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HypeDomino.Game.Screens;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Screens;
 using UnityEngine;
@@ -15,10 +16,11 @@ namespace HypeDomino.Game
         readonly Dictionary<AppState, ScreenView> screens = new();
         readonly Transform nav;
 
-        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings)
+        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings, TutorialOffer tutorial)
         {
             this.stack = stack;
             Strings = strings;
+            Tutorial = tutorial;
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
             screens[AppState.Room] = RoomScreens.Room(this);
@@ -38,6 +40,8 @@ namespace HypeDomino.Game
         }
 
         public GameStrings Strings { get; }
+
+        public TutorialOffer Tutorial { get; }
 
         public ScreenView Promo { get; }
 

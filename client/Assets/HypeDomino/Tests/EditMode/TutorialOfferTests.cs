@@ -1,4 +1,5 @@
 using HypeDomino.Game;
+using HypeDomino.Game.Screens;
 using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Localization;
 using Hypedomino.V1;
@@ -36,6 +37,15 @@ namespace HypeDomino.Tests.EditMode
         }
 
         void CountChange() => changes++;
+
+        static void PlayUntilThePlayerScores(TutorialRun run)
+        {
+            while (run.PlayerPoints == 0)
+            {
+                if (run.AwaitsPlayer) run.TryPlace(run.Current.Tile, run.Current.End);
+                else run.Continue();
+            }
+        }
 
         static ServerHello Accepted(bool inMatch) => new ServerHello { Status = HelloStatus.Accepted, InMatch = inMatch };
 
@@ -97,6 +107,62 @@ namespace HypeDomino.Tests.EditMode
             Assert.AreEqual(0u, offer.Run.PlayerPoints);
             Assert.IsTrue(TutorialProgressStore.ShouldOffer);
             Assert.AreEqual(2, changes);
+        }
+
+        [Test]
+        public void ReplayStartsAgainFromTheFirstStepOnAFinishedDevice()
+        {
+            offer.Run.Start();
+            offer.Run.Continue();
+            offer.Run.Skip();
+            TutorialProgressStore.Keep(offer.Run);
+
+            offer.Replay();
+
+            Assert.AreEqual(TutorialState.Running, offer.Run.State);
+            Assert.AreEqual(0, offer.Run.StepIndex);
+            Assert.AreEqual(0u, offer.Run.PlayerPoints);
+            Assert.AreEqual(0u, offer.Run.BotPoints);
+            Assert.IsFalse(TutorialProgressStore.ShouldOffer);
+            Assert.AreEqual(1, changes);
+        }
+
+        [Test]
+        public void ReplayRestartsARunningRunWithoutPoints()
+        {
+            offer.Read(AppState.Lobby);
+            offer.Accept();
+            PlayUntilThePlayerScores(offer.Run);
+
+            offer.Replay();
+
+            Assert.AreEqual(TutorialState.Running, offer.Run.State);
+            Assert.AreEqual(0, offer.Run.StepIndex);
+            Assert.AreEqual(0u, offer.Run.PlayerPoints);
+            Assert.IsTrue(TutorialProgressStore.ShouldOffer);
+        }
+
+        [Test]
+        public void ReplayAnswersAnOpenPromptAndThePromptIsNotAskedAfterIt()
+        {
+            offer.Read(AppState.Lobby);
+
+            offer.Replay();
+
+            Assert.IsFalse(offer.Asking);
+            Assert.AreEqual(TutorialState.Running, offer.Run.State);
+            Assert.IsFalse(offer.Accept());
+            offer.Read(AppState.Match);
+            Assert.IsFalse(offer.Read(AppState.Lobby));
+            Assert.AreEqual(2, changes);
+        }
+
+        [Test]
+        public void TheShippedBundleHasTheReplayRowInAzerbaijaniAndEnglish()
+        {
+            var strings = BuiltinStrings.Load();
+            Assert.IsNotNull(strings.Value(SettingsScreens.ReplayTutorialKey, GameLanguage.English));
+            Assert.IsNotNull(strings.Value(SettingsScreens.ReplayTutorialKey, "az"));
         }
 
         [Test]

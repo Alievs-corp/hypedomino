@@ -44,7 +44,7 @@ namespace HypeDomino.Game.Tutorial
 
         void Start()
         {
-            if (offer == null && TutorialBoot.Offer != null) Bind(TutorialBoot.Offer, LanguageBoot.Strings);
+            if (offer == null) Bind(TutorialBoot.Offer, LanguageBoot.Strings);
         }
 
         void OnDestroy() => Unbind();

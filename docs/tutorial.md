@@ -27,10 +27,10 @@ The interactive tutorial teaches a new player the rules of `docs/rules.md` in on
 ## 2. First offer, skip and replay
 
 - **TU-5** The player can skip the tutorial before it starts and at any step. A skipped run shows nothing further.
-- **TU-6** A finished run, skipped or completed, can be played again from the first step with no points.
+- **TU-6** A finished run, skipped or completed, can be played again from the first step with no points. The entry for it is a row in the Settings screen, `ui.plain.settings.replay_tutorial`, with no separate help button (owner decision, #852). It starts the run of TU-2 from the first step whether or not the device keeps `tutorial.finished`, restarts a run in progress, and answers an open prompt of TU-9 without keeping `tutorial.finished`.
 - **TU-7** A device that has finished a run, skipped or completed, keeps `tutorial.finished` (`docs/anti-cheat.md`, Device storage) and is no longer offered the tutorial on its own; the player can still open it again.
 - **TU-9** The tutorial is offered on its own only in the Lobby: the first time in an app session that the app enters the Lobby and the device has no `tutorial.finished`, a prompt asks Play or Skip (`tutorial.offer.*`). A resumed match is not interrupted; the prompt waits for the Lobby after it. Play starts the run of TU-2 from the first step. Skip counts as a skipped run: the device keeps `tutorial.finished` (TU-7) and is never offered the tutorial on its own again.
-- **TU-10** The prompt is shown at most once per app session. Leaving the Lobby before answering withdraws it without keeping `tutorial.finished`, so the next app session asks again. Replay (TU-6) is opened from a menu, never by this prompt.
+- **TU-10** The prompt is shown at most once per app session. Leaving the Lobby before answering withdraws it without keeping `tutorial.finished`, so the next app session asks again. Replay (TU-6) is opened from the Settings row, never by this prompt.
 
 ## 3. Completion reward
 
@@ -38,5 +38,5 @@ The interactive tutorial teaches a new player the rules of `docs/rules.md` in on
 
 ## 4. Implementation
 
-- Client: `Game/Tutorial` (`client/README.md`, Tutorial). `TutorialOffer` follows the app flow and answers TU-9 and TU-10; `TutorialBoot` builds it on the app flow.
-- Not built yet: the tutorial screen and the prompt view with their art (#848), and the menu entry for replay (TU-6).
+- Client: `Game/Tutorial` (`client/README.md`, Tutorial). `TutorialOffer` follows the app flow and answers TU-9 and TU-10; `TutorialBoot` builds it on the app flow, and `ScreenHost` hands the same offer to the Settings row of TU-6, which calls `TutorialOffer.Replay`.
+- Not built yet: the tutorial screen and the prompt view with their art (#848). The replay row of TU-6 starts the run, which shows once that screen exists.
