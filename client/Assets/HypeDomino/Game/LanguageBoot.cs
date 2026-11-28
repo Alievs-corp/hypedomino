@@ -33,6 +33,7 @@ namespace HypeDomino.Game
             if (Choice.Language != saved) Save();
             else Log();
             Strings = new GameStrings(BuiltinStrings.Load(), Choice, Debug.isDebugBuild);
+            Strings.KeyMissingInWholeChain += ReportMissingKey;
             if (Application.isEditor) return;
             Bundles = new StringBundleUpdater(new UnityStringBundleSource(ContentBoot.Folder), Strings);
             Bundles.LoadStored();
@@ -46,6 +47,9 @@ namespace HypeDomino.Game
         }
 
         static void Log() => Debug.Log($"Language {Choice.Language}");
+
+        static void ReportMissingKey(string key, string language, int bundleVersion) =>
+            CrashReportingBoot.Reports.MissingKey(key, language, bundleVersion);
 
         static IReadOnlyList<string> DeviceLocales()
         {
