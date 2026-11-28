@@ -192,6 +192,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_RATE_ACCOUNT_BURST` | No | admin-api | `40` (`AdminRateAccountBurst`) | `40` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_PER_MINUTE` | No | admin-api | `10` (`AdminRateSignInPerMinute`) | `10` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_BURST` | No | admin-api | `10` (`AdminRateSignInBurst`) | `10` | No | from #148 |
+| `HD_ADMIN_RATE_BREAK_GLASS_PER_HOUR` | No | admin-api | `3` (`AdminRateBreakGlassPerHour`) | `3` | No | from #754 |
 | `HD_ASSET_STORE_URL` | No | admin-api | none: `/admin/assets` lists rows and answers `asset_store_off` to uploads | `https://<bucket>.<object-store-host>` or `https://<object-store-host>/<bucket>` | No | from #135 |
 | `HD_ASSET_STORE_REGION` | With `HD_ASSET_STORE_URL` | admin-api | none | `<store-region>` | No | from #135 |
 | `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |

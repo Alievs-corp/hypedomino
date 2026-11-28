@@ -168,6 +168,7 @@ func configFromEnv(env lookup) (config, error) {
 	integer("HD_ADMIN_RATE_ACCOUNT_BURST", &c.api.Limits.Account.Burst)
 	integer("HD_ADMIN_RATE_SIGNIN_PER_MINUTE", &c.api.Limits.SignIn.PerMinute)
 	integer("HD_ADMIN_RATE_SIGNIN_BURST", &c.api.Limits.SignIn.Burst)
+	integer("HD_ADMIN_RATE_BREAK_GLASS_PER_HOUR", &c.api.Limits.BreakGlassPerHour)
 	if err := c.api.Limits.Validate(); err != nil {
 		errs = append(errs, fmt.Errorf("HD_ADMIN_RATE_*: %w", err))
 	}

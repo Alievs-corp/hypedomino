@@ -90,7 +90,7 @@ var matrix = map[Object]map[Role][]Action{
 		Support:    grant("VCEPRD"),
 	},
 	LiveControls: {
-		SuperAdmin: grant("V", SwitchLiveControl),
+		SuperAdmin: grant("V", SwitchLiveControl, BreakGlass),
 		LiveOps:    grant("V", SwitchLiveControl),
 		Support:    grant("V"),
 		Analyst:    grant("V"),

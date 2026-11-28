@@ -173,14 +173,14 @@ Store builds cannot be withdrawn from devices. That is why every client feature 
 
 | Control | Effect | Changed by | Defined in |
 |---|---|---|---|
-| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, with the `live_ops` or `super_admin` admin role and the two-person rule of `docs/admin.md` section 8 | #210 |
+| Purchase kill switch | Store purchases disabled in the shop; already validated receipts are still granted | Live-ops lead or incident commander, with the `live_ops` or `super_admin` admin role and the two-person rule of `docs/admin.md` section 8; break-glass (switch first, confirm after) only with `super_admin` | #210 |
 | Ranked kill switch | Ranked queues closed; matches in progress finish | Same | #210 |
 | Minimum version and build allowlist | Older or unlisted builds get `UPDATE_REQUIRED` | Same, with the client lead | #210, ADR 0004 |
 | Maintenance mode | Client shows the maintenance screen; no new matches | Same | #146 |
 | Feature flags | Any flagged feature off or on without a release | Same | #145 |
 | Promo code disable | One code stops redeeming | Live-ops lead | #142, `docs/anti-cheat.md` V-11 |
 
-Every change is audited with a reason (#134). Switching back follows the same path and is noted in the incident record.
+Every change is audited with a reason (#134). Switching back follows the same path and is noted in the incident record. During a declared SEV1 or SEV2 incident a `super_admin` may break-glass (`docs/admin.md` section 8): the switch applies at once, at most `AdminRateBreakGlassPerHour` times per admin per hour, and a second admin confirms it afterwards. If the second admin rejects it, the admin API switches the controls back to the version before the break-glass and audits the revert with the rejection reason; it does not when the controls changed again since, so check `/live-controls` after a rejection. Until an incident channel exists (OI-10) the incident id is checked for format only, so the second admin checks the incident before confirming.
 
 ### 5.6 Game node to dedicated vCPU
 

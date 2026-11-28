@@ -2,10 +2,12 @@ import { adminApi } from "@/admin/api";
 import { googleClientId } from "@/admin/google";
 import { can, canView } from "@/admin/navigation";
 import { currentAdmin } from "@/admin/session";
-import { unpublishedControls, type LiveControlsView } from "@/config/liveControls";
+import type { AuditEntry } from "@/audit/query";
+import { revertedBreakGlassPath, unpublishedControls, type LiveControlsView } from "@/config/liveControls";
 import { serverTranslator } from "@/i18n/server";
 import type { Proposal } from "@/approvals/proposals";
 import { LiveControlsEditor } from "./LiveControlsEditor";
+import { RevertedBreakGlass } from "./RevertedBreakGlass";
 import { UnconfirmedBreakGlass } from "./UnconfirmedBreakGlass";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +21,17 @@ export default async function LiveControlsPage() {
   if (!canView(admin.permissions, "live_controls")) {
     return <Notice text={t("auth.forbidden")} />;
   }
-  const [current, unconfirmed] = await Promise.all([
+  const seesAudit = canView(admin.permissions, "audit_log");
+  const [current, unconfirmed, reverted] = await Promise.all([
     adminApi<LiveControlsView>("GET", "/admin/live-controls"),
     adminApi<{ proposals: Proposal[] }>("GET", "/admin/live-controls/break-glass"),
+    seesAudit ? adminApi<{ entries: AuditEntry[] }>("GET", revertedBreakGlassPath) : null,
   ]);
   if (current.status !== 200 || unconfirmed.status !== 200) {
     return <Notice text={t("live.load_failed")} />;
   }
   const canSwitch = can(admin.permissions, "live_controls", "switch_live_control");
+  const canBreakGlass = can(admin.permissions, "live_controls", "break_glass");
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2">
@@ -40,7 +45,13 @@ export default async function LiveControlsPage() {
         <h2 className="font-semibold">{t("live.break_glass_unconfirmed")}</h2>
         <UnconfirmedBreakGlass proposals={unconfirmed.body.proposals} t={t} />
       </section>
-      <LiveControlsEditor published={current.body.controls ?? unpublishedControls} clientId={canSwitch ? googleClientId() : null} />
+      {reverted && (
+        <section className="flex flex-col gap-2">
+          <h2 className="font-semibold">{t("live.break_glass_reverted")}</h2>
+          {reverted.status === 200 ? <RevertedBreakGlass entries={reverted.body.entries} t={t} /> : <p className="text-sm text-text-secondary">{t("live.break_glass_reverted_failed")}</p>}
+        </section>
+      )}
+      <LiveControlsEditor published={current.body.controls ?? unpublishedControls} clientId={canSwitch ? googleClientId() : null} canBreakGlass={canBreakGlass} />
     </main>
   );
 }
