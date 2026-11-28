@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
+	"github.com/Alievs-corp/hypedomino/server/internal/botaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/custom"
 	"github.com/Alievs-corp/hypedomino/server/internal/friends"
@@ -68,7 +69,7 @@ func startMatchmaking(ctx context.Context, config app.Config, logger *slog.Logge
 	store := matchqueue.NewStore(deps.client, prefix)
 	penaltyRecords := deps.penalties
 	rankedBan := sanction.RankedBanCheck(deps.pool)
-	gate := matchqueue.NewGate(store, node, "", matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RankedBanned(rankedBan, matchqueue.RatedEntry(deps.ratings))), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
+	gate := matchqueue.NewGate(store, node, "", matchqueue.CasualOnlyBots(botaccount.Check(deps.pool), matchqueue.PenalizedEntry(penaltyRecords.Record, matchqueue.RankedBanned(rankedBan, matchqueue.RatedEntry(deps.ratings)))), deps.rankedOpen, deps.members.Accepting, time.Now, logger)
 	gate.Measure(deps.metrics)
 	gate.GrantAppeals(deps.appeal)
 	deps.sessions.Queue(gate)

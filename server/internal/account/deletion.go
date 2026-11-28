@@ -85,7 +85,7 @@ type reference struct {
 }
 
 func (s *Store) Lookup(ctx context.Context, identity idtoken.Identity) (Account, error) {
-	a, found, err := s.find(ctx, identity)
+	a, found, err := s.find(ctx, fromProvider(identity))
 	if err != nil {
 		return Account{}, err
 	}

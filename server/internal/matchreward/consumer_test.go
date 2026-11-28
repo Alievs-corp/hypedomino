@@ -97,3 +97,34 @@ func TestTheEconomyRelayPaysEveryPlayerOfAFinishedMatchOnce(t *testing.T) {
 		}
 	}
 }
+
+func TestABotAccountIsNeverPaidAndDoesNotHoldUpItsMatch(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	ctx := context.Background()
+	store := matchreward.NewStore(pool, matchreward.NewWatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil))), wallet.NewStore(pool))
+	var player, bot string
+	if err := pool.QueryRow(ctx, `insert into accounts (created_at) values ($1) returning id`, start.Add(-time.Hour)).Scan(&player); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `insert into accounts (created_at, is_bot) values ($1, true) returning id`, start.Add(-time.Hour)).Scan(&bot); err != nil {
+		t.Fatal(err)
+	}
+	outcome := matchstore.Outcome{Match: "m1", Mode: rules.Mode1v1, Kind: matchstore.KindCasual, EndedAt: start, Players: []matchstore.PlayerOutcome{{Account: bot, Won: true}, {Account: player}}}
+	payload, _ := json.Marshal(outcome)
+	if _, err := pool.Exec(ctx, `insert into outbox (topic, key, payload) values ($1, 'match:m1', $2)`, matchstore.TopicEconomy, payload); err != nil {
+		t.Fatal(err)
+	}
+	relay := matchstore.NewRelay(matchstore.New(pool), store, matchstore.TopicEconomy, 0, nil)
+	if published, err := relay.Once(ctx); err != nil || published != 1 {
+		t.Fatalf("published %d, %v", published, err)
+	}
+	for account, paid := range map[string]bool{bot: false, player: true} {
+		var entries int
+		if err := pool.QueryRow(ctx, `select count(*) from ledger_entries where account_id = $1`, account).Scan(&entries); err != nil {
+			t.Fatal(err)
+		}
+		if (entries > 0) != paid {
+			t.Fatalf("account %s has %d ledger entries, paid %v", account, entries, paid)
+		}
+	}
+}

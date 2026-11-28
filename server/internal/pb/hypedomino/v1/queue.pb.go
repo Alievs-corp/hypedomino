@@ -136,6 +136,7 @@ const (
 	QueueRefusal_QUEUE_REFUSAL_INTEGRITY_FAILED      QueueRefusal = 5
 	QueueRefusal_QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE QueueRefusal = 6
 	QueueRefusal_QUEUE_REFUSAL_RANKED_BAN            QueueRefusal = 7
+	QueueRefusal_QUEUE_REFUSAL_BOT_CASUAL_ONLY       QueueRefusal = 8
 )
 
 // Enum value maps for QueueRefusal.
@@ -149,6 +150,7 @@ var (
 		5: "QUEUE_REFUSAL_INTEGRITY_FAILED",
 		6: "QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE",
 		7: "QUEUE_REFUSAL_RANKED_BAN",
+		8: "QUEUE_REFUSAL_BOT_CASUAL_ONLY",
 	}
 	QueueRefusal_value = map[string]int32{
 		"QUEUE_REFUSAL_UNSPECIFIED":           0,
@@ -159,6 +161,7 @@ var (
 		"QUEUE_REFUSAL_INTEGRITY_FAILED":      5,
 		"QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE": 6,
 		"QUEUE_REFUSAL_RANKED_BAN":            7,
+		"QUEUE_REFUSAL_BOT_CASUAL_ONLY":       8,
 	}
 )
 
@@ -550,7 +553,7 @@ const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\x16QUEUE_STATUS_SEARCHING\x10\x01\x12\x15\n" +
 	"\x11QUEUE_STATUS_LEFT\x10\x02\x12\x1c\n" +
 	"\x18QUEUE_STATUS_MATCH_FOUND\x10\x03\x12\x18\n" +
-	"\x14QUEUE_STATUS_REFUSED\x10\x04*\x97\x02\n" +
+	"\x14QUEUE_STATUS_REFUSED\x10\x04*\xba\x02\n" +
 	"\fQueueRefusal\x12\x1d\n" +
 	"\x19QUEUE_REFUSAL_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16QUEUE_REFUSAL_IN_MATCH\x10\x01\x12!\n" +
@@ -559,7 +562,8 @@ const file_hypedomino_v1_queue_proto_rawDesc = "" +
 	"\x19QUEUE_REFUSAL_UNAVAILABLE\x10\x04\x12\"\n" +
 	"\x1eQUEUE_REFUSAL_INTEGRITY_FAILED\x10\x05\x12'\n" +
 	"#QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE\x10\x06\x12\x1c\n" +
-	"\x18QUEUE_REFUSAL_RANKED_BAN\x10\a*\xc9\x01\n" +
+	"\x18QUEUE_REFUSAL_RANKED_BAN\x10\a\x12!\n" +
+	"\x1dQUEUE_REFUSAL_BOT_CASUAL_ONLY\x10\b*\xc9\x01\n" +
 	"\tBanReason\x12\x1a\n" +
 	"\x16BAN_REASON_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13BAN_REASON_CHEATING\x10\x01\x12\x18\n" +

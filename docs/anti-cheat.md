@@ -29,7 +29,7 @@ Code review checks every change against this list. A change that breaks a rule i
 - **NT-7** Everything the client says about itself is a claim: app version, build hash, signature hash, device model, root or emulator status. Trust comes only from attestation tokens verified on the server, and even those are risk signals, never proof (#205, #185).
 - **NT-8** A client-side detection (hook, debugger, root, emulator) only raises the risk score. It never replaces a server check and is never the sole basis of a permanent ban.
 - **NT-9** The cosmetic loadout is checked against server inventory and frozen on the server at match start. Other players see the server's loadout, not what a client claims (#211).
-- **NT-10** The client holds no secret that grants anything: no server keys, no admin tokens, no reward or receipt signing keys. Anything shipped in the client is public (#206).
+- **NT-10** The client holds no secret that grants anything: no server keys, no admin tokens, no reward or receipt signing keys. Anything shipped in the client is public (#206). The bot token secret of the `dev` and `staging` bot sign-in (`docs/test-strategy.md` 3.1) is never built into a client either; production refuses to start with it (`docs/environments.md` E-3), and a bot account can play casual matches only: no ranked queue, shop, purchase, reward or ledger entry.
 - **NT-11** Every economy write goes through the idempotent ledger with a reason and a source (#101, #202). No code path changes a balance outside it.
 - **NT-12** Intents, logins, promo redemptions and purchases are rate limited and counted per account (ADR 0007, #184).
 
