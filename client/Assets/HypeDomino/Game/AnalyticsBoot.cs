@@ -36,6 +36,8 @@ namespace HypeDomino.Game
             session.HelloReceived += tuning.Read;
         }
 
+        public static void ScreenShown(string screenId) => app?.ScreenShown(screenId);
+
         static long DeviceTimeMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         sealed class Driver : MonoBehaviour

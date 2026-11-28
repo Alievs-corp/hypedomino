@@ -1,3 +1,5 @@
+import type { AuditEntry } from "@/audit/query";
+
 export type LiveControls = {
   minimum_app_version: string;
   build_allowlist_enforced: boolean;
@@ -60,6 +62,23 @@ export function breakGlassOf(change: unknown): BreakGlass | null {
     return null;
   }
   return { incident: candidate.incident, config_version: candidate.config_version };
+}
+
+export const revertBreakGlassAction = "revert_break_glass_live_controls";
+
+export const revertedBreakGlassPath = `/admin/audit?object_type=live_controls&action=${revertBreakGlassAction}&limit=10`;
+
+export type BreakGlassRevert = { id: number; incident: string; version: number; reason: string; actor: string; at: string };
+
+export function breakGlassRevertOf(entry: AuditEntry): BreakGlassRevert | null {
+  if (entry.action !== revertBreakGlassAction || entry.config_version === undefined) {
+    return null;
+  }
+  return { id: entry.id, incident: entry.ref ?? "", version: entry.config_version, reason: entry.reason ?? "", actor: entry.actor_id, at: entry.at };
+}
+
+export function breakGlassLimited(error: string): boolean {
+  return error === "break_glass_rate_limited";
 }
 
 export function maintenanceInput(endsAt: string | null | undefined): string {

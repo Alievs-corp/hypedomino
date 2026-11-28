@@ -39,7 +39,7 @@ namespace HypeDomino.Core.Diagnostics
             json.Append(",\"timestamp\":").AppendString(timestamp);
             json.Append(",\"platform\":").AppendString(Platform);
             json.Append(",\"logger\":").AppendString(Logger);
-            json.Append(",\"level\":\"error\"");
+            json.Append(",\"level\":").AppendString(report.Type == LogType.Warning ? "warning" : "error");
             json.Append(",\"release\":").AppendString(release);
             if (!string.IsNullOrEmpty(environment)) json.Append(",\"environment\":").AppendString(environment);
             json.Append(",\"sdk\":{\"name\":").AppendString(SdkName).Append(",\"version\":").AppendString(release).Append(",\"settings\":{\"infer_ip\":\"never\"}}");

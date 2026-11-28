@@ -21,9 +21,23 @@ const (
 	ProposeLiveControlsAction = "propose_live_controls"
 	SwitchLiveControlsAction  = "switch_live_controls"
 	BreakGlassAction          = "break_glass_live_controls"
+	RevertBreakGlassAction    = "revert_break_glass_live_controls"
 )
 
-var errStaleLiveControls = errors.New("adminapi: live controls changed after this proposal")
+const breakGlassWindow = time.Hour
+
+var (
+	errStaleLiveControls = errors.New("adminapi: live controls changed after this proposal")
+	liveControlsObject   = audit.Object{Type: rbac.LiveControls, ID: livecontrol.Domain}
+)
+
+type breakGlassLimitError struct {
+	retryAt time.Time
+}
+
+func (e breakGlassLimitError) Error() string {
+	return fmt.Sprintf("adminapi: break-glass limit per hour reached until %s", e.retryAt.Format(time.RFC3339))
+}
 
 type liveControlsRequest struct {
 	Controls   json.RawMessage       `json:"controls"`
@@ -67,6 +81,12 @@ func (h *Handler) switchLiveControls(w http.ResponseWriter, r *http.Request, p p
 	var request liveControlsRequest
 	if !decode(w, r, &request) {
 		return
+	}
+	if request.BreakGlass != nil {
+		if err := h.allows(p, rbac.LiveControls, rbac.BreakGlass); err != nil {
+			h.refuse(w, err)
+			return
+		}
 	}
 	var view liveControlsView
 	err := h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
@@ -118,6 +138,9 @@ func (h *Handler) breakGlass(ctx context.Context, tx pgx.Tx, p principal, reques
 	if err := incident.Validate(); err != nil {
 		return nil, err
 	}
+	if err := h.withinBreakGlassLimit(ctx, tx, p, now); err != nil {
+		return nil, err
+	}
 	version, err := snapshot.Publish(ctx, tx, livecontrol.Domain, request.Controls)
 	if err != nil {
 		return nil, err
@@ -132,24 +155,76 @@ func (h *Handler) breakGlass(ctx context.Context, tx pgx.Tx, p principal, reques
 	return []audit.Entry{liveControlsEntry(BreakGlassAction, before, record, version, changeNote{Reason: request.Reason, Ref: incident.ID})}, nil
 }
 
+func (h *Handler) withinBreakGlassLimit(ctx context.Context, tx pgx.Tx, p principal, now time.Time) error {
+	limit := h.config.Limits.BreakGlassPerHour
+	recent, err := h.audit.In(tx).Search(ctx, p.account.Roles, audit.Filter{
+		ActorID: p.account.ID, Object: liveControlsObject, Action: BreakGlassAction, From: now.Add(time.Microsecond - breakGlassWindow), Limit: limit,
+	})
+	if err != nil || len(recent) < limit {
+		return err
+	}
+	return breakGlassLimitError{retryAt: recent[len(recent)-1].At.Add(breakGlassWindow)}
+}
+
+func (h *Handler) breakGlassSwitch(ctx context.Context, tx pgx.Tx, p principal, change breakGlassChange) (audit.Recorded, error) {
+	switched, err := h.audit.In(tx).Search(ctx, p.account.Roles, audit.Filter{Object: liveControlsObject, Action: BreakGlassAction, ConfigVersion: change.ConfigVersion, Limit: 1})
+	if err != nil {
+		return audit.Recorded{}, err
+	}
+	if len(switched) == 0 {
+		return audit.Recorded{}, fmt.Errorf("adminapi: no break-glass entry for config version %d", change.ConfigVersion)
+	}
+	return switched[0], nil
+}
+
+func breakGlassDecision(action string, proposal approval.Proposal, change breakGlassChange, switched audit.Recorded, note changeNote) audit.Entry {
+	return audit.Entry{
+		Action: action, Object: proposal.Object, After: marshal(breakGlassRecord{breakGlassChange: change, ApprovalID: proposal.ID}),
+		ApprovalID: switched.ID, ConfigVersion: change.ConfigVersion, Reason: note.Reason, Ref: change.Incident.ID,
+	}
+}
+
 func (h *Handler) confirmBreakGlass(ctx context.Context, tx pgx.Tx, p principal, proposal approval.Proposal, note changeNote, now time.Time) error {
 	var change breakGlassChange
 	if err := json.Unmarshal(proposal.Change, &change); err != nil {
 		return err
 	}
-	switched, err := h.audit.In(tx).Search(ctx, p.account.Roles, audit.Filter{Object: proposal.Object, Action: BreakGlassAction, ConfigVersion: change.ConfigVersion, Limit: 1})
+	switched, err := h.breakGlassSwitch(ctx, tx, p, change)
 	if err != nil {
 		return err
 	}
-	if len(switched) == 0 {
-		return fmt.Errorf("adminapi: no break-glass entry for config version %d", change.ConfigVersion)
-	}
-	confirmation := audit.Entry{
-		Action: "approve", Object: proposal.Object, After: marshal(breakGlassRecord{breakGlassChange: change, ApprovalID: proposal.ID}),
-		ApprovalID: switched[0].ID, ConfigVersion: change.ConfigVersion, Reason: note.Reason, Ref: change.Incident.ID,
-	}
-	_, err = h.audit.In(tx).Append(ctx, h.stamp(p, confirmation), now)
+	_, err = h.audit.In(tx).Append(ctx, h.stamp(p, breakGlassDecision("approve", proposal, change, switched, note)), now)
 	return err
+}
+
+func (h *Handler) revertBreakGlass(ctx context.Context, tx pgx.Tx, p principal, proposal approval.Proposal, note changeNote, now time.Time) (int64, error) {
+	var change breakGlassChange
+	if err := json.Unmarshal(proposal.Change, &change); err != nil {
+		return 0, err
+	}
+	if err := lockDomain(ctx, tx, livecontrol.Domain); err != nil {
+		return 0, err
+	}
+	switched, err := h.breakGlassSwitch(ctx, tx, p, change)
+	if err != nil {
+		return 0, err
+	}
+	rejection, err := h.audit.In(tx).Append(ctx, h.stamp(p, breakGlassDecision("reject", proposal, change, switched, note)), now)
+	if err != nil {
+		return 0, err
+	}
+	current, live, err := latestSnapshot(ctx, tx, livecontrol.Domain)
+	if err != nil || current != change.ConfigVersion || len(switched.Before) == 0 {
+		return 0, err
+	}
+	version, err := snapshot.Publish(ctx, tx, livecontrol.Domain, switched.Before)
+	if err != nil {
+		return 0, err
+	}
+	reverted := liveControlsEntry(RevertBreakGlassAction, live, switched.Before, version, changeNote{Reason: note.Reason, Ref: change.Incident.ID})
+	reverted.ApprovalID = rejection.ID
+	_, err = h.audit.In(tx).Append(ctx, h.stamp(p, reverted), now)
+	return version, err
 }
 
 func (h *Handler) unconfirmedBreakGlass(w http.ResponseWriter, r *http.Request, p principal) {
@@ -167,7 +242,7 @@ func (h *Handler) unconfirmedBreakGlass(w http.ResponseWriter, r *http.Request, 
 
 func liveControlsEntry(action string, before, after []byte, version int64, note changeNote) audit.Entry {
 	return audit.Entry{
-		Action: action, Object: audit.Object{Type: rbac.LiveControls, ID: livecontrol.Domain}, Before: before,
+		Action: action, Object: liveControlsObject, Before: before,
 		After: json.RawMessage(after), ConfigVersion: version, Reason: note.Reason, Ref: note.Ref,
 	}
 }

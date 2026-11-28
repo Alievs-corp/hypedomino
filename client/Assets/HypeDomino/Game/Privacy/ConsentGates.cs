@@ -9,6 +9,7 @@ namespace HypeDomino.Game.Privacy
         readonly AnalyticsQueue analytics;
         readonly ErrorReports diagnostics;
         readonly Func<string> newAnalyticsId;
+        string analyticsAccount;
 
         public ConsentGates(AnalyticsQueue analytics, ErrorReports diagnostics, Func<string> newAnalyticsId)
         {
@@ -22,6 +23,13 @@ namespace HypeDomino.Game.Privacy
             if (choices == null) throw new ArgumentNullException(nameof(choices));
             Analytics(choices.analytics);
             Diagnostics(choices.diagnostics);
+        }
+
+        public void SignedIn(string accountId)
+        {
+            if (string.IsNullOrEmpty(accountId) || accountId == analyticsAccount) return;
+            if (analyticsAccount != null) analytics.Withdraw();
+            analyticsAccount = accountId;
         }
 
         public void Withdraw(bool analyticsOn, bool diagnosticsOn)

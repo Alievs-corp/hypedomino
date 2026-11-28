@@ -62,6 +62,7 @@ const (
 	DisablePromo         Action = "disable_promo"
 	EditTargetedAccounts Action = "edit_targeted_accounts"
 	SwitchLiveControl    Action = "switch_live_control"
+	BreakGlass           Action = "break_glass"
 	Rollback             Action = "rollback"
 	RollbackOwnDomains   Action = "rollback_own_domains"
 	ActOnPlayer          Action = "act_on_player"

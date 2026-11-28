@@ -204,6 +204,53 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsFalse(shop.TakesInput);
         }
 
+        [TestCase(AppState.Login, "login")]
+        [TestCase(AppState.Lobby, "lobby")]
+        [TestCase(AppState.Room, "room")]
+        [TestCase(AppState.UpdateRequired, "update_required")]
+        [TestCase(AppState.Maintenance, "maintenance")]
+        public void EveryStateScreenHasItsScreenViewId(AppState state, string id)
+        {
+            Assert.AreEqual(id, host.ScreenIdOf(host.ScreenOf(state)));
+        }
+
+        [TestCase("ui.plain.nav.pass", "pass")]
+        [TestCase(PromoScreens.NavKey, "promo")]
+        [TestCase("ui.plain.nav.shop", "shop")]
+        [TestCase(SettingsScreens.NavKey, "settings")]
+        [TestCase(RankingScreens.NavKey, "ranking")]
+        [TestCase(CollectionScreens.NavKey, "collection")]
+        [TestCase(ProfileScreens.NavKey, "profile")]
+        [TestCase(MissionScreens.NavKey, "missions")]
+        [TestCase(MedalScreens.NavKey, "medals")]
+        public void EveryNavScreenHasItsScreenViewId(string navKey, string id)
+        {
+            Assert.AreEqual(id, host.ScreenIdOf(Pushed(navKey)));
+        }
+
+        [Test]
+        public void ThePrivacyNoticeHasItsScreenViewId()
+        {
+            Assert.AreEqual("privacy_notice", host.ScreenIdOf(host.PrivacyNotice));
+        }
+
+        [Test]
+        public void EveryShownScreenIsReportedWithItsIdOnce()
+        {
+            var shown = new System.Collections.Generic.List<string>();
+            host.ScreenShown += shown.Add;
+
+            host.Follow(AppState.Login);
+            host.Follow(AppState.Lobby);
+            host.Follow(AppState.Lobby);
+            NavButton("ui.plain.nav.shop").onClick.Invoke();
+            NavButton("ui.plain.nav.shop").onClick.Invoke();
+            ButtonOf(stack.Top, ScreenHost.BackKey).onClick.Invoke();
+            host.Follow(AppState.Match);
+
+            CollectionAssert.AreEqual(new[] { "login", "lobby", "shop", "lobby" }, shown);
+        }
+
         [Test]
         public void AStateChangeLeavesAPushedScreen()
         {

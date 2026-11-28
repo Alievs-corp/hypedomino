@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using HypeDomino.Core.Diagnostics;
 using HypeDomino.UI.Localization;
 using NUnit.Framework;
 using UnityEngine;
@@ -392,6 +393,48 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
+        public void OnlyAKeyMissingInTheWholeChainIsAnnouncedForDiagnostics()
+        {
+            var strings = Strings("az");
+            var missing = new List<string>();
+            strings.KeyMissingInWholeChain += (key, language, version) => missing.Add(key + " " + language + " " + version);
+            LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=k language=az version=0$"));
+            Assert.AreEqual("T", strings.Text("k"));
+            CollectionAssert.IsEmpty(missing);
+            LogAssert.Expect(LogType.Warning, new Regex("^Strings missing key=nope language=az version=0$"));
+            strings.Text("nope");
+            strings.Text("nope");
+            CollectionAssert.AreEqual(new[] { "nope az 0", "nope az 0" }, missing);
+        }
+
+        [Test]
+        public void APresentKeyIsNotAnnouncedForDiagnostics()
+        {
+            var strings = Strings("tr");
+            var missing = 0;
+            strings.KeyMissingInWholeChain += (_, _, _) => missing++;
+            Assert.AreEqual("T", strings.Text("k"));
+            LogAssert.NoUnexpectedReceived();
+            Assert.AreEqual(0, missing);
+        }
+
+        [Test]
+        public void AKeyMissingInTheWholeChainReachesTheDiagnosticsReportsOnce()
+        {
+            var sender = new RecordingErrorSender();
+            var reports = new ErrorReports(sender);
+            reports.Consent();
+            var strings = Strings("en");
+            strings.KeyMissingInWholeChain += reports.MissingKey;
+            LogAssert.Expect(LogType.Warning, new Regex("key=nope"));
+            Assert.AreEqual("Unavailable", strings.Text("nope"));
+            Assert.AreEqual("Unavailable", strings.Text("nope"));
+            Assert.AreEqual("E", strings.Text("k"));
+            Assert.AreEqual(1, sender.Sent.Count);
+            Assert.AreEqual("Strings missing key=nope language=en version=0", sender.Sent[0].Message);
+        }
+
+        [Test]
         public void TheShippedBuiltinBundleLoadsWithoutErrors()
         {
             var strings = BuiltinStrings.Load();
@@ -418,6 +461,13 @@ namespace HypeDomino.Tests.EditMode
             lookup();
 
             Assert.That(lookup, Allocates.Nothing);
+        }
+
+        sealed class RecordingErrorSender : IErrorSender
+        {
+            public readonly List<ErrorReport> Sent = new List<ErrorReport>();
+
+            public void Send(ErrorReport report) => Sent.Add(report);
         }
 
         static LanguageChoice Choice(string language) => LanguageChoice.Load(language, () => NoLocales);

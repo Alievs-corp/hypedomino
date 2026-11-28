@@ -29,6 +29,7 @@ namespace HypeDomino.Game
             auth = session;
             Versions = new PolicyVersions();
             Gates = new ConsentGates(AnalyticsBoot.Queue, CrashReportingBoot.Reports, PrivacySettings.RandomAnalyticsId);
+            session.AccountSignedIn += Gates.SignedIn;
             Consents = new ConsentStartup(api, Gates);
             FirstLaunch = new FirstLaunchConsents(CurrentPolicy, Application.version);
             Settings = new PrivacySettings(api, AnalyticsBoot.Queue, CrashReportingBoot.Reports, PrivacySettings.RandomAnalyticsId, CurrentPolicy, Application.version);
