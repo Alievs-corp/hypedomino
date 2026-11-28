@@ -100,13 +100,38 @@ namespace HypeDomino.Tests.EditMode
         }
 
         [Test]
-        public void AnAccountLanguageAndTheDeviceChoiceAreBothLeftAsTheyAre()
+        public void TheAccountLanguageWinsOverTheDeviceChoice()
         {
+            var changes = 0;
+            choice.Changed += () => changes++;
             sync.SignedIn("acc-1");
             AnswerRead("ru");
             Assert.AreEqual(1, api.Requests.Count);
-            Assert.AreEqual("az", choice.Language);
+            Assert.AreEqual("ru", choice.Language);
+            Assert.AreEqual(1, changes);
             Assert.IsFalse(sync.Busy);
+        }
+
+        [Test]
+        public void TheSameLanguageOnBothSidesChangesNothing()
+        {
+            var changes = 0;
+            choice.Changed += () => changes++;
+            sync.SignedIn("acc-1");
+            AnswerRead("az");
+            Assert.AreEqual(1, api.Requests.Count);
+            Assert.AreEqual(0, changes);
+        }
+
+        [Test]
+        public void TheAccountLanguageOfAnotherAccountReplacesTheFirstOne()
+        {
+            sync.SignedIn("acc-1");
+            AnswerRead("ru");
+            sync.SignedIn("acc-2");
+            AnswerRead("tr");
+            Assert.AreEqual(2, api.Requests.Count);
+            Assert.AreEqual("tr", choice.Language);
         }
 
         [Test]
@@ -137,6 +162,7 @@ namespace HypeDomino.Tests.EditMode
             sync.SignedIn("acc-1");
             AnswerRead("ru");
             Assert.AreEqual(1, api.Requests.Count);
+            Assert.AreEqual("ru", choice.Language);
         }
 
         [Test]
@@ -148,6 +174,7 @@ namespace HypeDomino.Tests.EditMode
             AnswerRead("ru");
             Assert.AreEqual(2, api.Requests.Count);
             AssertSaved("en");
+            Assert.AreEqual("en", choice.Language);
         }
 
         [Test]

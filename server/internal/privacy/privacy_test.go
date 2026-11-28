@@ -2,6 +2,7 @@ package privacy_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -23,6 +24,8 @@ func TestParseReadsThePublishedPrivacyConfig(t *testing.T) {
 		{"lowest retention", `{"ConsentRecordRetentionYears":1}`, privacy.Config{ConsentRecordRetentionYears: 1}, 1},
 		{"highest retention", `{"ConsentRecordRetentionYears":10}`, privacy.Config{ConsentRecordRetentionYears: 10}, 10},
 		{"longest version", `{"TermsVersion":"abcdefghijklmnopqrstuvwxyz012345"}`, privacy.Config{TermsVersion: "abcdefghijklmnopqrstuvwxyz012345"}, 3},
+		{"legal links", `{"PrivacyPolicyUrl":"https://hypedomino.example/privacy?lang=az","TermsOfUseUrl":"https://hypedomino.example/terms#top"}`, privacy.Config{PrivacyPolicyURL: "https://hypedomino.example/privacy?lang=az", TermsOfUseURL: "https://hypedomino.example/terms#top"}, 3},
+		{"longest link", `{"TermsOfUseUrl":"https://a.example/` + strings.Repeat("x", privacy.MaxURLLength-18) + `"}`, privacy.Config{TermsOfUseURL: "https://a.example/" + strings.Repeat("x", privacy.MaxURLLength-18)}, 3},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -55,6 +58,16 @@ func TestParseRefusesAnInvalidPrivacyConfig(t *testing.T) {
 		`{"ConsentRecordRetentionYears":"3"}`,
 		`{"privacyPolicyVersion":"2026-11-01"}`,
 		`{"MinAccountAgeByCountry":13}`,
+		`{"PrivacyPolicyUrl":""}`,
+		`{"PrivacyPolicyUrl":"http://hypedomino.example/privacy"}`,
+		`{"PrivacyPolicyUrl":"hypedomino.example/privacy"}`,
+		`{"PrivacyPolicyUrl":"https:///privacy"}`,
+		`{"PrivacyPolicyUrl":"https://user:pass@hypedomino.example/privacy"}`,
+		`{"PrivacyPolicyUrl":"https://hypedomino.example/a b"}`,
+		`{"PrivacyPolicyUrl":"javascript:alert(1)"}`,
+		`{"TermsOfUseUrl":null}`,
+		`{"TermsOfUseUrl":"https://a.example/` + strings.Repeat("x", privacy.MaxURLLength-17) + `"}`,
+		`{"privacyPolicyUrl":"https://hypedomino.example/privacy"}`,
 	} {
 		if _, err := privacy.Parse([]byte(raw)); !errors.Is(err, privacy.ErrInvalid) {
 			t.Fatalf("%s: got %v, want ErrInvalid", raw, err)
@@ -69,6 +82,10 @@ func TestVersionsCarryThePublishedVersionsForTheHello(t *testing.T) {
 	}{
 		{privacy.Config{}, &pb.PrivacyVersions{}},
 		{privacy.Config{PrivacyPolicyVersion: "2026-11-01", TermsVersion: "2026-10-01", ConsentRecordRetentionYears: 4}, &pb.PrivacyVersions{PrivacyPolicyVersion: "2026-11-01", TermsVersion: "2026-10-01"}},
+		{
+			privacy.Config{PrivacyPolicyVersion: "2026-11-01", PrivacyPolicyURL: "https://hypedomino.example/privacy", TermsOfUseURL: "https://hypedomino.example/terms"},
+			&pb.PrivacyVersions{PrivacyPolicyVersion: "2026-11-01", PrivacyPolicyUrl: "https://hypedomino.example/privacy", TermsOfUseUrl: "https://hypedomino.example/terms"},
+		},
 	}
 	for _, test := range tests {
 		if got := test.config.Versions(); !proto.Equal(got, test.want) {
