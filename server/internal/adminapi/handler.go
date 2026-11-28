@@ -438,9 +438,10 @@ func bearer(r *http.Request) string {
 }
 
 type errorResponse struct {
-	Error  string   `json:"error"`
-	Detail string   `json:"detail,omitempty"`
-	Keys   []string `json:"keys,omitempty"`
+	Error   string   `json:"error"`
+	Detail  string   `json:"detail,omitempty"`
+	Keys    []string `json:"keys,omitempty"`
+	RetryAt string   `json:"retry_at,omitempty"`
 }
 
 var (
@@ -481,7 +482,7 @@ func (h *Handler) refuse(w http.ResponseWriter, err error) {
 	} else {
 		h.logger.Info("admin request refused", "reason", code)
 	}
-	response := errorResponse{Error: code}
+	response := errorResponse{Error: code, RetryAt: h.announceRetry(w, err)}
 	if status == http.StatusBadRequest || code == "frozen" || code == "medal_art_missing" || code == "cosmetic_art_missing" {
 		response.Detail = err.Error()
 	}
@@ -650,6 +651,8 @@ func classify(err error) (int, string) {
 		return http.StatusBadRequest, "invalid"
 	case errors.Is(err, pass.ErrFrozen), errors.Is(err, rating.ErrFrozen):
 		return http.StatusConflict, "frozen"
+	case errors.As(err, new(breakGlassLimitError)):
+		return http.StatusTooManyRequests, "break_glass_rate_limited"
 	case errors.Is(err, errStaleLiveControls):
 		return http.StatusConflict, "stale_proposal"
 	case errors.Is(err, livecontrol.ErrIncident):

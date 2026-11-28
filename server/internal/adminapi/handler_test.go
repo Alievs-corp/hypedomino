@@ -30,7 +30,7 @@ import (
 
 var (
 	start       = time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC)
-	unthrottled = adminapi.Limits{Account: ratelimit.Rule{PerMinute: 60000, Burst: 10000}, SignIn: ratelimit.Rule{PerMinute: 60000, Burst: 10000}}
+	unthrottled = adminapi.Limits{Account: ratelimit.Rule{PerMinute: 60000, Burst: 10000}, SignIn: ratelimit.Rule{PerMinute: 60000, Burst: 10000}, BreakGlassPerHour: 1000}
 )
 
 func TestMain(m *testing.M) {
