@@ -61,7 +61,7 @@ func has(names []string, want string) bool {
 	return false
 }
 
-const head = 63
+const head = 64
 
 func TestUpFromEmptyToHeadDownToZeroAndUpAgain(t *testing.T) {
 	url := dbtest.Empty(t)
@@ -166,6 +166,13 @@ func TestAccountIdentityProfileAndInventoryConstraints(t *testing.T) {
 	}
 	if _, err := pool.Exec(ctx, "insert into auth_identities (provider, subject, account_id) values ('facebook', 'sub-2', $1)", b); !check(err) {
 		t.Fatalf("unknown provider accepted: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "insert into auth_identities (provider, subject, account_id) values ('bot', 'staging-bot-1', $1)", b); err != nil {
+		t.Fatalf("bot identity refused: %v", err)
+	}
+	var bot bool
+	if err := pool.QueryRow(ctx, "select is_bot from accounts where id = $1", b).Scan(&bot); err != nil || bot {
+		t.Fatalf("a new account is a bot: %v, %v", bot, err)
 	}
 	if _, err := pool.Exec(ctx, "insert into profiles (account_id, nickname, nickname_key) values ($1, 'Domino', 'domino')", a); err != nil {
 		t.Fatal(err)

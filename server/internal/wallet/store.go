@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Alievs-corp/hypedomino/server/internal/botaccount"
 )
 
 type Reason string
@@ -180,6 +182,13 @@ func (s *Store) ApplyIn(ctx context.Context, tx pgx.Tx, entry Entry, now time.Ti
 		return Applied{}, err
 	}
 	entry = entry.withCurrency()
+	bot, err := botaccount.Is(ctx, tx, entry.Account)
+	if err != nil {
+		return Applied{}, err
+	}
+	if bot {
+		return Applied{}, fmt.Errorf("%w: no ledger entry for a bot account", botaccount.ErrCasualOnly)
+	}
 	if _, err := tx.Exec(ctx, `insert into wallets (account_id, currency, updated_at) values ($1, $2, $3) on conflict do nothing`, entry.Account, entry.Currency, now); err != nil {
 		return Applied{}, err
 	}

@@ -62,6 +62,37 @@ func TestEmailFollowsTheProviderButIsNeverBlanked(t *testing.T) {
 	}
 }
 
+func TestBotSignInCreatesABotAccountAndRefusesAnyOther(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := account.New(pool)
+	ctx := context.Background()
+	first, created, err := store.SignInBot(ctx, "staging-bot-1")
+	if err != nil || !created || !first.Bot || first.State != account.StateActive {
+		t.Fatalf("first bot sign-in: %+v %v %v", first, created, err)
+	}
+	again, created, err := store.SignInBot(ctx, "staging-bot-1")
+	if err != nil || created || again.ID != first.ID || !again.Bot {
+		t.Fatalf("second bot sign-in: %+v %v %v", again, created, err)
+	}
+	var flagged bool
+	if err := pool.QueryRow(ctx, `select is_bot from accounts where id = $1`, first.ID).Scan(&flagged); err != nil || !flagged {
+		t.Fatalf("stored is_bot %v %v", flagged, err)
+	}
+	player, _, err := store.SignIn(ctx, idtoken.Identity{Provider: idtoken.ProviderGoogle, Subject: "staging-bot-2"})
+	if err != nil || player.Bot {
+		t.Fatalf("player sign-in: %+v %v", player, err)
+	}
+	if _, err := pool.Exec(ctx, `insert into auth_identities (provider, subject, account_id) values ('bot', 'linked-to-a-player', $1)`, player.ID); err != nil {
+		t.Fatal(err)
+	}
+	if a, _, err := store.SignInBot(ctx, "linked-to-a-player"); !errors.Is(err, account.ErrNotBot) {
+		t.Fatalf("bot sign-in into a player account: %+v %v", a, err)
+	}
+	if _, _, err := store.SignInBot(ctx, ""); !errors.Is(err, account.ErrInvalidIdentity) {
+		t.Fatalf("empty bot name: %v", err)
+	}
+}
+
 func TestBannedAndDeletedAccountsAreRefused(t *testing.T) {
 	_, pool := dbtest.Fresh(t)
 	store := account.New(pool)

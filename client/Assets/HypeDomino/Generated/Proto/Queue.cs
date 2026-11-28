@@ -48,22 +48,23 @@ namespace Hypedomino.V1 {
             "AQoLUXVldWVTdGF0dXMSHAoYUVVFVUVfU1RBVFVTX1VOU1BFQ0lGSUVEEAAS",
             "GgoWUVVFVUVfU1RBVFVTX1NFQVJDSElORxABEhUKEVFVRVVFX1NUQVRVU19M",
             "RUZUEAISHAoYUVVFVUVfU1RBVFVTX01BVENIX0ZPVU5EEAMSGAoUUVVFVUVf",
-            "U1RBVFVTX1JFRlVTRUQQBCqXAgoMUXVldWVSZWZ1c2FsEh0KGVFVRVVFX1JF",
+            "U1RBVFVTX1JFRlVTRUQQBCq6AgoMUXVldWVSZWZ1c2FsEh0KGVFVRVVFX1JF",
             "RlVTQUxfVU5TUEVDSUZJRUQQABIaChZRVUVVRV9SRUZVU0FMX0lOX01BVENI",
             "EAESIQodUVVFVUVfUkVGVVNBTF9NQVRDSE1BS0lOR19CQU4QAhIfChtRVUVV",
             "RV9SRUZVU0FMX1JBTktFRF9DTE9TRUQQAxIdChlRVUVVRV9SRUZVU0FMX1VO",
             "QVZBSUxBQkxFEAQSIgoeUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlfRkFJTEVE",
             "EAUSJwojUVVFVUVfUkVGVVNBTF9JTlRFR1JJVFlfVU5BVkFJTEFCTEUQBhIc",
-            "ChhRVUVVRV9SRUZVU0FMX1JBTktFRF9CQU4QByrJAQoJQmFuUmVhc29uEhoK",
-            "FkJBTl9SRUFTT05fVU5TUEVDSUZJRUQQABIXChNCQU5fUkVBU09OX0NIRUFU",
-            "SU5HEAESGAoUQkFOX1JFQVNPTl9DT0xMVVNJT04QAhIaChZCQU5fUkVBU09O",
-            "X0FGS19MRUFWSU5HEAMSHQoZQkFOX1JFQVNPTl9PRkZFTlNJVkVfTkFNRRAE",
-            "EhwKGEJBTl9SRUFTT05fUEFZTUVOVF9GUkFVRBAFEhQKEEJBTl9SRUFTT05f",
-            "T1RIRVIQBkLFAQoRY29tLmh5cGVkb21pbm8udjFCClF1ZXVlUHJvdG9QAVpP",
-            "Z2l0aHViLmNvbS9BbGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRl",
-            "cm5hbC9wYi9oeXBlZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5",
-            "cGVkb21pbm8uVjHKAg1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxH",
-            "UEJNZXRhZGF0YeoCDkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "ChhRVUVVRV9SRUZVU0FMX1JBTktFRF9CQU4QBxIhCh1RVUVVRV9SRUZVU0FM",
+            "X0JPVF9DQVNVQUxfT05MWRAIKskBCglCYW5SZWFzb24SGgoWQkFOX1JFQVNP",
+            "Tl9VTlNQRUNJRklFRBAAEhcKE0JBTl9SRUFTT05fQ0hFQVRJTkcQARIYChRC",
+            "QU5fUkVBU09OX0NPTExVU0lPThACEhoKFkJBTl9SRUFTT05fQUZLX0xFQVZJ",
+            "TkcQAxIdChlCQU5fUkVBU09OX09GRkVOU0lWRV9OQU1FEAQSHAoYQkFOX1JF",
+            "QVNPTl9QQVlNRU5UX0ZSQVVEEAUSFAoQQkFOX1JFQVNPTl9PVEhFUhAGQsUB",
+            "ChFjb20uaHlwZWRvbWluby52MUIKUXVldWVQcm90b1ABWk9naXRodWIuY29t",
+            "L0FsaWV2cy1jb3JwL2h5cGVkb21pbm8vc2VydmVyL2ludGVybmFsL3BiL2h5",
+            "cGVkb21pbm8vdjE7aHlwZWRvbWlub3YxogIDSFhYqgINSHlwZWRvbWluby5W",
+            "McoCDUh5cGVkb21pbm9cVjHiAhlIeXBlZG9taW5vXFYxXEdQQk1ldGFkYXRh",
+            "6gIOSHlwZWRvbWlubzo6VjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Hypedomino.V1.HelloReflection.Descriptor, global::Hypedomino.V1.MatchReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.QueueKind), typeof(global::Hypedomino.V1.QueueStatus), typeof(global::Hypedomino.V1.QueueRefusal), typeof(global::Hypedomino.V1.BanReason), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -100,6 +101,7 @@ namespace Hypedomino.V1 {
     [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_FAILED")] IntegrityFailed = 5,
     [pbr::OriginalName("QUEUE_REFUSAL_INTEGRITY_UNAVAILABLE")] IntegrityUnavailable = 6,
     [pbr::OriginalName("QUEUE_REFUSAL_RANKED_BAN")] RankedBan = 7,
+    [pbr::OriginalName("QUEUE_REFUSAL_BOT_CASUAL_ONLY")] BotCasualOnly = 8,
   }
 
   public enum BanReason {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/botaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/db/dbtest"
 	"github.com/Alievs-corp/hypedomino/server/internal/wallet"
 )
@@ -31,6 +32,31 @@ func account(t *testing.T, pool *pgxpool.Pool) string {
 }
 
 var match = wallet.Source{Type: "match", Ref: "m1"}
+
+func TestTheLedgerRefusesEveryEntryForABotAccount(t *testing.T) {
+	_, pool := dbtest.Fresh(t)
+	store := wallet.NewStore(pool)
+	ctx := context.Background()
+	var bot string
+	if err := pool.QueryRow(ctx, `insert into accounts (is_bot) values (true) returning id`).Scan(&bot); err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range []wallet.Entry{
+		{Account: bot, Amount: 120, Reason: wallet.MatchReward, Source: match, Key: "match:m1"},
+		{Account: bot, Amount: -50, Reason: wallet.ShopPurchase, Currency: wallet.Coin, Source: wallet.Source{Type: "shop", Ref: "offer-1"}, Key: "spend:1"},
+	} {
+		if applied, err := store.Apply(ctx, entry, start); !errors.Is(err, botaccount.ErrCasualOnly) {
+			t.Fatalf("%s for a bot: %+v, %v", entry.Reason, applied, err)
+		}
+	}
+	var entries, wallets int
+	if err := pool.QueryRow(ctx, `select (select count(*) from ledger_entries where account_id = $1), (select count(*) from wallets where account_id = $1)`, bot).Scan(&entries, &wallets); err != nil || entries != 0 || wallets != 0 {
+		t.Fatalf("bot has %d ledger entries and %d wallets, %v", entries, wallets, err)
+	}
+	if _, err := store.Apply(ctx, wallet.Entry{Account: account(t, pool), Amount: 120, Reason: wallet.MatchReward, Source: match, Key: "match:m1"}, start); err != nil {
+		t.Fatalf("player entry: %v", err)
+	}
+}
 
 func TestEntriesAreIdempotentPerAccountAndKey(t *testing.T) {
 	_, pool := dbtest.Fresh(t)

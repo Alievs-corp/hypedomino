@@ -110,6 +110,11 @@ func randomSecret(t *testing.T) string {
 
 func startRedTeam(t *testing.T) *redTeam {
 	t.Helper()
+	return startRedTeamWith(t, nil)
+}
+
+func startRedTeamWith(t *testing.T, extra map[string]string) *redTeam {
+	t.Helper()
 	dsn, pool := dbtest.Fresh(t)
 	seedConfigs(t, pool)
 	h := &redTeam{pool: pool, play: newFakePlayStore(t), promoKey: randomSecret(t), pushSecret: randomSecret(t), tokenKeys: "redteam:" + randomSecret(t), logs: &lockedBuffer{}}
@@ -128,6 +133,9 @@ func startRedTeam(t *testing.T) *redTeam {
 		"HD_PLAY_NOTIFICATION_TOKEN": h.pushSecret,
 		"HD_APPLE_BUNDLE_ID":         redTeamBundle,
 		"HD_PROMO_KEY":               h.promoKey,
+	}
+	for name, value := range extra {
+		env[name] = value
 	}
 	config, err := app.ConfigFromEnv(func(name string) (string, bool) {
 		value, ok := env[name]

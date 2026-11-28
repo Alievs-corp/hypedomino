@@ -8,7 +8,7 @@ dev: .env
 	docker compose watch --no-up
 
 .env:
-	sed "s|^HD_TOKEN_KEYS=.*|HD_TOKEN_KEYS=dev:$$(openssl rand -base64 32)|" .env.example > .env
+	sed -e "s|^HD_TOKEN_KEYS=.*|HD_TOKEN_KEYS=dev:$$(openssl rand -base64 32)|" -e "s|^HD_BOT_TOKEN_SECRET=.*|HD_BOT_TOKEN_SECRET=$$(openssl rand -base64 32)|" .env.example > .env
 
 seed: .env
 	docker compose run --rm seed
