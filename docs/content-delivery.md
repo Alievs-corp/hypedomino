@@ -85,7 +85,15 @@ What the player is told after a clear (CD-26) is one game string per outcome (`d
 | A bundle is in use, so the clear runs at the next start | `settings.cache.cleared_at_next_start` |
 | Refused in a match | `settings.cache.not_in_match` |
 
-The size of CD-25 is shown as `settings.cache.size` with the `decimal` placeholder `megabytes`: the bytes divided by 1,000,000, rounded half away from zero to one decimal and always written with that decimal (`Game/CacheSizeText`), so `12,400,000` bytes read `Cache: 12.4 MB` in `en` and `Keş: 12,4 MB` in `az` (`docs/localization.md` 4.4).
+The size of CD-25 is shown in one of three game strings (`Game/CacheSizeText`, owner decision 2026-11-28, #160), in decimal units: 1 MB is 1,000,000 bytes and 1 GB is 1,000,000,000 bytes.
+
+| Size | Key | `en` example |
+|---|---|---|
+| Under 1,000,000 bytes | `settings.cache.size_below_one_megabyte` | `Cache: < 1 MB` |
+| Megabytes that round to under 1,000.0 | `settings.cache.size` with the `decimal` placeholder `megabytes` | `Cache: 12.4 MB` |
+| Anything larger | `settings.cache.size_gigabytes` with the `decimal` placeholder `gigabytes` | `Cache: 1.3 GB` |
+
+The megabytes and gigabytes are rounded half away from zero to one decimal and always written with that decimal, in the number format of the selected language (`docs/localization.md` 4.4), so `12,400,000` bytes read `Cache: 12.4 MB` in `en` and `Keş: 12,4 MB` in `az`, and `1,234,567,890,123` bytes read `Cache: 1,234.6 GB` and `Keş: 1.234,6 GB`. From 999,950,000 bytes the size reads `1.0 GB`, never `1,000.0 MB`.
 
 Their `en` and `az` texts ship in the built-in bundle (`docs/localization.md`, Cache keys), so a fresh install or an offline start can tell the player. Admin may publish other texts like for any other key; until `tr` and `ru` are translated, those languages fall back to `en` (`docs/localization.md` 1.2).
 

@@ -176,6 +176,8 @@
     { "key": "settings.cache.cleared_at_next_start", "en": "The cache will be cleared the next time the game starts", "az": "Keş oyun növbəti dəfə açılanda təmizlənəcək" },
     { "key": "settings.cache.not_in_match", "en": "Finish the match before clearing the cache", "az": "Keşi təmizləmək üçün əvvəlcə matçı bitir" },
     { "key": "settings.cache.size", "en": "Cache: {megabytes} MB", "az": "Keş: {megabytes} MB" },
+    { "key": "settings.cache.size_below_one_megabyte", "en": "Cache: < 1 MB", "az": "Keş: < 1 MB" },
+    { "key": "settings.cache.size_gigabytes", "en": "Cache: {gigabytes} GB", "az": "Keş: {gigabytes} GB" },
     { "key": "tutorial.welcome", "en": "Welcome! Learn the rules in one short hand against a bot", "az": "Xoş gəldin! Bot ilə qısa bir əldə qaydaları öyrən" },
     { "key": "tutorial.open", "en": "You hold 2-3, so you open the first hand. Place 2-3", "az": "2-3 səndədir, ona görə ilk əli sən açırsan. 2-3-ü qoy" },
     { "key": "tutorial.ends", "en": "The chain has two open ends: 2 and 3. A tile goes on an end that shows the same number as one of its halves. In the first hand the opening tile never scores", "az": "Zəncirin iki açıq ucu var: 2 və 3. Daş yarılarından birindəki rəqəmlə eyni rəqəmi göstərən uca qoyulur. İlk əldə açılış daşı xal vermir" },
