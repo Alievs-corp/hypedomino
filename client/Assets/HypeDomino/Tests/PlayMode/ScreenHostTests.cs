@@ -41,7 +41,7 @@ namespace HypeDomino.Tests.PlayMode
         const int NavButtons = 9;
         const int LoginButtons = 3;
         const int SettingsLabels = 25;
-        const int RankingLabels = 3;
+        const int RankingLabels = 4;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
         const int InvitePromptButtons = 2;
@@ -456,6 +456,8 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsNotNull(screen.GetComponent<LeaderboardView>());
             Assert.IsNotNull(screen.GetComponentInChildren<RecyclingList>(true));
             Assert.IsFalse(screen.GetComponentInChildren<LeaderboardRowSlot>(true).gameObject.activeSelf);
+            Assert.IsNotNull(screen.GetComponent<SeasonHistoryView>());
+            Assert.IsFalse(screen.GetComponentInChildren<SeasonHistoryRowSlot>(true).gameObject.activeSelf);
             var labels = screen.GetComponentsInChildren<PlainLabel>(true);
             Assert.AreEqual(RankingLabels, labels.Length);
             foreach (var label in labels) AssertShowsItsString(label);

@@ -1,5 +1,6 @@
 using System;
 using HypeDomino.Game.Ranking;
+using HypeDomino.UI.Lists;
 using HypeDomino.UI.Screens;
 using HypeDomino.UI.Tokens;
 using UnityEngine;
@@ -21,9 +22,43 @@ namespace HypeDomino.Game.Screens
             var teams = PlainUi.Button(modes, TeamsKey, host.Strings);
             var rank = Standing(screen, column);
             var leaderboard = screen.gameObject.AddComponent<LeaderboardView>();
-            leaderboard.Configure(PlainUi.List(column), RowTemplate(screen.transform), Array.Empty<Sprite>());
-            screen.gameObject.AddComponent<RankingScreenView>().Configure(rank, leaderboard, solo, teams);
+            leaderboard.Configure(HalfHeight(PlainUi.List(column)), RowTemplate(screen.transform), Array.Empty<Sprite>());
+            var history = History(screen, column, host);
+            screen.gameObject.AddComponent<RankingScreenView>().Configure(rank, leaderboard, history, solo, teams);
             return screen;
+        }
+
+        static SeasonHistoryView History(ScreenView screen, Transform column, ScreenHost host)
+        {
+            var panel = PlainUi.Column(column);
+            PlainUi.Text(panel.transform, TokenTextStyle.Title, SeasonHistoryView.TitleKey, host.Strings);
+            var list = HalfHeight(PlainUi.List(panel.transform));
+            var view = screen.gameObject.AddComponent<SeasonHistoryView>();
+            view.Configure(panel, list, HistoryRowTemplate(screen.transform), Array.Empty<Sprite>());
+            return view;
+        }
+
+        static RecyclingList HalfHeight(RecyclingList list)
+        {
+            var holder = (RectTransform)list.transform;
+            holder.sizeDelta = new Vector2(holder.sizeDelta.x, ScreenView.ReferenceShortSide / 2f);
+            list.GetComponent<LayoutElement>().preferredHeight = ScreenView.ReferenceShortSide / 2f;
+            return list;
+        }
+
+        static SeasonHistoryRowSlot HistoryRowTemplate(Transform parent)
+        {
+            var row = PlainUi.Row(parent);
+            var at = row.transform;
+            var seasonName = PlainUi.Text(at, TokenTextStyle.Label);
+            var badge = PlainUi.Mark(at).GetComponent<Image>();
+            var lp = PlainUi.Text(at, TokenTextStyle.Counter);
+            var position = PlainUi.Text(at, TokenTextStyle.Counter);
+            var reward = PlainUi.Text(at, TokenTextStyle.Caption);
+            var slot = row.AddComponent<SeasonHistoryRowSlot>();
+            slot.Configure(seasonName, badge, lp, position, reward);
+            row.SetActive(false);
+            return slot;
         }
 
         static RankScreenView Standing(ScreenView screen, Transform column)
