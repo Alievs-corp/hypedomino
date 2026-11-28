@@ -33,6 +33,8 @@ namespace HypeDomino.Game.Analytics
             AppOpenTracked = queue.Track(AnalyticsEvents.AppOpen);
         }
 
+        public void ScreenShown(string screenId) => queue.Track(AnalyticsEvents.ScreenView, screenId);
+
         public static string QueueLabel(QueueKind kind, Mode mode) => kind == QueueKind.Ranked
             ? mode == Mode._2V2 ? RankedTwoVsTwo : RankedOneVsOne
             : mode == Mode._2V2 ? CasualTwoVsTwo : CasualOneVsOne;

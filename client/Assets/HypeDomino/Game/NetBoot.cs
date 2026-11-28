@@ -45,6 +45,7 @@ namespace HypeDomino.Game
         public static LanguageSync Language { get; private set; }
         public static LobbyScreen LobbyScreen { get; private set; }
         public static LobbyHeaderLoader LobbyHeaderLoader { get; private set; }
+        public static QueueAgain QueueAgain { get; private set; }
 
         static readonly Action<LobbyHeaderLoadOutcome> headerLoaded = HeaderLoaded;
 
@@ -162,6 +163,7 @@ namespace HypeDomino.Game
             var header = new LobbyHeader();
             LobbyHeaderLoader = new LobbyHeaderLoader(api, header);
             LobbyScreen = NewLobbyScreen(queue, integrity, header);
+            QueueAgain = new QueueAgain(queue, LobbyScreen.Play, flow);
             flow.Changed += OnFlowChanged;
         }
 

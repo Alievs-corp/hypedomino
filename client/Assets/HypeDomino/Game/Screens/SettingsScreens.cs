@@ -17,6 +17,11 @@ namespace HypeDomino.Game.Screens
         public const string FrameRateKey = "ui.plain.settings.frame_rate";
         public const string BatterySaverKey = "ui.plain.settings.battery_saver";
         public const string ClearCacheKey = "ui.plain.settings.clear_cache";
+        public const string ReplayTutorialKey = "ui.plain.settings.replay_tutorial";
+        public const string AnalyticsKey = "ui.plain.settings.analytics";
+        public const string DiagnosticsKey = "ui.plain.settings.diagnostics";
+        public const string GameplayPushKey = "ui.plain.settings.push_gameplay";
+        public const string PromotionalPushKey = "ui.plain.settings.push_promotional";
         public const string ExportDataKey = "ui.plain.settings.export_data";
         public const string DeleteAccountKey = "ui.plain.settings.delete_account";
         public const string DeleteWarningKey = "ui.plain.settings.delete_warning";
@@ -49,11 +54,31 @@ namespace HypeDomino.Game.Screens
             var clearCache = PlainUi.Button(list, ClearCacheKey, host.Strings);
             var message = PlainUi.Text(list, TokenTextStyle.Body);
             var promoCode = PlainUi.Button(list, PromoScreens.NavKey, host.Strings);
+            PlainUi.Button(list, ReplayTutorialKey, host.Strings).onClick.AddListener(host.Tutorial.Replay);
             var view = screen.gameObject.AddComponent<SettingsScreenView>();
             view.Configure(language, volumes, reduceMotion, haptics, autoFrameRate, frameRate, batterySaver, cacheSize, clearCache, promoCode, message);
             view.Bind(model, host.Strings, () => host.Open(host.Promo));
+            Consents(screen, list, host);
             Account(screen, list, host);
+            Legal(screen, list, host);
             return screen;
+        }
+
+        static void Consents(ScreenView screen, Transform list, ScreenHost host)
+        {
+            var analytics = Toggle(list, host, AnalyticsKey);
+            var diagnostics = Toggle(list, host, DiagnosticsKey);
+            var gameplayPush = Toggle(list, host, GameplayPushKey);
+            var promotionalPush = Toggle(list, host, PromotionalPushKey);
+            var message = PlainUi.Text(list, TokenTextStyle.Body);
+            screen.gameObject.AddComponent<ConsentSettingsView>().Configure(analytics, diagnostics, gameplayPush, promotionalPush, message);
+        }
+
+        static void Legal(ScreenView screen, Transform list, ScreenHost host)
+        {
+            var policy = PlainUi.Button(list, FirstLaunchScreens.PolicyKey, host.Strings);
+            var terms = PlainUi.Button(list, FirstLaunchScreens.TermsKey, host.Strings);
+            screen.gameObject.AddComponent<LegalLinksView>().Configure(policy, terms);
         }
 
         static void Account(ScreenView screen, Transform list, ScreenHost host)

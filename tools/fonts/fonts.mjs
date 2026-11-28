@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const fontsFolder = "client/Assets/HypeDomino/UI/Fonts";
@@ -6,6 +6,8 @@ export const manifestPath = `${fontsFolder}/fonts.json`;
 export const builtinStringsPath = "client/Assets/HypeDomino/UI/Localization/Resources/builtin-strings.json";
 export const tokensPath = "docs/design-tokens.json";
 export const nicknameCharactersPath = "server/internal/profile/nickname-characters.json";
+export const fontCharactersPath = "server/internal/gamestrings/font-characters.json";
+export const writeFontCharactersFlag = "--write-font-characters";
 const nicknameStyle = "name";
 const staticPopulationMode = 0;
 const builtinLanguages = ["en", "az", "tr", "ru"];
@@ -173,6 +175,29 @@ export function nicknameErrors({ manifest, faceId, allowed, glyphsOf, source }) 
   return [`${source} chain ${chain.join(" > ")} of the ${nicknameStyle} style misses nickname characters ${missing.map(label).join(", ")} (${nicknameCharactersPath})`];
 }
 
+export function drawnByEveryChain(manifest, glyphsOf) {
+  let drawn = null;
+  for (const face of manifest.faces) {
+    const chain = new Set(chainOf(face.id, manifest.faces).flatMap((id) => [...glyphsOf(id)]));
+    drawn = drawn === null ? chain : new Set([...drawn].filter((codePoint) => chain.has(codePoint)));
+  }
+  return [...drawn].sort((a, b) => a - b);
+}
+
+export const fontCharactersJson = (codePoints) => `${JSON.stringify({ characters: String.fromCodePoint(...codePoints) }, null, 2)}
+`;
+
+export function fontCharactersErrors(drawn, committed) {
+  const listed = [...new Set([...(committed.characters ?? "")].map((character) => character.codePointAt(0)))];
+  const errors = [];
+  const unlisted = drawn.filter((codePoint) => !listed.includes(codePoint));
+  const undrawn = listed.filter((codePoint) => !drawn.includes(codePoint));
+  const regenerate = `run node tools/fonts/fonts.mjs ${writeFontCharactersFlag}`;
+  if (unlisted.length > 0) errors.push(`${fontCharactersPath} misses characters every chain draws: ${unlisted.map(label).join(", ")}; ${regenerate}`);
+  if (undrawn.length > 0) errors.push(`${fontCharactersPath} lists characters not every chain draws: ${undrawn.map(label).join(", ")}; ${regenerate}`);
+  return errors;
+}
+
 export function checkFonts(root = ".") {
   const read = (path) => readFileSync(`${root}/${path}`);
   const exists = (path) => existsSync(`${root}/${path}`);
@@ -209,6 +234,9 @@ export function checkFonts(root = ".") {
   const faceId = nicknameFace(tokens);
   errors.push(...nicknameErrors({ manifest, faceId, allowed, glyphsOf: (id) => sources.get(id), source: "font file" }));
   errors.push(...nicknameErrors({ manifest, faceId, allowed, glyphsOf: (id) => assets.get(id).characters, source: "font asset" }));
+  const drawn = drawnByEveryChain(manifest, (id) => assets.get(id).characters);
+  const committedFontCharacters = exists(fontCharactersPath) ? JSON.parse(read(fontCharactersPath).toString("utf8")) : {};
+  errors.push(...fontCharactersErrors(drawn, committedFontCharacters));
   for (const face of manifest.faces) {
     const facts = assets.get(face.id);
     if (facts.populationMode !== staticPopulationMode) errors.push(`${fontAssetPath(face)}: atlas population mode ${facts.populationMode}, must be static`);
@@ -217,10 +245,17 @@ export function checkFonts(root = ".") {
   }
   const report = manifest.faces.map((face) => `${chainOf(face.id, manifest.faces).join(" > ")}: ${required.length}/${required.length}`);
   report.push(`nickname characters in the ${nicknameStyle} style (${chainOf(faceId, manifest.faces).join(" > ")}): ${allowed.length}/${allowed.length}`);
-  return { errors, report };
+  report.push(`characters every chain draws, which published bundles may hold (${fontCharactersPath}): ${drawn.length}`);
+  return { errors, report, fontCharacters: fontCharactersJson(drawn) };
+}
+
+function writeFontCharacters() {
+  const { fontCharacters } = checkFonts();
+  if (fontCharacters) writeFileSync(fontCharactersPath, fontCharacters);
 }
 
 function main() {
+  if (process.argv.includes(writeFontCharactersFlag)) writeFontCharacters();
   const { errors, report } = checkFonts();
   for (const error of errors) console.error(error);
   if (errors.length > 0) {

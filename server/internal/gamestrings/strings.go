@@ -193,8 +193,9 @@ func exactNumber(selector string) bool {
 }
 
 type Problem struct {
-	Key string
-	Err error
+	Key        string
+	Characters []string
+	Err        error
 }
 
 type Bundle struct {
