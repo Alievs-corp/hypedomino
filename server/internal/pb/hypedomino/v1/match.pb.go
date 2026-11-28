@@ -1614,6 +1614,7 @@ type MatchView struct {
 	LockedTeams             []Team                 `protobuf:"varint,25,rep,packed,name=locked_teams,json=lockedTeams,proto3,enum=hypedomino.v1.Team" json:"locked_teams,omitempty"`
 	TurnSeconds             uint32                 `protobuf:"varint,26,opt,name=turn_seconds,json=turnSeconds,proto3" json:"turn_seconds,omitempty"`
 	TurnWarningSeconds      uint32                 `protobuf:"varint,27,opt,name=turn_warning_seconds,json=turnWarningSeconds,proto3" json:"turn_warning_seconds,omitempty"`
+	MatchId                 string                 `protobuf:"bytes,28,opt,name=match_id,json=matchId,proto3" json:"match_id,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -1837,6 +1838,13 @@ func (x *MatchView) GetTurnWarningSeconds() uint32 {
 	return 0
 }
 
+func (x *MatchView) GetMatchId() string {
+	if x != nil {
+		return x.MatchId
+	}
+	return ""
+}
+
 var File_hypedomino_v1_match_proto protoreflect.FileDescriptor
 
 const file_hypedomino_v1_match_proto_rawDesc = "" +
@@ -1933,7 +1941,7 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\aemblems\x18\b \x03(\tR\aemblems\x12\x10\n" +
 	"\x03bot\x18\t \x01(\bR\x03bot\x12\x12\n" +
 	"\x04tile\x18\n" +
-	" \x01(\tR\x04tile\"\x80\n" +
+	" \x01(\tR\x04tile\"\x9b\n" +
 	"\n" +
 	"\tMatchView\x12/\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x19.hypedomino.v1.MatchStateR\x05state\x12'\n" +
@@ -1966,7 +1974,8 @@ const file_hypedomino_v1_match_proto_rawDesc = "" +
 	"\x1ahand_points_lock_threshold\x18\x18 \x01(\rR\x17handPointsLockThreshold\x126\n" +
 	"\flocked_teams\x18\x19 \x03(\x0e2\x13.hypedomino.v1.TeamR\vlockedTeams\x12!\n" +
 	"\fturn_seconds\x18\x1a \x01(\rR\vturnSeconds\x120\n" +
-	"\x14turn_warning_seconds\x18\x1b \x01(\rR\x12turnWarningSeconds*w\n" +
+	"\x14turn_warning_seconds\x18\x1b \x01(\rR\x12turnWarningSeconds\x12\x19\n" +
+	"\bmatch_id\x18\x1c \x01(\tR\amatchId*w\n" +
 	"\bBoardEnd\x12\x19\n" +
 	"\x15BOARD_END_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eBOARD_END_LEFT\x10\x01\x12\x13\n" +

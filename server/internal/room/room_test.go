@@ -694,3 +694,12 @@ func TestASeatStillAbsentAfterTheGraceIsLeft(t *testing.T) {
 		t.Fatalf("after the grace: %+v", v.Presence[rules.SeatY])
 	}
 }
+
+func TestEveryViewCarriesTheStoredMatchID(t *testing.T) {
+	r := New(Options{Mode: rules.Mode1v1, MatchID: "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10", Config: rules.DefaultConfig(), Bot: bot.DefaultConfig(), Clock: newFakeClock()})
+	for _, seat := range rules.Mode1v1.Seats() {
+		if got := r.view(seat).MatchID; got != "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10" {
+			t.Fatalf("seat %v view match id %q", seat, got)
+		}
+	}
+}

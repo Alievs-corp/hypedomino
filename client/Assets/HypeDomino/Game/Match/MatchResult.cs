@@ -21,6 +21,8 @@ namespace HypeDomino.Game.Match
         public Team MyTeam { get; private set; }
         public uint MyScore { get; private set; }
         public uint TheirScore { get; private set; }
+        public string MatchId { get; private set; } = string.Empty;
+        public MatchRewards Rewards { get; private set; }
 
         public bool Read(MatchSnapshot view)
         {
@@ -35,8 +37,17 @@ namespace HypeDomino.Game.Match
             return true;
         }
 
+        public bool ShowRewards(MatchRewards rewards)
+        {
+            if (!open || rewards == null || string.IsNullOrEmpty(MatchId) || rewards.MatchId != MatchId) return false;
+            Rewards = rewards;
+            return true;
+        }
+
         void Explain(MatchSnapshot view)
         {
+            MatchId = view.MatchId;
+            Rewards = null;
             var seated = view.Seat != Seat.Unspecified;
             MyTeam = seated ? SeatOrder.TeamOf(view.Seat) : Team.A;
             Winner = view.Winner;

@@ -330,6 +330,39 @@ func TestViewMessageMirrorsTheRoomView(t *testing.T) {
 	}
 }
 
+func TestOnlyAFinishedViewCarriesTheMatchID(t *testing.T) {
+	view := room.View{
+		State:         room.StateFinished,
+		Seat:          rules.SeatX,
+		Mode:          rules.Mode1v1,
+		MatchID:       "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10",
+		HandsPlayed:   4,
+		Scores:        rules.TeamPoints{153, 95},
+		HandSizes:     [6]int{rules.SeatY: 2},
+		OpeningTeam:   rules.TeamB,
+		TurnDeadline:  time.UnixMilli(1761480620000),
+		Winner:        rules.TeamA,
+		HasWinner:     true,
+		TargetScore:   150,
+		LockThreshold: 120,
+		TurnSeconds:   15,
+		TurnWarning:   5,
+	}
+	want := &pb.Envelope{}
+	if err := proto.Unmarshal(mustRead(t, "../../../proto/testdata/frames/match_view_finished.bin"), want); err != nil {
+		t.Fatal(err)
+	}
+	if got := ViewMessage(view, false, false); !proto.Equal(got, want.GetMatchView()) {
+		t.Fatalf("finished view differs\n got %v\nwant %v", got, want.GetMatchView())
+	}
+	for _, state := range []room.State{room.StateWaiting, room.StateLoading, room.StateOpening, room.StatePlaying} {
+		view.State = state
+		if got := ViewMessage(view, true, true); got.GetMatchId() != "" {
+			t.Fatalf("state %v carries the match id %q", state, got.GetMatchId())
+		}
+	}
+}
+
 func TestViewMessageShowsDisconnectsAndTimeouts(t *testing.T) {
 	view := room.View{
 		State:        room.StatePlaying,

@@ -106,6 +106,7 @@ type Player struct {
 
 type Options struct {
 	Kind           Kind
+	MatchID        string
 	Mode           rules.Mode
 	Config         rules.Config
 	Bot            bot.Config

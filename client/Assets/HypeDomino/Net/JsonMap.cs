@@ -49,6 +49,14 @@ namespace HypeDomino.Net
             return true;
         }
 
+        public bool TryBool(string key, out bool flag)
+        {
+            flag = false;
+            if (!TryValue(key, Value.KindOneofCase.BoolValue, out var value)) return false;
+            flag = value.BoolValue;
+            return true;
+        }
+
         public bool TryInteger(string key, out long number)
         {
             number = 0;

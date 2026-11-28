@@ -1,0 +1,23 @@
+{
+  "protocolVersion": 1,
+  "ackedSequence": 41,
+  "matchView": {
+    "state": "MATCH_STATE_FINISHED",
+    "seat": "SEAT_X",
+    "mode": "MODE_1V1",
+    "handsPlayed": 4,
+    "scores": { "teamA": 153, "teamB": 95 },
+    "seats": [
+      { "seat": "SEAT_X", "handSize": 0, "controller": "CONTROLLER_PLAYER" },
+      { "seat": "SEAT_Y", "handSize": 2, "controller": "CONTROLLER_PLAYER" }
+    ],
+    "openingTeam": "TEAM_B",
+    "turnDeadlineUnixMs": "1761480620000",
+    "winner": "TEAM_A",
+    "targetScore": 150,
+    "handPointsLockThreshold": 120,
+    "turnSeconds": 15,
+    "turnWarningSeconds": 5,
+    "matchId": "0b9f6c1e-4d2a-4f61-9a57-3c8e2d7b5a10"
+  }
+}

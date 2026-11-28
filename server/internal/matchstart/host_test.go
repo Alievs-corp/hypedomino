@@ -94,7 +94,7 @@ func TestAPlacementOpensARoomSeatsEveryPlayerAndAnnouncesIt(t *testing.T) {
 	if f.seated["sa"] != rules.SeatNorth || f.seated["sb"] != rules.SeatSouth || len(f.found) != 2 || len(f.requeued) != 0 {
 		t.Fatalf("seated %v found %v requeued %v", f.seated, f.found, f.requeued)
 	}
-	if len(f.begun) != 1 || f.begun[0].Kind != matchstore.KindCasual || len(f.begun[0].Participants) != 4 || f.begun[0].Seed != f.options.Seed || len(f.finished) != 0 {
+	if len(f.begun) != 1 || f.begun[0].Kind != matchstore.KindCasual || len(f.begun[0].Participants) != 4 || f.begun[0].Seed != f.options.Seed || f.begun[0].ID == "" || f.options.MatchID != f.begun[0].ID || len(f.finished) != 0 {
 		t.Fatalf("begun %+v finished %+v", f.begun, f.finished)
 	}
 }
