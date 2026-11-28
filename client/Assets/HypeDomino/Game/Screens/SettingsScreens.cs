@@ -53,7 +53,15 @@ namespace HypeDomino.Game.Screens
             view.Configure(language, volumes, reduceMotion, haptics, autoFrameRate, frameRate, batterySaver, cacheSize, clearCache, promoCode, message);
             view.Bind(model, host.Strings, () => host.Open(host.Promo));
             Account(screen, list, host);
+            Legal(screen, list, host);
             return screen;
+        }
+
+        static void Legal(ScreenView screen, Transform list, ScreenHost host)
+        {
+            var policy = PlainUi.Button(list, FirstLaunchScreens.PolicyKey, host.Strings);
+            var terms = PlainUi.Button(list, FirstLaunchScreens.TermsKey, host.Strings);
+            screen.gameObject.AddComponent<LegalLinksView>().Configure(policy, terms);
         }
 
         static void Account(ScreenView screen, Transform list, ScreenHost host)
