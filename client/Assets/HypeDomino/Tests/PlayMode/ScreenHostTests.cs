@@ -41,7 +41,7 @@ namespace HypeDomino.Tests.PlayMode
         const int NavButtons = 9;
         const int LoginButtons = 3;
         const int SettingsLabels = 25;
-        const int RankingLabels = 3;
+        const int RankingLabels = 4;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
         const int InvitePromptButtons = 2;
@@ -202,6 +202,53 @@ namespace HypeDomino.Tests.PlayMode
             Assert.AreEqual(1, stack.Count);
             Assert.IsTrue(lobby.TakesInput);
             Assert.IsFalse(shop.TakesInput);
+        }
+
+        [TestCase(AppState.Login, "login")]
+        [TestCase(AppState.Lobby, "lobby")]
+        [TestCase(AppState.Room, "room")]
+        [TestCase(AppState.UpdateRequired, "update_required")]
+        [TestCase(AppState.Maintenance, "maintenance")]
+        public void EveryStateScreenHasItsScreenViewId(AppState state, string id)
+        {
+            Assert.AreEqual(id, host.ScreenIdOf(host.ScreenOf(state)));
+        }
+
+        [TestCase("ui.plain.nav.pass", "pass")]
+        [TestCase(PromoScreens.NavKey, "promo")]
+        [TestCase("ui.plain.nav.shop", "shop")]
+        [TestCase(SettingsScreens.NavKey, "settings")]
+        [TestCase(RankingScreens.NavKey, "ranking")]
+        [TestCase(CollectionScreens.NavKey, "collection")]
+        [TestCase(ProfileScreens.NavKey, "profile")]
+        [TestCase(MissionScreens.NavKey, "missions")]
+        [TestCase(MedalScreens.NavKey, "medals")]
+        public void EveryNavScreenHasItsScreenViewId(string navKey, string id)
+        {
+            Assert.AreEqual(id, host.ScreenIdOf(Pushed(navKey)));
+        }
+
+        [Test]
+        public void ThePrivacyNoticeHasItsScreenViewId()
+        {
+            Assert.AreEqual("privacy_notice", host.ScreenIdOf(host.PrivacyNotice));
+        }
+
+        [Test]
+        public void EveryShownScreenIsReportedWithItsIdOnce()
+        {
+            var shown = new System.Collections.Generic.List<string>();
+            host.ScreenShown += shown.Add;
+
+            host.Follow(AppState.Login);
+            host.Follow(AppState.Lobby);
+            host.Follow(AppState.Lobby);
+            NavButton("ui.plain.nav.shop").onClick.Invoke();
+            NavButton("ui.plain.nav.shop").onClick.Invoke();
+            ButtonOf(stack.Top, ScreenHost.BackKey).onClick.Invoke();
+            host.Follow(AppState.Match);
+
+            CollectionAssert.AreEqual(new[] { "login", "lobby", "shop", "lobby" }, shown);
         }
 
         [Test]
@@ -456,6 +503,8 @@ namespace HypeDomino.Tests.PlayMode
             Assert.IsNotNull(screen.GetComponent<LeaderboardView>());
             Assert.IsNotNull(screen.GetComponentInChildren<RecyclingList>(true));
             Assert.IsFalse(screen.GetComponentInChildren<LeaderboardRowSlot>(true).gameObject.activeSelf);
+            Assert.IsNotNull(screen.GetComponent<SeasonHistoryView>());
+            Assert.IsFalse(screen.GetComponentInChildren<SeasonHistoryRowSlot>(true).gameObject.activeSelf);
             var labels = screen.GetComponentsInChildren<PlainLabel>(true);
             Assert.AreEqual(RankingLabels, labels.Length);
             foreach (var label in labels) AssertShowsItsString(label);

@@ -310,6 +310,46 @@ func TestADatabaseNeedsASigningKey(t *testing.T) {
 	}
 }
 
+func TestAnEmptyEnvironmentIsProductionWithoutBotSignIn(t *testing.T) {
+	for _, values := range []map[string]string{nil, {"HD_ENVIRONMENT": ""}} {
+		config, err := ConfigFromEnv(lookup(values))
+		if err != nil || config.Environment != EnvironmentProduction || config.BotTokenSecret != nil {
+			t.Fatalf("%v: environment %q, bot secret %v, %v", values, config.Environment, config.BotTokenSecret, err)
+		}
+	}
+	if _, err := ConfigFromEnv(lookup(map[string]string{"HD_ENVIRONMENT": "prod"})); err == nil || !strings.Contains(err.Error(), "HD_ENVIRONMENT") {
+		t.Fatalf("an unknown environment was accepted: %v", err)
+	}
+}
+
+func TestProductionRefusesToStartWithABotSecret(t *testing.T) {
+	secret := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{5}, 32))
+	for _, environment := range []string{"", EnvironmentProduction} {
+		_, err := ConfigFromEnv(lookup(map[string]string{"HD_ENVIRONMENT": environment, "HD_BOT_TOKEN_SECRET": secret}))
+		if err == nil || !strings.Contains(err.Error(), "HD_BOT_TOKEN_SECRET: refused in production") || strings.Contains(err.Error(), secret) {
+			t.Fatalf("environment %q started with a bot secret: %v", environment, err)
+		}
+	}
+}
+
+func TestBotSignInIsEnabledInDevAndStagingOnly(t *testing.T) {
+	secret := bytes.Repeat([]byte{5}, 32)
+	for _, environment := range []string{EnvironmentDev, EnvironmentStaging} {
+		config, err := ConfigFromEnv(lookup(map[string]string{"HD_ENVIRONMENT": environment, "HD_BOT_TOKEN_SECRET": base64.StdEncoding.EncodeToString(secret)}))
+		if err != nil || config.Environment != environment || !bytes.Equal(config.BotTokenSecret, secret) {
+			t.Fatalf("%s: environment %q, secret %x, %v", environment, config.Environment, config.BotTokenSecret, err)
+		}
+		config, err = ConfigFromEnv(lookup(map[string]string{"HD_ENVIRONMENT": environment}))
+		if err != nil || config.BotTokenSecret != nil {
+			t.Fatalf("%s without a secret: %x, %v", environment, config.BotTokenSecret, err)
+		}
+	}
+	short := base64.StdEncoding.EncodeToString(make([]byte, 16))
+	if _, err := ConfigFromEnv(lookup(map[string]string{"HD_ENVIRONMENT": EnvironmentStaging, "HD_BOT_TOKEN_SECRET": short})); err == nil || !strings.Contains(err.Error(), "HD_BOT_TOKEN_SECRET") || strings.Contains(err.Error(), short) {
+		t.Fatalf("a short bot secret was accepted: %v", err)
+	}
+}
+
 func TestSentryDSNMustBeAnEURegionDSNAndIsNeverEchoed(t *testing.T) {
 	config, err := ConfigFromEnv(lookup(map[string]string{"HD_SENTRY_DSN": "https://public@o1.ingest.de.sentry.io/1", "HD_SENTRY_ENVIRONMENT": "staging"}))
 	if err != nil || config.SentryDSN != "https://public@o1.ingest.de.sentry.io/1" || config.SentryEnv != "staging" {

@@ -25,7 +25,10 @@ var (
 	ErrDeleted         = errors.New("account: deleted")
 	ErrDeletionPending = errors.New("account: deletion pending")
 	ErrInvalidIdentity = errors.New("account: identity has no provider or subject")
+	ErrNotBot          = errors.New("account: bot sign-in for an account that is not a bot")
 )
+
+const BotProvider = "bot"
 
 type Account struct {
 	ID          string
@@ -37,6 +40,7 @@ type Account struct {
 	BanCategory string
 	BanSanction int64
 	DeletionAt  *time.Time
+	Bot         bool
 }
 
 type BannedError struct {
@@ -62,14 +66,39 @@ func New(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
+type signInIdentity struct {
+	provider string
+	subject  string
+	email    string
+	bot      bool
+}
+
 func (s *Store) SignIn(ctx context.Context, identity idtoken.Identity) (Account, bool, error) {
 	if identity.Provider.String() == "invalid" || identity.Subject == "" {
 		return Account{}, false, ErrInvalidIdentity
 	}
+	return s.signIn(ctx, fromProvider(identity))
+}
+
+func fromProvider(identity idtoken.Identity) signInIdentity {
+	return signInIdentity{provider: identity.Provider.String(), subject: identity.Subject, email: identity.Email}
+}
+
+func (s *Store) SignInBot(ctx context.Context, bot string) (Account, bool, error) {
+	if bot == "" {
+		return Account{}, false, ErrInvalidIdentity
+	}
+	return s.signIn(ctx, signInIdentity{provider: BotProvider, subject: bot, bot: true})
+}
+
+func (s *Store) signIn(ctx context.Context, identity signInIdentity) (Account, bool, error) {
 	for {
 		a, found, err := s.find(ctx, identity)
 		if err != nil {
 			return Account{}, false, err
+		}
+		if found && identity.bot && !a.Bot {
+			return Account{}, false, ErrNotBot
 		}
 		if found {
 			return a, false, admitted(a, time.Now())
@@ -84,33 +113,33 @@ func (s *Store) SignIn(ctx context.Context, identity idtoken.Identity) (Account,
 	}
 }
 
-func (s *Store) find(ctx context.Context, identity idtoken.Identity) (Account, bool, error) {
+func (s *Store) find(ctx context.Context, identity signInIdentity) (Account, bool, error) {
 	var a Account
 	err := s.pool.QueryRow(ctx, `update auth_identities i set email = coalesce(nullif($3, ''), i.email)
 		from accounts a left join lateral (select s.id, s.category from account_sanctions s where s.account_id = a.id and s.kind in ('temporary_ban', 'permanent_ban')
 				and s.lifted_at is null and (s.ends_at is null or s.ends_at > now()) order by s.starts_at desc, s.id desc limit 1) ban on true
 		where a.id = i.account_id and i.provider = $1 and i.subject = $2
 		returning a.id, a.state, coalesce(a.country, ''), coalesce(i.email, ''), a.created_at, a.banned_until, a.deletion_requested_at,
-			coalesce(ban.category, ''), coalesce(ban.id, 0)`,
-		identity.Provider.String(), identity.Subject, identity.Email).Scan(&a.ID, &a.State, &a.Country, &a.Email, &a.CreatedAt, &a.BannedUntil, &a.DeletionAt, &a.BanCategory, &a.BanSanction)
+			coalesce(ban.category, ''), coalesce(ban.id, 0), a.is_bot`,
+		identity.provider, identity.subject, identity.email).Scan(&a.ID, &a.State, &a.Country, &a.Email, &a.CreatedAt, &a.BannedUntil, &a.DeletionAt, &a.BanCategory, &a.BanSanction, &a.Bot)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Account{}, false, nil
 	}
 	return a, err == nil, err
 }
 
-func (s *Store) create(ctx context.Context, identity idtoken.Identity) (Account, bool, error) {
+func (s *Store) create(ctx context.Context, identity signInIdentity) (Account, bool, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return Account{}, false, err
 	}
 	defer tx.Rollback(ctx)
-	a := Account{Email: identity.Email}
-	if err := tx.QueryRow(ctx, `insert into accounts default values returning id, state, created_at`).Scan(&a.ID, &a.State, &a.CreatedAt); err != nil {
+	a := Account{Email: identity.email, Bot: identity.bot}
+	if err := tx.QueryRow(ctx, `insert into accounts (is_bot) values ($1) returning id, state, created_at`, identity.bot).Scan(&a.ID, &a.State, &a.CreatedAt); err != nil {
 		return Account{}, false, err
 	}
 	_, err = tx.Exec(ctx, `insert into auth_identities (provider, subject, account_id, email) values ($1, $2, $3, nullif($4, ''))`,
-		identity.Provider.String(), identity.Subject, a.ID, identity.Email)
+		identity.provider, identity.subject, a.ID, identity.email)
 	if isUniqueViolation(err) {
 		return Account{}, false, nil
 	}

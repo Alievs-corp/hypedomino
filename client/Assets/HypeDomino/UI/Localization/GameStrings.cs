@@ -26,6 +26,8 @@ namespace HypeDomino.UI.Localization
 
         public event Action Changed;
 
+        public event Action<string, string, int> KeyMissingInWholeChain;
+
         public string Language => choice.Language;
 
         public bool SetChain(string language, IReadOnlyList<string> chain)
@@ -65,10 +67,11 @@ namespace HypeDomino.UI.Localization
             for (var i = 0; i < chain.Length; i++)
             {
                 if (!TryFormat(key, chain[i], args, out var text)) continue;
-                if (i > 0) Report(key);
+                if (i > 0) Log(key);
                 return text;
             }
-            Report(key);
+            KeyMissingInWholeChain?.Invoke(key, Language, BundleVersion());
+            Log(key);
             if (showMissingKeys) return "[!" + key + "]";
             return builtin.Value(UnavailableKey, GameLanguage.English) ?? string.Empty;
         }
@@ -91,11 +94,12 @@ namespace HypeDomino.UI.Localization
             return builtin.Value(key, language);
         }
 
-        void Report(string key)
+        int BundleVersion() => active.TryGetValue(Language, out var bundle) ? bundle.Version : 0;
+
+        void Log(string key)
         {
             if (!reported.Add(key)) return;
-            var version = active.TryGetValue(Language, out var bundle) ? bundle.Version : 0;
-            Debug.LogWarning($"Strings missing key={key} language={Language} version={version}");
+            Debug.LogWarning($"Strings missing key={key} language={Language} version={BundleVersion()}");
         }
     }
 }

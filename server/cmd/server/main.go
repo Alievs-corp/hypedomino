@@ -21,6 +21,7 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/app"
 	"github.com/Alievs-corp/hypedomino/server/internal/attestkey"
 	"github.com/Alievs-corp/hypedomino/server/internal/auth"
+	"github.com/Alievs-corp/hypedomino/server/internal/botaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/consent"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
@@ -157,6 +158,13 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	accounts := account.New(pool)
 	signIn := auth.New(verifier, accounts, tokens, sessions, logger)
 	signIn.SetCountryHeader(config.CountryHeader)
+	if len(config.BotTokenSecret) > 0 {
+		signIn.EnableBotSignIn(config.BotTokenSecret, accounts, time.Now)
+		logger.Warn("bot sign-in enabled", "environment", config.Environment)
+	}
+	casualOnly := func(next http.Handler) http.Handler {
+		return botaccount.CasualOnly(tokens, botaccount.Check(pool), logger, next)
+	}
 	a.Handle("POST /auth/", signIn)
 	a.Expose(signIn.SignIns())
 	profileStore := profile.NewStore(pool, config.Profile)
@@ -234,7 +242,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	})
 	a.Handle("/reports", report.NewHandler(tokens, report.NewStore(pool, config.Reports), logger, time.Now))
 	walletStore := wallet.NewStore(pool)
-	a.Handle("/wallet", wallet.NewHandler(tokens, walletStore, logger))
+	a.Handle("/wallet", casualOnly(wallet.NewHandler(tokens, walletStore, logger)))
 	passConfigs := pass.NewWatcher(pool, logger)
 	watchConfig(ctx, a.AwaitBeforeReady, "pass", config.ConfigPoll, passConfigs)
 	passes := pass.NewStore(pool, passConfigs)
@@ -273,7 +281,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "outbox missions", config.OutboxPoll, func(ctx context.Context, every time.Duration) {
 		missionProgress.Run(ctx, every, func(err error) { logger.Error("mission progress relay failed", "error", err) })
 	})
-	logins := critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now))
+	logins := casualOnly(critical(dailylogin.NewHandler(tokens, dailylogin.NewStore(pool, calendar, engine), logger, time.Now)))
 	a.Handle("/daily-login", logins)
 	a.Handle("/daily-login/", logins)
 	offers := snapshot.New(pool, shop.Domain, shop.Parser(config.Shop), logger)
@@ -380,7 +388,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	go panics.Supervise(ctx, "pass season end", config.SeasonPoll, func(ctx context.Context, every time.Duration) {
 		passes.RunSeasonEnd(ctx, logger, every, time.Now)
 	})
-	passHandler := critical(pass.NewHandler(tokens, passes, logger, time.Now))
+	passHandler := casualOnly(critical(pass.NewHandler(tokens, passes, logger, time.Now)))
 	a.Handle("/pass", passHandler)
 	a.Handle("/pass/", passHandler)
 	medalRequests := medal.NewHandler(tokens, medals, logger, time.Now)
@@ -388,7 +396,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 	medalHandler := critical(medalRequests)
 	a.Handle("/medals", medalHandler)
 	a.Handle("/medals/", medalHandler)
-	missionHandler := critical(mission.NewHandler(tokens, missions, logger, time.Now))
+	missionHandler := casualOnly(critical(mission.NewHandler(tokens, missions, logger, time.Now)))
 	a.Handle("/missions", missionHandler)
 	a.Handle("/missions/", missionHandler)
 	shopStore := shop.NewStore(pool, walletStore, inventoryStore, engine, offers, config.Shop)
@@ -397,7 +405,7 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		current, _, _ := controls.Current()
 		return current.PurchasesDisabled
 	})
-	store := critical(shopHandler)
+	store := casualOnly(critical(shopHandler))
 	a.Handle("/shop", store)
 	a.Handle("/shop/", store)
 	validators, google, apple, err := stores(config)
@@ -436,15 +444,15 @@ func build(ctx context.Context, config app.Config, logger *slog.Logger, sessions
 		sessions.CheckIntegrity(gate)
 	}
 	receipts := purchase.NewHandler(tokens, purchases, google, apple, config.PushSecret, logger, time.Now)
-	a.Handle("POST /shop/complete", critical(guarded(gate, tokens, integrity.PurposePurchase, receipts)))
-	a.Handle("GET /purchases", receipts)
+	a.Handle("POST /shop/complete", casualOnly(critical(guarded(gate, tokens, integrity.PurposePurchase, receipts))))
+	a.Handle("GET /purchases", casualOnly(receipts))
 	a.Handle("POST /store/", receipts)
 	promos, err := promos(pool, engine, catalog, passes, config)
 	if err != nil {
 		pool.Close()
 		return nil, nil, err
 	}
-	a.Handle("POST /promo/redeem", critical(promo.NewHandler(tokens, promos, logger, time.Now)))
+	a.Handle("POST /promo/redeem", casualOnly(critical(promo.NewHandler(tokens, promos, logger, time.Now))))
 	return a, pool.Close, nil
 }
 

@@ -33,7 +33,7 @@ Requirements: Docker with Compose 2.22 or newer, `make` and `openssl`.
 
 | Command | What |
 |---|---|
-| `make dev` | Starts PostgreSQL, Redis, the migrations, the game server (`:8080`), `admin-api` (`:8090`) and the admin panel (`:3000`), then watches the code: a change under `server/` rebuilds the server and restarts `admin-api`; the admin panel reloads through `next dev`. On the first run it writes `.env` from `.env.example` with a fresh `HD_TOKEN_KEYS` and seeds an empty database |
+| `make dev` | Starts PostgreSQL, Redis, the migrations, the game server (`:8080`), `admin-api` (`:8090`) and the admin panel (`:3000`), then watches the code: a change under `server/` rebuilds the server and restarts `admin-api`; the admin panel reloads through `next dev`. On the first run it writes `.env` from `.env.example` with a fresh `HD_TOKEN_KEYS` and `HD_BOT_TOKEN_SECRET` (with `HD_ENVIRONMENT=dev`, so the bot sign-in of `docs/test-strategy.md` 3.1 is on locally) and seeds an empty database |
 | `make seed` | Publishes the example configs of `docs/*/examples` through `cmd/config-publish` and adds the synthetic players `DevPlayer1` to `DevPlayer8` (`tools/dev/players.sql`, `docs/test-strategy.md` 7.2) |
 | `make bots` | Runs `cmd/loadbot local`: bot players fill rooms on an in-process server; pass flags with `BOTS="-rooms 10 -hold 30s"` |
 | `make logs`, `make down`, `make reset` | Follow the logs, stop the stack, stop it and delete its volumes |

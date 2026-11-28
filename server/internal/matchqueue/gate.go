@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/botaccount"
 	"github.com/Alievs-corp/hypedomino/server/internal/matchmaking"
 	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
@@ -86,6 +87,9 @@ func (g *Gate) Join(ctx context.Context, account, session string, intent *pb.Joi
 	}
 	now := g.now()
 	entry, err := g.entry(ctx, account, mode, queue, now)
+	if errors.Is(err, botaccount.ErrCasualOnly) {
+		return refused(intent, pb.QueueRefusal_QUEUE_REFUSAL_BOT_CASUAL_ONLY)
+	}
 	if state, sanctionID := banRefusal(intent, err); state != nil {
 		state.Appeal = g.appealFor(account, sanctionID)
 		return state
@@ -180,6 +184,21 @@ func PenalizedEntry(records func(ctx context.Context, account string) (penalties
 			entry.SearchFrom = delayed
 		}
 		return entry, nil
+	}
+}
+
+func CasualOnlyBots(isBot func(ctx context.Context, account string) (bool, error), next EntryFunc) EntryFunc {
+	return func(ctx context.Context, account string, mode rules.Mode, queue matchmaking.Queue, now time.Time) (matchmaking.Entry, error) {
+		if queue == matchmaking.QueueRanked {
+			bot, err := isBot(ctx, account)
+			if err != nil {
+				return matchmaking.Entry{}, err
+			}
+			if bot {
+				return matchmaking.Entry{}, botaccount.ErrCasualOnly
+			}
+		}
+		return next(ctx, account, mode, queue, now)
 	}
 }
 

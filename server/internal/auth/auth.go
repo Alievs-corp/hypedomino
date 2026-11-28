@@ -13,6 +13,7 @@ import (
 
 	"github.com/Alievs-corp/hypedomino/server/internal/account"
 	"github.com/Alievs-corp/hypedomino/server/internal/appeal"
+	"github.com/Alievs-corp/hypedomino/server/internal/bottoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/idtoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/metrics"
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
@@ -40,6 +41,16 @@ type Tokens interface {
 	Verify(access string) (token.Claims, error)
 }
 
+type BotAccounts interface {
+	SignInBot(ctx context.Context, bot string) (account.Account, bool, error)
+}
+
+type botSignIn struct {
+	secret   []byte
+	accounts BotAccounts
+	now      func() time.Time
+}
+
 type Connections interface {
 	RevokeAccount(account string) int
 }
@@ -55,6 +66,7 @@ type Handler struct {
 	logger        *slog.Logger
 	mux           *http.ServeMux
 	signIns       *metrics.Counter
+	bots          *botSignIn
 }
 
 func New(verifier Verifier, accounts Accounts, tokens Tokens, connections Connections, logger *slog.Logger) *Handler {
@@ -135,6 +147,9 @@ func (h *Handler) attemptSignIn(w http.ResponseWriter, r *http.Request) (string,
 	if !decode(w, r, &request) {
 		return unknownProvider, "malformed"
 	}
+	if request.Provider == account.BotProvider && h.bots != nil {
+		return account.BotProvider, h.signInBot(w, r, request)
+	}
 	provider, ok := parseProvider(request.Provider)
 	if !ok {
 		reply(w, http.StatusBadRequest, errorResponse{Error: "unknown_provider"})
@@ -162,12 +177,40 @@ func (h *Handler) attemptSignIn(w http.ResponseWriter, r *http.Request) (string,
 			return name, h.refuse(w, err)
 		}
 	}
-	pair, err := h.tokens.Issue(r.Context(), a.ID, request.DeviceID)
+	return name, h.issue(w, r, a, created, request.DeviceID)
+}
+
+func (h *Handler) EnableBotSignIn(secret []byte, accounts BotAccounts, now func() time.Time) {
+	h.bots = &botSignIn{secret: secret, accounts: accounts, now: now}
+}
+
+func (h *Handler) signInBot(w http.ResponseWriter, r *http.Request, request signInRequest) string {
+	if request.DeviceID == "" {
+		reply(w, http.StatusBadRequest, errorResponse{Error: "device_required"})
+		return "device_required"
+	}
+	bot, err := bottoken.Verify(h.bots.secret, request.IDToken, h.bots.now())
 	if err != nil {
-		return name, h.refuse(w, err)
+		return h.refuse(w, err)
+	}
+	a, created, err := h.bots.accounts.SignInBot(r.Context(), bot)
+	if errors.Is(err, account.ErrDeletionPending) {
+		reply(w, http.StatusConflict, deletionResponse{Error: "deletion_pending", DeleteAt: h.deleteAt(a)})
+		return "deletion_pending"
+	}
+	if err != nil {
+		return h.refuse(w, err)
+	}
+	return h.issue(w, r, a, created, request.DeviceID)
+}
+
+func (h *Handler) issue(w http.ResponseWriter, r *http.Request, a account.Account, created bool, device string) string {
+	pair, err := h.tokens.Issue(r.Context(), a.ID, device)
+	if err != nil {
+		return h.refuse(w, err)
 	}
 	reply(w, http.StatusOK, tokenResponse{AccessToken: pair.AccessToken, RefreshToken: pair.RefreshToken, ExpiresIn: pair.ExpiresIn, RequestKey: base64.StdEncoding.EncodeToString(pair.RequestKey), AccountID: a.ID, Created: created})
-	return name, "ok"
+	return "ok"
 }
 
 func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
@@ -273,6 +316,13 @@ func classify(err error) (int, string) {
 		errors.Is(err, idtoken.ErrSignature), errors.Is(err, idtoken.ErrIssuer), errors.Is(err, idtoken.ErrAudience),
 		errors.Is(err, idtoken.ErrSubject), errors.Is(err, idtoken.ErrUnknownProvider), errors.Is(err, account.ErrInvalidIdentity):
 		return http.StatusUnauthorized, "token_rejected"
+	case errors.Is(err, bottoken.ErrExpired), errors.Is(err, bottoken.ErrNotYet):
+		return http.StatusUnauthorized, "token_expired"
+	case errors.Is(err, bottoken.ErrMalformed), errors.Is(err, bottoken.ErrSignature), errors.Is(err, bottoken.ErrIssuer),
+		errors.Is(err, bottoken.ErrAudience), errors.Is(err, bottoken.ErrBotName), errors.Is(err, bottoken.ErrLifetime):
+		return http.StatusUnauthorized, "token_rejected"
+	case errors.Is(err, account.ErrNotBot):
+		return http.StatusForbidden, "not_bot"
 	case errors.Is(err, token.ErrExpired):
 		return http.StatusUnauthorized, "access_expired"
 	case errors.Is(err, token.ErrMalformed), errors.Is(err, token.ErrSignature), errors.Is(err, token.ErrUnknownKey), errors.Is(err, token.ErrIssuer):

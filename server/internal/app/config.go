@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Alievs-corp/hypedomino/server/internal/bottoken"
 	"github.com/Alievs-corp/hypedomino/server/internal/cluster"
 	"github.com/Alievs-corp/hypedomino/server/internal/cosmetics"
 	"github.com/Alievs-corp/hypedomino/server/internal/dataexport"
@@ -34,7 +35,15 @@ import (
 	"github.com/Alievs-corp/hypedomino/server/internal/token"
 )
 
+const (
+	EnvironmentDev        = "dev"
+	EnvironmentStaging    = "staging"
+	EnvironmentProduction = "production"
+)
+
 type Config struct {
+	Environment     string
+	BotTokenSecret  []byte
 	ListenAddr      string
 	DebugAddr       string
 	PprofAddr       string
@@ -216,6 +225,7 @@ func (r *envReader) duration(name string, value *time.Duration) {
 func ConfigFromEnv(lookup Lookup) (Config, error) {
 	config := DefaultConfig()
 	r := &envReader{lookup: lookup}
+	r.botIdentity(&config)
 	r.text("HD_LISTEN_ADDR", &config.ListenAddr)
 	r.text("HD_DEBUG_ADDR", &config.DebugAddr)
 	r.text("HD_PPROF_ADDR", &config.PprofAddr)
@@ -467,6 +477,28 @@ func checkContentBaseURL(raw string) error {
 		return fmt.Errorf("%q is not an https URL without a trailing slash, query or fragment", raw)
 	}
 	return nil
+}
+
+func (r *envReader) botIdentity(config *Config) {
+	r.text("HD_ENVIRONMENT", &config.Environment)
+	if config.Environment == "" {
+		config.Environment = EnvironmentProduction
+	}
+	var secret string
+	r.text("HD_BOT_TOKEN_SECRET", &secret)
+	switch {
+	case config.Environment != EnvironmentDev && config.Environment != EnvironmentStaging && config.Environment != EnvironmentProduction:
+		r.errs = append(r.errs, fmt.Errorf("HD_ENVIRONMENT: %q is not dev, staging or production", config.Environment))
+	case secret == "":
+	case config.Environment == EnvironmentProduction:
+		r.errs = append(r.errs, errors.New("HD_BOT_TOKEN_SECRET: refused in production; bot sign-in runs in dev and staging only"))
+	default:
+		parsed, err := bottoken.ParseSecret(secret)
+		if err != nil {
+			r.errs = append(r.errs, fmt.Errorf("HD_BOT_TOKEN_SECRET: %w", err))
+		}
+		config.BotTokenSecret = parsed
+	}
 }
 
 func (r *envReader) export(config *Config) {

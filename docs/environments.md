@@ -15,7 +15,7 @@ Scope boundaries: deploy, rollback and orchestration are #25 and `docs/launch-ru
 Rules:
 - E-1 Each environment has its own database, Redis, object storage bucket, admin accounts and secrets. No credential is valid in two environments.
 - E-2 No production data is copied into `staging` or `dev` (`docs/test-strategy.md` 7.4). A production incident is reproduced from its replay record and config version.
-- E-3 Staging-only paths (the bot identity path of `docs/test-strategy.md` section 3.1) are refused by the server at start when it runs as `production` (#57, #58).
+- E-3 The server knows its environment from `HD_ENVIRONMENT`: `dev`, `staging` or `production`; empty or unset is `production`, any other value stops the start. Test-only paths are refused at start in `production`: the bot identity path of `docs/test-strategy.md` section 3.1 is on only when `HD_BOT_TOKEN_SECRET` is set, and the server refuses to start in `production` with it set (exit code 2), so bot sign-in exists in `dev` and `staging` only (decided 2026-11-28, #24). The `SERVER_ENV` of `staging` (2.3) carries `HD_ENVIRONMENT=staging` and the bot secret; the `SERVER_ENV` of `production` carries `HD_ENVIRONMENT=production` and never the bot secret.
 - E-4 An image is built once and promoted from `staging` to `production` unchanged; environments differ only by environment variables and secrets (`docs/launch-runbook.md` 5.1, #25).
 - E-5 Admin change sets move from `staging` to `production` by export and import, approved again in production (`docs/admin.md` 3.6).
 - E-6 PostgreSQL and Redis run the same major version in CI, `staging` and `production` (`docs/test-strategy.md` 2.3). PostgreSQL is 16 (#55, `server/internal/db/dbtest` runs `postgres:16-alpine`); Redis is 7 (#51, `server/internal/cluster/redistest` runs `redis:7-alpine`); the hosting is #25 (ADR 0010).
@@ -32,6 +32,8 @@ Today no code on `main` reads an environment variable. The server variables belo
 
 | Name | Required | Service | Default | Example placeholder | Secret | Source |
 |---|---|---|---|---|---|---|
+| `HD_ENVIRONMENT` | No | server | `production` | `staging` | No | #24; `dev`, `staging` or `production`, empty is `production` (E-3) |
+| `HD_BOT_TOKEN_SECRET` | No; refused in `production` | server, `cmd/bot-token` | empty (no bot sign-in) | `<base64 of 32 random bytes>` | Yes | #24; HMAC key of the bot tokens of `docs/test-strategy.md` 3.1, at least 32 bytes; set it in `dev` or `staging` to turn bot sign-in on |
 | `HD_LISTEN_ADDR` | No | server | `:8080` | `:8080` | No | from #264 |
 | `HD_DEBUG_ADDR` | No | server | empty (off) | `127.0.0.1:6060` | No | #192 |
 | `HD_PPROF_ADDR` | No | server | empty (off) | `127.0.0.1:6061` | No | #642 |
@@ -192,6 +194,7 @@ The gateway limits and the reconnect grace are environment variables only until 
 | `HD_ADMIN_RATE_ACCOUNT_BURST` | No | admin-api | `40` (`AdminRateAccountBurst`) | `40` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_PER_MINUTE` | No | admin-api | `10` (`AdminRateSignInPerMinute`) | `10` | No | from #148 |
 | `HD_ADMIN_RATE_SIGNIN_BURST` | No | admin-api | `10` (`AdminRateSignInBurst`) | `10` | No | from #148 |
+| `HD_ADMIN_RATE_BREAK_GLASS_PER_HOUR` | No | admin-api | `3` (`AdminRateBreakGlassPerHour`) | `3` | No | from #754 |
 | `HD_ASSET_STORE_URL` | No | admin-api | none: `/admin/assets` lists rows and answers `asset_store_off` to uploads | `https://<bucket>.<object-store-host>` or `https://<object-store-host>/<bucket>` | No | from #135 |
 | `HD_ASSET_STORE_REGION` | With `HD_ASSET_STORE_URL` | admin-api | none | `<store-region>` | No | from #135 |
 | `HD_ASSET_STORE_ACCESS_KEY` | With `HD_ASSET_STORE_URL` | admin-api | none | `<asset-store-access-key>` | Yes | from #135 |
@@ -279,6 +282,7 @@ Where the player connects is fixed when it is built. `Editor/ReleaseBuild` takes
 | PostgreSQL superuser and `walg` role passwords, PostgreSQL TLS key | Secrets `postgres-superuser`, `walg-credentials` and `postgres-tls` of each cluster (`docs/backup-restore.md` 3.4), from the environment secrets above | Environment variables and mounted files of the `postgres` pod and the backup CronJobs |
 | Deletion job: database URL and deletion log key (`HD_DATABASE_URL`, `HD_DELETION_LOG_ACCESS_KEY`, `HD_DELETION_LOG_SECRET_KEY`) | The `account-deletion-env` secret of each cluster, from the environment secrets above; never in `server-env` (`docs/backup-restore.md` 3.7) | Environment variables of the `account-deletion` CronJob only |
 | Access token signing keys (`HD_TOKEN_KEYS`) | The `server-env` secret of each cluster; generated with `openssl rand -base64 32` per key id, never derived from a password | Environment variable of the server pods; rotated with overlap (section 5 step 3) |
+| Bot token secret (`HD_BOT_TOKEN_SECRET`), `staging` and `dev` only | The `server-env` secret of the staging cluster, from the `staging` environment secrets; generated with `openssl rand -base64 32`; never in any `production` secret (E-3) | Environment variable of the staging server pods, and of the shell or CI job that runs `server/cmd/bot-token` or the bot clients against staging |
 | Client crash report DSN (`CLIENT_SENTRY_DSN`) | GitHub Actions repository secret; one DSN for the builds of a tag, from the Sentry EU data region project the owner creates | Written by the `Release build` workflow to `client/Signing/crash-reporting.json`, removed after the build, and built into the player as `Resources/CrashReporting.json`; unset until the Sentry account exists (section 7) |
 | Infrastructure as code: cloud API token, object storage keys, state passphrase, k3s join token, game TLS private key (section 8.3) | The password vaults of the owner and the server lead, one set per environment | Environment variables of the operator's shell for `tofu plan` and `tofu apply` only; never a GitHub secret, because no workflow applies infrastructure |
 | Server crash report DSN (`HD_SENTRY_DSN`) | The `server-env` secret of each cluster, from the environment secrets above; one DSN per environment, taken from the Sentry EU data region project the owner creates | Environment variable of the server pods and of the admin API, which gets the same DSN; unset until the Sentry account exists (section 7) |
@@ -314,6 +318,7 @@ When: on any suspected leak, when a person with access to it leaves the team or 
 | Secret type | Regular cadence | Why |
 |---|---|---|
 | Session token signing keys (#58) | 90 days | Signs every session; rotation is cheap because of the overlap in step 3 |
+| Bot token secret (#24), `staging` only | 90 days | No overlap is needed: a bot token lives at most one hour, so bots mint new tokens with the new secret after the deploy |
 | PostgreSQL and Redis passwords, runtime and migration roles (M-7) | 180 days | Reachable only inside the cluster network; each rotation needs a deploy |
 | Hosting and infrastructure tokens: cloud API, object storage keys, registry and deploy tokens (ADR 0010) | 180 days | Broad power over the environment |
 | Store and vendor API credentials: Play service account key, App Store Connect API key, crash reporting (#106, #182) | 365 days | Narrow scope, issued and revoked in the vendor console |
