@@ -888,6 +888,8 @@ type PrivacyVersions struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	PrivacyPolicyVersion string                 `protobuf:"bytes,1,opt,name=privacy_policy_version,json=privacyPolicyVersion,proto3" json:"privacy_policy_version,omitempty"`
 	TermsVersion         string                 `protobuf:"bytes,2,opt,name=terms_version,json=termsVersion,proto3" json:"terms_version,omitempty"`
+	PrivacyPolicyUrl     string                 `protobuf:"bytes,3,opt,name=privacy_policy_url,json=privacyPolicyUrl,proto3" json:"privacy_policy_url,omitempty"`
+	TermsOfUseUrl        string                 `protobuf:"bytes,4,opt,name=terms_of_use_url,json=termsOfUseUrl,proto3" json:"terms_of_use_url,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -932,6 +934,20 @@ func (x *PrivacyVersions) GetPrivacyPolicyVersion() string {
 func (x *PrivacyVersions) GetTermsVersion() string {
 	if x != nil {
 		return x.TermsVersion
+	}
+	return ""
+}
+
+func (x *PrivacyVersions) GetPrivacyPolicyUrl() string {
+	if x != nil {
+		return x.PrivacyPolicyUrl
+	}
+	return ""
+}
+
+func (x *PrivacyVersions) GetTermsOfUseUrl() string {
+	if x != nil {
+		return x.TermsOfUseUrl
 	}
 	return ""
 }
@@ -1064,10 +1080,12 @@ const file_hypedomino_v1_hello_proto_rawDesc = "" +
 	"\n" +
 	"glow_scale\x18\t \x01(\x02R\tglowScale\x12\x12\n" +
 	"\x04flow\x18\n" +
-	" \x01(\bR\x04flow\"l\n" +
+	" \x01(\bR\x04flow\"\xc3\x01\n" +
 	"\x0fPrivacyVersions\x124\n" +
 	"\x16privacy_policy_version\x18\x01 \x01(\tR\x14privacyPolicyVersion\x12#\n" +
-	"\rterms_version\x18\x02 \x01(\tR\ftermsVersion\"I\n" +
+	"\rterms_version\x18\x02 \x01(\tR\ftermsVersion\x12,\n" +
+	"\x12privacy_policy_url\x18\x03 \x01(\tR\x10privacyPolicyUrl\x12'\n" +
+	"\x10terms_of_use_url\x18\x04 \x01(\tR\rtermsOfUseUrl\"I\n" +
 	"\rFallbackChain\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x1c\n" +
 	"\tlanguages\x18\x02 \x03(\tR\tlanguages*L\n" +

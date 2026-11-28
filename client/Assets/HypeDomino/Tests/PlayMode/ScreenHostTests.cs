@@ -39,7 +39,7 @@ namespace HypeDomino.Tests.PlayMode
         const string TermsUrl = "https://policy.test/terms";
         const int NavButtons = 9;
         const int LoginButtons = 3;
-        const int SettingsLabels = 18;
+        const int SettingsLabels = 20;
         const int RankingLabels = 3;
         const int RoomEntryButtons = 2;
         const int RoomEntryLabels = 3;
@@ -379,6 +379,16 @@ namespace HypeDomino.Tests.PlayMode
             ButtonOf(host.Promo, ScreenHost.BackKey).onClick.Invoke();
             Assert.AreSame(screen, stack.Top);
             Assert.IsTrue(screen.TakesInput);
+        }
+
+        [Test]
+        public void TheSettingsScreenHasTheLegalLinkRowsHiddenUntilAUrlIsAnnounced()
+        {
+            var screen = Pushed(SettingsScreens.NavKey);
+
+            Assert.IsNotNull(screen.GetComponent<LegalLinksView>());
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.PolicyKey).gameObject.activeSelf);
+            Assert.IsFalse(ButtonOf(screen, FirstLaunchScreens.TermsKey).gameObject.activeSelf);
         }
 
         [Test]

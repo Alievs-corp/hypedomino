@@ -74,20 +74,22 @@ namespace Hypedomino.V1 {
             "Am9uGAUgASgJUgJvbhISCgR0ZXh0GAYgASgJUgR0ZXh0EhIKBHBpcHMYByAB",
             "KA1SBHBpcHMSHQoKZ2xvd19hbHBoYRgIIAEoAlIJZ2xvd0FscGhhEh0KCmds",
             "b3dfc2NhbGUYCSABKAJSCWdsb3dTY2FsZRISCgRmbG93GAogASgIUgRmbG93",
-            "ImwKD1ByaXZhY3lWZXJzaW9ucxI0ChZwcml2YWN5X3BvbGljeV92ZXJzaW9u",
-            "GAEgASgJUhRwcml2YWN5UG9saWN5VmVyc2lvbhIjCg10ZXJtc192ZXJzaW9u",
-            "GAIgASgJUgx0ZXJtc1ZlcnNpb24iSQoNRmFsbGJhY2tDaGFpbhIaCghsYW5n",
-            "dWFnZRgBIAEoCVIIbGFuZ3VhZ2USHAoJbGFuZ3VhZ2VzGAIgAygJUglsYW5n",
-            "dWFnZXMqTAoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIU",
-            "ChBQTEFURk9STV9BTkRST0lEEAESEAoMUExBVEZPUk1fSU9TEAIqhgEKC0hl",
-            "bGxvU3RhdHVzEhwKGEhFTExPX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhF",
-            "TExPX1NUQVRVU19BQ0NFUFRFRBABEiAKHEhFTExPX1NUQVRVU19VUERBVEVf",
-            "UkVRVUlSRUQQAhIcChhIRUxMT19TVEFUVVNfTUFJTlRFTkFOQ0UQA0LFAQoR",
-            "Y29tLmh5cGVkb21pbm8udjFCCkhlbGxvUHJvdG9QAVpPZ2l0aHViLmNvbS9B",
-            "bGlldnMtY29ycC9oeXBlZG9taW5vL3NlcnZlci9pbnRlcm5hbC9wYi9oeXBl",
-            "ZG9taW5vL3YxO2h5cGVkb21pbm92MaICA0hYWKoCDUh5cGVkb21pbm8uVjHK",
-            "Ag1IeXBlZG9taW5vXFYx4gIZSHlwZWRvbWlub1xWMVxHUEJNZXRhZGF0YeoC",
-            "Dkh5cGVkb21pbm86OlYxYgZwcm90bzM="));
+            "IsMBCg9Qcml2YWN5VmVyc2lvbnMSNAoWcHJpdmFjeV9wb2xpY3lfdmVyc2lv",
+            "bhgBIAEoCVIUcHJpdmFjeVBvbGljeVZlcnNpb24SIwoNdGVybXNfdmVyc2lv",
+            "bhgCIAEoCVIMdGVybXNWZXJzaW9uEiwKEnByaXZhY3lfcG9saWN5X3VybBgD",
+            "IAEoCVIQcHJpdmFjeVBvbGljeVVybBInChB0ZXJtc19vZl91c2VfdXJsGAQg",
+            "ASgJUg10ZXJtc09mVXNlVXJsIkkKDUZhbGxiYWNrQ2hhaW4SGgoIbGFuZ3Vh",
+            "Z2UYASABKAlSCGxhbmd1YWdlEhwKCWxhbmd1YWdlcxgCIAMoCVIJbGFuZ3Vh",
+            "Z2VzKkwKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQ",
+            "UExBVEZPUk1fQU5EUk9JRBABEhAKDFBMQVRGT1JNX0lPUxACKoYBCgtIZWxs",
+            "b1N0YXR1cxIcChhIRUxMT19TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUxM",
+            "T19TVEFUVVNfQUNDRVBURUQQARIgChxIRUxMT19TVEFUVVNfVVBEQVRFX1JF",
+            "UVVJUkVEEAISHAoYSEVMTE9fU1RBVFVTX01BSU5URU5BTkNFEANCxQEKEWNv",
+            "bS5oeXBlZG9taW5vLnYxQgpIZWxsb1Byb3RvUAFaT2dpdGh1Yi5jb20vQWxp",
+            "ZXZzLWNvcnAvaHlwZWRvbWluby9zZXJ2ZXIvaW50ZXJuYWwvcGIvaHlwZWRv",
+            "bWluby92MTtoeXBlZG9taW5vdjGiAgNIWFiqAg1IeXBlZG9taW5vLlYxygIN",
+            "SHlwZWRvbWlub1xWMeICGUh5cGVkb21pbm9cVjFcR1BCTWV0YWRhdGHqAg5I",
+            "eXBlZG9taW5vOjpWMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Hypedomino.V1.Platform), typeof(global::Hypedomino.V1.HelloStatus), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -100,7 +102,7 @@ namespace Hypedomino.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.AnalyticsConfig), global::Hypedomino.V1.AnalyticsConfig.Parser, new[]{ "BatchSize", "QueueLimit", "FlushSeconds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RarityTableConfig), global::Hypedomino.V1.RarityTableConfig.Parser, new[]{ "DiamondMinSize", "FlowPeriodMs", "Tiers" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.RarityTierConfig), global::Hypedomino.V1.RarityTierConfig.Parser, new[]{ "Id", "Ordinal", "NameKey", "Fill", "On", "Text", "Pips", "GlowAlpha", "GlowScale", "Flow" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.PrivacyVersions), global::Hypedomino.V1.PrivacyVersions.Parser, new[]{ "PrivacyPolicyVersion", "TermsVersion" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.PrivacyVersions), global::Hypedomino.V1.PrivacyVersions.Parser, new[]{ "PrivacyPolicyVersion", "TermsVersion", "PrivacyPolicyUrl", "TermsOfUseUrl" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Hypedomino.V1.FallbackChain), global::Hypedomino.V1.FallbackChain.Parser, new[]{ "Language", "Languages" }, null, null, null, null)
           }));
     }
@@ -3547,6 +3549,8 @@ namespace Hypedomino.V1 {
     public PrivacyVersions(PrivacyVersions other) : this() {
       privacyPolicyVersion_ = other.privacyPolicyVersion_;
       termsVersion_ = other.termsVersion_;
+      privacyPolicyUrl_ = other.privacyPolicyUrl_;
+      termsOfUseUrl_ = other.termsOfUseUrl_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3580,6 +3584,30 @@ namespace Hypedomino.V1 {
       }
     }
 
+    /// <summary>Field number for the "privacy_policy_url" field.</summary>
+    public const int PrivacyPolicyUrlFieldNumber = 3;
+    private string privacyPolicyUrl_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PrivacyPolicyUrl {
+      get { return privacyPolicyUrl_; }
+      set {
+        privacyPolicyUrl_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "terms_of_use_url" field.</summary>
+    public const int TermsOfUseUrlFieldNumber = 4;
+    private string termsOfUseUrl_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TermsOfUseUrl {
+      get { return termsOfUseUrl_; }
+      set {
+        termsOfUseUrl_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -3597,6 +3625,8 @@ namespace Hypedomino.V1 {
       }
       if (PrivacyPolicyVersion != other.PrivacyPolicyVersion) return false;
       if (TermsVersion != other.TermsVersion) return false;
+      if (PrivacyPolicyUrl != other.PrivacyPolicyUrl) return false;
+      if (TermsOfUseUrl != other.TermsOfUseUrl) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3606,6 +3636,8 @@ namespace Hypedomino.V1 {
       int hash = 1;
       if (PrivacyPolicyVersion.Length != 0) hash ^= PrivacyPolicyVersion.GetHashCode();
       if (TermsVersion.Length != 0) hash ^= TermsVersion.GetHashCode();
+      if (PrivacyPolicyUrl.Length != 0) hash ^= PrivacyPolicyUrl.GetHashCode();
+      if (TermsOfUseUrl.Length != 0) hash ^= TermsOfUseUrl.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3632,6 +3664,14 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(18);
         output.WriteString(TermsVersion);
       }
+      if (PrivacyPolicyUrl.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(PrivacyPolicyUrl);
+      }
+      if (TermsOfUseUrl.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TermsOfUseUrl);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3650,6 +3690,14 @@ namespace Hypedomino.V1 {
         output.WriteRawTag(18);
         output.WriteString(TermsVersion);
       }
+      if (PrivacyPolicyUrl.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(PrivacyPolicyUrl);
+      }
+      if (TermsOfUseUrl.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TermsOfUseUrl);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3665,6 +3713,12 @@ namespace Hypedomino.V1 {
       }
       if (TermsVersion.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(TermsVersion);
+      }
+      if (PrivacyPolicyUrl.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PrivacyPolicyUrl);
+      }
+      if (TermsOfUseUrl.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TermsOfUseUrl);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3683,6 +3737,12 @@ namespace Hypedomino.V1 {
       }
       if (other.TermsVersion.Length != 0) {
         TermsVersion = other.TermsVersion;
+      }
+      if (other.PrivacyPolicyUrl.Length != 0) {
+        PrivacyPolicyUrl = other.PrivacyPolicyUrl;
+      }
+      if (other.TermsOfUseUrl.Length != 0) {
+        TermsOfUseUrl = other.TermsOfUseUrl;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -3711,6 +3771,14 @@ namespace Hypedomino.V1 {
             TermsVersion = input.ReadString();
             break;
           }
+          case 26: {
+            PrivacyPolicyUrl = input.ReadString();
+            break;
+          }
+          case 34: {
+            TermsOfUseUrl = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -3736,6 +3804,14 @@ namespace Hypedomino.V1 {
           }
           case 18: {
             TermsVersion = input.ReadString();
+            break;
+          }
+          case 26: {
+            PrivacyPolicyUrl = input.ReadString();
+            break;
+          }
+          case 34: {
+            TermsOfUseUrl = input.ReadString();
             break;
           }
         }
