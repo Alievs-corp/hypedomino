@@ -67,9 +67,10 @@ func TestEachHighRiskActionHasItsProposersAndApprovers(t *testing.T) {
 		{approval.SuperAdminGrant, admin("root", rbac.SuperAdmin), true, admin("root2", rbac.SuperAdmin), true},
 		{approval.SuperAdminGrant, admin("root", rbac.SuperAdmin), true, admin("l1", rbac.LiveOps), false},
 		{approval.SuperAdminGrant, admin("l1", rbac.LiveOps), false, audit.Actor{}, false},
-		{approval.BreakGlass, admin("l1", rbac.LiveOps), true, admin("root", rbac.SuperAdmin), true},
+		{approval.BreakGlass, admin("l1", rbac.LiveOps), false, audit.Actor{}, false},
+		{approval.BreakGlass, admin("root", rbac.SuperAdmin), true, admin("root2", rbac.SuperAdmin), true},
 		{approval.BreakGlass, admin("root", rbac.SuperAdmin), true, admin("l1", rbac.LiveOps), true},
-		{approval.BreakGlass, admin("l1", rbac.LiveOps), true, admin("s1", rbac.Support), false},
+		{approval.BreakGlass, admin("root", rbac.SuperAdmin), true, admin("s1", rbac.Support), false},
 		{approval.BreakGlass, admin("s1", rbac.Support), false, audit.Actor{}, false},
 		{approval.BreakGlass, admin("c1", rbac.Content), false, audit.Actor{}, false},
 	}
@@ -157,7 +158,7 @@ func TestAProposalExpiresAfterTheTtl(t *testing.T) {
 func TestAnUnconfirmedBreakGlassStaysListedAfterTheTtl(t *testing.T) {
 	store := newStore(t)
 	ctx := context.Background()
-	glass := propose(t, store, approval.BreakGlass, admin("l1", rbac.LiveOps))
+	glass := propose(t, store, approval.BreakGlass, admin("root", rbac.SuperAdmin))
 	propose(t, store, approval.LiveControl, admin("l1", rbac.LiveOps))
 	later := start.Add(72 * time.Hour)
 	if pending, err := store.Pending(ctx, later); err != nil || len(pending) != 1 || pending[0].ID != glass.ID {
@@ -166,10 +167,10 @@ func TestAnUnconfirmedBreakGlassStaysListedAfterTheTtl(t *testing.T) {
 	if unconfirmed, err := store.Unconfirmed(ctx); err != nil || len(unconfirmed) != 1 || unconfirmed[0].ID != glass.ID {
 		t.Fatalf("unconfirmed %+v %v", unconfirmed, err)
 	}
-	if _, err := store.Approve(ctx, glass.ID, admin("l1", rbac.LiveOps), later); !errors.Is(err, approval.ErrSelfDecision) {
+	if _, err := store.Approve(ctx, glass.ID, admin("root", rbac.SuperAdmin), later); !errors.Is(err, approval.ErrSelfDecision) {
 		t.Fatalf("self confirmation: %v", err)
 	}
-	if _, err := store.Approve(ctx, glass.ID, admin("root", rbac.SuperAdmin), later); err != nil {
+	if _, err := store.Approve(ctx, glass.ID, admin("l1", rbac.LiveOps), later); err != nil {
 		t.Fatalf("confirm after the ttl: %v", err)
 	}
 	if unconfirmed, err := store.Unconfirmed(ctx); err != nil || len(unconfirmed) != 0 {

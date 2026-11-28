@@ -50,6 +50,7 @@ var actionBySpecPhrase = map[string]Action{
 	"disable":                            DisablePromo,
 	"targeted account list":              EditTargetedAccounts,
 	"switch":                             SwitchLiveControl,
+	"break-glass":                        BreakGlass,
 	"rollback":                           Rollback,
 	"rollback (own domains)":             RollbackOwnDomains,
 	"all of section 6":                   ActOnPlayer,
@@ -69,7 +70,7 @@ var viewScopeBySpecQualifier = map[string]Action{
 var everyAction = []Action{
 	View, Create, Edit, Publish, Retire, Delete, ViewCounts, CulturalReview,
 	SwitchOffForIncident, ApprovePromo, DisablePromo, EditTargetedAccounts,
-	SwitchLiveControl, Rollback, RollbackOwnDomains, ActOnPlayer, ActOnQueue,
+	SwitchLiveControl, BreakGlass, Rollback, RollbackOwnDomains, ActOnPlayer, ActOnQueue,
 	GrantSuperAdmin, ExportAudit, PushStorePrices,
 }
 

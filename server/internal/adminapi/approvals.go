@@ -32,6 +32,7 @@ type proposalView struct {
 	State         approval.State  `json:"state"`
 	DeciderID     string          `json:"decider_id,omitempty"`
 	DecidedAt     *time.Time      `json:"decided_at,omitempty"`
+	RevertVersion int64           `json:"revert_config_version,omitempty"`
 }
 
 type proposalsResponse struct {
@@ -150,6 +151,7 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, p principal) {
 		return
 	}
 	var rejected approval.Proposal
+	var revertVersion int64
 	err = h.audited(r.Context(), p, func(tx pgx.Tx, now time.Time) ([]audit.Entry, error) {
 		if err := h.sensitive(p, note, now); err != nil {
 			return nil, err
@@ -159,16 +161,22 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, p principal) {
 		if err != nil {
 			return nil, err
 		}
-		entries := []audit.Entry{{Action: "reject", Object: rejected.Object, After: rejected.Change, Reason: note.Reason, Ref: note.Ref}}
-		if rejected.Kind != approval.PromoCode {
-			return entries, nil
+		rejection := audit.Entry{Action: "reject", Object: rejected.Object, After: rejected.Change, Reason: note.Reason, Ref: note.Ref}
+		switch rejected.Kind {
+		case approval.BreakGlass:
+			revertVersion, err = h.revertBreakGlass(r.Context(), tx, p, rejected, note, now)
+			return nil, err
+		case approval.PromoCode:
+			discarded, err := h.discardPromo(r.Context(), tx, rejected, now)
+			return []audit.Entry{rejection, discarded}, err
 		}
-		discarded, err := h.discardPromo(r.Context(), tx, rejected, now)
-		return append(entries, discarded), err
+		return []audit.Entry{rejection}, nil
 	})
 	if err != nil {
 		h.refuse(w, err)
 		return
 	}
-	reply(w, http.StatusOK, viewProposal(rejected))
+	view := viewProposal(rejected)
+	view.RevertVersion = revertVersion
+	reply(w, http.StatusOK, view)
 }

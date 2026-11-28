@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { needsStepUp } from "@/admin/refusals";
 import { StepUpPrompt } from "@/app/auth/StepUpPrompt";
 import {
+  breakGlassLimited,
   breakGlassSeverities,
   buildsFromText,
   emptyEnforcedAllowlist,
@@ -30,7 +31,7 @@ const toggles: readonly { key: Toggle; label: MessageKey }[] = [
   { key: "build_allowlist_enforced", label: "live.build_allowlist_enforced" },
 ];
 
-export function LiveControlsEditor({ published, clientId }: { published: LiveControls; clientId: string | null }) {
+export function LiveControlsEditor({ published, clientId, canBreakGlass }: { published: LiveControls; clientId: string | null; canBreakGlass: boolean }) {
   const t = useTranslator();
   const router = useRouter();
   const [controls, setControls] = useState(published);
@@ -108,10 +109,14 @@ export function LiveControlsEditor({ published, clientId }: { published: LiveCon
             {t("live.reason")}
             <input value={reason} onChange={(event) => setReason(event.target.value)} className={fieldClass} />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={incident !== null} onChange={(event) => setIncident(event.target.checked ? { severity: "SEV1", id: "" } : null)} />
-            {t("live.break_glass")}
-          </label>
+          {canBreakGlass ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={incident !== null} onChange={(event) => setIncident(event.target.checked ? { severity: "SEV1", id: "" } : null)} />
+              {t("live.break_glass")}
+            </label>
+          ) : (
+            <p className="text-sm text-text-secondary">{t("live.break_glass_super_admin_only")}</p>
+          )}
           {incident !== null && (
             <div className="flex flex-col gap-2">
               <p className="text-sm text-text-secondary">{t("live.break_glass_explain")}</p>
@@ -157,6 +162,13 @@ export function LiveControlsEditor({ published, clientId }: { published: LiveCon
 
 function Outcome({ result }: { result: SwitchResult }) {
   const t = useTranslator();
+  if (!result.ok && breakGlassLimited(result.error)) {
+    return (
+      <p role="alert" className="text-sm text-danger-text">
+        {result.retryAt ? `${t("live.break_glass_rate_limited")} ${t.when(result.retryAt)}` : t("live.break_glass_rate_limited")}
+      </p>
+    );
+  }
   if (!result.ok) {
     return (
       <p role="status" className="text-sm text-text-secondary">
