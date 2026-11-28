@@ -4,6 +4,7 @@ using HypeDomino.Content;
 using HypeDomino.Game;
 using HypeDomino.Game.Screens;
 using HypeDomino.Game.Shop;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.Net;
 using HypeDomino.Net.Api;
 using HypeDomino.Net.Auth;
@@ -123,7 +124,7 @@ namespace HypeDomino.Tests.PlayMode
                 new FrameRatePolicy(graphics, Panel120, null, false),
                 new HapticsPreference(true),
                 new ContentCache(new NoCacheStore(), () => false));
-            host = new ScreenHost(stack, strings, settings);
+            host = new ScreenHost(stack, strings, settings, new TutorialOffer());
             api = new Api();
             billing = new Billing();
             client = SignedInClient(api);

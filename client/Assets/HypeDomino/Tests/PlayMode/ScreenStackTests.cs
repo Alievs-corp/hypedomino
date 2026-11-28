@@ -209,6 +209,44 @@ namespace HypeDomino.Tests.PlayMode
         }
 
         [Test]
+        public void EveryScreenThatBecomesTheTopIsShownOnce()
+        {
+            var shown = new List<ScreenView>();
+            stack.TopShown += shown.Add;
+            var root = NewScreen("Root");
+            var next = NewScreen("Next");
+            var other = NewScreen("Other");
+
+            stack.Replace(root);
+            stack.Push(next);
+            stack.Pop();
+            stack.Push(next);
+            stack.Replace(other);
+
+            CollectionAssert.AreEqual(new[] { root, next, root, next, other }, shown);
+        }
+
+        [Test]
+        public void AScreenThatStaysTheTopIsNotShownAgain()
+        {
+            var root = NewScreen("Root");
+            var next = NewScreen("Next");
+            stack.Replace(root);
+            stack.Push(next);
+            var shown = new List<ScreenView>();
+            stack.TopShown += shown.Add;
+
+            stack.Push(next);
+            stack.Push(root);
+            stack.Replace(null);
+            stack.Replace(root);
+            stack.Replace(root);
+            stack.Pop();
+
+            CollectionAssert.AreEqual(new[] { root }, shown);
+        }
+
+        [Test]
         public void ReduceMotionFadesWithoutScaling()
         {
             SettledRoot();
@@ -265,6 +303,21 @@ namespace HypeDomino.Tests.PlayMode
             PopAndPushBack(next);
 
             Assert.That(() => PopAndPushBack(next), Allocates.Nothing);
+        }
+
+        [Test]
+        public void ShowingTheTopToAListenerAllocatesNothingOnceWarm()
+        {
+            var shownCount = 0;
+            stack.TopShown += _ => shownCount++;
+            SettledRoot();
+            var next = NewScreen("Next");
+            stack.Push(next);
+            stack.Advance(TokenDurationMs.Slow);
+            PopAndPushBack(next);
+
+            Assert.That(() => PopAndPushBack(next), Allocates.Nothing);
+            Assert.Greater(shownCount, 4);
         }
 
         [UnityTest]

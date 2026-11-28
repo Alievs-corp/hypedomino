@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ namespace HypeDomino.UI.Screens
 
         readonly List<ScreenView> stack = new(8);
         readonly List<ScreenView> moving = new(8);
+
+        public event Action<ScreenView> TopShown;
 
         public bool ReduceMotion { get; set; }
 
@@ -26,6 +29,7 @@ namespace HypeDomino.UI.Screens
             screen.TakeInput(true);
             screen.Enter();
             Track(screen);
+            TopShown?.Invoke(screen);
         }
 
         public void Replace(ScreenView screen)
@@ -43,6 +47,7 @@ namespace HypeDomino.UI.Screens
             stack.RemoveAt(stack.Count - 1);
             Leave(leaving);
             RevealTop();
+            TopShown?.Invoke(Top);
             return true;
         }
 

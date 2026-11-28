@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
+	"unicode"
 
 	pb "github.com/Alievs-corp/hypedomino/server/internal/pb/hypedomino/v1"
 )
@@ -15,6 +18,9 @@ const (
 	PrivacyPolicyVersion               = "PrivacyPolicyVersion"
 	TermsVersion                       = "TermsVersion"
 	ConsentRecordRetentionYears        = "ConsentRecordRetentionYears"
+	PrivacyPolicyURL                   = "PrivacyPolicyUrl"
+	TermsOfUseURL                      = "TermsOfUseUrl"
+	MaxURLLength                       = 512
 	DefaultConsentRecordRetentionYears = 3
 	MaxConsentRecordRetentionYears     = 10
 )
@@ -27,6 +33,8 @@ type Config struct {
 	PrivacyPolicyVersion        string
 	TermsVersion                string
 	ConsentRecordRetentionYears int
+	PrivacyPolicyURL            string
+	TermsOfUseURL               string
 }
 
 func Parse(raw []byte) (Config, error) {
@@ -56,6 +64,10 @@ func (c *Config) set(name string, field json.RawMessage) error {
 		}
 		c.ConsentRecordRetentionYears = years
 		return nil
+	case PrivacyPolicyURL:
+		return link(name, field, &c.PrivacyPolicyURL)
+	case TermsOfUseURL:
+		return link(name, field, &c.TermsOfUseURL)
 	}
 	return fmt.Errorf("%w: unknown key %s", ErrInvalid, name)
 }
@@ -69,6 +81,25 @@ func version(name string, field json.RawMessage, target *string) error {
 	return nil
 }
 
+func link(name string, field json.RawMessage, target *string) error {
+	var text string
+	if err := json.Unmarshal(field, &text); err != nil || !validLink(text) {
+		return fmt.Errorf("%w: %s must be an https URL with a host, at most %d characters, got %s", ErrInvalid, name, MaxURLLength, field)
+	}
+	*target = text
+	return nil
+}
+
+func validLink(text string) bool {
+	if text == "" || len(text) > MaxURLLength || strings.IndexFunc(text, blank) >= 0 {
+		return false
+	}
+	parsed, err := url.Parse(text)
+	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil
+}
+
+func blank(r rune) bool { return unicode.IsSpace(r) || unicode.IsControl(r) }
+
 func (c Config) RetentionYears() int {
 	if c.ConsentRecordRetentionYears == 0 {
 		return DefaultConsentRecordRetentionYears
@@ -77,5 +108,10 @@ func (c Config) RetentionYears() int {
 }
 
 func (c Config) Versions() *pb.PrivacyVersions {
-	return &pb.PrivacyVersions{PrivacyPolicyVersion: c.PrivacyPolicyVersion, TermsVersion: c.TermsVersion}
+	return &pb.PrivacyVersions{
+		PrivacyPolicyVersion: c.PrivacyPolicyVersion,
+		TermsVersion:         c.TermsVersion,
+		PrivacyPolicyUrl:     c.PrivacyPolicyURL,
+		TermsOfUseUrl:        c.TermsOfUseURL,
+	}
 }

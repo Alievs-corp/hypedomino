@@ -43,10 +43,16 @@ namespace HypeDomino.Game.Tutorial
         public bool Accept()
         {
             if (!Asking) return false;
+            Replay();
+            return true;
+        }
+
+        public void Replay()
+        {
+            Offered = true;
             Asking = false;
             Run.Start();
             Changed?.Invoke();
-            return true;
         }
 
         public bool Decline()

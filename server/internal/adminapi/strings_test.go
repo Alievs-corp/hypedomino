@@ -306,6 +306,33 @@ func TestPublishingIsAuditedAndBlockedByFailingValues(t *testing.T) {
 	}
 }
 
+func TestPublishingRefusesCharactersTheClientFontsDoNotDraw(t *testing.T) {
+	a := newAPI(t)
+	content := a.signIn("ayla")
+	a.call("PUT", "/admin/strings/match.result.win", content, winKey)
+	a.call("PUT", "/admin/strings/match.result.win/values/tr", content, map[string]any{"text": "Kazandın! ñé", "status": "approved"})
+	status, body := a.call("POST", "/admin/strings/bundles/tr", content, map[string]any{"reason": "launch"})
+	problems, _ := body["problems"].([]any)
+	if status != http.StatusBadRequest || body["error"] != "undrawable_characters" || len(problems) != 1 {
+		t.Fatalf("undrawable publish %d %v", status, body)
+	}
+	problem := problems[0].(map[string]any)
+	if problem["key"] != "match.result.win" || !reflect.DeepEqual(problem["characters"], []any{"ñ", "é"}) || !strings.Contains(problem["error"].(string), `"ñ" U+00F1, "é" U+00E9`) {
+		t.Fatalf("problem %v", problem)
+	}
+	if _, body := a.call("GET", "/admin/strings/bundles?language=tr", content, nil); len(body["bundles"].([]any)) != 0 || len(a.content.files) != 0 {
+		t.Fatalf("bundles %v, uploaded %v", body, a.content.files)
+	}
+	if entries := a.entries(content, "object_type=game_strings&action=publish"); len(entries) != 0 {
+		t.Fatalf("publish entries %v", entries)
+	}
+
+	a.call("PUT", "/admin/strings/match.result.win/values/tr", content, map[string]any{"text": "Kazandın!", "status": "approved"})
+	if status, body := a.call("POST", "/admin/strings/bundles/tr", content, map[string]any{"reason": "launch"}); status != http.StatusOK {
+		t.Fatalf("drawable publish %d %v", status, body)
+	}
+}
+
 func (a *api) approveEnglishWin(token string) {
 	a.t.Helper()
 	a.call("PUT", "/admin/strings/match.result.win", token, winKey)

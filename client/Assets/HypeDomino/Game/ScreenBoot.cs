@@ -1,4 +1,5 @@
 using HypeDomino.Content;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Screens;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -19,7 +20,8 @@ namespace HypeDomino.Game
             var motion = MotionBoot.Motion;
             stack.ReduceMotion = motion.ReduceMotion;
             motion.Changed += () => stack.ReduceMotion = motion.ReduceMotion;
-            Host = new ScreenHost(stack, LanguageBoot.Strings, Settings());
+            Host = new ScreenHost(stack, LanguageBoot.Strings, Settings(), TutorialBoot.Offer);
+            Host.ScreenShown += AnalyticsBoot.ScreenShown;
             Host.Follow(AppBoot.Flow.State);
             AppBoot.Flow.Changed += Host.Follow;
         }

@@ -87,8 +87,9 @@ type bundlesResponse struct {
 }
 
 type problemView struct {
-	Key   string `json:"key"`
-	Error string `json:"error"`
+	Key        string   `json:"key"`
+	Characters []string `json:"characters,omitempty"`
+	Error      string   `json:"error"`
 }
 
 type blockedResponse struct {
@@ -175,7 +176,11 @@ func (h *Handler) refuseStrings(w http.ResponseWriter, err error, problems []gam
 	}
 	views := make([]problemView, 0, len(problems))
 	for _, problem := range problems {
-		views = append(views, problemView{Key: problem.Key, Error: problem.Err.Error()})
+		views = append(views, problemView{Key: problem.Key, Characters: problem.Characters, Error: problem.Err.Error()})
+	}
+	if errors.Is(err, gamestrings.ErrUndrawable) {
+		reply(w, http.StatusBadRequest, blockedResponse{Error: "undrawable_characters", Problems: views})
+		return
 	}
 	reply(w, http.StatusUnprocessableEntity, blockedResponse{Error: "blocked", Problems: views})
 }

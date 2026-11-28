@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using HypeDomino.Game.Analytics;
 using HypeDomino.Game.Screens;
+using HypeDomino.Game.Tutorial;
 using HypeDomino.UI.Localization;
 using HypeDomino.UI.Screens;
 using UnityEngine;
@@ -13,12 +16,15 @@ namespace HypeDomino.Game
 
         readonly ScreenStack stack;
         readonly Dictionary<AppState, ScreenView> screens = new();
+        readonly Dictionary<ScreenView, string> screenIds = new();
         readonly Transform nav;
 
-        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings)
+        public ScreenHost(ScreenStack stack, GameStrings strings, SettingsModel settings, TutorialOffer tutorial)
         {
             this.stack = stack;
             Strings = strings;
+            Tutorial = tutorial;
+            stack.TopShown += TopShown;
             screens[AppState.Login] = LoginScreens.Login(this);
             screens[AppState.Lobby] = LobbyScreens.Lobby(this, out nav);
             screens[AppState.Room] = RoomScreens.Room(this);
@@ -37,7 +43,11 @@ namespace HypeDomino.Game
             Nav(MedalScreens.NavKey, MedalScreens.Medals(this));
         }
 
+        public event Action<string> ScreenShown;
+
         public GameStrings Strings { get; }
+
+        public TutorialOffer Tutorial { get; }
 
         public ScreenView Promo { get; }
 
@@ -47,7 +57,14 @@ namespace HypeDomino.Game
 
         public void Follow(AppState state) => stack.Replace(ScreenOf(state));
 
-        public ScreenView Screen(string name, out Transform column) => PlainUi.Screen(stack.transform, name, out column);
+        public string ScreenIdOf(ScreenView screen) => screenIds.TryGetValue(screen, out var id) ? id : null;
+
+        public ScreenView Screen(string name, out Transform column)
+        {
+            var screen = PlainUi.Screen(stack.transform, name, out column);
+            screenIds[screen] = ScreenViewIds.Of(name);
+            return screen;
+        }
 
         public ScreenView PushedScreen(string name, out Transform column)
         {
@@ -68,5 +85,10 @@ namespace HypeDomino.Game
         }
 
         void Nav(string labelKey, ScreenView screen) => PushButton(nav, labelKey, screen);
+
+        void TopShown(ScreenView screen)
+        {
+            if (screenIds.TryGetValue(screen, out var id)) ScreenShown?.Invoke(id);
+        }
     }
 }

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { ConfigResult } from "@/config/result";
 import { useTranslator } from "@/i18n/client";
-import { badFields, clearsPolicyVersion, configFromFields, fieldsFromConfig, retentionField, versionFields, type PrivacyConfig } from "@/privacy/config";
+import { badFields, clearsPolicyVersion, configFromFields, fieldsFromConfig, linkFields, retentionField, versionFields, type PrivacyConfig } from "@/privacy/config";
 import { publishPrivacy } from "./actions";
 
 const fieldClass = "rounded-md bg-surface px-3 py-1 text-text-primary";
@@ -35,6 +35,12 @@ export function PrivacyEditor({ published, canPublish }: { published: PrivacyCon
           <span className="font-mono">{retentionField}</span>
           <input inputMode="numeric" readOnly={!canPublish} placeholder={t("privacy.retention_default")} value={fields[retentionField]} onChange={(event) => set(retentionField, event.target.value)} className={fieldClass} />
         </label>
+        {linkFields.map((name) => (
+          <label key={name} className={`${labelClass} sm:col-span-2`}>
+            <span className="font-mono">{name}</span>
+            <input type="url" readOnly={!canPublish} placeholder={t("privacy.link_hidden")} value={fields[name]} onChange={(event) => set(name, event.target.value)} className={fieldClass} />
+          </label>
+        ))}
       </div>
       {bad.length > 0 && (
         <p role="alert" className="text-sm text-danger-text">
